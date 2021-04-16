@@ -15,7 +15,7 @@ import {
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateCheckpointScheduleParams {
   start: Date | null;
@@ -36,7 +36,7 @@ export type Params = CreateCheckpointScheduleParams & {
 export const createCheckpointScheduleResolver = (ticker: string, context: Context) => (
   receipt: ISubmittableResult
 ): CheckpointSchedule => {
-  const { data } = findEventRecord(receipt, 'checkpoint', 'ScheduleCreated');
+  const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
 
   const scheduleParams = storedScheduleToCheckpointScheduleParams(data[2]);
 
@@ -101,7 +101,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const createCheckpointSchedule = new Procedure(
-  prepareCreateCheckpointSchedule,
-  getAuthorization
-);
+export const createCheckpointSchedule = (): Procedure<Params, CheckpointSchedule> =>
+  new Procedure(prepareCreateCheckpointSchedule, getAuthorization);

@@ -3,17 +3,20 @@ import sinon from 'sinon';
 
 import {
   Checkpoint,
-  claimDividends,
   Context,
   CorporateAction,
   DefaultPortfolio,
   DividendDistribution,
   Entity,
-  payDividends,
   TransactionQueue,
 } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('DividendDistribution class', () => {
   let context: Context;
@@ -36,6 +39,7 @@ describe('DividendDistribution class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -100,11 +104,13 @@ describe('DividendDistribution class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -154,8 +160,8 @@ describe('DividendDistribution class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(claimDividends, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -170,8 +176,8 @@ describe('DividendDistribution class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
       const identityTargets = ['identityDid'];
 
-      sinon
-        .stub(payDividends, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { targets: identityTargets, distribution: dividendDistribution },

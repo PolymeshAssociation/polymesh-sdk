@@ -123,7 +123,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const consumeJoinIdentityAuthorization = new Procedure(
-  prepareConsumeJoinIdentityAuthorization,
-  getAuthorization
-);
+export const consumeJoinIdentityAuthorization = (): Procedure<ConsumeJoinIdentityAuthorizationParams> =>
+  new Procedure(prepareConsumeJoinIdentityAuthorization, getAuthorization);

@@ -80,4 +80,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeTransfers = new Procedure(prepareToggleFreezeTransfers, getAuthorization);
+export const toggleFreezeTransfers = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareToggleFreezeTransfers, getAuthorization);

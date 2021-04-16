@@ -95,4 +95,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const controllerTransfer = new Procedure(prepareControllerTransfer, getAuthorization);
+export const controllerTransfer = (): Procedure<Params, void> =>
+  new Procedure(prepareControllerTransfer, getAuthorization);

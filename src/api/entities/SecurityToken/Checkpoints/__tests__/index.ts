@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
-import { Checkpoint, Context, createCheckpoint, Namespace, TransactionQueue } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Checkpoint, Context, Namespace, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -19,6 +19,10 @@ jest.mock(
     '~/api/entities/CheckpointSchedule'
   )
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Checkpoints class', () => {
   let context: Context;
@@ -31,6 +35,7 @@ describe('Checkpoints class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     ticker = 'SOME_TICKER';
 
@@ -40,6 +45,7 @@ describe('Checkpoints class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
 
     context = dsMockUtils.getContextInstance();
 
@@ -50,6 +56,7 @@ describe('Checkpoints class', () => {
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -64,8 +71,8 @@ describe('Checkpoints class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Checkpoint>;
 
-      sinon
-        .stub(createCheckpoint, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

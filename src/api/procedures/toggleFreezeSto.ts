@@ -94,4 +94,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeSto = new Procedure(prepareToggleFreezeSto, getAuthorization);
+export const toggleFreezeSto = (): Procedure<ToggleFreezeStoParams, Sto> =>
+  new Procedure(prepareToggleFreezeSto, getAuthorization);

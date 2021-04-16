@@ -16,7 +16,7 @@ import {
   textToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -31,7 +31,7 @@ export interface Params {
 export const createPortfolioResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): NumberedPortfolio => {
-  const { data } = findEventRecord(receipt, 'portfolio', 'PortfolioCreated');
+  const [{ data }] = filterEventRecords(receipt, 'portfolio', 'PortfolioCreated');
   const did = identityIdToString(data[0]);
   const id = u64ToBigNumber(data[1]);
 
@@ -85,10 +85,11 @@ export async function prepareCreatePortfolio(
 /**
  * @hidden
  */
-export const createPortfolio = new Procedure(prepareCreatePortfolio, {
-  signerPermissions: {
-    transactions: [TxTags.portfolio.CreatePortfolio],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const createPortfolio = (): Procedure<Params, NumberedPortfolio> =>
+  new Procedure(prepareCreatePortfolio, {
+    signerPermissions: {
+      transactions: [TxTags.portfolio.CreatePortfolio],
+      tokens: [],
+      portfolios: [],
+    },
+  });

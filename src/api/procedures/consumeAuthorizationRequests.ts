@@ -107,7 +107,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const consumeAuthorizationRequests = new Procedure(
-  prepareConsumeAuthorizationRequests,
-  getAuthorization
-);
+export const consumeAuthorizationRequests = (): Procedure<ConsumeAuthorizationRequestsParams> =>
+  new Procedure(prepareConsumeAuthorizationRequests, getAuthorization);

@@ -5,16 +5,14 @@ import sinon from 'sinon';
 import {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
-  addTransferRestriction,
   Context,
   Namespace,
   SecurityToken,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
-  setTransferRestrictions,
   TransactionQueue,
 } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CountTransferRestriction, PercentageTransferRestriction } from '~/types';
 import { TransferRestrictionType } from '~/types/internal';
 
@@ -26,19 +24,28 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('TransferRestrictionBase class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
+    procedureMockUtils.initMocks();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -68,8 +75,8 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
 
-      sinon
-        .stub(addTransferRestriction, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Count },
@@ -96,8 +103,8 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
 
-      sinon
-        .stub(addTransferRestriction, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Percentage },
@@ -137,8 +144,8 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
 
-      sinon
-        .stub(setTransferRestrictions, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Count },
@@ -164,8 +171,8 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
 
-      sinon
-        .stub(setTransferRestrictions, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { ticker: token.ticker, ...args, type: TransferRestrictionType.Percentage },
@@ -201,8 +208,8 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
 
-      sinon
-        .stub(setTransferRestrictions, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { ticker: token.ticker, restrictions: [], type: TransferRestrictionType.Count },
@@ -222,8 +229,8 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
 
-      sinon
-        .stub(setTransferRestrictions, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: {

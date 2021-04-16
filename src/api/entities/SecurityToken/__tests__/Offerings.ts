@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 import { Fundraiser, FundraiserName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, launchSto, Namespace, SecurityToken, Sto, TransactionQueue } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Context, Namespace, SecurityToken, Sto, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -18,6 +18,10 @@ jest.mock(
   '~/api/entities/Sto',
   require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Offerings class', () => {
   let ticker: string;
@@ -29,6 +33,7 @@ describe('Offerings class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     ticker = 'SOME_TOKEN';
   });
@@ -43,11 +48,13 @@ describe('Offerings class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -69,8 +76,8 @@ describe('Offerings class', () => {
         minInvestment: new BigNumber(100),
       };
 
-      sinon
-        .stub(launchSto, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

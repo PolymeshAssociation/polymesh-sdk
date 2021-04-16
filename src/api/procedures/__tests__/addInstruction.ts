@@ -81,7 +81,8 @@ describe('addInstruction procedure', () => {
   let rawBlockSettlementType: SettlementType;
   let rawLeg: { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance };
 
-  let instruction: PostTransactionValue<Instruction>;
+  let instruction: PostTransactionValue<Instruction[]>;
+  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -152,20 +153,22 @@ describe('addInstruction procedure', () => {
     };
     args = {
       venueId,
-      legs: [
+      instructions: [
         {
-          from,
-          to,
-          token,
-          amount,
+          legs: [
+            {
+              from,
+              to,
+              token,
+              amount,
+            },
+          ],
         },
       ],
     };
 
-    instruction = ('instruction' as unknown) as PostTransactionValue<Instruction>;
+    instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
   });
-
-  let addTransactionStub: sinon.SinonStub;
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
     [
@@ -186,7 +189,9 @@ describe('addInstruction procedure', () => {
   >;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([instruction]);
+    addBatchTransactionStub = procedureMockUtils
+      .getAddBatchTransactionStub()
+      .returns([instruction]);
 
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
@@ -239,19 +244,20 @@ describe('addInstruction procedure', () => {
   });
 
   test('should throw an error if the legs array is empty', async () => {
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
 
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { ...args, legs: [] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
     } catch (err) {
       error = err;
     }
 
     expect(error.message).toBe("The legs array can't be empty");
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
   test('should throw an error if the end block is in the past', async () => {
@@ -263,19 +269,35 @@ describe('addInstruction procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
 
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { ...args, endBlock: new BigNumber(100) });
+      await prepareAddInstruction.call(proc, {
+        venueId,
+        instructions: [
+          {
+            legs: [
+              {
+                from,
+                to,
+                amount,
+                token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+              },
+            ],
+            endBlock: new BigNumber(100),
+          },
+        ],
+      });
     } catch (err) {
       error = err;
     }
 
     expect(error.message).toBe('End block must be a future block');
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
   test('should throw an error if the value date is before the trade date', async () => {
@@ -285,7 +307,7 @@ describe('addInstruction procedure', () => {
         exists: true,
       },
     });
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
 
@@ -293,15 +315,28 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        ...args,
-        tradeDate: new Date(valueDate.getTime() + 1),
-        valueDate,
+        venueId,
+        instructions: [
+          {
+            legs: [
+              {
+                from,
+                to,
+                token,
+                amount,
+              },
+            ],
+            tradeDate: new Date(valueDate.getTime() + 1),
+            valueDate,
+          },
+        ],
       });
     } catch (err) {
       error = err;
     }
 
     expect(error.message).toBe('Value date must be after trade date');
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
   test('should add an add and authorize instruction transaction to the queue', async () => {
@@ -312,24 +347,19 @@ describe('addInstruction procedure', () => {
       },
     });
     getCustodianStub.onCall(1).returns({ did: fromDid });
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfoliosToAffirm: [fromPortfolio, toPortfolio],
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
     const result = await prepareAddInstruction.call(proc, args);
 
     sinon.assert.calledWith(
-      addTransactionStub,
+      addBatchTransactionStub,
       addAndAuthorizeInstructionTransaction,
       sinon.match({
         resolvers: sinon.match.array,
       }),
-      rawVenueId,
-      rawAuthSettlementType,
-      null,
-      null,
-      [rawLeg],
-      [rawFrom, rawTo]
+      [[rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]]]
     );
     expect(result).toBe(instruction);
   });
@@ -342,31 +372,36 @@ describe('addInstruction procedure', () => {
       },
     });
     getCustodianStub.onCall(0).returns({ did: toDid });
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-      portfoliosToAffirm: [],
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [[]],
     });
 
     const result = await prepareAddInstruction.call(proc, {
-      ...args,
-      legs: [
-        { from, to, amount, token: entityMockUtils.getSecurityTokenInstance({ ticker: token }) },
+      venueId,
+      instructions: [
+        {
+          legs: [
+            {
+              from,
+              to,
+              amount,
+              token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+            },
+          ],
+          tradeDate,
+          valueDate,
+          endBlock,
+        },
       ],
-      tradeDate,
-      valueDate,
-      endBlock,
     });
 
     sinon.assert.calledWith(
-      addTransactionStub,
+      addBatchTransactionStub,
       addInstructionTransaction,
       sinon.match({
         resolvers: sinon.match.array,
       }),
-      rawVenueId,
-      rawBlockSettlementType,
-      rawTradeDate,
-      rawValueDate,
-      [rawLeg]
+      [[rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]]]
     );
     expect(result).toBe(instruction);
   });
@@ -378,14 +413,14 @@ describe('addInstruction procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
 
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { ...args, legs: [] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
     } catch (err) {
       error = err;
     }
@@ -395,14 +430,16 @@ describe('addInstruction procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      let proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-        portfoliosToAffirm: [fromPortfolio, toPortfolio],
+      let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+        portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
       });
       let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc({
         venueId,
-        legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }],
+        instructions: [
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+        ],
       });
 
       expect(result).toEqual({
@@ -414,14 +451,16 @@ describe('addInstruction procedure', () => {
         },
       });
 
-      proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext, {
-        portfoliosToAffirm: [],
+      proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+        portfoliosToAffirm: [[]],
       });
       boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({
         venueId,
-        legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }],
+        instructions: [
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+        ],
       });
 
       expect(result).toEqual({
@@ -437,7 +476,7 @@ describe('addInstruction procedure', () => {
 
   describe('prepareStorage', () => {
     test('should return the list of portfolios that will be affirmed', async () => {
-      const proc = procedureMockUtils.getInstance<Params, Instruction, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
@@ -449,7 +488,7 @@ describe('addInstruction procedure', () => {
       let result = await boundFunc(args);
 
       expect(result).toEqual({
-        portfoliosToAffirm: [fromPortfolio, toPortfolio],
+        portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
       });
 
       fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
@@ -461,14 +500,14 @@ describe('addInstruction procedure', () => {
       result = await boundFunc(args);
 
       expect(result).toEqual({
-        portfoliosToAffirm: [],
+        portfoliosToAffirm: [[]],
       });
     });
   });
 });
 
 describe('createAddInstructionResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id.toNumber());
 
@@ -481,11 +520,11 @@ describe('createAddInstructionResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(dsMockUtils.createMockIEvent(['did', 'venueId', rawId]));
+    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['did', 'venueId', rawId])]);
   });
 
   afterEach(() => {
-    findEventRecordStub.reset();
+    filterEventRecordsStub.reset();
   });
 
   test('should return the new Instruction', () => {
@@ -493,6 +532,24 @@ describe('createAddInstructionResolver', () => {
 
     const result = createAddInstructionResolver(fakeContext)({} as ISubmittableResult);
 
-    expect(result.id).toEqual(id);
+    expect(result[0].id).toEqual(id);
+  });
+
+  test('should return a list of new Instructions', () => {
+    const fakeContext = {} as Context;
+    const previousInstructionId = new BigNumber(2);
+
+    const previousInstructions = ({
+      value: [new Instruction({ id: previousInstructionId }, fakeContext)],
+    } as unknown) as PostTransactionValue<Instruction[]>;
+
+    const result = createAddInstructionResolver(
+      fakeContext,
+      previousInstructions
+    )({} as ISubmittableResult);
+
+    expect(result.length).toEqual(2);
+    expect(result[0].id).toEqual(previousInstructionId);
+    expect(result[1].id).toEqual(id);
   });
 });

@@ -89,4 +89,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const linkCaDocs = new Procedure(prepareLinkCaDocs, getAuthorization);
+export const linkCaDocs = (): Procedure<Params, void> =>
+  new Procedure(prepareLinkCaDocs, getAuthorization);

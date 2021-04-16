@@ -4,10 +4,11 @@ import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { CalendarPeriod, CalendarUnit,ClaimType, CommonKeyring, CountryCode } from '~/types';
+import { CalendarPeriod, CalendarUnit, ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
@@ -20,10 +21,12 @@ import {
   createClaim,
   createProcedureMethod,
   delay,
-  findEventRecord,
+  filterEventRecords,
   getCommonKeyring,
   getDid,
+  getTicker,
   isPrintableAscii,
+  optionize,
   padString,
   periodComplexity,
   removePadding,
@@ -158,33 +161,33 @@ describe('unwrapValues', () => {
   });
 });
 
-describe('findEventRecord', () => {
-  const findRecordStub = sinon.stub();
+describe('filterEventRecords', () => {
+  const filterRecordsStub = sinon.stub();
   const mockReceipt = ({
-    findRecord: findRecordStub,
+    filterRecords: filterRecordsStub,
   } as unknown) as ISubmittableResult;
 
   afterEach(() => {
-    findRecordStub.reset();
+    filterRecordsStub.reset();
   });
 
   test('returns the corresponding Event Record', () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     const fakeResult = 'event';
-    findRecordStub.withArgs(mod, eventName).returns({ event: fakeResult });
+    filterRecordsStub.withArgs(mod, eventName).returns([{ event: fakeResult }]);
 
-    const eventRecord = findEventRecord(mockReceipt, mod, eventName);
+    const eventRecord = filterEventRecords(mockReceipt, mod, eventName);
 
-    expect(eventRecord).toBe(fakeResult);
+    expect(eventRecord[0]).toBe(fakeResult);
   });
 
   test("throws if the Event wasn't fired", () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
-    findRecordStub.withArgs(mod, eventName).returns(undefined);
+    filterRecordsStub.withArgs(mod, eventName).returns([]);
 
-    expect(() => findEventRecord(mockReceipt, mod, eventName)).toThrow(
+    expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
     );
   });
@@ -473,10 +476,11 @@ describe('createProcedureMethod', () => {
     const prepare = sinon.stub();
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
-    const fakeProcedure = ({
-      prepare,
-      checkAuthorization,
-    } as unknown) as Procedure<number, void>;
+    const fakeProcedure = (): Procedure<number, void> =>
+      (({
+        prepare,
+        checkAuthorization,
+      } as unknown) as Procedure<number, void>);
 
     const method = createProcedureMethod(
       { getProcedureAndArgs: (args: number) => [fakeProcedure, args], transformer },
@@ -549,6 +553,18 @@ describe('assertFormatValid', () => {
   });
 });
 
+describe('getTicker', () => {
+  test('should return a token symbol', async () => {
+    const symbol = 'TOKEN';
+    let result = getTicker(symbol);
+
+    expect(result).toBe(symbol);
+
+    result = getTicker(new SecurityToken({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    expect(result).toBe(symbol);
+  });
+});
+
 describe('periodComplexity', () => {
   test('should calculate complexity for any period', () => {
     const period: CalendarPeriod = {
@@ -585,5 +601,21 @@ describe('periodComplexity', () => {
     period.amount = 0;
     result = periodComplexity(period);
     expect(result).toBe(1);
+  });
+});
+
+describe('optionize', () => {
+  const context = dsMockUtils.getContextInstance();
+
+  test('should transform a conversion util into a version that returns null if the input is falsy', () => {
+    const number = 1;
+
+    const toString = (value: number): string => value.toString();
+
+    let result = optionize(toString)(number, context);
+    expect(result).toBe(number.toString());
+
+    result = optionize(toString)(null, context);
+    expect(result).toBeNull();
   });
 });
