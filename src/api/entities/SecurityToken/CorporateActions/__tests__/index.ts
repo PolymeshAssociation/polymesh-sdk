@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -10,6 +11,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { TargetTreatment } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { CorporateActions } from '../';
@@ -122,6 +124,42 @@ describe('CorporateActions class', () => {
       result = await corporateActions.getAgent();
 
       expect(result).toEqual(identity);
+    });
+  });
+
+  describe('method: getDefaults', () => {
+    test("should retrieve the Security Token's Corporate Actions defaults", async () => {
+      const dids = ['someDid', 'otherDid'];
+      const targets = {
+        identities: [
+          entityMockUtils.getIdentityInstance({ did: dids[0] }),
+          entityMockUtils.getIdentityInstance({ did: dids[1] }),
+        ],
+        treatment: TargetTreatment.Include,
+      };
+      const defaultTaxWithholding = new BigNumber(10);
+      const taxWithholdings = [{ identity: targets.identities[0], percentage: new BigNumber(15) }];
+
+      dsMockUtils.createQueryStub('corporateAction', 'defaultTargetIdentities');
+      dsMockUtils.createQueryStub('corporateAction', 'defaultWithholdingTax');
+      dsMockUtils.createQueryStub('corporateAction', 'didWithholdingTax');
+
+      dsMockUtils.getQueryMultiStub().resolves([
+        dsMockUtils.createMockTargetIdentities({
+          identities: dids,
+          treatment: 'Include',
+        }),
+        dsMockUtils.createMockPermill(10 * 10000),
+        [[dsMockUtils.createMockIdentityId(dids[0]), dsMockUtils.createMockPermill(15 * 10000)]],
+      ]);
+
+      const result = await corporateActions.getDefaults();
+
+      expect(result).toEqual({
+        targets,
+        defaultTaxWithholding,
+        taxWithholdings,
+      });
     });
   });
 });
