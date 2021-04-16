@@ -54,10 +54,11 @@ export async function prepareRemoveSecondaryKeys(
 /**
  * @hidden
  */
-export const removeSecondaryKeys = new Procedure(prepareRemoveSecondaryKeys, {
-  signerPermissions: {
-    transactions: [TxTags.identity.RemoveSecondaryKeys],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const removeSecondaryKeys = (): Procedure<RemoveSecondaryKeysParams> =>
+  new Procedure(prepareRemoveSecondaryKeys, {
+    signerPermissions: {
+      transactions: [TxTags.identity.RemoveSecondaryKeys],
+      tokens: [],
+      portfolios: [],
+    },
+  });

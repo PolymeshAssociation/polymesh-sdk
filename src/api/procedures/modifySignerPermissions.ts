@@ -59,10 +59,11 @@ export async function prepareModifySignerPermissions(
 /**
  * @hidden
  */
-export const modifySignerPermissions = new Procedure(prepareModifySignerPermissions, {
-  signerPermissions: {
-    transactions: [TxTags.identity.SetPermissionToSigner],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const modifySignerPermissions = (): Procedure<ModifySignerPermissionsParams> =>
+  new Procedure(prepareModifySignerPermissions, {
+    signerPermissions: {
+      transactions: [TxTags.identity.SetPermissionToSigner],
+      tokens: [],
+      portfolios: [],
+    },
+  });

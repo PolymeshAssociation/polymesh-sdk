@@ -99,7 +99,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const addInvestorUniquenessClaim = new Procedure(
-  prepareAddInvestorUniquenessClaim,
-  getAuthorization
-);
+export const addInvestorUniquenessClaim = (): Procedure<AddInvestorUniquenessClaimParams, void> =>
+  new Procedure(prepareAddInvestorUniquenessClaim, getAuthorization);

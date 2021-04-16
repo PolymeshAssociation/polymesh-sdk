@@ -74,4 +74,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const issueTokens = new Procedure(prepareIssueTokens, getAuthorization);
+export const issueTokens = (): Procedure<IssueTokensParams, SecurityToken> =>
+  new Procedure(prepareIssueTokens, getAuthorization);

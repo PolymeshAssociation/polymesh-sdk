@@ -2,15 +2,8 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
-import {
-  CheckpointSchedule,
-  Context,
-  createCheckpointSchedule,
-  Namespace,
-  removeCheckpointSchedule,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { CheckpointSchedule, Context, Namespace, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CalendarUnit, ScheduleWithDetails } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -22,6 +15,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockCheckpointScheduleModule(
     '~/api/entities/CheckpointSchedule'
   )
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('Schedules class', () => {
@@ -35,6 +32,7 @@ describe('Schedules class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     ticker = 'SOME_TICKER';
 
@@ -44,6 +42,7 @@ describe('Schedules class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
 
     context = dsMockUtils.getContextInstance();
 
@@ -54,6 +53,7 @@ describe('Schedules class', () => {
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -76,8 +76,8 @@ describe('Schedules class', () => {
         repetitions: null,
       };
 
-      sinon
-        .stub(createCheckpointSchedule, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -98,8 +98,8 @@ describe('Schedules class', () => {
         schedule: new BigNumber(1),
       };
 
-      sinon
-        .stub(removeCheckpointSchedule, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 

@@ -151,4 +151,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const moveFunds = new Procedure(prepareMoveFunds, getAuthorization);
+export const moveFunds = (): Procedure<Params, void> =>
+  new Procedure(prepareMoveFunds, getAuthorization);

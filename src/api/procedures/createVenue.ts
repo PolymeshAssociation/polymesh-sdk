@@ -59,10 +59,11 @@ export async function prepareCreateVenue(
 /**
  * @hidden
  */
-export const createVenue = new Procedure(prepareCreateVenue, {
-  signerPermissions: {
-    transactions: [TxTags.settlement.CreateVenue],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const createVenue = (): Procedure<CreateVenueParams, Venue> =>
+  new Procedure(prepareCreateVenue, {
+    signerPermissions: {
+      transactions: [TxTags.settlement.CreateVenue],
+      tokens: [],
+      portfolios: [],
+    },
+  });

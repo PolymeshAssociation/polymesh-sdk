@@ -1,30 +1,31 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  createSecurityToken,
-  Entity,
-  reserveTicker,
-  SecurityToken,
-  TickerReservation,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { Entity, SecurityToken, TickerReservation, TransactionQueue } from '~/internal';
+import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('TickerReservation class', () => {
   const ticker = 'FAKETICKER';
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -211,8 +212,8 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon
-        .stub(reserveTicker, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -239,8 +240,8 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(createSecurityToken, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 

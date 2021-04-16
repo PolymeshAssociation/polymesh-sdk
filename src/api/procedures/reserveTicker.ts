@@ -113,4 +113,5 @@ export function getAuthorization({
 /**
  * @hidden
  */
-export const reserveTicker = new Procedure(prepareReserveTicker, getAuthorization);
+export const reserveTicker = (): Procedure<ReserveTickerParams, TickerReservation> =>
+  new Procedure(prepareReserveTicker, getAuthorization);

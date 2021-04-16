@@ -14,7 +14,6 @@ import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
-import { Procedure } from '~/base/Procedure';
 import {
   Context,
   Identity,
@@ -45,7 +44,7 @@ import {
   MaybePostTransactionValue,
   ProcedureMethod,
 } from '~/types/internal';
-import { UnionOfProcedures } from '~/types/utils';
+import { ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
@@ -410,8 +409,8 @@ export function createProcedureMethod<
       methodArgs: MethodArgs
     ) => [
       (
-        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
-        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
       ),
       ProcedureArgs
     ];
@@ -430,8 +429,8 @@ export function createProcedureMethod<
       methodArgs: MethodArgs
     ) => [
       (
-        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
-        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
       ),
       ProcedureArgs
     ];
@@ -452,8 +451,8 @@ export function createProcedureMethod<
       methodArgs: MethodArgs
     ) => [
       (
-        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
-        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
       ),
       ProcedureArgs
     ];
@@ -467,11 +466,7 @@ export function createProcedureMethod<
     methodArgs: MethodArgs
   ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
-
-    return (proc as Procedure<ProcedureArgs, ProcedureReturnValue, Storage>).prepare(
-      { args: procArgs, transformer },
-      context
-    );
+    return proc().prepare({ args: procArgs, transformer }, context);
   };
 
   method.checkAuthorization = async (
@@ -479,7 +474,7 @@ export function createProcedureMethod<
   ): Promise<ProcedureAuthorizationStatus> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
 
-    return proc.checkAuthorization(procArgs, context);
+    return proc().checkAuthorization(procArgs, context);
   };
 
   return method;

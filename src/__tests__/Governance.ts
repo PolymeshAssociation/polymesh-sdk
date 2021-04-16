@@ -182,7 +182,7 @@ describe('Governance class', () => {
 //       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Proposal>;
 
 //       sinon
-//         .stub(createProposal, 'prepare')
+//         .stub(createProposal(), 'prepare')
 //         .withArgs(args, context)
 //         .resolves(expectedQueue);
 

@@ -185,7 +185,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const initiateCorporateAction = new Procedure(
-  prepareInitiateCorporateAction,
-  getAuthorization
-);
+export const initiateCorporateAction = (): Procedure<Params, CAId> =>
+  new Procedure(prepareInitiateCorporateAction, getAuthorization);

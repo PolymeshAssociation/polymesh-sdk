@@ -85,10 +85,11 @@ export async function prepareCreatePortfolio(
 /**
  * @hidden
  */
-export const createPortfolio = new Procedure(prepareCreatePortfolio, {
-  signerPermissions: {
-    transactions: [TxTags.portfolio.CreatePortfolio],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const createPortfolio = (): Procedure<Params, NumberedPortfolio> =>
+  new Procedure(prepareCreatePortfolio, {
+    signerPermissions: {
+      transactions: [TxTags.portfolio.CreatePortfolio],
+      tokens: [],
+      portfolios: [],
+    },
+  });
