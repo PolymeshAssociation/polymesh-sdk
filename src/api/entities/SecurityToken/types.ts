@@ -26,3 +26,5 @@ export interface TokenHolderOptions {
 export interface TokenHolderProperties {
   canBeIssuedTo: boolean;
 }
+
+export * from './CorporateActions/types';

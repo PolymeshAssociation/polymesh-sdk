@@ -209,6 +209,7 @@ import {
   stringToText,
   stringToTicker,
   stringToVenueDetails,
+  targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
   textToString,
   tickerToDid,
@@ -5465,6 +5466,47 @@ describe('checkpointToRecordDateSpec', () => {
 
     const result = checkpointToRecordDateSpec(value, context);
 
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('targetIdentitiesToCorporateActionTargets', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('should convert a polkadot TargetIdentities object to a CorporateActionTargets object', () => {
+    const fakeResult = {
+      identities: [entityMockUtils.getIdentityInstance({ did: 'someDid' })],
+      treatment: TargetTreatment.Include,
+    };
+    const context = dsMockUtils.getContextInstance();
+    let targetIdentities = dsMockUtils.createMockTargetIdentities({
+      identities: ['someDid'],
+      treatment: 'Include',
+    });
+
+    let result = targetIdentitiesToCorporateActionTargets(targetIdentities, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult.treatment = TargetTreatment.Exclude;
+    targetIdentities = dsMockUtils.createMockTargetIdentities({
+      identities: ['someDid'],
+      treatment: 'Exclude',
+    });
+
+    result = targetIdentitiesToCorporateActionTargets(targetIdentities, context);
     expect(result).toEqual(fakeResult);
   });
 });
