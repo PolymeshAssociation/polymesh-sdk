@@ -2,6 +2,7 @@ import {
   AddressOrPair,
   AugmentedEvents,
   AugmentedSubmittable,
+  QueryableConsts,
   QueryableStorage,
   SubmittableExtrinsic,
   SubmittableExtrinsics,
@@ -28,6 +29,11 @@ export type Events = AugmentedEvents<'promise'>;
  * Polkadot's `query` submodule
  */
 export type Queries = QueryableStorage<'promise'>;
+
+/**
+ * Polkadot's `consts` submodule
+ */
+export type Consts = QueryableConsts<'promise'>;
 
 /**
  * Low level transaction method in the polkadot API
