@@ -62,7 +62,6 @@ import {
   // NOTE uncomment in Governance v2 upgrade
   // TxTags,
 } from '~/types';
-import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -626,11 +625,11 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   getIdentifiers: [],
   transferRestrictionsCountGet: {
     restrictions: [],
-    availableSlots: MAX_TRANSFER_MANAGERS,
+    availableSlots: 3,
   },
   transferRestrictionsPercentageGet: {
     restrictions: [],
-    availableSlots: MAX_TRANSFER_MANAGERS,
+    availableSlots: 3,
   },
   corporateActionsGetAgent: { did: 'someDid' } as Identity,
 };
