@@ -98,6 +98,10 @@ describe('setAssetRequirements procedure', () => {
   >;
 
   beforeEach(() => {
+    dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
+      returnValue: dsMockUtils.createMockU32(50),
+    });
+
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     assetCompliancesStub = dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
