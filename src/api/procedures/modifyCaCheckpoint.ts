@@ -42,16 +42,7 @@ export async function prepareModifyCaCheckpoint(
     corporateAction: { id: localId, ticker },
   } = args;
 
-  if (checkpoint instanceof Checkpoint) {
-    const exists = await checkpoint.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: messageNotExist,
-      });
-    }
-  } else if (checkpoint instanceof CheckpointSchedule) {
+  if (checkpoint instanceof Checkpoint || checkpoint instanceof CheckpointSchedule) {
     const exists = await checkpoint.exists();
 
     if (!exists) {
