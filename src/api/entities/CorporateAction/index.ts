@@ -125,7 +125,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
       context
     );
 
-    this.modifyCaCheckpoint = createProcedureMethod(
+    this.modifyCheckpoint = createProcedureMethod(
       {
         getProcedureAndArgs: modifyCaCheckpointArgs => [
           modifyCaCheckpoint,
@@ -150,7 +150,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
   /**
    * Modify the Corporate Action's Checkpoint
    */
-  public modifyCaCheckpoint: ProcedureMethod<ModifyCaCheckpointParams, void>;
+  public modifyCheckpoint: ProcedureMethod<ModifyCaCheckpointParams, void>;
 
   /**
    * Retrieve whether the Corporate Action exists

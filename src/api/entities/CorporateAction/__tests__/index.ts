@@ -297,7 +297,7 @@ describe('CorporateAction class', () => {
         .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await corporateAction.modifyCaCheckpoint(args);
+      const queue = await corporateAction.modifyCheckpoint(args);
 
       expect(queue).toBe(expectedQueue);
     });

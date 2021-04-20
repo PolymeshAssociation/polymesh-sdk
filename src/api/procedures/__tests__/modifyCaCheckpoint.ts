@@ -174,14 +174,6 @@ describe('modifyCaCheckpoint procedure', () => {
       rawCaId,
       rawRecordDateSpec
     );
-
-    await prepareModifyCaCheckpoint.call(proc, {
-      corporateAction: entityMockUtils.getCorporateActionInstance({
-        id,
-      }),
-    });
-
-    sinon.assert.calledWith(addTransactionStub, changeRecordDateTransaction, {}, rawCaId, null);
   });
 
   describe('getAuthorization', () => {

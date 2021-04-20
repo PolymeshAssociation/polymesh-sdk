@@ -15,7 +15,7 @@ import { optionize } from '~/utils/internal';
  * @hidden
  */
 export interface ModifyCaCheckpointParams {
-  checkpoint?: Checkpoint | CheckpointSchedule | Date;
+  checkpoint: Checkpoint | CheckpointSchedule | Date;
 }
 
 export type Params = ModifyCaCheckpointParams & {
@@ -40,25 +40,23 @@ export async function prepareModifyCaCheckpoint(
     corporateAction: { id: localId, ticker },
   } = args;
 
-  if (checkpoint) {
-    if (!(checkpoint instanceof Date)) {
-      const exists = await checkpoint.exists();
+  if (!(checkpoint instanceof Date)) {
+    const exists = await checkpoint.exists();
 
-      if (!exists) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message:
-            checkpoint instanceof Checkpoint
-              ? "Checkpoint doesn't exist"
-              : "Checkpoint Schedule doesn't exist",
-        });
-      }
-    } else if (checkpoint <= new Date()) {
+    if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'Checkpoint date must be in the future',
+        message:
+          checkpoint instanceof Checkpoint
+            ? "Checkpoint doesn't exist"
+            : "Checkpoint Schedule doesn't exist",
       });
     }
+  } else if (checkpoint <= new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Checkpoint date must be in the future',
+    });
   }
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
