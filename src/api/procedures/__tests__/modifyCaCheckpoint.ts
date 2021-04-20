@@ -89,7 +89,7 @@ describe('modifyCaCheckpoint procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe("Checkpoint doesn't exist");
+    expect(err.message).toBe("Checkpoint Schedule doesn't exist");
   });
 
   test('should throw an error if date is in the past', async () => {

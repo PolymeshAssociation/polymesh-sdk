@@ -22,8 +22,6 @@ export type Params = ModifyCaCheckpointParams & {
   corporateAction: CorporateAction;
 };
 
-const messageNotExist = "Checkpoint doesn't exist";
-
 /**
  * @hidden
  */
@@ -42,17 +40,20 @@ export async function prepareModifyCaCheckpoint(
     corporateAction: { id: localId, ticker },
   } = args;
 
-  if (checkpoint instanceof Checkpoint || checkpoint instanceof CheckpointSchedule) {
-    const exists = await checkpoint.exists();
+  if (checkpoint) {
+    if (!(checkpoint instanceof Date)) {
+      const exists = await checkpoint.exists();
 
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: messageNotExist,
-      });
-    }
-  } else {
-    if (checkpoint && checkpoint <= new Date()) {
+      if (!exists) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message:
+            checkpoint instanceof Checkpoint
+              ? "Checkpoint doesn't exist"
+              : "Checkpoint Schedule doesn't exist",
+        });
+      }
+    } else if (checkpoint <= new Date()) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'Checkpoint date must be in the future',
