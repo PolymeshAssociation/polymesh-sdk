@@ -148,7 +148,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
   public linkDocuments: ProcedureMethod<LinkCaDocsParams, void>;
 
   /**
-   * Modify the Corporate Action's checkpoint
+   * Modify the Corporate Action's Checkpoint
    */
   public modifyCaCheckpoint: ProcedureMethod<ModifyCaCheckpointParams, void>;
 

@@ -117,7 +117,7 @@ export class DividendDistribution extends CorporateAction {
       {
         getProcedureAndArgs: modifyCheckpointArgs => [
           modifyDistributionCheckpoint,
-          { distribution: this as DividendDistribution, ...modifyCheckpointArgs },
+          { distribution: this, ...modifyCheckpointArgs },
         ],
       },
       context
@@ -130,7 +130,7 @@ export class DividendDistribution extends CorporateAction {
   public claim: ProcedureMethod<void, void>;
 
   /**
-   * Modify the distribution's checkpoint
+   * Modify the Distribution's checkpoint
    */
   public modifyCheckpoint: ProcedureMethod<ModifyDistributionCheckpointParams, void>;
 

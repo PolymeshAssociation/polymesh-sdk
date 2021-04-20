@@ -14,6 +14,11 @@ import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
 describe('modifyCaCheckpoint procedure', () => {
   const ticker = 'SOMETICKER';
 
@@ -45,7 +50,7 @@ describe('modifyCaCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the checkpoint no longer exists', async () => {
+  test('should throw an error if the checkpoint does not exist', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: entityMockUtils.getCheckpointInstance({
@@ -63,7 +68,7 @@ describe('modifyCaCheckpoint procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Checkpoint no longer exists');
+    expect(err.message).toBe("Checkpoint doesn't exist");
   });
 
   test('should throw an error if checkpoint schedule no longer exists', async () => {
@@ -84,13 +89,13 @@ describe('modifyCaCheckpoint procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Checkpoint Schedule no longer exists');
+    expect(err.message).toBe("Checkpoint doesn't exist");
   });
 
   test('should throw an error if date is in the past', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
-      checkpoint: new Date('10/10/2020'),
+      checkpoint: new Date(new Date().getTime() - 100000),
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -159,7 +164,7 @@ describe('modifyCaCheckpoint procedure', () => {
       corporateAction: entityMockUtils.getCorporateActionInstance({
         id,
       }),
-      checkpoint: new Date('10/10/2030'),
+      checkpoint: new Date(new Date().getTime() + 100000),
     });
 
     sinon.assert.calledWith(
@@ -192,7 +197,7 @@ describe('modifyCaCheckpoint procedure', () => {
       expect(boundFunc(args)).toEqual({
         identityRoles: [{ type: RoleType.TokenCaa, ticker }],
         signerPermissions: {
-          tokens: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },

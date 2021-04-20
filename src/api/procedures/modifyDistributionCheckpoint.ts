@@ -1,10 +1,11 @@
-import { modifyCaCheckpoint } from '~/api/procedures/modifyCaCheckpoint';
 import {
   Checkpoint,
   CheckpointSchedule,
   DividendDistribution,
+  modifyCaCheckpoint,
   PolymeshError,
   Procedure,
+  SecurityToken,
 } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -38,7 +39,7 @@ export async function prepareModifyDistributionCheckpoint(
   if (paymentDate <= now) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Distribution payment date must be in the future',
+      message: 'Distribution is already in its payment period',
     });
   }
 
@@ -85,12 +86,17 @@ export async function prepareModifyDistributionCheckpoint(
 /**
  * @hidden
  */
-export function getAuthorization({ distribution: { ticker } }: Params): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<Params, void>,
+  { distribution: { ticker } }: Params
+): ProcedureAuthorization {
+  const { context } = this;
+
   return {
     identityRoles: [{ type: RoleType.TokenCaa, ticker }],
     signerPermissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
-      tokens: [],
+      tokens: [new SecurityToken({ ticker }, context)],
       portfolios: [],
     },
   };
