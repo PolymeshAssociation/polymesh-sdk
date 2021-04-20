@@ -73,6 +73,9 @@ describe('addTransferRestriction procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
+    dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
+      returnValue: dsMockUtils.createMockU32(3),
+    });
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count.toNumber());
     rawPercentage = dsMockUtils.createMockPermill(percentage.toNumber() * 10000);

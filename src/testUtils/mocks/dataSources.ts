@@ -149,7 +149,7 @@ import {
   ResultSet,
   SecondaryKey,
 } from '~/types';
-import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { Mutable, tuple } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
@@ -455,6 +455,7 @@ export const mockApolloModule = (path: string) => (): object => ({
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
+let constsModule = {} as Consts;
 
 // TODO cast rpcModule to a better type
 let rpcModule = {} as any;
@@ -677,6 +678,17 @@ function updateRpc(mod?: any): void {
 /**
  * @hidden
  */
+function updateConsts(mod?: Consts): void {
+  const updateTo = mod || constsModule;
+
+  constsModule = updateTo;
+
+  mockInstanceContainer.apiInstance.consts = constsModule;
+}
+
+/**
+ * @hidden
+ */
 function updateQueryMulti(stub?: SinonStub): void {
   const updateTo = stub || queryMultiStub;
 
@@ -710,6 +722,17 @@ function initRpc(): void {
 /**
  * @hidden
  *
+ * Mock the consts module
+ */
+function initConsts(): void {
+  const mod = {} as Consts;
+
+  updateConsts(mod);
+}
+
+/**
+ * @hidden
+ *
  * Mock queryMulti
  */
 function initQueryMulti(): void {
@@ -729,6 +752,7 @@ function initApi(): void {
   initTx();
   initQuery();
   initRpc();
+  initConsts();
   initQueryMulti();
 
   apiPromiseCreateStub = sinon.stub();
@@ -1044,6 +1068,41 @@ export function createRpcStub(
   (stub as any).count = count++;
 
   return stub;
+}
+
+/**
+ * @hidden
+ * Set a consts mock
+ *
+ * @param mod - name of the module
+ * @param constName - name of the constant
+ */
+export function setConstMock<
+  ModuleName extends keyof Consts,
+  ConstName extends keyof Consts[ModuleName]
+>(
+  mod: ModuleName,
+  constName: ConstName,
+  opts: {
+    returnValue: unknown;
+  }
+): void {
+  let runtimeModule = constsModule[mod];
+
+  if (!runtimeModule) {
+    runtimeModule = {} as Consts[ModuleName];
+    constsModule[mod] = runtimeModule;
+  }
+
+  const returnValue = opts.returnValue as Consts[ModuleName][ConstName];
+  if (!runtimeModule[constName]) {
+    runtimeModule[constName] = returnValue;
+
+    updateConsts();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    instance.consts[mod][constName] = returnValue;
+  }
 }
 
 /**

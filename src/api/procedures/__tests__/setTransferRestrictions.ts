@@ -80,6 +80,10 @@ describe('setTransferRestrictions procedure', () => {
   let removeExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferManager, ScopeId[]]>;
 
   beforeEach(() => {
+    dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
+      returnValue: dsMockUtils.createMockU32(3),
+    });
+
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     entityMockUtils.getTickerReservationDetailsStub().resolves({
