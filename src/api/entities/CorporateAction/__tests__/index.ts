@@ -284,4 +284,22 @@ describe('CorporateAction class', () => {
       expect(result instanceof Checkpoint);
     });
   });
+
+  describe('method: modifyCaCheckpoint', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        checkpoint: new Date(),
+      };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await corporateAction.modifyCheckpoint(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 });

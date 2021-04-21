@@ -9,6 +9,8 @@ import {
   Entity,
   linkCaDocs,
   LinkCaDocsParams,
+  modifyCaCheckpoint,
+  ModifyCaCheckpointParams,
   PolymeshError,
 } from '~/internal';
 import { ErrorCode } from '~/types';
@@ -122,6 +124,16 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
       { getProcedureAndArgs: procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }] },
       context
     );
+
+    this.modifyCheckpoint = createProcedureMethod(
+      {
+        getProcedureAndArgs: modifyCaCheckpointArgs => [
+          modifyCaCheckpoint,
+          { corporateAction: this, ...modifyCaCheckpointArgs },
+        ],
+      },
+      context
+    );
   }
 
   /**
@@ -134,6 +146,11 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
    *   - Corporate Actions Agent
    */
   public linkDocuments: ProcedureMethod<LinkCaDocsParams, void>;
+
+  /**
+   * Modify the Corporate Action's Checkpoint
+   */
+  public modifyCheckpoint: ProcedureMethod<ModifyCaCheckpointParams, void>;
 
   /**
    * Retrieve whether the Corporate Action exists
