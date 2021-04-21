@@ -3,7 +3,14 @@ import { differenceWith } from 'lodash';
 
 import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, InputTargets, InputTaxWithholding, RoleType, TxTags } from '~/types';
+import {
+  CorporateActionTargets,
+  ErrorCode,
+  InputTargets,
+  InputTaxWithholding,
+  RoleType,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -35,6 +42,21 @@ export type ModifyCaDefaultsParams =
  * @hidden
  */
 export type Params = { ticker: string } & ModifyCaDefaultsParams;
+
+const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTargets): boolean => {
+  const { identities: newIdentities, treatment: newTreatment } = newTargets;
+  const { identities, treatment } = targets;
+
+  return (
+    !differenceWith(
+      identities,
+      newIdentities,
+      ({ did }, newIdentity) => did === signerToString(newIdentity)
+    ).length &&
+    identities.length === newIdentities.length &&
+    treatment === newTreatment
+  );
+};
 
 /**
  * @hidden
@@ -86,18 +108,7 @@ export async function prepareModifyCaDefaults(
   } = await securityToken.corporateActions.getDefaults();
 
   if (newTargets) {
-    const { identities: newIdentities, treatment: newTreatment } = newTargets;
-    const { identities, treatment } = targets;
-
-    const areSameTargets =
-      !differenceWith(
-        identities,
-        newIdentities,
-        ({ did }, newIdentity) => did === signerToString(newIdentity)
-      ).length &&
-      identities.length === newIdentities.length &&
-      treatment === newTreatment;
-    if (areSameTargets) {
+    if (areSameTargets(targets, newTargets)) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'New targets are the same as the current ones',
