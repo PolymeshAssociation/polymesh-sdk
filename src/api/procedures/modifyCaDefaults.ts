@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { differenceWith } from 'lodash';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { CorporateActionTargets, ErrorCode, RoleType, TaxWithholding, TxTags } from '~/types';
+import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { ErrorCode, InputTargets, InputTaxWithholding, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -12,14 +13,6 @@ import {
   stringToTicker,
   targetsToTargetIdentities,
 } from '~/utils/conversion';
-
-export type InputTargets = Omit<CorporateActionTargets, 'identities'> & {
-  identities: (string | Identity)[];
-};
-
-export type InputTaxWithholding = Omit<TaxWithholding, 'identity'> & {
-  identity: string | Identity;
-};
 
 export type ModifyCaDefaultsParams =
   | {
@@ -73,6 +66,13 @@ export async function prepareModifyCaDefaults(
       code: ErrorCode.ValidationError,
       message: 'Nothing to modify',
     });
+  }
+
+  if (newTargets) {
+    assertCaTargetsValid(newTargets, context);
+  }
+  if (newTaxWithholdings) {
+    assertCaTaxWithholdingsValid(newTaxWithholdings, context);
   }
 
   const rawTicker = stringToTicker(ticker, context);

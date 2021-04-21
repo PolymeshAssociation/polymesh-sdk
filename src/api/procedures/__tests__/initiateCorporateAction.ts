@@ -1,7 +1,6 @@
 import { Text } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { range } from 'lodash';
 import {
   CAId,
   CAKind,
@@ -20,6 +19,7 @@ import {
   Params,
   prepareInitiateCorporateAction,
 } from '~/api/procedures/initiateCorporateAction';
+import * as utilsProcedureModule from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -76,6 +76,9 @@ describe('initiateCorporateAction procedure', () => {
   let percentageToPermillStub: sinon.SinonStub;
   let stringToIdentityIdStub: sinon.SinonStub;
 
+  let assertCaTargetsValidStub: sinon.SinonStub;
+  let assertCaTaxWithholdingsValidStub: sinon.SinonStub;
+
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
@@ -125,6 +128,11 @@ describe('initiateCorporateAction procedure', () => {
     targetsToTargetIdentitiesStub = sinon.stub(utilsConversionModule, 'targetsToTargetIdentities');
     percentageToPermillStub = sinon.stub(utilsConversionModule, 'percentageToPermill');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    assertCaTargetsValidStub = sinon.stub(utilsProcedureModule, 'assertCaTargetsValid');
+    assertCaTaxWithholdingsValidStub = sinon.stub(
+      utilsProcedureModule,
+      'assertCaTaxWithholdingsValid'
+    );
   });
 
   beforeEach(() => {
@@ -134,12 +142,6 @@ describe('initiateCorporateAction procedure', () => {
       'initiateCorporateAction'
     );
 
-    dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
-      returnValue: dsMockUtils.createMockU32(1000),
-    });
-    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
-      returnValue: dsMockUtils.createMockU32(1000),
-    });
     maxDetailsLengthQueryStub = dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
       returnValue: dsMockUtils.createMockU32(100),
     });
@@ -168,64 +170,6 @@ describe('initiateCorporateAction procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  test('should throw an error if there are more targets than the maximum allowed', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
-
-    let err;
-
-    try {
-      await prepareInitiateCorporateAction.call(proc, {
-        ticker,
-        kind,
-        declarationDate,
-        checkpoint,
-        description,
-        targets: {
-          identities: range(1001).map(() => 'someDid'),
-          treatment: TargetTreatment.Include,
-        },
-        defaultTaxWithholding,
-        taxWithholdings,
-      });
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Too many target Identities');
-    expect(err.data).toEqual({
-      maxTargets: 1000,
-    });
-  });
-
-  test('should throw an error if there are more tax withholding entries than the maximum allowed', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
-
-    let err;
-
-    try {
-      await prepareInitiateCorporateAction.call(proc, {
-        ticker,
-        kind,
-        declarationDate,
-        checkpoint,
-        description,
-        targets,
-        defaultTaxWithholding,
-        taxWithholdings: range(1001).map(() => ({
-          identity: 'someDid',
-          percentage: new BigNumber(15),
-        })),
-      });
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Too many tax withholding entries');
-    expect(err.data).toEqual({
-      maxWithholdingEntries: 1000,
-    });
   });
 
   test('should throw an error if the declaration date is in the future', async () => {
@@ -288,6 +232,9 @@ describe('initiateCorporateAction procedure', () => {
       defaultTaxWithholding,
       taxWithholdings,
     });
+
+    sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
+    sinon.assert.calledWith(assertCaTaxWithholdingsValidStub, taxWithholdings, mockContext);
 
     sinon.assert.calledWith(
       addTransactionStub,

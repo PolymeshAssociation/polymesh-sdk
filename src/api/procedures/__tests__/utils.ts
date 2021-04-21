@@ -2,6 +2,8 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
+  assertCaTargetsValid,
+  assertCaTaxWithholdingsValid,
   assertInstructionValid,
   assertPortfolioExists,
   assertSecondaryKeys,
@@ -10,7 +12,13 @@ import { Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
-import { InstructionDetails, InstructionStatus, InstructionType, Signer } from '~/types';
+import {
+  InstructionDetails,
+  InstructionStatus,
+  InstructionType,
+  Signer,
+  TargetTreatment,
+} from '~/types';
 import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -315,5 +323,90 @@ describe('assertSecondaryKeys', () => {
 
     expect(error.message).toBe('One of the Signers is not a Secondary Key for the Identity');
     expect(error.data.missing).toEqual([signerValues[0].value]);
+  });
+});
+
+describe('assertCaTargetsValid', () => {
+  let mockContext: Mocked<Context>;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
+      returnValue: dsMockUtils.createMockU32(1),
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if there are more target identities than the maximum', async () => {
+    expect(() =>
+      assertCaTargetsValid(
+        { identities: ['someDid', 'otherDid'], treatment: TargetTreatment.Include },
+        mockContext
+      )
+    ).toThrow('Too many target Identities');
+  });
+
+  test('should not throw an error if the number of target identities is appropriate', async () => {
+    expect(() =>
+      assertCaTargetsValid(
+        { identities: ['someDid'], treatment: TargetTreatment.Include },
+        mockContext
+      )
+    ).not.toThrow();
+  });
+});
+
+describe('assertCaTaxWithholdingsValid', () => {
+  let mockContext: Mocked<Context>;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+      returnValue: dsMockUtils.createMockU32(1),
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if there are more target identities than the maximum', async () => {
+    expect(() =>
+      assertCaTaxWithholdingsValid(
+        [
+          { identity: 'someDid', percentage: new BigNumber(15) },
+          { identity: 'otherDid', percentage: new BigNumber(16) },
+        ],
+        mockContext
+      )
+    ).toThrow('Too many tax withholding emties');
+  });
+
+  test('should not throw an error if the number of target identities is appropriate', async () => {
+    expect(() =>
+      assertCaTaxWithholdingsValid(
+        [{ identity: 'someDid', percentage: new BigNumber(15) }],
+        mockContext
+      )
+    ).not.toThrow();
   });
 });

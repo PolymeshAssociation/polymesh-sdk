@@ -7,10 +7,11 @@ import {
   Params,
   prepareModifyCaDefaults,
 } from '~/api/procedures/modifyCaDefaults';
+import * as utilsProcedureModule from '~/api/procedures/utils';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TargetTreatment } from '~/types';
+import { InputTargets, RoleType, TargetTreatment } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -24,6 +25,10 @@ describe('modifyCaDefaults procedure', () => {
   let targetsToTargetIdentitiesStub: sinon.SinonStub;
   let percentageToPermillStub: sinon.SinonStub;
   let stringToIdentityIdStub: sinon.SinonStub;
+
+  let assertCaTargetsValidStub: sinon.SinonStub;
+  let assertCaTaxWithholdingsValidStub: sinon.SinonStub;
+
   let ticker: string;
   let rawTicker: Ticker;
 
@@ -37,6 +42,12 @@ describe('modifyCaDefaults procedure', () => {
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
+
+    assertCaTargetsValidStub = sinon.stub(utilsProcedureModule, 'assertCaTargetsValid');
+    assertCaTaxWithholdingsValidStub = sinon.stub(
+      utilsProcedureModule,
+      'assertCaTaxWithholdingsValid'
+    );
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -128,6 +139,11 @@ describe('modifyCaDefaults procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultTargets');
 
+    let targets: InputTargets = {
+      identities: [],
+      treatment: TargetTreatment.Exclude,
+    };
+
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         corporateActionsGetDefaults: {
@@ -143,24 +159,14 @@ describe('modifyCaDefaults procedure', () => {
       identities: [],
       treatment: 'Exclude',
     });
-    targetsToTargetIdentitiesStub
-      .withArgs(
-        {
-          identities: [],
-          treatment: TargetTreatment.Exclude,
-        },
-        mockContext
-      )
-      .returns(rawTargets);
+    targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
 
     await prepareModifyCaDefaults.call(proc, {
       ticker,
-      targets: {
-        identities: [],
-        treatment: TargetTreatment.Exclude,
-      },
+      targets,
     });
 
+    sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
@@ -173,24 +179,19 @@ describe('modifyCaDefaults procedure', () => {
       identities: ['someDid', 'otherDid'],
       treatment: 'Exclude',
     });
-    targetsToTargetIdentitiesStub
-      .withArgs(
-        {
-          identities: ['someDid', 'otherDid'],
-          treatment: TargetTreatment.Exclude,
-        },
-        mockContext
-      )
-      .returns(rawTargets);
+
+    targets = {
+      identities: ['someDid', 'otherDid'],
+      treatment: TargetTreatment.Exclude,
+    };
+    targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
 
     await prepareModifyCaDefaults.call(proc, {
       ticker,
-      targets: {
-        identities: ['someDid', 'otherDid'],
-        treatment: TargetTreatment.Exclude,
-      },
+      targets,
     });
 
+    sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
@@ -249,16 +250,18 @@ describe('modifyCaDefaults procedure', () => {
     stringToIdentityIdStub.withArgs('someDid', mockContext).returns(rawDid);
     percentageToPermillStub.withArgs(new BigNumber(25), mockContext).returns(rawPercentage);
 
+    const taxWithholdings = [
+      {
+        identity: 'someDid',
+        percentage: new BigNumber(25),
+      },
+    ];
     await prepareModifyCaDefaults.call(proc, {
       ticker,
-      taxWithholdings: [
-        {
-          identity: 'someDid',
-          percentage: new BigNumber(25),
-        },
-      ],
+      taxWithholdings,
     });
 
+    sinon.assert.calledWith(assertCaTaxWithholdingsValidStub, taxWithholdings, mockContext);
     sinon.assert.calledWith(
       procedureMockUtils.getAddBatchTransactionStub(),
       transaction,
