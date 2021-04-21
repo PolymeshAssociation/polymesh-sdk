@@ -218,4 +218,25 @@ describe('DividendDistribution class', () => {
       expect(err.message).toBe('The Dividend Distribution no longer exists');
     });
   });
+
+  describe('method: modifyCheckpoint', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        checkpoint: new Date(),
+      };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          { args: { distribution: dividendDistribution, ...args }, transformer: undefined },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await dividendDistribution.modifyCheckpoint(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 });

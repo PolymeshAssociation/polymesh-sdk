@@ -209,6 +209,7 @@ interface CheckpointOptions {
   ticker?: string;
   createdAt?: Date;
   totalSupply?: BigNumber;
+  exists?: boolean;
 }
 
 interface CheckpointScheduleOptions {
@@ -219,6 +220,7 @@ interface CheckpointScheduleOptions {
   expiryDate?: Date | null;
   complexity?: number;
   details?: Partial<ScheduleDetails>;
+  exists?: boolean;
 }
 
 interface CorporateActionOptions {
@@ -315,8 +317,10 @@ let defaultPortfolioIsCustodiedByStub: SinonStub;
 let stoDetailsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
+let checkpointExistsStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
 let corporateActionExistsStub: SinonStub;
+let checkpointScheduleExistsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -725,6 +729,7 @@ const defaultCheckpointOptions: CheckpointOptions = {
   createdAt: new Date('10/14/1987'),
   ticker: 'SOME_TICKER',
   id: new BigNumber(1),
+  exists: true,
 };
 let checkpointOptions = defaultCheckpointOptions;
 const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
@@ -741,6 +746,7 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
     remainingCheckpoints: 1,
     nextCheckpointDate: new Date('10/10/2030'),
   },
+  exists: true,
 };
 let checkpointScheduleOptions = defaultCheckpointScheduleOptions;
 const defaultCorporateActionOptions: CorporateActionOptions = {
@@ -1350,6 +1356,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
     ticker: opts.ticker,
     id: opts.id,
+    exists: checkpointExistsStub.resolves(opts.exists),
   } as unknown) as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
@@ -1368,6 +1375,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
   checkpointConstructorStub = sinon.stub();
   checkpointCreatedAtStub = sinon.stub();
   checkpointTotalSupplyStub = sinon.stub();
+  checkpointExistsStub = sinon.stub();
 
   checkpointOptions = merge({}, defaultCheckpointOptions, opts);
 
@@ -1387,6 +1395,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     expiryDate: opts.expiryDate,
     complexity: opts.complexity,
     details: checkpointScheduleDetailsStub.resolves(opts.details),
+    exists: checkpointScheduleExistsStub.resolves(opts.exists),
   } as unknown) as MockCheckpointSchedule;
 
   Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
@@ -1404,6 +1413,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
 function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
   checkpointScheduleConstructorStub = sinon.stub();
   checkpointScheduleDetailsStub = sinon.stub();
+  checkpointScheduleExistsStub = sinon.stub();
 
   checkpointScheduleOptions = merge({}, defaultCheckpointScheduleOptions, opts);
 

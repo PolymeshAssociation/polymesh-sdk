@@ -210,4 +210,24 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
 
     return balance;
   }
+
+  /**
+   * Retrieve whether the Checkpoint still exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { checkpoint },
+        },
+      },
+      context,
+      ticker,
+      id,
+    } = this;
+
+    const rawCheckpointId = await checkpoint.checkpointIdSequence(stringToTicker(ticker, context));
+
+    return id.lte(u64ToBigNumber(rawCheckpointId));
+  }
 }
