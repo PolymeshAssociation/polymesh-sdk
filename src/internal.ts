@@ -158,6 +158,7 @@ export {
   removeCorporateAction,
   RemoveCorporateActionParams,
 } from '~/api/procedures/removeCorporateAction';
+export {
   modifyDistributionCheckpoint,
   ModifyDistributionCheckpointParams,
 } from '~/api/procedures/modifyDistributionCheckpoint';
