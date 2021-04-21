@@ -152,4 +152,9 @@ export {
 } from '~/api/procedures/configureDividendDistribution';
 export { claimDividends } from '~/api/procedures/claimDividends';
 export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
+export { modifyCaCheckpoint, ModifyCaCheckpointParams } from '~/api/procedures/modifyCaCheckpoint';
 export { payDividends, PayDividendsParams } from '~/api/procedures/payDividends';
+export {
+  modifyDistributionCheckpoint,
+  ModifyDistributionCheckpointParams,
+} from '~/api/procedures/modifyDistributionCheckpoint';

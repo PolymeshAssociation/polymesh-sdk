@@ -9,6 +9,8 @@ import {
   Context,
   CorporateAction,
   DefaultPortfolio,
+  modifyDistributionCheckpoint,
+  ModifyDistributionCheckpointParams,
   NumberedPortfolio,
   payDividends,
   PayDividendsParams,
@@ -110,12 +112,27 @@ export class DividendDistribution extends CorporateAction {
       { getProcedureAndArgs: () => [claimDividends, { distribution: this }] },
       context
     );
+
+    this.modifyCheckpoint = createProcedureMethod(
+      {
+        getProcedureAndArgs: modifyCheckpointArgs => [
+          modifyDistributionCheckpoint,
+          { distribution: this, ...modifyCheckpointArgs },
+        ],
+      },
+      context
+    );
   }
 
   /**
    * Claim the dividends corresponding to the current Identity
    */
   public claim: ProcedureMethod<void, void>;
+
+  /**
+   * Modify the Distribution's checkpoint
+   */
+  public modifyCheckpoint: ProcedureMethod<ModifyDistributionCheckpointParams, void>;
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
