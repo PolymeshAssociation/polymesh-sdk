@@ -33,6 +33,7 @@ import {
   AuthorizationType,
   CalendarPeriod,
   CalendarUnit,
+  CorporateActionDefaults,
   CorporateActionKind,
   CorporateActionTargets,
   CountTransferRestriction,
@@ -136,6 +137,7 @@ interface SecurityTokenOptions {
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgent?: Identity;
+  corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
 }
 
 interface AuthorizationRequestOptions {
@@ -276,6 +278,7 @@ let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let securityTokenCorporateActionsGetAgentStub: SinonStub;
+let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -632,6 +635,11 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     availableSlots: 3,
   },
   corporateActionsGetAgent: { did: 'someDid' } as Identity,
+  corporateActionsGetDefaults: {
+    targets: { identities: [], treatment: TargetTreatment.Exclude },
+    defaultTaxWithholding: new BigNumber(10),
+    taxWithholdings: [],
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -1009,6 +1017,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     },
     corporateActions: {
       getAgent: securityTokenCorporateActionsGetAgentStub.resolves(opts.corporateActionsGetAgent),
+      getDefaults: securityTokenCorporateActionsGetDefaultsStub.resolves(
+        opts.corporateActionsGetDefaults
+      ),
     },
   } as unknown) as MockSecurityToken;
 
@@ -1034,6 +1045,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
   securityTokenCorporateActionsGetAgentStub = sinon.stub();
+  securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -2140,6 +2152,20 @@ export function getSecurityTokenCorporateActionsGetAgentStub(agent?: Identity): 
   }
 
   return securityTokenCorporateActionsGetAgentStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.corporateActions.getDefaults` method
+ */
+export function getSecurityTokenCorporateActionsGetDefaultsStub(
+  defaults?: Partial<CorporateActionDefaults>
+): SinonStub {
+  if (defaults) {
+    return securityTokenCorporateActionsGetDefaultsStub.resolves(defaults);
+  }
+
+  return securityTokenCorporateActionsGetDefaultsStub;
 }
 
 /**

@@ -17,6 +17,14 @@ export interface TaxWithholding {
   percentage: BigNumber;
 }
 
+export type InputTargets = Omit<CorporateActionTargets, 'identities'> & {
+  identities: (string | Identity)[];
+};
+
+export type InputTaxWithholding = Omit<TaxWithholding, 'identity'> & {
+  identity: string | Identity;
+};
+
 export enum CorporateActionKind {
   PredictableBenefit = 'PredictableBenefit',
   UnpredictableBenefit = 'UnpredictableBenefit',
