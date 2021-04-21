@@ -1,9 +1,16 @@
 // import BigNumber from 'bignumber.js';
 
 import { Context, Instruction, NumberedPortfolio, PolymeshError } from '~/internal';
-import { ErrorCode, InstructionStatus, InstructionType, SecondaryKey } from '~/types';
+import {
+  ErrorCode,
+  InputTargets,
+  InputTaxWithholding,
+  InstructionStatus,
+  InstructionType,
+  SecondaryKey,
+} from '~/types';
 import { PortfolioId, SignerValue } from '~/types/internal';
-import { signerToSignerValue } from '~/utils/conversion';
+import { signerToSignerValue, u64ToBigNumber } from '~/utils/conversion';
 
 // import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
@@ -143,6 +150,47 @@ export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | nul
       message: 'The Distribution has already expired',
       data: {
         expiryDate,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertCaTargetsValid(targets: InputTargets, context: Context): void {
+  const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
+
+  const maxTargets = u64ToBigNumber(maxTargetIds);
+
+  if (maxTargets.lt(targets.identities.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Too many target Identities',
+      data: {
+        maxTargets,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertCaTaxWithholdingsValid(
+  taxWithholdings: InputTaxWithholding[],
+  context: Context
+): void {
+  const { maxDidWhts } = context.polymeshApi.consts.corporateAction;
+
+  const maxWithholdingEntries = u64ToBigNumber(maxDidWhts);
+
+  if (maxWithholdingEntries.lt(taxWithholdings.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Too many tax withholding emties',
+      data: {
+        maxWithholdingEntries,
       },
     });
   }

@@ -63,7 +63,43 @@ describe('CorporateActions class', () => {
     expect(CorporateActions.prototype instanceof Namespace).toBe(true);
   });
 
-  describe('method: modifyCorporateActionAgent', () => {
+  describe('method: setDefaults', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const targets = {
+        identities: ['someDid'],
+        treatment: TargetTreatment.Exclude,
+      };
+      const defaultTaxWithholding = new BigNumber(15);
+      const taxWithholdings = [
+        {
+          identity: 'someDid',
+          percentage: new BigNumber(20),
+        },
+      ];
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ticker: 'SOME_TICKER', targets, taxWithholdings, defaultTaxWithholding },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await corporateActions.setDefaults({
+        targets,
+        taxWithholdings,
+        defaultTaxWithholding,
+      });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: setAgent', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const target = 'someDid';
 
