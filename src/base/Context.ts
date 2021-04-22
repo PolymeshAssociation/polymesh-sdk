@@ -83,6 +83,7 @@ interface AccountData {
  */
 export class Context {
   private keyring: CommonKeyring;
+  private isDisconnected = false;
 
   public polymeshApi: ApiPromise;
 
@@ -102,6 +103,20 @@ export class Context {
    */
   private constructor(params: ConstructorParams) {
     const { polymeshApi, middlewareApi, keyring, pair } = params;
+
+    const callback = (): void => {
+      polymeshApi.off('disconnected', callback);
+      polymeshApi.off('error', callback);
+
+      if (this.isDisconnected) {
+        return;
+      }
+
+      this.disconnect();
+    };
+
+    polymeshApi.on('disconnected', callback);
+    polymeshApi.on('error', callback);
 
     this._middlewareApi = middlewareApi;
 
@@ -190,7 +205,18 @@ export class Context {
     context.ss58Format = ss58Format;
     context.isArchiveNode = await context.isCurrentNodeArchive();
 
-    return context;
+    return new Proxy(context, {
+      get: (target, prop: keyof Context): Context[keyof Context] => {
+        if (target.isDisconnected) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Client disconnected. Please create a new instance via "Polymesh.connect()"',
+          });
+        }
+
+        return target[prop];
+      },
+    });
   }
 
   /**
@@ -859,5 +885,25 @@ export class Context {
     const { number } = await this.polymeshApi.rpc.chain.getHeader();
 
     return u32ToBigNumber(number.unwrap());
+  }
+
+  /**
+   * Disconnect the Polkadot API, middleware, and render this instance unusable
+   *
+   * @note after disconnecting, trying to access any property in this objecct will result
+   *   in an error
+   */
+  public disconnect(): Promise<void> {
+    const { polymeshApi } = this;
+    let middlewareApi;
+
+    if (this.isMiddlewareEnabled()) {
+      ({ middlewareApi } = this);
+    }
+    this.isDisconnected = true;
+
+    middlewareApi && middlewareApi.stop();
+
+    return polymeshApi.disconnect();
   }
 }

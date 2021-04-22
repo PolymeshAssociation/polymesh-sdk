@@ -645,6 +645,17 @@ export class Polymesh {
     return this.context.getLatestBlock();
   }
 
+  /**
+   * Disconnect the client and close all open connections and subscriptions
+   *
+   * @note the SDK will become unusable after this operation. It will throw an error when attempting to
+   *   access any chain or middleware data. If you wish to continue using the SDK, you must
+   *   create a new instance by calling [[connect]]
+   */
+  public disconnect(): Promise<void> {
+    return this.context.disconnect();
+  }
+
   // TODO @monitz87: remove when the dApp team no longer needs it
   /* istanbul ignore next: only for testing purposes */
   /**

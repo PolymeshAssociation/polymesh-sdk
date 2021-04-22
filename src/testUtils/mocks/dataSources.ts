@@ -167,7 +167,17 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
     setSigner: sinon.stub() as (signer: Signer) => void,
+    disconnect: sinon.stub() as () => Promise<void>,
   } as Mutable<ApiPromise> & EventEmitter;
+}
+
+/**
+ * Create a mock instance of the Apollo client
+ */
+function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
+  return ({
+    stop: sinon.stub(),
+  } as unknown) as Mutable<ApolloClient<NormalizedCacheObject>>;
 }
 
 let apolloConstructorStub: SinonStub;
@@ -185,7 +195,7 @@ const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
-  apolloInstance: {} as ApolloClient<NormalizedCacheObject>,
+  apolloInstance: createApolloClient(),
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -613,6 +623,7 @@ function configureContext(opts: ContextOptions): void {
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
+    disconnect: sinon.stub(),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -856,7 +867,7 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
-  mockInstanceContainer.apolloInstance = {} as ApolloClient<NormalizedCacheObject>;
+  mockInstanceContainer.apolloInstance = createApolloClient();
 }
 
 /**
@@ -1206,8 +1217,10 @@ export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> 
  * @hidden
  * Retrieve an instance of the mocked Apollo Client
  */
-export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> {
-  return mockInstanceContainer.apolloInstance;
+export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
+  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstance as ApolloClient<NormalizedCacheObject> &
+    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
