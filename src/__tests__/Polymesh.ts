@@ -1078,4 +1078,20 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(blockNumber);
     });
   });
+
+  describe('method: disconnect', () => {
+    test('should call the underlying disconnect function', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      await polymesh.disconnect();
+      sinon.assert.calledOnce(dsMockUtils.getContextInstance().disconnect);
+    });
+  });
 });
