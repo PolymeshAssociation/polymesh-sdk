@@ -15,6 +15,7 @@ import {
   payDividends,
   PayDividendsParams,
   PolymeshError,
+  reclaimCapitalDistribution,
 } from '~/internal';
 import { Distribution } from '~/polkadot';
 import { CorporateActionKind, DividendDistributionDetails, ErrorCode } from '~/types';
@@ -122,6 +123,13 @@ export class DividendDistribution extends CorporateAction {
       },
       context
     );
+
+    this.reclaim = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [reclaimCapitalDistribution, { distribution: this }],
+      },
+      context
+    );
   }
 
   /**
@@ -138,6 +146,16 @@ export class DividendDistribution extends CorporateAction {
    * Transfer the corresponding share of the dividends to a list of Identities
    */
   public pay: ProcedureMethod<PayDividendsParams, void>;
+
+  /**
+   * Reclaim the Capital Distribution once it is expired
+   *
+   * @note taxes withheld are reclaimed in the same transaction
+   *
+   * @note required roles:
+   *   - Original Distribution Portfolio Custodian
+   */
+  public reclaim: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,

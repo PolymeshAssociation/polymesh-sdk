@@ -239,4 +239,19 @@ describe('DividendDistribution class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: reclaim', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await dividendDistribution.reclaim();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 });
