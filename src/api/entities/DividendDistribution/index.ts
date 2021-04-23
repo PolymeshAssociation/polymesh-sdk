@@ -16,8 +16,10 @@ import {
   PayDividendsParams,
   PolymeshError,
 } from '~/internal';
+import { getWithholdingTaxesOfCA } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
-import { CorporateActionKind, DividendDistributionDetails, ErrorCode } from '~/types';
+import { CorporateActionKind, DividendDistributionDetails, Ensured, ErrorCode } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
   balanceToBigNumber,
@@ -189,5 +191,30 @@ export class DividendDistribution extends CorporateAction {
     return context.polymeshApi.query.capitalDistribution.distributions(
       corporateActionIdentifierToCaId({ ticker, localId: id }, context)
     );
+  }
+
+  /**
+   * Retrieve the current amount of withheld tax for a given distribution
+   *
+   * @note uses the middleware
+   */
+  public async getWithheldTax(opts: { from?: Date; to?: Date } = {}): Promise<BigNumber | null> {
+    const { id, ticker, context } = this;
+
+    const { from, to } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
+      getWithholdingTaxesOfCA({
+        CAId: { ticker, localId: id.toNumber() },
+        fromDate: from ? from.toISOString().split('T')[0] : null,
+        toDate: to ? to.toISOString().split('T')[0] : null,
+      })
+    );
+
+    if (result.data.getWithholdingTaxesOfCA) {
+      return new BigNumber(result.data.getWithholdingTaxesOfCA.taxes);
+    }
+
+    return null;
   }
 }

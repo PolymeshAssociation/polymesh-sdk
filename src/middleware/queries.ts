@@ -4,6 +4,7 @@ import {
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryGetWithholdingTaxesOfCaArgs,
   QueryInvestmentsArgs,
   QueryIssuerDidsWithClaimsByTargetArgs,
   QueryProposalArgs,
@@ -604,6 +605,28 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
           offeringTokenAmount
           raiseTokenAmount
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get current amount of withheld tax for a distribution
+ */
+export function getWithholdingTaxesOfCA(
+  variables: QueryGetWithholdingTaxesOfCaArgs
+): GraphqlQuery<QueryGetWithholdingTaxesOfCaArgs> {
+  const query = gql`
+    query GetWithholdingTaxesOfCAQuery($CAId: CaId!, $fromDate: String, $toDate: String) {
+      getWithholdingTaxesOfCA(CAId: $CAId, fromDate: $fromDate, toDate: $coutoDatent) {
+        taxes
       }
     }
   `;

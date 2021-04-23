@@ -10,6 +10,7 @@ import {
   Entity,
   TransactionQueue,
 } from '~/internal';
+import { getWithholdingTaxesOfCA } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
 
@@ -237,6 +238,64 @@ describe('DividendDistribution class', () => {
       const queue = await dividendDistribution.modifyCheckpoint(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getWithheldTax', () => {
+    test('should return the amount of the withheld tax', async () => {
+      const fakeTax = new BigNumber(100);
+      const from = 1589816265000;
+      const to = 1599819865000;
+
+      dsMockUtils.createApolloQueryStub(
+        getWithholdingTaxesOfCA({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+        }),
+        {
+          getWithholdingTaxesOfCA: {
+            taxes: fakeTax.toNumber(),
+          },
+        }
+      );
+
+      let result = await dividendDistribution.getWithheldTax();
+
+      expect(result).toEqual(fakeTax);
+
+      dsMockUtils.createApolloQueryStub(
+        getWithholdingTaxesOfCA({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: '2020-05-18',
+          toDate: '2020-09-11',
+        }),
+        {
+          getWithholdingTaxesOfCA: {
+            taxes: fakeTax.toNumber(),
+          },
+        }
+      );
+
+      result = await dividendDistribution.getWithheldTax({
+        from: new Date(from),
+        to: new Date(to),
+      });
+
+      expect(result).toEqual(fakeTax);
+    });
+
+    test('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloQueryStub(
+        getWithholdingTaxesOfCA({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+        }),
+        {}
+      );
+      const result = await dividendDistribution.getWithheldTax();
+      expect(result).toBeNull();
     });
   });
 });
