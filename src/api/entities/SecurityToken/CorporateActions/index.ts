@@ -101,7 +101,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
   public removeAgent: ProcedureMethod<void, void>;
 
   /**
-   * Remove a Corporate Action or a Dividend Distribution
+   * Remove a Corporate Action
    *
    * @note required role:
    *   - Corporate Actions Agent
