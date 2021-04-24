@@ -38,6 +38,7 @@ import {
   CorporateActionTargets,
   CountTransferRestriction,
   ExtrinsicData,
+  IdentityBalance,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
@@ -212,6 +213,7 @@ interface CheckpointOptions {
   createdAt?: Date;
   totalSupply?: BigNumber;
   exists?: boolean;
+  allBalances?: ResultSet<IdentityBalance>;
 }
 
 interface CheckpointScheduleOptions {
@@ -320,6 +322,7 @@ let stoDetailsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
+let checkpointAllBalancesStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 
@@ -1360,12 +1363,22 @@ function initSto(opts?: StoOptions): void {
  * Configure the Checkpoint instance
  */
 function configureCheckpoint(opts: CheckpointOptions): void {
+  const allBalances = opts.allBalances || {
+    data: [
+      {
+        identity: mockInstanceContainer.identity,
+        balance: new BigNumber(10000),
+      },
+    ],
+    next: null,
+  };
   const checkpoint = ({
     createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
     totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
     ticker: opts.ticker,
     id: opts.id,
     exists: checkpointExistsStub.resolves(opts.exists),
+    allBalances: checkpointAllBalancesStub.resolves(allBalances),
   } as unknown) as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
@@ -1385,6 +1398,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
   checkpointCreatedAtStub = sinon.stub();
   checkpointTotalSupplyStub = sinon.stub();
   checkpointExistsStub = sinon.stub();
+  checkpointAllBalancesStub = sinon.stub();
 
   checkpointOptions = merge({}, defaultCheckpointOptions, opts);
 
@@ -2347,13 +2361,35 @@ export function getCheckpointCreatedAtStub(createdAt?: Date): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Checkpoint.createdAt` method
+ * Retrieve the stub of the `Checkpoint.totalSupply` method
  */
 export function getCheckpointTotalSupplyStub(totalSupply?: BigNumber): SinonStub {
   if (totalSupply) {
     return checkpointTotalSupplyStub.resolves(totalSupply);
   }
   return checkpointTotalSupplyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.exists` method
+ */
+export function getCheckpointExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return checkpointExistsStub.resolves(exists);
+  }
+  return checkpointExistsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.allBalances` method
+ */
+export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBalance>): SinonStub {
+  if (allBalances) {
+    return checkpointAllBalancesStub.resolves(allBalances);
+  }
+  return checkpointAllBalancesStub;
 }
 
 /**
