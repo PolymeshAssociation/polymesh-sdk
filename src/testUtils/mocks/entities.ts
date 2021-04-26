@@ -2446,3 +2446,14 @@ export function getDividendDistributionInstance(
 export function getDividendDistributionConstructorStub(): SinonStub {
   return dividendDistributionConstructorStub;
 }
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CorporateAction.exists` method
+ */
+export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return corporateActionExistsStub.resolves(exists);
+  }
+  return corporateActionExistsStub;
+}

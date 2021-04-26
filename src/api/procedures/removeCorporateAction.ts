@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { CorporateAction } from '~/api/entities/CorporateAction';
 import { DividendDistribution } from '~/api/entities/DividendDistribution';
-import { PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { corporateActionIdentifierToCaId, momentToDate } from '~/utils/conversion';
@@ -16,6 +16,16 @@ export interface RemoveCorporateActionParams {
  */
 export type Params = RemoveCorporateActionParams & {
   ticker: string;
+};
+
+/**
+ * @hidden
+ */
+const throwCorporateActionError = (): void => {
+  throw new PolymeshError({
+    code: ErrorCode.ValidationError,
+    message: "The Corporate Action doesn't exist",
+  });
 };
 
 /**
@@ -37,32 +47,34 @@ export async function prepareRemoveCorporateAction(
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
   if (corporateAction instanceof DividendDistribution || corporateAction instanceof BigNumber) {
+    const isBN = corporateAction instanceof BigNumber;
     const distributionDetail = await query.capitalDistribution.distributions(rawCaId);
     const exists = distributionDetail.isSome;
 
-    if (!exists) {
+    if (!exists && !isBN) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: "The Distribution doesn't exist",
       });
     }
 
-    const { payment_at: rawPaymentAt } = distributionDetail.unwrap();
+    if (!isBN) {
+      const { payment_at: rawPaymentAt } = distributionDetail.unwrap();
 
-    if (momentToDate(rawPaymentAt) < new Date()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The Distribution has already started',
-      });
+      if (momentToDate(rawPaymentAt) < new Date()) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The Distribution has already started',
+        });
+      }
+    } else {
+      throwCorporateActionError();
     }
   } else {
     const exists = await corporateAction.exists();
 
     if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Corporate Action doesn't exist",
-      });
+      throwCorporateActionError();
     }
   }
 
@@ -80,7 +92,7 @@ export function getAuthorization(
     identityRoles: [{ type: RoleType.TokenCaa, ticker }],
     signerPermissions: {
       transactions: [TxTags.corporateAction.RemoveCa],
-      tokens: [],
+      tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],
     },
   };

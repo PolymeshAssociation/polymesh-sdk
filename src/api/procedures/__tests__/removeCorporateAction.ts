@@ -14,6 +14,10 @@ import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
   '~/api/entities/CorporateAction',
   require('~/testUtils/mocks/entities').mockCorporateActionModule('~/api/entities/CorporateAction')
 );
@@ -52,12 +56,12 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the distribution doesn't exist", async () => {
+  test("should throw an error if the Corporate Action is a Distribution and it doesn't exist", async () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
 
-    let proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await expect(
       prepareRemoveCorporateAction.call(proc, {
@@ -65,15 +69,21 @@ describe('removeCorporateAction procedure', () => {
         ticker,
       })
     ).rejects.toThrow("The Distribution doesn't exist");
+  });
 
-    proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+  test("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", async () => {
+    dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      returnValue: dsMockUtils.createMockOption(),
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: new BigNumber(1),
         ticker,
       })
-    ).rejects.toThrow("The Distribution doesn't exist");
+    ).rejects.toThrow("The Corporate Action doesn't exist");
   });
 
   test('should throw an error if the distribution has already started', async () => {
@@ -173,7 +183,7 @@ describe('removeCorporateAction procedure', () => {
         identityRoles: [{ type: RoleType.TokenCaa, ticker }],
         signerPermissions: {
           transactions: [TxTags.corporateAction.RemoveCa],
-          tokens: [],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },
       });
