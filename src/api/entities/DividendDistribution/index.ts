@@ -16,17 +16,24 @@ import {
   PayDividendsParams,
   PolymeshError,
 } from '~/internal';
-import { getWithholdingTaxesOfCA } from '~/middleware/queries';
+import { getHistoryOfClaimsForCA, getWithholdingTaxesOfCA } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
-import { CorporateActionKind, DividendDistributionDetails, Ensured, ErrorCode } from '~/types';
+import {
+  CorporateActionKind,
+  DividendDistributionDetails,
+  Ensured,
+  ErrorCode,
+  PaymentDistribution,
+  ResultSet,
+} from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import {
   balanceToBigNumber,
   boolToBoolean,
   corporateActionIdentifierToCaId,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 export interface DividendDistributionParams {
   origin: DefaultPortfolio | NumberedPortfolio;
@@ -216,5 +223,62 @@ export class DividendDistribution extends CorporateAction {
     }
 
     return null;
+  }
+
+  /**
+   * Retrieve the claims history for a given distribution
+   *
+   * @note uses the middleware
+   */
+  public async getPaymentsHistory(
+    opts: { from?: Date; to?: Date; size?: number; start?: number } = {}
+  ): Promise<ResultSet<PaymentDistribution>> {
+    const { id, ticker, context } = this;
+
+    const { from, to, size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'getHistoryOfClaimsForCA'>>(
+      getHistoryOfClaimsForCA({
+        CAId: { ticker, localId: id.toNumber() },
+        fromDate: from ? from.toISOString().split('T')[0] : null,
+        toDate: to ? to.toISOString().split('T')[0] : null,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: { getHistoryOfClaimsForCA: getHistoryOfClaimsForCAResult },
+    } = result;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { items, totalCount: count } = getHistoryOfClaimsForCAResult!;
+
+    const data: PaymentDistribution[] = [];
+    let next = null;
+
+    if (items) {
+      items.forEach(item => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { blockId, eventId, datetime, eventDid: target, balance, tax } = item!;
+
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          eventId,
+          date: new Date(datetime),
+          target,
+          claimedAmount: new BigNumber(balance),
+          taxWithheld: new BigNumber(tax),
+        });
+      });
+
+      next = calculateNextKey(count, size, start);
+    }
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

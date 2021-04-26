@@ -10,7 +10,7 @@ import {
   Entity,
   TransactionQueue,
 } from '~/internal';
-import { getWithholdingTaxesOfCA } from '~/middleware/queries';
+import { getHistoryOfClaimsForCA, getWithholdingTaxesOfCA } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
 
@@ -296,6 +296,143 @@ describe('DividendDistribution class', () => {
       );
       const result = await dividendDistribution.getWithheldTax();
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getPaymentsHistory', () => {
+    test('should return the amount of the withheld tax', async () => {
+      const from = 1589816265000;
+      const to = 1599819865000;
+
+      const blockId = new BigNumber(1);
+      const eventId = 'eventId';
+      const datetime = '2020-10-10';
+      const eventDid = 'eventDid';
+      const balance = new BigNumber(100);
+      const tax = new BigNumber(10);
+      const fromDate = '2020-05-18';
+      const toDate = '2020-09-11';
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfClaimsForCA({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfClaimsForCA: {
+            totalCount: 1,
+            items: [
+              {
+                blockId: blockId.toNumber(),
+                eventId,
+                datetime,
+                eventDid,
+                balance: balance.toNumber(),
+                tax: tax.toNumber(),
+              },
+            ],
+          },
+        }
+      );
+
+      let result = await dividendDistribution.getPaymentsHistory();
+
+      expect(result.data).toEqual([
+        {
+          blockNumber: blockId,
+          eventId,
+          date: new Date(datetime),
+          target: eventDid,
+          claimedAmount: balance,
+          taxWithheld: tax,
+        },
+      ]);
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfClaimsForCA({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate,
+          toDate,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfClaimsForCA: {
+            totalCount: 1,
+            items: [
+              {
+                blockId: blockId.toNumber(),
+                eventId,
+                datetime,
+                eventDid,
+                balance: balance.toNumber(),
+                tax: tax.toNumber(),
+              },
+            ],
+          },
+        }
+      );
+
+      result = await dividendDistribution.getPaymentsHistory({
+        from: new Date(from),
+        to: new Date(to),
+      });
+
+      expect(result.data).toEqual([
+        {
+          blockNumber: blockId,
+          eventId,
+          date: new Date(datetime),
+          target: eventDid,
+          claimedAmount: balance,
+          taxWithheld: tax,
+        },
+      ]);
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfClaimsForCA({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate,
+          toDate,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfClaimsForCA: {
+            totalCount: 0,
+          },
+        }
+      );
+
+      result = await dividendDistribution.getPaymentsHistory({
+        from: new Date(from),
+        to: new Date(to),
+      });
+
+      expect(result.data).toEqual([]);
+    });
+
+    test('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfClaimsForCA({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfClaimsForCA: {
+            totalCount: 0,
+            items: [],
+          },
+        }
+      );
+      const result = await dividendDistribution.getPaymentsHistory();
+      expect(result.data).toEqual([]);
     });
   });
 });

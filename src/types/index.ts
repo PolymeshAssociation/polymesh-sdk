@@ -832,6 +832,15 @@ export interface DistributionWithDetails {
   details: DividendDistributionDetails;
 }
 
+export interface PaymentDistribution {
+  blockNumber: BigNumber;
+  eventId: string;
+  date: Date;
+  target: string;
+  claimedAmount: BigNumber;
+  taxWithheld: BigNumber;
+}
+
 export { TxTags, TxTag };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
