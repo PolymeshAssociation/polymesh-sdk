@@ -240,7 +240,7 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: reclaim', () => {
+  describe('method: reclaimFunds', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
@@ -249,7 +249,7 @@ describe('DividendDistribution class', () => {
         .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await dividendDistribution.reclaim();
+      const queue = await dividendDistribution.reclaimFunds();
 
       expect(queue).toBe(expectedQueue);
     });

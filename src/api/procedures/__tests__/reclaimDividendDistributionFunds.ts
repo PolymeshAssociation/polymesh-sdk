@@ -4,8 +4,8 @@ import sinon from 'sinon';
 import {
   getAuthorization,
   Params,
-  prepareReclaimCapitalDistribution,
-} from '~/api/procedures/reclaimCapitalDistribution';
+  prepareReclaimDividendDistributionFunds,
+} from '~/api/procedures/reclaimDividendDistributionFunds';
 import { Context, DividendDistribution } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -17,7 +17,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
-describe('reclaimCapitalDistribution procedure', () => {
+describe('reclaimDividendDistributionFunds procedure', () => {
   const ticker = 'SOMETICKER';
   const id = new BigNumber(1);
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
@@ -70,7 +70,7 @@ describe('reclaimCapitalDistribution procedure', () => {
     let err;
 
     try {
-      await prepareReclaimCapitalDistribution.call(proc, { distribution });
+      await prepareReclaimDividendDistributionFunds.call(proc, { distribution });
     } catch (error) {
       err = error;
     }
@@ -85,7 +85,7 @@ describe('reclaimCapitalDistribution procedure', () => {
     let err;
 
     try {
-      await prepareReclaimCapitalDistribution.call(proc, {
+      await prepareReclaimDividendDistributionFunds.call(proc, {
         distribution: entityMockUtils.getDividendDistributionInstance({
           origin,
           ticker,
@@ -100,7 +100,7 @@ describe('reclaimCapitalDistribution procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Distribution was already reclaimed');
+    expect(err.message).toBe('Distribution funds have already been reclaimed');
   });
 
   test('should add a reclaim transaction to the queue', async () => {
@@ -108,7 +108,7 @@ describe('reclaimCapitalDistribution procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('capitalDistribution', 'reclaim');
 
-    await prepareReclaimCapitalDistribution.call(proc, {
+    await prepareReclaimDividendDistributionFunds.call(proc, {
       distribution: entityMockUtils.getDividendDistributionInstance({
         origin,
         ticker,

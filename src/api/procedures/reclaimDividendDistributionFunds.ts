@@ -13,7 +13,7 @@ export interface Params {
 /**
  * @hidden
  */
-export async function prepareReclaimCapitalDistribution(
+export async function prepareReclaimDividendDistributionFunds(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
@@ -44,7 +44,7 @@ export async function prepareReclaimCapitalDistribution(
   if (fundsReclaimed) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Distribution was already reclaimed',
+      message: 'Distribution funds have already been reclaimed',
     });
   }
 
@@ -76,5 +76,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const reclaimCapitalDistribution = (): Procedure<Params, void> =>
-  new Procedure(prepareReclaimCapitalDistribution, getAuthorization);
+export const reclaimDividendDistributionFunds = (): Procedure<Params, void> =>
+  new Procedure(prepareReclaimDividendDistributionFunds, getAuthorization);
