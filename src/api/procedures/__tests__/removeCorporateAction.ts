@@ -107,7 +107,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow('The Distribution has already started');
   });
 
-  test('should throw an error if the corporate action does not exists', async () => {
+  test('should throw an error if the corporate action does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await expect(
