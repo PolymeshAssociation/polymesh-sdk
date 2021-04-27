@@ -194,7 +194,7 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
-   * Retrieve the current amount of withheld tax for a given distribution
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution. Optionally, `from` and `to` dates can be passed to retrieve the amount of taxes withheld during a specific period
    *
    * @note uses the middleware
    */
