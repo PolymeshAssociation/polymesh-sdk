@@ -10,7 +10,7 @@ import {
   Entity,
   TransactionQueue,
 } from '~/internal';
-import { getHistoryOfClaimsForCA, getWithholdingTaxesOfCA } from '~/middleware/queries';
+import { getHistoryOfClaimsForCA, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
 
@@ -248,7 +248,7 @@ describe('DividendDistribution class', () => {
       const to = 1599819865000;
 
       dsMockUtils.createApolloQueryStub(
-        getWithholdingTaxesOfCA({
+        getWithholdingTaxesOfCa({
           CAId: { ticker, localId: id.toNumber() },
           fromDate: null,
           toDate: null,
@@ -265,7 +265,7 @@ describe('DividendDistribution class', () => {
       expect(result).toEqual(fakeTax);
 
       dsMockUtils.createApolloQueryStub(
-        getWithholdingTaxesOfCA({
+        getWithholdingTaxesOfCa({
           CAId: { ticker, localId: id.toNumber() },
           fromDate: '2020-05-18',
           toDate: '2020-09-11',
@@ -285,9 +285,9 @@ describe('DividendDistribution class', () => {
       expect(result).toEqual(fakeTax);
     });
 
-    test('should return null if the query result is empty', async () => {
+    test('should return 0 if the query result is empty', async () => {
       dsMockUtils.createApolloQueryStub(
-        getWithholdingTaxesOfCA({
+        getWithholdingTaxesOfCa({
           CAId: { ticker, localId: id.toNumber() },
           fromDate: null,
           toDate: null,
@@ -295,7 +295,22 @@ describe('DividendDistribution class', () => {
         {}
       );
       const result = await dividendDistribution.getWithheldTax();
-      expect(result).toBeNull();
+      expect(result).toEqual(new BigNumber(0));
+    });
+  });
+
+  describe('method: reclaimFunds', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await dividendDistribution.reclaimFunds();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

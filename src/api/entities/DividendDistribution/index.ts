@@ -15,8 +15,9 @@ import {
   payDividends,
   PayDividendsParams,
   PolymeshError,
+  reclaimDividendDistributionFunds,
 } from '~/internal';
-import { getHistoryOfClaimsForCA, getWithholdingTaxesOfCA } from '~/middleware/queries';
+import { getHistoryOfClaimsForCA, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
 import {
@@ -131,6 +132,13 @@ export class DividendDistribution extends CorporateAction {
       },
       context
     );
+
+    this.reclaimFunds = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [reclaimDividendDistributionFunds, { distribution: this }],
+      },
+      context
+    );
   }
 
   /**
@@ -147,6 +155,16 @@ export class DividendDistribution extends CorporateAction {
    * Transfer the corresponding share of the dividends to a list of Identities
    */
   public pay: ProcedureMethod<PayDividendsParams, void>;
+
+  /**
+   * Reclaim any remaining funds back to the origin Portfolio. This can only be done after the Distribution has expired
+   *
+   * @note withheld taxes are also reclaimed in the same transaction
+   *
+   * @note required roles:
+   *   - Origin Portfolio Custodian
+   */
+  public reclaimFunds: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,
@@ -201,28 +219,26 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
-   * Retrieve the current amount of withheld tax for a given distribution
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution. Optionally, `from` and `to` dates can be passed to retrieve the amount of taxes withheld during a specific period
    *
    * @note uses the middleware
    */
-  public async getWithheldTax(opts: { from?: Date; to?: Date } = {}): Promise<BigNumber | null> {
+  public async getWithheldTax(opts: { from?: Date; to?: Date } = {}): Promise<BigNumber> {
     const { id, ticker, context } = this;
 
     const { from, to } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
-      getWithholdingTaxesOfCA({
+      getWithholdingTaxesOfCa({
         CAId: { ticker, localId: id.toNumber() },
         fromDate: from ? from.toISOString().split('T')[0] : null,
         toDate: to ? to.toISOString().split('T')[0] : null,
       })
     );
 
-    if (result.data.getWithholdingTaxesOfCA) {
-      return new BigNumber(result.data.getWithholdingTaxesOfCA.taxes);
-    }
+    const withholdingTaxesOfCA = result.data.getWithholdingTaxesOfCA;
 
-    return null;
+    return new BigNumber(withholdingTaxesOfCA ? withholdingTaxesOfCA.taxes : 0);
   }
 
   /**
