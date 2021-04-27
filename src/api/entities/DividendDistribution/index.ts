@@ -196,7 +196,7 @@ export class DividendDistribution extends CorporateAction {
    * Retrieve a comprehensive list of all Identities that are entitled to dividends in this Distribution (participants),
    *   the amount they are entitled to and whether they have been paid or not
    *
-   * @note this request can take a lot of time with large amounts of TokenholdersgrowsZ
+   * @note this request can take a lot of time with large amounts of Tokenholders
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be an empty array.
    *   This is because the Distribution participants cannot be determined without a Checkpoint
    */
