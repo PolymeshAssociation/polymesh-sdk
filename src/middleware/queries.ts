@@ -620,7 +620,7 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
  *
  * Get current amount of withheld tax for a distribution
  */
-export function getWithholdingTaxesOfCA(
+export function getWithholdingTaxesOfCa(
   variables: QueryGetWithholdingTaxesOfCaArgs
 ): GraphqlQuery<QueryGetWithholdingTaxesOfCaArgs> {
   const query = gql`

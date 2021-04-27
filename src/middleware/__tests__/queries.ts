@@ -14,7 +14,7 @@ import {
   eventByAddedTrustedClaimIssuer,
   eventByIndexedArgs,
   eventsByIndexedArgs,
-  getWithholdingTaxesOfCA,
+  getWithholdingTaxesOfCa,
   investments,
   issuerDidsWithClaimsByTarget,
   proposal,
@@ -252,13 +252,13 @@ describe('investments', () => {
   });
 });
 
-describe('getWithholdingTaxesOfCA', () => {
+describe('getWithholdingTaxesOfCa', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       CAId: { ticker: 'SOMETICKER', localId: 1 },
     };
 
-    const result = getWithholdingTaxesOfCA(variables);
+    const result = getWithholdingTaxesOfCa(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

@@ -16,7 +16,7 @@ import {
   PayDividendsParams,
   PolymeshError,
 } from '~/internal';
-import { getWithholdingTaxesOfCA } from '~/middleware/queries';
+import { getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
 import { CorporateActionKind, DividendDistributionDetails, Ensured, ErrorCode } from '~/types';
@@ -198,23 +198,21 @@ export class DividendDistribution extends CorporateAction {
    *
    * @note uses the middleware
    */
-  public async getWithheldTax(opts: { from?: Date; to?: Date } = {}): Promise<BigNumber | null> {
+  public async getWithheldTax(opts: { from?: Date; to?: Date } = {}): Promise<BigNumber> {
     const { id, ticker, context } = this;
 
     const { from, to } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
-      getWithholdingTaxesOfCA({
+      getWithholdingTaxesOfCa({
         CAId: { ticker, localId: id.toNumber() },
         fromDate: from ? from.toISOString().split('T')[0] : null,
         toDate: to ? to.toISOString().split('T')[0] : null,
       })
     );
 
-    if (result.data.getWithholdingTaxesOfCA) {
-      return new BigNumber(result.data.getWithholdingTaxesOfCA.taxes);
-    }
+    const withholdingTaxesOfCA = result.data.getWithholdingTaxesOfCA;
 
-    return null;
+    return new BigNumber(withholdingTaxesOfCA ? withholdingTaxesOfCA.taxes : 0);
   }
 }
