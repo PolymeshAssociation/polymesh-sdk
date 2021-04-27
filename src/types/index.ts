@@ -832,11 +832,10 @@ export interface DistributionWithDetails {
   details: DividendDistributionDetails;
 }
 
-export interface PaymentDistribution {
+export interface DistributionPayment {
   blockNumber: BigNumber;
-  eventId: string;
   date: Date;
-  target: string;
+  target: Identity;
   claimedAmount: BigNumber;
   taxWithheld: BigNumber;
 }

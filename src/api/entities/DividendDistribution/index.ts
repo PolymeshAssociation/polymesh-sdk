@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js';
 import { Checkpoint } from '~/api/entities/Checkpoint';
 import { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entities/CorporateAction';
+import { Identity } from '~/api/entities/Identity';
 import {
   claimDividends,
   Context,
@@ -17,15 +18,15 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { getHistoryOfClaimsForCA, getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { getHistoryOfClaimsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
 import {
   CorporateActionKind,
+  DistributionPayment,
   DividendDistributionDetails,
   Ensured,
   ErrorCode,
-  PaymentDistribution,
   ResultSet,
 } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
@@ -242,47 +243,47 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
-   * Retrieve the claims history for a given distribution
+   * Retrieve the payment history for this Distribution
    *
    * @note uses the middleware
+   * @note supports pagination
    */
-  public async getPaymentsHistory(
-    opts: { from?: Date; to?: Date; size?: number; start?: number } = {}
-  ): Promise<ResultSet<PaymentDistribution>> {
+  public async getPaymentHistory(
+    opts: { size?: number; start?: number } = {}
+  ): Promise<ResultSet<DistributionPayment>> {
     const { id, ticker, context } = this;
 
-    const { from, to, size, start } = opts;
+    const { size, start } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'getHistoryOfClaimsForCA'>>(
-      getHistoryOfClaimsForCA({
+      getHistoryOfClaimsForCa({
         CAId: { ticker, localId: id.toNumber() },
-        fromDate: from ? from.toISOString().split('T')[0] : null,
-        toDate: to ? to.toISOString().split('T')[0] : null,
+        fromDate: null,
+        toDate: null,
         count: size,
         skip: start,
       })
     );
 
     const {
-      data: { getHistoryOfClaimsForCA: getHistoryOfClaimsForCAResult },
+      data: { getHistoryOfClaimsForCA: getHistoryOfClaimsForCaResult },
     } = result;
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { items, totalCount: count } = getHistoryOfClaimsForCAResult!;
+    const { items, totalCount: count } = getHistoryOfClaimsForCaResult!;
 
-    const data: PaymentDistribution[] = [];
+    const data: DistributionPayment[] = [];
     let next = null;
 
     if (items) {
       items.forEach(item => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { blockId, eventId, datetime, eventDid: target, balance, tax } = item!;
+        const { blockId, datetime, eventDid: did, balance, tax } = item!;
 
         data.push({
           blockNumber: new BigNumber(blockId),
-          eventId,
           date: new Date(datetime),
-          target,
+          target: new Identity({ did }, context),
           claimedAmount: new BigNumber(balance),
           taxWithheld: new BigNumber(tax),
         });

@@ -643,7 +643,7 @@ export function getWithholdingTaxesOfCa(
  *
  * Get history of claims for a distribution
  */
-export function getHistoryOfClaimsForCA(
+export function getHistoryOfClaimsForCa(
   variables: QueryGetHistoryOfClaimsForCaArgs
 ): GraphqlQuery<QueryGetHistoryOfClaimsForCaArgs> {
   const query = gql`
@@ -657,7 +657,7 @@ export function getHistoryOfClaimsForCA(
       getHistoryOfClaimsForCA(
         CAId: $CAId
         fromDate: $fromDate
-        toDate: $coutoDatent
+        toDate: $toDate
         count: $count
         skip: $skip
       ) {
