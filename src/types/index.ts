@@ -659,9 +659,10 @@ export interface StoWithDetails {
   details: StoDetails;
 }
 
-export interface CheckpointWithCreationDate {
+export interface CheckpointWithData {
   checkpoint: Checkpoint;
   createdAt: Date;
+  totalSupply: BigNumber;
 }
 
 export interface SecondaryKey {
