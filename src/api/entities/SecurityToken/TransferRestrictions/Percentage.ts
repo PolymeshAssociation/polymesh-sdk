@@ -3,8 +3,12 @@ import {
   AddPercentageTransferRestrictionParams,
   SetPercentageTransferRestrictionsParams,
 } from '~/internal';
-import { ActiveTransferRestrictions, PercentageTransferRestriction } from '~/types';
-import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
+import {
+  ActiveTransferRestrictions,
+  PercentageTransferRestriction,
+  TransferRestrictionType,
+} from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 
 /**
  * Handles all Percentage Transfer Restriction related functionality

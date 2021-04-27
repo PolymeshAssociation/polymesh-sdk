@@ -1,7 +1,11 @@
 import { TransferRestrictionBase } from '~/api/entities/SecurityToken/TransferRestrictions/TransferRestrictionBase';
 import { AddCountTransferRestrictionParams, SetCountTransferRestrictionsParams } from '~/internal';
-import { ActiveTransferRestrictions, CountTransferRestriction } from '~/types';
-import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
+import {
+  ActiveTransferRestrictions,
+  CountTransferRestriction,
+  TransferRestrictionType,
+} from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 
 /**
  * Handles all Count Transfer Restriction related functionality

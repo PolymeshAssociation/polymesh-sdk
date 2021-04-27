@@ -9,9 +9,10 @@ import {
   ErrorCode,
   PercentageTransferRestrictionInput,
   RoleType,
+  TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, TransferRestrictionType } from '~/types/internal';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   stringToScopeId,
   stringToTicker,

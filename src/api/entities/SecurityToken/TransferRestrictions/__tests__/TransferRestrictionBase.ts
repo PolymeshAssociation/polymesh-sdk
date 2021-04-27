@@ -13,8 +13,11 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { CountTransferRestriction, PercentageTransferRestriction } from '~/types';
-import { TransferRestrictionType } from '~/types/internal';
+import {
+  CountTransferRestriction,
+  PercentageTransferRestriction,
+  TransferRestrictionType,
+} from '~/types';
 
 import { Count } from '../Count';
 import { Percentage } from '../Percentage';
