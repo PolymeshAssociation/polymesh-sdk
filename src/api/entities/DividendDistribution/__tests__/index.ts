@@ -244,8 +244,6 @@ describe('DividendDistribution class', () => {
   describe('method: getWithheldTax', () => {
     test('should return the amount of the withheld tax', async () => {
       const fakeTax = new BigNumber(100);
-      const from = 1589816265000;
-      const to = 1599819865000;
 
       dsMockUtils.createApolloQueryStub(
         getWithholdingTaxesOfCa({
@@ -260,27 +258,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      let result = await dividendDistribution.getWithheldTax();
-
-      expect(result).toEqual(fakeTax);
-
-      dsMockUtils.createApolloQueryStub(
-        getWithholdingTaxesOfCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: '2020-05-18',
-          toDate: '2020-09-11',
-        }),
-        {
-          getWithholdingTaxesOfCA: {
-            taxes: fakeTax.toNumber(),
-          },
-        }
-      );
-
-      result = await dividendDistribution.getWithheldTax({
-        from: new Date(from),
-        to: new Date(to),
-      });
+      const result = await dividendDistribution.getWithheldTax();
 
       expect(result).toEqual(fakeTax);
     });

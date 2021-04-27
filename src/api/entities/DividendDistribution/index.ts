@@ -216,16 +216,14 @@ export class DividendDistribution extends CorporateAction {
    *
    * @note uses the middleware
    */
-  public async getWithheldTax(opts: { from?: Date; to?: Date } = {}): Promise<BigNumber> {
+  public async getWithheldTax(): Promise<BigNumber> {
     const { id, ticker, context } = this;
-
-    const { from, to } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
         CAId: { ticker, localId: id.toNumber() },
-        fromDate: from ? from.toISOString().split('T')[0] : null,
-        toDate: to ? to.toISOString().split('T')[0] : null,
+        fromDate: null,
+        toDate: null,
       })
     );
 
