@@ -37,6 +37,7 @@ import {
   CorporateActionKind,
   CorporateActionTargets,
   CountTransferRestriction,
+  DividendDistributionDetails,
   ExtrinsicData,
   IdentityBalance,
   InstructionDetails,
@@ -252,6 +253,7 @@ interface DividendDistributionOptions {
   maxAmount?: BigNumber;
   expiryDate?: null | Date;
   paymentDate?: Date;
+  details?: Partial<DividendDistributionDetails>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -325,6 +327,7 @@ let checkpointExistsStub: SinonStub;
 let checkpointAllBalancesStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
+let dividendDistributionDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -788,6 +791,10 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
   maxAmount: new BigNumber(1000000),
   expiryDate: null,
   paymentDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+  details: {
+    remainingFunds: new BigNumber(100),
+    fundsReclaimed: false,
+  },
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
 // NOTE uncomment in Governance v2 upgrade
@@ -1499,6 +1506,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     maxAmount: opts.maxAmount,
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
+    details: dividendDistributionDetailsStub.resolves(opts.details),
   } as unknown) as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
@@ -1515,6 +1523,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
  */
 function initDividendDistribution(opts?: DividendDistributionOptions): void {
   dividendDistributionConstructorStub = sinon.stub();
+  dividendDistributionDetailsStub = sinon.stub();
 
   dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
 
