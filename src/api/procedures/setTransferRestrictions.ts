@@ -8,13 +8,11 @@ import {
   ErrorCode,
   PercentageTransferRestrictionInput,
   RoleType,
-  TxTags,
-} from '~/types';
-import {
-  ProcedureAuthorization,
   TransferRestriction,
   TransferRestrictionType,
-} from '~/types/internal';
+  TxTags,
+} from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   stringToScopeId,
