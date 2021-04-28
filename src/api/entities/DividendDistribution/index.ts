@@ -1,11 +1,13 @@
-import { Option } from '@polkadot/types';
+import { bool, Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { chunk, flatten, remove } from 'lodash';
 
-import { Checkpoint } from '~/api/entities/Checkpoint';
-import { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entities/CorporateAction';
 import { Identity } from '~/api/entities/Identity';
 import {
+  Checkpoint,
+  CheckpointSchedule,
   claimDividends,
   Context,
   CorporateAction,
@@ -27,15 +29,22 @@ import {
   DividendDistributionDetails,
   Ensured,
   ErrorCode,
+  IdentityBalance,
   ResultSet,
+  TargetTreatment,
 } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
+import { tuple } from '~/types/utils';
+import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
   boolToBoolean,
   corporateActionIdentifierToCaId,
+  stringToIdentityId,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, xor } from '~/utils/internal';
+
+import { DistributionParticipant } from './types';
 
 export interface DividendDistributionParams {
   origin: DefaultPortfolio | NumberedPortfolio;
@@ -209,6 +218,65 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
+   * Retrieve a comprehensive list of all Identities that are entitled to dividends in this Distribution (participants),
+   *   the amount they are entitled to and whether they have been paid or not
+   *
+   * @note this request can take a lot of time with large amounts of Tokenholders
+   * @note if the Distribution Checkpoint hasn't been created yet, the result will be an empty array.
+   *   This is because the Distribution participants cannot be determined without a Checkpoint
+   */
+  public async getParticipants(): Promise<DistributionParticipant[]> {
+    const {
+      targets: { identities: targetIdentities, treatment },
+      paymentDate,
+      perShare,
+    } = this;
+
+    let balances: IdentityBalance[] = [];
+
+    const checkpoint = await this.checkpoint();
+
+    if (checkpoint instanceof CheckpointSchedule) {
+      return [];
+    }
+
+    let allFetched = false;
+    let start: string | undefined;
+
+    while (!allFetched) {
+      const { data, next } = await checkpoint.allBalances({ size: MAX_PAGE_SIZE, start });
+      start = (next as string) || undefined;
+      allFetched = !next;
+      balances = [...balances, ...data];
+    }
+
+    const isExclusion = treatment === TargetTreatment.Exclude;
+
+    const participants: DistributionParticipant[] = [];
+    const clonedTargets = [...targetIdentities];
+    balances.forEach(({ identity: { did }, identity, balance }) => {
+      const isTarget = !!remove(clonedTargets, ({ did: targetDid }) => did === targetDid).length;
+
+      if (balance.gt(0) && xor(isTarget, isExclusion)) {
+        participants.push({
+          identity,
+          amount: balance.multipliedBy(perShare),
+          paid: false,
+        });
+      }
+    });
+
+    // participants can't be paid before the payment date
+    if (paymentDate < new Date()) {
+      return participants;
+    }
+
+    const paidStatuses = await this.getParticipantStatuses(participants);
+
+    return paidStatuses.map((paid, index) => ({ ...participants[index], paid }));
+  }
+
+  /**
    * @hidden
    */
   private fetchDistribution(): Promise<Option<Distribution>> {
@@ -224,16 +292,14 @@ export class DividendDistribution extends CorporateAction {
    *
    * @note uses the middleware
    */
-  public async getWithheldTax(opts: { from?: Date; to?: Date } = {}): Promise<BigNumber> {
+  public async getWithheldTax(): Promise<BigNumber> {
     const { id, ticker, context } = this;
-
-    const { from, to } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
         CAId: { ticker, localId: id.toNumber() },
-        fromDate: from ? from.toISOString().split('T')[0] : null,
-        toDate: to ? to.toISOString().split('T')[0] : null,
+        fromDate: null,
+        toDate: null,
       })
     );
 
@@ -297,5 +363,41 @@ export class DividendDistribution extends CorporateAction {
       next,
       count,
     };
+  }
+
+  /**
+   * @hidden
+   */
+  private async getParticipantStatuses(
+    participants: DistributionParticipant[]
+  ): Promise<boolean[]> {
+    const { ticker, id: localId, context } = this;
+
+    /*
+       For optimization, we separate the participants into chunks that can fit into one multi call
+       and then sequentially perform bunches of said multi requests in parallel
+     */
+    const participantChunks = chunk(participants, MAX_PAGE_SIZE);
+    const parallelCallChunks = chunk(participantChunks, MAX_CONCURRENT_REQUESTS);
+
+    let paidStatuses: boolean[] = [];
+
+    const caId = corporateActionIdentifierToCaId({ localId, ticker }, context);
+
+    await P.each(parallelCallChunks, async callChunk => {
+      const parallelMultiCalls = callChunk.map(participantChunk => {
+        const multiParams = participantChunk.map(({ identity: { did } }) =>
+          tuple(caId, stringToIdentityId(did, context))
+        );
+
+        return context.polymeshApi.query.capitalDistribution.holderPaid.multi<bool>(multiParams);
+      });
+
+      const results = await Promise.all(parallelMultiCalls);
+
+      paidStatuses = [...paidStatuses, ...flatten(results).map(paid => boolToBoolean(paid))];
+    });
+
+    return paidStatuses;
   }
 }
