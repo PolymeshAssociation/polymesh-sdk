@@ -4,7 +4,6 @@ import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
 
 import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entities/CorporateAction';
-import { Identity } from '~/api/entities/Identity';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -12,6 +11,7 @@ import {
   Context,
   CorporateAction,
   DefaultPortfolio,
+  Identity,
   modifyDistributionCheckpoint,
   ModifyDistributionCheckpointParams,
   NumberedPortfolio,
