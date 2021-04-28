@@ -57,6 +57,7 @@ import {
   Fundraiser,
   FundraiserName,
   FundraiserTier,
+  GranularCanTransferResult,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
@@ -164,6 +165,10 @@ import {
   TokenIdentifier,
   TokenIdentifierType,
   TokenType,
+  TransferBreakdown,
+  TransferError,
+  TransferRestriction,
+  TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
@@ -179,8 +184,6 @@ import {
   ScopeClaimProof,
   SignerType,
   SignerValue,
-  TransferRestriction,
-  TransferRestrictionType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -2423,6 +2426,86 @@ export function transferManagerToTransferRestriction(
       value: permillToBigNumber(transferManager.asPercentageTransferManager),
     };
   }
+}
+
+/**
+ * @hidden
+ */
+export function granularCanTransferResultToTransferBreakdown(
+  result: GranularCanTransferResult,
+  context: Context
+): TransferBreakdown {
+  const {
+    invalid_granularity: invalidGranularity,
+    self_transfer: selfTransfer,
+    invalid_receiver_cdd: invalidReceiverCdd,
+    invalid_sender_cdd: invalidSenderCdd,
+    missing_scope_claim: missingScopeClaim,
+    sender_insufficient_balance: insufficientBalance,
+    asset_frozen: assetFrozen,
+    portfolio_validity_result: {
+      sender_portfolio_does_not_exist: senderPortfolioNotExists,
+      receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
+      sender_insufficient_balance: senderInsufficientBalance,
+    },
+    statistics_result: transferRestrictionResults,
+    compliance_result: complianceResult,
+    result: finalResult,
+  } = result;
+
+  const general = [];
+
+  if (boolToBoolean(invalidGranularity)) {
+    general.push(TransferError.InvalidGranularity);
+  }
+
+  if (boolToBoolean(selfTransfer)) {
+    general.push(TransferError.SelfTransfer);
+  }
+
+  if (boolToBoolean(invalidReceiverCdd)) {
+    general.push(TransferError.InvalidReceiverCdd);
+  }
+
+  if (boolToBoolean(invalidSenderCdd)) {
+    general.push(TransferError.InvalidSenderCdd);
+  }
+
+  if (boolToBoolean(missingScopeClaim)) {
+    general.push(TransferError.ScopeClaimMissing);
+  }
+
+  if (boolToBoolean(insufficientBalance)) {
+    general.push(TransferError.InsufficientBalance);
+  }
+
+  if (boolToBoolean(assetFrozen)) {
+    general.push(TransferError.TransfersFrozen);
+  }
+
+  if (boolToBoolean(senderPortfolioNotExists)) {
+    general.push(TransferError.InvalidSenderPortfolio);
+  }
+
+  if (boolToBoolean(receiverPortfolioNotExists)) {
+    general.push(TransferError.InvalidReceiverPortfolio);
+  }
+
+  if (boolToBoolean(senderInsufficientBalance)) {
+    general.push(TransferError.InsufficientPortfolioBalance);
+  }
+
+  const restrictions = transferRestrictionResults.map(({ tm, result: tmResult }) => ({
+    restriction: transferManagerToTransferRestriction(tm),
+    result: boolToBoolean(tmResult),
+  }));
+
+  return {
+    general,
+    compliance: assetComplianceResultToCompliance(complianceResult, context),
+    restrictions,
+    result: boolToBoolean(finalResult),
+  };
 }
 
 /**
