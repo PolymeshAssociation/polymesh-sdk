@@ -4785,6 +4785,32 @@ describe('txGroupToTxTags', () => {
       TxTags.complianceManager.ResumeAssetCompliance,
       TxTags.complianceManager.ResetAssetCompliance,
     ]);
+
+    result = txGroupToTxTags(TxGroup.CorporateActionsManagement);
+
+    expect(result).toEqual([
+      TxTags.checkpoint.CreateSchedule,
+      TxTags.checkpoint.RemoveSchedule,
+      TxTags.checkpoint.CreateCheckpoint,
+      TxTags.corporateAction.InitiateCorporateAction,
+      TxTags.capitalDistribution.Distribute,
+      TxTags.capitalDistribution.Claim,
+      TxTags.identity.AddInvestorUniquenessClaim,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.StoManagement);
+
+    expect(result).toEqual([
+      TxTags.sto.CreateFundraiser,
+      TxTags.sto.FreezeFundraiser,
+      TxTags.sto.Invest,
+      TxTags.sto.ModifyFundraiserWindow,
+      TxTags.sto.Stop,
+      TxTags.sto.UnfreezeFundraiser,
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.asset.Issue,
+      TxTags.settlement.CreateVenue,
+    ]);
   });
 });
 
