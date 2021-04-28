@@ -27,6 +27,7 @@ export const DEFAULT_SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
 export const DEFAULT_GQL_PAGE_SIZE = 25;
+export const MAX_PAGE_SIZE = 1000;
 
 const didTypes = ['IdentityId'];
 
