@@ -809,6 +809,18 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim,
    */
   CorporateActionsManagement = 'CorporateActionsManagement',
+  /**
+   * - TxTags.sto.CreateFundraiser,
+   * - TxTags.sto.FreezeFundraiser,
+   * - TxTags.sto.Invest,
+   * - TxTags.sto.ModifyFundraiserWindow,
+   * - TxTags.sto.Stop,
+   * - TxTags.sto.UnfreezeFundraiser,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   * - TxTags.asset.Issue,
+   * - TxTags.settlement.CreateVenue
+   */
+  StoManagement = 'StoManagement',
 }
 
 /**
