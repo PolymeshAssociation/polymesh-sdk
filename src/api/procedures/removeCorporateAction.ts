@@ -2,10 +2,15 @@ import BigNumber from 'bignumber.js';
 
 import { CorporateAction } from '~/api/entities/CorporateAction';
 import { DividendDistribution } from '~/api/entities/DividendDistribution';
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Context, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { corporateActionIdentifierToCaId, momentToDate } from '~/utils/conversion';
+import {
+  corporateActionIdentifierToCaId,
+  momentToDate,
+  numberToU32,
+  stringToTicker,
+} from '~/utils/conversion';
 
 export interface RemoveCorporateActionParams {
   corporateAction: CorporateAction | BigNumber;
@@ -21,11 +26,34 @@ export type Params = RemoveCorporateActionParams & {
 /**
  * @hidden
  */
-const throwCorporateActionError = (): void => {
-  throw new PolymeshError({
-    code: ErrorCode.ValidationError,
-    message: "The Corporate Action doesn't exist",
-  });
+const checkCorporateActionExistsOrThrow = async (
+  corporateAction: CorporateAction | BigNumber,
+  context: Context,
+  ticker?: string
+): Promise<void> => {
+  const {
+    polymeshApi: { query },
+  } = context;
+
+  let exists: boolean;
+
+  if (corporateAction instanceof BigNumber) {
+    const CA = await query.corporateAction.corporateActions(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      stringToTicker(ticker!, context),
+      numberToU32(corporateAction, context)
+    );
+    exists = CA.isSome;
+  } else {
+    exists = await corporateAction.exists();
+  }
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The Corporate Action doesn't exist",
+    });
+  }
 };
 
 /**
@@ -47,19 +75,19 @@ export async function prepareRemoveCorporateAction(
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
   if (corporateAction instanceof DividendDistribution || corporateAction instanceof BigNumber) {
-    const isBN = corporateAction instanceof BigNumber;
-    const distributionDetail = await query.capitalDistribution.distributions(rawCaId);
-    const exists = distributionDetail.isSome;
+    const isBn = corporateAction instanceof BigNumber;
+    const distribution = await query.capitalDistribution.distributions(rawCaId);
+    const exists = distribution.isSome;
 
-    if (!exists && !isBN) {
+    if (!exists && !isBn) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: "The Distribution doesn't exist",
       });
     }
 
-    if (!isBN) {
-      const { payment_at: rawPaymentAt } = distributionDetail.unwrap();
+    if (!isBn) {
+      const { payment_at: rawPaymentAt } = distribution.unwrap();
 
       if (momentToDate(rawPaymentAt) < new Date()) {
         throw new PolymeshError({
@@ -68,14 +96,10 @@ export async function prepareRemoveCorporateAction(
         });
       }
     } else {
-      throwCorporateActionError();
+      await checkCorporateActionExistsOrThrow(corporateAction, context, ticker);
     }
   } else {
-    const exists = await corporateAction.exists();
-
-    if (!exists) {
-      throwCorporateActionError();
-    }
+    await checkCorporateActionExistsOrThrow(corporateAction, context);
   }
 
   this.addTransaction(tx.corporateAction.removeCa, {}, rawCaId);

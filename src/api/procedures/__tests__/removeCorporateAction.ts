@@ -25,8 +25,9 @@ jest.mock(
 describe('removeCorporateAction procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
+  let corporateActionsQueryStub: sinon.SinonStub;
 
-  const ticker = 'someTicker';
+  const ticker = 'SOMETICKER';
   const id = new BigNumber(1);
   // eslint-disable-next-line @typescript-eslint/camelcase
   const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
@@ -42,6 +43,7 @@ describe('removeCorporateAction procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    corporateActionsQueryStub = dsMockUtils.createQueryStub('corporateAction', 'corporateActions');
   });
 
   afterEach(() => {
@@ -75,6 +77,8 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
+
+    corporateActionsQueryStub.returns(dsMockUtils.createMockOption());
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
