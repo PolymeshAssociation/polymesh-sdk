@@ -2040,6 +2040,14 @@ export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.getCustodian` method
+ */
+export function getDefaultPortfolioGetCustodianStub(): SinonStub {
+  return defaultPortfolioGetCustodianStub;
+}
+
+/**
+ * @hidden
  * Retrieve a Ticker Reservation instance
  */
 export function getTickerReservationInstance(
