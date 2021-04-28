@@ -285,7 +285,7 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
-   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution. Optionally, `from` and `to` dates can be passed to retrieve the amount of taxes withheld during a specific period
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
    *
    * @note uses the middleware
    */
