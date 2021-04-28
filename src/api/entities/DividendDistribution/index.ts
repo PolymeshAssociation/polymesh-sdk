@@ -300,9 +300,10 @@ export class DividendDistribution extends CorporateAction {
       })
     );
 
-    const withholdingTaxesOfCA = result.data.getWithholdingTaxesOfCA;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { taxes } = result.data.getWithholdingTaxesOfCA!;
 
-    return new BigNumber(withholdingTaxesOfCA ? withholdingTaxesOfCA.taxes : 0);
+    return new BigNumber(taxes);
   }
 
   /**
