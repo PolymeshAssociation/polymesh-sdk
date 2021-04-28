@@ -174,6 +174,8 @@ export class Requirements extends Namespace<SecurityToken> {
    *
    * @param args.from - sender Identity (optional, defaults to the current Identity)
    * @param args.to - receiver Identity
+   *
+   * @deprecated in favor of `settlements.canTransfer`
    */
   public async checkSettle(args: {
     from?: string | Identity;
