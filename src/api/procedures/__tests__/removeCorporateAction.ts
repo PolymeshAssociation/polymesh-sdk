@@ -173,6 +173,17 @@ describe('removeCorporateAction procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
+
+    corporateActionsQueryStub.returns(
+      dsMockUtils.createMockOption(dsMockUtils.createMockCorporateAction())
+    );
+
+    await prepareRemoveCorporateAction.call(proc, {
+      corporateAction: new BigNumber(1),
+      ticker,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
   });
 
   describe('getAuthorization', () => {

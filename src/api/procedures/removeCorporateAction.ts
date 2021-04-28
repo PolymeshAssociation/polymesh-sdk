@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { CorporateAction } from '~/api/entities/CorporateAction';
 import { DividendDistribution } from '~/api/entities/DividendDistribution';
-import { Context, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -26,34 +26,11 @@ export type Params = RemoveCorporateActionParams & {
 /**
  * @hidden
  */
-const checkCorporateActionExistsOrThrow = async (
-  corporateAction: CorporateAction | BigNumber,
-  context: Context,
-  ticker?: string
-): Promise<void> => {
-  const {
-    polymeshApi: { query },
-  } = context;
-
-  let exists: boolean;
-
-  if (corporateAction instanceof BigNumber) {
-    const CA = await query.corporateAction.corporateActions(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      stringToTicker(ticker!, context),
-      numberToU32(corporateAction, context)
-    );
-    exists = CA.isSome;
-  } else {
-    exists = await corporateAction.exists();
-  }
-
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "The Corporate Action doesn't exist",
-    });
-  }
+const throwCorporateActionError = (): void => {
+  throw new PolymeshError({
+    code: ErrorCode.ValidationError,
+    message: "The Corporate Action doesn't exist",
+  });
 };
 
 /**
@@ -96,10 +73,21 @@ export async function prepareRemoveCorporateAction(
         });
       }
     } else {
-      await checkCorporateActionExistsOrThrow(corporateAction, context, ticker);
+      const CA = await query.corporateAction.corporateActions(
+        stringToTicker(ticker, context),
+        numberToU32(corporateAction as BigNumber, context)
+      );
+
+      if (CA.isEmpty) {
+        throwCorporateActionError();
+      }
     }
   } else {
-    await checkCorporateActionExistsOrThrow(corporateAction, context);
+    const exists = await corporateAction.exists();
+
+    if (!exists) {
+      throwCorporateActionError();
+    }
   }
 
   this.addTransaction(tx.corporateAction.removeCa, {}, rawCaId);
