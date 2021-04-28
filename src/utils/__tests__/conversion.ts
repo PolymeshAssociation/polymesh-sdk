@@ -91,17 +91,14 @@ import {
   TargetTreatment,
   TokenDocument,
   TokenIdentifierType,
+  TransferError,
+  TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
   VenueType,
 } from '~/types';
-import {
-  ScopeClaimProof,
-  SignerType,
-  SignerValue,
-  TransferRestrictionType,
-} from '~/types/internal';
+import { ScopeClaimProof, SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -144,6 +141,7 @@ import {
   fundingRoundNameToString,
   fundraiserTierToTier,
   fundraiserToStoDetails,
+  granularCanTransferResultToTransferBreakdown,
   identityIdToString,
   isCusipValid,
   isIsinValid,
@@ -2208,6 +2206,134 @@ describe('canTransferResultToTransferStatus', () => {
     );
 
     expect(result).toBe(TransferStatus.Success);
+  });
+});
+
+describe('granularCanTransferResultToTransferBreakdown', () => {
+  test('granularCanTransferResultToTransferBreakdown should convert a polkadot GranularCanTransferResult object to a TransferBreakdown', () => {
+    const context = dsMockUtils.getContextInstance();
+    let result = granularCanTransferResultToTransferBreakdown(
+      dsMockUtils.createMockGranularCanTransferResult({
+        /* eslint-disable @typescript-eslint/camelcase */
+        invalid_granularity: true,
+        self_transfer: true,
+        invalid_receiver_cdd: true,
+        invalid_sender_cdd: true,
+        missing_scope_claim: true,
+        receiver_custodian_error: true,
+        sender_custodian_error: true,
+        sender_insufficient_balance: true,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: true,
+          sender_portfolio_does_not_exist: true,
+          receiver_portfolio_does_not_exist: true,
+          sender_insufficient_balance: true,
+          result: false,
+        },
+        asset_frozen: true,
+        statistics_result: [
+          {
+            tm: {
+              CountTransferManager: dsMockUtils.createMockU64(100),
+            },
+            result: false,
+          },
+        ],
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
+          paused: false,
+          requirements: [],
+          result: false,
+        }),
+        result: false,
+        /* eslint-enable @typescript-eslint/camelcase */
+      }),
+      context
+    );
+
+    expect(result).toEqual({
+      general: [
+        TransferError.InvalidGranularity,
+        TransferError.SelfTransfer,
+        TransferError.InvalidReceiverCdd,
+        TransferError.InvalidSenderCdd,
+        TransferError.ScopeClaimMissing,
+        TransferError.InsufficientBalance,
+        TransferError.TransfersFrozen,
+        TransferError.InvalidSenderPortfolio,
+        TransferError.InvalidReceiverPortfolio,
+        TransferError.InsufficientPortfolioBalance,
+      ],
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
+      restrictions: [
+        {
+          restriction: {
+            type: TransferRestrictionType.Count,
+            value: new BigNumber(100),
+          },
+          result: false,
+        },
+      ],
+      result: false,
+    });
+
+    result = granularCanTransferResultToTransferBreakdown(
+      dsMockUtils.createMockGranularCanTransferResult({
+        /* eslint-disable @typescript-eslint/camelcase */
+        invalid_granularity: false,
+        self_transfer: false,
+        invalid_receiver_cdd: false,
+        invalid_sender_cdd: false,
+        missing_scope_claim: false,
+        receiver_custodian_error: false,
+        sender_custodian_error: false,
+        sender_insufficient_balance: false,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: false,
+          sender_portfolio_does_not_exist: false,
+          receiver_portfolio_does_not_exist: false,
+          sender_insufficient_balance: false,
+          result: false,
+        },
+        asset_frozen: false,
+        statistics_result: [
+          {
+            tm: {
+              CountTransferManager: dsMockUtils.createMockU64(100),
+            },
+            result: false,
+          },
+        ],
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
+          paused: false,
+          requirements: [],
+          result: false,
+        }),
+        result: false,
+        /* eslint-enable @typescript-eslint/camelcase */
+      }),
+      context
+    );
+
+    expect(result).toEqual({
+      general: [],
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
+      restrictions: [
+        {
+          restriction: {
+            type: TransferRestrictionType.Count,
+            value: new BigNumber(100),
+          },
+          result: false,
+        },
+      ],
+      result: false,
+    });
   });
 });
 
