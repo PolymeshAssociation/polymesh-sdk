@@ -31,6 +31,8 @@ export type Query = {
   blockByHash?: Maybe<Block>;
   /** Get events by moduleId and eventId */
   events?: Maybe<Array<Maybe<Event>>>;
+  /** Get staking events by stashAccount, stakingEventIds, fromDate, toDate */
+  stakingEvents?: Maybe<StakingEventResult>;
   /** Get settlements where a portfolio is envolved */
   settlements?: Maybe<SettlementResult>;
   /** Get event where trustedClaimIssuer was added */
@@ -84,6 +86,15 @@ export type Query = {
   /** Get investments related to sto id */
   investments?: Maybe<InvestmentResult>;
   investmentsAggregated?: Maybe<InvestmentResult>;
+  corporateActionsWithTicker?: Maybe<CorporateActionsWithTickerResult>;
+  corporateActionsWithCAId?: Maybe<CorporateActionsWithCaIdResult>;
+  getWithholdingTaxesOfCA?: Maybe<WithholdingTaxesOfCa>;
+  getHistoryOfClaimsForCA?: Maybe<HistoryOfClaimsForCaResults>;
+  getInstructionIdsForVenue?: Maybe<InstructionIdsForVenueResults>;
+  getItnRewardRankings?: Maybe<ItnRewardRankingResult>;
+  getDidItnRewardRanking?: Maybe<Array<Maybe<ItnRewardRanking>>>;
+  getDidItnRewardActions?: Maybe<DidItnRewardActions>;
+  updateItnRewardRankings: Scalars['Boolean'];
 };
 
 export type QueryBlocksArgs = {
@@ -102,8 +113,17 @@ export type QueryBlockByHashArgs = {
 export type QueryEventsArgs = {
   moduleId: ModuleIdEnum;
   eventId: EventIdEnum;
-  fromBlock?: Maybe<Scalars['Int']>;
-  toBlock?: Maybe<Scalars['Int']>;
+  fromBlock: Scalars['Int'];
+  toBlock: Scalars['Int'];
+};
+
+export type QueryStakingEventsArgs = {
+  stashAccount?: Maybe<Scalars['String']>;
+  stakingEventIds?: Maybe<Array<Maybe<StakingEventIdEnum>>>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
 };
 
 export type QuerySettlementsArgs = {
@@ -287,6 +307,62 @@ export type QueryInvestmentsAggregatedArgs = {
   skip?: Maybe<Scalars['Int']>;
 };
 
+export type QueryCorporateActionsWithTickerArgs = {
+  identityId?: Maybe<Scalars['String']>;
+  ticker?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryCorporateActionsWithCaIdArgs = {
+  identityId?: Maybe<Scalars['String']>;
+  eventDid?: Maybe<Scalars['String']>;
+  CAId?: Maybe<CaId>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetWithholdingTaxesOfCaArgs = {
+  CAId: CaId;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+};
+
+export type QueryGetHistoryOfClaimsForCaArgs = {
+  CAId: CaId;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetInstructionIdsForVenueArgs = {
+  venueId: Scalars['String'];
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+};
+
+export type QueryGetItnRewardRankingsArgs = {
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetDidItnRewardRankingArgs = {
+  did: Scalars['String'];
+  neighborRange?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetDidItnRewardActionsArgs = {
+  did: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  groupByAction?: Maybe<Scalars['Boolean']>;
+};
+
 export type ChainInfo = {
   __typename?: 'ChainInfo';
   /** Chain information */
@@ -421,7 +497,7 @@ export enum ModuleIdEnum {
   Settlement = 'settlement',
   Sto = 'sto',
   Cddserviceproviders = 'cddserviceproviders',
-  Statistic = 'statistic',
+  Statistics = 'statistics',
   Protocolfee = 'protocolfee',
   Utility = 'utility',
   Portfolio = 'portfolio',
@@ -432,6 +508,7 @@ export enum ModuleIdEnum {
   Corporateballot = 'corporateballot',
   Capitaldistribution = 'capitaldistribution',
   Checkpoint = 'checkpoint',
+  Testnet = 'testnet',
 }
 
 export enum EventIdEnum {
@@ -508,6 +585,7 @@ export enum EventIdEnum {
   TemplateUsageFeeChanged = 'TemplateUsageFeeChanged',
   TemplateInstantiationFeeChanged = 'TemplateInstantiationFeeChanged',
   TemplateMetaUrlChanged = 'TemplateMetaUrlChanged',
+  PutCodeFlagChanged = 'PutCodeFlagChanged',
   TreasuryDisbursement = 'TreasuryDisbursement',
   TreasuryReimbursement = 'TreasuryReimbursement',
   Proposed = 'Proposed',
@@ -651,6 +729,12 @@ export enum EventIdEnum {
   VenueUnauthorized = 'VenueUnauthorized',
   FundraiserCreated = 'FundraiserCreated',
   FundsRaised = 'FundsRaised',
+  FundraiserWindowModifed = 'FundraiserWindowModifed',
+  FundraiserClosed = 'FundraiserClosed',
+  TransferManagerAdded = 'TransferManagerAdded',
+  TransferManagerRemoved = 'TransferManagerRemoved',
+  ExemptionsAdded = 'ExemptionsAdded',
+  ExemptionsRemoved = 'ExemptionsRemoved',
   FeeSet = 'FeeSet',
   CoefficientSet = 'CoefficientSet',
   FeeCharged = 'FeeCharged',
@@ -850,6 +934,7 @@ export enum CallIdEnum {
   MakeMultisigSigner = 'make_multisig_signer',
   MakeMultisigPrimary = 'make_multisig_primary',
   UpdateSchedule = 'update_schedule',
+  SetPutCodeFlag = 'set_put_code_flag',
   PutCode = 'put_code',
   Call = 'call',
   Instantiate = 'instantiate',
@@ -930,9 +1015,7 @@ export enum CallIdEnum {
   New = 'new',
   Cancel = 'cancel',
   ClaimUnclaimed = 'claim_unclaimed',
-  RegisterDid = 'register_did',
   CddRegisterDid = 'cdd_register_did',
-  MockCddRegisterDid = 'mock_cdd_register_did',
   InvalidateCddClaims = 'invalidate_cdd_claims',
   RemoveSecondaryKeys = 'remove_secondary_keys',
   SetPrimaryKey = 'set_primary_key',
@@ -951,8 +1034,6 @@ export enum CallIdEnum {
   LegacySetPermissionToSigner = 'legacy_set_permission_to_signer',
   FreezeSecondaryKeys = 'freeze_secondary_keys',
   UnfreezeSecondaryKeys = 'unfreeze_secondary_keys',
-  GetMyDid = 'get_my_did',
-  GetCddOf = 'get_cdd_of',
   AddAuthorization = 'add_authorization',
   BatchAddAuthorization = 'batch_add_authorization',
   RemoveAuthorization = 'remove_authorization',
@@ -965,6 +1046,7 @@ export enum CallIdEnum {
   AddInvestorUniquenessClaim = 'add_investor_uniqueness_claim',
   GcAddCddClaim = 'gc_add_cdd_claim',
   GcRevokeCddClaim = 'gc_revoke_cdd_claim',
+  AddInvestorUniquenessClaimV2 = 'add_investor_uniqueness_claim_v2',
   ChangeController = 'change_controller',
   ChangeAdmin = 'change_admin',
   ChangeTimelock = 'change_timelock',
@@ -1018,12 +1100,17 @@ export enum CallIdEnum {
   AllowVenues = 'allow_venues',
   DisallowVenues = 'disallow_venues',
   ExecuteScheduledInstruction = 'execute_scheduled_instruction',
+  ChangeReceiptValidity = 'change_receipt_validity',
   CreateFundraiser = 'create_fundraiser',
   Invest = 'invest',
   FreezeFundraiser = 'freeze_fundraiser',
   UnfreezeFundraiser = 'unfreeze_fundraiser',
   ModifyFundraiserWindow = 'modify_fundraiser_window',
   Stop = 'stop',
+  AddTransferManager = 'add_transfer_manager',
+  RemoveTransferManager = 'remove_transfer_manager',
+  AddExemptedEntities = 'add_exempted_entities',
+  RemoveExemptedEntities = 'remove_exempted_entities',
   ChangeCoefficient = 'change_coefficient',
   ChangeBaseFee = 'change_base_fee',
   Batch = 'batch',
@@ -1062,6 +1149,10 @@ export enum CallIdEnum {
   SetSchedulesMaxComplexity = 'set_schedules_max_complexity',
   CreateSchedule = 'create_schedule',
   RemoveSchedule = 'remove_schedule',
+  RegisterDid = 'register_did',
+  MockCddRegisterDid = 'mock_cdd_register_did',
+  GetMyDid = 'get_my_did',
+  GetCddOf = 'get_cdd_of',
   ControllerTransfer = 'controller_transfer',
   Approve = 'approve',
   TransferFrom = 'transfer_from',
@@ -1109,6 +1200,32 @@ export type Account = {
 export type AccountTransactionsArgs = {
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+};
+
+export enum StakingEventIdEnum {
+  Bonded = 'Bonded',
+  Unbonded = 'Unbonded',
+  Nominated = 'Nominated',
+  Reward = 'Reward',
+  Slash = 'Slash',
+}
+
+export type StakingEventResult = {
+  __typename?: 'StakingEventResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<StakingEvent>>>;
+};
+
+export type StakingEvent = {
+  __typename?: 'StakingEvent';
+  date?: Maybe<Scalars['DateTime']>;
+  blockId?: Maybe<Scalars['BigInt']>;
+  transactionId?: Maybe<Scalars['String']>;
+  eventId?: Maybe<StakingEventIdEnum>;
+  identityId?: Maybe<Scalars['String']>;
+  stashAccount?: Maybe<Scalars['String']>;
+  amount?: Maybe<Scalars['BigInt']>;
+  nominatedValidators?: Maybe<Array<Maybe<Scalars['String']>>>;
 };
 
 export type SettlementResult = {
@@ -1381,6 +1498,109 @@ export type Investment = {
   offeringTokenAmount: Scalars['BigInt'];
   raiseTokenAmount: Scalars['BigInt'];
 };
+
+export type CorporateActionsWithTickerResult = {
+  __typename?: 'CorporateActionsWithTickerResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<CorporateActionsWithTicker>>>;
+};
+
+export type CorporateActionsWithTicker = {
+  __typename?: 'CorporateActionsWithTicker';
+  eventId: Scalars['String'];
+  datetime: Scalars['String'];
+  identityId: Scalars['String'];
+  ticker: Scalars['String'];
+  arg1?: Maybe<Scalars['String']>;
+  arg2?: Maybe<Scalars['String']>;
+};
+
+export type CaId = {
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
+};
+
+export type CorporateActionsWithCaIdResult = {
+  __typename?: 'CorporateActionsWithCAIdResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<CorporateActionsWithCaId>>>;
+};
+
+export type CorporateActionsWithCaId = {
+  __typename?: 'CorporateActionsWithCAId';
+  eventId: Scalars['String'];
+  datetime: Scalars['String'];
+  identityId?: Maybe<Scalars['String']>;
+  eventDid?: Maybe<Scalars['String']>;
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
+  arg?: Maybe<Scalars['String']>;
+};
+
+export type WithholdingTaxesOfCa = {
+  __typename?: 'WithholdingTaxesOfCA';
+  taxes: Scalars['Float'];
+};
+
+export type HistoryOfClaimsForCaResults = {
+  __typename?: 'HistoryOfClaimsForCAResults';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<HistoryOfClaimsForCa>>>;
+};
+
+export type HistoryOfClaimsForCa = {
+  __typename?: 'HistoryOfClaimsForCA';
+  blockId: Scalars['Int'];
+  eventId: Scalars['String'];
+  eventDid: Scalars['String'];
+  datetime: Scalars['String'];
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
+  balance: Scalars['Int'];
+  tax: Scalars['Int'];
+};
+
+export type InstructionIdsForVenueResults = {
+  __typename?: 'InstructionIdsForVenueResults';
+  items?: Maybe<Array<Scalars['Int']>>;
+};
+
+export type ItnRewardRankingResult = {
+  __typename?: 'ItnRewardRankingResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<ItnRewardRanking>>>;
+};
+
+export type ItnRewardRanking = {
+  __typename?: 'ItnRewardRanking';
+  did: Scalars['String'];
+  total: Scalars['Int'];
+  rank: Scalars['Int'];
+};
+
+export type DidItnRewardActions = {
+  __typename?: 'DidItnRewardActions';
+  did: Scalars['String'];
+  total: Scalars['Int'];
+  rank: Scalars['Int'];
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<ItnRewardAction>>>;
+};
+
+export type ItnRewardAction = {
+  __typename?: 'ItnRewardAction';
+  datetime: Scalars['String'];
+  blockId: Scalars['Int'];
+  action: ItnRewardActionType;
+  points: Scalars['Int'];
+};
+
+export enum ItnRewardActionType {
+  Staking = 'Staking',
+  Onboarding = 'Onboarding',
+  PolyxTransfer = 'PolyxTransfer',
+  SecondaryKey = 'SecondaryKey',
+}
 
 export enum CacheControlScope {
   Public = 'PUBLIC',

@@ -2,7 +2,6 @@ import { bool, Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
-import { Distribution } from 'polymesh-types/types';
 
 import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entities/CorporateAction';
 import {
@@ -20,10 +19,13 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
+import { getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import { Distribution } from '~/polkadot';
 import {
   CorporateActionKind,
-  DistributionParticipant,
   DividendDistributionDetails,
+  Ensured,
   ErrorCode,
   IdentityBalance,
   TargetTreatment,
@@ -38,6 +40,8 @@ import {
   stringToIdentityId,
 } from '~/utils/conversion';
 import { createProcedureMethod, xor } from '~/utils/internal';
+
+import { DistributionParticipant } from './types';
 
 export interface DividendDistributionParams {
   origin: DefaultPortfolio | NumberedPortfolio;
@@ -278,6 +282,28 @@ export class DividendDistribution extends CorporateAction {
     return context.polymeshApi.query.capitalDistribution.distributions(
       corporateActionIdentifierToCaId({ ticker, localId: id }, context)
     );
+  }
+
+  /**
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
+   *
+   * @note uses the middleware
+   */
+  public async getWithheldTax(): Promise<BigNumber> {
+    const { id, ticker, context } = this;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
+      getWithholdingTaxesOfCa({
+        CAId: { ticker, localId: id.toNumber() },
+        fromDate: null,
+        toDate: null,
+      })
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { taxes } = result.data.getWithholdingTaxesOfCA!;
+
+    return new BigNumber(taxes);
   }
 
   /**
