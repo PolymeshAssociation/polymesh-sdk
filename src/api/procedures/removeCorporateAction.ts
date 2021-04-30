@@ -1,7 +1,6 @@
 import { QueryableStorage } from '@polkadot/api/types';
-import type { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Distribution } from 'polymesh-types/polymesh';
+import { CAId } from 'polymesh-types/polymesh';
 
 import { CorporateAction } from '~/api/entities/CorporateAction';
 import { DividendDistribution } from '~/api/entities/DividendDistribution';
@@ -40,14 +39,16 @@ const throwCorporateActionError = (): void => {
  * @hidden
  */
 const corporateActionValidations = async (
-  exists: boolean,
-  isBn: boolean,
-  distribution: Option<Distribution>,
+  rawCaId: CAId,
   query: QueryableStorage<'promise'>,
   ticker: string,
   context: Context,
   corporateAction: CorporateAction | BigNumber
 ): Promise<void> => {
+  const isBn = corporateAction instanceof BigNumber;
+  const distribution = await query.capitalDistribution.distributions(rawCaId);
+  const exists = distribution.isSome;
+
   if (!exists && !isBn) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -95,19 +96,7 @@ export async function prepareRemoveCorporateAction(
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
   if (corporateAction instanceof DividendDistribution || corporateAction instanceof BigNumber) {
-    const isBn = corporateAction instanceof BigNumber;
-    const distribution = await query.capitalDistribution.distributions(rawCaId);
-    const exists = distribution.isSome;
-
-    await corporateActionValidations(
-      exists,
-      isBn,
-      distribution,
-      query,
-      ticker,
-      context,
-      corporateAction
-    );
+    await corporateActionValidations(rawCaId, query, ticker, context, corporateAction);
   } else {
     const exists = await corporateAction.exists();
 
