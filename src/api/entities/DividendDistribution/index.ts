@@ -349,10 +349,10 @@ export class DividendDistribution extends CorporateAction {
 
         data.push({
           blockNumber: new BigNumber(blockId),
-          date: new Date(datetime),
+          date: new Date(`${datetime}Z`),
           target: new Identity({ did }, context),
-          claimedAmount: new BigNumber(balance),
-          taxWithheld: new BigNumber(tax),
+          amount: new BigNumber(balance),
+          withheldTax: new BigNumber(tax),
         });
       });
 

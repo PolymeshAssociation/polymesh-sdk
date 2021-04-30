@@ -930,8 +930,8 @@ export interface DistributionPayment {
   blockNumber: BigNumber;
   date: Date;
   target: Identity;
-  claimedAmount: BigNumber;
-  taxWithheld: BigNumber;
+  amount: BigNumber;
+  withheldTax: BigNumber;
 }
 
 export { TxTags, TxTag };

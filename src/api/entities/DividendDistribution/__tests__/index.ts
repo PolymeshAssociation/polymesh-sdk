@@ -392,10 +392,10 @@ describe('DividendDistribution class', () => {
       expect(result.data).toEqual([
         {
           blockNumber: blockId,
-          date: new Date(datetime),
+          date: new Date(`${datetime}Z`),
           target: entityMockUtils.getIdentityInstance({ did: eventDid }),
-          claimedAmount: balance,
-          taxWithheld: tax,
+          amount: balance,
+          withheldTax: tax,
         },
       ]);
 
