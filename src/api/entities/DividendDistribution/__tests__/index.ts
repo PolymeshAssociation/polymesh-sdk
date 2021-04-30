@@ -10,6 +10,7 @@ import {
   Entity,
   TransactionQueue,
 } from '~/internal';
+import { getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
 
@@ -237,6 +238,99 @@ describe('DividendDistribution class', () => {
       const queue = await dividendDistribution.modifyCheckpoint(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getWithheldTax', () => {
+    test('should return the amount of the withheld tax', async () => {
+      const fakeTax = new BigNumber(100);
+
+      dsMockUtils.createApolloQueryStub(
+        getWithholdingTaxesOfCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+        }),
+        {
+          getWithholdingTaxesOfCA: {
+            taxes: fakeTax.toNumber(),
+          },
+        }
+      );
+
+      const result = await dividendDistribution.getWithheldTax();
+
+      expect(result).toEqual(fakeTax);
+    });
+  });
+
+  describe('method: getParticipants', () => {
+    test('should return the distribution participants', async () => {
+      const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
+      dividendDistribution.targets = {
+        identities: [excluded],
+        treatment: TargetTreatment.Exclude,
+      };
+      sinon
+        .stub(dividendDistribution, 'checkpoint')
+        .resolves(entityMockUtils.getCheckpointInstance());
+      const allBalancesStub = entityMockUtils.getCheckpointAllBalancesStub();
+
+      const balances = [
+        {
+          identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+          balance: new BigNumber(10000),
+        },
+        {
+          identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+          balance: new BigNumber(0),
+        },
+        {
+          identity: excluded,
+          balance: new BigNumber(20000),
+        },
+      ];
+
+      allBalancesStub.onFirstCall().resolves({ data: balances, next: 'notNull' });
+      allBalancesStub.onSecondCall().resolves({ data: [], next: null });
+
+      dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+        multi: [dsMockUtils.createMockBool(true)],
+      });
+
+      let result = await dividendDistribution.getParticipants();
+
+      expect(result).toEqual([
+        {
+          identity: balances[0].identity,
+          amount: balances[0].balance.multipliedBy(dividendDistribution.perShare),
+          paid: true,
+        },
+      ]);
+
+      dividendDistribution.paymentDate = new Date('10/14/1987');
+
+      allBalancesStub.onThirdCall().resolves({ data: balances, next: null });
+
+      result = await dividendDistribution.getParticipants();
+
+      expect(result).toEqual([
+        {
+          identity: balances[0].identity,
+          amount: balances[0].balance.multipliedBy(dividendDistribution.perShare),
+          paid: false,
+        },
+      ]);
+    });
+
+    test("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
+      sinon
+        .stub(dividendDistribution, 'checkpoint')
+        .resolves(entityMockUtils.getCheckpointScheduleInstance());
+
+      const result = await dividendDistribution.getParticipants();
+
+      expect(result).toEqual([]);
     });
   });
 
