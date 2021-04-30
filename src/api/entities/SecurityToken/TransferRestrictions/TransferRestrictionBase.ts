@@ -16,8 +16,9 @@ import {
   ActiveTransferRestrictions,
   CountTransferRestriction,
   PercentageTransferRestriction,
+  TransferRestrictionType,
 } from '~/types';
-import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
+import { ProcedureMethod } from '~/types/internal';
 import {
   scopeIdToString,
   stringToTicker,

@@ -474,6 +474,9 @@ export enum ErrorCode {
   DataUnavailable = 'DataUnavailable',
 }
 
+/**
+ * ERC1400 compliant transfer status
+ */
 export enum TransferStatus {
   Failure = 'Failure', // 80
   Success = 'Success', // 81
@@ -496,6 +499,75 @@ export enum TransferStatus {
   CustodianError = 'CustodianError', // 170
   ScopeClaimMissing = 'ScopeClaimMissing', // 171
   TransferRestrictionFailure = 'TransferRestrictionFailure', // 172
+}
+
+/**
+ * Akin to TransferStatus, these are a bit more granular and specific. Every TransferError translates to
+ *   a [[TransferStatus]], but two or more TransferErrors can represent the same TransferStatus, and
+ *   not all Transfer Statuses are represented by a TransferError
+ */
+export enum TransferError {
+  /**
+   * translates to TransferStatus.InvalidGranularity
+   *
+   * occurs if attempting to transfer decimal amounts of a non-divisible token
+   */
+  InvalidGranularity = 'InvalidGranularity',
+  /**
+   * translates to TransferStatus.InvalidReceiverIdentity
+   *
+   * occurs if the origin and destination Identities are the same
+   */
+  SelfTransfer = 'SelfTransfer',
+  /**
+   * translates to TransferStatus.InvalidReceiverIdentity
+   *
+   * occurs if the receiver Identity doesn't have a valid CDD claim
+   */
+  InvalidReceiverCdd = 'InvalidReceiverCdd',
+  /**
+   * translates to TransferStatus.InvalidSenderIdentity
+   *
+   * occurs if the receiver Identity doesn't have a valid CDD claim
+   */
+  InvalidSenderCdd = 'InvalidSenderCdd',
+  /**
+   * translates to TransferStatus.ScopeClaimMissing
+   *
+   * occurs if one of the participants doesn't have a valid Investor Uniqueness Claim for
+   *   the Security Token
+   */
+  ScopeClaimMissing = 'ScopeClaimMissing',
+  /**
+   * translates to TransferStatus.InsufficientBalance
+   *
+   * occurs if the sender Identity does not have enough balance to cover the amount
+   */
+  InsufficientBalance = 'InsufficientBalance',
+  /**
+   * translates to TransferStatus.TransfersHalted
+   *
+   * occurs if the Security Token's transfers are frozen
+   */
+  TransfersFrozen = 'TransfersFrozen',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the sender Portfolio doesn't exist
+   */
+  InvalidSenderPortfolio = 'InvalidSenderPortfolio',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the receiver Portfolio doesn't exist
+   */
+  InvalidReceiverPortfolio = 'InvalidReceiverPortfolio',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the sender Portfolio does not have enough balance to cover the amount
+   */
+  InsufficientPortfolioBalance = 'InsufficientPortfolioBalance',
 }
 
 export interface ClaimTarget {
@@ -737,6 +809,18 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim,
    */
   CorporateActionsManagement = 'CorporateActionsManagement',
+  /**
+   * - TxTags.sto.CreateFundraiser,
+   * - TxTags.sto.FreezeFundraiser,
+   * - TxTags.sto.Invest,
+   * - TxTags.sto.ModifyFundraiserWindow,
+   * - TxTags.sto.Stop,
+   * - TxTags.sto.UnfreezeFundraiser,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   * - TxTags.asset.Issue,
+   * - TxTags.settlement.CreateVenue
+   */
+  StoManagement = 'StoManagement',
 }
 
 /**
@@ -802,6 +886,16 @@ export interface ActiveTransferRestrictions<
    * amount of restrictions that can be added before reaching the shared limit
    */
   availableSlots: number;
+}
+
+export enum TransferRestrictionType {
+  Count = 'Count',
+  Percentage = 'Percentage',
+}
+
+export interface TransferRestriction {
+  type: TransferRestrictionType;
+  value: BigNumber;
 }
 
 export enum CalendarUnit {

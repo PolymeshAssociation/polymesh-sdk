@@ -266,19 +266,6 @@ describe('DividendDistribution class', () => {
 
       expect(result).toEqual(fakeTax);
     });
-
-    test('should return 0 if the query result is empty', async () => {
-      dsMockUtils.createApolloQueryStub(
-        getWithholdingTaxesOfCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-        }),
-        {}
-      );
-      const result = await dividendDistribution.getWithheldTax();
-      expect(result).toEqual(new BigNumber(0));
-    });
   });
 
   describe('method: getParticipants', () => {

@@ -288,7 +288,7 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
-   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution. Optionally, `from` and `to` dates can be passed to retrieve the amount of taxes withheld during a specific period
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
    *
    * @note uses the middleware
    */
@@ -303,9 +303,10 @@ export class DividendDistribution extends CorporateAction {
       })
     );
 
-    const withholdingTaxesOfCA = result.data.getWithholdingTaxesOfCA;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { taxes } = result.data.getWithholdingTaxesOfCA!;
 
-    return new BigNumber(withholdingTaxesOfCA ? withholdingTaxesOfCA.taxes : 0);
+    return new BigNumber(taxes);
   }
 
   /**

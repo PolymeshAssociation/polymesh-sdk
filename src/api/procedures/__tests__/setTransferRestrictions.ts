@@ -14,8 +14,13 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TickerReservationStatus } from '~/types';
-import { PolymeshTx, TransferRestriction, TransferRestrictionType } from '~/types/internal';
+import {
+  RoleType,
+  TickerReservationStatus,
+  TransferRestriction,
+  TransferRestrictionType,
+} from '~/types';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
