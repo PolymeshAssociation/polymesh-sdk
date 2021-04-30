@@ -53,7 +53,7 @@ export class CurrentAccount extends Account {
    * Check if this Account possesses certain Permissions for its corresponding Identity
    */
   public async hasPermissions(permissions: PermissionsLike): Promise<boolean> {
-    const { tokens, transactions, portfolios } = permissionsLikeToPermissions(
+    const { tokens, transactions, portfolios, transactionGroups } = permissionsLikeToPermissions(
       permissions,
       this.context
     );
@@ -62,6 +62,7 @@ export class CurrentAccount extends Account {
       tokens: currentTokens,
       transactions: currentTransactions,
       portfolios: currentPortfolios,
+      transactionGroups: currentTransactionGroups
     } = await this.getPermissions();
 
     let hasTokens;
@@ -71,6 +72,15 @@ export class CurrentAccount extends Account {
       hasTokens = false;
     } else {
       hasTokens = tokens.length === 0 || !differenceBy(tokens, currentTokens, 'ticker').length;
+    }
+
+    let hasTransactionGroups: boolean;
+    if(currentTransactionGroups === null) {
+      hasTransactionGroups = true;
+    } else if (transactionGroups === null ) {
+      hasTransactionGroups = false;
+    } else {
+      hasTransactionGroups = transactionGroups.length === 0 || !difference(transactionGroups, currentTransactionGroups).length
     }
 
     // these transactions are allowed to any account, independent of permissions
@@ -111,6 +121,6 @@ export class CurrentAccount extends Account {
         }).length;
     }
 
-    return hasTokens && hasTransactions && hasPortfolios;
+    return hasTokens && hasTransactions && hasPortfolios && hasTransactionGroups;
   }
 }
