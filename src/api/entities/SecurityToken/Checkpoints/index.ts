@@ -1,4 +1,6 @@
-import { Moment } from 'polymesh-types/types';
+import { Balance } from '@polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
+import { CheckpointId, Moment, Ticker } from 'polymesh-types/types';
 
 import { Checkpoint, Context, createCheckpoint, Namespace, SecurityToken } from '~/internal';
 import { CheckpointWithData, PaginationOptions, ResultSet } from '~/types';
@@ -65,21 +67,31 @@ export class Checkpoints extends Namespace<SecurityToken> {
       paginationOpts,
     });
 
-    const checkpoints = entries.map(([{ args: [, id] }, balance]) => ({
-      tuple: tuple(id, rawTicker),
-      id,
-      balance,
-    }));
+    const checkpointsMultiParams: [CheckpointId, Ticker][] = [];
+    const checkpoints: { checkpoint: Checkpoint; totalSupply: BigNumber }[] = [];
 
-    const timestamps = await query.checkpoint.timestamps.multi<Moment>(
-      checkpoints.map(({ tuple: rawTuple }) => rawTuple)
+    entries.forEach(
+      ([
+        {
+          args: [, id],
+        },
+        balance,
+      ]) => {
+        checkpointsMultiParams.push(tuple(id, rawTicker));
+        checkpoints.push({
+          checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
+          totalSupply: balanceToBigNumber(balance),
+        });
+      }
     );
 
+    const timestamps = await query.checkpoint.timestamps.multi<Moment>(checkpointsMultiParams);
+
     const data = timestamps.map((moment, i) => {
-      const { id, balance } = checkpoints[i];
+      const { totalSupply, checkpoint } = checkpoints[i];
       return {
-        checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
-        totalSupply: balanceToBigNumber(balance),
+        checkpoint,
+        totalSupply,
         createdAt: momentToDate(moment),
       };
     });

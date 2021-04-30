@@ -88,15 +88,17 @@ describe('Checkpoints class', () => {
 
       const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
 
+      const fakeTicker = 'FAKETICKER';
+
       const totalSupply = [
         {
-          ticker: 'FAKETICKER',
+          ticker: fakeTicker,
           checkpointId: new BigNumber(1),
           balance: new BigNumber(100),
           moment: new Date('10/10/2020'),
         },
         {
-          ticker: 'OTHERTICKER',
+          ticker: fakeTicker,
           checkpointId: new BigNumber(2),
           balance: new BigNumber(1000),
           moment: new Date('11/11/2020'),
