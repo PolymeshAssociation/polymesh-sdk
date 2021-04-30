@@ -118,6 +118,7 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -577,6 +578,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getVenues: [],
   getScopeId: 'someScopeId',
   getTokenBalance: new BigNumber(100),
+  areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -589,6 +591,7 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  areScondaryKeysFrozen: false,
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {

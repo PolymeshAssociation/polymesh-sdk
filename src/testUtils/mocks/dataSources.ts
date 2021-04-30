@@ -268,6 +268,7 @@ interface ContextOptions {
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
   ss58Format?: number;
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface Pair {
@@ -543,6 +544,7 @@ const defaultContextOptions: ContextOptions = {
   },
   isArchiveNode: true,
   ss58Format: 42,
+  areScondaryKeysFrozen: false,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -569,6 +571,7 @@ function configureContext(opts: ContextOptions): void {
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
+    areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
   };
   opts.withSeed
     ? getCurrentIdentity.resolves(identity)
@@ -627,6 +630,7 @@ function configureContext(opts: ContextOptions): void {
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
+    areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

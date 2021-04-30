@@ -10,6 +10,7 @@ import {
   ModifySignerPermissionsParams,
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
+  toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
@@ -59,6 +60,14 @@ export class CurrentIdentity extends Identity {
     );
     this.createVenue = createProcedureMethod(
       { getProcedureAndArgs: args => [createVenue, args] },
+      context
+    );
+    this.freezeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true }] },
+      context
+    );
+    this.unfreezeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false }] },
       context
     );
   }
@@ -122,4 +131,14 @@ export class CurrentIdentity extends Identity {
    * Create a Venue
    */
   public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
+
+  /**
+   * Freeze all the seconday keys
+   */
+  public freezeSecondaryKeys: ProcedureMethod<void, void>;
+
+  /**
+   * Unfreeze all the seconday keys
+   */
+  public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
 }

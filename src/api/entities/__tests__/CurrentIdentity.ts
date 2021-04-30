@@ -195,4 +195,48 @@ describe('CurrentIdentity class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: freezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const args = {
+        freeze: true,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.freezeSecondaryKeys();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unfreezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const args = {
+        freeze: false,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.unfreezeSecondaryKeys();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 });
