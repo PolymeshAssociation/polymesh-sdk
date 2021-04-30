@@ -1,4 +1,3 @@
-import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { CheckpointId, Moment, Ticker } from 'polymesh-types/types';
 
