@@ -1,8 +1,11 @@
+import { QueryableStorage } from '@polkadot/api/types';
+import type { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { Distribution } from 'polymesh-types/polymesh';
 
 import { CorporateAction } from '~/api/entities/CorporateAction';
 import { DividendDistribution } from '~/api/entities/DividendDistribution';
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Context, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -36,6 +39,46 @@ const throwCorporateActionError = (): void => {
 /**
  * @hidden
  */
+const corporateActionValidations = async (
+  exists: boolean,
+  isBn: boolean,
+  distribution: Option<Distribution>,
+  query: QueryableStorage<'promise'>,
+  ticker: string,
+  context: Context,
+  corporateAction: CorporateAction | BigNumber
+): Promise<void> => {
+  if (!exists && !isBn) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The Distribution doesn't exist",
+    });
+  }
+
+  if (!isBn) {
+    const { payment_at: rawPaymentAt } = distribution.unwrap();
+
+    if (momentToDate(rawPaymentAt) < new Date()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The Distribution has already started',
+      });
+    }
+  } else {
+    const CA = await query.corporateAction.corporateActions(
+      stringToTicker(ticker, context),
+      numberToU32(corporateAction as BigNumber, context)
+    );
+
+    if (CA.isEmpty) {
+      throwCorporateActionError();
+    }
+  }
+};
+
+/**
+ * @hidden
+ */
 export async function prepareRemoveCorporateAction(
   this: Procedure<Params, void>,
   args: Params
@@ -56,32 +99,15 @@ export async function prepareRemoveCorporateAction(
     const distribution = await query.capitalDistribution.distributions(rawCaId);
     const exists = distribution.isSome;
 
-    if (!exists && !isBn) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Distribution doesn't exist",
-      });
-    }
-
-    if (!isBn) {
-      const { payment_at: rawPaymentAt } = distribution.unwrap();
-
-      if (momentToDate(rawPaymentAt) < new Date()) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The Distribution has already started',
-        });
-      }
-    } else {
-      const CA = await query.corporateAction.corporateActions(
-        stringToTicker(ticker, context),
-        numberToU32(corporateAction as BigNumber, context)
-      );
-
-      if (CA.isEmpty) {
-        throwCorporateActionError();
-      }
-    }
+    await corporateActionValidations(
+      exists,
+      isBn,
+      distribution,
+      query,
+      ticker,
+      context,
+      corporateAction
+    );
   } else {
     const exists = await corporateAction.exists();
 
