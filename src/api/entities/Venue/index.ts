@@ -9,6 +9,8 @@ import {
   Entity,
   Identity,
   Instruction,
+  modifyVenue,
+  ModifyVenueParams,
   PolymeshError,
 } from '~/internal';
 import { ErrorCode, InstructionStatus } from '~/types';
@@ -74,6 +76,11 @@ export class Venue extends Entity<UniqueIdentifiers> {
 
     this.addInstructions = createProcedureMethod(
       { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: id }] },
+      context
+    );
+
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyVenue, { ...args, venueId: id }] },
       context
     );
   }
@@ -201,4 +208,12 @@ export class Venue extends Entity<UniqueIdentifiers> {
    *   - Venue Owner
    */
   public addInstructions: ProcedureMethod<AddInstructionsParams, Instruction[]>;
+
+  /**
+   * Modify details and type
+   *
+   * @note required role:
+   *   - Venue Owner
+   */
+  public modify: ProcedureMethod<ModifyVenueParams, void>;
 }
