@@ -38,7 +38,7 @@ const throwCorporateActionError = (): void => {
 /**
  * @hidden
  */
-const corporateActionValidations = async (
+const assertCaIsRemovable = async (
   rawCaId: CAId,
   query: QueryableStorage<'promise'>,
   ticker: string,
@@ -96,7 +96,7 @@ export async function prepareRemoveCorporateAction(
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
   if (corporateAction instanceof DividendDistribution || corporateAction instanceof BigNumber) {
-    await corporateActionValidations(rawCaId, query, ticker, context, corporateAction);
+    await assertCaIsRemovable(rawCaId, query, ticker, context, corporateAction);
   } else {
     const exists = await corporateAction.exists();
 
