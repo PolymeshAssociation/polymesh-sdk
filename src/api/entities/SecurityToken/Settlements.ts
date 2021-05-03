@@ -91,7 +91,9 @@ export class Settlements extends Namespace<SecurityToken> {
   }
 
   /**
-   * Check whether it is possible to create a settlement instruction to transfer a certain amount of this asset between two Portfolios. Returns a list of
+   * Check whether it is possible to create a settlement instruction to transfer a certain amount of this asset between two Portfolios. Returns a breakdown of
+   *   the transaction containing general errors (such as insufficient balance or invalid receiver), any broken transfer restrictions, and any compliance
+   *   failures
    *
    * @note this takes locked tokens into account. For example, if portfolio A has 1000 tokens and this function is called to check if 700 of them can be
    *   transferred to portfolio B (assuming everything else checks out) the result will be success. If an instruction is created and authorized to transfer those 700 tokens,
