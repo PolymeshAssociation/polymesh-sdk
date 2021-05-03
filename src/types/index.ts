@@ -550,7 +550,7 @@ export interface Permissions {
    *   means having permissions over every TxTag in said group. Transaction permissions are the result of
    *   combining these with the `transactions` array. If `transactions` is null, then this value is redundant
    */
-  transactionGroups: TxGroup[];
+  transactionGroups: TxGroup[] | null;
   /* list of Portfolios over which this key has permissions */
   portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }

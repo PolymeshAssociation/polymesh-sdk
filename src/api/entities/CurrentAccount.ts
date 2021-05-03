@@ -38,7 +38,7 @@ export class CurrentAccount extends Account {
       return {
         tokens: null,
         transactions: null,
-        transactionGroups: [],
+        transactionGroups: null,
         portfolios: null,
       };
     }
