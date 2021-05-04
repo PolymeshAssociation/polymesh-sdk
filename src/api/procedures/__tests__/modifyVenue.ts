@@ -71,7 +71,7 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied type is the same as current one', () => {
+  test('should throw an error if the supplied type is the same as the current one', () => {
     const type = VenueType.Exchange;
 
     const args = {
