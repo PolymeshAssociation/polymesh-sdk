@@ -48,7 +48,7 @@ describe('modifyVenue procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied detail is the same as current one', () => {
+  test('should throw an error if the supplied description is the same as the current one', () => {
     const details = 'someDetails';
 
     const args = {
