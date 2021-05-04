@@ -303,21 +303,21 @@ describe('Venue class', () => {
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
-      const details = 'someDetails';
+      const description = 'someDetails';
       const type = VenueType.Other;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs(
           {
-            args: { venueId: id, details, type },
+            args: { venueId: id, description, type },
             transformer: undefined,
           },
           context
         )
         .resolves(expectedQueue);
 
-      const queue = await venue.modify({ details, type });
+      const queue = await venue.modify({ description, type });
 
       expect(queue).toBe(expectedQueue);
     });
