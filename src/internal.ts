@@ -156,6 +156,10 @@ export { modifyCaCheckpoint, ModifyCaCheckpointParams } from '~/api/procedures/m
 export { payDividends, PayDividendsParams } from '~/api/procedures/payDividends';
 export { modifyCaDefaults, ModifyCaDefaultsParams } from '~/api/procedures/modifyCaDefaults';
 export {
+  removeCorporateAction,
+  RemoveCorporateActionParams,
+} from '~/api/procedures/removeCorporateAction';
+export {
   modifyDistributionCheckpoint,
   ModifyDistributionCheckpointParams,
 } from '~/api/procedures/modifyDistributionCheckpoint';
