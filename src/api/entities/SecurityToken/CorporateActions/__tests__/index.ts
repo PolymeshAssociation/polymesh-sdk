@@ -131,6 +131,25 @@ describe('CorporateActions class', () => {
     });
   });
 
+  describe('method: remove', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const corporateAction = new BigNumber(100);
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          { args: { corporateAction, ticker: 'SOME_TICKER' }, transformer: undefined },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await corporateActions.remove({ corporateAction });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: getAgent', () => {
     test("should retrieve the Security Token's Corporate Actions agent", async () => {
       const did = 'someDid';
