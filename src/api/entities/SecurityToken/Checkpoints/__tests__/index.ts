@@ -105,13 +105,12 @@ describe('Checkpoints class', () => {
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
       const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
-        ticker: rawTicker,
         checkpointId: dsMockUtils.createMockU64(checkpointId.toNumber()),
         balance: dsMockUtils.createMockBalance(balance.toNumber()),
       }));
 
-      const totalSupplyEntries = rawTotalSupply.map(({ ticker: t, checkpointId, balance }) =>
-        tuple(({ args: [t, checkpointId] } as unknown) as StorageKey, balance)
+      const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
+        tuple(({ args: [rawTicker, checkpointId] } as unknown) as StorageKey, balance)
       );
 
       requestPaginatedStub.resolves({ entries: totalSupplyEntries, lastKey: null });
