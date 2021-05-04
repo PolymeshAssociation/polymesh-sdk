@@ -109,6 +109,7 @@ import {
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
+  Event as MiddlewareEvent,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
@@ -134,6 +135,7 @@ import {
   CorporateActionTargets,
   DividendDistributionParams,
   ErrorCode,
+  EventIdentifier,
   IdentityCondition,
   IdentityWithClaims,
   InstructionStatus,
@@ -1562,6 +1564,20 @@ export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
   }
+}
+
+/**
+ * @hidden
+ */
+export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventIdentifier {
+  const { block_id: blockNumber, block, event_idx: eventIndex } = event;
+
+  return {
+    blockNumber: new BigNumber(blockNumber),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    blockDate: new Date(block!.datetime),
+    eventIndex,
+  };
 }
 
 /**

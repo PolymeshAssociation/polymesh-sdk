@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import {
@@ -31,11 +30,12 @@ import {
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
+  middlewareEventToEventIdentifier,
   stringToTicker,
   tickerToDid,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, padString } from '~/utils/internal';
+import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
 import { Checkpoints } from './Checkpoints';
 import { Compliance } from './Compliance';
@@ -310,7 +310,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
@@ -318,17 +320,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       })
     );
 
-    if (result.data.eventByIndexedArgs) {
-      // TODO remove null check once types fixed
-      return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        blockDate: result.data.eventByIndexedArgs.block!.datetime,
-        eventIndex: result.data.eventByIndexedArgs.event_idx,
-      };
-    }
-
-    return null;
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**
