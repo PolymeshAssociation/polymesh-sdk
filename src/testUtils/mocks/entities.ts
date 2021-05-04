@@ -237,6 +237,7 @@ interface CorporateActionOptions {
   targets?: CorporateActionTargets;
   defaultTaxWithholding?: BigNumber;
   taxWithholdings?: TaxWithholding[];
+  exists?: boolean;
 }
 
 interface DividendDistributionOptions {
@@ -326,6 +327,7 @@ let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
 let checkpointAllBalancesStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
+let corporateActionExistsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
 
@@ -773,6 +775,7 @@ const defaultCorporateActionOptions: CorporateActionOptions = {
   },
   defaultTaxWithholding: new BigNumber(10),
   taxWithholdings: [],
+  exists: true,
 };
 let corporateActionOptions = defaultCorporateActionOptions;
 const defaultDividendDistributionOptions: DividendDistributionOptions = {
@@ -1464,6 +1467,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
     targets: opts.targets,
     defaultTaxWithholding: opts.defaultTaxWithholding,
     taxWithholdings: opts.taxWithholdings,
+    exists: corporateActionExistsStub.resolves(opts.exists),
   } as unknown) as MockCorporateAction;
 
   Object.assign(mockInstanceContainer.corporateAction, corporateAction);
@@ -1480,6 +1484,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
  */
 function initCorporateAction(opts?: CorporateActionOptions): void {
   corporateActionConstructorStub = sinon.stub();
+  corporateActionExistsStub = sinon.stub();
 
   corporateActionOptions = merge({}, defaultCorporateActionOptions, opts);
 
@@ -2493,4 +2498,15 @@ export function getDividendDistributionInstance(
  */
 export function getDividendDistributionConstructorStub(): SinonStub {
   return dividendDistributionConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CorporateAction.exists` method
+ */
+export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return corporateActionExistsStub.resolves(exists);
+  }
+  return corporateActionExistsStub;
 }
