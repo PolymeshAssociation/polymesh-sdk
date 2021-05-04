@@ -630,7 +630,6 @@ function configureContext(opts: ContextOptions): void {
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
-    areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);

@@ -203,6 +203,7 @@ describe('CurrentIdentity class', () => {
 
       const args = {
         freeze: true,
+        identity,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
@@ -225,6 +226,7 @@ describe('CurrentIdentity class', () => {
 
       const args = {
         freeze: false,
+        identity,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;

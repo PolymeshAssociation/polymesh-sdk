@@ -1,9 +1,10 @@
-import { PolymeshError, Procedure } from '~/internal';
+import { CurrentIdentity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 
 export interface ToggleFreezeSecondaryKeysParams {
   freeze: boolean;
+  identity: CurrentIdentity;
 }
 
 /**
@@ -19,11 +20,9 @@ export async function prepareToggleFreezeSecondaryKeys(
         tx: { identity: identityTx },
       },
     },
-    context,
   } = this;
-  const { freeze } = args;
+  const { freeze, identity } = args;
 
-  const identity = await context.getCurrentIdentity();
   const areSecondaryKeysFrozen = await identity.areSecondaryKeysFrozen();
 
   if (freeze) {

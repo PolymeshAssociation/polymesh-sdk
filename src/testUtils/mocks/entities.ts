@@ -301,6 +301,7 @@ let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
 let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetScopeIdStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
+let currentIdentityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -1218,6 +1219,9 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     },
     getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
+    areSecondaryKeysFrozen: currentIdentityAreSecondaryKeysFrozenStub.resolves(
+      opts.areScondaryKeysFrozen
+    ),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -1245,6 +1249,7 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetScopeIdStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
+  currentIdentityAreSecondaryKeysFrozenStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
