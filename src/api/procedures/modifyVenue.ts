@@ -1,22 +1,22 @@
 import BigNumber from 'bignumber.js';
 
-import { Venue } from '~/api/entities/Venue';
-import { PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToVenueDetails, venueTypeToMeshVenueType } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export type ModifyVenueParams =
   | {
-      details?: string;
+      description?: string;
       type: VenueType;
     }
   | {
-      details: string;
+      description: string;
       type?: VenueType;
     }
   | {
-      details: string;
+      description: string;
       type: VenueType;
     };
 
@@ -39,23 +39,23 @@ export async function prepareModifyVenue(
     context,
   } = this;
 
-  const { venueId, details, type } = args;
+  const { venueId, description, type } = args;
 
   const venue = new Venue({ id: venueId }, context);
 
-  const { description, type: currentType } = await venue.details();
+  const { description: currentDescription, type: currentType } = await venue.details();
 
-  if (details && description === details) {
+  if (currentDescription === description) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'New detail is the same as current one',
+      message: 'New description is the same as the current one',
     });
   }
 
-  if (type && currentType === type) {
+  if (currentType === type) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'New type is the same as current one',
+      message: 'New type is the same as the current one',
     });
   }
 
@@ -63,8 +63,8 @@ export async function prepareModifyVenue(
     tx.settlement.updateVenue,
     {},
     numberToU64(venueId, context),
-    details ? stringToVenueDetails(details, context) : null,
-    type ? venueTypeToMeshVenueType(type, context) : null
+    optionize(stringToVenueDetails)(description, context),
+    optionize(venueTypeToMeshVenueType)(type, context)
   );
 }
 

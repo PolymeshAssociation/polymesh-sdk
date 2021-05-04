@@ -210,7 +210,7 @@ export class Venue extends Entity<UniqueIdentifiers> {
   public addInstructions: ProcedureMethod<AddInstructionsParams, Instruction[]>;
 
   /**
-   * Modify details and type
+   * Modify description and type
    *
    * @note required role:
    *   - Venue Owner

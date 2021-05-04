@@ -27,11 +27,7 @@ describe('modifyVenue procedure', () => {
   });
 
   beforeEach(() => {
-    entityMockUtils.configureMocks({
-      securityTokenOptions: {
-        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'agentDid' }),
-      },
-    });
+    entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
@@ -49,17 +45,17 @@ describe('modifyVenue procedure', () => {
   });
 
   test('should throw an error if the supplied description is the same as the current one', () => {
-    const details = 'someDetails';
+    const description = 'someDetails';
 
     const args = {
       venueId,
-      details,
+      description,
     };
 
     entityMockUtils.configureMocks({
       venueOptions: {
         details: {
-          description: details,
+          description,
         },
       },
     });
@@ -67,7 +63,7 @@ describe('modifyVenue procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyVenue.call(proc, args)).rejects.toThrow(
-      'New detail is the same as current one'
+      'New description is the same as the current one'
     );
   });
 
@@ -82,6 +78,7 @@ describe('modifyVenue procedure', () => {
     entityMockUtils.configureMocks({
       venueOptions: {
         details: {
+          description: 'someDescription',
           type,
         },
       },
@@ -90,21 +87,21 @@ describe('modifyVenue procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyVenue.call(proc, args)).rejects.toThrow(
-      'New type is the same as current one'
+      'New type is the same as the current one'
     );
   });
 
   test('should add an update venue transaction to the queue', async () => {
-    const details = 'someDetails';
+    const description = 'someDetails';
     const type = VenueType.Exchange;
 
-    const rawDetails = dsMockUtils.createMockVenueDetails(details);
+    const rawDetails = dsMockUtils.createMockVenueDetails(description);
     const rawType = dsMockUtils.createMockVenueType(type);
     const rawId = dsMockUtils.createMockU64(venueId.toNumber());
 
     const args = {
       venueId,
-      details,
+      description,
       type,
     };
 
@@ -128,7 +125,7 @@ describe('modifyVenue procedure', () => {
 
     await prepareModifyVenue.call(proc, {
       venueId,
-      details,
+      description,
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawId, rawDetails, null);
