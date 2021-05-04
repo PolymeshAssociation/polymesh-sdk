@@ -27,6 +27,7 @@ jest.mock(
 
 describe('Checkpoints class', () => {
   const ticker = 'SOME_TICKER';
+  const rawTicker = dsMockUtils.createMockTicker(ticker);
 
   let checkpoints: Checkpoints;
   let context: Context;
@@ -88,36 +89,29 @@ describe('Checkpoints class', () => {
 
       const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
 
-      const fakeTicker = 'FAKETICKER';
-
       const totalSupply = [
         {
-          ticker: fakeTicker,
           checkpointId: new BigNumber(1),
           balance: new BigNumber(100),
           moment: new Date('10/10/2020'),
         },
         {
-          ticker: fakeTicker,
           checkpointId: new BigNumber(2),
           balance: new BigNumber(1000),
           moment: new Date('11/11/2020'),
         },
       ];
 
-      totalSupply.forEach(({ ticker: t }) =>
-        stringToTickerStub.withArgs(t, context).returns(dsMockUtils.createMockTicker(t))
-      );
+      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
-      const rawTotalSupply = totalSupply.map(({ ticker: t, checkpointId, balance }) => ({
-        ticker: dsMockUtils.createMockTicker(t),
+      const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
+        ticker: rawTicker,
         checkpointId: dsMockUtils.createMockU64(checkpointId.toNumber()),
         balance: dsMockUtils.createMockBalance(balance.toNumber()),
       }));
 
-      const totalSupplyEntries = rawTotalSupply.map(
-        ({ ticker: rawTicker, checkpointId, balance }) =>
-          tuple(({ args: [rawTicker, checkpointId] } as unknown) as StorageKey, balance)
+      const totalSupplyEntries = rawTotalSupply.map(({ ticker: t, checkpointId, balance }) =>
+        tuple(({ args: [t, checkpointId] } as unknown) as StorageKey, balance)
       );
 
       requestPaginatedStub.resolves({ entries: totalSupplyEntries, lastKey: null });
