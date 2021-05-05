@@ -4,7 +4,8 @@ import { Context } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import { Ensured, EventIdentifier, ExtrinsicData } from '~/types';
-import { extrinsicIdentifierToTxTag } from '~/utils/conversion';
+import { extrinsicIdentifierToTxTag, middlewareEventToEventIdentifier } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 /**
  * Handles all Middleware related functionality
@@ -41,7 +42,9 @@ export class Middleware {
 
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2 } = opts;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
         moduleId,
         eventId,
@@ -51,17 +54,7 @@ export class Middleware {
       })
     );
 
-    if (result.data.eventByIndexedArgs) {
-      /* eslint-disable @typescript-eslint/no-non-null-assertion */
-      return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
-        blockDate: result.data.eventByIndexedArgs.block!.datetime,
-        eventIndex: result.data.eventByIndexedArgs.event_idx,
-      };
-      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
-    }
-
-    return null;
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**
@@ -107,13 +100,8 @@ export class Middleware {
     } = result;
 
     if (events) {
-      return events.map(event => {
-        return {
-          blockNumber: new BigNumber(event!.block_id),
-          blockDate: event!.block!.datetime,
-          eventIndex: event!.event_idx,
-        };
-      });
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return events.map(event => middlewareEventToEventIdentifier(event!));
     }
 
     return null;
@@ -141,34 +129,34 @@ export class Middleware {
       data: { transactionByHash: transaction },
     } = result;
 
-    /* eslint-disable @typescript-eslint/camelcase */
     if (transaction) {
       const {
-        block_id,
-        extrinsic_idx,
+        block_id: blockNumber,
+        extrinsic_idx: extrinsicIdx,
         address: rawAddress,
         nonce,
-        module_id,
-        call_id,
+        module_id: moduleId,
+        call_id: callId,
         params,
         success: txSuccess,
-        spec_version_id,
-        extrinsic_hash,
+        spec_version_id: specVersionId,
+        extrinsic_hash: extrinsicHash,
       } = transaction;
 
       return {
-        blockNumber: new BigNumber(block_id),
-        extrinsicIdx: extrinsic_idx,
+        blockNumber: new BigNumber(blockNumber),
+        extrinsicIdx,
         address: rawAddress ?? null,
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
         nonce: nonce!,
-        txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
+        txTag: extrinsicIdentifierToTxTag({ moduleId, callId }),
         params,
         success: !!txSuccess,
-        specVersionId: spec_version_id,
-        extrinsicHash: extrinsic_hash!,
+        specVersionId,
+        extrinsicHash: extrinsicHash!,
+        /* eslint-enable @typescript-eslint/no-non-null-assertion */
       };
     }
-    /* eslint-enable @typescript-eslint/camelcase */
 
     return null;
   }
