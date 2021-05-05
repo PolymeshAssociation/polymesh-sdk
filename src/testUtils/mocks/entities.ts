@@ -118,6 +118,7 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -300,6 +301,7 @@ let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
 let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetScopeIdStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
+let currentIdentityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -579,6 +581,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getVenues: [],
   getScopeId: 'someScopeId',
   getTokenBalance: new BigNumber(100),
+  areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -591,6 +594,7 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  areScondaryKeysFrozen: false,
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -1215,6 +1219,9 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     },
     getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
+    areSecondaryKeysFrozen: currentIdentityAreSecondaryKeysFrozenStub.resolves(
+      opts.areScondaryKeysFrozen
+    ),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -1242,6 +1249,7 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetScopeIdStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
+  currentIdentityAreSecondaryKeysFrozenStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
@@ -1940,6 +1948,14 @@ export function getCurrentIdentityGetScopeIdStub(): SinonStub {
  */
 export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
   return currentIdentityAuthorizationsGetReceivedStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.areSecondaryKeysFrozen` method
+ */
+export function getCurrentIdentityAreSecondaryKeysFrozenStub(): SinonStub {
+  return currentIdentityAreSecondaryKeysFrozenStub;
 }
 
 /**
