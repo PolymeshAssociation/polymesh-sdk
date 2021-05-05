@@ -295,6 +295,33 @@ describe('Venue class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: modify', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const description = 'someDetails';
+      const type = VenueType.Other;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { venueId: id, description, type },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await venue.modify({ description, type });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 });
 
 describe('addInstructionTransformer', () => {
