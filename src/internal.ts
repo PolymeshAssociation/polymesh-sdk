@@ -164,3 +164,4 @@ export {
   ModifyDistributionCheckpointParams,
 } from '~/api/procedures/modifyDistributionCheckpoint';
 export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
+export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
