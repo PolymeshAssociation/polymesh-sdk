@@ -14,7 +14,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   let mockContext: Mocked<Context>;
 
   beforeAll(() => {
-    dsMockUtils.initMocks({ contextOptions: { withSeed: true } });
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
   });

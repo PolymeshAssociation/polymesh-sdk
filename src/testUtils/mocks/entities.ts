@@ -1952,6 +1952,14 @@ export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `CurrentIdentity.areSecondaryKeysFrozen` method
+ */
+export function getCurrentIdentityAreSecondaryKeysFrozenStub(): SinonStub {
+  return currentIdentityAreSecondaryKeysFrozenStub;
+}
+
+/**
+ * @hidden
  * Retrieve an Account instance
  */
 export function getAccountInstance(opts?: AccountOptions): MockAccount {
