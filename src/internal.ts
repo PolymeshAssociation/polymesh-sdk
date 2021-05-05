@@ -168,3 +168,4 @@ export {
   transferTickerOwnership,
   TransferTickerOwnershipParams,
 } from '~/api/procedures/transferTickerOwnership';
+export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';

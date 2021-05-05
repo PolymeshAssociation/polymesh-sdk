@@ -58,7 +58,13 @@ import {
   Venue,
 } from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
-import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  ClaimScopeTypeEnum,
+  ClaimTypeEnum,
+  Event as MiddlewareEvent,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AffirmationStatus,
@@ -156,6 +162,7 @@ import {
   meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
+  middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   // middlewareProposalToProposalDetails,
@@ -2799,6 +2806,26 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
     scope = { type: ScopeType.Custom, value: 'customValue' };
     result = scopeToMiddlewareScope(scope);
     expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+  });
+});
+
+describe('middlewareEventToEventIdentifier', () => {
+  test('should convert a middleware Event object to an EventIdentifier', () => {
+    const event = {
+      /* eslint-disable @typescript-eslint/camelcase */
+      block_id: 3000,
+      event_idx: 3,
+      /* eslint-enable @typescript-eslint/camelcase */
+      block: {
+        datetime: new Date('10/14/1987').toISOString(),
+      },
+    } as MiddlewareEvent;
+
+    expect(middlewareEventToEventIdentifier(event)).toEqual({
+      blockNumber: new BigNumber(3000),
+      blockDate: new Date('10/14/1987'),
+      eventIndex: 3,
+    });
   });
 });
 
