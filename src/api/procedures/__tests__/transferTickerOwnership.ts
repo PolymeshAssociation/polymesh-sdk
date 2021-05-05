@@ -6,9 +6,9 @@ import sinon from 'sinon';
 import {
   getAuthorization,
   Params,
-  prepareTransferTokenOwnership,
-} from '~/api/procedures/transferTokenOwnership';
-import { Context, SecurityToken } from '~/internal';
+  prepareTransferTickerOwnership,
+} from '~/api/procedures/transferTickerOwnership';
+import { Context, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, RoleType } from '~/types';
@@ -16,11 +16,13 @@ import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/TickerReservation',
+  require('~/testUtils/mocks/entities').mockTickerReservationModule(
+    '~/api/entities/TickerReservation'
+  )
 );
 
-describe('transferTokenOwnership procedure', () => {
+describe('transferTickerOwnership procedure', () => {
   let mockContext: Mocked<Context>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
@@ -77,7 +79,7 @@ describe('transferTokenOwnership procedure', () => {
       .withArgs({ type: SignerType.Identity, value: did }, mockContext)
       .returns(rawSignatory);
     authorizationToAuthorizationDataStub
-      .withArgs({ type: AuthorizationType.TransferAssetOwnership, value: ticker }, mockContext)
+      .withArgs({ type: AuthorizationType.TransferTicker, value: ticker }, mockContext)
       .returns(rawAuthorizationData);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawMoment);
   });
@@ -95,9 +97,9 @@ describe('transferTokenOwnership procedure', () => {
   });
 
   test('should add an add authorization transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
 
-    const result = await prepareTransferTokenOwnership.call(proc, args);
+    const result = await prepareTransferTickerOwnership.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -107,13 +109,13 @@ describe('transferTokenOwnership procedure', () => {
       rawAuthorizationData,
       null
     );
-    expect(result).toEqual(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(entityMockUtils.getTickerReservationInstance({ ticker }));
   });
 
   test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
 
-    const result = await prepareTransferTokenOwnership.call(proc, { ...args, expiry });
+    const result = await prepareTransferTickerOwnership.call(proc, { ...args, expiry });
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -123,18 +125,18 @@ describe('transferTokenOwnership procedure', () => {
       rawAuthorizationData,
       rawMoment
     );
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(entityMockUtils.getTickerReservationInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
+        identityRoles: [{ type: RoleType.TickerOwner, ticker }],
         signerPermissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },
