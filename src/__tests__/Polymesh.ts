@@ -6,18 +6,10 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Account,
-  Identity,
-  registerIdentity,
-  reserveTicker,
-  TickerReservation,
-  TransactionQueue,
-  transferPolyX,
-} from '~/internal';
+import { Account, Identity, TickerReservation, TransactionQueue } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { AccountBalance, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -48,21 +40,28 @@ jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Polymesh Class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   describe('method: create', () => {
@@ -328,6 +327,7 @@ describe('Polymesh Class', () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),
+        total: new BigNumber(100),
       };
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
@@ -343,6 +343,7 @@ describe('Polymesh Class', () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),
+        total: new BigNumber(100),
       };
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
@@ -363,6 +364,7 @@ describe('Polymesh Class', () => {
       const fakeBalance = {
         free: new BigNumber(100),
         locked: new BigNumber(0),
+        total: new BigNumber(100),
       };
       const unsubCallback = 'unsubCallback';
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
@@ -402,7 +404,10 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon.stub(reserveTicker, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await polymesh.reserveTicker(args);
 
@@ -852,7 +857,10 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(transferPolyX, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await polymesh.transferPolyX(args);
 
@@ -942,6 +950,7 @@ describe('Polymesh Class', () => {
       fakeBalance = {
         free: new BigNumber(500000),
         locked: new BigNumber(0),
+        total: new BigNumber(500000),
       };
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
     });
@@ -1013,7 +1022,10 @@ describe('Polymesh Class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
 
-      sinon.stub(registerIdentity, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await polymesh.registerIdentity(args);
 
@@ -1064,6 +1076,22 @@ describe('Polymesh Class', () => {
       const result = await polymesh.getLatestBlock();
 
       expect(result).toEqual(blockNumber);
+    });
+  });
+
+  describe('method: disconnect', () => {
+    test('should call the underlying disconnect function', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      await polymesh.disconnect();
+      sinon.assert.calledOnce(dsMockUtils.getContextInstance().disconnect);
     });
   });
 });

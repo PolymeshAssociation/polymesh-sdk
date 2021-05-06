@@ -1,33 +1,34 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  createSecurityToken,
-  Entity,
-  reserveTicker,
-  SecurityToken,
-  TickerReservation,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { Entity, SecurityToken, TickerReservation, TransactionQueue } from '~/internal';
+import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('TickerReservation class', () => {
   const ticker = 'FAKETICKER';
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(TickerReservation.prototype instanceof Entity).toBe(true);
   });
 
@@ -211,7 +212,10 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
 
-      sinon.stub(reserveTicker, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await tickerReservation.extend();
 
@@ -236,7 +240,10 @@ describe('TickerReservation class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon.stub(createSecurityToken, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await tickerReservation.createToken(args);
 

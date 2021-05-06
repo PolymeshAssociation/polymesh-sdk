@@ -2,7 +2,7 @@
 export default {
   rpc: {
     isIdentityHasValidCdd: {
-      description: 'use to tell whether the given did has valid cdd claim or not',
+      description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
       params: [
         {
           name: 'did',
@@ -72,7 +72,9 @@ export default {
     },
     getFilteredAuthorizations: {
       description:
-        'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+        'Retrieve authorizations data for a given ' +
+        'signatory and filtered using the given ' +
+        'authorization type',
       params: [
         {
           name: 'signatory',
@@ -111,7 +113,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'Option<KeyIdentityData<IdentityId>>',
+      type: 'Option<KeyIdentityData>',
     },
   },
   types: {},

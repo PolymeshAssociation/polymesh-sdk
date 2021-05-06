@@ -1,22 +1,19 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  Context,
-  deletePortfolio,
-  Entity,
-  NumberedPortfolio,
-  renamePortfolio,
-  TransactionQueue,
-} from '~/internal';
+import { Context, Entity, NumberedPortfolio, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('NumberedPortfolio class', () => {
@@ -25,6 +22,7 @@ describe('NumberedPortfolio class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -34,14 +32,16 @@ describe('NumberedPortfolio class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(NumberedPortfolio.prototype instanceof Entity).toBe(true);
   });
 
@@ -76,7 +76,10 @@ describe('NumberedPortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(deletePortfolio, 'prepare').withArgs({ id, did }, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { id, did }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await numberedPortfolio.delete();
 
@@ -92,9 +95,9 @@ describe('NumberedPortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
 
-      sinon
-        .stub(renamePortfolio, 'prepare')
-        .withArgs({ id, did, name }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { id, did, name }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await numberedPortfolio.modifyName({ name });

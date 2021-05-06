@@ -1,23 +1,19 @@
 import BigNumber from 'bignumber.js';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
 import {
-  closeSto,
   Context,
   DefaultPortfolio,
   Entity,
   Identity,
-  modifyStoTimes,
   Sto,
-  toggleFreezeSto,
-  ToggleFreezeStoParams,
   TransactionQueue,
   Venue,
 } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
 import { InvestmentResult } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { StoDetails, StoStatus } from '~/types';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -38,18 +34,18 @@ jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Sto class', () => {
   let context: Context;
-  let prepareToggleFreezeStoStub: SinonStub<
-    [ToggleFreezeStoParams, Context],
-    Promise<TransactionQueue<Sto, unknown[][]>>
-  >;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    prepareToggleFreezeStoStub = sinon.stub(toggleFreezeSto, 'prepare');
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -59,14 +55,16 @@ describe('Sto class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(Sto.prototype instanceof Entity).toBe(true);
   });
 
@@ -94,9 +92,12 @@ describe('Sto class', () => {
     const ticker = 'FAKETICKER';
     const id = new BigNumber(1);
     const someDid = 'someDid';
+    const name = 'someSto';
     const otherDid = 'otherDid';
     const raisingCurrency = 'USD';
-    const tierNumber = new BigNumber(10);
+    const amount = new BigNumber(1000);
+    const price = new BigNumber(100);
+    const remaining = new BigNumber(700);
     const date = new Date();
     const minInvestmentValue = new BigNumber(1);
 
@@ -116,9 +117,9 @@ describe('Sto class', () => {
         raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
         tiers: [
           dsMockUtils.createMockFundraiserTier({
-            total: dsMockUtils.createMockBalance(tierNumber.toNumber()),
-            price: dsMockUtils.createMockBalance(tierNumber.toNumber()),
-            remaining: dsMockUtils.createMockBalance(tierNumber.toNumber()),
+            total: dsMockUtils.createMockBalance(amount.toNumber()),
+            price: dsMockUtils.createMockBalance(price.toNumber()),
+            remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
           }),
         ],
         venue_id: dsMockUtils.createMockU64(1),
@@ -130,6 +131,8 @@ describe('Sto class', () => {
       })
     );
 
+    const rawName = dsMockUtils.createMockFundraiserName(name);
+
     let sto: Sto;
 
     beforeEach(() => {
@@ -140,25 +143,36 @@ describe('Sto class', () => {
     test('should return details for a security token offering', async () => {
       const fakeResult = {
         creator: new Identity({ did: someDid }, context),
+        name,
         offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
         raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
         raisingCurrency,
         tiers: [
           {
-            amount: tierNumber.div(Math.pow(10, 6)),
-            price: tierNumber.div(Math.pow(10, 6)),
-            remaining: tierNumber.div(Math.pow(10, 6)),
+            amount: amount.shiftedBy(-6),
+            price: price.shiftedBy(-6),
+            remaining: remaining.shiftedBy(-6),
           },
         ],
         venue: new Venue({ id: new BigNumber(1) }, context),
         start: date,
         end: date,
-        status: StoStatus.Live,
-        minInvestment: minInvestmentValue.div(Math.pow(10, 6)),
+        status: {
+          sale: StoSaleStatus.Live,
+          timing: StoTimingStatus.Expired,
+          balance: StoBalanceStatus.Residual,
+        },
+        minInvestment: minInvestmentValue.shiftedBy(-6),
+        totalAmount: amount.shiftedBy(-6),
+        totalRemaining: remaining.shiftedBy(-6),
       };
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         returnValue: rawFundraiser,
+      });
+
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        returnValue: rawName,
       });
 
       const details = await sto.details();
@@ -166,6 +180,9 @@ describe('Sto class', () => {
     });
 
     test('should throw if security token offering does not exist', async () => {
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        returnValue: dsMockUtils.createMockFundraiserName(),
+      });
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -176,8 +193,12 @@ describe('Sto class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        returnValue: rawName,
+      });
+
       dsMockUtils.createQueryStub('sto', 'fundraisers').callsFake(async (_a, _b, cbFunc) => {
-        cbFunc(rawFundraiser);
+        cbFunc(rawFundraiser, rawName);
         return unsubCallback;
       });
 
@@ -204,7 +225,10 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(closeSto, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await sto.close();
 
@@ -231,7 +255,10 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(modifyStoTimes, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await sto.modifyTimes({
         start,
@@ -324,8 +351,9 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
 
-      prepareToggleFreezeStoStub
-        .withArgs({ ticker, id, freeze: true }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, id, freeze: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await sto.freeze();
@@ -342,11 +370,48 @@ describe('Sto class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
 
-      prepareToggleFreezeStoStub
-        .withArgs({ ticker, id, freeze: false }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, id, freeze: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await sto.unfreeze();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: invest', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'SOMETICKER';
+      const id = new BigNumber(1);
+      const sto = new Sto({ id, ticker }, context);
+      const did = 'someDid';
+
+      const purchasePortfolio = new DefaultPortfolio({ did }, context);
+      const fundingPortfolio = new DefaultPortfolio({ did }, context);
+      const purchaseAmount = new BigNumber(10);
+
+      const args = {
+        ticker,
+        id,
+        purchasePortfolio,
+        fundingPortfolio,
+        purchaseAmount,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await sto.invest({
+        purchasePortfolio,
+        fundingPortfolio,
+        purchaseAmount,
+      });
 
       expect(queue).toBe(expectedQueue);
     });

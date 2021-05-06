@@ -11,7 +11,7 @@ import {
 import { Context, Sto } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, StoStatus } from '~/types';
+import { RoleType, StoBalanceStatus, StoSaleStatus, StoTimingStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -71,7 +71,11 @@ describe('toggleFreezeSto procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          end: new Date(),
+          status: {
+            timing: StoTimingStatus.Expired,
+            balance: StoBalanceStatus.Available,
+            sale: StoSaleStatus.Closed,
+          },
         },
       },
     });
@@ -91,7 +95,11 @@ describe('toggleFreezeSto procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Frozen,
+          status: {
+            sale: StoSaleStatus.Frozen,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -113,7 +121,11 @@ describe('toggleFreezeSto procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -129,7 +141,11 @@ describe('toggleFreezeSto procedure', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
-          status: StoStatus.Closed,
+          status: {
+            sale: StoSaleStatus.Closed,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
         },
       },
     });
@@ -161,8 +177,14 @@ describe('toggleFreezeSto procedure', () => {
 
   test('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
-        isFrozen: true,
+      stoOptions: {
+        details: {
+          status: {
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+            sale: StoSaleStatus.Frozen,
+          },
+        },
       },
     });
 

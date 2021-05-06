@@ -94,7 +94,7 @@ describe('Procedure class', () => {
       posRatioToBigNumberStub = sinon.stub(utilsConversionModule, 'posRatioToBigNumber');
       balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
       txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
-      txTags = [TxTags.asset.RegisterTicker, TxTags.identity.RegisterDid];
+      txTags = [TxTags.asset.RegisterTicker, TxTags.identity.CddRegisterDid];
       fees = [250, 0];
       numerator = 7;
       denominator = 3;
@@ -134,7 +134,7 @@ describe('Procedure class', () => {
         secondaryKeys,
       };
       const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = dsMockUtils.createTxStub('identity', 'registerDid');
+      const tx2 = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
 
       const returnValue = 'good';
 
@@ -153,16 +153,18 @@ describe('Procedure class', () => {
 
       const constructorSpy = sinon.spy(baseModule, 'TransactionQueue');
 
-      let { transactions } = await proc1.prepare(procArgs, context);
+      let { transactions } = await proc1.prepare({ args: procArgs }, context);
 
       expect(transactions.length).toBe(2);
       sinon.assert.calledWith(
         constructorSpy,
-        sinon.match([
-          sinon.match({ tx: tx1, args: [ticker] }),
-          sinon.match({ tx: tx2, args: [secondaryKeys] }),
-        ]),
-        returnValue,
+        sinon.match({
+          transactions: sinon.match([
+            sinon.match({ tx: tx1, args: [ticker] }),
+            sinon.match({ tx: tx2, args: [secondaryKeys] }),
+          ]),
+          procedureResult: returnValue,
+        }),
         context
       );
 
@@ -175,16 +177,18 @@ describe('Procedure class', () => {
 
       const proc2 = new Procedure(func2);
 
-      ({ transactions } = await proc2.prepare(procArgs, context));
+      ({ transactions } = await proc2.prepare({ args: procArgs }, context));
 
       expect(transactions.length).toBe(2);
       sinon.assert.calledWith(
         constructorSpy,
-        sinon.match([
-          sinon.match({ tx: tx1, args: [ticker] }),
-          sinon.match({ tx: tx2, args: [secondaryKeys] }),
-        ]),
-        returnValue,
+        sinon.match({
+          transactions: sinon.match([
+            sinon.match({ tx: tx1, args: [ticker] }),
+            sinon.match({ tx: tx2, args: [secondaryKeys] }),
+          ]),
+          procedureResult: returnValue,
+        }),
         context
       );
     });
@@ -206,7 +210,7 @@ describe('Procedure class', () => {
 
       const proc = new Procedure(func);
 
-      return expect(proc.prepare(procArgs, context)).rejects.toThrow(errorMsg);
+      return expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(errorMsg);
     });
 
     test("should throw an error if the caller doesn't have the appropriate roles", async () => {
@@ -227,7 +231,7 @@ describe('Procedure class', () => {
       });
       context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
 
-      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"
       );
 
@@ -239,7 +243,7 @@ describe('Procedure class', () => {
         },
       });
 
-      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Account doesn't have the required permissions to execute this procedure"
       );
 
@@ -247,13 +251,13 @@ describe('Procedure class', () => {
         signerPermissions: false,
       });
 
-      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Account doesn't have the required permissions to execute this procedure"
       );
 
       proc = new Procedure(func, async () => ({ identityRoles: false }));
 
-      await expect(proc.prepare(procArgs, context)).rejects.toThrow(
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"
       );
     });

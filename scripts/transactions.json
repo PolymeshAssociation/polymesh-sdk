@@ -127,7 +127,8 @@
     "unfreeze_instantiation": "unfreeze_instantiation",
     "transfer_template_ownership": "transfer_template_ownership",
     "change_template_fees": "change_template_fees",
-    "change_template_meta_url": "change_template_meta_url"
+    "change_template_meta_url": "change_template_meta_url",
+    "set_put_code_flag": "set_put_code_flag"
   },
   "Treasury": {
     "disbursement": "disbursement",
@@ -306,7 +307,9 @@
     "add_secondary_keys_with_authorization": "add_secondary_keys_with_authorization",
     "add_investor_uniqueness_claim": "add_investor_uniqueness_claim",
     "gc_add_cdd_claim": "gc_add_cdd_claim",
-    "gc_revoke_cdd_claim": "gc_revoke_cdd_claim"
+    "gc_revoke_cdd_claim": "gc_revoke_cdd_claim",
+    "add_investor_uniqueness_claim_v2": "add_investor_uniqueness_claim_v2",
+    "revoke_claim_by_index": "revoke_claim_by_index"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -382,7 +385,8 @@
     "affirm_instruction": "affirm_instruction",
     "withdraw_affirmation": "withdraw_affirmation",
     "affirm_with_receipts": "affirm_with_receipts",
-    "execute_scheduled_instruction": "execute_scheduled_instruction"
+    "execute_scheduled_instruction": "execute_scheduled_instruction",
+    "change_receipt_validity": "change_receipt_validity"
   },
   "Sto": {
     "create_fundraiser": "create_fundraiser",
@@ -467,5 +471,11 @@
     "remove_transfer_manager": "remove_transfer_manager",
     "add_exempted_entities": "add_exempted_entities",
     "remove_exempted_entities": "remove_exempted_entities"
+  },
+  "TestUtils": {
+    "register_did": "register_did",
+    "mock_cdd_register_did": "mock_cdd_register_did",
+    "get_my_did": "get_my_did",
+    "get_cdd_of": "get_cdd_of"
   }
 }

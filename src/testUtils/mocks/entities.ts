@@ -8,9 +8,13 @@ import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entit
 import {
   Account,
   AuthorizationRequest,
+  Checkpoint,
+  CheckpointSchedule,
+  CorporateAction,
   CurrentAccount,
   CurrentIdentity,
   DefaultPortfolio,
+  DividendDistribution,
   Identity,
   Instruction,
   NumberedPortfolio,
@@ -27,8 +31,15 @@ import {
   ActiveTransferRestrictions,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
+  CorporateActionDefaults,
+  CorporateActionKind,
+  CorporateActionTargets,
   CountTransferRestriction,
+  DividendDistributionDetails,
   ExtrinsicData,
+  IdentityBalance,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
@@ -36,9 +47,15 @@ import {
   PercentageTransferRestriction,
   PortfolioBalance,
   ResultSet,
+  ScheduleDetails,
   SecondaryKey,
   SecurityTokenDetails,
+  StoBalanceStatus,
   StoDetails,
+  StoSaleStatus,
+  StoTimingStatus,
+  TargetTreatment,
+  TaxWithholding,
   TickerReservationDetails,
   TickerReservationStatus,
   TokenIdentifier,
@@ -48,7 +65,6 @@ import {
   // NOTE uncomment in Governance v2 upgrade
   // TxTags,
 } from '~/types';
-import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -65,6 +81,10 @@ const mockInstanceContainer = {
   numberedPortfolio: {} as MockNumberedPortfolio,
   defaultPortfolio: {} as MockDefaultPortfolio,
   sto: {} as MockSto,
+  checkpoint: {} as MockCheckpoint,
+  checkpointSchedule: {} as MockCheckpointSchedule,
+  corporateAction: {} as MockCorporateAction,
+  dividendDistribution: {} as MockDividendDistribution,
 };
 
 type MockIdentity = Mocked<Identity>;
@@ -81,6 +101,10 @@ type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
 type MockSto = Mocked<Sto>;
+type MockCheckpoint = Mocked<Checkpoint>;
+type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
+type MockCorporateAction = Mocked<CorporateAction>;
+type MockDividendDistribution = Mocked<DividendDistribution>;
 
 interface IdentityOptions {
   did?: string;
@@ -93,6 +117,8 @@ interface IdentityOptions {
   };
   getVenues?: Venue[];
   getScopeId?: string;
+  getTokenBalance?: BigNumber;
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -113,6 +139,8 @@ interface SecurityTokenOptions {
   getIdentifiers?: TokenIdentifier[];
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
+  corporateActionsGetAgent?: Identity;
+  corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
 }
 
 interface AuthorizationRequestOptions {
@@ -168,19 +196,66 @@ interface DefaultPortfolioOptions {
   isCustodiedBy?: boolean;
 }
 
-interface StoOptions {
-  details?: Partial<StoDetails>;
-}
-
 interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
   getLegs?: ResultSet<Leg>;
+  exists?: boolean;
 }
 
 interface StoOptions {
   id?: BigNumber;
   ticker?: string;
+  details?: Partial<StoDetails>;
+}
+
+interface CheckpointOptions {
+  id?: BigNumber;
+  ticker?: string;
+  createdAt?: Date;
+  totalSupply?: BigNumber;
+  exists?: boolean;
+  allBalances?: ResultSet<IdentityBalance>;
+}
+
+interface CheckpointScheduleOptions {
+  id?: BigNumber;
+  ticker?: string;
+  start?: Date;
+  period?: CalendarPeriod | null;
+  expiryDate?: Date | null;
+  complexity?: number;
+  details?: Partial<ScheduleDetails>;
+  exists?: boolean;
+}
+
+interface CorporateActionOptions {
+  id?: BigNumber;
+  ticker?: string;
+  kind?: CorporateActionKind;
+  declarationDate?: Date;
+  description?: string;
+  targets?: CorporateActionTargets;
+  defaultTaxWithholding?: BigNumber;
+  taxWithholdings?: TaxWithholding[];
+  exists?: boolean;
+}
+
+interface DividendDistributionOptions {
+  id?: BigNumber;
+  ticker?: string;
+  declarationDate?: Date;
+  description?: string;
+  targets?: CorporateActionTargets;
+  defaultTaxWithholding?: BigNumber;
+  taxWithholdings?: TaxWithholding[];
+  origin?: DefaultPortfolio | NumberedPortfolio;
+  currency?: string;
+  perShare?: BigNumber;
+  maxAmount?: BigNumber;
+  expiryDate?: null | Date;
+  paymentDate?: Date;
+  details?: Partial<DividendDistributionDetails>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -196,6 +271,10 @@ let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
 let stoConstructorStub: SinonStub;
+let checkpointConstructorStub: SinonStub;
+let checkpointScheduleConstructorStub: SinonStub;
+let corporateActionConstructorStub: SinonStub;
+let dividendDistributionConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -204,6 +283,8 @@ let securityTokenTransfersCanTransferStub: SinonStub;
 let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
+let securityTokenCorporateActionsGetAgentStub: SinonStub;
+let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -211,6 +292,7 @@ let identityGetPrimaryKeyStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
+let identityGetTokenBalanceStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -219,6 +301,7 @@ let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
 let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetScopeIdStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
+let currentIdentityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -230,6 +313,7 @@ let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
+let instructionExistsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
@@ -240,6 +324,14 @@ let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
 let stoDetailsStub: SinonStub;
+let checkpointCreatedAtStub: SinonStub;
+let checkpointTotalSupplyStub: SinonStub;
+let checkpointExistsStub: SinonStub;
+let checkpointAllBalancesStub: SinonStub;
+let checkpointScheduleDetailsStub: SinonStub;
+let corporateActionExistsStub: SinonStub;
+let checkpointScheduleExistsStub: SinonStub;
+let dividendDistributionDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -358,6 +450,42 @@ const MockStoClass = class {
   }
 };
 
+const MockCheckpointClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return checkpointConstructorStub(...args);
+  }
+};
+
+const MockCheckpointScheduleClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return checkpointScheduleConstructorStub(...args);
+  }
+};
+
+const MockCorporateActionClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return corporateActionConstructorStub(...args);
+  }
+};
+
+const MockDividendDistributionClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return dividendDistributionConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -423,6 +551,26 @@ export const mockStoModule = (path: string) => (): object => ({
   Sto: MockStoClass,
 });
 
+export const mockCheckpointModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  Checkpoint: MockCheckpointClass,
+});
+
+export const mockCheckpointScheduleModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  CheckpointSchedule: MockCheckpointScheduleClass,
+});
+
+export const mockCorporateActionModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  CorporateAction: MockCorporateActionClass,
+});
+
+export const mockDividendDistributionModule = (path: string) => (): object => ({
+  ...jest.requireActual(path),
+  DividendDistribution: MockDividendDistributionClass,
+});
+
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
@@ -432,6 +580,8 @@ const defaultIdentityOptions: IdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  getTokenBalance: new BigNumber(100),
+  areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -444,6 +594,7 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  areScondaryKeysFrozen: false,
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -452,6 +603,7 @@ const defaultAccountOptions: AccountOptions = {
   getBalance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   getTransactionHistory: [],
 };
@@ -462,6 +614,7 @@ const defaultCurrentAccountOptions: CurrentAccountOptions = {
   getBalance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   getTransactionHistory: [],
 };
@@ -487,11 +640,17 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   getIdentifiers: [],
   transferRestrictionsCountGet: {
     restrictions: [],
-    availableSlots: MAX_TRANSFER_MANAGERS,
+    availableSlots: 3,
   },
   transferRestrictionsPercentageGet: {
     restrictions: [],
-    availableSlots: MAX_TRANSFER_MANAGERS,
+    availableSlots: 3,
+  },
+  corporateActionsGetAgent: { did: 'someDid' } as Identity,
+  corporateActionsGetDefaults: {
+    targets: { identities: [], treatment: TargetTreatment.Exclude },
+    defaultTaxWithholding: new BigNumber(10),
+    taxWithholdings: [],
   },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
@@ -520,6 +679,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
       token: ('someToken' as unknown) as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
+      free: new BigNumber(1),
     },
   ],
   did: 'someDid',
@@ -536,6 +696,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
       token: ('someToken' as unknown) as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
+      free: new BigNumber(1),
     },
   ],
   did: 'someDid',
@@ -553,14 +714,96 @@ const defaultInstructionOptions: InstructionOptions = {
     valueDate: null,
     type: InstructionType.SettleOnAffirmation,
   },
+  exists: false,
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
-  details: {} as StoDetails,
+  details: {
+    end: null,
+    start: new Date('10/14/1987'),
+    status: {
+      timing: StoTimingStatus.Started,
+      balance: StoBalanceStatus.Available,
+      sale: StoSaleStatus.Live,
+    },
+    tiers: [
+      {
+        price: new BigNumber(100000000),
+        remaining: new BigNumber(700000000),
+        amount: new BigNumber(1000000000),
+      },
+    ],
+    totalAmount: new BigNumber(1000000000),
+    totalRemaining: new BigNumber(700000000),
+    raisingCurrency: 'USD',
+    minInvestment: new BigNumber(100000000),
+  },
   ticker: 'SOME_TICKER',
   id: new BigNumber(1),
 };
 let stoOptions = defaultStoOptions;
+const defaultCheckpointOptions: CheckpointOptions = {
+  totalSupply: new BigNumber(10000),
+  createdAt: new Date('10/14/1987'),
+  ticker: 'SOME_TICKER',
+  id: new BigNumber(1),
+  exists: true,
+};
+let checkpointOptions = defaultCheckpointOptions;
+const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
+  id: new BigNumber(1),
+  ticker: 'SOME_TICKER',
+  start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+  period: {
+    unit: CalendarUnit.Month,
+    amount: 1,
+  },
+  expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+  complexity: 2,
+  details: {
+    remainingCheckpoints: 1,
+    nextCheckpointDate: new Date('10/10/2030'),
+  },
+  exists: true,
+};
+let checkpointScheduleOptions = defaultCheckpointScheduleOptions;
+const defaultCorporateActionOptions: CorporateActionOptions = {
+  id: new BigNumber(1),
+  ticker: 'SOME_TICKER',
+  kind: CorporateActionKind.UnpredictableBenefit,
+  declarationDate: new Date('10/14/1987'),
+  description: 'someDescription',
+  targets: {
+    identities: [],
+    treatment: TargetTreatment.Include,
+  },
+  defaultTaxWithholding: new BigNumber(10),
+  taxWithholdings: [],
+  exists: true,
+};
+let corporateActionOptions = defaultCorporateActionOptions;
+const defaultDividendDistributionOptions: DividendDistributionOptions = {
+  id: new BigNumber(1),
+  ticker: 'SOME_TICKER',
+  declarationDate: new Date('10/14/1987'),
+  description: 'someDescription',
+  targets: {
+    identities: [],
+    treatment: TargetTreatment.Include,
+  },
+  defaultTaxWithholding: new BigNumber(10),
+  taxWithholdings: [],
+  currency: 'USD',
+  perShare: new BigNumber(100),
+  maxAmount: new BigNumber(1000000),
+  expiryDate: null,
+  paymentDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+  details: {
+    remainingFunds: new BigNumber(100),
+    fundsReclaimed: false,
+  },
+};
+let dividendDistributionOptions = defaultDividendDistributionOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -789,6 +1032,12 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
         ),
       },
     },
+    corporateActions: {
+      getAgent: securityTokenCorporateActionsGetAgentStub.resolves(opts.corporateActionsGetAgent),
+      getDefaults: securityTokenCorporateActionsGetDefaultsStub.resolves(
+        opts.corporateActionsGetDefaults
+      ),
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -812,6 +1061,8 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenGetIdentifiersStub = sinon.stub();
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
+  securityTokenCorporateActionsGetAgentStub = sinon.stub();
+  securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -870,6 +1121,7 @@ function configureIdentity(opts: IdentityOptions): void {
     },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
+    getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -893,6 +1145,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityAuthorizationsGetReceivedStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
+  identityGetTokenBalanceStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -917,8 +1170,10 @@ function configureInstruction(opts: InstructionOptions): void {
     next: null,
   };
   const instruction = ({
+    id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
+    exists: instructionExistsStub.resolves(opts.exists),
   } as unknown) as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
@@ -937,6 +1192,7 @@ function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
   instructionGetLegsStub = sinon.stub();
+  instructionExistsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
 
@@ -963,6 +1219,9 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     },
     getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
+    areSecondaryKeysFrozen: currentIdentityAreSecondaryKeysFrozenStub.resolves(
+      opts.areScondaryKeysFrozen
+    ),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -990,6 +1249,7 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetScopeIdStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
+  currentIdentityAreSecondaryKeysFrozenStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
@@ -1082,7 +1342,13 @@ function initCurrentAccount(opts?: CurrentAccountOptions): void {
  * Configure the Security Token Offering instance
  */
 function configureSto(opts: StoOptions): void {
-  const details = { owner: mockInstanceContainer.identity, ...opts.details };
+  const details = {
+    creator: mockInstanceContainer.identity,
+    venue: mockInstanceContainer.venue,
+    offeringPortfolio: mockInstanceContainer.defaultPortfolio,
+    raisingPorfolio: mockInstanceContainer.numberedPortfolio,
+    ...opts.details,
+  };
   const sto = ({
     details: stoDetailsStub.resolves(details),
     ticker: opts.ticker,
@@ -1112,6 +1378,173 @@ function initSto(opts?: StoOptions): void {
 
 /**
  * @hidden
+ * Configure the Checkpoint instance
+ */
+function configureCheckpoint(opts: CheckpointOptions): void {
+  const allBalances = opts.allBalances || {
+    data: [
+      {
+        identity: mockInstanceContainer.identity,
+        balance: new BigNumber(10000),
+      },
+    ],
+    next: null,
+  };
+  const checkpoint = ({
+    createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
+    totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
+    ticker: opts.ticker,
+    id: opts.id,
+    exists: checkpointExistsStub.resolves(opts.exists),
+    allBalances: checkpointAllBalancesStub.resolves(allBalances),
+  } as unknown) as MockCheckpoint;
+
+  Object.assign(mockInstanceContainer.checkpoint, checkpoint);
+  checkpointConstructorStub.callsFake(args => {
+    const value = merge({}, checkpoint, args);
+    Object.setPrototypeOf(value, require('~/internal').Checkpoint.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Checkpoint instance
+ */
+function initCheckpoint(opts?: CheckpointOptions): void {
+  checkpointConstructorStub = sinon.stub();
+  checkpointCreatedAtStub = sinon.stub();
+  checkpointTotalSupplyStub = sinon.stub();
+  checkpointExistsStub = sinon.stub();
+  checkpointAllBalancesStub = sinon.stub();
+
+  checkpointOptions = merge({}, defaultCheckpointOptions, opts);
+
+  configureCheckpoint(checkpointOptions);
+}
+
+/**
+ * @hidden
+ * Configure the CheckpointSchedule instance
+ */
+function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
+  const checkpointSchedule = ({
+    id: opts.id,
+    ticker: opts.ticker,
+    start: opts.start,
+    period: opts.period,
+    expiryDate: opts.expiryDate,
+    complexity: opts.complexity,
+    details: checkpointScheduleDetailsStub.resolves(opts.details),
+    exists: checkpointScheduleExistsStub.resolves(opts.exists),
+  } as unknown) as MockCheckpointSchedule;
+
+  Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
+  checkpointScheduleConstructorStub.callsFake(args => {
+    const value = merge({}, checkpointSchedule, args);
+    Object.setPrototypeOf(value, require('~/internal').CheckpointSchedule.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the CheckpointSchedule instance
+ */
+function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
+  checkpointScheduleConstructorStub = sinon.stub();
+  checkpointScheduleDetailsStub = sinon.stub();
+  checkpointScheduleExistsStub = sinon.stub();
+
+  checkpointScheduleOptions = merge({}, defaultCheckpointScheduleOptions, opts);
+
+  configureCheckpointSchedule(checkpointScheduleOptions);
+}
+
+/**
+ * @hidden
+ * Configure the CorporateAction instance
+ */
+function configureCorporateAction(opts: CorporateActionOptions): void {
+  const corporateAction = ({
+    id: opts.id,
+    ticker: opts.ticker,
+    kind: opts.kind,
+    declarationDate: opts.declarationDate,
+    description: opts.description,
+    targets: opts.targets,
+    defaultTaxWithholding: opts.defaultTaxWithholding,
+    taxWithholdings: opts.taxWithholdings,
+    exists: corporateActionExistsStub.resolves(opts.exists),
+  } as unknown) as MockCorporateAction;
+
+  Object.assign(mockInstanceContainer.corporateAction, corporateAction);
+  corporateActionConstructorStub.callsFake(args => {
+    const value = merge({}, corporateAction, args);
+    Object.setPrototypeOf(value, require('~/internal').CorporateAction.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the CorporateAction instance
+ */
+function initCorporateAction(opts?: CorporateActionOptions): void {
+  corporateActionConstructorStub = sinon.stub();
+  corporateActionExistsStub = sinon.stub();
+
+  corporateActionOptions = merge({}, defaultCorporateActionOptions, opts);
+
+  configureCorporateAction(corporateActionOptions);
+}
+
+/**
+ * @hidden
+ * Configure the CorporateAction instance
+ */
+function configureDividendDistribution(opts: DividendDistributionOptions): void {
+  const dividendDistribution = ({
+    id: opts.id,
+    ticker: opts.ticker,
+    kind: CorporateActionKind.UnpredictableBenefit,
+    declarationDate: opts.declarationDate,
+    description: opts.description,
+    targets: opts.targets,
+    defaultTaxWithholding: opts.defaultTaxWithholding,
+    taxWithholdings: opts.taxWithholdings,
+    origin: mockInstanceContainer.defaultPortfolio,
+    currency: opts.currency,
+    perShare: opts.perShare,
+    maxAmount: opts.maxAmount,
+    expiryDate: opts.expiryDate,
+    paymentDate: opts.paymentDate,
+    details: dividendDistributionDetailsStub.resolves(opts.details),
+  } as unknown) as MockDividendDistribution;
+
+  Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
+  dividendDistributionConstructorStub.callsFake(args => {
+    const value = merge({}, dividendDistribution, args);
+    Object.setPrototypeOf(value, require('~/internal').DividendDistribution.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the DividendDistribution instance
+ */
+function initDividendDistribution(opts?: DividendDistributionOptions): void {
+  dividendDistributionConstructorStub = sinon.stub();
+  dividendDistributionDetailsStub = sinon.stub();
+
+  dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
+
+  configureDividendDistribution(dividendDistributionOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -1129,6 +1562,10 @@ export function configureMocks(opts?: {
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
   stoOptions?: StoOptions;
+  checkpointOptions?: CheckpointOptions;
+  checkpointScheduleOptions?: CheckpointScheduleOptions;
+  corporateActionOptions?: CorporateActionOptions;
+  dividendDistributionOptions?: DividendDistributionOptions;
 }): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
@@ -1212,6 +1649,30 @@ export function configureMocks(opts?: {
     ...opts?.stoOptions,
   };
   configureSto(tempStoOptions);
+
+  const tempCheckpointOptions = {
+    ...checkpointOptions,
+    ...opts?.checkpointOptions,
+  };
+  configureCheckpoint(tempCheckpointOptions);
+
+  const tempCheckpointScheduleOptions = {
+    ...checkpointScheduleOptions,
+    ...opts?.checkpointScheduleOptions,
+  };
+  configureCheckpointSchedule(tempCheckpointScheduleOptions);
+
+  const tempCorporateActionOptions = {
+    ...corporateActionOptions,
+    ...opts?.corporateActionOptions,
+  };
+  configureCorporateAction(tempCorporateActionOptions);
+
+  const tempDividendDistributionOptions = {
+    ...dividendDistributionOptions,
+    ...opts?.dividendDistributionOptions,
+  };
+  configureDividendDistribution(tempDividendDistributionOptions);
 }
 
 /**
@@ -1233,6 +1694,10 @@ export function initMocks(opts?: {
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
   stoOptions?: StoOptions;
+  checkpointOptions?: CheckpointOptions;
+  checkpointScheduleOptions?: CheckpointScheduleOptions;
+  corporateActionOptions?: CorporateActionOptions;
+  dividendDistributionOptions?: DividendDistributionOptions;
 }): void {
   // Identity
   initIdentity(opts?.identityOptions);
@@ -1276,6 +1741,18 @@ export function initMocks(opts?: {
 
   // Sto
   initSto(opts?.stoOptions);
+
+  // Checkpoint
+  initCheckpoint(opts?.checkpointOptions);
+
+  // CheckpointSchedule
+  initCheckpointSchedule(opts?.checkpointScheduleOptions);
+
+  // CorporateAction
+  initCorporateAction(opts?.corporateActionOptions);
+
+  // DividendDistribution
+  initDividendDistribution(opts?.dividendDistributionOptions);
 }
 
 /**
@@ -1295,6 +1772,10 @@ export function cleanup(): void {
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
   mockInstanceContainer.sto = {} as MockSto;
+  mockInstanceContainer.checkpoint = {} as MockCheckpoint;
+  mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
+  mockInstanceContainer.corporateAction = {} as MockCorporateAction;
+  mockInstanceContainer.dividendDistribution = {} as MockDividendDistribution;
 }
 
 /**
@@ -1318,6 +1799,10 @@ export function reset(): void {
     numberedPortfolioOptions,
     defaultPortfolioOptions,
     stoOptions,
+    checkpointOptions,
+    checkpointScheduleOptions,
+    corporateActionOptions,
+    dividendDistributionOptions,
   });
 }
 
@@ -1467,6 +1952,14 @@ export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `CurrentIdentity.areSecondaryKeysFrozen` method
+ */
+export function getCurrentIdentityAreSecondaryKeysFrozenStub(): SinonStub {
+  return currentIdentityAreSecondaryKeysFrozenStub;
+}
+
+/**
+ * @hidden
  * Retrieve an Account instance
  */
 export function getAccountInstance(opts?: AccountOptions): MockAccount {
@@ -1559,6 +2052,14 @@ export function getNumberedPortfolioGetCustodianStub(): SinonStub {
  */
 export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
   return defaultPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.getCustodian` method
+ */
+export function getDefaultPortfolioGetCustodianStub(): SinonStub {
+  return defaultPortfolioGetCustodianStub;
 }
 
 /**
@@ -1691,6 +2192,32 @@ export function getSecurityTokenTransferRestrictionsPercentageGetStub(
   }
 
   return securityTokenTransferRestrictionsPercentageGetStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.corporateActions.getAgent` method
+ */
+export function getSecurityTokenCorporateActionsGetAgentStub(agent?: Identity): SinonStub {
+  if (agent) {
+    return securityTokenCorporateActionsGetAgentStub.resolves(agent);
+  }
+
+  return securityTokenCorporateActionsGetAgentStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.corporateActions.getDefaults` method
+ */
+export function getSecurityTokenCorporateActionsGetDefaultsStub(
+  defaults?: Partial<CorporateActionDefaults>
+): SinonStub {
+  if (defaults) {
+    return securityTokenCorporateActionsGetDefaultsStub.resolves(defaults);
+  }
+
+  return securityTokenCorporateActionsGetDefaultsStub;
 }
 
 /**
@@ -1845,4 +2372,157 @@ export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
  */
 export function getStoConstructorStub(): SinonStub {
   return stoConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a Checkpoint instance
+ */
+export function getCheckpointInstance(opts?: CheckpointOptions): MockCheckpoint {
+  if (opts) {
+    configureCheckpoint({ ...defaultCheckpointOptions, ...opts });
+  }
+
+  return new MockCheckpointClass() as MockCheckpoint;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.createdAt` method
+ */
+export function getCheckpointCreatedAtStub(createdAt?: Date): SinonStub {
+  if (createdAt) {
+    return checkpointCreatedAtStub.resolves(createdAt);
+  }
+  return checkpointCreatedAtStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.totalSupply` method
+ */
+export function getCheckpointTotalSupplyStub(totalSupply?: BigNumber): SinonStub {
+  if (totalSupply) {
+    return checkpointTotalSupplyStub.resolves(totalSupply);
+  }
+  return checkpointTotalSupplyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.exists` method
+ */
+export function getCheckpointExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return checkpointExistsStub.resolves(exists);
+  }
+  return checkpointExistsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.allBalances` method
+ */
+export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBalance>): SinonStub {
+  if (allBalances) {
+    return checkpointAllBalancesStub.resolves(allBalances);
+  }
+  return checkpointAllBalancesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the Checkpoint constructor stub
+ */
+export function getCheckpointConstructorStub(): SinonStub {
+  return checkpointConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a CheckpointSchedule instance
+ */
+export function getCheckpointScheduleInstance(
+  opts?: CheckpointScheduleOptions
+): MockCheckpointSchedule {
+  if (opts) {
+    configureCheckpointSchedule({ ...defaultCheckpointScheduleOptions, ...opts });
+  }
+
+  return new MockCheckpointScheduleClass() as MockCheckpointSchedule;
+}
+
+/**
+ * @hidden
+ * Retrieve the CheckpointSchedule constructor stub
+ */
+export function getCheckpointScheduleConstructorStub(): SinonStub {
+  return checkpointScheduleConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CheckpointSchedule.details` method
+ */
+export function getCheckpointScheduleDetailsStub(details?: Partial<ScheduleDetails>): SinonStub {
+  if (details) {
+    return checkpointScheduleDetailsStub.resolves({
+      ...defaultCheckpointScheduleOptions.details,
+      ...details,
+    });
+  }
+  return checkpointScheduleDetailsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a CorporateAction instance
+ */
+export function getCorporateActionInstance(opts?: CorporateActionOptions): MockCorporateAction {
+  if (opts) {
+    configureCorporateAction({ ...defaultCorporateActionOptions, ...opts });
+  }
+
+  return new MockCorporateActionClass() as MockCorporateAction;
+}
+
+/**
+ * @hidden
+ * Retrieve the CorporateAction constructor stub
+ */
+export function getCorporateActionConstructorStub(): SinonStub {
+  return corporateActionConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a DividendDistribution instance
+ */
+export function getDividendDistributionInstance(
+  opts?: DividendDistributionOptions
+): MockDividendDistribution {
+  if (opts) {
+    configureDividendDistribution({ ...defaultDividendDistributionOptions, ...opts });
+  }
+
+  return new MockDividendDistributionClass() as MockDividendDistribution;
+}
+
+/**
+ * @hidden
+ * Retrieve the DividendDistribution constructor stub
+ */
+export function getDividendDistributionConstructorStub(): SinonStub {
+  return dividendDistributionConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CorporateAction.exists` method
+ */
+export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return corporateActionExistsStub.resolves(exists);
+  }
+  return corporateActionExistsStub;
 }

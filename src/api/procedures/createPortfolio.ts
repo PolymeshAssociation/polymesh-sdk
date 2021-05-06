@@ -1,6 +1,5 @@
-import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -17,7 +16,7 @@ import {
   textToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -32,10 +31,9 @@ export interface Params {
 export const createPortfolioResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): NumberedPortfolio => {
-  const eventRecord = findEventRecord(receipt, 'portfolio', 'PortfolioCreated');
-  const data = eventRecord.event.data;
-  const did = identityIdToString(data[0] as IdentityId);
-  const id = u64ToBigNumber(data[1] as u64);
+  const [{ data }] = filterEventRecords(receipt, 'portfolio', 'PortfolioCreated');
+  const did = identityIdToString(data[0]);
+  const id = u64ToBigNumber(data[1]);
 
   return new NumberedPortfolio({ did, id }, context);
 };
@@ -87,10 +85,11 @@ export async function prepareCreatePortfolio(
 /**
  * @hidden
  */
-export const createPortfolio = new Procedure(prepareCreatePortfolio, {
-  signerPermissions: {
-    transactions: [TxTags.portfolio.CreatePortfolio],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const createPortfolio = (): Procedure<Params, NumberedPortfolio> =>
+  new Procedure(prepareCreatePortfolio, {
+    signerPermissions: {
+      transactions: [TxTags.portfolio.CreatePortfolio],
+      tokens: [],
+      portfolios: [],
+    },
+  });

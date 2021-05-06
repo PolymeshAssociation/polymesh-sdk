@@ -1,11 +1,14 @@
 import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { Fundraiser, FundraiserName } from 'polymesh-types/types';
 
 import {
   closeSto,
   Context,
   Entity,
   Identity,
+  investInSto,
+  InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
   PolymeshError,
@@ -13,7 +16,6 @@ import {
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Fundraiser } from '~/polkadot/polymesh/types';
 import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
 import { ProcedureMethod } from '~/types/internal';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
@@ -62,16 +64,23 @@ export class Sto extends Entity<UniqueIdentifiers> {
     this.ticker = ticker;
 
     this.freeze = createProcedureMethod(
-      () => [toggleFreezeSto, { ticker, id, freeze: true }],
+      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: true }] },
       context
     );
     this.unfreeze = createProcedureMethod(
-      () => [toggleFreezeSto, { ticker, id, freeze: false }],
+      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: false }] },
       context
     );
-    this.close = createProcedureMethod(() => [closeSto, { ticker, id }], context);
+    this.close = createProcedureMethod(
+      { getProcedureAndArgs: () => [closeSto, { ticker, id }] },
+      context
+    );
     this.modifyTimes = createProcedureMethod(
-      args => [modifyStoTimes, { ticker, id, ...args }],
+      { getProcedureAndArgs: args => [modifyStoTimes, { ticker, id, ...args }] },
+      context
+    );
+    this.invest = createProcedureMethod(
+      { getProcedureAndArgs: args => [investInSto, { ticker, id, ...args }] },
       context
     );
   }
@@ -97,9 +106,12 @@ export class Sto extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const assembleResult = (rawFundraiser: Option<Fundraiser>): StoDetails => {
+    const assembleResult = (
+      rawFundraiser: Option<Fundraiser>,
+      rawName: FundraiserName
+    ): StoDetails => {
       if (rawFundraiser.isSome) {
-        return fundraiserToStoDetails(rawFundraiser.unwrap(), context);
+        return fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
       } else {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
@@ -111,15 +123,18 @@ export class Sto extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = numberToU64(id, context);
 
+    const fetchName = (): Promise<FundraiserName> => sto.fundraiserNames(rawTicker, rawU64);
+
     if (callback) {
+      const fundraiserName = await fetchName();
       return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
-        callback(assembleResult(fundraiserData));
+        callback(assembleResult(fundraiserData, fundraiserName));
       });
     }
 
-    const fundraiser = await sto.fundraisers(rawTicker, rawU64);
+    const [fundraiser, name] = await Promise.all([sto.fundraisers(rawTicker, rawU64), fetchName()]);
 
-    return assembleResult(fundraiser);
+    return assembleResult(fundraiser, name);
   }
 
   /**
@@ -158,6 +173,20 @@ export class Sto extends Entity<UniqueIdentifiers> {
    *   - Security Token Primary Issuance Agent
    */
   public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
+
+  /**
+   * Invest in the STO
+   *
+   * @param args.purchasePortfolio - portfolio in which the purchased Tokens will be stored
+   * @param args.fundingPortfolio - portfolio from which funds will be withdrawn to pay for the Tokens
+   * @param args.purchaseAmount - amount of tokens to purchase
+   * @param args.maxPrice - maximum average price to pay per Token (optional)
+   *
+   * @note required roles:
+   *   - Purchase Portfolio Custodian
+   *   - Funding Portfolio Custodian
+   */
+  public invest: ProcedureMethod<InvestInStoParams, void>;
 
   /**
    * Retrieve all investments made on this STO

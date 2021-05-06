@@ -1,8 +1,9 @@
-import BigNumber from 'bignumber.js';
 import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import {
   Context,
+  controllerTransfer,
+  ControllerTransferParams,
   Entity,
   Identity,
   modifyPrimaryIssuanceAgent,
@@ -29,13 +30,16 @@ import {
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
+  middlewareEventToEventIdentifier,
   stringToTicker,
   tickerToDid,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, padString } from '~/utils/internal';
+import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
+import { Checkpoints } from './Checkpoints';
 import { Compliance } from './Compliance';
+import { CorporateActions } from './CorporateActions';
 import { Documents } from './Documents';
 import { Issuance } from './Issuance';
 import { Offerings } from './Offerings';
@@ -86,6 +90,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public compliance: Compliance;
   public transferRestrictions: TransferRestrictions;
   public offerings: Offerings;
+  public checkpoints: Checkpoints;
+  public corporateActions: CorporateActions;
 
   /**
    * @hidden
@@ -105,29 +111,41 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.compliance = new Compliance(this, context);
     this.transferRestrictions = new TransferRestrictions(this, context);
     this.offerings = new Offerings(this, context);
+    this.checkpoints = new Checkpoints(this, context);
+    this.corporateActions = new CorporateActions(this, context);
 
     this.transferOwnership = createProcedureMethod(
-      args => [transferTokenOwnership, { ticker, ...args }],
+      { getProcedureAndArgs: args => [transferTokenOwnership, { ticker, ...args }] },
       context
     );
-    this.modify = createProcedureMethod(args => [modifyToken, { ticker, ...args }], context);
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyToken, { ticker, ...args }] },
+      context
+    );
     this.freeze = createProcedureMethod(
-      () => [toggleFreezeTransfers, { ticker, freeze: true }],
+      { getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: true }] },
       context
     );
     this.unfreeze = createProcedureMethod(
-      () => [toggleFreezeTransfers, { ticker, freeze: false }],
+      { getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }] },
       context
     );
     this.modifyPrimaryIssuanceAgent = createProcedureMethod(
-      args => [modifyPrimaryIssuanceAgent, { ticker, ...args }],
+      { getProcedureAndArgs: args => [modifyPrimaryIssuanceAgent, { ticker, ...args }] },
       context
     );
     this.removePrimaryIssuanceAgent = createProcedureMethod(
-      () => [removePrimaryIssuanceAgent, { ticker }],
+      { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }] },
       context
     );
-    this.redeem = createProcedureMethod(args => [redeemToken, { ticker, ...args }], context);
+    this.redeem = createProcedureMethod(
+      { getProcedureAndArgs: args => [redeemToken, { ticker, ...args }] },
+      context
+    );
+    this.controllerTransfer = createProcedureMethod(
+      { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
+      context
+    );
   }
 
   /**
@@ -249,7 +267,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrive the Security Token's asset identifiers list
+   * Retrieve the Security Token's asset identifiers list
    *
    * @note can be subscribed to
    */
@@ -292,7 +310,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
@@ -300,17 +320,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       })
     );
 
-    if (result.data.eventByIndexedArgs) {
-      // TODO remove null check once types fixed
-      return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        blockDate: result.data.eventByIndexedArgs.block!.datetime,
-        eventIndex: result.data.eventByIndexedArgs.event_idx,
-      };
-    }
-
-    return null;
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**
@@ -437,4 +447,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     return u64ToBigNumber(result).toNumber();
   }
+
+  /**
+   * Force a transfer from a given Portfolio to the PIA’s default Portfolio
+   *
+   * @param args.originPortfolio - portfolio (or portfolio ID) from which tokens will be transferred
+   * @param args.amount - amount of tokens to transfer
+   *
+   * @note required role:
+   *   - Security Token Primary Issuance Agent
+   */
+  public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
 }

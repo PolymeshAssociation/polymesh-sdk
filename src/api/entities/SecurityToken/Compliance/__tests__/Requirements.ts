@@ -3,15 +3,8 @@ import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'poly
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
-import {
-  Context,
-  Namespace,
-  SecurityToken,
-  setAssetRequirements,
-  togglePauseRequirements,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Context, Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
@@ -29,21 +22,28 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Requirements class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -85,9 +85,9 @@ describe('Requirements class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(setAssetRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await requirements.set(args);
@@ -108,9 +108,12 @@ describe('Requirements class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(setAssetRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, requirements: [] }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          { args: { ticker: token.ticker, requirements: [] }, transformer: undefined },
+          context
+        )
         .resolves(expectedQueue);
 
       const queue = await requirements.reset();
@@ -311,9 +314,9 @@ describe('Requirements class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(togglePauseRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, pause: true }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, pause: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await requirements.pause();
@@ -334,9 +337,9 @@ describe('Requirements class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(togglePauseRequirements, 'prepare')
-        .withArgs({ ticker: token.ticker, pause: false }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, pause: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await requirements.unpause();

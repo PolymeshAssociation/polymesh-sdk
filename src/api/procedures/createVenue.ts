@@ -1,10 +1,9 @@
-import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
 import { TxTags, VenueType } from '~/types';
 import { stringToVenueDetails, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateVenueParams {
   details: string;
@@ -17,9 +16,8 @@ export interface CreateVenueParams {
 export const createCreateVenueResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): Venue => {
-  const eventRecord = findEventRecord(receipt, 'settlement', 'VenueCreated');
-  const data = eventRecord.event.data;
-  const id = u64ToBigNumber(data[1] as u64);
+  const [{ data }] = filterEventRecords(receipt, 'settlement', 'VenueCreated');
+  const id = u64ToBigNumber(data[1]);
 
   return new Venue({ id }, context);
 };
@@ -61,10 +59,11 @@ export async function prepareCreateVenue(
 /**
  * @hidden
  */
-export const createVenue = new Procedure(prepareCreateVenue, {
-  signerPermissions: {
-    transactions: [TxTags.settlement.CreateVenue],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const createVenue = (): Procedure<CreateVenueParams, Venue> =>
+  new Procedure(prepareCreateVenue, {
+    signerPermissions: {
+      transactions: [TxTags.settlement.CreateVenue],
+      tokens: [],
+      portfolios: [],
+    },
+  });

@@ -7,11 +7,9 @@ import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 import {
   Context,
   Entity,
-  moveFunds,
   NumberedPortfolio,
   Portfolio,
   SecurityToken,
-  setCustodian,
   TransactionQueue,
 } from '~/internal';
 import { heartbeat, settlements } from '~/middleware/queries';
@@ -20,7 +18,7 @@ import {
   SettlementResult,
   SettlementResultEnum,
 } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -28,19 +26,21 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
-
 jest.mock(
   '~/api/entities/NumberedPortfolio',
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
   )
 );
-
 jest.mock(
   '~/api/entities/DefaultPortfolio',
   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
     '~/api/entities/DefaultPortfolio'
   )
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('Portfolio class', () => {
@@ -49,6 +49,7 @@ describe('Portfolio class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -58,14 +59,16 @@ describe('Portfolio class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(Portfolio.prototype instanceof Entity).toBe(true);
   });
 
@@ -219,9 +222,11 @@ describe('Portfolio class', () => {
       expect(result[0].token.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
+      expect(result[0].free).toEqual(total0.minus(locked0));
       expect(result[1].token.ticker).toBe(ticker1);
       expect(result[1].total).toEqual(total1);
       expect(result[1].locked).toEqual(locked1);
+      expect(result[1].free).toEqual(total1.minus(locked1));
     });
 
     test('should return the requested portfolio assets and their balances', async () => {
@@ -236,9 +241,11 @@ describe('Portfolio class', () => {
       expect(result[0].token.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
+      expect(result[0].free).toEqual(total0.minus(locked0));
       expect(result[1].token.ticker).toBe(otherTicker);
       expect(result[1].total).toEqual(new BigNumber(0));
       expect(result[1].locked).toEqual(new BigNumber(0));
+      expect(result[1].free).toEqual(new BigNumber(0));
     });
   });
 
@@ -289,9 +296,9 @@ describe('Portfolio class', () => {
       const portfolio = new Portfolio({ did: 'someDid' }, context);
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(moveFunds, 'prepare')
-        .withArgs({ ...args, from: portfolio }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ...args, from: portfolio }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await portfolio.moveFunds(args);
@@ -318,9 +325,9 @@ describe('Portfolio class', () => {
       const targetIdentity = 'someTarget';
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(setCustodian, 'prepare')
-        .withArgs({ id, did, targetIdentity }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { id, did, targetIdentity }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await portfolio.setCustodian({ targetIdentity });
@@ -411,7 +418,7 @@ describe('Portfolio class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account).returns(key);
+      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
 
       dsMockUtils.createApolloQueryStub(
         settlements({

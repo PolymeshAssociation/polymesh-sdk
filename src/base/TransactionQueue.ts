@@ -32,7 +32,8 @@ type PolymeshTransactionArray<TransactionArgs extends unknown[][]> = {
  * Class to manage procedural transaction queues
  */
 export class TransactionQueue<
-  ReturnType = void,
+  ProcedureReturnType = void,
+  ReturnType = ProcedureReturnType,
   TransactionArgs extends unknown[][] = unknown[][]
 > {
   /**
@@ -58,9 +59,15 @@ export class TransactionQueue<
 
   /**
    * @hidden
-   * value that will be returned by the queue after running
+   * value
    */
-  private returnValue: MaybePostTransactionValue<ReturnType>;
+  private procedureResult: MaybePostTransactionValue<ProcedureReturnType>;
+
+  /**
+   * @hidden
+   * function that transforms the return type
+   */
+  private transformer: (procedureResult: ProcedureReturnType) => Promise<ReturnType> | ReturnType;
 
   /**
    * @hidden
@@ -79,20 +86,30 @@ export class TransactionQueue<
   /**
    * Create a transaction queue
    *
-   * @param transactions - list of transactions to be run in this queue
-   * @param returnValue - value that will be returned by the queue after it is run. It can be a [[PostTransactionValue]]
-   * @param args - arguments with which the Procedure that generated this queue was instanced
+   * @param args.transactions - list of transactions to be run in this queue
+   * @param args.procedureResult - value that will be returned by the queue after it is run. It can be a [[PostTransactionValue]]
+   * @param args.transformer - function that transforms the procedure's return value before returning it after the queue is run
    */
   constructor(
-    transactions: PolymeshTransactionArray<TransactionArgs>,
-    returnValue: MaybePostTransactionValue<ReturnType>,
+    args: {
+      transactions: PolymeshTransactionArray<TransactionArgs>;
+      procedureResult: MaybePostTransactionValue<ProcedureReturnType>;
+      transformer?: (result: ProcedureReturnType) => Promise<ReturnType> | ReturnType;
+    },
     context: Context
   ) {
+    const {
+      transactions,
+      procedureResult,
+      transformer = async (val): Promise<ReturnType> => (val as unknown) as ReturnType,
+    } = args;
+
     this.emitter = new EventEmitter();
-    this.returnValue = returnValue;
+    this.procedureResult = procedureResult;
     this.hasRun = false;
     this.context = context;
     this.transactions = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+    this.transformer = transformer;
 
     transactions.forEach(transaction => {
       transaction.onStatusChange(updatedTransaction => {
@@ -140,18 +157,21 @@ export class TransactionQueue<
     this.queue = [...this.transactions] as PolymeshTransactionArray<TransactionArgs>;
     this.updateStatus(TransactionQueueStatus.Running);
 
-    let res: ReturnType | undefined;
+    let procRes: ProcedureReturnType;
+    let res: ReturnType;
 
     try {
       await this.executeTransactionQueue();
       this.updateStatus(TransactionQueueStatus.Succeeded);
-      const { returnValue } = this;
+      const { procedureResult } = this;
 
-      if (returnValue instanceof PostTransactionValue) {
-        res = returnValue.value;
+      if (procedureResult instanceof PostTransactionValue) {
+        procRes = procedureResult.value;
       } else {
-        res = returnValue;
+        procRes = procedureResult;
       }
+
+      res = await this.transformer(procRes);
     } catch (err) {
       this.error = err;
       this.updateStatus(TransactionQueueStatus.Failed);

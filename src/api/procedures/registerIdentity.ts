@@ -1,5 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
 import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
@@ -10,7 +10,7 @@ import {
   signerToString,
   stringToAccountId,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
@@ -23,9 +23,8 @@ export interface RegisterIdentityParams {
 export const createRegisterIdentityResolver = (context: Context) => (
   receipt: ISubmittableResult
 ): Identity => {
-  const eventRecord = findEventRecord(receipt, 'identity', 'DidCreated');
-  const data = eventRecord.event.data;
-  const did = identityIdToString(data[0] as IdentityId);
+  const [{ data }] = filterEventRecords(receipt, 'identity', 'DidCreated');
+  const did = identityIdToString(data[0]);
 
   return new Identity({ did }, context);
 };
@@ -70,11 +69,12 @@ export async function prepareRegisterIdentity(
 /**
  * @hidden
  */
-export const registerIdentity = new Procedure(prepareRegisterIdentity, {
-  identityRoles: [{ type: RoleType.CddProvider }],
-  signerPermissions: {
-    tokens: [],
-    portfolios: [],
-    transactions: [TxTags.identity.CddRegisterDid],
-  },
-});
+export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> =>
+  new Procedure(prepareRegisterIdentity, {
+    identityRoles: [{ type: RoleType.CddProvider }],
+    signerPermissions: {
+      tokens: [],
+      portfolios: [],
+      transactions: [TxTags.identity.CddRegisterDid],
+    },
+  });

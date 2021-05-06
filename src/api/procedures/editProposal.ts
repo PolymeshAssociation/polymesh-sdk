@@ -77,4 +77,4 @@
 // /**
 //  * @hidden
 //  */
-// export const editProposal = new Procedure(prepareEditProposal, isAuthorized);
+// export const editProposal = (): Procedure => new Procedure(prepareEditProposal, isAuthorized);

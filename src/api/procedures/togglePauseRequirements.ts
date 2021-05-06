@@ -73,7 +73,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const togglePauseRequirements = new Procedure(
-  prepareTogglePauseRequirements,
-  getAuthorization
-);
+export const togglePauseRequirements = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareTogglePauseRequirements, getAuthorization);

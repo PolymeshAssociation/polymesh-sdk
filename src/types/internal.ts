@@ -1,6 +1,8 @@
 import {
   AddressOrPair,
+  AugmentedEvents,
   AugmentedSubmittable,
+  QueryableConsts,
   QueryableStorage,
   SubmittableExtrinsic,
   SubmittableExtrinsics,
@@ -11,7 +13,7 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue, TransactionQueue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
+import { CalendarPeriod, Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -19,9 +21,19 @@ import { Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
 export type Extrinsics = SubmittableExtrinsics<'promise'>;
 
 /**
+ * Polkadot's events
+ */
+export type Events = AugmentedEvents<'promise'>;
+
+/**
  * Polkadot's `query` submodule
  */
 export type Queries = QueryableStorage<'promise'>;
+
+/**
+ * Polkadot's `consts` submodule
+ */
+export type Consts = QueryableConsts<'promise'>;
 
 /**
  * Low level transaction method in the polkadot API
@@ -182,14 +194,24 @@ export enum InstructionAffirmationOperation {
   Reject = 'Reject',
 }
 
-export enum TransferRestrictionType {
-  Count = 'Count',
-  Percentage = 'Percentage',
+export interface ScheduleSpec {
+  start: Date | null;
+  period: CalendarPeriod | null;
+  repetitions: number | null;
 }
 
-export interface TransferRestriction {
-  type: TransferRestrictionType;
-  value: BigNumber;
+export interface ScopeClaimProof {
+  proofScopeIdWellformed: string;
+  proofScopeIdCddIdMatch: {
+    challengeResponses: [string, string];
+    subtractExpressionsRes: string;
+    blindedScopeDidHash: string;
+  };
+}
+
+export interface CorporateActionIdentifier {
+  ticker: string;
+  localId: BigNumber;
 }
 
 export interface ProcedureAuthorization {
@@ -197,8 +219,12 @@ export interface ProcedureAuthorization {
   identityRoles?: Role[] | boolean;
 }
 
-export interface ProcedureMethod<MethodArgs, ReturnValue> {
-  (args: MethodArgs): Promise<TransactionQueue<ReturnValue>>;
+export interface ProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args: MethodArgs): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
 

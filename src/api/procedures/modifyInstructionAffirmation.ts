@@ -1,4 +1,4 @@
-import { u64 } from '@polkadot/types';
+import { u32, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import {
@@ -19,6 +19,7 @@ import {
 import { tuple } from '~/types/utils';
 import {
   meshAffirmationStatusToAffirmationStatus,
+  numberToU32,
   numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
@@ -31,6 +32,7 @@ export interface ModifyInstructionAffirmationParams {
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
+  senderLegAmount: number;
 }
 
 /**
@@ -48,7 +50,7 @@ export async function prepareModifyInstructionAffirmation(
       },
     },
     context,
-    storage: { portfolios },
+    storage: { portfolios, senderLegAmount },
   } = this;
 
   const { operation, id } = args;
@@ -57,6 +59,13 @@ export async function prepareModifyInstructionAffirmation(
 
   await assertInstructionValid(instruction, context);
 
+  if (!portfolios.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Current Identity is not involved in this Instruction',
+    });
+  }
+
   const rawInstructionId = numberToU64(id, context);
   const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
@@ -64,7 +73,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PortfolioId[]]>;
+  let transaction: PolymeshTx<[u64, PortfolioId[], u32]>;
 
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {
@@ -109,7 +118,13 @@ export async function prepareModifyInstructionAffirmation(
     });
   }
 
-  this.addTransaction(transaction, {}, rawInstructionId, validPortfolioIds);
+  this.addTransaction(
+    transaction,
+    { batchSize: senderLegAmount },
+    rawInstructionId,
+    validPortfolioIds,
+    numberToU32(senderLegAmount, context)
+  );
 
   return instruction;
 }
@@ -163,39 +178,49 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
   const instruction = new Instruction({ id }, context);
-  const { data: legs } = await instruction.getLegs();
+  const [{ data: legs }, { did }] = await Promise.all([
+    instruction.getLegs(),
+    context.getCurrentIdentity(),
+  ]);
 
-  const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
+  const [portfolios, senderLegAmount] = await P.reduce<
+    Leg,
+    [(DefaultPortfolio | NumberedPortfolio)[], number]
+  >(
     legs,
     async (result, { from, to }) => {
       const [fromIsCustodied, toIsCustodied] = await Promise.all([
-        from.isCustodiedBy(),
-        to.isCustodiedBy(),
+        from.isCustodiedBy({ identity: did }),
+        to.isCustodiedBy({ identity: did }),
       ]);
 
-      let res = [...result];
+      const [custodiedPortfolios, amount] = result;
+
+      let res = [...custodiedPortfolios];
+      let legAmount = amount;
 
       if (fromIsCustodied) {
         res = [...res, from];
+        legAmount += 1;
       }
 
       if (toIsCustodied) {
         res = [...res, to];
       }
 
-      return res;
+      return tuple(res, legAmount);
     },
-    []
+    [[], 0]
   );
 
-  return { portfolios };
+  return { portfolios, senderLegAmount };
 }
 
 /**
  * @hidden
  */
-export const modifyInstructionAffirmation = new Procedure(
-  prepareModifyInstructionAffirmation,
-  getAuthorization,
-  prepareStorage
-);
+export const modifyInstructionAffirmation = (): Procedure<
+  ModifyInstructionAffirmationParams,
+  Instruction,
+  Storage
+> => new Procedure(prepareModifyInstructionAffirmation, getAuthorization, prepareStorage);

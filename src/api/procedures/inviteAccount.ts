@@ -1,5 +1,6 @@
+import { TxTags } from 'polymesh-types/types';
+
 import { Account, PolymeshError, Procedure } from '~/internal';
-import { TxTags } from '~/polkadot/types';
 import { AuthorizationType, ErrorCode, Permissions, PermissionsLike } from '~/types';
 import { SignerType } from '~/types/internal';
 import {
@@ -118,10 +119,11 @@ export async function prepareInviteAccount(
 /**
  * @hidden
  */
-export const inviteAccount = new Procedure(prepareInviteAccount, {
-  signerPermissions: {
-    tokens: [],
-    portfolios: [],
-    transactions: [TxTags.identity.AddAuthorization],
-  },
-});
+export const inviteAccount = (): Procedure<InviteAccountParams, void> =>
+  new Procedure(prepareInviteAccount, {
+    signerPermissions: {
+      tokens: [],
+      portfolios: [],
+      transactions: [TxTags.identity.AddAuthorization],
+    },
+  });

@@ -782,11 +782,8 @@ import type {
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
-  GetPortfolioAssetsResult,
-  GetPortfoliosResult,
+  GranularCanTransferResult,
   HandledTxStatus,
-  HistoricalVotingByAddress,
-  HistoricalVotingById,
   IdentityClaim,
   IdentityClaimKey,
   IdentityId,
@@ -796,7 +793,6 @@ import type {
   InstructionStatus,
   InvestorUid,
   InvestorZKProofData,
-  IssueAssetItem,
   IssueRecipient,
   KeyIdentityData,
   Leg,
@@ -815,7 +811,6 @@ import type {
   MotionTitle,
   MovePortfolioItem,
   OffChainSignature,
-  OfflineSlashingParams,
   PalletName,
   PalletPermissions,
   Payload,
@@ -832,6 +827,7 @@ import type {
   PortfolioKind,
   PortfolioName,
   PortfolioNumber,
+  PortfolioValidityResult,
   PosRatio,
   PreAuthorizedKeyInfo,
   PriceTier,
@@ -849,9 +845,12 @@ import type {
   RecordDate,
   RecordDateSpec,
   RestrictionResult,
+  RistrettoPoint,
+  Scalar,
   ScheduleId,
   ScheduleSpec,
   Scope,
+  ScopeClaimProof,
   ScopeId,
   SecondaryKey,
   SecondaryKeyWithAuth,
@@ -882,10 +881,12 @@ import type {
   TickerRegistrationConfig,
   TickerTransferApproval,
   TransferManager,
+  TransferManagerResult,
   TrustedFor,
   TrustedIssuer,
   UniqueCall,
   Url,
+  ValidatorPrefsWithBlocked,
   Venue,
   VenueDetails,
   VenueType,
@@ -894,6 +895,7 @@ import type {
   VoteCount,
   VoteCountProposalFound,
   VotingResult,
+  ZkProofData,
 } from 'polymesh-types/polymesh';
 
 declare module '@polkadot/types/types/registry' {
@@ -1321,13 +1323,12 @@ declare module '@polkadot/types/types/registry' {
     'Option<FundraiserStatus>': Option<FundraiserStatus>;
     'Option<FundraiserTier>': Option<FundraiserTier>;
     'Option<Gas>': Option<Gas>;
-    'Option<GetPortfolioAssetsResult>': Option<GetPortfolioAssetsResult>;
-    'Option<GetPortfoliosResult>': Option<GetPortfoliosResult>;
     'Option<GlobalValidationSchedule>': Option<GlobalValidationSchedule>;
     'Option<GrandpaEquivocation>': Option<GrandpaEquivocation>;
     'Option<GrandpaEquivocationProof>': Option<GrandpaEquivocationProof>;
     'Option<GrandpaEquivocationValue>': Option<GrandpaEquivocationValue>;
     'Option<GrandpaPrevote>': Option<GrandpaPrevote>;
+    'Option<GranularCanTransferResult>': Option<GranularCanTransferResult>;
     'Option<GroupIndex>': Option<GroupIndex>;
     'Option<H1024>': Option<H1024>;
     'Option<H128>': Option<H128>;
@@ -1343,8 +1344,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<Health>': Option<Health>;
     'Option<Heartbeat>': Option<Heartbeat>;
     'Option<HeartbeatTo244>': Option<HeartbeatTo244>;
-    'Option<HistoricalVotingByAddress>': Option<HistoricalVotingByAddress>;
-    'Option<HistoricalVotingById>': Option<HistoricalVotingById>;
     'Option<HostConfiguration>': Option<HostConfiguration>;
     'Option<HostFnWeights>': Option<HostFnWeights>;
     'Option<HrmpChannel>': Option<HrmpChannel>;
@@ -1388,7 +1387,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<InvalidTransaction>': Option<InvalidTransaction>;
     'Option<InvestorUid>': Option<InvestorUid>;
     'Option<InvestorZKProofData>': Option<InvestorZKProofData>;
-    'Option<IssueAssetItem>': Option<IssueAssetItem>;
     'Option<IssueRecipient>': Option<IssueRecipient>;
     'Option<Json>': Option<Json>;
     'Option<Junction>': Option<Junction>;
@@ -1478,7 +1476,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<OffChainSignature>': Option<OffChainSignature>;
     'Option<OffenceDetails>': Option<OffenceDetails>;
     'Option<Offender>': Option<Offender>;
-    'Option<OfflineSlashingParams>': Option<OfflineSlashingParams>;
     'Option<OpaqueCall>': Option<OpaqueCall>;
     'Option<OpaqueMultiaddr>': Option<OpaqueMultiaddr>;
     'Option<OpaqueNetworkState>': Option<OpaqueNetworkState>;
@@ -1544,6 +1541,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<PortfolioKind>': Option<PortfolioKind>;
     'Option<PortfolioName>': Option<PortfolioName>;
     'Option<PortfolioNumber>': Option<PortfolioNumber>;
+    'Option<PortfolioValidityResult>': Option<PortfolioValidityResult>;
     'Option<PosRatio>': Option<PosRatio>;
     'Option<PreAuthorizedKeyInfo>': Option<PreAuthorizedKeyInfo>;
     'Option<Precommits>': Option<Precommits>;
@@ -1615,12 +1613,14 @@ declare module '@polkadot/types/types/registry' {
     'Option<ReserveAssetDeposit>': Option<ReserveAssetDeposit>;
     'Option<RestrictionResult>': Option<RestrictionResult>;
     'Option<Retriable>': Option<Retriable>;
+    'Option<RistrettoPoint>': Option<RistrettoPoint>;
     'Option<RoundState>': Option<RoundState>;
     'Option<RpcMethods>': Option<RpcMethods>;
     'Option<RuntimeDbWeight>': Option<RuntimeDbWeight>;
     'Option<RuntimeDispatchInfo>': Option<RuntimeDispatchInfo>;
     'Option<RuntimeVersion>': Option<RuntimeVersion>;
     'Option<RuntimeVersionApi>': Option<RuntimeVersionApi>;
+    'Option<Scalar>': Option<Scalar>;
     'Option<Schedule>': Option<Schedule>;
     'Option<Scheduled>': Option<Scheduled>;
     'Option<ScheduledTo254>': Option<ScheduledTo254>;
@@ -1632,6 +1632,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<ScheduleTo258>': Option<ScheduleTo258>;
     'Option<Scheduling>': Option<Scheduling>;
     'Option<Scope>': Option<Scope>;
+    'Option<ScopeClaimProof>': Option<ScopeClaimProof>;
     'Option<ScopeId>': Option<ScopeId>;
     'Option<Seal>': Option<Seal>;
     'Option<SealV0>': Option<SealV0>;
@@ -1750,6 +1751,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<TransactionPriority>': Option<TransactionPriority>;
     'Option<TransactionValidityError>': Option<TransactionValidityError>;
     'Option<TransferManager>': Option<TransferManager>;
+    'Option<TransferManagerResult>': Option<TransferManagerResult>;
     'Option<TransientValidationData>': Option<TransientValidationData>;
     'Option<TreasuryProposal>': Option<TreasuryProposal>;
     'Option<TrieId>': Option<TrieId>;
@@ -1783,6 +1785,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<ValidatorCount>': Option<ValidatorCount>;
     'Option<ValidatorId>': Option<ValidatorId>;
     'Option<ValidatorIdOf>': Option<ValidatorIdOf>;
+    'Option<ValidatorPrefsWithBlocked>': Option<ValidatorPrefsWithBlocked>;
     'Option<ValidatorSignature>': Option<ValidatorSignature>;
     'Option<ValidityAttestation>': Option<ValidityAttestation>;
     'Option<Venue>': Option<Venue>;
@@ -1825,6 +1828,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<Xcm>': Option<Xcm>;
     'Option<XcmError>': Option<XcmError>;
     'Option<XcmResult>': Option<XcmResult>;
+    'Option<ZkProofData>': Option<ZkProofData>;
     'Vec<AbridgedCandidateReceipt>': Vec<AbridgedCandidateReceipt>;
     'Vec<AbridgedHostConfiguration>': Vec<AbridgedHostConfiguration>;
     'Vec<AbridgedHrmpChannel>': Vec<AbridgedHrmpChannel>;
@@ -2160,13 +2164,12 @@ declare module '@polkadot/types/types/registry' {
     'Vec<FundraiserStatus>': Vec<FundraiserStatus>;
     'Vec<FundraiserTier>': Vec<FundraiserTier>;
     'Vec<Gas>': Vec<Gas>;
-    'Vec<GetPortfolioAssetsResult>': Vec<GetPortfolioAssetsResult>;
-    'Vec<GetPortfoliosResult>': Vec<GetPortfoliosResult>;
     'Vec<GlobalValidationSchedule>': Vec<GlobalValidationSchedule>;
     'Vec<GrandpaEquivocation>': Vec<GrandpaEquivocation>;
     'Vec<GrandpaEquivocationProof>': Vec<GrandpaEquivocationProof>;
     'Vec<GrandpaEquivocationValue>': Vec<GrandpaEquivocationValue>;
     'Vec<GrandpaPrevote>': Vec<GrandpaPrevote>;
+    'Vec<GranularCanTransferResult>': Vec<GranularCanTransferResult>;
     'Vec<GroupIndex>': Vec<GroupIndex>;
     'Vec<H1024>': Vec<H1024>;
     'Vec<H128>': Vec<H128>;
@@ -2182,8 +2185,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<Health>': Vec<Health>;
     'Vec<Heartbeat>': Vec<Heartbeat>;
     'Vec<HeartbeatTo244>': Vec<HeartbeatTo244>;
-    'Vec<HistoricalVotingByAddress>': Vec<HistoricalVotingByAddress>;
-    'Vec<HistoricalVotingById>': Vec<HistoricalVotingById>;
     'Vec<HostConfiguration>': Vec<HostConfiguration>;
     'Vec<HostFnWeights>': Vec<HostFnWeights>;
     'Vec<HrmpChannel>': Vec<HrmpChannel>;
@@ -2227,7 +2228,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<InvalidTransaction>': Vec<InvalidTransaction>;
     'Vec<InvestorUid>': Vec<InvestorUid>;
     'Vec<InvestorZKProofData>': Vec<InvestorZKProofData>;
-    'Vec<IssueAssetItem>': Vec<IssueAssetItem>;
     'Vec<IssueRecipient>': Vec<IssueRecipient>;
     'Vec<Json>': Vec<Json>;
     'Vec<Junction>': Vec<Junction>;
@@ -2317,7 +2317,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<OffChainSignature>': Vec<OffChainSignature>;
     'Vec<OffenceDetails>': Vec<OffenceDetails>;
     'Vec<Offender>': Vec<Offender>;
-    'Vec<OfflineSlashingParams>': Vec<OfflineSlashingParams>;
     'Vec<OpaqueCall>': Vec<OpaqueCall>;
     'Vec<OpaqueMultiaddr>': Vec<OpaqueMultiaddr>;
     'Vec<OpaqueNetworkState>': Vec<OpaqueNetworkState>;
@@ -2383,6 +2382,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<PortfolioKind>': Vec<PortfolioKind>;
     'Vec<PortfolioName>': Vec<PortfolioName>;
     'Vec<PortfolioNumber>': Vec<PortfolioNumber>;
+    'Vec<PortfolioValidityResult>': Vec<PortfolioValidityResult>;
     'Vec<PosRatio>': Vec<PosRatio>;
     'Vec<PreAuthorizedKeyInfo>': Vec<PreAuthorizedKeyInfo>;
     'Vec<Precommits>': Vec<Precommits>;
@@ -2454,12 +2454,14 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ReserveAssetDeposit>': Vec<ReserveAssetDeposit>;
     'Vec<RestrictionResult>': Vec<RestrictionResult>;
     'Vec<Retriable>': Vec<Retriable>;
+    'Vec<RistrettoPoint>': Vec<RistrettoPoint>;
     'Vec<RoundState>': Vec<RoundState>;
     'Vec<RpcMethods>': Vec<RpcMethods>;
     'Vec<RuntimeDbWeight>': Vec<RuntimeDbWeight>;
     'Vec<RuntimeDispatchInfo>': Vec<RuntimeDispatchInfo>;
     'Vec<RuntimeVersion>': Vec<RuntimeVersion>;
     'Vec<RuntimeVersionApi>': Vec<RuntimeVersionApi>;
+    'Vec<Scalar>': Vec<Scalar>;
     'Vec<Schedule>': Vec<Schedule>;
     'Vec<Scheduled>': Vec<Scheduled>;
     'Vec<ScheduledTo254>': Vec<ScheduledTo254>;
@@ -2471,6 +2473,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ScheduleTo258>': Vec<ScheduleTo258>;
     'Vec<Scheduling>': Vec<Scheduling>;
     'Vec<Scope>': Vec<Scope>;
+    'Vec<ScopeClaimProof>': Vec<ScopeClaimProof>;
     'Vec<ScopeId>': Vec<ScopeId>;
     'Vec<Seal>': Vec<Seal>;
     'Vec<SealV0>': Vec<SealV0>;
@@ -2589,6 +2592,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<TransactionPriority>': Vec<TransactionPriority>;
     'Vec<TransactionValidityError>': Vec<TransactionValidityError>;
     'Vec<TransferManager>': Vec<TransferManager>;
+    'Vec<TransferManagerResult>': Vec<TransferManagerResult>;
     'Vec<TransientValidationData>': Vec<TransientValidationData>;
     'Vec<TreasuryProposal>': Vec<TreasuryProposal>;
     'Vec<TrieId>': Vec<TrieId>;
@@ -2622,6 +2626,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ValidatorCount>': Vec<ValidatorCount>;
     'Vec<ValidatorId>': Vec<ValidatorId>;
     'Vec<ValidatorIdOf>': Vec<ValidatorIdOf>;
+    'Vec<ValidatorPrefsWithBlocked>': Vec<ValidatorPrefsWithBlocked>;
     'Vec<ValidatorSignature>': Vec<ValidatorSignature>;
     'Vec<ValidityAttestation>': Vec<ValidityAttestation>;
     'Vec<Venue>': Vec<Venue>;
@@ -2664,6 +2669,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<Xcm>': Vec<Xcm>;
     'Vec<XcmError>': Vec<XcmError>;
     'Vec<XcmResult>': Vec<XcmResult>;
+    'Vec<ZkProofData>': Vec<ZkProofData>;
     AbridgedCandidateReceipt: AbridgedCandidateReceipt;
     AbridgedHostConfiguration: AbridgedHostConfiguration;
     AbridgedHrmpChannel: AbridgedHrmpChannel;
@@ -2999,13 +3005,12 @@ declare module '@polkadot/types/types/registry' {
     FundraiserStatus: FundraiserStatus;
     FundraiserTier: FundraiserTier;
     Gas: Gas;
-    GetPortfolioAssetsResult: GetPortfolioAssetsResult;
-    GetPortfoliosResult: GetPortfoliosResult;
     GlobalValidationSchedule: GlobalValidationSchedule;
     GrandpaEquivocation: GrandpaEquivocation;
     GrandpaEquivocationProof: GrandpaEquivocationProof;
     GrandpaEquivocationValue: GrandpaEquivocationValue;
     GrandpaPrevote: GrandpaPrevote;
+    GranularCanTransferResult: GranularCanTransferResult;
     GroupIndex: GroupIndex;
     H1024: H1024;
     H128: H128;
@@ -3021,8 +3026,6 @@ declare module '@polkadot/types/types/registry' {
     Health: Health;
     Heartbeat: Heartbeat;
     HeartbeatTo244: HeartbeatTo244;
-    HistoricalVotingByAddress: HistoricalVotingByAddress;
-    HistoricalVotingById: HistoricalVotingById;
     HostConfiguration: HostConfiguration;
     HostFnWeights: HostFnWeights;
     HrmpChannel: HrmpChannel;
@@ -3066,7 +3069,6 @@ declare module '@polkadot/types/types/registry' {
     InvalidTransaction: InvalidTransaction;
     InvestorUid: InvestorUid;
     InvestorZKProofData: InvestorZKProofData;
-    IssueAssetItem: IssueAssetItem;
     IssueRecipient: IssueRecipient;
     Json: Json;
     Junction: Junction;
@@ -3156,7 +3158,6 @@ declare module '@polkadot/types/types/registry' {
     OffChainSignature: OffChainSignature;
     OffenceDetails: OffenceDetails;
     Offender: Offender;
-    OfflineSlashingParams: OfflineSlashingParams;
     OpaqueCall: OpaqueCall;
     OpaqueMultiaddr: OpaqueMultiaddr;
     OpaqueNetworkState: OpaqueNetworkState;
@@ -3222,6 +3223,7 @@ declare module '@polkadot/types/types/registry' {
     PortfolioKind: PortfolioKind;
     PortfolioName: PortfolioName;
     PortfolioNumber: PortfolioNumber;
+    PortfolioValidityResult: PortfolioValidityResult;
     PosRatio: PosRatio;
     PreAuthorizedKeyInfo: PreAuthorizedKeyInfo;
     Precommits: Precommits;
@@ -3293,12 +3295,14 @@ declare module '@polkadot/types/types/registry' {
     ReserveAssetDeposit: ReserveAssetDeposit;
     RestrictionResult: RestrictionResult;
     Retriable: Retriable;
+    RistrettoPoint: RistrettoPoint;
     RoundState: RoundState;
     RpcMethods: RpcMethods;
     RuntimeDbWeight: RuntimeDbWeight;
     RuntimeDispatchInfo: RuntimeDispatchInfo;
     RuntimeVersion: RuntimeVersion;
     RuntimeVersionApi: RuntimeVersionApi;
+    Scalar: Scalar;
     Schedule: Schedule;
     Scheduled: Scheduled;
     ScheduledTo254: ScheduledTo254;
@@ -3310,6 +3314,7 @@ declare module '@polkadot/types/types/registry' {
     ScheduleTo258: ScheduleTo258;
     Scheduling: Scheduling;
     Scope: Scope;
+    ScopeClaimProof: ScopeClaimProof;
     ScopeId: ScopeId;
     Seal: Seal;
     SealV0: SealV0;
@@ -3428,6 +3433,7 @@ declare module '@polkadot/types/types/registry' {
     TransactionPriority: TransactionPriority;
     TransactionValidityError: TransactionValidityError;
     TransferManager: TransferManager;
+    TransferManagerResult: TransferManagerResult;
     TransientValidationData: TransientValidationData;
     TreasuryProposal: TreasuryProposal;
     TrieId: TrieId;
@@ -3461,6 +3467,7 @@ declare module '@polkadot/types/types/registry' {
     ValidatorCount: ValidatorCount;
     ValidatorId: ValidatorId;
     ValidatorIdOf: ValidatorIdOf;
+    ValidatorPrefsWithBlocked: ValidatorPrefsWithBlocked;
     ValidatorSignature: ValidatorSignature;
     ValidityAttestation: ValidityAttestation;
     Venue: Venue;
@@ -3503,5 +3510,6 @@ declare module '@polkadot/types/types/registry' {
     Xcm: Xcm;
     XcmError: XcmError;
     XcmResult: XcmResult;
+    ZkProofData: ZkProofData;
   }
 }

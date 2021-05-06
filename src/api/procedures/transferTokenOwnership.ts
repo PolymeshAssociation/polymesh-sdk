@@ -74,7 +74,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const transferTokenOwnership = new Procedure(
-  prepareTransferTokenOwnership,
-  getAuthorization
-);
+export const transferTokenOwnership = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareTransferTokenOwnership, getAuthorization);

@@ -1,5 +1,5 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment, Permill } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
   stringLowerFirst,
   stringToU8a,
@@ -34,6 +34,9 @@ import {
   AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CAId,
+  CAKind,
+  CalendarPeriod as MeshCalendarPeriod,
   CanTransferResult,
   CddId,
   CddStatus,
@@ -43,6 +46,8 @@ import {
   ComplianceRequirementResult,
   Condition as MeshCondition,
   ConditionType as MeshConditionType,
+  CorporateAction as MeshCorporateAction,
+  Distribution,
   Document,
   DocumentHash,
   DocumentName,
@@ -50,8 +55,9 @@ import {
   DocumentUri,
   FundingRoundName,
   Fundraiser,
-  FundraiserStatus as MeshFundraiserStatus,
+  FundraiserName,
   FundraiserTier,
+  GranularCanTransferResult,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
@@ -63,11 +69,18 @@ import {
   PosRatio,
   PriceTier,
   ProtocolOp,
+  RecordDateSpec,
+  RistrettoPoint,
+  Scalar,
+  ScheduleSpec as MeshScheduleSpec,
   Scope as MeshScope,
+  ScopeClaimProof as MeshScopeClaimProof,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
+  StoredSchedule,
+  TargetIdentities,
   TargetIdentity,
   Ticker,
   TransferManager,
@@ -82,6 +95,8 @@ import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
   Account,
+  Checkpoint,
+  CheckpointSchedule,
   Context,
   DefaultPortfolio,
   Identity,
@@ -94,6 +109,7 @@ import {
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
+  Event as MiddlewareEvent,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
@@ -104,6 +120,9 @@ import {
   AffirmationStatus,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
+  CheckpointScheduleParams,
   Claim,
   ClaimType,
   Compliance,
@@ -111,7 +130,12 @@ import {
   ConditionCompliance,
   ConditionTarget,
   ConditionType,
+  CorporateActionKind,
+  CorporateActionParams,
+  CorporateActionTargets,
+  DividendDistributionParams,
   ErrorCode,
+  EventIdentifier,
   IdentityCondition,
   IdentityWithClaims,
   InstructionStatus,
@@ -132,14 +156,21 @@ import {
   SecondaryKey,
   Signer,
   SingleClaimCondition,
+  StoBalanceStatus,
   StoDetails,
-  StoStatus,
+  StoSaleStatus,
   StoTier,
+  StoTimingStatus,
+  TargetTreatment,
   Tier,
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
   TokenType,
+  TransferBreakdown,
+  TransferError,
+  TransferRestriction,
+  TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
@@ -147,13 +178,14 @@ import {
 } from '~/types';
 import {
   AuthTarget,
+  CorporateActionIdentifier,
   ExtrinsicIdentifier,
   PolymeshTx,
   PortfolioId,
+  ScheduleSpec,
+  ScopeClaimProof,
   SignerType,
   SignerValue,
-  TransferRestriction,
-  TransferRestrictionType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -162,12 +194,12 @@ import {
   MAX_DECIMALS,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
-  SS58_FORMAT,
 } from '~/utils/constants';
 import {
   assertIsInteger,
   assertIsPositive,
   createClaim,
+  getTicker,
   isPrintableAscii,
   padString,
   removePadding,
@@ -395,7 +427,18 @@ export function numberToU64(value: number | BigNumber, context: Context): u64 {
  * @hidden
  */
 export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
-  return context.polymeshApi.createType('Permill', new BigNumber(value).shiftedBy(4).toString()); // (value : 100) * 10^6
+  assertIsPositive(value);
+
+  const val = new BigNumber(value);
+
+  if (val.gt(100)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "Percentage shouldn't exceed 100",
+    });
+  }
+
+  return context.polymeshApi.createType('Permill', val.shiftedBy(4).toString()); // (value : 100) * 10^6
 }
 
 /**
@@ -530,6 +573,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
       ];
@@ -578,6 +622,30 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.complianceManager.PauseAssetCompliance,
         TxTags.complianceManager.ResumeAssetCompliance,
         TxTags.complianceManager.ResetAssetCompliance,
+      ];
+    }
+    case TxGroup.CorporateActionsManagement: {
+      return [
+        TxTags.checkpoint.CreateSchedule,
+        TxTags.checkpoint.RemoveSchedule,
+        TxTags.checkpoint.CreateCheckpoint,
+        TxTags.corporateAction.InitiateCorporateAction,
+        TxTags.capitalDistribution.Distribute,
+        TxTags.capitalDistribution.Claim,
+        TxTags.identity.AddInvestorUniquenessClaim,
+      ];
+    }
+    case TxGroup.StoManagement: {
+      return [
+        TxTags.sto.CreateFundraiser,
+        TxTags.sto.FreezeFundraiser,
+        TxTags.sto.Invest,
+        TxTags.sto.ModifyFundraiserWindow,
+        TxTags.sto.Stop,
+        TxTags.sto.UnfreezeFundraiser,
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.asset.Issue,
+        TxTags.settlement.CreateVenue,
       ];
     }
   }
@@ -791,6 +859,13 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  if (auth.isTransferCorporateActionAgent) {
+    return {
+      type: AuthorizationType.TransferCorporateActionAgent,
+      value: tickerToString(auth.asTransferCorporateActionAgent),
+    };
+  }
+
   if (auth.isCustom) {
     return {
       type: AuthorizationType.Custom,
@@ -878,6 +953,13 @@ export function numberToU32(value: number | BigNumber, context: Context): u32 {
  * @hidden
  */
 export function u32ToBigNumber(value: u32): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u8ToBigNumber(value: u8): BigNumber {
   return new BigNumber(value.toString());
 }
 
@@ -997,6 +1079,9 @@ export function assetTypeToString(assetType: AssetType): string {
   }
   if (assetType.isDerivative) {
     return KnownTokenType.Derivative;
+  }
+  if (assetType.isStableCoin) {
+    return KnownTokenType.StableCoin;
   }
 
   return u8aToString(assetType.asCustom);
@@ -1438,6 +1523,10 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       );
       break;
     }
+    case ClaimType.InvestorUniquenessV2: {
+      value = stringToCddId(claim.cddId, context);
+      break;
+    }
     default: {
       value = scopeToMeshScope(claim.scope, context);
     }
@@ -1475,6 +1564,20 @@ export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
   }
+}
+
+/**
+ * @hidden
+ */
+export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventIdentifier {
+  const { block_id: blockNumber, block, event_idx: eventIndex } = event;
+
+  return {
+    blockNumber: new BigNumber(blockNumber),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    blockDate: new Date(block!.datetime),
+    eventIndex,
+  };
 }
 
 /**
@@ -1552,6 +1655,13 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
       scope: meshScopeToScope(scope),
       scopeId: scopeIdToString(scopeId),
       cddId: cddIdToString(cddId),
+    };
+  }
+
+  if (claim.isInvestorUniquenessV2) {
+    return {
+      type: ClaimType.InvestorUniquenessV2,
+      cddId: cddIdToString(claim.asInvestorUniquenessV2),
     };
   }
 
@@ -2026,22 +2136,25 @@ export function assetComplianceResultToCompliance(
 /**
  * @hidden
  */
-export function moduleAddressToString(moduleAddress: string): string {
-  return encodeAddress(stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)), SS58_FORMAT);
+export function moduleAddressToString(moduleAddress: string, context: Context): string {
+  return encodeAddress(
+    stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)),
+    context.ss58Format
+  );
 }
 
 /**
  * @hidden
  */
-export function keyToAddress(key: string): string {
-  return encodeAddress(key, SS58_FORMAT);
+export function keyToAddress(key: string, context: Context): string {
+  return encodeAddress(key, context.ss58Format);
 }
 
 /**
  * @hidden
  */
-export function addressToKey(address: string): string {
-  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, SS58_FORMAT));
+export function addressToKey(address: string, context: Context): string {
+  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, context.ss58Format));
 }
 
 /**
@@ -2276,7 +2389,7 @@ export function portfolioMovementToMovePortfolioItem(
 ): MovePortfolioItem {
   const { token, amount } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
-    ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+    ticker: stringToTicker(getTicker(token), context),
     amount: numberToBalance(amount, context),
   });
 }
@@ -2301,21 +2414,9 @@ export function transferRestrictionToTransferManager(
 
   if (type === TransferRestrictionType.Count) {
     tmType = 'CountTransferManager';
-
-    assertIsInteger(value);
-    assertIsPositive(value);
-
     tmValue = numberToU64(value, context);
   } else {
     tmType = 'PercentageTransferManager';
-
-    if (value.lt(0) || value.gt(100)) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Percentage should be between 0 and 100',
-      });
-    }
-
     tmValue = percentageToPermill(value, context);
   }
 
@@ -2341,6 +2442,86 @@ export function transferManagerToTransferRestriction(
       value: permillToBigNumber(transferManager.asPercentageTransferManager),
     };
   }
+}
+
+/**
+ * @hidden
+ */
+export function granularCanTransferResultToTransferBreakdown(
+  result: GranularCanTransferResult,
+  context: Context
+): TransferBreakdown {
+  const {
+    invalid_granularity: invalidGranularity,
+    self_transfer: selfTransfer,
+    invalid_receiver_cdd: invalidReceiverCdd,
+    invalid_sender_cdd: invalidSenderCdd,
+    missing_scope_claim: missingScopeClaim,
+    sender_insufficient_balance: insufficientBalance,
+    asset_frozen: assetFrozen,
+    portfolio_validity_result: {
+      sender_portfolio_does_not_exist: senderPortfolioNotExists,
+      receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
+      sender_insufficient_balance: senderInsufficientBalance,
+    },
+    statistics_result: transferRestrictionResults,
+    compliance_result: complianceResult,
+    result: finalResult,
+  } = result;
+
+  const general = [];
+
+  if (boolToBoolean(invalidGranularity)) {
+    general.push(TransferError.InvalidGranularity);
+  }
+
+  if (boolToBoolean(selfTransfer)) {
+    general.push(TransferError.SelfTransfer);
+  }
+
+  if (boolToBoolean(invalidReceiverCdd)) {
+    general.push(TransferError.InvalidReceiverCdd);
+  }
+
+  if (boolToBoolean(invalidSenderCdd)) {
+    general.push(TransferError.InvalidSenderCdd);
+  }
+
+  if (boolToBoolean(missingScopeClaim)) {
+    general.push(TransferError.ScopeClaimMissing);
+  }
+
+  if (boolToBoolean(insufficientBalance)) {
+    general.push(TransferError.InsufficientBalance);
+  }
+
+  if (boolToBoolean(assetFrozen)) {
+    general.push(TransferError.TransfersFrozen);
+  }
+
+  if (boolToBoolean(senderPortfolioNotExists)) {
+    general.push(TransferError.InvalidSenderPortfolio);
+  }
+
+  if (boolToBoolean(receiverPortfolioNotExists)) {
+    general.push(TransferError.InvalidReceiverPortfolio);
+  }
+
+  if (boolToBoolean(senderInsufficientBalance)) {
+    general.push(TransferError.InsufficientPortfolioBalance);
+  }
+
+  const restrictions = transferRestrictionResults.map(({ tm, result: tmResult }) => ({
+    restriction: transferManagerToTransferRestriction(tm),
+    result: boolToBoolean(tmResult),
+  }));
+
+  return {
+    general,
+    compliance: assetComplianceResultToCompliance(complianceResult, context),
+    restrictions,
+    result: boolToBoolean(finalResult),
+  };
 }
 
 /**
@@ -2433,47 +2614,389 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
 /**
  * @hidden
  */
-export function meshFundraiserStatusToStoStatus(
-  meshFundraiserStatus: MeshFundraiserStatus
-): StoStatus {
-  if (meshFundraiserStatus.isLive) {
-    return StoStatus.Live;
-  }
-
-  if (meshFundraiserStatus.isFrozen) {
-    return StoStatus.Frozen;
-  }
-
-  return StoStatus.Closed;
-}
-
-/**
- * @hidden
- */
-export function fundraiserToStoDetails(fundraiser: Fundraiser, context: Context): StoDetails {
+export function fundraiserToStoDetails(
+  fundraiser: Fundraiser,
+  name: FundraiserName,
+  context: Context
+): StoDetails {
   const {
     creator,
     offering_portfolio: offeringPortfolio,
     raising_portfolio: raisingPortfolio,
     raising_asset: raisingAsset,
-    tiers,
+    tiers: rawTiers,
     venue_id: venueId,
-    start,
-    end,
-    status,
-    minimum_investment: minInvestment,
+    start: rawStart,
+    end: rawEnd,
+    status: rawStatus,
+    minimum_investment: rawMinInvestment,
   } = fundraiser;
+
+  const tiers: Tier[] = [];
+  let totalRemaining = new BigNumber(0);
+  let totalAmount = new BigNumber(0);
+  let totalRemainingValue = new BigNumber(0);
+
+  rawTiers.forEach(rawTier => {
+    const tier = fundraiserTierToTier(rawTier);
+
+    tiers.push(tier);
+    const { amount, remaining, price } = tier;
+
+    totalAmount = totalAmount.plus(amount);
+    totalRemaining = totalRemaining.plus(remaining);
+    totalRemainingValue = totalRemainingValue.plus(price.multipliedBy(remaining));
+  });
+
+  const start = momentToDate(rawStart);
+  const end = rawEnd.isSome ? momentToDate(rawEnd.unwrap()) : null;
+  const now = new Date();
+
+  const isStarted = now > start;
+  const isExpired = end && now > end;
+
+  const minInvestment = balanceToBigNumber(rawMinInvestment);
+
+  let timing: StoTimingStatus = StoTimingStatus.NotStarted;
+  let balance: StoBalanceStatus = StoBalanceStatus.Available;
+  let sale: StoSaleStatus = StoSaleStatus.Live;
+
+  if (isExpired) {
+    timing = StoTimingStatus.Expired;
+  } else if (isStarted) {
+    timing = StoTimingStatus.Started;
+  }
+
+  if (totalRemainingValue.isZero()) {
+    balance = StoBalanceStatus.SoldOut;
+  } else if (totalRemainingValue.lt(minInvestment)) {
+    balance = StoBalanceStatus.Residual;
+  }
+
+  if (rawStatus.isClosedEarly) {
+    sale = StoSaleStatus.ClosedEarly;
+  } else if (rawStatus.isClosed) {
+    sale = StoSaleStatus.Closed;
+  } else if (rawStatus.isFrozen) {
+    sale = StoSaleStatus.Frozen;
+  }
 
   return {
     creator: new Identity({ did: identityIdToString(creator) }, context),
+    name: textToString(name),
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
     raisingCurrency: tickerToString(raisingAsset),
-    tiers: tiers.map(tier => fundraiserTierToTier(tier)),
+    tiers,
     venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
-    start: momentToDate(start),
-    end: end.isSome ? momentToDate(end.unwrap()) : null,
-    status: meshFundraiserStatusToStoStatus(status),
-    minInvestment: balanceToBigNumber(minInvestment),
+    start,
+    end,
+    status: {
+      timing,
+      balance,
+      sale,
+    },
+    minInvestment,
+    totalAmount,
+    totalRemaining,
   };
+}
+
+/**
+ * @hidden
+ */
+export function calendarPeriodToMeshCalendarPeriod(
+  period: CalendarPeriod,
+  context: Context
+): MeshCalendarPeriod {
+  const { unit, amount } = period;
+
+  if (amount < 0) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Calendar period cannot have a negative amount',
+    });
+  }
+
+  return context.polymeshApi.createType('CalendarPeriod', {
+    unit: stringUpperFirst(unit),
+    amount: numberToU64(amount, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): CalendarPeriod {
+  const { unit: rawUnit, amount } = period;
+
+  let unit: CalendarUnit;
+
+  if (rawUnit.isSecond) {
+    unit = CalendarUnit.Second;
+  } else if (rawUnit.isMinute) {
+    unit = CalendarUnit.Minute;
+  } else if (rawUnit.isHour) {
+    unit = CalendarUnit.Hour;
+  } else if (rawUnit.isDay) {
+    unit = CalendarUnit.Day;
+  } else if (rawUnit.isWeek) {
+    unit = CalendarUnit.Week;
+  } else if (rawUnit.isMonth) {
+    unit = CalendarUnit.Month;
+  } else {
+    unit = CalendarUnit.Year;
+  }
+
+  return {
+    unit,
+    amount: u64ToBigNumber(amount).toNumber(),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function scheduleSpecToMeshScheduleSpec(
+  details: ScheduleSpec,
+  context: Context
+): MeshScheduleSpec {
+  const { start, period, repetitions } = details;
+
+  return context.polymeshApi.createType('ScheduleSpec', {
+    start: start && dateToMoment(start, context),
+    period: calendarPeriodToMeshCalendarPeriod(
+      period || { unit: CalendarUnit.Month, amount: 0 },
+      context
+    ),
+    remaining: numberToU64(repetitions || 0, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function storedScheduleToCheckpointScheduleParams(
+  storedSchedule: StoredSchedule
+): CheckpointScheduleParams {
+  const {
+    schedule: { start, period },
+    id,
+    at,
+    remaining,
+  } = storedSchedule;
+  return {
+    id: u64ToBigNumber(id),
+    period: meshCalendarPeriodToCalendarPeriod(period),
+    start: momentToDate(start),
+    remaining: u32ToBigNumber(remaining).toNumber(),
+    nextCheckpointDate: momentToDate(at),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function stringToSignature(signature: string, context: Context): Signature {
+  return context.polymeshApi.createType('Signature', signature);
+}
+
+/**
+ * @hidden
+ */
+export function meshCorporateActionToCorporateActionParams(
+  corporateAction: MeshCorporateAction,
+  context: Context
+): CorporateActionParams {
+  const {
+    kind: rawKind,
+    decl_date: declDate,
+    details,
+    targets: { identities, treatment },
+    default_withholding_tax: defaultWithholdingTax,
+    withholding_tax: withholdingTax,
+  } = corporateAction;
+
+  let kind: CorporateActionKind;
+
+  if (rawKind.isIssuerNotice) {
+    kind = CorporateActionKind.IssuerNotice;
+  } else if (rawKind.isPredictableBenefit) {
+    kind = CorporateActionKind.PredictableBenefit;
+  } else if (rawKind.isUnpredictableBenefit) {
+    kind = CorporateActionKind.UnpredictableBenefit;
+  } else if (rawKind.isReorganization) {
+    kind = CorporateActionKind.Reorganization;
+  } else {
+    kind = CorporateActionKind.Other;
+  }
+
+  const targets = {
+    identities: identities.map(
+      identityId => new Identity({ did: identityIdToString(identityId) }, context)
+    ),
+    treatment: treatment.isExclude ? TargetTreatment.Exclude : TargetTreatment.Include,
+  };
+
+  const taxWithholdings = withholdingTax.map(([identityId, tax]) => ({
+    identity: new Identity({ did: identityIdToString(identityId) }, context),
+    percentage: permillToBigNumber(tax),
+  }));
+
+  return {
+    kind,
+    declarationDate: momentToDate(declDate),
+    description: textToString(details),
+    targets,
+    defaultTaxWithholding: permillToBigNumber(defaultWithholdingTax),
+    taxWithholdings,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function stringToRistrettoPoint(ristrettoPoint: string, context: Context): RistrettoPoint {
+  return context.polymeshApi.createType('RistrettoPoint', ristrettoPoint);
+}
+
+/**
+ * @hidden
+ */
+export function corporateActionKindToCaKind(kind: CorporateActionKind, context: Context): CAKind {
+  return context.polymeshApi.createType('CAKind', kind);
+}
+
+/**
+ * @hidden
+ */
+export function stringToScalar(scalar: string, context: Context): Scalar {
+  return context.polymeshApi.createType('Scalar', scalar);
+}
+
+/**
+ * @hidden
+ */
+export function checkpointToRecordDateSpec(
+  checkpoint: Checkpoint | Date | CheckpointSchedule,
+  context: Context
+): RecordDateSpec {
+  let value;
+
+  if (checkpoint instanceof Checkpoint) {
+    value = { Existing: numberToU64(checkpoint.id, context) };
+  } else if (checkpoint instanceof Date) {
+    value = { Scheduled: dateToMoment(checkpoint, context) };
+  } else {
+    value = { ExistingSchedule: numberToU64(checkpoint.id, context) };
+  }
+
+  return context.polymeshApi.createType('RecordDateSpec', value);
+}
+
+/**
+ * @hidden
+ */
+export function scopeClaimProofToMeshScopeClaimProof(
+  proof: ScopeClaimProof,
+  scopeId: string,
+  context: Context
+): MeshScopeClaimProof {
+  const { polymeshApi } = context;
+  const {
+    proofScopeIdWellformed,
+    proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
+  } = proof;
+
+  const zkProofData = polymeshApi.createType('ZkProofData', {
+    /* eslint-disable @typescript-eslint/camelcase */
+    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
+    subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
+    blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
+    /* eslint-enable @typescript-eslint/camelcase */
+  });
+
+  return polymeshApi.createType('ScopeClaimProof', {
+    /* eslint-disable @typescript-eslint/camelcase */
+    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellformed, context),
+    proof_scope_id_cdd_id_match: zkProofData,
+    scope_id: stringToRistrettoPoint(scopeId, context),
+    /* eslint-enable @typescript-eslint/camelcase */
+  });
+}
+
+/**
+ * @hidden
+ */
+export function targetIdentitiesToCorporateActionTargets(
+  targetIdentities: TargetIdentities,
+  context: Context
+): CorporateActionTargets {
+  const { identities, treatment } = targetIdentities;
+
+  return {
+    identities: identities.map(
+      identity => new Identity({ did: identityIdToString(identity) }, context)
+    ),
+    treatment: treatment.isInclude ? TargetTreatment.Include : TargetTreatment.Exclude,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function targetsToTargetIdentities(
+  targets: Omit<CorporateActionTargets, 'identities'> & {
+    identities: (string | Identity)[];
+  },
+  context: Context
+): TargetIdentities {
+  const { polymeshApi } = context;
+  const { treatment, identities } = targets;
+
+  return polymeshApi.createType('TargetIdentities', {
+    identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
+    treatment: polymeshApi.createType('TargetTreatment', treatment),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function distributionToDividendDistributionParams(
+  distribution: Distribution,
+  context: Context
+): DividendDistributionParams {
+  const {
+    from,
+    currency,
+    per_share: perShare,
+    amount,
+    expires_at: expiryDate,
+    payment_at: paymentDate,
+  } = distribution;
+
+  return {
+    origin: meshPortfolioIdToPortfolio(from, context),
+    currency: tickerToString(currency),
+    perShare: balanceToBigNumber(perShare),
+    maxAmount: balanceToBigNumber(amount),
+    expiryDate: expiryDate.isNone ? null : momentToDate(expiryDate.unwrap()),
+    paymentDate: momentToDate(paymentDate),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function corporateActionIdentifierToCaId(
+  corporateActionIdentifier: CorporateActionIdentifier,
+  context: Context
+): CAId {
+  const { ticker, localId } = corporateActionIdentifier;
+  return context.polymeshApi.createType('CAId', {
+    ticker: stringToTicker(ticker, context),
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    local_id: numberToU32(localId, context),
+  });
 }

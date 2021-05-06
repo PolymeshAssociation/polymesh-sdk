@@ -85,10 +85,7 @@ import type {
   CddStatus,
   DidRecords,
   DidStatus,
-  GetPortfolioAssetsResult,
-  GetPortfoliosResult,
-  HistoricalVotingByAddress,
-  HistoricalVotingById,
+  GranularCanTransferResult,
   IdentityId,
   KeyIdentityData,
   PortfolioId,
@@ -115,6 +112,20 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<CanTransferResult>
+      >;
+      /**
+       * Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.
+       **/
+      canTransferGranular: AugmentedRpc<
+        (
+          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
+          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
+          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          ticker: Ticker | string | Uint8Array,
+          value: Balance | AnyNumber | Uint8Array,
+          blockHash?: Hash | string | Uint8Array
+        ) => Observable<GranularCanTransferResult>
       >;
     };
     author: {
@@ -768,40 +779,6 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
           address: AccountId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<Vec<u32>>
-      >;
-      /**
-       * Retrieves proposal `address` indices voted on
-       **/
-      votingHistoryByAddress: AugmentedRpc<
-        (
-          address: AccountId | string | Uint8Array,
-          blockHash?: Hash | string | Uint8Array
-        ) => Observable<HistoricalVotingByAddress>
-      >;
-      /**
-       * Retrieve historical voting of `id` identity
-       **/
-      votingHistoryById: AugmentedRpc<
-        (
-          id: IdentityId | string | Uint8Array,
-          blockHash?: Hash | string | Uint8Array
-        ) => Observable<HistoricalVotingById>
-      >;
-    };
-    portfolio: {
-      /**
-       * Gets the balances of all assets in a given portfolio
-       **/
-      getPortfolioAssets: AugmentedRpc<
-        (
-          portfolio_id: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
-        ) => Observable<GetPortfolioAssetsResult>
-      >;
-      /**
-       * Gets all user-defined portfolio names of an identity
-       **/
-      getPortfolios: AugmentedRpc<
-        (did: IdentityId | string | Uint8Array) => Observable<GetPortfoliosResult>
       >;
     };
     protocolFee: {

@@ -4,13 +4,12 @@ import sinon from 'sinon';
 import {
   Context,
   DefaultTrustedClaimIssuer,
-  modifyTokenTrustedClaimIssuers,
   ModifyTokenTrustedClaimIssuersAddSetParams,
   Namespace,
   SecurityToken,
   TransactionQueue,
 } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -20,19 +19,26 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('TrustedClaimIssuers class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -58,10 +64,13 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(modifyTokenTrustedClaimIssuers, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
-          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+          {
+            args: { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -93,10 +102,13 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(modifyTokenTrustedClaimIssuers, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
-          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+          {
+            args: { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);
@@ -125,10 +137,13 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(modifyTokenTrustedClaimIssuers, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
-          { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+          {
+            args: { ticker: token.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+            transformer: undefined,
+          },
           context
         )
         .resolves(expectedQueue);

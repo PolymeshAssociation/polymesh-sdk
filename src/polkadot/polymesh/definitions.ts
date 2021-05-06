@@ -2,6 +2,12 @@
 export default {
   rpc: {},
   types: {
+    AccountInfo: 'AccountInfoWithRefCount',
+    Address: 'IndicesLookupSource',
+    LookupSource: 'IndicesLookupSource',
+    ValidatorPrefsWithBlocked: {
+      commission: 'Compact<Perbill>',
+    },
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
     InvestorUid: '[u8; 16]',
@@ -46,6 +52,7 @@ export default {
         StructuredProduct: '',
         Derivative: '',
         Custom: 'Vec<u8>',
+        StableCoin: '',
       },
     },
     AssetIdentifier: {
@@ -384,6 +391,9 @@ export default {
         'YE',
         'ZM',
         'ZW',
+        'BQ',
+        'CW',
+        'SX',
       ],
     },
     Scope: {
@@ -393,7 +403,19 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: '[u8;64]',
+    InvestorZKProofData: 'Signature',
+    Scalar: '[u8; 32]',
+    RistrettoPoint: '[u8; 32]',
+    ZkProofData: {
+      challenge_responses: '[Scalar; 2]',
+      subtract_expressions_res: 'RistrettoPoint',
+      blinded_scope_did_hash: 'RistrettoPoint',
+    },
+    ScopeClaimProof: {
+      proof_scope_id_wellformed: 'Signature',
+      proof_scope_id_cdd_id_match: 'ZkProofData',
+      scope_id: 'RistrettoPoint',
+    },
     Claim: {
       _enum: {
         Accredited: 'Scope',
@@ -407,6 +429,7 @@ export default {
         Blocked: 'Scope',
         InvestorUniqueness: '(Scope, ScopeId, CddId)',
         NoData: '',
+        InvestorUniquenessV2: '(CddId)',
       },
     },
     ClaimType: {
@@ -422,6 +445,7 @@ export default {
         Blocked: '',
         InvestorUniqueness: '',
         NoData: '',
+        InvestorUniquenessV2: '',
       },
     },
     IdentityClaim: {
@@ -702,11 +726,6 @@ export default {
       did: 'IdentityId',
       bridge_tx: 'BridgeTx',
     },
-    OfflineSlashingParams: {
-      max_offline_percent: 'u32',
-      constant: 'u32',
-      max_slash_percent: 'u32',
-    },
     AssetCompliance: {
       is_paused: 'bool',
       requirements: 'Vec<ComplianceRequirement>',
@@ -802,8 +821,6 @@ export default {
       pip: 'PipId',
       vote: 'Vote',
     },
-    HistoricalVotingByAddress: 'Vec<VoteByPip>',
-    HistoricalVotingById: 'Vec<(AccountId, HistoricalVotingByAddress)>',
     BridgeTxDetail: {
       amount: 'Balance',
       status: 'BridgeTxStatus',
@@ -829,18 +846,6 @@ export default {
     CanTransferResult: {
       _enum: {
         Ok: 'u8',
-        Err: 'Vec<u8>',
-      },
-    },
-    GetPortfolioAssetsResult: {
-      _enum: {
-        Ok: 'Vec<(Ticker, Balance)>',
-        Err: 'Vec<u8>',
-      },
-    },
-    GetPortfoliosResult: {
-      _enum: {
-        Ok: 'Vec<(PortfolioNumber, PortfolioName)>',
         Err: 'Vec<u8>',
       },
     },
@@ -882,10 +887,6 @@ export default {
         CddVerified: '',
       },
     },
-    IssueAssetItem: {
-      identity_did: 'IdentityId',
-      value: 'Balance',
-    },
     PortfolioName: 'Text',
     PortfolioNumber: 'u64',
     PortfolioKind: {
@@ -925,10 +926,12 @@ export default {
       schedule: 'CheckpointSchedule',
       id: 'ScheduleId',
       at: 'Moment',
+      remaining: 'u32',
     },
     ScheduleSpec: {
       start: 'Option<Moment>',
       period: 'CalendarPeriod',
+      remaining: 'u32',
     },
     InstructionStatus: {
       _enum: {
@@ -1015,7 +1018,7 @@ export default {
     },
     FundraiserName: 'Text',
     FundraiserStatus: {
-      _enum: ['Live', 'Frozen', 'Closed'],
+      _enum: ['Live', 'Frozen', 'Closed', 'ClosedEarly'],
     },
     FundraiserTier: {
       total: 'Balance',
@@ -1067,7 +1070,7 @@ export default {
     CADetails: 'Text',
     CACheckpoint: {
       _enum: {
-        Scheduled: 'ScheduleId',
+        Scheduled: '(ScheduleId, u64)',
         Existing: 'CheckpointId',
       },
     },
@@ -1099,6 +1102,7 @@ export default {
     Distribution: {
       from: 'PortfolioId',
       currency: 'Ticker',
+      per_share: 'Balance',
       amount: 'Balance',
       remaining: 'Balance',
       reclaimed: 'bool',
@@ -1126,6 +1130,32 @@ export default {
     PermissionedIdentityPrefs: {
       intended_count: 'u32',
       running_count: 'u32',
+    },
+    GranularCanTransferResult: {
+      invalid_granularity: 'bool',
+      self_transfer: 'bool',
+      invalid_receiver_cdd: 'bool',
+      invalid_sender_cdd: 'bool',
+      missing_scope_claim: 'bool',
+      receiver_custodian_error: 'bool',
+      sender_custodian_error: 'bool',
+      sender_insufficient_balance: 'bool',
+      portfolio_validity_result: 'PortfolioValidityResult',
+      asset_frozen: 'bool',
+      statistics_result: 'Vec<TransferManagerResult>',
+      compliance_result: 'AssetComplianceResult',
+      result: 'bool',
+    },
+    PortfolioValidityResult: {
+      receiver_is_same_portfolio: 'bool',
+      sender_portfolio_does_not_exist: 'bool',
+      receiver_portfolio_does_not_exist: 'bool',
+      sender_insufficient_balance: 'bool',
+      result: 'bool',
+    },
+    TransferManagerResult: {
+      tm: 'TransferManager',
+      result: 'bool',
     },
   },
 };

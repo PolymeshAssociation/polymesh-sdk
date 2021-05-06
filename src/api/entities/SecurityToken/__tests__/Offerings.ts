@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
+import { Fundraiser, FundraiserName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, launchSto, Namespace, SecurityToken, Sto, TransactionQueue } from '~/internal';
-import { Fundraiser, Ticker } from '~/polkadot';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { StoDetails, StoStatus } from '~/types';
+import { Context, Namespace, SecurityToken, Sto, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -18,6 +18,10 @@ jest.mock(
   '~/api/entities/Sto',
   require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Offerings class', () => {
   let ticker: string;
@@ -29,6 +33,7 @@ describe('Offerings class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     ticker = 'SOME_TOKEN';
   });
@@ -43,11 +48,13 @@ describe('Offerings class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -69,9 +76,9 @@ describe('Offerings class', () => {
         minInvestment: new BigNumber(100),
       };
 
-      sinon
-        .stub(launchSto, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await offerings.launch(args);
@@ -82,9 +89,13 @@ describe('Offerings class', () => {
 
   describe('method: get', () => {
     let rawTicker: Ticker;
+    let rawName: FundraiserName;
 
     let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-    let fundraiserToStoDetailsStub: sinon.SinonStub<[Fundraiser, Context], StoDetails>;
+    let fundraiserToStoDetailsStub: sinon.SinonStub<
+      [Fundraiser, FundraiserName, Context],
+      StoDetails
+    >;
 
     let details: StoDetails[];
     let fundraisers: Fundraiser[];
@@ -95,6 +106,8 @@ describe('Offerings class', () => {
       fundraiserToStoDetailsStub = sinon.stub(utilsConversionModule, 'fundraiserToStoDetails');
 
       const creator = entityMockUtils.getIdentityInstance();
+      const name = 'someSto';
+      rawName = dsMockUtils.createMockFundraiserName(name);
       const offeringPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const raisingPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const venue = entityMockUtils.getVenueInstance();
@@ -113,6 +126,7 @@ describe('Offerings class', () => {
       details = [
         {
           creator,
+          name,
           offeringPortfolio,
           raisingPortfolio,
           raisingCurrency,
@@ -121,10 +135,17 @@ describe('Offerings class', () => {
           tiers,
           minInvestment,
           venue,
-          status: StoStatus.Closed,
+          status: {
+            sale: StoSaleStatus.Closed,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
+          totalAmount: tiers[0].amount,
+          totalRemaining: tiers[0].remaining,
         },
         {
           creator,
+          name,
           offeringPortfolio,
           raisingPortfolio,
           raisingCurrency,
@@ -133,7 +154,13 @@ describe('Offerings class', () => {
           tiers,
           minInvestment,
           venue,
-          status: StoStatus.Live,
+          status: {
+            sale: StoSaleStatus.Live,
+            timing: StoTimingStatus.Started,
+            balance: StoBalanceStatus.Available,
+          },
+          totalAmount: tiers[0].amount,
+          totalRemaining: tiers[0].remaining,
         },
       ];
       fundraisers = [
@@ -194,8 +221,8 @@ describe('Offerings class', () => {
 
     beforeEach(() => {
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
-      fundraiserToStoDetailsStub.withArgs(fundraisers[0], context).returns(details[0]);
-      fundraiserToStoDetailsStub.withArgs(fundraisers[1], context).returns(details[1]);
+      fundraiserToStoDetailsStub.withArgs(fundraisers[0], rawName, context).returns(details[0]);
+      fundraiserToStoDetailsStub.withArgs(fundraisers[1], rawName, context).returns(details[1]);
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         entries: [
@@ -207,6 +234,12 @@ describe('Offerings class', () => {
             [rawTicker, dsMockUtils.createMockU64(2)],
             dsMockUtils.createMockOption(fundraisers[1])
           ),
+        ],
+      });
+      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+        entries: [
+          tuple([rawTicker, dsMockUtils.createMockU64(1)], rawName),
+          tuple([rawTicker, dsMockUtils.createMockU64(2)], rawName),
         ],
       });
     });
@@ -227,7 +260,13 @@ describe('Offerings class', () => {
     });
 
     test('should return offerings associated to the token filtered by status', async () => {
-      const result = await offerings.get({ status: StoStatus.Live });
+      const result = await offerings.get({
+        status: {
+          sale: StoSaleStatus.Live,
+          timing: StoTimingStatus.Started,
+          balance: StoBalanceStatus.Available,
+        },
+      });
 
       expect(result[0].sto.id).toEqual(new BigNumber(2));
       expect(result[0].details).toEqual(details[1]);

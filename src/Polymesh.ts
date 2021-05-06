@@ -13,6 +13,7 @@ import { TxTag } from 'polymesh-types/types';
 import {
   Account,
   Context,
+  CurrentAccount,
   Identity,
   PolymeshError,
   registerIdentity,
@@ -28,7 +29,6 @@ import { heartbeat } from '~/middleware/queries';
 import {
   AccountBalance,
   CommonKeyring,
-  CurrentAccount,
   CurrentIdentity,
   ErrorCode,
   MiddlewareConfig,
@@ -85,11 +85,22 @@ export class Polymesh {
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
 
-    this.transferPolyX = createProcedureMethod(args => [transferPolyX, args], context);
+    this.transferPolyX = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferPolyX, args] },
+      context
+    );
 
-    this.reserveTicker = createProcedureMethod(args => [reserveTicker, args], context);
+    this.reserveTicker = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [reserveTicker, args],
+      },
+      context
+    );
 
-    this.registerIdentity = createProcedureMethod(args => [registerIdentity, args], context);
+    this.registerIdentity = createProcedureMethod(
+      { getProcedureAndArgs: args => [registerIdentity, args] },
+      context
+    );
   }
 
   /**
@@ -351,9 +362,9 @@ export class Polymesh {
    * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include tokens that
    *   have already been launched
    *
-   * @param args.owner - identity representation or Identity ID as stored in the blockchain
+   * @param args.owner - defaults to the current Identity
    *
-   * * @note reservations with unreadable characters in their tickers will be left out
+   * @note reservations with unreadable characters in their tickers will be left out
    */
   public async getTickerReservations(args?: {
     owner: string | Identity;
@@ -465,7 +476,11 @@ export class Polymesh {
    * Get the treasury wallet address
    */
   public getTreasuryAccount(): Account {
-    return new Account({ address: moduleAddressToString(TREASURY_MODULE_ADDRESS) }, this.context);
+    const { context } = this;
+    return new Account(
+      { address: moduleAddressToString(TREASURY_MODULE_ADDRESS, context) },
+      context
+    );
   }
 
   /**
@@ -628,6 +643,17 @@ export class Polymesh {
    */
   public getLatestBlock(): Promise<BigNumber> {
     return this.context.getLatestBlock();
+  }
+
+  /**
+   * Disconnect the client and close all open connections and subscriptions
+   *
+   * @note the SDK will become unusable after this operation. It will throw an error when attempting to
+   *   access any chain or middleware data. If you wish to continue using the SDK, you must
+   *   create a new instance by calling [[connect]]
+   */
+  public disconnect(): Promise<void> {
+    return this.context.disconnect();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

@@ -9,15 +9,16 @@ import {
   ErrorCode,
   PercentageTransferRestrictionInput,
   RoleType,
+  TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, TransferRestrictionType } from '~/types/internal';
-import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   stringToScopeId,
   stringToTicker,
   transferManagerToTransferRestriction,
   transferRestrictionToTransferManager,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { batchArguments } from '~/utils/internal';
 
@@ -49,6 +50,7 @@ export async function prepareAddTransferRestriction(
       polymeshApi: {
         tx: { statistics },
         query,
+        consts,
       },
     },
     context,
@@ -57,15 +59,18 @@ export async function prepareAddTransferRestriction(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const currentTms = await query.statistics.activeTransferManagers(ticker);
+  const maxTransferManagers = u32ToBigNumber(
+    consts.statistics.maxTransferManagersPerAsset
+  ).toNumber();
 
+  const currentTms = await query.statistics.activeTransferManagers(ticker);
   const restrictionAmount = currentTms.length;
 
-  if (restrictionAmount >= MAX_TRANSFER_MANAGERS) {
+  if (restrictionAmount >= maxTransferManagers) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Transfer Restriction limit reached',
-      data: { limit: MAX_TRANSFER_MANAGERS },
+      data: { limit: maxTransferManagers },
     });
   }
 
@@ -166,7 +171,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const addTransferRestriction = new Procedure(
-  prepareAddTransferRestriction,
-  getAuthorization
-);
+export const addTransferRestriction = (): Procedure<AddTransferRestrictionParams, number> =>
+  new Procedure(prepareAddTransferRestriction, getAuthorization);

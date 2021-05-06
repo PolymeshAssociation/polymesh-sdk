@@ -12,8 +12,8 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
-import { PolymeshTx, TransferRestriction, TransferRestrictionType } from '~/types/internal';
+import { RoleType, TransferRestriction, TransferRestrictionType } from '~/types';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -73,6 +73,9 @@ describe('addTransferRestriction procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
+    dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
+      returnValue: dsMockUtils.createMockU32(3),
+    });
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count.toNumber());
     rawPercentage = dsMockUtils.createMockPermill(percentage.toNumber() * 10000);

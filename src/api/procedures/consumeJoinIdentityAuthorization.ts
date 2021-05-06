@@ -1,5 +1,6 @@
+import { TxTag, TxTags } from 'polymesh-types/types';
+
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
-import { TxTag, TxTags } from '~/polkadot';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
@@ -122,7 +123,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const consumeJoinIdentityAuthorization = new Procedure(
-  prepareConsumeJoinIdentityAuthorization,
-  getAuthorization
-);
+export const consumeJoinIdentityAuthorization = (): Procedure<ConsumeJoinIdentityAuthorizationParams> =>
+  new Procedure(prepareConsumeJoinIdentityAuthorization, getAuthorization);

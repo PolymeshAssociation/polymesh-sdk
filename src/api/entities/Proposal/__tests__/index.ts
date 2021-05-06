@@ -57,7 +57,7 @@ describe('Proposal class', () => {
 //     entityMockUtils.cleanup();
 //   });
 
-//   test('should extend entity', () => {
+//   test('should extend Entity', () => {
 //     expect(Proposal.prototype instanceof Entity).toBe(true);
 //   });
 
@@ -162,7 +162,7 @@ describe('Proposal class', () => {
 //       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
 //       sinon
-//         .stub(editProposal, 'prepare')
+//         .stub(editProposal(), 'prepare')
 //         .withArgs({ pipId, ...args }, context)
 //         .resolves(expectedQueue);
 
@@ -177,7 +177,7 @@ describe('Proposal class', () => {
 //       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
 //       sinon
-//         .stub(cancelProposal, 'prepare')
+//         .stub(cancelProposal(), 'prepare')
 //         .withArgs({ pipId }, context)
 //         .resolves(expectedQueue);
 
@@ -339,7 +339,7 @@ describe('Proposal class', () => {
 //       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
 //       sinon
-//         .stub(voteOnProposal, 'prepare')
+//         .stub(voteOnProposal(), 'prepare')
 //         .withArgs({ pipId, ...args }, context)
 //         .resolves(expectedQueue);
 

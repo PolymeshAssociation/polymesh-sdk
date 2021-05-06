@@ -1,25 +1,33 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { issueTokens, Namespace, SecurityToken, TransactionQueue } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 
 import { Issuance } from '../Issuance';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Issuance class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -43,7 +51,10 @@ describe('Issuance class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon.stub(issueTokens, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await issuance.issue(args);
 

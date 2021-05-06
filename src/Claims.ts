@@ -48,13 +48,15 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      args => [
-        modifyClaims,
-        {
-          ...args,
-          operation: ClaimOperation.Add,
-        } as ModifyClaimsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyClaims,
+          {
+            ...args,
+            operation: ClaimOperation.Add,
+          } as ModifyClaimsParams,
+        ],
+      },
       context
     );
 
@@ -63,13 +65,15 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      args => [
-        modifyClaims,
-        {
-          ...args,
-          operation: ClaimOperation.Edit,
-        } as ModifyClaimsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyClaims,
+          {
+            ...args,
+            operation: ClaimOperation.Edit,
+          } as ModifyClaimsParams,
+        ],
+      },
       context
     );
 
@@ -78,18 +82,20 @@ export class Claims {
       ModifyClaimsParams,
       void
     >(
-      args => [
-        modifyClaims,
-        {
-          ...args,
-          operation: ClaimOperation.Revoke,
-        } as ModifyClaimsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          modifyClaims,
+          {
+            ...args,
+            operation: ClaimOperation.Revoke,
+          } as ModifyClaimsParams,
+        ],
+      },
       context
     );
 
     this.addInvestorUniquenessClaim = createProcedureMethod(
-      args => [addInvestorUniquenessClaim, args],
+      { getProcedureAndArgs: args => [addInvestorUniquenessClaim, args] },
       context
     );
   }
@@ -106,8 +112,8 @@ export class Claims {
    *
    * @param args.claims - array of claims to be added
    *
-   * @note required role if at least one claim is CDD type:
-   *   - Customer Due Diligence Provider
+   * @note required roles:
+   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
    */
   public addClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
@@ -116,8 +122,8 @@ export class Claims {
    *
    * @param args.claims - array of claims to be edited
    *
-   * @note required role if at least one claim is CDD type:
-   *   - Customer Due Diligence Provider
+   * @note required roles:
+   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
    */
 
   public editClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
@@ -127,8 +133,8 @@ export class Claims {
    *
    * @param args.claims - array of claims to be revoked
    *
-   * @note required role if at least one claim is CDD type:
-   *   - Customer Due Diligence Provider
+   * @note required roles:
+   *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
    */
   public revokeClaims: ProcedureMethod<Pick<ModifyClaimsParams, 'claims'>, void>;
 
@@ -181,7 +187,7 @@ export class Claims {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       scope?: Scope;
-      claimTypes?: ClaimType[];
+      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
       includeExpired?: boolean;
       size?: number;
       start?: number;

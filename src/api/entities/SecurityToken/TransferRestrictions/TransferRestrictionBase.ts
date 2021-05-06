@@ -16,13 +16,14 @@ import {
   ActiveTransferRestrictions,
   CountTransferRestriction,
   PercentageTransferRestriction,
+  TransferRestrictionType,
 } from '~/types';
-import { ProcedureMethod, TransferRestrictionType } from '~/types/internal';
-import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
+import { ProcedureMethod } from '~/types/internal';
 import {
   scopeIdToString,
   stringToTicker,
   transferManagerToTransferRestriction,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -65,10 +66,12 @@ export abstract class TransferRestrictionBase<
       AddTransferRestrictionParams,
       number
     >(
-      args => [
-        addTransferRestriction,
-        ({ ...args, type: this.type, ticker } as unknown) as AddTransferRestrictionParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          addTransferRestriction,
+          ({ ...args, type: this.type, ticker } as unknown) as AddTransferRestrictionParams,
+        ],
+      },
       context
     );
 
@@ -78,10 +81,12 @@ export abstract class TransferRestrictionBase<
       number,
       SetTransferRestrictionsStorage
     >(
-      args => [
-        setTransferRestrictions,
-        ({ ...args, type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
-      ],
+      {
+        getProcedureAndArgs: args => [
+          setTransferRestrictions,
+          ({ ...args, type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
+        ],
+      },
       context
     );
 
@@ -91,10 +96,16 @@ export abstract class TransferRestrictionBase<
       number,
       SetTransferRestrictionsStorage
     >(
-      () => [
-        setTransferRestrictions,
-        ({ restrictions: [], type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
-      ],
+      {
+        getProcedureAndArgs: () => [
+          setTransferRestrictions,
+          ({
+            restrictions: [],
+            type: this.type,
+            ticker,
+          } as unknown) as SetTransferRestrictionsParams,
+        ],
+      },
       context
     );
   }
@@ -146,6 +157,7 @@ export abstract class TransferRestrictionBase<
       context: {
         polymeshApi: {
           query: { statistics },
+          consts,
         },
       },
       context,
@@ -189,9 +201,13 @@ export abstract class TransferRestrictionBase<
       return restriction;
     });
 
+    const maxTransferManagers = u32ToBigNumber(
+      consts.statistics.maxTransferManagersPerAsset
+    ).toNumber();
+
     return {
       restrictions,
-      availableSlots: MAX_TRANSFER_MANAGERS - activeTms.length,
+      availableSlots: maxTransferManagers - activeTms.length,
     } as GetReturnType<T>;
   }
 }

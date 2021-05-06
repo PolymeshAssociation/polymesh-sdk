@@ -10,7 +10,7 @@
 // import { ErrorCode, Role, TransactionArgumentType } from '~/types';
 // import {
 //   balanceToBigNumber,
-//   findEventRecord,
+//   filterEventRecords,
 //   numberToBalance,
 //   stringToText,
 //   u32ToBigNumber,
@@ -30,7 +30,7 @@
 // export const createProposalResolver = (context: Context) => (
 //   receipt: ISubmittableResult
 // ): Proposal => {
-//   const eventRecord = findEventRecord(receipt, 'pips', 'ProposalCreated');
+//   const eventRecord = filterEventRecords(receipt, 'pips', 'ProposalCreated');
 //   const data = eventRecord.event.data;
 //   const pipId = u32ToBigNumber(data[2] as PipId);
 
@@ -124,4 +124,4 @@
 // /**
 //  * @hidden
 //  */
-// export const createProposal = new Procedure(prepareCreateProposal, getRequiredRoles);
+// export const createProposal = (): Procedure => new Procedure(prepareCreateProposal, getRequiredRoles);

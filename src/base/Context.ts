@@ -36,7 +36,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { ROOT_TYPES } from '~/utils/constants';
+import { DEFAULT_SS58_FORMAT, ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimTypeToMeshClaimType,
@@ -52,9 +52,15 @@ import {
   stringToIdentityId,
   textToString,
   txTagToProtocolOp,
+  u8ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, createClaim, getCommonKeyring } from '~/utils/internal';
+import {
+  assertFormatValid,
+  calculateNextKey,
+  createClaim,
+  getCommonKeyring,
+} from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -77,6 +83,7 @@ interface AccountData {
  */
 export class Context {
   private keyring: CommonKeyring;
+  private isDisconnected = false;
 
   public polymeshApi: ApiPromise;
 
@@ -87,6 +94,8 @@ export class Context {
    */
   public isArchiveNode = false;
 
+  public ss58Format = DEFAULT_SS58_FORMAT;
+
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
   /**
@@ -94,6 +103,20 @@ export class Context {
    */
   private constructor(params: ConstructorParams) {
     const { polymeshApi, middlewareApi, keyring, pair } = params;
+
+    const callback = (): void => {
+      polymeshApi.off('disconnected', callback);
+      polymeshApi.off('error', callback);
+
+      if (this.isDisconnected) {
+        return;
+      }
+
+      this.disconnect();
+    };
+
+    polymeshApi.on('disconnected', callback);
+    polymeshApi.on('error', callback);
 
     this._middlewareApi = middlewareApi;
 
@@ -136,13 +159,23 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    let keyring: CommonKeyring = new Keyring({ type: 'sr25519' });
+    let ss58Format: number;
+    const { ss58Format: rawSs58Format } = await polymeshApi.rpc.system.properties();
+    if (rawSs58Format.isSome) {
+      ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
+    } else {
+      ss58Format = DEFAULT_SS58_FORMAT;
+    }
+
+    let keyring: CommonKeyring = new Keyring({ type: 'sr25519', ss58Format });
     let currentPair: KeyringPair | undefined;
     let context: Context;
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
       currentPair = keyring.getPairs()[0];
+
+      assertFormatValid(currentPair.address, ss58Format);
     } else if (accountSeed) {
       if (accountSeed.length !== 66) {
         throw new PolymeshError({
@@ -169,9 +202,21 @@ export class Context {
       context = new Context({ polymeshApi, middlewareApi, keyring });
     }
 
+    context.ss58Format = ss58Format;
     context.isArchiveNode = await context.isCurrentNodeArchive();
 
-    return context;
+    return new Proxy(context, {
+      get: (target, prop: keyof Context): Context[keyof Context] => {
+        if (target.isDisconnected) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Client disconnected. Please create a new instance via "Polymesh.connect()"',
+          });
+        }
+
+        return target[prop];
+      },
+    });
   }
 
   /**
@@ -212,6 +257,7 @@ export class Context {
     let newCurrentPair;
 
     try {
+      assertFormatValid(address, this.ss58Format);
       newCurrentPair = keyring.getPair(address);
     } catch (e) {
       throw new PolymeshError({
@@ -258,11 +304,14 @@ export class Context {
     }
 
     const assembleResult = ({
-      data: { free, miscFrozen, feeFrozen },
+      data: { free: rawFree, miscFrozen, feeFrozen },
     }: AccountInfo): AccountBalance => {
+      const free = balanceToBigNumber(rawFree);
+      const locked = BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen));
       return {
-        free: balanceToBigNumber(free),
-        locked: BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen)),
+        free,
+        locked,
+        total: free.plus(locked),
       };
     };
 
@@ -651,7 +700,7 @@ export class Context {
   public async getIdentityClaimsFromMiddleware(args: {
     targets?: (string | Identity)[];
     trustedClaimIssuers?: (string | Identity)[];
-    claimTypes?: ClaimType[];
+    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
     includeExpired?: boolean;
     size?: number;
     start?: number;
@@ -727,7 +776,7 @@ export class Context {
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: ClaimType[];
+      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
       includeExpired?: boolean;
       size?: number;
       start?: number;
@@ -836,5 +885,25 @@ export class Context {
     const { number } = await this.polymeshApi.rpc.chain.getHeader();
 
     return u32ToBigNumber(number.unwrap());
+  }
+
+  /**
+   * Disconnect the Polkadot API, middleware, and render this instance unusable
+   *
+   * @note after disconnecting, trying to access any property in this objecct will result
+   *   in an error
+   */
+  public disconnect(): Promise<void> {
+    const { polymeshApi } = this;
+    let middlewareApi;
+
+    if (this.isMiddlewareEnabled()) {
+      ({ middlewareApi } = this);
+    }
+    this.isDisconnected = true;
+
+    middlewareApi && middlewareApi.stop();
+
+    return polymeshApi.disconnect();
   }
 }

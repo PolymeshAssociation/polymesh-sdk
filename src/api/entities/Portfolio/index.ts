@@ -70,10 +70,13 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     this._id = id;
 
     this.setCustodian = createProcedureMethod(
-      args => [setCustodian, { ...args, did, id }],
+      { getProcedureAndArgs: args => [setCustodian, { ...args, did, id }] },
       context
     );
-    this.moveFunds = createProcedureMethod(args => [moveFunds, { ...args, from: this }], context);
+    this.moveFunds = createProcedureMethod(
+      { getProcedureAndArgs: args => [moveFunds, { ...args, from: this }] },
+      context
+    );
   }
 
   /**
@@ -143,6 +146,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
         token: new SecurityToken({ ticker }, context),
         total,
         locked: new BigNumber(0),
+        free: total,
       };
     });
 
@@ -151,6 +155,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       const locked = balanceToBigNumber(balance);
 
       assetBalances[ticker].locked = locked;
+      assetBalances[ticker].free = assetBalances[ticker].total.minus(locked);
     });
 
     const mask: PortfolioBalance[] | undefined = args?.tokens.map(ticker => {
@@ -159,6 +164,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       return {
         total: new BigNumber(0),
         locked: new BigNumber(0),
+        free: new BigNumber(0),
         token,
       };
     });
@@ -261,7 +267,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       settlements({
         identityId: did,
         portfolioNumber: _id ? _id.toString() : null,
-        addressFilter: account ? addressToKey(account) : undefined,
+        addressFilter: account ? addressToKey(account, context) : undefined,
         tickerFilter: ticker,
         count: size,
         skip: start,
@@ -287,7 +293,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
           blockNumber: new BigNumber(blockId),
           status,
           accounts: addresses!.map(
-            address => new Account({ address: keyToAddress('0x' + address) }, context)
+            address => new Account({ address: keyToAddress('0x' + address, context) }, context)
           ),
           legs: settlementLegs.map(leg => {
             return {

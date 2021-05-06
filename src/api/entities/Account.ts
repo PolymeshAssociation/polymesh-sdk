@@ -19,7 +19,7 @@ import {
   stringToAccountId,
   txTagToExtrinsicIdentifier,
 } from '~/utils/conversion';
-import { calculateNextKey } from '~/utils/internal';
+import { assertFormatValid, calculateNextKey } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   address: string;
@@ -60,8 +60,10 @@ export class Account extends Entity<UniqueIdentifiers> {
 
     const { address } = identifiers;
 
+    assertFormatValid(address, context.ss58Format);
+
     this.address = address;
-    this.key = addressToKey(address);
+    this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
   }
 
@@ -145,7 +147,7 @@ export class Account extends Entity<UniqueIdentifiers> {
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
         block_id: blockNumber ? blockNumber.toNumber() : undefined,
-        address: addressToKey(address),
+        address: addressToKey(address, context),
         module_id: moduleId,
         call_id: callId,
         success,

@@ -1,26 +1,36 @@
 import { StorageKey } from '@polkadot/types';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken, setTokenDocuments, TransactionQueue } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TokenDocument } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsInternalModule from '~/utils/internal';
 
 import { Documents } from '../Documents';
 
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+
 describe('Documents class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -49,9 +59,9 @@ describe('Documents class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(setTokenDocuments, 'prepare')
-        .withArgs({ ticker: token.ticker, ...args }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await documents.set(args);

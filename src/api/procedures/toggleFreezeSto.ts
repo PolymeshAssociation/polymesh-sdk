@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
-import { ErrorCode, RoleType, StoStatus, TxTags } from '~/types';
+import { ErrorCode, RoleType, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 
@@ -33,11 +33,11 @@ export async function prepareToggleFreezeSto(
 
   const sto = new Sto({ ticker, id }, context);
 
-  const { status, end } = await sto.details();
+  const {
+    status: { timing, sale },
+  } = await sto.details();
 
-  const now = new Date();
-
-  if (end && end < now) {
+  if (timing === StoTimingStatus.Expired) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The STO has already ended',
@@ -45,7 +45,7 @@ export async function prepareToggleFreezeSto(
   }
 
   if (freeze) {
-    if (status === StoStatus.Frozen) {
+    if (sale === StoSaleStatus.Frozen) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The STO is already frozen',
@@ -54,17 +54,17 @@ export async function prepareToggleFreezeSto(
 
     this.addTransaction(txSto.freezeFundraiser, {}, rawTicker, rawId);
   } else {
-    if (status === StoStatus.Live) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The STO is already unfrozen',
-      });
-    }
-
-    if (status === StoStatus.Closed) {
+    if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The STO is already closed',
+      });
+    }
+
+    if (sale !== StoSaleStatus.Frozen) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The STO is already unfrozen',
       });
     }
 
@@ -94,4 +94,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeSto = new Procedure(prepareToggleFreezeSto, getAuthorization);
+export const toggleFreezeSto = (): Procedure<ToggleFreezeStoParams, Sto> =>
+  new Procedure(prepareToggleFreezeSto, getAuthorization);

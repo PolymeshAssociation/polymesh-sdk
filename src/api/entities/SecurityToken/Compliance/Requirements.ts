@@ -36,17 +36,20 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
-    this.set = createProcedureMethod(args => [setAssetRequirements, { ticker, ...args }], context);
+    this.set = createProcedureMethod(
+      { getProcedureAndArgs: args => [setAssetRequirements, { ticker, ...args }] },
+      context
+    );
     this.reset = createProcedureMethod(
-      () => [setAssetRequirements, { ticker, requirements: [] }],
+      { getProcedureAndArgs: () => [setAssetRequirements, { ticker, requirements: [] }] },
       context
     );
     this.pause = createProcedureMethod(
-      () => [togglePauseRequirements, { ticker, pause: true }],
+      { getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: true }] },
       context
     );
     this.unpause = createProcedureMethod(
-      () => [togglePauseRequirements, { ticker, pause: false }],
+      { getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: false }] },
       context
     );
   }
@@ -171,6 +174,8 @@ export class Requirements extends Namespace<SecurityToken> {
    *
    * @param args.from - sender Identity (optional, defaults to the current Identity)
    * @param args.to - receiver Identity
+   *
+   * @deprecated in favor of `settlements.canTransfer`
    */
   public async checkSettle(args: {
     from?: string | Identity;

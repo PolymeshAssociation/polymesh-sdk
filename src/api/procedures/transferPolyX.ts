@@ -116,4 +116,5 @@ export function getAuthorization({ memo }: TransferPolyXParams): ProcedureAuthor
 /**
  * @hidden
  */
-export const transferPolyX = new Procedure(prepareTransferPolyX, getAuthorization);
+export const transferPolyX = (): Procedure<TransferPolyXParams> =>
+  new Procedure(prepareTransferPolyX, getAuthorization);

@@ -1,24 +1,31 @@
-import { AugmentedQuery, AugmentedQueryDoubleMap, ObsInnerType } from '@polkadot/api/types';
+import {
+  AugmentedEvent,
+  AugmentedQuery,
+  AugmentedQueryDoubleMap,
+  ObsInnerType,
+} from '@polkadot/api/types';
 import { StorageKey } from '@polkadot/types';
-import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { AnyFunction, AnyTuple, ISubmittableResult } from '@polkadot/types/types';
+import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
+import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
-import { Procedure } from '~/base/Procedure';
 import {
   Context,
   Identity,
   PolymeshError,
   PostTransactionValue,
+  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  CalendarPeriod,
+  CalendarUnit,
   Claim,
   ClaimType,
   CommonKeyring,
@@ -31,13 +38,13 @@ import {
   UiKeyring,
 } from '~/types';
 import {
-  Extrinsics,
+  Events,
   Falsyable,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
   ProcedureMethod,
 } from '~/types/internal';
-import { UnionOfProcedures } from '~/types/utils';
+import { ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
@@ -156,6 +163,12 @@ export function createClaim(
         cddId: cddId as string,
       };
     }
+    case ClaimType.InvestorUniquenessV2: {
+      return {
+        type,
+        cddId: cddId as string,
+      };
+    }
   }
 
   return { type, scope };
@@ -183,28 +196,39 @@ export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactio
   return values.map(unwrapValue) as T;
 }
 
+/**
+ * @hidden
+ */
+type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Data : never;
+
 // TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
- * Find a specific event inside a receipt
+ * Find every occurrence of a specific event inside a receipt
  *
  * @throws If the event is not found
  */
-export function findEventRecord(
+export function filterEventRecords<
+  ModuleName extends keyof Events,
+  EventName extends keyof Events[ModuleName]
+>(
   receipt: ISubmittableResult,
-  mod: keyof Extrinsics,
-  eventName: string
-): EventRecord {
-  const eventRecord = receipt.findRecord(mod, eventName);
+  mod: ModuleName,
+  eventName: EventName
+): IEvent<EventData<Events[ModuleName][EventName]>>[] {
+  const eventRecords = receipt.filterRecords(mod, eventName as string);
 
-  if (!eventRecord) {
+  if (!eventRecords.length) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
       message: `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
     });
   }
 
-  return eventRecord;
+  return eventRecords.map(
+    eventRecord =>
+      (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>
+  );
 }
 
 /**
@@ -377,30 +401,80 @@ export function calculateNextKey(totalCount: number, size?: number, start?: numb
 export function createProcedureMethod<
   MethodArgs,
   ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  Storage = {}
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+  },
+  context: Context
+): ProcedureMethod<MethodArgs, ProcedureReturnValue, ProcedureReturnValue>;
+export function createProcedureMethod<
+  MethodArgs,
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
   ReturnValue,
   Storage = {}
 >(
-  getProcedureAndArgs: (
-    args: MethodArgs
-  ) => [
-    (
-      | UnionOfProcedures<ProcedureArgs, ReturnValue, Storage>
-      | Procedure<ProcedureArgs, ReturnValue, Storage>
-    ),
-    ProcedureArgs
-  ],
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    transformer: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
   context: Context
-): ProcedureMethod<MethodArgs, ReturnValue> {
-  const method = (args: MethodArgs): Promise<TransactionQueue<ReturnValue>> => {
-    const [proc, procArgs] = getProcedureAndArgs(args);
+): ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>;
+// eslint-disable-next-line require-jsdoc
+export function createProcedureMethod<
+  MethodArgs,
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue,
+  Storage = {}
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    transformer?: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
+  context: Context
+): ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue> {
+  const { getProcedureAndArgs, transformer } = args;
 
-    return proc.prepare(procArgs, context);
+  const method = (
+    methodArgs: MethodArgs
+  ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+    const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+    return proc().prepare({ args: procArgs, transformer }, context);
   };
 
-  method.checkAuthorization = async (args: MethodArgs): Promise<ProcedureAuthorizationStatus> => {
-    const [proc, procArgs] = getProcedureAndArgs(args);
+  method.checkAuthorization = async (
+    methodArgs: MethodArgs
+  ): Promise<ProcedureAuthorizationStatus> => {
+    const [proc, procArgs] = getProcedureAndArgs(methodArgs);
 
-    return proc.checkAuthorization(procArgs, context);
+    return proc().checkAuthorization(procArgs, context);
   };
 
   return method;
@@ -446,4 +520,102 @@ function isUiKeyring(keyring: any): keyring is UiKeyring {
  */
 export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
   return isUiKeyring(keyring) ? keyring.keyring : keyring;
+}
+
+/**
+ * @hidden
+ */
+export function assertFormatValid(address: string, ss58Format: number): void {
+  const encodedAddress = encodeAddress(decodeAddress(address), ss58Format);
+
+  if (address !== encodedAddress) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: "The supplied address is not encoded with the chain's SS58 format",
+      data: {
+        ss58Format,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function getTicker(token: string | SecurityToken): string {
+  return typeof token === 'string' ? token : token.ticker;
+}
+
+/**
+ * @hidden
+ */
+export function xor(a: boolean, b: boolean): boolean {
+  return a !== b;
+}
+
+/**
+ * @hidden
+ */
+function secondsInUnit(unit: CalendarUnit): number {
+  const SECOND = 1;
+  const MINUTE = SECOND * 60;
+  const HOUR = MINUTE * 60;
+  const DAY = HOUR * 24;
+  const WEEK = DAY * 7;
+  const MONTH = DAY * 30;
+  const YEAR = DAY * 365;
+
+  switch (unit) {
+    case CalendarUnit.Second: {
+      return SECOND;
+    }
+    case CalendarUnit.Minute: {
+      return MINUTE;
+    }
+    case CalendarUnit.Hour: {
+      return HOUR;
+    }
+    case CalendarUnit.Day: {
+      return DAY;
+    }
+    case CalendarUnit.Week: {
+      return WEEK;
+    }
+    case CalendarUnit.Month: {
+      return MONTH;
+    }
+    case CalendarUnit.Year: {
+      return YEAR;
+    }
+  }
+}
+
+/**
+ * @hidden
+ * Transform a conversion util into a version that returns null if the input is falsy
+ */
+export function periodComplexity(period: CalendarPeriod): number {
+  const secsInYear = secondsInUnit(CalendarUnit.Year);
+  const { amount, unit } = period;
+
+  if (amount === 0) {
+    return 1;
+  }
+
+  const secsInUnit = secondsInUnit(unit);
+
+  return Math.max(2, Math.floor(secsInYear / (secsInUnit * amount)));
+}
+
+/**
+ * @hidden
+ * Transform a conversion util into a version that returns null if the input is falsy
+ */
+export function optionize<InputType, OutputType, RestType extends unknown[]>(
+  converter: (input: InputType, ...rest: RestType) => OutputType
+): (val: InputType | null | undefined, ...rest: RestType) => OutputType | null {
+  return (value: InputType | null | undefined, ...rest: RestType): OutputType | null => {
+    const data = value ?? null;
+    return data && converter(data, ...rest);
+  };
 }

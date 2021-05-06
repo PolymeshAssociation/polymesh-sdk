@@ -1,31 +1,21 @@
-import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  Context,
-  createVenue,
-  CurrentIdentity,
-  Identity,
-  inviteAccount,
-  modifySignerPermissions,
-  removeSecondaryKeys,
-  TransactionQueue,
-  Venue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Context, CurrentIdentity, Identity, TransactionQueue, Venue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
-import { tuple } from '~/types/utils';
-import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('CurrentIdentity class', () => {
   let context: Context;
-  let modifySignerPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
-
-    modifySignerPermissionsStub = sinon.stub(modifySignerPermissions, 'prepare');
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -35,11 +25,13 @@ describe('CurrentIdentity class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Identity', () => {
@@ -97,9 +89,9 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(removeSecondaryKeys, 'prepare')
-        .withArgs({ signers }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { signers }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await identity.removeSecondaryKeys({ signers });
@@ -123,7 +115,10 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      modifySignerPermissionsStub.withArgs({ secondaryKeys }, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.revokePermissions({ secondaryKeys: signers });
 
@@ -145,7 +140,10 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      modifySignerPermissionsStub.withArgs({ secondaryKeys }, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.modifyPermissions({ secondaryKeys });
 
@@ -164,7 +162,10 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon.stub(inviteAccount, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.inviteAccount(args);
 
@@ -184,7 +185,10 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
 
-      sinon.stub(createVenue, 'prepare').withArgs(args, context).resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
       const queue = await identity.createVenue(args);
 
@@ -192,144 +196,49 @@ describe('CurrentIdentity class', () => {
     });
   });
 
-  describe('method: getPendingInstructions', () => {
-    test('should return all pending instructions in which the identity is involved', async () => {
-      const id1 = new BigNumber(1);
-      const id2 = new BigNumber(2);
-      const id3 = new BigNumber(3);
-      const id4 = new BigNumber(4);
-
+  describe('method: freezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const did = 'someDid';
       const identity = new CurrentIdentity({ did }, context);
 
-      const defaultPortfolioDid = 'someDid';
-      const numberedPortfolioDid = 'someDid';
-      const numberedPortfolioId = new BigNumber(1);
+      const args = {
+        freeze: true,
+        identity,
+      };
 
-      const defaultPortfolio = entityMockUtils.getDefaultPortfolioInstance({
-        did: defaultPortfolioDid,
-        isCustodiedBy: true,
-      });
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      const numberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
-        did: numberedPortfolioDid,
-        id: numberedPortfolioId,
-        isCustodiedBy: false,
-      });
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
-      identity.portfolios.getPortfolios = sinon
-        .stub()
-        .resolves([defaultPortfolio, numberedPortfolio]);
+      const queue = await identity.freezeSecondaryKeys();
 
-      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves({ data: [], next: null });
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 
-      const portfolioLikeToPortfolioIdStub = sinon.stub(
-        utilsConversionModule,
-        'portfolioLikeToPortfolioId'
-      );
+  describe('method: unfreezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
 
-      portfolioLikeToPortfolioIdStub
-        .withArgs(defaultPortfolio)
-        .returns({ did: defaultPortfolioDid, number: undefined });
-      portfolioLikeToPortfolioIdStub
-        .withArgs(numberedPortfolio)
-        .returns({ did: numberedPortfolioDid, number: numberedPortfolioId });
+      const args = {
+        freeze: false,
+        identity,
+      };
 
-      const rawPortfolio = dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId(did),
-        kind: dsMockUtils.createMockPortfolioKind('Default'),
-      });
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      const portfolioIdToMeshPortfolioIdStub = sinon.stub(
-        utilsConversionModule,
-        'portfolioIdToMeshPortfolioId'
-      );
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
-      portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did, number: undefined }, context)
-        .returns(rawPortfolio);
+      const queue = await identity.unfreezeSecondaryKeys();
 
-      const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
-
-      const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
-      const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
-      const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
-
-      const entriesStub = sinon.stub();
-      entriesStub
-        .withArgs(rawPortfolio)
-        .resolves([
-          tuple(
-            { args: [rawPortfolio, rawId1] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawPortfolio, rawId2] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-          tuple(
-            { args: [rawPortfolio, rawId3] },
-            dsMockUtils.createMockAffirmationStatus('Pending')
-          ),
-        ]);
-
-      userAuthsStub.entries = entriesStub;
-
-      /* eslint-disable @typescript-eslint/camelcase */
-      const instructionDetailsStub = dsMockUtils.createQueryStub(
-        'settlement',
-        'instructionDetails',
-        {
-          multi: [],
-        }
-      );
-
-      const multiStub = sinon.stub();
-
-      multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
-          venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-        }),
-      ]);
-
-      instructionDetailsStub.multi = multiStub;
-      /* eslint-enable @typescript-eslint/camelcase */
-
-      const result = await identity.getPendingInstructions();
-
-      expect(result.length).toBe(3);
-      expect(result[0].id).toEqual(id1);
-      expect(result[1].id).toEqual(id2);
-      expect(result[2].id).toEqual(id4);
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

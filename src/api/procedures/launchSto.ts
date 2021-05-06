@@ -1,4 +1,3 @@
-import { u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -28,7 +27,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -66,9 +65,8 @@ export interface Storage {
 export const createStoResolver = (ticker: string, context: Context) => (
   receipt: ISubmittableResult
 ): Sto => {
-  const eventRecord = findEventRecord(receipt, 'sto', 'FundraiserCreated');
-  const data = eventRecord.event.data;
-  const newFundraiserId = u64ToBigNumber(data[1] as u64);
+  const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
+  const newFundraiserId = u64ToBigNumber(data[1]);
 
   return new Sto({ id: newFundraiserId, ticker }, context);
 };
@@ -89,9 +87,14 @@ export async function prepareLaunchSto(
   } = this;
   const { ticker, raisingCurrency, venue, name, tiers, start, end, minInvestment } = args;
 
-  await Promise.all([
+  const portfolio = portfolioIdToPortfolio(offeringPortfolioId, context);
+
+  const [, , [{ free }]] = await Promise.all([
     assertPortfolioExists(offeringPortfolioId, context),
     assertPortfolioExists(raisingPortfolioId, context),
+    portfolio.getTokenBalances({
+      tokens: [ticker],
+    }),
   ]);
 
   let venueId: BigNumber | undefined;
@@ -121,6 +124,21 @@ export async function prepareLaunchSto(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'A valid Venue for the Offering was neither supplied nor found',
+    });
+  }
+
+  const totalTierBalance = tiers.reduce<BigNumber>(
+    (total, { amount }) => total.plus(amount),
+    new BigNumber(0)
+  );
+
+  if (totalTierBalance.gt(free)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "There isn't enough free balance in the offering Portfolio",
+      data: {
+        free,
+      },
     });
   }
 
@@ -203,4 +221,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const launchSto = new Procedure(prepareLaunchSto, getAuthorization, prepareStorage);
+export const launchSto = (): Procedure<Params, Sto, Storage> =>
+  new Procedure(prepareLaunchSto, getAuthorization, prepareStorage);

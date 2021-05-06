@@ -4,10 +4,13 @@ import P from 'bluebird';
 import {
   addInstruction,
   AddInstructionParams,
+  AddInstructionsParams,
   Context,
   Entity,
   Identity,
   Instruction,
+  modifyVenue,
+  ModifyVenueParams,
   PolymeshError,
 } from '~/internal';
 import { ErrorCode, InstructionStatus } from '~/types';
@@ -25,6 +28,13 @@ import { VenueDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
+}
+
+/**
+ * @hidden
+ */
+export function addInstructionTransformer([instruction]: Instruction[]): Instruction {
+  return instruction;
 }
 
 /**
@@ -57,7 +67,20 @@ export class Venue extends Entity<UniqueIdentifiers> {
     this.id = id;
 
     this.addInstruction = createProcedureMethod(
-      args => [addInstruction, { ...args, venueId: id }],
+      {
+        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venueId: id }],
+        transformer: addInstructionTransformer,
+      },
+      context
+    );
+
+    this.addInstructions = createProcedureMethod(
+      { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: id }] },
+      context
+    );
+
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyVenue, { ...args, venueId: id }] },
       context
     );
   }
@@ -147,6 +170,12 @@ export class Venue extends Entity<UniqueIdentifiers> {
     );
 
     return P.filter(instructions, async instruction => {
+      const instructionExists = await instruction.exists();
+
+      if (!instructionExists) {
+        return false;
+      }
+
       const { status } = await instruction.details();
 
       return status === InstructionStatus.Pending;
@@ -164,5 +193,27 @@ export class Venue extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Venue Owner
    */
-  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction>;
+  public addInstruction: ProcedureMethod<AddInstructionParams, Instruction[], Instruction>;
+
+  /**
+   * Creates a batch of settlement Instructions in this Venue
+   *
+   * @param args.instructions - array of Instructions
+   * @param args.instructions.legs - array of token movements (amount, from, to, token)
+   * @param args.instructions.tradeDate - date at which the trade was agreed upon (optional, for offchain trades)
+   * @param args.instructions.valueDate - date at which the trade was executed (optional, for offchain trades)
+   * @param args.instructions.endBlock - block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+   *
+   * @note required role:
+   *   - Venue Owner
+   */
+  public addInstructions: ProcedureMethod<AddInstructionsParams, Instruction[]>;
+
+  /**
+   * Modify description and type
+   *
+   * @note required role:
+   *   - Venue Owner
+   */
+  public modify: ProcedureMethod<ModifyVenueParams, void>;
 }

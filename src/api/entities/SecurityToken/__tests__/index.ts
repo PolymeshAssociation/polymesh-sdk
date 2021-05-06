@@ -6,24 +6,12 @@ import {
   FundingRoundName,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
-import { Params } from '~/api/procedures/toggleFreezeTransfers';
-import {
-  Context,
-  Entity,
-  modifyPrimaryIssuanceAgent,
-  modifyToken,
-  redeemToken,
-  removePrimaryIssuanceAgent,
-  SecurityToken,
-  toggleFreezeTransfers,
-  TransactionQueue,
-  transferTokenOwnership,
-} from '~/internal';
+import { Context, Entity, SecurityToken, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -33,30 +21,31 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('SecurityToken class', () => {
-  let prepareToggleFreezeTransfersStub: SinonStub<
-    [Params, Context],
-    Promise<TransactionQueue<SecurityToken, unknown[][]>>
-  >;
-
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    prepareToggleFreezeTransfersStub = sinon.stub(toggleFreezeTransfers, 'prepare');
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
-  test('should extend entity', () => {
+  test('should extend Entity', () => {
     expect(SecurityToken.prototype instanceof Entity).toBe(true);
   });
 
@@ -196,9 +185,9 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(transferTokenOwnership, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.transferOwnership(args);
@@ -220,9 +209,9 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      sinon
-        .stub(modifyToken, 'prepare')
-        .withArgs({ ticker, ...args }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.modify(args);
@@ -419,8 +408,9 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      prepareToggleFreezeTransfersStub
-        .withArgs({ ticker, freeze: true }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, freeze: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.freeze();
@@ -437,8 +427,9 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
 
-      prepareToggleFreezeTransfersStub
-        .withArgs({ ticker, freeze: false }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, freeze: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.unfreeze();
@@ -501,9 +492,9 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(modifyPrimaryIssuanceAgent, 'prepare')
-        .withArgs({ ticker, target }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, target }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.modifyPrimaryIssuanceAgent({ target });
@@ -520,9 +511,9 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(removePrimaryIssuanceAgent, 'prepare')
-        .withArgs({ ticker }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.removePrimaryIssuanceAgent();
@@ -540,9 +531,9 @@ describe('SecurityToken class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(redeemToken, 'prepare')
-        .withArgs({ amount, ticker }, context)
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { amount, ticker }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await securityToken.redeem({ amount });
@@ -596,6 +587,27 @@ describe('SecurityToken class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, investorCount);
+    });
+  });
+
+  describe('method: controllerTransfer', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const originPortfolio = 'portfolio';
+      const amount = new BigNumber(1);
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, originPortfolio, amount }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await securityToken.controllerTransfer({ originPortfolio, amount });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

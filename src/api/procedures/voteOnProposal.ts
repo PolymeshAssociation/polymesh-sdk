@@ -81,4 +81,4 @@
 //   );
 // }
 
-// export const voteOnProposal = new Procedure(prepareVoteOnProposal);
+// export const voteOnProposal = (): Procedure => new Procedure(prepareVoteOnProposal);

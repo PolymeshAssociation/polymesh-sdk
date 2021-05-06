@@ -4,14 +4,16 @@ import { range } from 'lodash';
 import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { SecurityToken } from '~/api/entities/SecurityToken';
 import { Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { ClaimType, CommonKeyring, CountryCode } from '~/types';
+import { CalendarPeriod, CalendarUnit, ClaimType, CommonKeyring, CountryCode } from '~/types';
 import { tuple } from '~/types/utils';
-import { MAX_BATCH_ELEMENTS } from '~/utils/constants';
+import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
+  assertFormatValid,
   assertIsInteger,
   assertIsPositive,
   batchArguments,
@@ -19,11 +21,14 @@ import {
   createClaim,
   createProcedureMethod,
   delay,
-  findEventRecord,
+  filterEventRecords,
   getCommonKeyring,
   getDid,
+  getTicker,
   isPrintableAscii,
+  optionize,
   padString,
+  periodComplexity,
   removePadding,
   requestAtBlock,
   requestPaginated,
@@ -156,33 +161,33 @@ describe('unwrapValues', () => {
   });
 });
 
-describe('findEventRecord', () => {
-  const findRecordStub = sinon.stub();
+describe('filterEventRecords', () => {
+  const filterRecordsStub = sinon.stub();
   const mockReceipt = ({
-    findRecord: findRecordStub,
+    filterRecords: filterRecordsStub,
   } as unknown) as ISubmittableResult;
 
   afterEach(() => {
-    findRecordStub.reset();
+    filterRecordsStub.reset();
   });
 
   test('returns the corresponding Event Record', () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     const fakeResult = 'event';
-    findRecordStub.withArgs(mod, eventName).returns(fakeResult);
+    filterRecordsStub.withArgs(mod, eventName).returns([{ event: fakeResult }]);
 
-    const eventRecord = findEventRecord(mockReceipt, mod, eventName);
+    const eventRecord = filterEventRecords(mockReceipt, mod, eventName);
 
-    expect(eventRecord).toBe(fakeResult);
+    expect(eventRecord[0]).toBe(fakeResult);
   });
 
   test("throws if the Event wasn't fired", () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
-    findRecordStub.withArgs(mod, eventName).returns(undefined);
+    filterRecordsStub.withArgs(mod, eventName).returns([]);
 
-    expect(() => findEventRecord(mockReceipt, mod, eventName)).toThrow(
+    expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
     );
   });
@@ -233,6 +238,14 @@ describe('createClaim', () => {
     expect(result).toEqual({
       type: ClaimType.InvestorUniqueness,
       scope: scope,
+      cddId: id,
+    });
+
+    type = 'InvestorUniquenessV2';
+
+    result = createClaim(type, null, null, id, undefined);
+    expect(result).toEqual({
+      type: ClaimType.InvestorUniquenessV2,
       cddId: id,
     });
   });
@@ -372,8 +385,8 @@ describe('batchArguments', () => {
   });
 
   test('should use a custom batching function to group elements', () => {
-    const tag = TxTags.asset.BatchAddDocument;
-    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
+    const tag = TxTags.corporateAction.InitiateCorporateAction;
+    const expectedBatchLength = DEFAULT_MAX_BATCH_ELEMENTS;
 
     const elements = range(0, 2 * expectedBatchLength);
 
@@ -462,17 +475,22 @@ describe('createProcedureMethod', () => {
   test('should return a ProcedureMethod object', async () => {
     const prepare = sinon.stub();
     const checkAuthorization = sinon.stub();
-    const fakeProcedure = ({
-      prepare,
-      checkAuthorization,
-    } as unknown) as Procedure<number, void>;
+    const transformer = sinon.stub();
+    const fakeProcedure = (): Procedure<number, void> =>
+      (({
+        prepare,
+        checkAuthorization,
+      } as unknown) as Procedure<number, void>);
 
-    const method = createProcedureMethod((args: number) => [fakeProcedure, args], context);
+    const method = createProcedureMethod(
+      { getProcedureAndArgs: (args: number) => [fakeProcedure, args], transformer },
+      context
+    );
 
     const procArgs = 1;
     await method(procArgs);
 
-    sinon.assert.calledWithExactly(prepare, procArgs, context);
+    sinon.assert.calledWithExactly(prepare, { args: procArgs, transformer }, context);
 
     await method.checkAuthorization(procArgs);
 
@@ -499,7 +517,10 @@ describe('assertIsInteger', () => {
 });
 
 describe('assertIsPositive', () => {
-  test('assertIsPositive should throw an error if the argument is negative', async () => {
+  test('should not throw an error if the argument is positive', () => {
+    expect(() => assertIsPositive(new BigNumber(43))).not.toThrow();
+  });
+  test('should throw an error if the argument is negative', async () => {
     expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
   });
 });
@@ -513,5 +534,87 @@ describe('getCommonKeyring', () => {
 
     result = getCommonKeyring({ keyring: fakeKeyring });
     expect(result).toBe(fakeKeyring);
+  });
+});
+
+describe('assertFormatValid', () => {
+  const ss58Format = 42;
+
+  test('should throw an error if the address is prefixed with an invalid ss58', async () => {
+    expect(() =>
+      assertFormatValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
+    ).toThrow("The supplied address is not encoded with the chain's SS58 format");
+  });
+
+  test('should not throw if the address is prefixed with valid ss58', async () => {
+    expect(() =>
+      assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
+    ).not.toThrow();
+  });
+});
+
+describe('getTicker', () => {
+  test('should return a token symbol', async () => {
+    const symbol = 'TOKEN';
+    let result = getTicker(symbol);
+
+    expect(result).toBe(symbol);
+
+    result = getTicker(new SecurityToken({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    expect(result).toBe(symbol);
+  });
+});
+
+describe('periodComplexity', () => {
+  test('should calculate complexity for any period', () => {
+    const period: CalendarPeriod = {
+      unit: CalendarUnit.Second,
+      amount: 1,
+    };
+    let result = periodComplexity(period);
+    expect(result).toBe(31536000);
+
+    period.unit = CalendarUnit.Minute;
+    result = periodComplexity(period);
+    expect(result).toBe(525600);
+
+    period.unit = CalendarUnit.Hour;
+    result = periodComplexity(period);
+    expect(result).toBe(8760);
+
+    period.unit = CalendarUnit.Day;
+    result = periodComplexity(period);
+    expect(result).toBe(365);
+
+    period.unit = CalendarUnit.Week;
+    result = periodComplexity(period);
+    expect(result).toBe(52);
+
+    period.unit = CalendarUnit.Month;
+    result = periodComplexity(period);
+    expect(result).toBe(12);
+
+    period.unit = CalendarUnit.Year;
+    result = periodComplexity(period);
+    expect(result).toBe(2);
+
+    period.amount = 0;
+    result = periodComplexity(period);
+    expect(result).toBe(1);
+  });
+});
+
+describe('optionize', () => {
+  test('should transform a conversion util into a version that returns null if the first input is falsy, passing along the rest if not', () => {
+    const number = 1;
+
+    const toString = (value: number, foo: string, bar: number): string =>
+      `${value.toString()}${foo}${bar}`;
+
+    let result = optionize(toString)(number, 'notNeeded', 1);
+    expect(result).toBe(toString(number, 'notNeeded', 1));
+
+    result = optionize(toString)(null, 'stillNotNeeded', 2);
+    expect(result).toBeNull();
   });
 });

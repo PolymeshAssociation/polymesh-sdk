@@ -7,6 +7,7 @@ import {
   complianceRequirementToRequirement,
   requirementToComplianceRequirement,
   stringToTicker,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 
 export interface SetAssetRequirementsParams {
@@ -29,13 +30,25 @@ export async function prepareSetAssetRequirements(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { query, tx, consts },
     },
     context,
   } = this;
   const { ticker, requirements } = args;
 
   const rawTicker = stringToTicker(ticker, context);
+
+  const maxConditionComplexity = u32ToBigNumber(
+    consts.complianceManager.maxConditionComplexity
+  ).toNumber();
+
+  if (requirements.length >= maxConditionComplexity) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Condition limit reached',
+      data: { limit: maxConditionComplexity },
+    });
+  }
 
   const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
 
@@ -109,4 +122,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setAssetRequirements = new Procedure(prepareSetAssetRequirements, getAuthorization);
+export const setAssetRequirements = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareSetAssetRequirements, getAuthorization);

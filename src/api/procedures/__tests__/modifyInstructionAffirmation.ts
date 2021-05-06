@@ -1,4 +1,4 @@
-import { u64 } from '@polkadot/types';
+import { u32, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import {
   AffirmationStatus as MeshAffirmationStatus,
@@ -40,11 +40,15 @@ describe('modifyInstructionAffirmation procedure', () => {
     did: dsMockUtils.createMockIdentityId('someDid'),
     kind: dsMockUtils.createMockPortfolioKind('Default'),
   });
+  const did = 'someDid';
   let portfolio: DefaultPortfolio;
-  const portfolioId: PortfolioId = { did: 'someDid' };
+  let legAmount: number;
+  let rawLegAmount: u32;
+  const portfolioId: PortfolioId = { did };
   const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let numberToU32Stub: sinon.SinonStub<[number | BigNumber, Context], u32>;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let meshAffirmationStatusToAffirmationStatusStub: sinon.SinonStub<
@@ -62,7 +66,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     entityMockUtils.initMocks();
 
     portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid ' });
+    legAmount = 2;
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    numberToU32Stub = sinon.stub(utilsConversionModule, 'numberToU32');
     portfolioLikeToPortfolioIdStub = sinon.stub(
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
@@ -82,12 +88,14 @@ describe('modifyInstructionAffirmation procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
+    rawLegAmount = dsMockUtils.createMockU32(2);
     dsMockUtils.createTxStub('settlement', 'affirmInstruction');
     dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
     dsMockUtils.createTxStub('settlement', 'rejectInstruction');
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     numberToU64Stub.returns(rawInstructionId);
+    numberToU32Stub.returns(rawLegAmount);
     portfolioLikeToPortfolioIdStub.withArgs(portfolio).returns(portfolioId);
     portfolioIdToMeshPortfolioIdStub.withArgs(portfolioId, mockContext).returns(rawPortfolioId);
   });
@@ -102,6 +110,32 @@ describe('modifyInstructionAffirmation procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if the current identity is not the custodian of any of the involved portfolios', () => {
+    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
+    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
+      multi: [rawAffirmationStatus, rawAffirmationStatus],
+    });
+    meshAffirmationStatusToAffirmationStatusStub
+      .withArgs(rawAffirmationStatus)
+      .returns(AffirmationStatus.Affirmed);
+
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [],
+      senderLegAmount: legAmount,
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.Affirm,
+      })
+    ).rejects.toThrow('Current Identity is not involved in this Instruction');
   });
 
   test("should throw an error if the operation is Affirm and all of the current Identity's Portfolios are affirmed", () => {
@@ -119,6 +153,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      senderLegAmount: legAmount,
     });
 
     return expect(
@@ -142,7 +177,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       ModifyInstructionAffirmationParams,
       Instruction,
       Storage
-    >(mockContext, { portfolios: [portfolio, portfolio] });
+    >(mockContext, { portfolios: [portfolio, portfolio], senderLegAmount: legAmount });
 
     const transaction = dsMockUtils.createTxStub('settlement', 'affirmInstruction');
 
@@ -151,10 +186,14 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Affirm,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawInstructionId, [
-      rawPortfolioId,
-      rawPortfolioId,
-    ]);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { batchSize: 2 },
+      rawInstructionId,
+      [rawPortfolioId, rawPortfolioId],
+      rawLegAmount
+    );
 
     expect(result.id).toEqual(id);
   });
@@ -174,6 +213,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      senderLegAmount: legAmount,
     });
 
     return expect(
@@ -199,6 +239,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      senderLegAmount: legAmount,
     });
 
     return expect(
@@ -224,6 +265,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      senderLegAmount: legAmount,
     });
 
     const transaction = dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
@@ -233,10 +275,14 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Withdraw,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawInstructionId, [
-      rawPortfolioId,
-      rawPortfolioId,
-    ]);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { batchSize: 2 },
+      rawInstructionId,
+      [rawPortfolioId, rawPortfolioId],
+      rawLegAmount
+    );
 
     expect(result.id).toEqual(id);
   });
@@ -256,6 +302,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      senderLegAmount: legAmount,
     });
 
     return expect(
@@ -266,30 +313,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The Instruction cannot be rejected');
   });
 
-  test('should add an reject instruction transaction to the queue', async () => {
-    const currentDid = (await mockContext.getCurrentIdentity()).did;
-
-    entityMockUtils.configureMocks({
-      instructionOptions: {
-        getLegs: {
-          data: [
-            {
-              from: new DefaultPortfolio({ did: 'notTheCurrentIdentity' }, mockContext),
-              to: new DefaultPortfolio({ did: currentDid }, mockContext),
-              token: entityMockUtils.getSecurityTokenInstance(),
-              amount: new BigNumber(100),
-            },
-            {
-              from: new DefaultPortfolio({ did: currentDid }, mockContext),
-              to: new DefaultPortfolio({ did: 'notTheCurrentIdentity' }, mockContext),
-              token: entityMockUtils.getSecurityTokenInstance(),
-              amount: new BigNumber(200),
-            },
-          ],
-          next: null,
-        },
-      },
-    });
+  test('should add a reject instruction transaction to the queue', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -310,6 +334,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      senderLegAmount: legAmount,
     });
 
     const transaction = dsMockUtils.createTxStub('settlement', 'rejectInstruction');
@@ -319,10 +344,14 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Reject,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawInstructionId, [
-      rawPortfolioId,
-      rawPortfolioId,
-    ]);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { batchSize: 2 },
+      rawInstructionId,
+      [rawPortfolioId, rawPortfolioId],
+      rawLegAmount
+    );
 
     expect(result.id).toEqual(id);
   });
@@ -342,6 +371,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         Storage
       >(mockContext, {
         portfolios: [from, to],
+        senderLegAmount: legAmount,
       });
       let boundFunc = getAuthorization.bind(proc);
 
@@ -361,6 +391,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         Storage
       >(mockContext, {
         portfolios: [],
+        senderLegAmount: legAmount,
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -414,6 +445,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         portfolios: [from, to],
+        senderLegAmount: 1,
       });
 
       from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
@@ -430,6 +462,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         portfolios: [],
+        senderLegAmount: 0,
       });
     });
   });

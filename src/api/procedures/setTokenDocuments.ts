@@ -1,4 +1,4 @@
-import { differenceWith } from 'lodash';
+import { differenceWith, isEqual } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -43,18 +43,8 @@ export async function prepareSetTokenDocuments(
   } = this;
   const { ticker, documents } = args;
 
-  const comparator = (a: TokenDocument, b: TokenDocument): boolean => {
-    return (
-      a.name === b.name &&
-      a.uri === b.uri &&
-      a.contentHash === b.contentHash &&
-      a.type === b.type &&
-      a.filedAt === b.filedAt
-    );
-  };
-
   if (
-    !differenceWith(currentDocs, documents, comparator).length &&
+    !differenceWith(currentDocs, documents, isEqual).length &&
     currentDocs.length === documents.length
   ) {
     throw new PolymeshError({
@@ -158,8 +148,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const setTokenDocuments = new Procedure(
-  prepareSetTokenDocuments,
-  getAuthorization,
-  prepareStorage
-);
+export const setTokenDocuments = (): Procedure<Params, SecurityToken, Storage> =>
+  new Procedure(prepareSetTokenDocuments, getAuthorization, prepareStorage);

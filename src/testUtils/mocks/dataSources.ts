@@ -33,15 +33,16 @@ import {
   Permill,
   RefCount,
   RuntimeVersion,
+  Signature,
 } from '@polkadot/types/interfaces';
 import { Call } from '@polkadot/types/interfaces/runtime';
-import { Codec, ISubmittableResult, Registry } from '@polkadot/types/types';
+import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import { BigNumber } from 'bignumber.js';
 import { EventEmitter } from 'events';
-import { cloneDeep, merge, upperFirst } from 'lodash';
+import { cloneDeep, map, merge, upperFirst } from 'lodash';
 import {
   AffirmationStatus,
   AssetComplianceResult,
@@ -53,9 +54,16 @@ import {
   Authorization,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
+  CACheckpoint,
+  CAId,
+  CAKind,
+  CalendarPeriod,
+  CalendarUnit,
   CanTransferResult,
   CddId,
   CddStatus,
+  CheckpointId,
+  CheckpointSchedule,
   Claim,
   Claim1stKey,
   ClaimType as MeshClaimType,
@@ -64,9 +72,11 @@ import {
   Condition,
   ConditionResult,
   ConditionType,
+  CorporateAction,
   CountryCode,
   DidRecord,
   DispatchableName,
+  Distribution,
   Document,
   DocumentHash,
   DocumentName,
@@ -74,15 +84,16 @@ import {
   DocumentUri,
   FundingRoundName,
   Fundraiser,
+  FundraiserName,
   FundraiserStatus,
   FundraiserTier,
+  GranularCanTransferResult,
   IdentityClaim,
   IdentityId,
   IdentityRole,
   Instruction,
   InstructionStatus,
   InvestorZKProofData,
-  IssueAssetItem,
   MovePortfolioItem,
   PalletName,
   PalletPermissions,
@@ -92,25 +103,40 @@ import {
   PipsMetadata,
   PortfolioId,
   PortfolioKind,
+  PortfolioValidityResult,
   PosRatio,
   PriceTier,
   ProposalState,
+  RecordDate,
+  RecordDateSpec,
+  RistrettoPoint,
+  Scalar,
+  ScheduleId,
+  ScheduleSpec,
   Scope,
+  ScopeClaimProof as MeshScopeClaimProof,
+  ScopeClaimProof,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SecurityToken,
   SettlementType,
   Signatory,
+  StoredSchedule,
+  TargetIdentities,
   TargetIdentity,
+  TargetTreatment,
+  Tax,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
   TransferManager,
+  TransferManagerResult,
   TrustedFor,
   TrustedIssuer,
   Venue,
   VenueDetails,
   VenueType,
+  ZkProofData,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
@@ -126,8 +152,8 @@ import {
   ResultSet,
   SecondaryKey,
 } from '~/types';
-import { Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
-import { Mutable } from '~/types/utils';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
+import { Mutable, tuple } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
 
@@ -144,7 +170,17 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
     setSigner: sinon.stub() as (signer: Signer) => void,
+    disconnect: sinon.stub() as () => Promise<void>,
   } as Mutable<ApiPromise> & EventEmitter;
+}
+
+/**
+ * Create a mock instance of the Apollo client
+ */
+function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
+  return ({
+    stop: sinon.stub(),
+  } as unknown) as Mutable<ApolloClient<NormalizedCacheObject>>;
 }
 
 let apolloConstructorStub: SinonStub;
@@ -162,7 +198,7 @@ const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
-  apolloInstance: {} as ApolloClient<NormalizedCacheObject>,
+  apolloInstance: createApolloClient(),
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -231,6 +267,8 @@ interface ContextOptions {
   middlewareAvailable?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
+  ss58Format?: number;
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface Pair {
@@ -431,6 +469,7 @@ export const mockApolloModule = (path: string) => (): object => ({
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
+let constsModule = {} as Consts;
 
 // TODO cast rpcModule to a better type
 let rpcModule = {} as any;
@@ -443,6 +482,7 @@ const defaultContextOptions: ContextOptions = {
   balance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
+    total: new BigNumber(110),
   },
   hasRoles: true,
   hasPermissions: true,
@@ -503,6 +543,8 @@ const defaultContextOptions: ContextOptions = {
     count: 1,
   },
   isArchiveNode: true,
+  ss58Format: 42,
+  areScondaryKeysFrozen: false,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -529,6 +571,7 @@ function configureContext(opts: ContextOptions): void {
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
+    areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
   };
   opts.withSeed
     ? getCurrentIdentity.resolves(identity)
@@ -585,6 +628,8 @@ function configureContext(opts: ContextOptions): void {
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
     isArchiveNode: opts.isArchiveNode,
+    ss58Format: opts.ss58Format,
+    disconnect: sinon.stub(),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -650,6 +695,17 @@ function updateRpc(mod?: any): void {
 /**
  * @hidden
  */
+function updateConsts(mod?: Consts): void {
+  const updateTo = mod || constsModule;
+
+  constsModule = updateTo;
+
+  mockInstanceContainer.apiInstance.consts = constsModule;
+}
+
+/**
+ * @hidden
+ */
 function updateQueryMulti(stub?: SinonStub): void {
   const updateTo = stub || queryMultiStub;
 
@@ -683,6 +739,17 @@ function initRpc(): void {
 /**
  * @hidden
  *
+ * Mock the consts module
+ */
+function initConsts(): void {
+  const mod = {} as Consts;
+
+  updateConsts(mod);
+}
+
+/**
+ * @hidden
+ *
  * Mock queryMulti
  */
 function initQueryMulti(): void {
@@ -702,6 +769,7 @@ function initApi(): void {
   initTx();
   initQuery();
   initRpc();
+  initConsts();
   initQueryMulti();
 
   apiPromiseCreateStub = sinon.stub();
@@ -805,7 +873,7 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
-  mockInstanceContainer.apolloInstance = {} as ApolloClient<NormalizedCacheObject>;
+  mockInstanceContainer.apolloInstance = createApolloClient();
 }
 
 /**
@@ -974,7 +1042,7 @@ export function createQueryStub<
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);
   }
-  if (opts?.size) {
+  if (typeof opts?.size !== 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     stub.size.resolves(createMockU64(opts.size));
   }
@@ -1017,6 +1085,41 @@ export function createRpcStub(
   (stub as any).count = count++;
 
   return stub;
+}
+
+/**
+ * @hidden
+ * Set a consts mock
+ *
+ * @param mod - name of the module
+ * @param constName - name of the constant
+ */
+export function setConstMock<
+  ModuleName extends keyof Consts,
+  ConstName extends keyof Consts[ModuleName]
+>(
+  mod: ModuleName,
+  constName: ConstName,
+  opts: {
+    returnValue: unknown;
+  }
+): void {
+  let runtimeModule = constsModule[mod];
+
+  if (!runtimeModule) {
+    runtimeModule = {} as Consts[ModuleName];
+    constsModule[mod] = runtimeModule;
+  }
+
+  const returnValue = opts.returnValue as Consts[ModuleName][ConstName];
+  if (!runtimeModule[constName]) {
+    runtimeModule[constName] = returnValue;
+
+    updateConsts();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    instance.consts[mod][constName] = returnValue;
+  }
 }
 
 /**
@@ -1120,8 +1223,10 @@ export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> 
  * @hidden
  * Retrieve an instance of the mocked Apollo Client
  */
-export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> {
-  return mockInstanceContainer.apolloInstance;
+export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
+  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstance as ApolloClient<NormalizedCacheObject> &
+    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
@@ -1165,8 +1270,30 @@ export function getKeyringInstance(opts?: KeyringOptions): Keyring {
 /**
  * @hidden
  */
+export const setRuntimeVersion = (args: unknown): void => {
+  mockInstanceContainer.apiInstance.runtimeVersion = args as RuntimeVersion;
+};
+
+/**
+ * @hidden
+ */
+function isCodec<T extends Codec>(codec: any): codec is T {
+  return !!codec?._isCodec;
+}
+
+/**
+ * @hidden
+ */
+function isOption<T extends Codec>(codec: any): codec is Option<T> {
+  return typeof codec?.unwrap === 'function';
+}
+
+/**
+ * @hidden
+ */
 const createMockCodec = (codec: object, isEmpty: boolean): Codec => {
   const clone = cloneDeep(codec) as Mutable<Codec>;
+  (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
   return clone;
 };
@@ -1205,14 +1332,25 @@ const createMockNumberCodec = (value?: number): Codec =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockIdentityId = (did?: string): IdentityId =>
-  createMockStringCodec(did) as IdentityId;
+export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
+  if (isCodec<IdentityId>(did)) {
+    return did;
+  }
+
+  return createMockStringCodec(did) as IdentityId;
+};
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTicker = (ticker?: string): Ticker => createMockU8aCodec(ticker) as Ticker;
+export const createMockTicker = (ticker?: string | Ticker): Ticker => {
+  if (isCodec<Ticker>(ticker)) {
+    return ticker;
+  }
+
+  return createMockU8aCodec(ticker) as Ticker;
+};
 
 /**
  * @hidden
@@ -1225,8 +1363,13 @@ export const createMockAccountId = (accountId?: string): AccountId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBalance = (balance?: number): Balance =>
-  createMockNumberCodec(balance) as Balance;
+export const createMockBalance = (balance?: number | Balance): Balance => {
+  if (isCodec<Balance>(balance)) {
+    return balance;
+  }
+
+  return createMockNumberCodec(balance) as Balance;
+};
 
 /**
  * @hidden
@@ -1260,8 +1403,14 @@ export const createMockDocumentType = (name?: string): DocumentType =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockOption = <T extends Codec>(wrapped: T | null = null): Option<T> =>
-  createMockCodec(
+export const createMockOption = <T extends Codec>(
+  wrapped: T | null | Option<T> = null
+): Option<T> => {
+  if (isOption<T>(wrapped)) {
+    return wrapped;
+  }
+
+  return createMockCodec(
     {
       unwrap: () => wrapped as T,
       unwrapOr: (val: unknown) => wrapped ?? val,
@@ -1270,6 +1419,7 @@ export const createMockOption = <T extends Codec>(wrapped: T | null = null): Opt
     },
     !wrapped
   ) as Option<T>;
+};
 
 /**
  * @hidden
@@ -1291,8 +1441,13 @@ export const createMockCompact = <T extends CompactEncodable>(
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockMoment = (millis?: number): Moment =>
-  createMockNumberCodec(millis) as Moment;
+export const createMockMoment = (millis?: number | Moment): Moment => {
+  if (isCodec<Moment>(millis)) {
+    return millis;
+  }
+
+  return createMockNumberCodec(millis) as Moment;
+};
 
 /**
  * @hidden
@@ -1324,20 +1479,34 @@ export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value)
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU32 = (value?: number): u32 => createMockNumberCodec(value) as u32;
+export const createMockU32 = (value?: number | u32): u32 => {
+  if (isCodec<u32>(value)) {
+    return value;
+  }
+  return createMockNumberCodec(value) as u32;
+};
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU64 = (value?: number): u64 => createMockNumberCodec(value) as u64;
+export const createMockU64 = (value?: number | u64): u64 => {
+  if (isCodec<u64>(value)) {
+    return value;
+  }
+  return createMockNumberCodec(value) as u64;
+};
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPermill = (value?: number): Permill =>
-  createMockNumberCodec(value) as Permill;
+export const createMockPermill = (value?: number | Permill): Permill => {
+  if (isCodec<Permill>(value)) {
+    return value;
+  }
+  return createMockNumberCodec(value) as Permill;
+};
 
 /**
  * @hidden
@@ -1367,8 +1536,12 @@ export const createMockPosRatio = (numerator: number, denominator: number): PosR
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBool = (value?: boolean): bool =>
-  createMockCodec(
+export const createMockBool = (value?: boolean | bool): bool => {
+  if (isCodec<bool>(value)) {
+    return value;
+  }
+
+  return createMockCodec(
     {
       isTrue: value,
       isFalse: !value,
@@ -1376,6 +1549,7 @@ export const createMockBool = (value?: boolean): bool =>
     },
     !value
   ) as bool;
+};
 
 /**
  * @hidden
@@ -1401,8 +1575,11 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): E
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioKind = (
-  portfolioKind?: 'Default' | { User: u64 }
+  portfolioKind?: 'Default' | { User: u64 } | PortfolioKind
 ): PortfolioKind => {
+  if (isCodec<PortfolioKind>(portfolioKind)) {
+    return portfolioKind;
+  }
   return createMockEnum(portfolioKind) as PortfolioKind;
 };
 
@@ -1410,17 +1587,22 @@ export const createMockPortfolioKind = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPortfolioId = (portfiolioId?: {
-  did: IdentityId;
-  kind: PortfolioKind;
-}): PortfolioId => {
-  const id = portfiolioId || {
+export const createMockPortfolioId = (
+  portfiolioId?:
+    | PortfolioId
+    | {
+        did: IdentityId | Parameters<typeof createMockIdentityId>[0];
+        kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
+      }
+): PortfolioId => {
+  const { did, kind } = portfiolioId || {
     did: createMockIdentityId(),
     kind: createMockPortfolioKind(),
   };
   return createMockCodec(
     {
-      ...id,
+      did: createMockIdentityId(did),
+      kind: createMockPortfolioKind(kind),
     },
     !portfiolioId
   ) as PortfolioId;
@@ -1461,6 +1643,7 @@ export const createMockAssetType = (
     | 'RevenueShareAgreement'
     | 'StructuredProduct'
     | 'Derivative'
+    | 'StableCoin'
     | { Custom: Bytes }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
@@ -1680,6 +1863,13 @@ export const createMockDispatchableName = (name?: string): DispatchableName =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockFundraiserName = (name?: string): FundraiserName =>
+  createMockStringCodec(name) as FundraiserName;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockPalletPermissions = (permissions?: {
   pallet_name: PalletName;
   dispatchable_names: DispatchableName[] | null;
@@ -1747,6 +1937,7 @@ export const createMockAuthorizationData = (
     | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
     | { custom: Bytes }
+    | { TransferCorporateActionAgent: Ticker }
     | 'NoData'
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
@@ -1787,6 +1978,15 @@ export const createMockEventRecord = (data: unknown[]): EventRecord =>
       data,
     },
   } as unknown) as EventRecord);
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockIEvent = <T extends Codec[]>(data: unknown[]): IEvent<T> =>
+  (({
+    data,
+  } as unknown) as IEvent<T>);
 
 /**
  * @hidden
@@ -1845,6 +2045,7 @@ export const createMockClaim = (
     | { Exempted: Scope }
     | { Blocked: Scope }
     | { InvestorUniqueness: [Scope, ScopeId, CddId] }
+    | { InvestorUniquenessV2: CddId }
     | 'NoData'
 ): Claim => createMockEnum(claim) as Claim;
 
@@ -1893,7 +2094,14 @@ export const createMockConditionType = (
     | { IsAnyOf: Claim[] }
     | { IsNoneOf: Claim[] }
     | { IsIdentity: TargetIdentity }
-): ConditionType => createMockEnum(conditionType) as ConditionType;
+    | ConditionType
+): ConditionType => {
+  if (isCodec<ConditionType>(conditionType)) {
+    return conditionType;
+  }
+
+  return createMockEnum(conditionType) as ConditionType;
+};
 
 /**
  * @hidden
@@ -1956,16 +2164,17 @@ export const createMockTrustedIssuer = (issuer?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCondition = (condition?: {
-  condition_type: ConditionType;
-  issuers: TrustedIssuer[];
+  condition_type: ConditionType | Parameters<typeof createMockConditionType>[0];
+  issuers: (TrustedIssuer | Parameters<typeof createMockTrustedIssuer>[0])[];
 }): Condition => {
-  const auxCondition = condition || {
+  const { condition_type, issuers } = condition || {
     condition_type: createMockConditionType(),
     issuers: [],
   };
   return createMockCodec(
     {
-      ...auxCondition,
+      condition_type: createMockConditionType(condition_type),
+      issuers: issuers.map(issuer => createMockTrustedIssuer(issuer)),
     },
     !condition
   ) as Condition;
@@ -1976,16 +2185,17 @@ export const createMockCondition = (condition?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockConditionResult = (conditionResult?: {
-  condition: Condition;
-  result: bool;
+  condition: Condition | Parameters<typeof createMockCondition>[0];
+  result: bool | Parameters<typeof createMockBool>[0];
 }): ConditionResult => {
-  const auxConditionResult = conditionResult || {
+  const { condition, result } = conditionResult || {
     condition: createMockCondition(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      ...auxConditionResult,
+      condition: createMockCondition(condition),
+      result: createMockBool(result),
     },
     !conditionResult
   ) as ConditionResult;
@@ -2019,12 +2229,12 @@ export const createMockComplianceRequirement = (complianceRequirement?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockComplianceRequirementResult = (complianceRequirementResult?: {
-  sender_conditions: ConditionResult[];
-  receiver_conditions: ConditionResult[];
-  id: u32;
-  result: bool;
+  sender_conditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
+  receiver_conditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
+  id: u32 | Parameters<typeof createMockU32>[0];
+  result: bool | Parameters<typeof createMockBool>[0];
 }): ComplianceRequirementResult => {
-  const result = complianceRequirementResult || {
+  const { sender_conditions, receiver_conditions, id, result } = complianceRequirementResult || {
     sender_conditions: [],
     receiver_conditions: [],
     id: createMockU32(),
@@ -2033,7 +2243,12 @@ export const createMockComplianceRequirementResult = (complianceRequirementResul
 
   return createMockCodec(
     {
-      ...result,
+      sender_conditions: sender_conditions.map(condition => createMockConditionResult(condition)),
+      receiver_conditions: receiver_conditions.map(condition =>
+        createMockConditionResult(condition)
+      ),
+      id: createMockU32(id),
+      result: createMockBool(result),
     },
     !complianceRequirementResult
   ) as ComplianceRequirementResult;
@@ -2044,19 +2259,26 @@ export const createMockComplianceRequirementResult = (complianceRequirementResul
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetComplianceResult = (assetComplianceResult?: {
-  paused: bool;
-  requirements: ComplianceRequirementResult[];
-  result: bool;
+  paused: bool | Parameters<typeof createMockBool>[0];
+  requirements: (
+    | ComplianceRequirementResult
+    | Parameters<typeof createMockComplianceRequirementResult>[0]
+  )[];
+  result: bool | Parameters<typeof createMockBool>[0];
 }): AssetComplianceResult => {
-  const result = assetComplianceResult || {
+  const { paused, requirements, result } = assetComplianceResult || {
     paused: createMockBool(),
-    requirements: createMockComplianceRequirementResult(),
+    requirements: [],
     result: createMockBool(),
   };
 
   return createMockCodec(
     {
-      ...result,
+      paused: createMockBool(paused),
+      requirements: requirements.map(requirement =>
+        createMockComplianceRequirementResult(requirement)
+      ),
+      result: createMockBool(result),
     },
     !assetComplianceResult
   ) as AssetComplianceResult;
@@ -2097,7 +2319,13 @@ export const createMockCanTransferResult = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockText = (value: string): Text => createMockStringCodec(value) as Text;
+export const createMockText = (value?: string | Text): Text => {
+  if (isCodec<Text>(value)) {
+    return value;
+  }
+
+  return createMockStringCodec(value) as Text;
+};
 
 /**
  * @hidden
@@ -2106,34 +2334,6 @@ export const createMockText = (value: string): Text => createMockStringCodec(val
 export const createMockAssetOwnershipRelation = (
   assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
 ): AssetOwnershipRelation => createMockEnum(assetOwnershipRelation) as AssetOwnershipRelation;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockIssueAssetItem = (issueAssetItem?: {
-  identity_did: IdentityId;
-  value: Balance;
-}): IssueAssetItem => {
-  const item = issueAssetItem || {
-    identity_did: createMockIdentityId(),
-    value: createMockBalance(),
-  };
-
-  return createMockCodec(
-    {
-      ...item,
-    },
-    !issueAssetItem
-  ) as IssueAssetItem;
-};
-
-/**
- * @hidden
- */
-export const setRuntimeVersion = (args: unknown): void => {
-  mockInstanceContainer.apiInstance.runtimeVersion = args as RuntimeVersion;
-};
 
 /**
  * @hidden
@@ -2297,6 +2497,7 @@ export const createMockInstruction = (instruction?: {
   settlement_type: SettlementType;
   created_at: Option<Moment>;
   trade_date: Option<Moment>;
+  value_date: Option<Moment>;
 }): Instruction => {
   const data = instruction || {
     instruction_id: createMockU64(),
@@ -2320,8 +2521,16 @@ export const createMockInstruction = (instruction?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTransferManager = (
-  transferManager?: { CountTransferManager: u64 } | { PercentageTransferManager: Permill }
-): TransferManager => createMockEnum(transferManager) as TransferManager;
+  transferManager?:
+    | { CountTransferManager: u64 }
+    | { PercentageTransferManager: Permill }
+    | TransferManager
+): TransferManager => {
+  if (isCodec<TransferManager>(transferManager)) {
+    return transferManager;
+  }
+  return createMockEnum(transferManager) as TransferManager;
+};
 
 /**
  * @hidden
@@ -2350,7 +2559,7 @@ export const createMockFundraiserTier = (fundraiserTier?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockFundraiserStatus = (
-  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed'
+  fundraiserStatus?: 'Live' | 'Frozen' | 'Closed' | 'ClosedEarly'
 ): FundraiserStatus => {
   return createMockEnum(fundraiserStatus) as FundraiserStatus;
 };
@@ -2408,4 +2617,600 @@ export const createMockPriceTier = (priceTier?: { total: Balance; price: Balance
     },
     !priceTier
   ) as PriceTier;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCalendarUnit = (
+  calendarUnit?: 'Second' | 'Minute' | 'Hour' | 'Day' | 'Week' | 'Month' | 'Year' | CalendarUnit
+): CalendarUnit => {
+  if (isCodec<CalendarUnit>(calendarUnit)) {
+    return calendarUnit;
+  }
+
+  return createMockEnum(calendarUnit) as CalendarUnit;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCalendarPeriod = (
+  calendarPeriod?:
+    | CalendarPeriod
+    | {
+        unit: CalendarUnit | Parameters<typeof createMockCalendarUnit>[0];
+        amount: u64 | Parameters<typeof createMockU64>[0];
+      }
+): CalendarPeriod => {
+  const { unit, amount } = calendarPeriod || {
+    unit: createMockCalendarUnit(),
+    amount: createMockU64(),
+  };
+
+  return createMockCodec(
+    {
+      unit: createMockCalendarUnit(unit),
+      amount: createMockU64(amount),
+    },
+    !calendarPeriod
+  ) as CalendarPeriod;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCheckpointSchedule = (
+  checkpointSchedule?:
+    | CheckpointSchedule
+    | {
+        start: Moment | Parameters<typeof createMockMoment>[0];
+        period: CalendarPeriod | Parameters<typeof createMockCalendarPeriod>[0];
+      }
+): CheckpointSchedule => {
+  const { start, period } = checkpointSchedule || {
+    start: createMockMoment(),
+    period: createMockCalendarPeriod(),
+  };
+
+  return createMockCodec(
+    {
+      start: createMockMoment(start),
+      period: createMockCalendarPeriod(period),
+    },
+    !checkpointSchedule
+  ) as CheckpointSchedule;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStoredSchedule = (
+  storedSchedule?:
+    | StoredSchedule
+    | {
+        schedule: CheckpointSchedule | Parameters<typeof createMockCheckpointSchedule>[0];
+        id: u64 | Parameters<typeof createMockU64>[0];
+        at: Moment | Parameters<typeof createMockMoment>[0];
+        remaining: u32 | Parameters<typeof createMockU32>[0];
+      }
+): StoredSchedule => {
+  const { schedule, id, at, remaining } = storedSchedule || {
+    schedule: createMockCheckpointSchedule(),
+    id: createMockU64(),
+    at: createMockMoment(),
+    remaining: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      schedule: createMockCheckpointSchedule(schedule),
+      id: createMockU64(id),
+      at: createMockMoment(at),
+      remaining: createMockU32(remaining),
+    },
+    !storedSchedule
+  ) as StoredSchedule;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScheduleSpec = (
+  scheduleSpec?:
+    | ScheduleSpec
+    | {
+        start: Option<Moment> | Parameters<typeof createMockOption>[0];
+        period: CalendarPeriod | Parameters<typeof createMockCalendarPeriod>[0];
+        remaining: u32 | Parameters<typeof createMockU32>[0];
+      }
+): ScheduleSpec => {
+  const { start, period, remaining } = scheduleSpec || {
+    start: createMockOption(),
+    period: createMockCalendarPeriod(),
+    remaining: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      start: createMockOption(start),
+      period: createMockCalendarPeriod(period),
+      remaining: createMockU32(remaining),
+    },
+    !scheduleSpec
+  ) as ScheduleSpec;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScalar = (scalar?: string | Scalar): Scalar => {
+  if (!scalar || typeof scalar === 'string') {
+    return createMockStringCodec(scalar) as Scalar;
+  } else {
+    return scalar;
+  }
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRecordDateSpec = (
+  recordDateSpec?:
+    | { Scheduled: Moment }
+    | { ExistingSchedule: ScheduleId }
+    | { Existing: CheckpointId }
+    | RecordDateSpec
+): RecordDateSpec => {
+  if (isCodec<RecordDateSpec>(recordDateSpec)) {
+    return recordDateSpec;
+  }
+
+  return createMockEnum(recordDateSpec) as RecordDateSpec;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRistrettoPoint = (
+  ristrettoPoint?: string | RistrettoPoint
+): RistrettoPoint => {
+  if (!ristrettoPoint || typeof ristrettoPoint === 'string') {
+    return createMockStringCodec(ristrettoPoint) as RistrettoPoint;
+  } else {
+    return ristrettoPoint;
+  }
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCACheckpoint = (
+  caCheckpoint?: { Scheduled: [ScheduleId, u64] } | { Existing: CheckpointId } | CACheckpoint
+): CACheckpoint => {
+  if (isCodec<CACheckpoint>(caCheckpoint)) {
+    return caCheckpoint;
+  }
+
+  return createMockEnum(caCheckpoint) as CACheckpoint;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRecordDate = (
+  recordDate?:
+    | RecordDate
+    | {
+        date: Moment | Parameters<typeof createMockMoment>[0];
+        checkpoint: CACheckpoint | Parameters<typeof createMockCACheckpoint>[0];
+      }
+): RecordDate => {
+  const { date, checkpoint } = recordDate || {
+    date: createMockMoment(),
+    checkpoint: createMockCACheckpoint(),
+  };
+
+  return createMockCodec(
+    {
+      date: createMockMoment(date),
+      checkpoint: createMockCACheckpoint(checkpoint),
+    },
+    !recordDate
+  ) as RecordDate;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignature = (signature?: string | Signature): Signature => {
+  if (!signature || typeof signature === 'string') {
+    return createMockStringCodec(signature) as Signature;
+  } else {
+    return signature;
+  }
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockZkProofData = (
+  zkProofData?:
+    | ZkProofData
+    | {
+        challenge_responses: [Scalar, Scalar] | [string, string];
+        subtract_expressions_res: RistrettoPoint | string;
+        blinded_scope_did_hash: RistrettoPoint | string;
+      }
+): ZkProofData => {
+  const { challenge_responses, subtract_expressions_res, blinded_scope_did_hash } = zkProofData || {
+    challenge_responses: [createMockScalar(), createMockScalar()],
+    subtract_expressions_res: createMockRistrettoPoint(),
+    blinded_scope_did_hash: createMockRistrettoPoint(),
+  };
+
+  return createMockCodec(
+    {
+      challenge_responses: [
+        createMockScalar(challenge_responses[0]),
+        createMockScalar(challenge_responses[1]),
+      ],
+      subtract_expressions_res: createMockRistrettoPoint(subtract_expressions_res),
+      blinded_scope_did_hash: createMockRistrettoPoint(blinded_scope_did_hash),
+    },
+    !zkProofData
+  ) as ZkProofData;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTargetTreatment = (
+  targetTreatment?: 'Include' | 'Exclude' | TargetTreatment
+): TargetTreatment => {
+  if (isCodec<TargetTreatment>(targetTreatment)) {
+    return targetTreatment;
+  }
+
+  return createMockEnum(targetTreatment) as TargetTreatment;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTargetIdentities = (
+  targetIdentities?:
+    | TargetIdentities
+    | {
+        identities: (IdentityId | Parameters<typeof createMockIdentityId>[0])[];
+        treatment: TargetTreatment | Parameters<typeof createMockTargetTreatment>[0];
+      }
+): TargetIdentities => {
+  const { identities, treatment } = targetIdentities || {
+    identities: [],
+    treatment: createMockTargetTreatment(),
+  };
+
+  return createMockCodec(
+    {
+      identities: map(identities, identityId => createMockIdentityId(identityId)),
+      treatment: createMockTargetTreatment(treatment),
+    },
+    !targetIdentities
+  ) as TargetIdentities;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScopeClaimProof = (
+  scopeClaimProof?:
+    | ScopeClaimProof
+    | {
+        proof_scope_id_wellformed: Signature | string;
+        proof_scope_id_cdd_id_match:
+          | ZkProofData
+          | {
+              challenge_responses: [string, string];
+              subtract_expressions_res: string;
+              blinded_scope_did_hash: string;
+            };
+        scope_id: RistrettoPoint | string;
+      }
+): MeshScopeClaimProof => {
+  const { proof_scope_id_wellformed, proof_scope_id_cdd_id_match, scope_id } = scopeClaimProof || {
+    proof_scope_id_wellformed: createMockSignature(),
+    proof_scope_id_cdd_id_match: createMockZkProofData(),
+    scope_id: createMockRistrettoPoint(),
+  };
+
+  return createMockCodec(
+    {
+      proof_scope_id_wellformed: createMockSignature(proof_scope_id_wellformed),
+      proof_scope_id_cdd_id_match: createMockZkProofData(proof_scope_id_cdd_id_match),
+      scope_id: createMockRistrettoPoint(scope_id),
+    },
+    !scopeClaimProof
+  ) as MeshScopeClaimProof;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCAKind = (
+  caKind?:
+    | 'PredictableBenefit'
+    | 'UnpredictableBenefit'
+    | 'IssuerNotice'
+    | 'Reorganization'
+    | 'Other'
+    | CAKind
+): CAKind => {
+  if (isCodec<CAKind>(caKind)) {
+    return caKind;
+  }
+
+  return createMockEnum(caKind) as CAKind;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCorporateAction = (corporateAction?: {
+  kind: CAKind | Parameters<typeof createMockCAKind>[0];
+  decl_date: Moment | Parameters<typeof createMockMoment>[0];
+  record_date: Option<RecordDate> | Parameters<typeof createMockOption>[0];
+  details: Text | Parameters<typeof createMockText>[0];
+  targets: TargetIdentities | Parameters<typeof createMockTargetIdentities>[0];
+  default_withholding_tax: Tax | Parameters<typeof createMockPermill>[0];
+  withholding_tax: [
+    IdentityId | Parameters<typeof createMockIdentityId>[0],
+    Tax | Parameters<typeof createMockPermill>[0]
+  ][];
+}): CorporateAction => {
+  const {
+    kind,
+    decl_date,
+    record_date,
+    details,
+    targets,
+    default_withholding_tax,
+    withholding_tax,
+  } = corporateAction || {
+    kind: createMockCAKind(),
+    decl_date: createMockMoment(),
+    record_date: createMockOption(),
+    details: createMockText(),
+    targets: createMockTargetIdentities(),
+    default_withholding_tax: createMockPermill(),
+    withholding_tax: [],
+  };
+
+  return createMockCodec(
+    {
+      kind: createMockCAKind(kind),
+      decl_date: createMockMoment(decl_date),
+      record_date: createMockOption(record_date),
+      details: createMockText(details),
+      targets: createMockTargetIdentities(targets),
+      default_withholding_tax: createMockPermill(default_withholding_tax),
+      withholding_tax: withholding_tax.map(([identityId, tax]) =>
+        tuple(createMockIdentityId(identityId), createMockPermill(tax))
+      ),
+    },
+    !corporateAction
+  ) as CorporateAction;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCAId = (
+  caId?:
+    | CAId
+    | {
+        ticker: Ticker | Parameters<typeof createMockTicker>[0];
+        local_id: u64 | Parameters<typeof createMockU64>[0];
+      }
+): CAId => {
+  const { ticker, local_id } = caId || {
+    ticker: createMockTicker(),
+    local_id: createMockU64(),
+  };
+
+  return createMockCodec(
+    {
+      ticker: createMockTicker(ticker),
+      local_id: createMockU64(local_id),
+    },
+    !caId
+  ) as CAId;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockDistribution = (distribution?: {
+  from: PortfolioId | Parameters<typeof createMockPortfolioId>[0];
+  currency: Ticker | Parameters<typeof createMockTicker>[0];
+  per_share: Balance | Parameters<typeof createMockBalance>[0];
+  amount: Balance | Parameters<typeof createMockBalance>[0];
+  remaining: Balance | Parameters<typeof createMockBalance>[0];
+  reclaimed: bool | Parameters<typeof createMockBool>[0];
+  payment_at: Moment | Parameters<typeof createMockMoment>[0];
+  expires_at: Option<Moment> | Parameters<typeof createMockOption>[0];
+}): Distribution => {
+  const {
+    from,
+    currency,
+    per_share,
+    amount,
+    remaining,
+    reclaimed,
+    payment_at,
+    expires_at,
+  } = distribution || {
+    from: createMockPortfolioId(),
+    currency: createMockTicker(),
+    per_share: createMockBalance(),
+    amount: createMockBalance(),
+    remaining: createMockBalance(),
+    reclaimed: createMockBool(),
+    payment_at: createMockMoment(),
+    expires_at: createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      from: createMockPortfolioId(from),
+      currency: createMockTicker(currency),
+      per_share: createMockBalance(per_share),
+      amount: createMockBalance(amount),
+      remaining: createMockBalance(remaining),
+      reclaimed: createMockBool(reclaimed),
+      payment_at: createMockMoment(payment_at),
+      expires_at: createMockOption(expires_at),
+    },
+    !distribution
+  ) as Distribution;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockTransferManagerResult = (transferManagerResult?: {
+  tm: TransferManager | Parameters<typeof createMockTransferManager>[0];
+  result: bool | Parameters<typeof createMockBool>[0];
+}): TransferManagerResult => {
+  const { tm, result } = transferManagerResult || {
+    tm: createMockTransferManager(),
+    result: createMockBool(),
+  };
+  return createMockCodec(
+    {
+      tm: createMockTransferManager(tm),
+      result: createMockBool(result),
+    },
+    !transferManagerResult
+  ) as TransferManagerResult;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPortfolioValidityResult = (portfolioValidityResult?: {
+  receiver_is_same_portfolio: bool | Parameters<typeof createMockBool>[0];
+  sender_portfolio_does_not_exist: bool | Parameters<typeof createMockBool>[0];
+  receiver_portfolio_does_not_exist: bool | Parameters<typeof createMockBool>[0];
+  sender_insufficient_balance: bool | Parameters<typeof createMockBool>[0];
+  result: bool | Parameters<typeof createMockBool>[0];
+}): PortfolioValidityResult => {
+  const {
+    receiver_is_same_portfolio,
+    sender_portfolio_does_not_exist,
+    receiver_portfolio_does_not_exist,
+    sender_insufficient_balance,
+    result,
+  } = portfolioValidityResult || {
+    receiver_is_same_portfolio: createMockBool(),
+    sender_portfolio_does_not_exist: createMockBool(),
+    receiver_portfolio_does_not_exist: createMockBool(),
+    sender_insufficient_balance: createMockBool(),
+    result: createMockBool(),
+  };
+  return createMockCodec(
+    {
+      receiver_is_same_portfolio: createMockBool(receiver_is_same_portfolio),
+      sender_portfolio_does_not_exist: createMockBool(sender_portfolio_does_not_exist),
+      receiver_portfolio_does_not_exist: createMockBool(receiver_portfolio_does_not_exist),
+      sender_insufficient_balance: createMockBool(sender_insufficient_balance),
+      result: createMockBool(result),
+    },
+    !portfolioValidityResult
+  ) as PortfolioValidityResult;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockGranularCanTransferResult = (granularCanTransferResult?: {
+  invalid_granularity: bool | Parameters<typeof createMockBool>[0];
+  self_transfer: bool | Parameters<typeof createMockBool>[0];
+  invalid_receiver_cdd: bool | Parameters<typeof createMockBool>[0];
+  invalid_sender_cdd: bool | Parameters<typeof createMockBool>[0];
+  missing_scope_claim: bool | Parameters<typeof createMockBool>[0];
+  receiver_custodian_error: bool | Parameters<typeof createMockBool>[0];
+  sender_custodian_error: bool | Parameters<typeof createMockBool>[0];
+  sender_insufficient_balance: bool | Parameters<typeof createMockBool>[0];
+  portfolio_validity_result:
+    | PortfolioValidityResult
+    | Parameters<typeof createMockPortfolioValidityResult>[0];
+  asset_frozen: bool | Parameters<typeof createMockBool>[0];
+  statistics_result: (
+    | TransferManagerResult
+    | Parameters<typeof createMockTransferManagerResult>[0]
+  )[];
+  compliance_result: AssetComplianceResult | Parameters<typeof createMockAssetComplianceResult>[0];
+  result: bool | Parameters<typeof createMockBool>[0];
+}): GranularCanTransferResult => {
+  const {
+    invalid_granularity,
+    self_transfer,
+    invalid_receiver_cdd,
+    invalid_sender_cdd,
+    missing_scope_claim,
+    receiver_custodian_error,
+    sender_custodian_error,
+    sender_insufficient_balance,
+    portfolio_validity_result,
+    asset_frozen,
+    statistics_result,
+    compliance_result,
+    result,
+  } = granularCanTransferResult || {
+    invalid_granularity: createMockBool(),
+    self_transfer: createMockBool(),
+    invalid_receiver_cdd: createMockBool(),
+    invalid_sender_cdd: createMockBool(),
+    missing_scope_claim: createMockBool(),
+    receiver_custodian_error: createMockBool(),
+    sender_custodian_error: createMockBool(),
+    sender_insufficient_balance: createMockBool(),
+    portfolio_validity_result: createMockPortfolioValidityResult(),
+    asset_frozen: createMockBool(),
+    statistics_result: [],
+    compliance_result: createMockAssetComplianceResult(),
+    result: createMockBool(),
+  };
+  return createMockCodec(
+    {
+      invalid_granularity: createMockBool(invalid_granularity),
+      self_transfer: createMockBool(self_transfer),
+      invalid_receiver_cdd: createMockBool(invalid_receiver_cdd),
+      invalid_sender_cdd: createMockBool(invalid_sender_cdd),
+      missing_scope_claim: createMockBool(missing_scope_claim),
+      receiver_custodian_error: createMockBool(receiver_custodian_error),
+      sender_custodian_error: createMockBool(sender_custodian_error),
+      sender_insufficient_balance: createMockBool(sender_insufficient_balance),
+      portfolio_validity_result: createMockPortfolioValidityResult(portfolio_validity_result),
+      asset_frozen: createMockBool(asset_frozen),
+      statistics_result: statistics_result.map(res => createMockTransferManagerResult(res)),
+      compliance_result: createMockAssetComplianceResult(compliance_result),
+      result: createMockBool(result),
+    },
+    !granularCanTransferResult
+  ) as GranularCanTransferResult;
 };

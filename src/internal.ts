@@ -12,7 +12,11 @@ export {
   consumeJoinIdentityAuthorization,
   ConsumeJoinIdentityAuthorizationParams,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
-export { addInstruction, AddInstructionParams } from '~/api/procedures/addInstruction';
+export {
+  addInstruction,
+  AddInstructionParams,
+  AddInstructionsParams,
+} from '~/api/procedures/addInstruction';
 // export { cancelProposal } from '~/api/procedures/cancelProposal';
 export {
   consumeAuthorizationRequests,
@@ -101,6 +105,10 @@ export {
 export { toggleFreezeSto, ToggleFreezeStoParams } from '~/api/procedures/toggleFreezeSto';
 export { closeSto } from '~/api/procedures/closeSto';
 export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
+export { investInSto, InvestInStoParams } from '~/api/procedures/investInSto';
+export { createCheckpoint } from '~/api/procedures/createCheckpoint';
+export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
+export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
@@ -112,9 +120,49 @@ export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 // export { Proposal } from '~/api/entities/Proposal';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Sto } from '~/api/entities/Sto';
-export { Venue } from '~/api/entities/Venue';
+export { Venue, addInstructionTransformer } from '~/api/entities/Venue';
 export { Instruction } from '~/api/entities/Instruction';
 export { Portfolio } from '~/api/entities/Portfolio';
 export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
+export { Checkpoint } from '~/api/entities/Checkpoint';
+export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
+export {
+  createCheckpointSchedule,
+  CreateCheckpointScheduleParams,
+} from '~/api/procedures/createCheckpointSchedule';
+export { CorporateAction } from '~/api/entities/CorporateAction';
+export {
+  removeCheckpointSchedule,
+  RemoveCheckpointScheduleParams,
+} from '~/api/procedures/removeCheckpointSchedule';
+export { DividendDistribution } from '~/api/entities/DividendDistribution';
+export {
+  modifyCorporateActionsAgent,
+  ModifyCorporateActionsAgentParams,
+} from '~/api/procedures/modifyCorporateActionsAgent';
+export {
+  initiateCorporateAction,
+  InitiateCorporateActionParams,
+} from '~/api/procedures/initiateCorporateAction';
+export {
+  configureDividendDistribution,
+  ConfigureDividendDistributionParams,
+} from '~/api/procedures/configureDividendDistribution';
+export { claimDividends } from '~/api/procedures/claimDividends';
+export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
+export { modifyCaCheckpoint, ModifyCaCheckpointParams } from '~/api/procedures/modifyCaCheckpoint';
+export { payDividends, PayDividendsParams } from '~/api/procedures/payDividends';
+export { modifyCaDefaults, ModifyCaDefaultsParams } from '~/api/procedures/modifyCaDefaults';
+export {
+  removeCorporateAction,
+  RemoveCorporateActionParams,
+} from '~/api/procedures/removeCorporateAction';
+export {
+  modifyDistributionCheckpoint,
+  ModifyDistributionCheckpointParams,
+} from '~/api/procedures/modifyDistributionCheckpoint';
+export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
+export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
+export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';

@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/camelcase */
 export default {
   types: {
+    AccountInfo: 'AccountInfoWithRefCount',
+    Address: 'IndicesLookupSource',
+    LookupSource: 'IndicesLookupSource',
+    ValidatorPrefsWithBlocked: {
+      commission: 'Compact<Perbill>',
+    },
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
     InvestorUid: '[u8; 16]',
@@ -45,6 +51,7 @@ export default {
         StructuredProduct: '',
         Derivative: '',
         Custom: 'Vec<u8>',
+        StableCoin: '',
       },
     },
     AssetIdentifier: {
@@ -383,6 +390,9 @@ export default {
         'YE',
         'ZM',
         'ZW',
+        'BQ',
+        'CW',
+        'SX',
       ],
     },
     Scope: {
@@ -392,7 +402,19 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: '[u8;64]',
+    InvestorZKProofData: 'Signature',
+    Scalar: '[u8; 32]',
+    RistrettoPoint: '[u8; 32]',
+    ZkProofData: {
+      challenge_responses: '[Scalar; 2]',
+      subtract_expressions_res: 'RistrettoPoint',
+      blinded_scope_did_hash: 'RistrettoPoint',
+    },
+    ScopeClaimProof: {
+      proof_scope_id_wellformed: 'Signature',
+      proof_scope_id_cdd_id_match: 'ZkProofData',
+      scope_id: 'RistrettoPoint',
+    },
     Claim: {
       _enum: {
         Accredited: 'Scope',
@@ -406,6 +428,7 @@ export default {
         Blocked: 'Scope',
         InvestorUniqueness: '(Scope, ScopeId, CddId)',
         NoData: '',
+        InvestorUniquenessV2: '(CddId)',
       },
     },
     ClaimType: {
@@ -421,6 +444,7 @@ export default {
         Blocked: '',
         InvestorUniqueness: '',
         NoData: '',
+        InvestorUniquenessV2: '',
       },
     },
     IdentityClaim: {
@@ -701,11 +725,6 @@ export default {
       did: 'IdentityId',
       bridge_tx: 'BridgeTx',
     },
-    OfflineSlashingParams: {
-      max_offline_percent: 'u32',
-      constant: 'u32',
-      max_slash_percent: 'u32',
-    },
     AssetCompliance: {
       is_paused: 'bool',
       requirements: 'Vec<ComplianceRequirement>',
@@ -801,8 +820,6 @@ export default {
       pip: 'PipId',
       vote: 'Vote',
     },
-    HistoricalVotingByAddress: 'Vec<VoteByPip>',
-    HistoricalVotingById: 'Vec<(AccountId, HistoricalVotingByAddress)>',
     BridgeTxDetail: {
       amount: 'Balance',
       status: 'BridgeTxStatus',
@@ -828,18 +845,6 @@ export default {
     CanTransferResult: {
       _enum: {
         Ok: 'u8',
-        Err: 'Vec<u8>',
-      },
-    },
-    GetPortfolioAssetsResult: {
-      _enum: {
-        Ok: 'Vec<(Ticker, Balance)>',
-        Err: 'Vec<u8>',
-      },
-    },
-    GetPortfoliosResult: {
-      _enum: {
-        Ok: 'Vec<(PortfolioNumber, PortfolioName)>',
         Err: 'Vec<u8>',
       },
     },
@@ -881,10 +886,6 @@ export default {
         CddVerified: '',
       },
     },
-    IssueAssetItem: {
-      identity_did: 'IdentityId',
-      value: 'Balance',
-    },
     PortfolioName: 'Text',
     PortfolioNumber: 'u64',
     PortfolioKind: {
@@ -924,10 +925,12 @@ export default {
       schedule: 'CheckpointSchedule',
       id: 'ScheduleId',
       at: 'Moment',
+      remaining: 'u32',
     },
     ScheduleSpec: {
       start: 'Option<Moment>',
       period: 'CalendarPeriod',
+      remaining: 'u32',
     },
     InstructionStatus: {
       _enum: {
@@ -1014,7 +1017,7 @@ export default {
     },
     FundraiserName: 'Text',
     FundraiserStatus: {
-      _enum: ['Live', 'Frozen', 'Closed'],
+      _enum: ['Live', 'Frozen', 'Closed', 'ClosedEarly'],
     },
     FundraiserTier: {
       total: 'Balance',
@@ -1066,7 +1069,7 @@ export default {
     CADetails: 'Text',
     CACheckpoint: {
       _enum: {
-        Scheduled: 'ScheduleId',
+        Scheduled: '(ScheduleId, u64)',
         Existing: 'CheckpointId',
       },
     },
@@ -1098,6 +1101,7 @@ export default {
     Distribution: {
       from: 'PortfolioId',
       currency: 'Ticker',
+      per_share: 'Balance',
       amount: 'Balance',
       remaining: 'Balance',
       reclaimed: 'bool',
@@ -1126,12 +1130,39 @@ export default {
       intended_count: 'u32',
       running_count: 'u32',
     },
+    GranularCanTransferResult: {
+      invalid_granularity: 'bool',
+      self_transfer: 'bool',
+      invalid_receiver_cdd: 'bool',
+      invalid_sender_cdd: 'bool',
+      missing_scope_claim: 'bool',
+      receiver_custodian_error: 'bool',
+      sender_custodian_error: 'bool',
+      sender_insufficient_balance: 'bool',
+      portfolio_validity_result: 'PortfolioValidityResult',
+      asset_frozen: 'bool',
+      statistics_result: 'Vec<TransferManagerResult>',
+      compliance_result: 'AssetComplianceResult',
+      result: 'bool',
+    },
+    PortfolioValidityResult: {
+      receiver_is_same_portfolio: 'bool',
+      sender_portfolio_does_not_exist: 'bool',
+      receiver_portfolio_does_not_exist: 'bool',
+      sender_insufficient_balance: 'bool',
+      result: 'bool',
+    },
+    TransferManagerResult: {
+      tm: 'TransferManager',
+      result: 'bool',
+    },
   },
   rpc: {
     compliance: {
       canTransfer: {
         description:
-          'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
+          'Checks whether a transaction with given parameters ' +
+          'is compliant to the compliance manager conditions',
         params: [
           {
             name: 'ticker',
@@ -1159,7 +1190,7 @@ export default {
     },
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given did has valid cdd claim or not',
+        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
         params: [
           {
             name: 'did',
@@ -1229,7 +1260,9 @@ export default {
       },
       getFilteredAuthorizations: {
         description:
-          'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+          'Retrieve authorizations data for a given ' +
+          'signatory and filtered using the given ' +
+          'authorization type',
         params: [
           {
             name: 'signatory',
@@ -1268,7 +1301,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Option<KeyIdentityData<IdentityId>>',
+        type: 'Option<KeyIdentityData>',
       },
     },
     pips: {
@@ -1320,38 +1353,6 @@ export default {
         ],
         type: 'Vec<u32>',
       },
-      votingHistoryByAddress: {
-        description: 'Retrieves proposal `address` indices voted on',
-        params: [
-          {
-            name: 'address',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'HistoricalVotingByAddress',
-      },
-      votingHistoryById: {
-        description: 'Retrieve historical voting of `id` identity',
-        params: [
-          {
-            name: 'id',
-            type: 'IdentityId',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'HistoricalVotingById',
-      },
     },
     protocolFee: {
       computeFee: {
@@ -1386,7 +1387,8 @@ export default {
     },
     asset: {
       canTransfer: {
-        description: 'Checks whether a transaction with given parameters can take place or not',
+        description:
+          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
         params: [
           {
             name: 'sender',
@@ -1431,29 +1433,50 @@ export default {
         ],
         type: 'CanTransferResult',
       },
-    },
-    portfolio: {
-      getPortfolios: {
-        description: 'Gets all user-defined portfolio names of an identity',
+      canTransferGranular: {
+        description:
+          'Checks whether a transaction with given ' +
+          'parameters can take place or not. The ' +
+          'result is granular meaning each check is ' +
+          'run and returned regardless of outcome.',
         params: [
           {
-            name: 'did',
-            type: 'IdentityId',
+            name: 'from_custodian',
+            type: 'Option<IdentityId>',
             isOptional: false,
           },
-        ],
-        type: 'GetPortfoliosResult',
-      },
-      getPortfolioAssets: {
-        description: 'Gets the balances of all assets in a given portfolio',
-        params: [
           {
-            name: 'portfolio_id',
+            name: 'from_portfolio',
             type: 'PortfolioId',
             isOptional: false,
           },
+          {
+            name: 'to_custodian',
+            type: 'Option<IdentityId>',
+            isOptional: false,
+          },
+          {
+            name: 'to_portfolio',
+            type: 'PortfolioId',
+            isOptional: false,
+          },
+          {
+            name: 'ticker',
+            type: 'Ticker',
+            isOptional: false,
+          },
+          {
+            name: 'value',
+            type: 'Balance',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
         ],
-        type: 'GetPortfolioAssetsResult',
+        type: 'GranularCanTransferResult',
       },
     },
   },

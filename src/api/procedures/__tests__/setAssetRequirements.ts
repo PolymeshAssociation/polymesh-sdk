@@ -98,6 +98,10 @@ describe('setAssetRequirements procedure', () => {
   >;
 
   beforeEach(() => {
+    dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
+      returnValue: dsMockUtils.createMockU32(50),
+    });
+
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     assetCompliancesStub = dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
@@ -151,6 +155,17 @@ describe('setAssetRequirements procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if condition limit is reached', () => {
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+
+    return expect(
+      prepareSetAssetRequirements.call(proc, {
+        ticker,
+        requirements: (new Array(50) as unknown) as Condition[][],
+      })
+    ).rejects.toThrow('Condition limit reached');
   });
 
   test('should throw an error if the new list is the same as the current one', () => {

@@ -3,13 +3,16 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { TxTag, TxTags } from 'polymesh-types/types';
 
-import { StoDetails } from '~/api/entities/types';
+import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Checkpoint,
+  CheckpointSchedule,
   DefaultPortfolio,
+  DividendDistribution,
   Identity,
   NumberedPortfolio,
   /*, Proposal */
@@ -80,9 +83,11 @@ export enum RoleType {
   TickerOwner = 'TickerOwner',
   TokenOwner = 'TokenOwner',
   TokenPia = 'TokenPia',
+  TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
+  CorporateActionsAgent = 'CorporateActionsAgent',
 }
 
 export interface TickerOwnerRole {
@@ -119,6 +124,18 @@ export interface TokenPiaRole {
  */
 export function isTokenPiaRole(role: Role): role is TokenPiaRole {
   return role.type === RoleType.TokenPia;
+}
+
+export interface TokenCaaRole {
+  type: RoleType.TokenCaa;
+  ticker: string;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenCaaRole(role: Role): role is TokenCaaRole {
+  return role.type === RoleType.TokenCaa;
 }
 
 export interface CddProviderRole {
@@ -160,6 +177,7 @@ export type Role =
   | TickerOwnerRole
   | TokenOwnerRole
   | TokenPiaRole
+  | TokenCaaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole;
@@ -174,6 +192,7 @@ export enum KnownTokenType {
   RevenueShareAgreement = 'RevenueShareAgreement',
   StructuredProduct = 'StructuredProduct',
   Derivative = 'Derivative',
+  StableCoin = 'StableCoin',
 }
 
 /**
@@ -222,6 +241,7 @@ export enum AuthorizationType {
   TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
+  TransferCorporateActionAgent = 'TransferCorporateActionAgent',
   Custom = 'Custom',
   NoData = 'NoData',
 }
@@ -273,6 +293,7 @@ export enum ClaimType {
   Blocked = 'Blocked',
   InvestorUniqueness = 'InvestorUniqueness',
   NoData = 'NoData',
+  InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
 export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
@@ -282,6 +303,11 @@ export type InvestorUniquenessClaim = {
   scope: Scope;
   cddId: string;
   scopeId: string;
+};
+
+export type InvestorUniquenessV2Claim = {
+  type: ClaimType.InvestorUniquenessV2;
+  cddId: string;
 };
 
 export type ScopedClaim =
@@ -294,11 +320,12 @@ export type ScopedClaim =
         | ClaimType.Jurisdiction
         | ClaimType.CustomerDueDiligence
         | ClaimType.InvestorUniqueness
+        | ClaimType.InvestorUniquenessV2
       >;
       scope: Scope;
     };
 
-export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim;
+export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -308,7 +335,11 @@ export type Claim = ScopedClaim | UnscopedClaim;
 export function isScopedClaim(claim: Claim): claim is ScopedClaim {
   const { type } = claim;
 
-  return ![ClaimType.NoData, ClaimType.CustomerDueDiligence].includes(type);
+  return ![
+    ClaimType.NoData,
+    ClaimType.CustomerDueDiligence,
+    ClaimType.InvestorUniquenessV2,
+  ].includes(type);
 }
 
 /**
@@ -443,6 +474,9 @@ export enum ErrorCode {
   DataUnavailable = 'DataUnavailable',
 }
 
+/**
+ * ERC1400 compliant transfer status
+ */
 export enum TransferStatus {
   Failure = 'Failure', // 80
   Success = 'Success', // 81
@@ -465,6 +499,75 @@ export enum TransferStatus {
   CustodianError = 'CustodianError', // 170
   ScopeClaimMissing = 'ScopeClaimMissing', // 171
   TransferRestrictionFailure = 'TransferRestrictionFailure', // 172
+}
+
+/**
+ * Akin to TransferStatus, these are a bit more granular and specific. Every TransferError translates to
+ *   a [[TransferStatus]], but two or more TransferErrors can represent the same TransferStatus, and
+ *   not all Transfer Statuses are represented by a TransferError
+ */
+export enum TransferError {
+  /**
+   * translates to TransferStatus.InvalidGranularity
+   *
+   * occurs if attempting to transfer decimal amounts of a non-divisible token
+   */
+  InvalidGranularity = 'InvalidGranularity',
+  /**
+   * translates to TransferStatus.InvalidReceiverIdentity
+   *
+   * occurs if the origin and destination Identities are the same
+   */
+  SelfTransfer = 'SelfTransfer',
+  /**
+   * translates to TransferStatus.InvalidReceiverIdentity
+   *
+   * occurs if the receiver Identity doesn't have a valid CDD claim
+   */
+  InvalidReceiverCdd = 'InvalidReceiverCdd',
+  /**
+   * translates to TransferStatus.InvalidSenderIdentity
+   *
+   * occurs if the receiver Identity doesn't have a valid CDD claim
+   */
+  InvalidSenderCdd = 'InvalidSenderCdd',
+  /**
+   * translates to TransferStatus.ScopeClaimMissing
+   *
+   * occurs if one of the participants doesn't have a valid Investor Uniqueness Claim for
+   *   the Security Token
+   */
+  ScopeClaimMissing = 'ScopeClaimMissing',
+  /**
+   * translates to TransferStatus.InsufficientBalance
+   *
+   * occurs if the sender Identity does not have enough balance to cover the amount
+   */
+  InsufficientBalance = 'InsufficientBalance',
+  /**
+   * translates to TransferStatus.TransfersHalted
+   *
+   * occurs if the Security Token's transfers are frozen
+   */
+  TransfersFrozen = 'TransfersFrozen',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the sender Portfolio doesn't exist
+   */
+  InvalidSenderPortfolio = 'InvalidSenderPortfolio',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the receiver Portfolio doesn't exist
+   */
+  InvalidReceiverPortfolio = 'InvalidReceiverPortfolio',
+  /**
+   * translates to TransferStatus.PortfolioFailure
+   *
+   * occurs if the sender Portfolio does not have enough balance to cover the amount
+   */
+  InsufficientPortfolioBalance = 'InsufficientPortfolioBalance',
 }
 
 export interface ClaimTarget {
@@ -503,10 +606,13 @@ export interface KeyringPair extends IKeyringPair {
   isLocked: boolean;
 }
 
-export interface AccountBalance {
+export interface Balance {
   free: BigNumber;
   locked: BigNumber;
+  total: BigNumber;
 }
+
+export type AccountBalance = Balance;
 
 export interface PaginationOptions {
   size: number;
@@ -625,6 +731,12 @@ export interface StoWithDetails {
   details: StoDetails;
 }
 
+export interface CheckpointWithData {
+  checkpoint: Checkpoint;
+  createdAt: Date;
+  totalSupply: BigNumber;
+}
+
 export interface SecondaryKey {
   signer: Signer;
   permissions: Permissions;
@@ -639,6 +751,7 @@ export enum TxGroup {
    * - TxTags.portfolio.MovePortfolioFunds
    * - TxTags.settlement.AddInstruction
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AffirmInstruction
    * - TxTags.settlement.RejectInstruction
    * - TxTags.settlement.CreateVenue
    */
@@ -687,6 +800,28 @@ export enum TxGroup {
    * - TxTags.complianceManager.ResetAssetCompliance
    */
   ComplianceRequirementsManagement = 'ComplianceRequirementsManagement',
+  /**
+   * - TxTags.checkpoint.CreateSchedule,
+   * - TxTags.checkpoint.RemoveSchedule,
+   * - TxTags.checkpoint.CreateCheckpoint,
+   * - TxTags.corporateAction.InitiateCorporateAction,
+   * - TxTags.capitalDistribution.Distribute,
+   * - TxTags.capitalDistribution.Claim,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   */
+  CorporateActionsManagement = 'CorporateActionsManagement',
+  /**
+   * - TxTags.sto.CreateFundraiser,
+   * - TxTags.sto.FreezeFundraiser,
+   * - TxTags.sto.Invest,
+   * - TxTags.sto.ModifyFundraiserWindow,
+   * - TxTags.sto.Stop,
+   * - TxTags.sto.UnfreezeFundraiser,
+   * - TxTags.identity.AddInvestorUniquenessClaim,
+   * - TxTags.asset.Issue,
+   * - TxTags.settlement.CreateVenue
+   */
+  StoManagement = 'StoManagement',
 }
 
 /**
@@ -752,6 +887,44 @@ export interface ActiveTransferRestrictions<
    * amount of restrictions that can be added before reaching the shared limit
    */
   availableSlots: number;
+}
+
+export enum TransferRestrictionType {
+  Count = 'Count',
+  Percentage = 'Percentage',
+}
+
+export interface TransferRestriction {
+  type: TransferRestrictionType;
+  value: BigNumber;
+}
+
+export enum CalendarUnit {
+  Second = 'second',
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
+  Year = 'year',
+}
+
+/**
+ * Represents a period of time measured in a specific unit (i.e. 20 days)
+ */
+export interface CalendarPeriod {
+  unit: CalendarUnit;
+  amount: number;
+}
+
+export interface ScheduleWithDetails {
+  schedule: CheckpointSchedule;
+  details: ScheduleDetails;
+}
+
+export interface DistributionWithDetails {
+  distribution: DividendDistribution;
+  details: DividendDistributionDetails;
 }
 
 export { TxTags, TxTag };
