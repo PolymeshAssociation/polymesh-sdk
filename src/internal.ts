@@ -168,3 +168,5 @@ export {
   transferTickerOwnership,
   TransferTickerOwnershipParams,
 } from '~/api/procedures/transferTickerOwnership';
+export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
+export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';

@@ -1,11 +1,10 @@
-import BigNumber from 'bignumber.js';
-
 import { Context, Entity, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ClaimType, Ensured, EventIdentifier } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
-import { padString } from '~/utils/internal';
+import { middlewareEventToEventIdentifier } from '~/utils/conversion';
+import { optionize, padString } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -69,24 +68,15 @@ export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
   public async addedAt(): Promise<EventIdentifier | null> {
     const { ticker, identity, context } = this;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'eventByAddedTrustedClaimIssuer'>>(
+    const {
+      data: { eventByAddedTrustedClaimIssuer: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByAddedTrustedClaimIssuer'>>(
       eventByAddedTrustedClaimIssuer({
         ticker: padString(ticker, MAX_TICKER_LENGTH),
         identityId: identity.did,
       })
     );
 
-    if (result.data.eventByAddedTrustedClaimIssuer) {
-      // TODO remove null check once types fixed
-      /* eslint-disable @typescript-eslint/no-non-null-assertion */
-      return {
-        blockNumber: new BigNumber(result.data.eventByAddedTrustedClaimIssuer.block_id),
-        blockDate: result.data.eventByAddedTrustedClaimIssuer.block!.datetime,
-        eventIndex: result.data.eventByAddedTrustedClaimIssuer.event_idx,
-      };
-      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
-    }
-
-    return null;
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 }

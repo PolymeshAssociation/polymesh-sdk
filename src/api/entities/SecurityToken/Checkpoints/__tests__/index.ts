@@ -1,11 +1,12 @@
+import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
+import sinon from 'sinon';
 
 import { Checkpoint, Context, Namespace, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { Checkpoints } from '../';
 
@@ -25,21 +26,16 @@ jest.mock(
 );
 
 describe('Checkpoints class', () => {
-  let context: Context;
+  const ticker = 'SOME_TICKER';
+  const rawTicker = dsMockUtils.createMockTicker(ticker);
+
   let checkpoints: Checkpoints;
-
-  let ticker: string;
-
-  let stringToTickerStub: SinonStub<[string, Context], Ticker>;
+  let context: Context;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-
-    ticker = 'SOME_TICKER';
-
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
   });
 
   afterEach(() => {
@@ -48,7 +44,6 @@ describe('Checkpoints class', () => {
     procedureMockUtils.reset();
 
     context = dsMockUtils.getContextInstance();
-
     const token = entityMockUtils.getSecurityTokenInstance({ ticker });
     checkpoints = new Checkpoints(token, context);
   });
@@ -87,30 +82,60 @@ describe('Checkpoints class', () => {
       sinon.restore();
     });
 
-    test('should return all created checkpoints with their timestamps', async () => {
-      const timestamps = [1000, 2000, new Date().getTime() + 10000];
-      const ids = [1, 2, 3];
-      const rawTicker = dsMockUtils.createMockTicker(ticker);
+    test('should return all created checkpoints with their timestamps and total supply', async () => {
+      const stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
 
-      dsMockUtils.createQueryStub('checkpoint', 'timestamps', {
-        entries: timestamps.map((timestamp, index) =>
-          tuple(
-            [rawTicker, dsMockUtils.createMockU64(ids[index])],
-            dsMockUtils.createMockMoment(timestamp)
-          )
-        ),
-      });
+      dsMockUtils.createQueryStub('checkpoint', 'totalSupply');
+
+      const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+
+      const totalSupply = [
+        {
+          checkpointId: new BigNumber(1),
+          balance: new BigNumber(100),
+          moment: new Date('10/10/2020'),
+        },
+        {
+          checkpointId: new BigNumber(2),
+          balance: new BigNumber(1000),
+          moment: new Date('11/11/2020'),
+        },
+      ];
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
+      const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
+        checkpointId: dsMockUtils.createMockU64(checkpointId.toNumber()),
+        balance: dsMockUtils.createMockBalance(balance.toNumber()),
+      }));
+
+      const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
+        tuple(({ args: [rawTicker, checkpointId] } as unknown) as StorageKey, balance)
+      );
+
+      requestPaginatedStub.resolves({ entries: totalSupplyEntries, lastKey: null });
+
+      const timestampsStub = dsMockUtils.createQueryStub('checkpoint', 'timestamps');
+      timestampsStub.multi.resolves(
+        totalSupply.map(({ moment }) => dsMockUtils.createMockMoment(moment.getTime()))
+      );
+
       const result = await checkpoints.get();
 
-      expect(result).toEqual(
-        timestamps.slice(0, -1).map((timestamp, index) => ({
-          checkpoint: entityMockUtils.getCheckpointInstance({ id: new BigNumber(ids[index]) }),
-          createdAt: new Date(timestamp),
-        }))
-      );
+      result.data.forEach(({ checkpoint, totalSupply: ts, createdAt }, index) => {
+        const {
+          checkpointId: expectedCheckpointId,
+          balance: expectedBalance,
+          moment: expectedMoment,
+        } = totalSupply[index];
+
+        expect(checkpoint).toEqual(
+          entityMockUtils.getCheckpointInstance({ id: expectedCheckpointId })
+        );
+        expect(ts).toEqual(expectedBalance.shiftedBy(-6));
+        expect(createdAt).toEqual(expectedMoment);
+      });
+      expect(result.next).toBeNull();
     });
   });
 });
