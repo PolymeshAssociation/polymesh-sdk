@@ -1,5 +1,5 @@
-import { Identity, Procedure, TickerReservation } from '~/internal';
-import { AuthorizationType, RoleType, TxTags } from '~/types';
+import { Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import { AuthorizationType, ErrorCode, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { ProcedureAuthorization, SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -33,6 +33,17 @@ export async function prepareTransferTickerOwnership(
   } = this;
   const { ticker, target, expiry } = args;
 
+  const tickerReservation = new TickerReservation({ ticker }, context);
+
+  const { status } = await tickerReservation.details();
+
+  if (status === TickerReservationStatus.TokenCreated) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'A Security Token has been created using this reserved ticker',
+    });
+  }
+
   const rawSignatory = signerValueToSignatory(
     { type: SignerType.Identity, value: signerToString(target) },
     context
@@ -51,7 +62,7 @@ export async function prepareTransferTickerOwnership(
     rawExpiry
   );
 
-  return new TickerReservation({ ticker }, context);
+  return tickerReservation;
 }
 
 /**

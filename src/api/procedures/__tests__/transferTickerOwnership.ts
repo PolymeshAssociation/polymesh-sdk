@@ -11,7 +11,7 @@ import {
 import { Context, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, RoleType } from '~/types';
+import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
 import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -55,7 +55,7 @@ describe('transferTickerOwnership procedure', () => {
       Identity: dsMockUtils.createMockIdentityId(did),
     });
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferAssetOwnership: dsMockUtils.createMockTicker(ticker),
+      TransferTicker: dsMockUtils.createMockTicker(ticker),
     });
     rawMoment = dsMockUtils.createMockMoment(expiry.getTime());
     args = {
@@ -94,6 +94,19 @@ describe('transferTickerOwnership procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if a token with that ticker has already been launched', () => {
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
+      expiryDate: null,
+      status: TickerReservationStatus.TokenCreated,
+    });
+    const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
+
+    return expect(prepareTransferTickerOwnership.call(proc, args)).rejects.toThrow(
+      'A Security Token has been created using this reserved ticker'
+    );
   });
 
   test('should add an add authorization transaction to the queue', async () => {
