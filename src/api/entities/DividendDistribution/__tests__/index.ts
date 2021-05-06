@@ -3,17 +3,21 @@ import sinon from 'sinon';
 
 import {
   Checkpoint,
-  claimDividends,
   Context,
   CorporateAction,
   DefaultPortfolio,
   DividendDistribution,
   Entity,
-  payDividends,
   TransactionQueue,
 } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('DividendDistribution class', () => {
   let context: Context;
@@ -36,6 +40,7 @@ describe('DividendDistribution class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -100,11 +105,13 @@ describe('DividendDistribution class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -154,8 +161,8 @@ describe('DividendDistribution class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(claimDividends, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -170,8 +177,8 @@ describe('DividendDistribution class', () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
       const identityTargets = ['identityDid'];
 
-      sinon
-        .stub(payDividends, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs(
           {
             args: { targets: identityTargets, distribution: dividendDistribution },
@@ -210,6 +217,135 @@ describe('DividendDistribution class', () => {
       }
 
       expect(err.message).toBe('The Dividend Distribution no longer exists');
+    });
+  });
+
+  describe('method: modifyCheckpoint', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        checkpoint: new Date(),
+      };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          { args: { distribution: dividendDistribution, ...args }, transformer: undefined },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await dividendDistribution.modifyCheckpoint(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getWithheldTax', () => {
+    test('should return the amount of the withheld tax', async () => {
+      const fakeTax = new BigNumber(100);
+
+      dsMockUtils.createApolloQueryStub(
+        getWithholdingTaxesOfCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+        }),
+        {
+          getWithholdingTaxesOfCA: {
+            taxes: fakeTax.toNumber(),
+          },
+        }
+      );
+
+      const result = await dividendDistribution.getWithheldTax();
+
+      expect(result).toEqual(fakeTax);
+    });
+  });
+
+  describe('method: getParticipants', () => {
+    test('should return the distribution participants', async () => {
+      const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
+      dividendDistribution.targets = {
+        identities: [excluded],
+        treatment: TargetTreatment.Exclude,
+      };
+      sinon
+        .stub(dividendDistribution, 'checkpoint')
+        .resolves(entityMockUtils.getCheckpointInstance());
+      const allBalancesStub = entityMockUtils.getCheckpointAllBalancesStub();
+
+      const balances = [
+        {
+          identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+          balance: new BigNumber(10000),
+        },
+        {
+          identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+          balance: new BigNumber(0),
+        },
+        {
+          identity: excluded,
+          balance: new BigNumber(20000),
+        },
+      ];
+
+      allBalancesStub.onFirstCall().resolves({ data: balances, next: 'notNull' });
+      allBalancesStub.onSecondCall().resolves({ data: [], next: null });
+
+      dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+        multi: [dsMockUtils.createMockBool(true)],
+      });
+
+      let result = await dividendDistribution.getParticipants();
+
+      expect(result).toEqual([
+        {
+          identity: balances[0].identity,
+          amount: balances[0].balance.multipliedBy(dividendDistribution.perShare),
+          paid: true,
+        },
+      ]);
+
+      dividendDistribution.paymentDate = new Date('10/14/1987');
+
+      allBalancesStub.onThirdCall().resolves({ data: balances, next: null });
+
+      result = await dividendDistribution.getParticipants();
+
+      expect(result).toEqual([
+        {
+          identity: balances[0].identity,
+          amount: balances[0].balance.multipliedBy(dividendDistribution.perShare),
+          paid: false,
+        },
+      ]);
+    });
+
+    test("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
+      sinon
+        .stub(dividendDistribution, 'checkpoint')
+        .resolves(entityMockUtils.getCheckpointScheduleInstance());
+
+      const result = await dividendDistribution.getParticipants();
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('method: reclaimFunds', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await dividendDistribution.reclaimFunds();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

@@ -164,4 +164,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyToken = new Procedure(prepareModifyToken, getAuthorization);
+export const modifyToken = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareModifyToken, getAuthorization);

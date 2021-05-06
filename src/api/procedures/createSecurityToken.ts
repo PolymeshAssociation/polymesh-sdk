@@ -142,4 +142,5 @@ export function getAuthorization({ ticker, documents }: Params): ProcedureAuthor
 /**
  * @hidden
  */
-export const createSecurityToken = new Procedure(prepareCreateSecurityToken, getAuthorization);
+export const createSecurityToken = (): Procedure<Params, SecurityToken> =>
+  new Procedure(prepareCreateSecurityToken, getAuthorization);

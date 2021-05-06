@@ -17,6 +17,8 @@ export const MAX_BATCH_ELEMENTS: Record<string, number> = {
   [TxTags.identity.RevokeClaim]: 200,
   [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer]: 200,
   [TxTags.complianceManager.AddDefaultTrustedClaimIssuer]: 200,
+  [TxTags.settlement.AddInstruction]: 50,
+  [TxTags.settlement.AddAndAffirmInstruction]: 50,
   [TxTags.capitalDistribution.PushBenefit]: 1000,
 };
 export const DEFAULT_MAX_BATCH_ELEMENTS = 20;
@@ -25,8 +27,7 @@ export const DEFAULT_SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;
 export const TREASURY_MODULE_ADDRESS = 'modlpm/trsry';
 export const DEFAULT_GQL_PAGE_SIZE = 25;
-export const MAX_TRANSFER_MANAGERS = 3;
-export const MAX_COMPLIANCE_REQUIREMENT_CONDITIONS = 50;
+export const MAX_PAGE_SIZE = 1000;
 
 const didTypes = ['IdentityId'];
 

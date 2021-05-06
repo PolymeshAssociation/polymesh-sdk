@@ -2,6 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { CAId } from 'polymesh-types/types';
 
+import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -33,13 +34,13 @@ import {
   targetsToTargetIdentities,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { findEventRecord } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export const createCaIdResolver = () => (receipt: ISubmittableResult): CAId => {
-  const { data } = findEventRecord(receipt, 'corporateAction', 'CAInitiated');
+  const [{ data }] = filterEventRecords(receipt, 'corporateAction', 'CAInitiated');
 
   return data[1];
 };
@@ -89,29 +90,10 @@ export async function prepareInitiateCorporateAction(
     taxWithholdings,
   } = args;
 
-  // TODO @monitz87: remove these when they can be fetched from the chain
-  const MAX_WITHHOLDING_ENTRIES = 1000;
-  const MAX_TARGETS = 1000;
-
-  if (targets && targets.identities.length > MAX_TARGETS) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Too many target Identities',
-      data: {
-        maxTargets: MAX_TARGETS,
-      },
-    });
+  if (targets) {
+    assertCaTargetsValid(targets, context);
   }
-
-  if (taxWithholdings.length > MAX_WITHHOLDING_ENTRIES) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Too many tax withholding entries',
-      data: {
-        maxWithholdingEntries: MAX_WITHHOLDING_ENTRIES,
-      },
-    });
-  }
+  assertCaTaxWithholdingsValid(taxWithholdings, context);
 
   if (declarationDate > new Date()) {
     throw new PolymeshError({
@@ -136,10 +118,10 @@ export async function prepareInitiateCorporateAction(
   const rawTicker = stringToTicker(ticker, context);
   const rawKind = corporateActionKindToCaKind(kind, context);
   const rawDeclDate = dateToMoment(declarationDate, context);
-  const rawRecordDate = checkpoint && checkpointToRecordDateSpec(checkpoint, context);
+  const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpoint, context);
   const rawDetails = stringToText(description, context);
-  const rawTargets = targets && targetsToTargetIdentities(targets, context);
-  const rawTax = defaultTaxWithholding && percentageToPermill(defaultTaxWithholding, context);
+  const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
+  const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
   const rawWithholdings = taxWithholdings.map(({ identity, percentage }) =>
     tuple(
       stringToIdentityId(signerToString(identity), context),
@@ -185,7 +167,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const initiateCorporateAction = new Procedure(
-  prepareInitiateCorporateAction,
-  getAuthorization
-);
+export const initiateCorporateAction = (): Procedure<Params, CAId> =>
+  new Procedure(prepareInitiateCorporateAction, getAuthorization);

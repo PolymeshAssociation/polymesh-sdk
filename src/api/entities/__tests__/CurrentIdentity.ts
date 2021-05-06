@@ -1,28 +1,21 @@
 import sinon from 'sinon';
 
-import {
-  Context,
-  createVenue,
-  CurrentIdentity,
-  Identity,
-  inviteAccount,
-  modifySignerPermissions,
-  removeSecondaryKeys,
-  TransactionQueue,
-  Venue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Context, CurrentIdentity, Identity, TransactionQueue, Venue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { SecondaryKey, SubCallback, VenueType } from '~/types';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('CurrentIdentity class', () => {
   let context: Context;
-  let modifySignerPermissionsPrepareStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
-
-    modifySignerPermissionsPrepareStub = sinon.stub(modifySignerPermissions, 'prepare');
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -32,11 +25,13 @@ describe('CurrentIdentity class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Identity', () => {
@@ -94,8 +89,8 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(removeSecondaryKeys, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { signers }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -120,7 +115,8 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      modifySignerPermissionsPrepareStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -144,7 +140,8 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      modifySignerPermissionsPrepareStub
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -165,8 +162,8 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(inviteAccount, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -188,12 +185,58 @@ describe('CurrentIdentity class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
 
-      sinon
-        .stub(createVenue, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
       const queue = await identity.createVenue(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: freezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const args = {
+        freeze: true,
+        identity,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.freezeSecondaryKeys();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unfreezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new CurrentIdentity({ did }, context);
+
+      const args = {
+        freeze: false,
+        identity,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.unfreezeSecondaryKeys();
 
       expect(queue).toBe(expectedQueue);
     });

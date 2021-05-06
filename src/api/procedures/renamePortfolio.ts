@@ -88,4 +88,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const renamePortfolio = new Procedure(prepareRenamePortfolio, getAuthorization);
+export const renamePortfolio = (): Procedure<Params, NumberedPortfolio> =>
+  new Procedure(prepareRenamePortfolio, getAuthorization);

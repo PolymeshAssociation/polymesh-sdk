@@ -58,7 +58,13 @@ import {
   Venue,
 } from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
-import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  ClaimScopeTypeEnum,
+  ClaimTypeEnum,
+  Event as MiddlewareEvent,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AffirmationStatus,
@@ -91,17 +97,14 @@ import {
   TargetTreatment,
   TokenDocument,
   TokenIdentifierType,
+  TransferError,
+  TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
   VenueType,
 } from '~/types';
-import {
-  ScopeClaimProof,
-  SignerType,
-  SignerValue,
-  TransferRestrictionType,
-} from '~/types/internal';
+import { ScopeClaimProof, SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -144,6 +147,7 @@ import {
   fundingRoundNameToString,
   fundraiserTierToTier,
   fundraiserToStoDetails,
+  granularCanTransferResultToTransferBreakdown,
   identityIdToString,
   isCusipValid,
   isIsinValid,
@@ -158,6 +162,7 @@ import {
   meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
+  middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   // middlewareProposalToProposalDetails,
@@ -209,6 +214,7 @@ import {
   stringToText,
   stringToTicker,
   stringToVenueDetails,
+  targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
   textToString,
   tickerToDid,
@@ -2210,6 +2216,134 @@ describe('canTransferResultToTransferStatus', () => {
   });
 });
 
+describe('granularCanTransferResultToTransferBreakdown', () => {
+  test('granularCanTransferResultToTransferBreakdown should convert a polkadot GranularCanTransferResult object to a TransferBreakdown', () => {
+    const context = dsMockUtils.getContextInstance();
+    let result = granularCanTransferResultToTransferBreakdown(
+      dsMockUtils.createMockGranularCanTransferResult({
+        /* eslint-disable @typescript-eslint/camelcase */
+        invalid_granularity: true,
+        self_transfer: true,
+        invalid_receiver_cdd: true,
+        invalid_sender_cdd: true,
+        missing_scope_claim: true,
+        receiver_custodian_error: true,
+        sender_custodian_error: true,
+        sender_insufficient_balance: true,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: true,
+          sender_portfolio_does_not_exist: true,
+          receiver_portfolio_does_not_exist: true,
+          sender_insufficient_balance: true,
+          result: false,
+        },
+        asset_frozen: true,
+        statistics_result: [
+          {
+            tm: {
+              CountTransferManager: dsMockUtils.createMockU64(100),
+            },
+            result: false,
+          },
+        ],
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
+          paused: false,
+          requirements: [],
+          result: false,
+        }),
+        result: false,
+        /* eslint-enable @typescript-eslint/camelcase */
+      }),
+      context
+    );
+
+    expect(result).toEqual({
+      general: [
+        TransferError.InvalidGranularity,
+        TransferError.SelfTransfer,
+        TransferError.InvalidReceiverCdd,
+        TransferError.InvalidSenderCdd,
+        TransferError.ScopeClaimMissing,
+        TransferError.InsufficientBalance,
+        TransferError.TransfersFrozen,
+        TransferError.InvalidSenderPortfolio,
+        TransferError.InvalidReceiverPortfolio,
+        TransferError.InsufficientPortfolioBalance,
+      ],
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
+      restrictions: [
+        {
+          restriction: {
+            type: TransferRestrictionType.Count,
+            value: new BigNumber(100),
+          },
+          result: false,
+        },
+      ],
+      result: false,
+    });
+
+    result = granularCanTransferResultToTransferBreakdown(
+      dsMockUtils.createMockGranularCanTransferResult({
+        /* eslint-disable @typescript-eslint/camelcase */
+        invalid_granularity: false,
+        self_transfer: false,
+        invalid_receiver_cdd: false,
+        invalid_sender_cdd: false,
+        missing_scope_claim: false,
+        receiver_custodian_error: false,
+        sender_custodian_error: false,
+        sender_insufficient_balance: false,
+        portfolio_validity_result: {
+          receiver_is_same_portfolio: false,
+          sender_portfolio_does_not_exist: false,
+          receiver_portfolio_does_not_exist: false,
+          sender_insufficient_balance: false,
+          result: false,
+        },
+        asset_frozen: false,
+        statistics_result: [
+          {
+            tm: {
+              CountTransferManager: dsMockUtils.createMockU64(100),
+            },
+            result: false,
+          },
+        ],
+        compliance_result: dsMockUtils.createMockAssetComplianceResult({
+          paused: false,
+          requirements: [],
+          result: false,
+        }),
+        result: false,
+        /* eslint-enable @typescript-eslint/camelcase */
+      }),
+      context
+    );
+
+    expect(result).toEqual({
+      general: [],
+      compliance: {
+        requirements: [],
+        complies: false,
+      },
+      restrictions: [
+        {
+          restriction: {
+            type: TransferRestrictionType.Count,
+            value: new BigNumber(100),
+          },
+          result: false,
+        },
+      ],
+      result: false,
+    });
+  });
+});
+
 describe('scopeToMeshScope and meshScopeToScope', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2672,6 +2806,26 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
     scope = { type: ScopeType.Custom, value: 'customValue' };
     result = scopeToMiddlewareScope(scope);
     expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+  });
+});
+
+describe('middlewareEventToEventIdentifier', () => {
+  test('should convert a middleware Event object to an EventIdentifier', () => {
+    const event = {
+      /* eslint-disable @typescript-eslint/camelcase */
+      block_id: 3000,
+      event_idx: 3,
+      /* eslint-enable @typescript-eslint/camelcase */
+      block: {
+        datetime: new Date('10/14/1987').toISOString(),
+      },
+    } as MiddlewareEvent;
+
+    expect(middlewareEventToEventIdentifier(event)).toEqual({
+      blockNumber: new BigNumber(3000),
+      blockDate: new Date('10/14/1987'),
+      eventIndex: 3,
+    });
   });
 });
 
@@ -4658,6 +4812,32 @@ describe('txGroupToTxTags', () => {
       TxTags.complianceManager.ResumeAssetCompliance,
       TxTags.complianceManager.ResetAssetCompliance,
     ]);
+
+    result = txGroupToTxTags(TxGroup.CorporateActionsManagement);
+
+    expect(result).toEqual([
+      TxTags.checkpoint.CreateSchedule,
+      TxTags.checkpoint.RemoveSchedule,
+      TxTags.checkpoint.CreateCheckpoint,
+      TxTags.corporateAction.InitiateCorporateAction,
+      TxTags.capitalDistribution.Distribute,
+      TxTags.capitalDistribution.Claim,
+      TxTags.identity.AddInvestorUniquenessClaim,
+    ]);
+
+    result = txGroupToTxTags(TxGroup.StoManagement);
+
+    expect(result).toEqual([
+      TxTags.sto.CreateFundraiser,
+      TxTags.sto.FreezeFundraiser,
+      TxTags.sto.Invest,
+      TxTags.sto.ModifyFundraiserWindow,
+      TxTags.sto.Stop,
+      TxTags.sto.UnfreezeFundraiser,
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.asset.Issue,
+      TxTags.settlement.CreateVenue,
+    ]);
   });
 });
 
@@ -5465,6 +5645,47 @@ describe('checkpointToRecordDateSpec', () => {
 
     const result = checkpointToRecordDateSpec(value, context);
 
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('targetIdentitiesToCorporateActionTargets', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('should convert a polkadot TargetIdentities object to a CorporateActionTargets object', () => {
+    const fakeResult = {
+      identities: [entityMockUtils.getIdentityInstance({ did: 'someDid' })],
+      treatment: TargetTreatment.Include,
+    };
+    const context = dsMockUtils.getContextInstance();
+    let targetIdentities = dsMockUtils.createMockTargetIdentities({
+      identities: ['someDid'],
+      treatment: 'Include',
+    });
+
+    let result = targetIdentitiesToCorporateActionTargets(targetIdentities, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult.treatment = TargetTreatment.Exclude;
+    targetIdentities = dsMockUtils.createMockTargetIdentities({
+      identities: ['someDid'],
+      treatment: 'Exclude',
+    });
+
+    result = targetIdentitiesToCorporateActionTargets(targetIdentities, context);
     expect(result).toEqual(fakeResult);
   });
 });

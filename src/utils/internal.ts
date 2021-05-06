@@ -14,12 +14,12 @@ import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
-import { Procedure } from '~/base/Procedure';
 import {
   Context,
   Identity,
   PolymeshError,
   PostTransactionValue,
+  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -44,7 +44,7 @@ import {
   MaybePostTransactionValue,
   ProcedureMethod,
 } from '~/types/internal';
-import { UnionOfProcedures } from '~/types/utils';
+import { ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
@@ -204,28 +204,31 @@ type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Da
 // TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
- * Find a specific event inside a receipt
+ * Find every occurrence of a specific event inside a receipt
  *
  * @throws If the event is not found
  */
-export function findEventRecord<
+export function filterEventRecords<
   ModuleName extends keyof Events,
   EventName extends keyof Events[ModuleName]
 >(
   receipt: ISubmittableResult,
   mod: ModuleName,
   eventName: EventName
-): IEvent<EventData<Events[ModuleName][EventName]>> {
-  const eventRecord = receipt.findRecord(mod, eventName as string);
+): IEvent<EventData<Events[ModuleName][EventName]>>[] {
+  const eventRecords = receipt.filterRecords(mod, eventName as string);
 
-  if (!eventRecord) {
+  if (!eventRecords.length) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
       message: `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
     });
   }
 
-  return (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>;
+  return eventRecords.map(
+    eventRecord =>
+      (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>
+  );
 }
 
 /**
@@ -406,8 +409,8 @@ export function createProcedureMethod<
       methodArgs: MethodArgs
     ) => [
       (
-        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
-        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
       ),
       ProcedureArgs
     ];
@@ -426,8 +429,8 @@ export function createProcedureMethod<
       methodArgs: MethodArgs
     ) => [
       (
-        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
-        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
       ),
       ProcedureArgs
     ];
@@ -448,8 +451,8 @@ export function createProcedureMethod<
       methodArgs: MethodArgs
     ) => [
       (
-        | UnionOfProcedures<ProcedureArgs, ProcedureReturnValue, Storage>
-        | Procedure<ProcedureArgs, ProcedureReturnValue, Storage>
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
       ),
       ProcedureArgs
     ];
@@ -463,11 +466,7 @@ export function createProcedureMethod<
     methodArgs: MethodArgs
   ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
-
-    return (proc as Procedure<ProcedureArgs, ProcedureReturnValue, Storage>).prepare(
-      { args: procArgs, transformer },
-      context
-    );
+    return proc().prepare({ args: procArgs, transformer }, context);
   };
 
   method.checkAuthorization = async (
@@ -475,7 +474,7 @@ export function createProcedureMethod<
   ): Promise<ProcedureAuthorizationStatus> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
 
-    return proc.checkAuthorization(procArgs, context);
+    return proc().checkAuthorization(procArgs, context);
   };
 
   return method;
@@ -543,13 +542,20 @@ export function assertFormatValid(address: string, ss58Format: number): void {
 /**
  * @hidden
  */
+export function getTicker(token: string | SecurityToken): string {
+  return typeof token === 'string' ? token : token.ticker;
+}
+
+/**
+ * @hidden
+ */
 export function xor(a: boolean, b: boolean): boolean {
   return a !== b;
 }
 
 /**
  * @hidden
- */                                                   
+ */
 function secondsInUnit(unit: CalendarUnit): number {
   const SECOND = 1;
   const MINUTE = SECOND * 60;
@@ -586,6 +592,7 @@ function secondsInUnit(unit: CalendarUnit): number {
 
 /**
  * @hidden
+ * Transform a conversion util into a version that returns null if the input is falsy
  */
 export function periodComplexity(period: CalendarPeriod): number {
   const secsInYear = secondsInUnit(CalendarUnit.Year);
@@ -598,4 +605,17 @@ export function periodComplexity(period: CalendarPeriod): number {
   const secsInUnit = secondsInUnit(unit);
 
   return Math.max(2, Math.floor(secsInYear / (secsInUnit * amount)));
+}
+
+/**
+ * @hidden
+ * Transform a conversion util into a version that returns null if the input is falsy
+ */
+export function optionize<InputType, OutputType, RestType extends unknown[]>(
+  converter: (input: InputType, ...rest: RestType) => OutputType
+): (val: InputType | null | undefined, ...rest: RestType) => OutputType | null {
+  return (value: InputType | null | undefined, ...rest: RestType): OutputType | null => {
+    const data = value ?? null;
+    return data && converter(data, ...rest);
+  };
 }

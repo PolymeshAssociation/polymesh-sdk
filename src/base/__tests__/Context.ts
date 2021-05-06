@@ -115,6 +115,33 @@ describe('Context class', () => {
     expect(context.middlewareApi).toEqual(middlewareApi);
   });
 
+  test('should listen for polkadot disconnection and errors in order to finish cleanup', async () => {
+    const polymeshApi = dsMockUtils.getApiInstance();
+
+    let context = await Context.create({
+      polymeshApi,
+      middlewareApi: null,
+      accountSeed: '0x6'.padEnd(66, '0'),
+    });
+
+    polymeshApi.emit('disconnected');
+
+    expect(() => context.getSigner).toThrow();
+
+    context = await Context.create({
+      polymeshApi,
+      middlewareApi: null,
+      accountSeed: '0x6'.padEnd(66, '0'),
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (context as any).isDisconnected = true;
+
+    polymeshApi.emit('disconnected');
+
+    expect(() => context.getSigner).toThrow();
+  });
+
   describe('method: create', () => {
     const hash = 'someBlockHash';
 
@@ -1462,6 +1489,28 @@ describe('Context class', () => {
       const result = await context.isMiddlewareAvailable();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('method: disconnect', () => {
+    test('should disconnect everything and leave the instance unusable', async () => {
+      const polymeshApi = dsMockUtils.getApiInstance();
+      const middlewareApi = dsMockUtils.getMiddlewareApi();
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApi,
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      await context.disconnect();
+      polymeshApi.emit('disconnected');
+
+      sinon.assert.calledOnce(polymeshApi.disconnect);
+      sinon.assert.calledOnce(middlewareApi.stop);
+
+      expect(() => context.getAccounts()).toThrow(
+        'Client disconnected. Please create a new instance via "Polymesh.connect()"'
+      );
     });
   });
 });

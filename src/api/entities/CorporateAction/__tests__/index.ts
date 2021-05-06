@@ -2,15 +2,8 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Checkpoint } from '~/api/entities/Checkpoint';
-import {
-  CheckpointSchedule,
-  Context,
-  CorporateAction,
-  Entity,
-  linkCaDocs,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { CheckpointSchedule, Context, CorporateAction, Entity, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CalendarUnit,
   CorporateActionKind,
@@ -28,6 +21,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockCheckpointScheduleModule(
     '~/api/entities/CheckpointSchedule'
   )
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
 describe('CorporateAction class', () => {
@@ -48,6 +45,7 @@ describe('CorporateAction class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -105,11 +103,13 @@ describe('CorporateAction class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -153,8 +153,8 @@ describe('CorporateAction class', () => {
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      sinon
-        .stub(linkCaDocs, 'prepare')
+      procedureMockUtils
+        .getPrepareStub()
         .withArgs({ args: { id, ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
@@ -282,6 +282,24 @@ describe('CorporateAction class', () => {
 
       expect(result.id).toEqual(new BigNumber(1));
       expect(result instanceof Checkpoint);
+    });
+  });
+
+  describe('method: modifyCaCheckpoint', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const args = {
+        checkpoint: new Date(),
+      };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await corporateAction.modifyCheckpoint(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

@@ -36,6 +36,7 @@ import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
+  boolToBoolean,
   cddStatusToBoolean,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
@@ -46,7 +47,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, removePadding } from '~/utils/internal';
+import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
@@ -412,7 +413,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const { context, did } = this;
     const { token } = args;
 
-    const ticker = typeof token === 'string' ? token : token.ticker;
+    const ticker = getTicker(token);
 
     const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
       stringToTicker(ticker, context),
@@ -469,5 +470,40 @@ export class Identity extends Entity<UniqueIdentifiers> {
     return rawInstructions
       .filter(({ status }) => status.isPending)
       .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
+  }
+
+  /**
+   * Check whether secondary keys are frozen
+   *
+   * @note can be subscribed to
+   */
+  public areSecondaryKeysFrozen(): Promise<boolean>;
+  public areSecondaryKeysFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async areSecondaryKeysFrozen(
+    callback?: SubCallback<boolean>
+  ): Promise<boolean | UnsubCallback> {
+    const {
+      did,
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+    } = this;
+
+    const rawIdentityId = stringToIdentityId(did, context);
+
+    if (callback) {
+      return identity.isDidFrozen(rawIdentityId, frozen => {
+        callback(boolToBoolean(frozen));
+      });
+    }
+
+    const result = await identity.isDidFrozen(rawIdentityId);
+
+    return boolToBoolean(result);
   }
 }

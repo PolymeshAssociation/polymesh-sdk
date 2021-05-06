@@ -12,7 +12,11 @@ export {
   consumeJoinIdentityAuthorization,
   ConsumeJoinIdentityAuthorizationParams,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
-export { addInstruction, AddInstructionParams } from '~/api/procedures/addInstruction';
+export {
+  addInstruction,
+  AddInstructionParams,
+  AddInstructionsParams,
+} from '~/api/procedures/addInstruction';
 // export { cancelProposal } from '~/api/procedures/cancelProposal';
 export {
   consumeAuthorizationRequests,
@@ -116,7 +120,7 @@ export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 // export { Proposal } from '~/api/entities/Proposal';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Sto } from '~/api/entities/Sto';
-export { Venue } from '~/api/entities/Venue';
+export { Venue, addInstructionTransformer } from '~/api/entities/Venue';
 export { Instruction } from '~/api/entities/Instruction';
 export { Portfolio } from '~/api/entities/Portfolio';
 export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
@@ -148,4 +152,17 @@ export {
 } from '~/api/procedures/configureDividendDistribution';
 export { claimDividends } from '~/api/procedures/claimDividends';
 export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
+export { modifyCaCheckpoint, ModifyCaCheckpointParams } from '~/api/procedures/modifyCaCheckpoint';
 export { payDividends, PayDividendsParams } from '~/api/procedures/payDividends';
+export { modifyCaDefaults, ModifyCaDefaultsParams } from '~/api/procedures/modifyCaDefaults';
+export {
+  removeCorporateAction,
+  RemoveCorporateActionParams,
+} from '~/api/procedures/removeCorporateAction';
+export {
+  modifyDistributionCheckpoint,
+  ModifyDistributionCheckpointParams,
+} from '~/api/procedures/modifyDistributionCheckpoint';
+export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
+export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
+export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';

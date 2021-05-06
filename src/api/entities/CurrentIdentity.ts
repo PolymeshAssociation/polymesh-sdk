@@ -10,6 +10,7 @@ import {
   ModifySignerPermissionsParams,
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
+  toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
 import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
@@ -59,6 +60,14 @@ export class CurrentIdentity extends Identity {
     );
     this.createVenue = createProcedureMethod(
       { getProcedureAndArgs: args => [createVenue, args] },
+      context
+    );
+    this.freezeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true, identity: this }] },
+      context
+    );
+    this.unfreezeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }] },
       context
     );
   }
@@ -122,4 +131,14 @@ export class CurrentIdentity extends Identity {
    * Create a Venue
    */
   public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
+
+  /**
+   * Freeze all the secondary keys in this Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
+   */
+  public freezeSecondaryKeys: ProcedureMethod<void, void>;
+
+  /**
+   * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
+   */
+  public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
 }

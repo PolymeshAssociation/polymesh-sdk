@@ -65,7 +65,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const removeCorporateActionsAgent = new Procedure(
-  prepareRemoveCorporateActionsAgent,
-  getAuthorization
-);
+export const removeCorporateActionsAgent = (): Procedure<Params, void> =>
+  new Procedure(prepareRemoveCorporateActionsAgent, getAuthorization);

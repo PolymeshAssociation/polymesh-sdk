@@ -57,6 +57,7 @@ import {
   Fundraiser,
   FundraiserName,
   FundraiserTier,
+  GranularCanTransferResult,
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
@@ -108,6 +109,7 @@ import {
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
+  Event as MiddlewareEvent,
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
@@ -133,6 +135,7 @@ import {
   CorporateActionTargets,
   DividendDistributionParams,
   ErrorCode,
+  EventIdentifier,
   IdentityCondition,
   IdentityWithClaims,
   InstructionStatus,
@@ -164,6 +167,10 @@ import {
   TokenIdentifier,
   TokenIdentifierType,
   TokenType,
+  TransferBreakdown,
+  TransferError,
+  TransferRestriction,
+  TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
@@ -179,8 +186,6 @@ import {
   ScopeClaimProof,
   SignerType,
   SignerValue,
-  TransferRestriction,
-  TransferRestrictionType,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -194,6 +199,7 @@ import {
   assertIsInteger,
   assertIsPositive,
   createClaim,
+  getTicker,
   isPrintableAscii,
   padString,
   removePadding,
@@ -627,6 +633,19 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.capitalDistribution.Distribute,
         TxTags.capitalDistribution.Claim,
         TxTags.identity.AddInvestorUniquenessClaim,
+      ];
+    }
+    case TxGroup.StoManagement: {
+      return [
+        TxTags.sto.CreateFundraiser,
+        TxTags.sto.FreezeFundraiser,
+        TxTags.sto.Invest,
+        TxTags.sto.ModifyFundraiserWindow,
+        TxTags.sto.Stop,
+        TxTags.sto.UnfreezeFundraiser,
+        TxTags.identity.AddInvestorUniquenessClaim,
+        TxTags.asset.Issue,
+        TxTags.settlement.CreateVenue,
       ];
     }
   }
@@ -1550,6 +1569,20 @@ export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
 /**
  * @hidden
  */
+export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventIdentifier {
+  const { block_id: blockNumber, block, event_idx: eventIndex } = event;
+
+  return {
+    blockNumber: new BigNumber(blockNumber),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    blockDate: new Date(block!.datetime),
+    eventIndex,
+  };
+}
+
+/**
+ * @hidden
+ */
 export function meshClaimToClaim(claim: MeshClaim): Claim {
   if (claim.isJurisdiction) {
     const [code, scope] = claim.asJurisdiction;
@@ -2356,7 +2389,7 @@ export function portfolioMovementToMovePortfolioItem(
 ): MovePortfolioItem {
   const { token, amount } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
-    ticker: stringToTicker(typeof token === 'string' ? token : token.ticker, context),
+    ticker: stringToTicker(getTicker(token), context),
     amount: numberToBalance(amount, context),
   });
 }
@@ -2409,6 +2442,86 @@ export function transferManagerToTransferRestriction(
       value: permillToBigNumber(transferManager.asPercentageTransferManager),
     };
   }
+}
+
+/**
+ * @hidden
+ */
+export function granularCanTransferResultToTransferBreakdown(
+  result: GranularCanTransferResult,
+  context: Context
+): TransferBreakdown {
+  const {
+    invalid_granularity: invalidGranularity,
+    self_transfer: selfTransfer,
+    invalid_receiver_cdd: invalidReceiverCdd,
+    invalid_sender_cdd: invalidSenderCdd,
+    missing_scope_claim: missingScopeClaim,
+    sender_insufficient_balance: insufficientBalance,
+    asset_frozen: assetFrozen,
+    portfolio_validity_result: {
+      sender_portfolio_does_not_exist: senderPortfolioNotExists,
+      receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
+      sender_insufficient_balance: senderInsufficientBalance,
+    },
+    statistics_result: transferRestrictionResults,
+    compliance_result: complianceResult,
+    result: finalResult,
+  } = result;
+
+  const general = [];
+
+  if (boolToBoolean(invalidGranularity)) {
+    general.push(TransferError.InvalidGranularity);
+  }
+
+  if (boolToBoolean(selfTransfer)) {
+    general.push(TransferError.SelfTransfer);
+  }
+
+  if (boolToBoolean(invalidReceiverCdd)) {
+    general.push(TransferError.InvalidReceiverCdd);
+  }
+
+  if (boolToBoolean(invalidSenderCdd)) {
+    general.push(TransferError.InvalidSenderCdd);
+  }
+
+  if (boolToBoolean(missingScopeClaim)) {
+    general.push(TransferError.ScopeClaimMissing);
+  }
+
+  if (boolToBoolean(insufficientBalance)) {
+    general.push(TransferError.InsufficientBalance);
+  }
+
+  if (boolToBoolean(assetFrozen)) {
+    general.push(TransferError.TransfersFrozen);
+  }
+
+  if (boolToBoolean(senderPortfolioNotExists)) {
+    general.push(TransferError.InvalidSenderPortfolio);
+  }
+
+  if (boolToBoolean(receiverPortfolioNotExists)) {
+    general.push(TransferError.InvalidReceiverPortfolio);
+  }
+
+  if (boolToBoolean(senderInsufficientBalance)) {
+    general.push(TransferError.InsufficientPortfolioBalance);
+  }
+
+  const restrictions = transferRestrictionResults.map(({ tm, result: tmResult }) => ({
+    restriction: transferManagerToTransferRestriction(tm),
+    result: boolToBoolean(tmResult),
+  }));
+
+  return {
+    general,
+    compliance: assetComplianceResultToCompliance(complianceResult, context),
+    restrictions,
+    result: boolToBoolean(finalResult),
+  };
 }
 
 /**
@@ -2810,6 +2923,23 @@ export function scopeClaimProofToMeshScopeClaimProof(
     scope_id: stringToRistrettoPoint(scopeId, context),
     /* eslint-enable @typescript-eslint/camelcase */
   });
+}
+
+/**
+ * @hidden
+ */
+export function targetIdentitiesToCorporateActionTargets(
+  targetIdentities: TargetIdentities,
+  context: Context
+): CorporateActionTargets {
+  const { identities, treatment } = targetIdentities;
+
+  return {
+    identities: identities.map(
+      identity => new Identity({ did: identityIdToString(identity) }, context)
+    ),
+    treatment: treatment.isInclude ? TargetTreatment.Include : TargetTreatment.Exclude,
+  };
 }
 
 /**

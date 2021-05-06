@@ -33,10 +33,13 @@ import {
   AuthorizationType,
   CalendarPeriod,
   CalendarUnit,
+  CorporateActionDefaults,
   CorporateActionKind,
   CorporateActionTargets,
   CountTransferRestriction,
+  DividendDistributionDetails,
   ExtrinsicData,
+  IdentityBalance,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
@@ -62,7 +65,6 @@ import {
   // NOTE uncomment in Governance v2 upgrade
   // TxTags,
 } from '~/types';
-import { MAX_TRANSFER_MANAGERS } from '~/utils/constants';
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -116,6 +118,7 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -137,6 +140,7 @@ interface SecurityTokenOptions {
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgent?: Identity;
+  corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
 }
 
 interface AuthorizationRequestOptions {
@@ -210,6 +214,8 @@ interface CheckpointOptions {
   ticker?: string;
   createdAt?: Date;
   totalSupply?: BigNumber;
+  exists?: boolean;
+  allBalances?: ResultSet<IdentityBalance>;
 }
 
 interface CheckpointScheduleOptions {
@@ -220,6 +226,7 @@ interface CheckpointScheduleOptions {
   expiryDate?: Date | null;
   complexity?: number;
   details?: Partial<ScheduleDetails>;
+  exists?: boolean;
 }
 
 interface CorporateActionOptions {
@@ -231,6 +238,7 @@ interface CorporateActionOptions {
   targets?: CorporateActionTargets;
   defaultTaxWithholding?: BigNumber;
   taxWithholdings?: TaxWithholding[];
+  exists?: boolean;
 }
 
 interface DividendDistributionOptions {
@@ -247,6 +255,7 @@ interface DividendDistributionOptions {
   maxAmount?: BigNumber;
   expiryDate?: null | Date;
   paymentDate?: Date;
+  details?: Partial<DividendDistributionDetails>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -275,6 +284,7 @@ let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let securityTokenCorporateActionsGetAgentStub: SinonStub;
+let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -291,6 +301,7 @@ let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
 let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetScopeIdStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
+let currentIdentityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -315,7 +326,12 @@ let defaultPortfolioIsCustodiedByStub: SinonStub;
 let stoDetailsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
+let checkpointExistsStub: SinonStub;
+let checkpointAllBalancesStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
+let corporateActionExistsStub: SinonStub;
+let checkpointScheduleExistsStub: SinonStub;
+let dividendDistributionDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -565,6 +581,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getVenues: [],
   getScopeId: 'someScopeId',
   getTokenBalance: new BigNumber(100),
+  areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -577,6 +594,7 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  areScondaryKeysFrozen: false,
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -622,13 +640,18 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   getIdentifiers: [],
   transferRestrictionsCountGet: {
     restrictions: [],
-    availableSlots: MAX_TRANSFER_MANAGERS,
+    availableSlots: 3,
   },
   transferRestrictionsPercentageGet: {
     restrictions: [],
-    availableSlots: MAX_TRANSFER_MANAGERS,
+    availableSlots: 3,
   },
   corporateActionsGetAgent: { did: 'someDid' } as Identity,
+  corporateActionsGetDefaults: {
+    targets: { identities: [], treatment: TargetTreatment.Exclude },
+    defaultTaxWithholding: new BigNumber(10),
+    taxWithholdings: [],
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -724,6 +747,7 @@ const defaultCheckpointOptions: CheckpointOptions = {
   createdAt: new Date('10/14/1987'),
   ticker: 'SOME_TICKER',
   id: new BigNumber(1),
+  exists: true,
 };
 let checkpointOptions = defaultCheckpointOptions;
 const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
@@ -740,6 +764,7 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
     remainingCheckpoints: 1,
     nextCheckpointDate: new Date('10/10/2030'),
   },
+  exists: true,
 };
 let checkpointScheduleOptions = defaultCheckpointScheduleOptions;
 const defaultCorporateActionOptions: CorporateActionOptions = {
@@ -754,6 +779,7 @@ const defaultCorporateActionOptions: CorporateActionOptions = {
   },
   defaultTaxWithholding: new BigNumber(10),
   taxWithholdings: [],
+  exists: true,
 };
 let corporateActionOptions = defaultCorporateActionOptions;
 const defaultDividendDistributionOptions: DividendDistributionOptions = {
@@ -772,6 +798,10 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
   maxAmount: new BigNumber(1000000),
   expiryDate: null,
   paymentDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+  details: {
+    remainingFunds: new BigNumber(100),
+    fundsReclaimed: false,
+  },
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
 // NOTE uncomment in Governance v2 upgrade
@@ -1004,6 +1034,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     },
     corporateActions: {
       getAgent: securityTokenCorporateActionsGetAgentStub.resolves(opts.corporateActionsGetAgent),
+      getDefaults: securityTokenCorporateActionsGetDefaultsStub.resolves(
+        opts.corporateActionsGetDefaults
+      ),
     },
   } as unknown) as MockSecurityToken;
 
@@ -1029,6 +1062,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
   securityTokenCorporateActionsGetAgentStub = sinon.stub();
+  securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1185,6 +1219,9 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     },
     getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
+    areSecondaryKeysFrozen: currentIdentityAreSecondaryKeysFrozenStub.resolves(
+      opts.areScondaryKeysFrozen
+    ),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -1212,6 +1249,7 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetScopeIdStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
+  currentIdentityAreSecondaryKeysFrozenStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
@@ -1343,11 +1381,22 @@ function initSto(opts?: StoOptions): void {
  * Configure the Checkpoint instance
  */
 function configureCheckpoint(opts: CheckpointOptions): void {
+  const allBalances = opts.allBalances || {
+    data: [
+      {
+        identity: mockInstanceContainer.identity,
+        balance: new BigNumber(10000),
+      },
+    ],
+    next: null,
+  };
   const checkpoint = ({
     createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
     totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
     ticker: opts.ticker,
     id: opts.id,
+    exists: checkpointExistsStub.resolves(opts.exists),
+    allBalances: checkpointAllBalancesStub.resolves(allBalances),
   } as unknown) as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
@@ -1366,6 +1415,8 @@ function initCheckpoint(opts?: CheckpointOptions): void {
   checkpointConstructorStub = sinon.stub();
   checkpointCreatedAtStub = sinon.stub();
   checkpointTotalSupplyStub = sinon.stub();
+  checkpointExistsStub = sinon.stub();
+  checkpointAllBalancesStub = sinon.stub();
 
   checkpointOptions = merge({}, defaultCheckpointOptions, opts);
 
@@ -1385,6 +1436,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     expiryDate: opts.expiryDate,
     complexity: opts.complexity,
     details: checkpointScheduleDetailsStub.resolves(opts.details),
+    exists: checkpointScheduleExistsStub.resolves(opts.exists),
   } as unknown) as MockCheckpointSchedule;
 
   Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
@@ -1402,6 +1454,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
 function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
   checkpointScheduleConstructorStub = sinon.stub();
   checkpointScheduleDetailsStub = sinon.stub();
+  checkpointScheduleExistsStub = sinon.stub();
 
   checkpointScheduleOptions = merge({}, defaultCheckpointScheduleOptions, opts);
 
@@ -1422,6 +1475,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
     targets: opts.targets,
     defaultTaxWithholding: opts.defaultTaxWithholding,
     taxWithholdings: opts.taxWithholdings,
+    exists: corporateActionExistsStub.resolves(opts.exists),
   } as unknown) as MockCorporateAction;
 
   Object.assign(mockInstanceContainer.corporateAction, corporateAction);
@@ -1438,6 +1492,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
  */
 function initCorporateAction(opts?: CorporateActionOptions): void {
   corporateActionConstructorStub = sinon.stub();
+  corporateActionExistsStub = sinon.stub();
 
   corporateActionOptions = merge({}, defaultCorporateActionOptions, opts);
 
@@ -1464,6 +1519,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     maxAmount: opts.maxAmount,
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
+    details: dividendDistributionDetailsStub.resolves(opts.details),
   } as unknown) as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
@@ -1480,6 +1536,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
  */
 function initDividendDistribution(opts?: DividendDistributionOptions): void {
   dividendDistributionConstructorStub = sinon.stub();
+  dividendDistributionDetailsStub = sinon.stub();
 
   dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
 
@@ -1895,6 +1952,14 @@ export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `CurrentIdentity.areSecondaryKeysFrozen` method
+ */
+export function getCurrentIdentityAreSecondaryKeysFrozenStub(): SinonStub {
+  return currentIdentityAreSecondaryKeysFrozenStub;
+}
+
+/**
+ * @hidden
  * Retrieve an Account instance
  */
 export function getAccountInstance(opts?: AccountOptions): MockAccount {
@@ -1987,6 +2052,14 @@ export function getNumberedPortfolioGetCustodianStub(): SinonStub {
  */
 export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
   return defaultPortfolioIsCustodiedByStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.getCustodian` method
+ */
+export function getDefaultPortfolioGetCustodianStub(): SinonStub {
+  return defaultPortfolioGetCustodianStub;
 }
 
 /**
@@ -2131,6 +2204,20 @@ export function getSecurityTokenCorporateActionsGetAgentStub(agent?: Identity): 
   }
 
   return securityTokenCorporateActionsGetAgentStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.corporateActions.getDefaults` method
+ */
+export function getSecurityTokenCorporateActionsGetDefaultsStub(
+  defaults?: Partial<CorporateActionDefaults>
+): SinonStub {
+  if (defaults) {
+    return securityTokenCorporateActionsGetDefaultsStub.resolves(defaults);
+  }
+
+  return securityTokenCorporateActionsGetDefaultsStub;
 }
 
 /**
@@ -2312,13 +2399,35 @@ export function getCheckpointCreatedAtStub(createdAt?: Date): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Checkpoint.createdAt` method
+ * Retrieve the stub of the `Checkpoint.totalSupply` method
  */
 export function getCheckpointTotalSupplyStub(totalSupply?: BigNumber): SinonStub {
   if (totalSupply) {
     return checkpointTotalSupplyStub.resolves(totalSupply);
   }
   return checkpointTotalSupplyStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.exists` method
+ */
+export function getCheckpointExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return checkpointExistsStub.resolves(exists);
+  }
+  return checkpointExistsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.allBalances` method
+ */
+export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBalance>): SinonStub {
+  if (allBalances) {
+    return checkpointAllBalancesStub.resolves(allBalances);
+  }
+  return checkpointAllBalancesStub;
 }
 
 /**
@@ -2405,4 +2514,15 @@ export function getDividendDistributionInstance(
  */
 export function getDividendDistributionConstructorStub(): SinonStub {
   return dividendDistributionConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CorporateAction.exists` method
+ */
+export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return corporateActionExistsStub.resolves(exists);
+  }
+  return corporateActionExistsStub;
 }

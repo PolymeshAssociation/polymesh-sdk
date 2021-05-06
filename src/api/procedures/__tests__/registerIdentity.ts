@@ -121,7 +121,7 @@ describe('registerIdentity procedure', () => {
 });
 
 describe('createRegisterIdentityResolver', () => {
-  const findEventRecordStub = sinon.stub(utilsInternalModule, 'findEventRecord');
+  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
@@ -134,11 +134,13 @@ describe('createRegisterIdentityResolver', () => {
   });
 
   beforeEach(() => {
-    findEventRecordStub.returns(dsMockUtils.createMockIEvent([rawDid, 'accountId', 'signingItem']));
+    filterEventRecordsStub.returns([
+      dsMockUtils.createMockIEvent([rawDid, 'accountId', 'signingItem']),
+    ]);
   });
 
   afterEach(() => {
-    findEventRecordStub.reset();
+    filterEventRecordsStub.reset();
   });
 
   test('should return the new Identity', () => {

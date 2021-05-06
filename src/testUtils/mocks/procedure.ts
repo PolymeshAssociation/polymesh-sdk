@@ -15,6 +15,7 @@ let procedureConstructorStub: SinonStub;
 let addTransactionStub: SinonStub;
 let addBatchTransactionStub: SinonStub;
 let addProcedureStub: SinonStub;
+let prepareStub: SinonStub;
 
 export const MockProcedureClass = class {
   /**
@@ -27,7 +28,7 @@ export const MockProcedureClass = class {
 
 export const mockProcedureModule = (path: string) => (): object => ({
   ...jest.requireActual(path),
-  PolymeshTransaction: MockProcedureClass,
+  Procedure: MockProcedureClass,
 });
 
 /**
@@ -39,10 +40,12 @@ function initProcedure(): void {
   addTransactionStub = sinon.stub();
   addProcedureStub = sinon.stub();
   addBatchTransactionStub = sinon.stub();
+  prepareStub = sinon.stub();
   const procedure = ({
     addTransaction: addTransactionStub.returns([]),
     addBatchTransaction: addBatchTransactionStub.returns([]),
     addProcedure: addProcedureStub.returns([]),
+    prepare: prepareStub.returns({}),
   } as unknown) as MockProcedure;
 
   mockInstanceContainer.procedure = procedure;
@@ -111,4 +114,12 @@ export function getAddBatchTransactionStub(): SinonStub {
  */
 export function getAddProcedureStub(): SinonStub {
   return addProcedureStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `prepare` method
+ */
+export function getPrepareStub(): SinonStub {
+  return prepareStub;
 }

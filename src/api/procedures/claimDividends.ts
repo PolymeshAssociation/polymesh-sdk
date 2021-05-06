@@ -68,10 +68,11 @@ export async function prepareClaimDividends(
 /**
  * @hidden
  */
-export const claimDividends = new Procedure(prepareClaimDividends, {
-  signerPermissions: {
-    transactions: [TxTags.capitalDistribution.Claim],
-    tokens: [],
-    portfolios: [],
-  },
-});
+export const claimDividends = (): Procedure<Params, void> =>
+  new Procedure(prepareClaimDividends, {
+    signerPermissions: {
+      transactions: [TxTags.capitalDistribution.Claim],
+      tokens: [],
+      portfolios: [],
+    },
+  });

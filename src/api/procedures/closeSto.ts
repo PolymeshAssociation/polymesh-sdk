@@ -67,4 +67,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const closeSto = new Procedure(prepareCloseSto, getAuthorization);
+export const closeSto = (): Procedure<Params, void> =>
+  new Procedure(prepareCloseSto, getAuthorization);

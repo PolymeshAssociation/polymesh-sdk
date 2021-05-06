@@ -218,7 +218,7 @@ describe('createProposal procedure', () => {
 // });
 
 // describe('createPrroposalResolver', () => {
-//   const findEventRecordStub = sinon.stub(utilsModule, 'findEventRecord');
+//   const filterEventRecordsStub = sinon.stub(utilsModule, 'filterEventRecords');
 //   const pipId = new BigNumber(1);
 //   const rawPipId = dsMockUtils.createMockU32(pipId.toNumber());
 
@@ -227,11 +227,11 @@ describe('createProposal procedure', () => {
 //   });
 
 //   beforeEach(() => {
-//     findEventRecordStub.returns(dsMockUtils.createMockEventRecord(['garbage', 'data', rawPipId]));
+//     filterEventRecordsStub.returns(dsMockUtils.createMockEventRecord(['garbage', 'data', rawPipId]));
 //   });
 
 //   afterEach(() => {
-//     findEventRecordStub.reset();
+//     filterEventRecordsStub.reset();
 //   });
 
 //   test('should return the new Proposal', () => {
