@@ -30,7 +30,7 @@ export async function prepareLeaveIdentity(
   const [existingIdentity, currentIdentity] = await Promise.all([
     account.getIdentity(),
     context.getCurrentIdentity(),
-  ]);
+  ] as const);
 
   if (!existingIdentity) {
     throw new PolymeshError({
