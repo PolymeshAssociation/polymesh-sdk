@@ -1,17 +1,37 @@
 import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
 
-import { Account, CurrentIdentity } from '~/internal';
+import { UniqueIdentifiers } from '~/api/entities/Account';
+import { Account, Context, CurrentIdentity, leaveIdentity } from '~/internal';
 import { Permissions, PermissionsLike, TxTags } from '~/types';
+import { ProcedureMethod } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   portfolioToPortfolioId,
   signerToString,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Represents the current account that is bound to the SDK instance
  */
 export class CurrentAccount extends Account {
+  /**
+   * @hidden
+   */
+  constructor(identifiers: UniqueIdentifiers, context: Context) {
+    super(identifiers, context);
+
+    this.leaveIdentity = createProcedureMethod(
+      { getProcedureAndArgs: () => [leaveIdentity, { account: this }] },
+      context
+    );
+  }
+
+  /**
+   * Leave the secondary key's identity
+   */
+  public leaveIdentity: ProcedureMethod<void, void>;
+
   /**
    * Retrieve the current Identity (null if there is none)
    */
