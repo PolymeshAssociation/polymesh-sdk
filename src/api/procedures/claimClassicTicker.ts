@@ -30,12 +30,6 @@ function generateClassicSigneableMessage(did: string): string {
   return stringToHex(`${CLASSIC_CLAIM_SIGNATURE_PREFIX}${strippedDid}`);
 }
 
-/*
- * TODO @monitz87: validate that the ticker is still reserved under the "systematic DID" once
- * we figure out how to fetch/generate it. Errors should be thrown if:
- *  - It's under a different DID than the systematic DID
- *  - The reservation is under the systematic DID but it has expired
- */
 /**
  * @hidden
  */
