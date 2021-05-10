@@ -161,9 +161,12 @@ export class Procedure<
       signerAllowed = signerPermissions;
     }
 
+    const isKeyFrozen = await context.getCurrentAccount().isFrozen();
+
     return {
       roles: identityAllowed,
       permissions: signerAllowed,
+      isKeyFrozen,
     };
   }
 
@@ -204,7 +207,14 @@ export class Procedure<
 
       await this.setup(procArgs, context);
 
-      const { roles, permissions } = await this._checkAuthorization(procArgs, context);
+      const { roles, permissions, isKeyFrozen } = await this._checkAuthorization(procArgs, context);
+
+      if (isKeyFrozen) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message: "Current Account can't exeucte this procedure with frozen keys",
+        });
+      }
 
       if (!permissions) {
         throw new PolymeshError({

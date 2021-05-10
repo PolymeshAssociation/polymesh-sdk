@@ -204,4 +204,25 @@ export class Account extends Entity<UniqueIdentifiers> {
       count,
     };
   }
+
+  /**
+   * Check whether this account is frozen
+   */
+  public async isFrozen(): Promise<boolean> {
+    const { address } = this;
+
+    const identity = await this.getIdentity();
+
+    if (identity === null) {
+      return false;
+    }
+
+    const primaryKey = await identity.getPrimaryKey();
+
+    if (address === primaryKey) {
+      return false;
+    }
+
+    return identity.areSecondaryKeysFrozen();
+  }
 }
