@@ -33,7 +33,7 @@ export class PolymeshTransactionBatch<
   /**
    * @hidden
    */
-  constructor(transactionSpec: Omit<BatchTransactionSpec<Args, Values>, 'type'>, context: Context) {
+  constructor(transactionSpec: BatchTransactionSpec<Args, Values>, context: Context) {
     const { args, ...rest } = transactionSpec;
 
     super(rest, context);

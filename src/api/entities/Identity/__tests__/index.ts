@@ -1,5 +1,6 @@
 import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
+import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, ScopeId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -802,6 +803,47 @@ describe('Identity class', () => {
       expect(result[0].id).toEqual(id1);
       expect(result[1].id).toEqual(id2);
       expect(result[2].id).toEqual(id4);
+    });
+  });
+
+  describe('method: areSecondaryKeysFrozen', () => {
+    let frozenStub: sinon.SinonStub;
+    let boolValue: boolean;
+    let rawBoolValue: bool;
+
+    beforeAll(() => {
+      boolValue = true;
+      rawBoolValue = dsMockUtils.createMockBool(boolValue);
+    });
+
+    beforeEach(() => {
+      frozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen');
+    });
+
+    test('should return whether secondary key is frozen or not', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      frozenStub.resolves(rawBoolValue);
+
+      const result = await identity.areSecondaryKeysFrozen();
+
+      expect(result).toBe(boolValue);
+    });
+
+    test('should allow subscription', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const unsubCallback = 'unsubCallBack';
+
+      frozenStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawBoolValue);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await identity.areSecondaryKeysFrozen(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, boolValue);
     });
   });
 });

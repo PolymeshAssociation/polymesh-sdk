@@ -605,17 +605,16 @@ describe('periodComplexity', () => {
 });
 
 describe('optionize', () => {
-  const context = dsMockUtils.getContextInstance();
-
-  test('should transform a conversion util into a version that returns null if the input is falsy', () => {
+  test('should transform a conversion util into a version that returns null if the first input is falsy, passing along the rest if not', () => {
     const number = 1;
 
-    const toString = (value: number): string => value.toString();
+    const toString = (value: number, foo: string, bar: number): string =>
+      `${value.toString()}${foo}${bar}`;
 
-    let result = optionize(toString)(number, context);
-    expect(result).toBe(number.toString());
+    let result = optionize(toString)(number, 'notNeeded', 1);
+    expect(result).toBe(toString(number, 'notNeeded', 1));
 
-    result = optionize(toString)(null, context);
+    result = optionize(toString)(null, 'stillNotNeeded', 2);
     expect(result).toBeNull();
   });
 });
