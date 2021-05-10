@@ -271,7 +271,7 @@ describe('Procedure class', () => {
       context = dsMockUtils.getContextInstance({ isFrozen: true });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Account can't exeucte this procedure with frozen keys"
+        "Current Account can't execute this procedure with frozen keys"
       );
     });
   });
