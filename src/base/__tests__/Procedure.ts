@@ -50,7 +50,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
-        isKeyFrozen: false,
+        isFrozenKey: false,
       });
 
       context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
@@ -67,7 +67,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: false,
         roles: false,
-        isKeyFrozen: false,
+        isFrozenKey: false,
       });
 
       procedure = new Procedure(prepareFunc, { signerPermissions: true, identityRoles: true });
@@ -76,7 +76,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
-        isKeyFrozen: false,
+        isFrozenKey: false,
       });
     });
   });
