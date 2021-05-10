@@ -181,10 +181,10 @@ export class DividendDistribution extends CorporateAction {
    *   the corresponding CheckpointSchedule is returned instead
    */
   public async checkpoint(): Promise<Checkpoint | CheckpointSchedule> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const checkpoint = (await super.checkpoint())!;
+    const checkpoint = await super.checkpoint();
 
-    return checkpoint;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return checkpoint!;
   }
 
   /**

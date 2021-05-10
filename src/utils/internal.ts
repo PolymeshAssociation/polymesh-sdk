@@ -611,11 +611,11 @@ export function periodComplexity(period: CalendarPeriod): number {
  * @hidden
  * Transform a conversion util into a version that returns null if the input is falsy
  */
-export function optionize<InputType, OutputType>(
-  converter: (input: InputType, context: Context) => OutputType
-): (val: InputType | null | undefined, context: Context) => OutputType | null {
-  return (value: InputType | null | undefined, context: Context): OutputType | null => {
+export function optionize<InputType, OutputType, RestType extends unknown[]>(
+  converter: (input: InputType, ...rest: RestType) => OutputType
+): (val: InputType | null | undefined, ...rest: RestType) => OutputType | null {
+  return (value: InputType | null | undefined, ...rest: RestType): OutputType | null => {
     const data = value ?? null;
-    return data && converter(data, context);
+    return data && converter(data, ...rest);
   };
 }

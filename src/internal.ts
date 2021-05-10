@@ -164,4 +164,5 @@ export {
   ModifyDistributionCheckpointParams,
 } from '~/api/procedures/modifyDistributionCheckpoint';
 export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
+export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
