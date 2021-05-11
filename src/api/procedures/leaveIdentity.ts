@@ -23,21 +23,10 @@ export async function prepareLeaveIdentity(
     context,
   } = this;
   const {
-    account,
     account: { address },
   } = args;
 
-  const [existingIdentity, currentIdentity] = await Promise.all([
-    account.getIdentity(),
-    context.getCurrentIdentity(),
-  ] as const);
-
-  if (!existingIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "You don't have a current identity to leave",
-    });
-  }
+  const currentIdentity = await context.getCurrentIdentity();
 
   const secondaryKeys = await currentIdentity.getSecondaryKeys();
   const isSecondaryKey = secondaryKeys.find(({ signer }) => address === signerToString(signer));
@@ -45,7 +34,7 @@ export async function prepareLeaveIdentity(
   if (!isSecondaryKey) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Only Seconday Keys are allowed to leave an identity',
+      message: 'Only Seconday Keys are allowed to leave an Identity',
     });
   }
 

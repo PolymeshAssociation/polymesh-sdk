@@ -41,23 +41,6 @@ describe('modifyCaCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the account does not have an Identity to leave', async () => {
-    const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
-    const account = entityMockUtils.getCurrentAccountInstance({
-      getIdentity: null,
-    });
-
-    let error;
-
-    try {
-      await prepareLeaveIdentity.call(proc, { account });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe("You don't have a current identity to leave");
-  });
-
   test('should throw an error if the account is not a secondary key', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getCurrentAccountInstance();
@@ -70,7 +53,7 @@ describe('modifyCaCheckpoint procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Only Seconday Keys are allowed to leave an identity');
+    expect(error.message).toBe('Only Seconday Keys are allowed to leave an Identity');
   });
 
   test('should add a leave identity as key transaction to the queue', async () => {

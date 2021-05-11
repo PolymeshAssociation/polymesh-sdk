@@ -28,7 +28,7 @@ export class CurrentAccount extends Account {
   }
 
   /**
-   * Leave the secondary key's identity
+   * Leave the current Identity. This operation can only be done if this Account is a secondary key for the Identity
    */
   public leaveIdentity: ProcedureMethod<void, void>;
 
