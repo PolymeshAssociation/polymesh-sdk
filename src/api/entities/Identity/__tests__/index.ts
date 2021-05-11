@@ -5,10 +5,12 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, ScopeId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, Entity, Identity } from '~/internal';
+import { Context, Entity, Identity, SecurityToken } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
+  DistributionWithDetails,
   Order,
   PortfolioCustodianRole,
   Role,
@@ -50,7 +52,7 @@ jest.mock(
 );
 
 describe('Identity class', () => {
-  let context: Context;
+  let context: MockContext;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
 
@@ -844,6 +846,108 @@ describe('Identity class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, boolValue);
+    });
+  });
+
+  describe('method: getPendingDistributions', () => {
+    let tokens: SecurityToken[];
+    let distributions: DistributionWithDetails[];
+    let expectedDistribution: DistributionWithDetails;
+
+    beforeAll(() => {
+      tokens = [
+        entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER_1' }),
+        entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER_2' }),
+      ];
+      const distributionTemplate = {
+        expiryDate: null,
+        perShare: new BigNumber(1),
+        checkpoint: entityMockUtils.getCheckpointInstance({
+          balance: new BigNumber(1000),
+        }),
+        paymentDate: new Date('10/14/1987'),
+      };
+      const detailsTemplate = {
+        remainingFunds: new BigNumber(10000),
+        fundsReclaimed: false,
+      };
+      expectedDistribution = {
+        distribution: entityMockUtils.getDividendDistributionInstance(distributionTemplate),
+        details: detailsTemplate,
+      };
+      distributions = [
+        expectedDistribution,
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance({
+            ...distributionTemplate,
+            expiryDate: new Date('10/14/1987'),
+          }),
+          details: detailsTemplate,
+        },
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance({
+            ...distributionTemplate,
+            paymentDate: new Date(new Date().getTime() + 3 * 60 * 1000),
+          }),
+          details: detailsTemplate,
+        },
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance(distributionTemplate),
+          details: { ...detailsTemplate, remainingFunds: new BigNumber(0) },
+        },
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance({
+            ...distributionTemplate,
+            perShare: new BigNumber(1000),
+          }),
+          details: detailsTemplate,
+        },
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance({
+            ...distributionTemplate,
+            id: new BigNumber(5),
+            ticker: 'HOLDER_PAID',
+          }),
+          details: detailsTemplate,
+        },
+      ];
+    });
+
+    beforeEach(() => {
+      context.getDividendDistributionsForTokens.withArgs({ tokens }).resolves(distributions);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return all distributions where the Identity can claim funds', async () => {
+      const holderPaidStub = dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid');
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      const rawCaId = dsMockUtils.createMockCAId({ ticker: 'HOLDER_PAID', local_id: 5 });
+      const rawIdentityId = dsMockUtils.createMockIdentityId('someDid');
+
+      sinon
+        .stub(utilsConversionModule, 'stringToIdentityId')
+        .withArgs('someDid', context)
+        .returns(rawIdentityId);
+      sinon
+        .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
+        .withArgs({ ticker: 'HOLDER_PAID', localId: new BigNumber(5) }, context)
+        .returns(rawCaId);
+
+      holderPaidStub.resolves(dsMockUtils.createMockBool(false));
+      holderPaidStub.withArgs([rawCaId, rawIdentityId]).resolves(dsMockUtils.createMockBool(true));
+
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      const heldTokensStub = sinon.stub(identity, 'getHeldTokens');
+      heldTokensStub.onFirstCall().resolves({ data: [tokens[0]], next: 1 });
+      heldTokensStub.onSecondCall().resolves({ data: [tokens[1]], next: null });
+
+      const result = await identity.getPendingDistributions();
+
+      expect(result).toEqual([expectedDistribution]);
     });
   });
 });

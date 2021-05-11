@@ -7,7 +7,14 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, SecondaryKey, Signer, TransactionArgumentType } from '~/types';
+import {
+  ClaimType,
+  CorporateActionKind,
+  SecondaryKey,
+  Signer,
+  TargetTreatment,
+  TransactionArgumentType,
+} from '~/types';
 import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
@@ -33,6 +40,24 @@ jest.mock(
 jest.mock(
   '~/api/entities/CurrentAccount',
   require('~/testUtils/mocks/entities').mockCurrentAccountModule('~/api/entities/CurrentAccount')
+);
+jest.mock(
+  '~/api/entities/DividendDistribution',
+  require('~/testUtils/mocks/entities').mockDividendDistributionModule(
+    '~/api/entities/DividendDistribution'
+  )
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
 );
 
 // TODO: refactor tests (too much repeated code)
@@ -1511,6 +1536,146 @@ describe('Context class', () => {
       expect(() => context.getAccounts()).toThrow(
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
       );
+    });
+  });
+
+  describe('method: getDividendDistributionsForTokens', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return all distributions associated to the passed tokens', async () => {
+      const tickers = ['TICKER_0', 'TICKER_1', 'TICKER_2'];
+      const rawTickers = tickers.map(dsMockUtils.createMockTicker);
+
+      const polymeshApi = dsMockUtils.getApiInstance();
+      const middlewareApi = dsMockUtils.getMiddlewareApi();
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApi,
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      /* eslint-disable @typescript-eslint/camelcase */
+      const corporateActions = [
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockCorporateAction({
+            kind: CorporateActionKind.UnpredictableBenefit,
+            decl_date: new Date('10/14/1987').getTime(),
+            record_date: dsMockUtils.createMockRecordDate({
+              date: new Date('10/14/2019').getTime(),
+              checkpoint: { Existing: dsMockUtils.createMockU64(2) },
+            }),
+            details: 'someDescription',
+            targets: {
+              identities: ['someDid'],
+              treatment: TargetTreatment.Exclude,
+            },
+            default_withholding_tax: 100000,
+            withholding_tax: [tuple('someDid', 300000)],
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockCorporateAction({
+            kind: CorporateActionKind.Reorganization,
+            decl_date: new Date('10/14/1987').getTime(),
+            record_date: null,
+            details: 'dummy',
+            targets: {
+              identities: [],
+              treatment: TargetTreatment.Exclude,
+            },
+            default_withholding_tax: 0,
+            withholding_tax: [],
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockCorporateAction({
+            kind: CorporateActionKind.UnpredictableBenefit,
+            decl_date: new Date('11/26/1989').getTime(),
+            record_date: dsMockUtils.createMockRecordDate({
+              date: new Date('11/26/2019').getTime(),
+              checkpoint: { Existing: dsMockUtils.createMockU64(5) },
+            }),
+            details: 'otherDescription',
+            targets: {
+              identities: [],
+              treatment: TargetTreatment.Exclude,
+            },
+            default_withholding_tax: 150000,
+            withholding_tax: [tuple('someDid', 200000)],
+          })
+        ),
+      ];
+
+      const distributions = [
+        dsMockUtils.createMockDistribution({
+          from: { kind: 'Default', did: 'someDid' },
+          currency: 'USD',
+          per_share: 10000000,
+          amount: 500000000000,
+          remaining: 400000000000,
+          reclaimed: false,
+          payment_at: new Date('10/14/1987').getTime(),
+          expires_at: null,
+        }),
+        dsMockUtils.createMockDistribution({
+          from: { kind: { User: dsMockUtils.createMockU64(2) }, did: 'someDid' },
+          currency: 'CAD',
+          per_share: 20000000,
+          amount: 300000000000,
+          remaining: 200000000000,
+          reclaimed: false,
+          payment_at: new Date('11/26/1989').getTime(),
+          expires_at: null,
+        }),
+      ];
+
+      /* eslint-enable @typescript-eslint/camelcase */
+      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+        entries: [
+          [[rawTickers[0], dsMockUtils.createMockU32(1)], corporateActions[0]],
+          [[rawTickers[1], dsMockUtils.createMockU32(2)], corporateActions[1]],
+          [[rawTickers[1], dsMockUtils.createMockU32(3)], corporateActions[2]],
+        ],
+      });
+
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        multi: distributions,
+      });
+
+      const stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+
+      tickers.forEach((ticker, index) =>
+        stringToTickerStub.withArgs(ticker, context).returns(rawTickers[index])
+      );
+
+      const result = await context.getDividendDistributionsForTokens({
+        tokens: tickers.map(ticker => entityMockUtils.getSecurityTokenInstance({ ticker })),
+      });
+
+      expect(result.length).toBe(2);
+      expect(result[0].details.fundsReclaimed).toBe(false);
+      expect(result[0].details.remainingFunds).toEqual(new BigNumber(400000));
+      expect(result[0].distribution.origin).toEqual(
+        entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })
+      );
+      expect(result[0].distribution.currency).toBe('USD');
+      expect(result[0].distribution.perShare).toEqual(new BigNumber(10));
+      expect(result[0].distribution.maxAmount).toEqual(new BigNumber(500000));
+      expect(result[0].distribution.expiryDate).toBe(null);
+      expect(result[0].distribution.paymentDate).toEqual(new Date('10/14/1987'));
+
+      expect(result[1].details.fundsReclaimed).toBe(false);
+      expect(result[1].details.remainingFunds).toEqual(new BigNumber(200000));
+      expect(result[1].distribution.origin).toEqual(
+        entityMockUtils.getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(2) })
+      );
+      expect(result[1].distribution.currency).toBe('CAD');
+      expect(result[1].distribution.perShare).toEqual(new BigNumber(20));
+      expect(result[1].distribution.maxAmount).toEqual(new BigNumber(300000));
+      expect(result[1].distribution.expiryDate).toBe(null);
+      expect(result[1].distribution.paymentDate).toEqual(new Date('11/26/1989'));
     });
   });
 });
