@@ -2541,7 +2541,7 @@ export function getDividendDistributionInstance(
 
 /**
  * @hidden
- * Retrieve the stub of the `CheckpointSchedule.checkpoint` method
+ * Retrieve the stub of the `DividendDistribution.checkpoint` method
  */
 export function getDividendDistributionCheckpointStub(
   checkpoint?: Checkpoint | CheckpointSchedule
