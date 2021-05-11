@@ -315,8 +315,8 @@ export class DividendDistribution extends CorporateAction {
     const { ticker, id: localId, context } = this;
 
     /*
-       For optimization, we separate the participants into chunks that can fit into one multi call
-       and then sequentially perform bunches of said multi requests in parallel
+     * For optimization, we separate the participants into chunks that can fit into one multi call
+     * and then sequentially perform bunches of said multi requests in parallel
      */
     const participantChunks = chunk(participants, MAX_PAGE_SIZE);
     const parallelCallChunks = chunk(participantChunks, MAX_CONCURRENT_REQUESTS);
