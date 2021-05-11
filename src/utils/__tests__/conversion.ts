@@ -6,6 +6,7 @@ import {
   CalendarPeriod as MeshCalendarPeriod,
   CddId,
   ComplianceRequirement,
+  EcdsaSignature,
   InvestorZKProofData,
   Memo,
   MovePortfolioItem,
@@ -203,6 +204,7 @@ import {
   stringToDocumentName,
   stringToDocumentType,
   stringToDocumentUri,
+  stringToEcdsaSignature,
   stringToFundingRoundName,
   stringToIdentityId,
   stringToInvestorZKProofData,
@@ -644,6 +646,32 @@ describe('stringToIdentityId and identityIdToString', () => {
     const identityId = dsMockUtils.createMockIdentityId(fakeResult);
 
     const result = identityIdToString(identityId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('stringToEcdsaSignature', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should convert a signature string into a polkadot EcdsaSignature object', () => {
+    const signature = 'hexSig';
+    const fakeResult = ('sig' as unknown) as EcdsaSignature;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.getCreateTypeStub().withArgs('EcdsaSignature', signature).returns(fakeResult);
+
+    const result = stringToEcdsaSignature(signature, context);
+
     expect(result).toBe(fakeResult);
   });
 });

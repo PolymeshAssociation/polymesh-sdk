@@ -167,3 +167,4 @@ export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDivide
 export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';
+export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';
