@@ -105,7 +105,7 @@ describe('transferTickerOwnership procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
 
     return expect(prepareTransferTickerOwnership.call(proc, args)).rejects.toThrow(
-      'A Security Token has been created using this reserved ticker'
+      'A Security Token with this ticker has already been created'
     );
   });
 
