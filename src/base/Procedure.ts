@@ -131,9 +131,7 @@ export class Procedure<
   }
 
   /**
-   *
-   * @param args
-   * @param context
+   * @hidden
    */
   private async _checkAuthorization(
     args: Args,
