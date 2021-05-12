@@ -53,6 +53,7 @@ import {
   DocumentName,
   DocumentType,
   DocumentUri,
+  EcdsaSignature,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -340,6 +341,13 @@ export function stringToIdentityId(identityId: string, context: Context): Identi
  */
 export function identityIdToString(identityId: IdentityId): string {
   return identityId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToEcdsaSignature(signature: string, context: Context): EcdsaSignature {
+  return context.polymeshApi.createType('EcdsaSignature', signature);
 }
 
 /**
