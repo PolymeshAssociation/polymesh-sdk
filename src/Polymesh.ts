@@ -429,10 +429,17 @@ export class Polymesh {
       context,
     } = this;
 
-    const tickerReservation = await asset.tickers(stringToTicker(ticker, context));
+    const { owner, expiry } = await asset.tickers(stringToTicker(ticker, context));
 
-    if (!tickerReservation.owner.isEmpty) {
-      return new TickerReservation({ ticker }, context);
+    if (!owner.isEmpty) {
+      if (!expiry.isNone) {
+        return new TickerReservation({ ticker }, context);
+      }
+
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `${ticker} token has been created`,
+      });
     }
 
     throw new PolymeshError({

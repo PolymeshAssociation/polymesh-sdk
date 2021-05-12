@@ -614,11 +614,12 @@ describe('Polymesh Class', () => {
   describe('method: getTickerReservation', () => {
     test('should return a specific ticker reservation owned by the Identity', async () => {
       const ticker = 'TEST';
+      const expiry = new Date();
 
       dsMockUtils.createQueryStub('asset', 'tickers', {
         returnValue: dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId('someDid'),
-          expiry: dsMockUtils.createMockOption(),
+          expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiry.getTime())),
         }),
       });
 
@@ -648,6 +649,26 @@ describe('Polymesh Class', () => {
 
       return expect(polymesh.getTickerReservation({ ticker })).rejects.toThrow(
         `There is no reservation for ${ticker} ticker`
+      );
+    });
+
+    test('should throw if ticker is already a token', async () => {
+      const ticker = 'TEST';
+
+      dsMockUtils.createQueryStub('asset', 'tickers', {
+        returnValue: dsMockUtils.createMockTickerRegistration({
+          owner: dsMockUtils.createMockIdentityId('someDid'),
+          expiry: dsMockUtils.createMockOption(),
+        }),
+      });
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      return expect(polymesh.getTickerReservation({ ticker })).rejects.toThrow(
+        `${ticker} token has been created`
       );
     });
   });
