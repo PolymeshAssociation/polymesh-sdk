@@ -253,15 +253,27 @@ describe('Account class', () => {
       result = await account.isFrozen();
       expect(result).toBe(false);
 
+      const otherAddress = 'otherAddress';
+
       result = await entityMockUtils
         .getAccountInstance({
-          address: 'otherAddress',
+          address: otherAddress,
           getIdentity: entityMockUtils.getIdentityInstance({
             areScondaryKeysFrozen: false,
           }),
         })
         .isFrozen();
       expect(result).toBe(false);
+
+      result = await entityMockUtils
+        .getAccountInstance({
+          address: otherAddress,
+          getIdentity: entityMockUtils.getIdentityInstance({
+            areScondaryKeysFrozen: true,
+          }),
+        })
+        .isFrozen();
+      expect(result).toBe(true);
     });
   });
 });

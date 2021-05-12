@@ -206,7 +206,7 @@ export class Account extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Check whether this account is frozen
+   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary key of the Identity unfreezes all secondary keys
    */
   public async isFrozen(): Promise<boolean> {
     const { address } = this;

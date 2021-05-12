@@ -50,7 +50,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
-        isFrozenKey: false,
+        accountFrozen: false,
       });
 
       context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
@@ -67,7 +67,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: false,
         roles: false,
-        isFrozenKey: false,
+        accountFrozen: false,
       });
 
       procedure = new Procedure(prepareFunc, { signerPermissions: true, identityRoles: true });
@@ -76,7 +76,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
-        isFrozenKey: false,
+        accountFrozen: false,
       });
     });
   });
@@ -271,7 +271,7 @@ describe('Procedure class', () => {
       context = dsMockUtils.getContextInstance({ isFrozen: true });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Account can't execute this procedure with frozen keys"
+        "Current Account can't execute this procedure because it is frozen"
       );
     });
   });
