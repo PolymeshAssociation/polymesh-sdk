@@ -272,6 +272,7 @@ interface ContextOptions {
   isArchiveNode?: boolean;
   ss58Format?: number;
   areScondaryKeysFrozen?: boolean;
+  isFrozen?: boolean;
 }
 
 interface Pair {
@@ -548,6 +549,7 @@ const defaultContextOptions: ContextOptions = {
   isArchiveNode: true,
   ss58Format: 42,
   areScondaryKeysFrozen: false,
+  isFrozen: false,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -589,6 +591,7 @@ function configureContext(opts: ContextOptions): void {
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
+        isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
     : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
   const currentPair = opts.withSeed
