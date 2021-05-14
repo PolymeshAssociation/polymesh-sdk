@@ -204,4 +204,25 @@ export class Account extends Entity<UniqueIdentifiers> {
       count,
     };
   }
+
+  /**
+   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary key of the Identity unfreezes all secondary keys
+   */
+  public async isFrozen(): Promise<boolean> {
+    const { address } = this;
+
+    const identity = await this.getIdentity();
+
+    if (identity === null) {
+      return false;
+    }
+
+    const primaryKey = await identity.getPrimaryKey();
+
+    if (address === primaryKey) {
+      return false;
+    }
+
+    return identity.areSecondaryKeysFrozen();
+  }
 }
