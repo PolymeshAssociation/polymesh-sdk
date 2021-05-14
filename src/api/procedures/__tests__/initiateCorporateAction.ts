@@ -222,7 +222,7 @@ describe('initiateCorporateAction procedure', () => {
   test('should add a initiate corporate action transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
-    let result = await prepareInitiateCorporateAction.call(proc, {
+    const result = await prepareInitiateCorporateAction.call(proc, {
       ticker,
       kind,
       declarationDate,
@@ -254,7 +254,7 @@ describe('initiateCorporateAction procedure', () => {
 
     expect(result).toEqual(rawCaId);
 
-    result = await prepareInitiateCorporateAction.call(proc, {
+    await prepareInitiateCorporateAction.call(proc, {
       ticker,
       kind,
       declarationDate,
