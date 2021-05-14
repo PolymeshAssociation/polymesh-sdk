@@ -440,7 +440,7 @@ describe('assertCaCheckpointValid', () => {
 
     checkpoint = new Date(new Date().getTime() + 100000);
 
-    await expect(() => assertCaCheckpointValid(checkpoint)).not.toThrow();
+    return expect(assertCaCheckpointValid(checkpoint)).resolves.not.toThrow();
   });
 
   test('should throw an error if the checkpoint does not exist', async () => {
@@ -461,7 +461,7 @@ describe('assertCaCheckpointValid', () => {
       exists: true,
     });
 
-    await expect(() => assertCaCheckpointValid(checkpoint)).not.toThrow();
+    return expect(assertCaCheckpointValid(checkpoint)).resolves.not.toThrow();
   });
 
   test('should throw an error if checkpoint schedule no longer exists', async () => {
@@ -559,8 +559,8 @@ describe('assertCaCheckpointValid', () => {
       },
     });
 
-    await expect(() =>
+    return expect(
       assertDistributionDatesValid(checkpoint, paymentDate, expiryDate)
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 });
