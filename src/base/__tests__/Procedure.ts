@@ -50,6 +50,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
+        accountFrozen: false,
       });
 
       context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
@@ -66,6 +67,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: false,
         roles: false,
+        accountFrozen: false,
       });
 
       procedure = new Procedure(prepareFunc, { signerPermissions: true, identityRoles: true });
@@ -74,6 +76,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
+        accountFrozen: false,
       });
     });
   });
@@ -229,7 +232,11 @@ describe('Procedure class', () => {
       let proc = new Procedure(func, {
         identityRoles: [({ type: 'FakeRole' } as unknown) as Role],
       });
-      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
+      context = dsMockUtils.getContextInstance({
+        hasRoles: false,
+        hasPermissions: false,
+        isFrozen: false,
+      });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"
@@ -259,6 +266,12 @@ describe('Procedure class', () => {
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"
+      );
+
+      context = dsMockUtils.getContextInstance({ isFrozen: true });
+
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
+        "Current Account can't execute this procedure because it is frozen"
       );
     });
   });

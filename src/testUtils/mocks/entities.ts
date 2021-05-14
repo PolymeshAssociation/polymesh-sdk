@@ -295,6 +295,7 @@ let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
 let identityGetTokenBalanceStub: SinonStub;
+let identityAreSecondaryKeysFrozenStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -1126,6 +1127,7 @@ function configureIdentity(opts: IdentityOptions): void {
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
     getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
+    areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1150,6 +1152,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
   identityGetTokenBalanceStub = sinon.stub();
+  identityAreSecondaryKeysFrozenStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 

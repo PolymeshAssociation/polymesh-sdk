@@ -852,6 +852,7 @@ export interface PortfolioMovement {
 export interface ProcedureAuthorizationStatus {
   permissions: boolean;
   roles: boolean;
+  accountFrozen: boolean;
 }
 
 interface TransferRestrictionBase {
