@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+/* eslint-disable @typescript-eslint/naming-convention */
 
 import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
@@ -66,6 +67,25 @@ import {
   // TxTags,
 } from '~/types';
 
+type MockIdentity = Mocked<Identity>;
+type MockCurrentIdentity = Mocked<CurrentIdentity>;
+type MockAccount = Mocked<Account>;
+type MockCurrentAccount = Mocked<CurrentAccount>;
+type MockTickerReservation = Mocked<TickerReservation>;
+type MockSecurityToken = Mocked<SecurityToken>;
+type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
+// NOTE uncomment in Governance v2 upgrade
+// type MockProposal = Mocked<Proposal>;
+type MockVenue = Mocked<Venue>;
+type MockInstruction = Mocked<Instruction>;
+type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
+type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
+type MockSto = Mocked<Sto>;
+type MockCheckpoint = Mocked<Checkpoint>;
+type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
+type MockCorporateAction = Mocked<CorporateAction>;
+type MockDividendDistribution = Mocked<DividendDistribution>;
+
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
   currentIdentity: {} as MockCurrentIdentity,
@@ -86,25 +106,6 @@ const mockInstanceContainer = {
   corporateAction: {} as MockCorporateAction,
   dividendDistribution: {} as MockDividendDistribution,
 };
-
-type MockIdentity = Mocked<Identity>;
-type MockCurrentIdentity = Mocked<CurrentIdentity>;
-type MockAccount = Mocked<Account>;
-type MockCurrentAccount = Mocked<CurrentAccount>;
-type MockTickerReservation = Mocked<TickerReservation>;
-type MockSecurityToken = Mocked<SecurityToken>;
-type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
-// NOTE uncomment in Governance v2 upgrade
-// type MockProposal = Mocked<Proposal>;
-type MockVenue = Mocked<Venue>;
-type MockInstruction = Mocked<Instruction>;
-type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
-type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
-type MockSto = Mocked<Sto>;
-type MockCheckpoint = Mocked<Checkpoint>;
-type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
-type MockCorporateAction = Mocked<CorporateAction>;
-type MockDividendDistribution = Mocked<DividendDistribution>;
 
 interface IdentityOptions {
   did?: string;
@@ -486,87 +487,87 @@ const MockDividendDistributionClass = class {
   }
 };
 
-export const mockIdentityModule = (path: string) => (): object => ({
+export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
 });
 
-export const mockCurrentIdentityModule = (path: string) => (): object => ({
+export const mockCurrentIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CurrentIdentity: MockCurrentIdentityClass,
 });
 
-export const mockAccountModule = (path: string) => (): object => ({
+export const mockAccountModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Account: MockAccountClass,
 });
 
-export const mockCurrentAccountModule = (path: string) => (): object => ({
+export const mockCurrentAccountModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CurrentAccount: MockCurrentAccountClass,
 });
 
-export const mockTickerReservationModule = (path: string) => (): object => ({
+export const mockTickerReservationModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   TickerReservation: MockTickerReservationClass,
 });
 
-export const mockSecurityTokenModule = (path: string) => (): object => ({
+export const mockSecurityTokenModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   SecurityToken: MockSecurityTokenClass,
 });
 
-export const mockAuthorizationRequestModule = (path: string) => (): object => ({
+export const mockAuthorizationRequestModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   AuthorizationRequest: MockAuthorizationRequestClass,
 });
 
-export const mockProposalModule = (path: string) => (): object => ({
+export const mockProposalModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Proposal: MockProposalClass,
 });
 
-export const mockVenueModule = (path: string) => (): object => ({
+export const mockVenueModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Venue: MockVenueClass,
 });
 
-export const mockInstructionModule = (path: string) => (): object => ({
+export const mockInstructionModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Instruction: MockInstructionClass,
 });
 
-export const mockNumberedPortfolioModule = (path: string) => (): object => ({
+export const mockNumberedPortfolioModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   NumberedPortfolio: MockNumberedPortfolioClass,
 });
 
-export const mockDefaultPortfolioModule = (path: string) => (): object => ({
+export const mockDefaultPortfolioModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
-export const mockStoModule = (path: string) => (): object => ({
+export const mockStoModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Sto: MockStoClass,
 });
 
-export const mockCheckpointModule = (path: string) => (): object => ({
+export const mockCheckpointModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Checkpoint: MockCheckpointClass,
 });
 
-export const mockCheckpointScheduleModule = (path: string) => (): object => ({
+export const mockCheckpointScheduleModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CheckpointSchedule: MockCheckpointScheduleClass,
 });
 
-export const mockCorporateActionModule = (path: string) => (): object => ({
+export const mockCorporateActionModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CorporateAction: MockCorporateActionClass,
 });
 
-export const mockDividendDistributionModule = (path: string) => (): object => ({
+export const mockDividendDistributionModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   DividendDistribution: MockDividendDistributionClass,
 });

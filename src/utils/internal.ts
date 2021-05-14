@@ -72,7 +72,7 @@ export async function delay(amount: number): Promise<void> {
  * @hidden
  * Convert an entity type and its unique Identifiers to a base64 string
  */
-export function serialize<UniqueIdentifiers extends object>(
+export function serialize<UniqueIdentifiers>(
   entityType: string,
   uniqueIdentifiers: UniqueIdentifiers
 ): string {
@@ -83,7 +83,7 @@ export function serialize<UniqueIdentifiers extends object>(
  * @hidden
  * Convert a uuid string to an Identifier object
  */
-export function unserialize<UniqueIdentifiers extends object>(id: string): UniqueIdentifiers {
+export function unserialize<UniqueIdentifiers>(id: string): UniqueIdentifiers {
   const unserialized = Buffer.from(id, 'base64').toString('utf8');
 
   const matched = unserialized.match(/^.*?:(.*)/);
@@ -402,7 +402,7 @@ export function createProcedureMethod<
   MethodArgs,
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
-  Storage = {}
+  Storage = Record<string, unknown>
 >(
   args: {
     getProcedureAndArgs: (
@@ -422,7 +422,7 @@ export function createProcedureMethod<
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   ReturnValue,
-  Storage = {}
+  Storage = Record<string, unknown>
 >(
   args: {
     getProcedureAndArgs: (
@@ -444,7 +444,7 @@ export function createProcedureMethod<
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   ReturnValue = ProcedureReturnValue,
-  Storage = {}
+  Storage = Record<string, unknown>
 >(
   args: {
     getProcedureAndArgs: (

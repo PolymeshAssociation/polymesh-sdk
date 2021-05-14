@@ -93,7 +93,7 @@ describe('cancelProposal procedure', () => {
 //         returnValue: dsMockUtils.createMockOption(
 //           dsMockUtils.createMockPipsMetadata({
 //             proposer: dsMockUtils.createMockAccountId(mockAddress),
-//             // eslint-disable-next-line @typescript-eslint/camelcase
+//             // eslint-disable-next-line @typescript-eslint/naming-convention
 //             cool_off_until: dsMockUtils.createMockU32(),
 //             end: dsMockUtils.createMockU32(),
 //           })

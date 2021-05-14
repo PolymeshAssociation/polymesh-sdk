@@ -24,8 +24,8 @@ import {
   ReserveTickerParams,
   SecurityToken,
   TickerReservation,
-  transferPolyX,
-  TransferPolyXParams,
+  transferPolyx,
+  TransferPolyxParams,
 } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import {
@@ -87,8 +87,8 @@ export class Polymesh {
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
 
-    this.transferPolyX = createProcedureMethod(
-      { getProcedureAndArgs: args => [transferPolyX, args] },
+    this.transferPolyx = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferPolyx, args] },
       context
     );
 
@@ -275,7 +275,7 @@ export class Polymesh {
    * @param args.memo - identifier string to help differentiate transfers
    */
 
-  public transferPolyX: ProcedureMethod<TransferPolyXParams, void>;
+  public transferPolyx: ProcedureMethod<TransferPolyxParams, void>;
 
   /**
    * Get the free/locked POLYX balance of an Account
@@ -675,6 +675,7 @@ export class Polymesh {
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
+  /* eslint-disable @typescript-eslint/naming-convention */
   /* istanbul ignore next: only for testing purposes */
   /**
    * Polkadot client
@@ -682,4 +683,5 @@ export class Polymesh {
   public get _polkadotApi(): ApiPromise {
     return this.context.polymeshApi;
   }
+  /* eslint-enable @typescript-eslint/naming-convention */
 }

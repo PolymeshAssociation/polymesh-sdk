@@ -96,7 +96,7 @@ describe('Distributions class', () => {
 
       const context = dsMockUtils.getContextInstance();
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const corporateActions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
@@ -171,7 +171,7 @@ describe('Distributions class', () => {
         }),
       ];
 
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         entries: [
           [[rawTicker, dsMockUtils.createMockU32(1)], corporateActions[0]],

@@ -121,7 +121,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }): Promise<PortfolioBalance[]> {
     const {
       owner: { did },
-      _id,
+      _id: number,
       context: {
         polymeshApi: {
           query: { portfolio },
@@ -130,7 +130,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: _id }, context);
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
     const [totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
       portfolio.portfolioAssetBalances.entries(rawPortfolioId),
       portfolio.portfolioLockedAssets.entries(rawPortfolioId),
@@ -216,7 +216,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const {
       owner,
       owner: { did },
-      _id,
+      _id: number,
       context: {
         polymeshApi: {
           query: { portfolio },
@@ -225,7 +225,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: _id }, context);
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
     const portfolioCustodian = await portfolio.portfolioCustodian(rawPortfolioId);
 
     try {
@@ -258,7 +258,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const {
       context,
       owner: { did },
-      _id,
+      _id: number,
     } = this;
 
     const { account, ticker, size, start } = filters;
@@ -266,7 +266,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const result = await context.queryMiddleware<Ensured<Query, 'settlements'>>(
       settlements({
         identityId: did,
-        portfolioNumber: _id ? _id.toString() : null,
+        portfolioNumber: number ? number.toString() : null,
         addressFilter: account ? addressToKey(account, context) : undefined,
         tickerFilter: ticker,
         count: size,

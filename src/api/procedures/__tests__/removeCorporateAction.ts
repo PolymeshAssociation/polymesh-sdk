@@ -29,7 +29,7 @@ describe('removeCorporateAction procedure', () => {
 
   const ticker = 'SOMETICKER';
   const id = new BigNumber(1);
-  // eslint-disable-next-line @typescript-eslint/camelcase
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
 
   beforeAll(() => {
@@ -94,7 +94,7 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           from: {
             kind: 'Default',
             did: 'someDid',
@@ -106,7 +106,7 @@ describe('removeCorporateAction procedure', () => {
           payment_at: new Date('1/1/2020').getTime(),
           expires_at: null,
           reclaimed: false,
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
@@ -150,7 +150,7 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           from: {
             kind: 'Default',
             did: 'someDid',
@@ -162,7 +162,7 @@ describe('removeCorporateAction procedure', () => {
           payment_at: new Date('10/10/2030').getTime(),
           expires_at: null,
           reclaimed: false,
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
