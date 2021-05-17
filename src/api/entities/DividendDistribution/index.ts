@@ -278,8 +278,8 @@ export class DividendDistribution extends CorporateAction {
    * Retrieve an Identity that is entitled to dividends in this Distribution (participant),
    *   the amount it is entitled to and whether it have been paid or not
    *
-   * @note if the Distribution Checkpoint hasn't been created yet, the result will be an empty array.
-   *   This is because the Distribution participants cannot be determined without a Checkpoint
+   * @note if the Distribution Checkpoint hasn't been created yet, the result will be null.
+   *   This is because the Distribution participant cannot be determined without a Checkpoint
    */
   public async getParticipant(args: {
     identity: string | Identity;
