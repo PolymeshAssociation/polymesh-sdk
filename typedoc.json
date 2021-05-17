@@ -1,7 +1,6 @@
 {
-  "mode": "file",
   "out": "docs",
-  "theme": "gitbook",
+  "theme": "markdown",
   "exclude": [
     "**/{__tests__,polkadot,testUtils,middleware}/*",
     "**/sandbox.ts",
@@ -17,6 +16,5 @@
     "src/context/index.ts"
   ],
   "excludeExternals": true,
-  "excludePrivate": true,
-  "ignoreCompilerErrors": true
+  "excludePrivate": true
 }
