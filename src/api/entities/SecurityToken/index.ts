@@ -196,7 +196,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = ({
       name,
       total_supply,
@@ -217,7 +217,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
           : owner,
       };
     };
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 

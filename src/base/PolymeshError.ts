@@ -1,6 +1,6 @@
 import { ErrorCode } from '~/types';
 
-export const ErrorMessagesPerCode: {
+const defaultMessages: {
   [errorCode: string]: string;
 } = {
   [ErrorCode.TransactionReverted]: 'The transaction execution reverted due to an error',
@@ -29,7 +29,7 @@ export class PolymeshError extends Error {
     code: ErrorCode;
     data?: Record<string, unknown>;
   }) {
-    super(message || ErrorMessagesPerCode[code] || `Unknown error, code: ${code}`);
+    super(message || defaultMessages[code] || `Unknown error, code: ${code}`);
 
     this.code = code || ErrorCode.FatalError;
     this.data = data;

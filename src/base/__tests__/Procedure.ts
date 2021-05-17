@@ -5,20 +5,37 @@ import { range } from 'lodash';
 import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import * as baseModule from '~/internal';
-import { dsMockUtils } from '~/testUtils/mocks';
+import {
+  Context,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
+import { dsMockUtils, polymeshTransactionMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { KeyringPair, Role, RoleType } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
-const { Procedure } = baseModule;
+jest.mock(
+  '~/base/TransactionQueue',
+  require('~/testUtils/mocks/procedure').mockTransactionQueueModule('~/base/TransactionQueue')
+);
+jest.mock(
+  '~/base/PolymeshTransaction',
+  require('~/testUtils/mocks/polymeshTransaction').mockPolymeshTransactionModule(
+    '~/base/PolymeshTransaction'
+  )
+);
 
 describe('Procedure class', () => {
-  let context: baseModule.Context;
+  let context: Context;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
+    polymeshTransactionMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -27,10 +44,13 @@ describe('Procedure class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    procedureMockUtils.reset();
+    polymeshTransactionMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   describe('method: checkAuthorization', () => {
@@ -50,6 +70,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
+        accountFrozen: false,
       });
 
       context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
@@ -66,6 +87,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: false,
         roles: false,
+        accountFrozen: false,
       });
 
       procedure = new Procedure(prepareFunc, { signerPermissions: true, identityRoles: true });
@@ -74,6 +96,7 @@ describe('Procedure class', () => {
       expect(result).toEqual({
         permissions: true,
         roles: true,
+        accountFrozen: false,
       });
     });
   });
@@ -81,7 +104,7 @@ describe('Procedure class', () => {
   describe('method: prepare', () => {
     let posRatioToBigNumberStub: sinon.SinonStub<[PosRatio], BigNumber>;
     let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
-    let txTagToProtocolOpStub: sinon.SinonStub<[TxTag, baseModule.Context], ProtocolOp>;
+    let txTagToProtocolOpStub: sinon.SinonStub<[TxTag, Context], ProtocolOp>;
     let txTags: TxTag[];
     let fees: number[];
     let rawCoefficient: PosRatio;
@@ -139,7 +162,7 @@ describe('Procedure class', () => {
       const returnValue = 'good';
 
       const func1 = async function (
-        this: baseModule.Procedure<typeof procArgs, string>,
+        this: Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<string> {
         this.addTransaction(tx1, {}, args.ticker);
@@ -149,27 +172,31 @@ describe('Procedure class', () => {
         return returnValue;
       };
 
+      const constructorStub = procedureMockUtils.getTransactionQueueConstructorStub();
+
       const proc1 = new Procedure(func1);
 
-      const constructorSpy = sinon.spy(baseModule, 'TransactionQueue');
+      let queue = await proc1.prepare({ args: procArgs }, context);
 
-      let { transactions } = await proc1.prepare({ args: procArgs }, context);
-
-      expect(transactions.length).toBe(2);
+      expect(queue).toMatchObject({
+        transactions: [
+          { tx: tx1, args: [ticker] },
+          { tx: tx2, args: [secondaryKeys] },
+        ],
+      });
       sinon.assert.calledWith(
-        constructorSpy,
+        constructorStub,
         sinon.match({
           transactions: sinon.match([
             sinon.match({ tx: tx1, args: [ticker] }),
             sinon.match({ tx: tx2, args: [secondaryKeys] }),
           ]),
-          procedureResult: returnValue,
         }),
         context
       );
 
       const func2 = async function (
-        this: baseModule.Procedure<typeof procArgs, string>,
+        this: Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<MaybePostTransactionValue<string>> {
         return this.addProcedure(proc1, args);
@@ -177,11 +204,16 @@ describe('Procedure class', () => {
 
       const proc2 = new Procedure(func2);
 
-      ({ transactions } = await proc2.prepare({ args: procArgs }, context));
-
-      expect(transactions.length).toBe(2);
+      queue = await proc2.prepare({ args: procArgs }, context);
+      expect(queue).toMatchObject({
+        transactions: [
+          { tx: tx1, args: [ticker] },
+          { tx: tx2, args: [secondaryKeys] },
+        ],
+        procedureResult: returnValue,
+      });
       sinon.assert.calledWith(
-        constructorSpy,
+        constructorStub,
         sinon.match({
           transactions: sinon.match([
             sinon.match({ tx: tx1, args: [ticker] }),
@@ -202,9 +234,7 @@ describe('Procedure class', () => {
       };
 
       const errorMsg = 'failed';
-      const func = async function (
-        this: baseModule.Procedure<typeof procArgs, string>
-      ): Promise<string> {
+      const func = async function (this: Procedure<typeof procArgs, string>): Promise<string> {
         throw new Error(errorMsg);
       };
 
@@ -220,16 +250,18 @@ describe('Procedure class', () => {
         ticker,
         secondaryKeys,
       };
-      const func = async function (
-        this: baseModule.Procedure<typeof procArgs, string>
-      ): Promise<string> {
+      const func = async function (this: Procedure<typeof procArgs, string>): Promise<string> {
         return 'success';
       };
 
       let proc = new Procedure(func, {
         identityRoles: [({ type: 'FakeRole' } as unknown) as Role],
       });
-      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
+      context = dsMockUtils.getContextInstance({
+        hasRoles: false,
+        hasPermissions: false,
+        isFrozen: false,
+      });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"
@@ -259,6 +291,12 @@ describe('Procedure class', () => {
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"
+      );
+
+      context = dsMockUtils.getContextInstance({ isFrozen: true });
+
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
+        "Current Account can't execute this procedure because it is frozen"
       );
     });
   });
@@ -339,7 +377,7 @@ describe('Procedure class', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transactions = (proc as any).transactions;
-      expect(transactions[0] instanceof baseModule.PolymeshTransaction).toBe(true);
+      expect(transactions[0] instanceof PolymeshTransaction).toBe(true);
       expect(transactions.length).toBe(1);
     });
 
@@ -353,7 +391,7 @@ describe('Procedure class', () => {
       let i = 0;
 
       proc.addBatchTransaction(
-        new baseModule.PostTransactionValue(() => tx),
+        new PostTransactionValue(() => tx),
         {
           fee: new BigNumber(100),
           groupByFn: () => `${i++}`,
@@ -365,8 +403,8 @@ describe('Procedure class', () => {
       const transactions = (proc as any).transactions;
 
       expect(transactions.length).toBe(2);
-      expect(transactions[0] instanceof baseModule.PolymeshTransactionBatch).toBe(true);
-      expect(transactions[1] instanceof baseModule.PolymeshTransactionBatch).toBe(true);
+      expect(transactions[0] instanceof PolymeshTransactionBatch).toBe(true);
+      expect(transactions[1] instanceof PolymeshTransactionBatch).toBe(true);
     });
   });
 
@@ -397,7 +435,7 @@ describe('Procedure class', () => {
   });
 
   describe('method: storage', () => {
-    let proc: baseModule.Procedure<void, undefined, { something: string }>;
+    let proc: Procedure<void, undefined, { something: string }>;
 
     beforeAll(() => {
       proc = new Procedure(async () => undefined);

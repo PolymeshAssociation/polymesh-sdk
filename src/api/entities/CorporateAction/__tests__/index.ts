@@ -67,7 +67,7 @@ describe('CorporateAction class', () => {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockCorporateAction({
           kind,
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           decl_date: declarationDate.getTime(),
           record_date: dsMockUtils.createMockRecordDate({
             date: new Date('10/14/2019').getTime(),
@@ -80,7 +80,7 @@ describe('CorporateAction class', () => {
           details: 'something',
           default_withholding_tax: 100000,
           withholding_tax: [],
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
@@ -230,7 +230,7 @@ describe('CorporateAction class', () => {
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
-            /* eslint-disable @typescript-eslint/camelcase */
+            /* eslint-disable @typescript-eslint/naming-convention */
             decl_date: declarationDate.getTime(),
             record_date: null,
             targets: {
@@ -240,7 +240,7 @@ describe('CorporateAction class', () => {
             details: 'something',
             default_withholding_tax: 100000,
             withholding_tax: [],
-            /* eslint-enable @typescript-eslint/camelcase */
+            /* eslint-enable @typescript-eslint/naming-convention */
           })
         )
       );
@@ -260,7 +260,7 @@ describe('CorporateAction class', () => {
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
-            /* eslint-disable @typescript-eslint/camelcase */
+            /* eslint-disable @typescript-eslint/naming-convention */
             decl_date: declarationDate.getTime(),
             record_date: dsMockUtils.createMockRecordDate({
               date: new Date('10/14/1987').getTime(),
@@ -273,7 +273,7 @@ describe('CorporateAction class', () => {
             details: 'something',
             default_withholding_tax: 100000,
             withholding_tax: [],
-            /* eslint-enable @typescript-eslint/camelcase */
+            /* eslint-enable @typescript-eslint/naming-convention */
           })
         )
       );

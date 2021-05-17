@@ -1,17 +1,23 @@
 /* istanbul ignore file */
+/* eslint-disable @typescript-eslint/naming-convention */
 
+import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { Context, Procedure } from '~/internal';
+import { Context, Procedure, TransactionQueue } from '~/internal';
 import { Mocked } from '~/testUtils/types';
+
+type MockProcedure = Mocked<Procedure>;
+type MockTransactionQueue = Mocked<TransactionQueue>;
 
 const mockInstanceContainer = {
   procedure: {} as MockProcedure,
+  transactionQueue: {} as MockTransactionQueue,
 };
 
-type MockProcedure = Mocked<Procedure>;
-
 let procedureConstructorStub: SinonStub;
+let transactionQueueConstructorStub: SinonStub;
+
 let addTransactionStub: SinonStub;
 let addBatchTransactionStub: SinonStub;
 let addProcedureStub: SinonStub;
@@ -21,15 +27,45 @@ export const MockProcedureClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return procedureConstructorStub();
+  constructor(...args: unknown[]) {
+    return procedureConstructorStub(...args);
   }
 };
 
-export const mockProcedureModule = (path: string) => (): object => ({
+export const MockTransactionQueueClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return transactionQueueConstructorStub(...args);
+  }
+};
+
+export const mockProcedureModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Procedure: MockProcedureClass,
 });
+
+export const mockTransactionQueueModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  TransactionQueue: MockTransactionQueueClass,
+});
+
+/**
+ * @hidden
+ * Initialize the transaction queue instance
+ */
+function initTransactionQueue(): void {
+  transactionQueueConstructorStub = sinon.stub();
+  const transactionQueue = ({} as unknown) as MockTransactionQueue;
+
+  Object.assign(mockInstanceContainer.transactionQueue, transactionQueue);
+  transactionQueueConstructorStub.callsFake(args => {
+    const value = merge({}, transactionQueue, args);
+    Object.setPrototypeOf(value, require('~/internal').TransactionQueue.prototype);
+    return value;
+  });
+}
 
 /**
  * @hidden
@@ -48,8 +84,12 @@ function initProcedure(): void {
     prepare: prepareStub.returns({}),
   } as unknown) as MockProcedure;
 
-  mockInstanceContainer.procedure = procedure;
-  procedureConstructorStub.returns(procedure);
+  Object.assign(mockInstanceContainer.procedure, procedure);
+  procedureConstructorStub.callsFake(args => {
+    const value = merge({}, procedure, args);
+    Object.setPrototypeOf(value, require('~/internal').Procedure.prototype);
+    return value;
+  });
 }
 
 /**
@@ -59,6 +99,7 @@ function initProcedure(): void {
  */
 export function initMocks(): void {
   initProcedure();
+  initTransactionQueue();
 }
 
 /**
@@ -67,6 +108,7 @@ export function initMocks(): void {
  */
 export function cleanup(): void {
   mockInstanceContainer.procedure = {} as MockProcedure;
+  mockInstanceContainer.transactionQueue = {} as MockTransactionQueue;
 }
 
 /**
@@ -82,14 +124,15 @@ export function reset(): void {
  * @hidden
  * Retrieve a Procedure instance
  */
-export function getInstance<T, U, S = {}>(context: Context, storage?: S): Procedure<T, U, S> {
+export function getInstance<T, U, S = Record<string, unknown>>(
+  context: Context,
+  storage?: S
+): Procedure<T, U, S> {
   const { procedure } = mockInstanceContainer;
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  (procedure as any).context = context;
-  (procedure as any).storage = storage;
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const value = merge({ context, storage }, procedure);
+  Object.setPrototypeOf(value, require('~/internal').Procedure.prototype);
 
-  return (procedure as unknown) as Procedure<T, U, S>;
+  return (value as unknown) as Procedure<T, U, S>;
 }
 
 /**
@@ -122,4 +165,12 @@ export function getAddProcedureStub(): SinonStub {
  */
 export function getPrepareStub(): SinonStub {
   return prepareStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the TransactionQueue constructor
+ */
+export function getTransactionQueueConstructorStub(): SinonStub {
+  return transactionQueueConstructorStub;
 }

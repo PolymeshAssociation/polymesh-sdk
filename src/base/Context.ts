@@ -655,7 +655,7 @@ export class Context {
       claimTypes.map(claimType => {
         return {
           target: signerToString(target),
-          // eslint-disable-next-line @typescript-eslint/camelcase
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           claim_type: claimTypeToMeshClaimType(claimType, this),
         };
       })
@@ -731,7 +731,7 @@ export class Context {
     didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
         ({
-          targetDID,
+          targetDID: target,
           issuer,
           issuance_date: issuanceDate,
           expiry,
@@ -741,7 +741,7 @@ export class Context {
           cdd_id: cddId,
         }) => {
           data.push({
-            target: new Identity({ did: targetDID }, this),
+            target: new Identity({ did: target }, this),
             issuer: new Identity({ did: issuer }, this),
             issuedAt: new Date(issuanceDate),
             expiry: expiry ? new Date(expiry) : null,
@@ -824,16 +824,16 @@ export class Context {
    * @throws if the middleware is not enabled
    */
   public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
-    const { _middlewareApi } = this;
+    const { _middlewareApi: api } = this;
 
-    if (!_middlewareApi) {
+    if (!api) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Cannot perform this action without an active middleware connection',
       });
     }
 
-    return _middlewareApi;
+    return api;
   }
 
   /**

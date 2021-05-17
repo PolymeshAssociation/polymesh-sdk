@@ -342,7 +342,7 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       tokensStub.withArgs(rawTicker).resolves(
         dsMockUtils.createMockSecurityToken({
           owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
@@ -353,7 +353,7 @@ describe('Identity class', () => {
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     test('should return the balance of a given token', async () => {
@@ -476,13 +476,13 @@ describe('Identity class', () => {
 
     beforeEach(() => {
       didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
         primary_key: dsMockUtils.createMockAccountId(accountId),
         secondary_keys: [],
       });
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
     });
 
     test('should return a PrimaryKey', async () => {
@@ -744,7 +744,7 @@ describe('Identity class', () => {
 
       userAuthsStub.entries = entriesStub;
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const instructionDetailsStub = dsMockUtils.createQueryStub(
         'settlement',
         'instructionDetails',
@@ -795,7 +795,7 @@ describe('Identity class', () => {
       ]);
 
       instructionDetailsStub.multi = multiStub;
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await identity.getPendingInstructions();
 
