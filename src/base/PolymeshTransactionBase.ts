@@ -376,7 +376,7 @@ export abstract class PolymeshTransactionBase<
    * @hidden
    */
   protected handleExtrinsicFailure(
-    _resolve: (value?: ISubmittableResult | PromiseLike<ISubmittableResult> | undefined) => void,
+    _resolve: (value: ISubmittableResult | PromiseLike<ISubmittableResult>) => void,
     reject: (reason?: unknown) => void,
     error: DispatchError,
     data?: Record<string, unknown>
@@ -405,7 +405,7 @@ export abstract class PolymeshTransactionBase<
    * @hidden
    */
   protected handleExtrinsicSuccess(
-    resolve: (value?: ISubmittableResult | PromiseLike<ISubmittableResult> | undefined) => void,
+    resolve: (value: ISubmittableResult | PromiseLike<ISubmittableResult>) => void,
     _reject: (reason?: unknown) => void,
     receipt: ISubmittableResult
   ): void {

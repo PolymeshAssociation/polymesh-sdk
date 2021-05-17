@@ -419,7 +419,7 @@ describe('configureDividendDistribution procedure', () => {
     beforeAll(() => {
       entityMockUtils.initMocks();
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       rawCorporateAction = dsMockUtils.createMockCorporateAction({
         kind: 'UnpredictableBenefit',
         decl_date: declarationDate.getTime(),
@@ -448,7 +448,7 @@ describe('configureDividendDistribution procedure', () => {
           dsMockUtils.createMockMoment(expiryDate?.getTime())
         ),
       });
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
@@ -456,7 +456,7 @@ describe('configureDividendDistribution procedure', () => {
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       filterEventRecordsStub.returns([
         dsMockUtils.createMockIEvent([
           'data',
@@ -467,7 +467,7 @@ describe('configureDividendDistribution procedure', () => {
           rawDistribution,
         ]),
       ]);
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     afterEach(() => {

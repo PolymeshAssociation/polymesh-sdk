@@ -76,7 +76,7 @@ export class PolymeshTransactionBatch<
    * @hidden
    */
   protected handleExtrinsicSuccess(
-    resolve: (value?: ISubmittableResult | PromiseLike<ISubmittableResult> | undefined) => void,
+    resolve: (value: ISubmittableResult | PromiseLike<ISubmittableResult>) => void,
     reject: (reason?: unknown) => void,
     receipt: ISubmittableResult
   ): void {

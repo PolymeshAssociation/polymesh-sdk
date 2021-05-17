@@ -54,7 +54,7 @@ export class PostTransactionValue<Value> {
    * @throws if the value is being accessed before the resolver function has run
    */
   public get value(): Value {
-    const { _value, resolved } = this;
+    const { _value: value, resolved } = this;
 
     if (!resolved) {
       throw new PolymeshError({
@@ -65,7 +65,7 @@ export class PostTransactionValue<Value> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return _value!;
+    return value!;
   }
 
   /**

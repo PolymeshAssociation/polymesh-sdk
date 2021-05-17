@@ -59,7 +59,7 @@ describe('IdentityAuthorizations class', () => {
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new IdentityAuthorizations(identity, context);
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -89,7 +89,7 @@ describe('IdentityAuthorizations class', () => {
           authorized_by: dsMockUtils.createMockIdentityId(did),
         })
       );
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const authorizationsGivenEntries = authorizations.map(
         ({ authorized_by: issuer, auth_id: authId }, index) =>
