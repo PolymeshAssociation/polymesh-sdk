@@ -1,6 +1,6 @@
 {
   "out": "docs",
-  "theme": "markdown",
+  "theme": "gitbook",
   "exclude": [
     "**/{__tests__,polkadot,testUtils,middleware}/*",
     "**/sandbox.ts",
