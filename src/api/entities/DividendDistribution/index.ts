@@ -298,7 +298,6 @@ export class DividendDistribution extends CorporateAction {
     }
 
     const isExclusion = treatment === TargetTreatment.Exclude;
-    const clonedTargets = [...targetIdentities];
 
     const [did, balance] = await Promise.all([
       getDid(args.identity, context),
@@ -307,9 +306,10 @@ export class DividendDistribution extends CorporateAction {
 
     const identity = new Identity({ did }, context);
 
-    const isTarget = !!remove(clonedTargets, ({ did: targetDid }) => did === targetDid).length;
+    const isTarget = !!remove([...targetIdentities], ({ did: targetDid }) => did === targetDid)
+      .length;
 
-    let participant: DistributionParticipant | null = null;
+    let participant: DistributionParticipant;
 
     if (balance.gt(0) && xor(isTarget, isExclusion)) {
       participant = {
