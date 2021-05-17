@@ -396,7 +396,7 @@ describe('Portfolio class', () => {
         },
       ];
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const transactionsQueryResponse: SettlementResult = {
         totalCount: 20,
         items: [
@@ -414,7 +414,7 @@ describe('Portfolio class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);

@@ -6,7 +6,7 @@ import {
   Params,
   prepareModifyDistributionCheckpoint,
 } from '~/api/procedures/modifyDistributionCheckpoint';
-import { Context } from '~/internal';
+import { Context, modifyCaCheckpoint } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
@@ -164,7 +164,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
 
     await prepareModifyDistributionCheckpoint.call(proc, args);
 
-    sinon.assert.calledWith(addProcedureStub, proc, {
+    sinon.assert.calledWith(addProcedureStub, modifyCaCheckpoint(), {
       checkpoint,
       corporateAction: distribution,
     });

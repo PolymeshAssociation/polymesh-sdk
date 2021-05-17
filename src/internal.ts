@@ -72,7 +72,7 @@ export {
   togglePauseRequirements,
   TogglePauseRequirementsParams,
 } from '~/api/procedures/togglePauseRequirements';
-export { transferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
+export { transferPolyx, TransferPolyxParams } from '~/api/procedures/transferPolyx';
 export {
   transferTokenOwnership,
   TransferTokenOwnershipParams,

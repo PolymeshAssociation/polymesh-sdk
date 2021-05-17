@@ -143,7 +143,7 @@ export class Account extends Entity<UniqueIdentifiers> {
       ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
     }
 
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
         block_id: blockNumber ? blockNumber.toNumber() : undefined,
@@ -194,7 +194,7 @@ export class Account extends Entity<UniqueIdentifiers> {
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
       }
     );
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const next = calculateNextKey(count, size, start);
 

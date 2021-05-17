@@ -651,7 +651,7 @@ describe('Context class', () => {
   });
 
   describe('method: getInvalidDids', () => {
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     test('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
       dsMockUtils.createQueryStub('identity', 'didRecords', {
@@ -692,7 +692,7 @@ describe('Context class', () => {
 
       expect(invalidDids).toEqual(inputDids.slice(2, 4));
     });
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
   });
 
   describe('method: getTransactionFees', () => {
@@ -793,7 +793,7 @@ describe('Context class', () => {
 
     beforeEach(() => {
       didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
         primary_key: dsMockUtils.createMockAccountId(),
@@ -816,7 +816,7 @@ describe('Context class', () => {
           }),
         ],
       });
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
     });
 
     afterEach(() => {
@@ -1145,7 +1145,7 @@ describe('Context class', () => {
           },
         },
       ];
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: targetDid,
         issuer: issuerDid,
@@ -1172,7 +1172,7 @@ describe('Context class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
