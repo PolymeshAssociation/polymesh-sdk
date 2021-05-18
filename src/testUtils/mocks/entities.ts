@@ -217,6 +217,7 @@ interface CheckpointOptions {
   totalSupply?: BigNumber;
   exists?: boolean;
   allBalances?: ResultSet<IdentityBalance>;
+  balance?: BigNumber;
 }
 
 interface CheckpointScheduleOptions {
@@ -331,6 +332,7 @@ let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
 let checkpointAllBalancesStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
+let checkpointBalanceStub: SinonStub;
 let corporateActionExistsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
@@ -1401,6 +1403,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     id: opts.id,
     exists: checkpointExistsStub.resolves(opts.exists),
     allBalances: checkpointAllBalancesStub.resolves(allBalances),
+    balance: checkpointBalanceStub.returns(opts.balance),
   } as unknown) as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
@@ -1421,6 +1424,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
   checkpointTotalSupplyStub = sinon.stub();
   checkpointExistsStub = sinon.stub();
   checkpointAllBalancesStub = sinon.stub();
+  checkpointBalanceStub = sinon.stub();
 
   checkpointOptions = merge({}, defaultCheckpointOptions, opts);
 
@@ -2432,6 +2436,17 @@ export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBal
     return checkpointAllBalancesStub.resolves(allBalances);
   }
   return checkpointAllBalancesStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Checkpoint.balance` method
+ */
+export function getCheckpointBalanceStub(balance?: ResultSet<BigNumber>): SinonStub {
+  if (balance) {
+    return checkpointBalanceStub.resolves(balance);
+  }
+  return checkpointBalanceStub;
 }
 
 /**

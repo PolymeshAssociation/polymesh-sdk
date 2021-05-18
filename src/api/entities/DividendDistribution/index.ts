@@ -285,10 +285,15 @@ export class DividendDistribution extends CorporateAction {
     identity: string | Identity;
   }): Promise<DistributionParticipant | null> {
     const {
+      id: localId,
+      ticker,
       targets: { identities: targetIdentities, treatment },
       paymentDate,
       perShare,
       context,
+      context: {
+        polymeshApi: { query },
+      },
     } = this;
 
     const checkpoint = await this.checkpoint();
@@ -326,7 +331,10 @@ export class DividendDistribution extends CorporateAction {
       return participant;
     }
 
-    const [paid] = await this.getParticipantStatuses([participant]);
+    const rawDid = stringToIdentityId(did, context);
+    const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+    const paid = boolToBoolean(await query.capitalDistribution.holderPaid([rawCaId, rawDid]));
+
     const { amount } = participant;
 
     return { identity, amount, paid };
