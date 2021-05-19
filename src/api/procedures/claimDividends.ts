@@ -1,12 +1,7 @@
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TargetTreatment, TxTags } from '~/types';
-import {
-  boolToBoolean,
-  corporateActionIdentifierToCaId,
-  stringToIdentityId,
-} from '~/utils/conversion';
-import { xor } from '~/utils/internal';
+import { ErrorCode, TxTags } from '~/types';
+import { corporateActionIdentifierToCaId } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -35,9 +30,9 @@ export async function prepareClaimDividends(
 
   assertDistributionOpen(paymentDate, expiryDate);
 
-  const { did: currentDid } = await context.getCurrentIdentity();
+  const identity = await context.getCurrentIdentity();
 
-  const participant = await distribution.getParticipant({ identity: currentDid });
+  const participant = await distribution.getParticipant({ identity });
 
   if (!participant) {
     throw new PolymeshError({

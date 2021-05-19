@@ -38,6 +38,7 @@ import {
   CorporateActionKind,
   CorporateActionTargets,
   CountTransferRestriction,
+  DistributionParticipant,
   DividendDistributionDetails,
   ExtrinsicData,
   IdentityBalance,
@@ -258,6 +259,7 @@ interface DividendDistributionOptions {
   expiryDate?: null | Date;
   paymentDate?: Date;
   details?: Partial<DividendDistributionDetails>;
+  getParticipant?: Partial<DistributionParticipant>;
 }
 
 let identityConstructorStub: SinonStub;
@@ -336,6 +338,7 @@ let checkpointBalanceStub: SinonStub;
 let corporateActionExistsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
+let dividendDistributionGetParticipantStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -1528,6 +1531,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
     details: dividendDistributionDetailsStub.resolves(opts.details),
+    getParticipant: dividendDistributionGetParticipantStub.resolves(opts.getParticipant),
   } as unknown) as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
@@ -1545,6 +1549,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
 function initDividendDistribution(opts?: DividendDistributionOptions): void {
   dividendDistributionConstructorStub = sinon.stub();
   dividendDistributionDetailsStub = sinon.stub();
+  dividendDistributionGetParticipantStub = sinon.stub();
 
   dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
 
@@ -2544,4 +2549,17 @@ export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
     return corporateActionExistsStub.resolves(exists);
   }
   return corporateActionExistsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DividendDistribution.getParticipant` method
+ */
+export function getDividendDistributionGetParticipantStub(
+  getParticipant?: DistributionParticipant
+): SinonStub {
+  if (getParticipant) {
+    return dividendDistributionGetParticipantStub.resolves(getParticipant);
+  }
+  return dividendDistributionGetParticipantStub;
 }
