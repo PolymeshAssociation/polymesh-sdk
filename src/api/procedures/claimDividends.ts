@@ -19,7 +19,7 @@ export async function prepareClaimDividends(
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: { tx },
     },
     context,
   } = this;
