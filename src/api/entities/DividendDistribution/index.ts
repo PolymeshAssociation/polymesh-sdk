@@ -302,8 +302,6 @@ export class DividendDistribution extends CorporateAction {
       return null;
     }
 
-    const isExclusion = treatment === TargetTreatment.Exclude;
-
     const [did, balance] = await Promise.all([
       getDid(args.identity, context),
       checkpoint.balance(args),
@@ -315,6 +313,8 @@ export class DividendDistribution extends CorporateAction {
       .length;
 
     let participant: DistributionParticipant;
+
+    const isExclusion = treatment === TargetTreatment.Exclude;
 
     if (balance.gt(0) && xor(isTarget, isExclusion)) {
       participant = {
