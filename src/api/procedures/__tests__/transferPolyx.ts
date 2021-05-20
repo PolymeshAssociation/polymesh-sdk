@@ -4,9 +4,9 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  prepareTransferPolyX,
-  TransferPolyXParams,
-} from '~/api/procedures/transferPolyX';
+  prepareTransferPolyx,
+  TransferPolyxParams,
+} from '~/api/procedures/transferPolyx';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -22,7 +22,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 
-describe('transferPolyX procedure', () => {
+describe('transferPolyx procedure', () => {
   let mockContext: Mocked<Context>;
 
   beforeAll(() => {
@@ -50,10 +50,10 @@ describe('transferPolyX procedure', () => {
   test('should throw an error if the user has insufficient balance to transfer', () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     return expect(
-      prepareTransferPolyX.call(proc, {
+      prepareTransferPolyx.call(proc, {
         to: 'someAccount',
         amount: new BigNumber(101),
       })
@@ -63,10 +63,10 @@ describe('transferPolyX procedure', () => {
   test("should throw an error if destination account doesn't have an associated Identity", () => {
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     return expect(
-      prepareTransferPolyX.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
+      prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
     ).rejects.toThrow("The destination account doesn't have an asssociated Identity");
   });
 
@@ -81,10 +81,10 @@ describe('transferPolyX procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     return expect(
-      prepareTransferPolyX.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
+      prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
     ).rejects.toThrow('The sender Identity has an invalid CDD claim');
   });
 
@@ -99,10 +99,10 @@ describe('transferPolyX procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     return expect(
-      prepareTransferPolyX.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
+      prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
     ).rejects.toThrow('The receiver Identity has an invalid CDD claim');
   });
 
@@ -123,9 +123,9 @@ describe('transferPolyX procedure', () => {
     sinon.stub(utilsConversionModule, 'stringToMemo').returns(rawMemo);
 
     let tx = dsMockUtils.createTxStub('balances', 'transfer');
-    const proc = procedureMockUtils.getInstance<TransferPolyXParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
-    await prepareTransferPolyX.call(proc, {
+    await prepareTransferPolyx.call(proc, {
       to,
       amount,
     });
@@ -140,7 +140,7 @@ describe('transferPolyX procedure', () => {
 
     tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
 
-    await prepareTransferPolyX.call(proc, {
+    await prepareTransferPolyx.call(proc, {
       to,
       amount,
       memo,
@@ -161,7 +161,7 @@ describe('transferPolyX procedure', () => {
       const memo = 'something';
       const args = {
         memo,
-      } as TransferPolyXParams;
+      } as TransferPolyxParams;
 
       expect(getAuthorization(args)).toEqual({
         signerPermissions: {

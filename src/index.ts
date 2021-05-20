@@ -1,6 +1,6 @@
-import './polkadot/augment-api';
-
 import BigNumber from 'bignumber.js';
+
+import './polkadot/augment-api';
 
 export { Polymesh } from './Polymesh';
 export { Keyring, WsProvider } from '@polkadot/api';

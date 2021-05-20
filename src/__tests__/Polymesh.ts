@@ -888,7 +888,7 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: transferPolyX', () => {
+  describe('method: transferPolyx', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
 
@@ -909,7 +909,7 @@ describe('Polymesh Class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await polymesh.transferPolyX(args);
+      const queue = await polymesh.transferPolyx(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -921,14 +921,14 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId('someDid'),
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
           primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
 
@@ -946,14 +946,14 @@ describe('Polymesh Class', () => {
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(),
           name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
           primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
 

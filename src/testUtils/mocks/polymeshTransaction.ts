@@ -1,11 +1,15 @@
 /* istanbul ignore file */
+/* eslint-disable @typescript-eslint/naming-convention */
 
 import BigNumber from 'bignumber.js';
+import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
 import { PolymeshTransaction } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
+
+type MockTransaction = Mocked<PolymeshTransaction<unknown[]>>;
 
 interface MockTransactionSpec {
   isCritical: boolean;
@@ -23,20 +27,18 @@ interface TransactionMockData {
   resolved: boolean;
 }
 
-type MockTransaction = Mocked<PolymeshTransaction<unknown[]>>;
-
 let polymeshTransactionConstructorStub: SinonStub;
 
 const MockPolymeshTransactionClass = class {
   /**
    * @hidden
    */
-  constructor() {
-    return polymeshTransactionConstructorStub();
+  constructor(...args: unknown[]) {
+    return polymeshTransactionConstructorStub(...args);
   }
 };
 
-export const mockPolymeshTransactionModule = (path: string) => (): object => ({
+export const mockPolymeshTransactionModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   PolymeshTransaction: MockPolymeshTransactionClass,
 });
@@ -51,6 +53,11 @@ const transactionMocksData = new Map<MockTransaction, TransactionMockData>();
 export function initMocks(): void {
   transactionMocksData.clear();
   polymeshTransactionConstructorStub = sinon.stub();
+  polymeshTransactionConstructorStub.callsFake(args => {
+    const value = merge({}, args);
+    Object.setPrototypeOf(value, require('~/internal').PolymeshTransaction.prototype);
+    return value;
+  });
 }
 
 /**
