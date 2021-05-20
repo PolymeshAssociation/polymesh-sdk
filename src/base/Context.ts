@@ -8,11 +8,19 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { flatMap, flatten } from 'lodash';
+import { chunk, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
+import { CAId, DidRecord, Distribution, ProtocolOp, TxTag } from 'polymesh-types/types';
 
-import { Account, CurrentAccount, CurrentIdentity, Identity, PolymeshError } from '~/internal';
+import {
+  Account,
+  CurrentAccount,
+  CurrentIdentity,
+  DividendDistribution,
+  Identity,
+  PolymeshError,
+  SecurityToken,
+} from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -22,6 +30,8 @@ import {
   ClaimType,
   CommonKeyring,
   ComplexTransactionArgument,
+  CorporateActionParams,
+  DistributionWithDetails,
   Ensured,
   ErrorCode,
   KeyringPair,
@@ -36,12 +46,21 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { DEFAULT_SS58_FORMAT, ROOT_TYPES } from '~/utils/constants';
+import {
+  DEFAULT_SS58_FORMAT,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  ROOT_TYPES,
+} from '~/utils/constants';
 import {
   balanceToBigNumber,
+  boolToBoolean,
   claimTypeToMeshClaimType,
+  corporateActionIdentifierToCaId,
+  distributionToDividendDistributionParams,
   identityIdToString,
   meshClaimToClaim,
+  meshCorporateActionToCorporateActionParams,
   meshPermissionsToPermissions,
   momentToDate,
   numberToU32,
@@ -50,7 +69,9 @@ import {
   signerToString,
   signerValueToSigner,
   stringToIdentityId,
+  stringToTicker,
   textToString,
+  tickerToString,
   txTagToProtocolOp,
   u8ToBigNumber,
   u32ToBigNumber,
@@ -625,6 +646,84 @@ export class Context {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
+  }
+
+  /**
+   * @hidden
+   */
+  public async getDividendDistributionsForTokens(args: {
+    tokens: SecurityToken[];
+  }): Promise<DistributionWithDetails[]> {
+    const {
+      polymeshApi: { query },
+    } = this;
+    const { tokens } = args;
+    const distributionsMultiParams: CAId[] = [];
+    const corporateActionParams: CorporateActionParams[] = [];
+    const corporateActionIds: BigNumber[] = [];
+    const tickers: string[] = [];
+
+    const tokenChunks = chunk(tokens, MAX_CONCURRENT_REQUESTS);
+
+    await P.each(tokenChunks, async tokenChunk => {
+      const corporateActions = await Promise.all(
+        tokenChunk.map(({ ticker }) =>
+          query.corporateAction.corporateActions.entries(stringToTicker(ticker, this))
+        )
+      );
+      const unpredictableCas = flatten(corporateActions).filter(
+        ([, action]) => action.unwrap().kind.isUnpredictableBenefit
+      );
+
+      unpredictableCas.forEach(
+        ([
+          {
+            args: [rawTicker, rawId],
+          },
+          corporateAction,
+        ]) => {
+          const localId = u32ToBigNumber(rawId);
+          const ticker = tickerToString(rawTicker);
+          tickers.push(ticker);
+          corporateActionIds.push(localId);
+          distributionsMultiParams.push(corporateActionIdentifierToCaId({ ticker, localId }, this));
+          const action = corporateAction.unwrap();
+          corporateActionParams.push(meshCorporateActionToCorporateActionParams(action, this));
+        }
+      );
+    });
+
+    /*
+     * Divide the requests to account for practical limits
+     */
+    const paramChunks = chunk(distributionsMultiParams, MAX_PAGE_SIZE);
+    const requestChunks = chunk(paramChunks, MAX_CONCURRENT_REQUESTS);
+    const distributions = await P.mapSeries(requestChunks, requestChunk =>
+      Promise.all(
+        requestChunk.map(paramChunk =>
+          query.capitalDistribution.distributions.multi<Distribution>(paramChunk)
+        )
+      )
+    );
+
+    return flattenDeep<Distribution>(distributions).map((distribution, index) => {
+      const { reclaimed, remaining } = distribution;
+      return {
+        distribution: new DividendDistribution(
+          {
+            ticker: tickers[index],
+            id: corporateActionIds[index],
+            ...corporateActionParams[index],
+            ...distributionToDividendDistributionParams(distribution, this),
+          },
+          this
+        ),
+        details: {
+          remainingFunds: balanceToBigNumber(remaining),
+          fundsReclaimed: boolToBoolean(reclaimed),
+        },
+      };
+    });
   }
 
   /**
