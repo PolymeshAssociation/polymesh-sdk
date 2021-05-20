@@ -6,7 +6,6 @@ import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-t
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
-  Checkpoint,
   Context,
   Entity,
   Instruction,
