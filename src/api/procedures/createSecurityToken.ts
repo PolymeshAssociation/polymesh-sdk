@@ -13,6 +13,7 @@ import {
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
+  boolToBoolean,
   numberToBalance,
   stringToAssetName,
   stringToFundingRoundName,
@@ -49,7 +50,7 @@ export async function prepareCreateSecurityToken(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { tx },
+      polymeshApi: { tx, query },
     },
     context,
   } = this;
@@ -66,7 +67,12 @@ export async function prepareCreateSecurityToken(
 
   const reservation = new TickerReservation({ ticker }, context);
 
-  const { status } = await reservation.details();
+  const rawTicker = stringToTicker(ticker, context);
+
+  const [{ status }, classicTicker] = await Promise.all([
+    reservation.details(),
+    query.asset.classicTickers(rawTicker),
+  ]);
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
@@ -82,7 +88,6 @@ export async function prepareCreateSecurityToken(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
   const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
@@ -92,9 +97,18 @@ export async function prepareCreateSecurityToken(
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
 
+  let fee: undefined | BigNumber;
+
+  // we waive any protocol fees
+  const tokenCreatedInEthereum =
+    classicTicker.isSome && boolToBoolean(classicTicker.unwrap().is_created);
+  if (tokenCreatedInEthereum) {
+    fee = new BigNumber(0);
+  }
+
   this.addTransaction(
     tx.asset.createAsset,
-    {},
+    { fee },
     rawName,
     rawTicker,
     rawTotalSupply,

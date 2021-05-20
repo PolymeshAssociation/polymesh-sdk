@@ -67,6 +67,7 @@ import {
   Claim,
   Claim1stKey,
   ClaimType as MeshClaimType,
+  ClassicTickerRegistration,
   ComplianceRequirement,
   ComplianceRequirementResult,
   Condition,
@@ -82,6 +83,8 @@ import {
   DocumentName,
   DocumentType,
   DocumentUri,
+  EcdsaSignature,
+  EthereumAddress,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -271,6 +274,7 @@ interface ContextOptions {
   ss58Format?: number;
   areScondaryKeysFrozen?: boolean;
   getDividendDistributionsForTokens?: DistributionWithDetails[];
+  isFrozen?: boolean;
 }
 
 interface Pair {
@@ -548,6 +552,7 @@ const defaultContextOptions: ContextOptions = {
   ss58Format: 42,
   areScondaryKeysFrozen: false,
   getDividendDistributionsForTokens: [],
+  isFrozen: false,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -589,6 +594,7 @@ function configureContext(opts: ContextOptions): void {
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
+        isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
     : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
   const currentPair = opts.withSeed
@@ -1350,6 +1356,30 @@ export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockEcdsaSignature = (signature?: string | EcdsaSignature): EcdsaSignature => {
+  if (isCodec<EcdsaSignature>(signature)) {
+    return signature;
+  }
+
+  return createMockStringCodec(signature) as EcdsaSignature;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockEthereumAddress = (address?: string | EthereumAddress): EthereumAddress => {
+  if (isCodec<EthereumAddress>(address)) {
+    return address;
+  }
+
+  return createMockU8aCodec(address) as EthereumAddress;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockTicker = (ticker?: string | Ticker): Ticker => {
   if (isCodec<Ticker>(ticker)) {
     return ticker;
@@ -1459,17 +1489,22 @@ export const createMockMoment = (millis?: number | Moment): Moment => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTickerRegistration = (registration?: {
-  owner: IdentityId;
-  expiry: Option<Moment>;
-}): TickerRegistration => {
-  const reg = registration || {
+export const createMockTickerRegistration = (
+  registration?:
+    | TickerRegistration
+    | {
+        owner: IdentityId | Parameters<typeof createMockIdentityId>[0];
+        expiry: Option<Moment> | Parameters<typeof createMockOption>[0];
+      }
+): TickerRegistration => {
+  const { owner, expiry } = registration || {
     owner: createMockIdentityId(),
     expiry: createMockOption(),
   };
   return createMockCodec(
     {
-      ...reg,
+      owner: createMockIdentityId(owner),
+      expiry: createMockOption(expiry),
     },
     !registration
   ) as TickerRegistration;
@@ -3219,4 +3254,29 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
     },
     !granularCanTransferResult
   ) as GranularCanTransferResult;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockClassicTickerRegistration = (
+  registration?:
+    | ClassicTickerRegistration
+    | {
+        eth_owner: EthereumAddress | Parameters<typeof createMockEthereumAddress>[0];
+        is_created: bool | Parameters<typeof createMockBool>[0];
+      }
+): ClassicTickerRegistration => {
+  const { eth_owner, is_created } = registration || {
+    eth_owner: createMockEthereumAddress(),
+    is_created: createMockBool(),
+  };
+
+  return createMockCodec(
+    {
+      eth_owner: createMockEthereumAddress(eth_owner),
+      is_created: createMockBool(is_created),
+    },
+    !registration
+  ) as ClassicTickerRegistration;
 };

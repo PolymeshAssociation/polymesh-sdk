@@ -250,4 +250,30 @@ describe('TickerReservation class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: transferOwnership', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const tickerReservation = new TickerReservation({ ticker }, context);
+      const target = 'someOtherDid';
+      const expiry = new Date('10/10/2022');
+
+      const args = {
+        ticker,
+        target,
+        expiry,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await tickerReservation.transferOwnership(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 });

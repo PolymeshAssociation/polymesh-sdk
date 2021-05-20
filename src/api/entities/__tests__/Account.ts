@@ -229,4 +229,51 @@ describe('Account class', () => {
       expect(result.next).toBeNull();
     });
   });
+
+  describe('method: isFrozen', () => {
+    test('should return if the Account is frozen or not', async () => {
+      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
+
+      dsMockUtils.createQueryStub('identity', 'didRecords').returns(
+        dsMockUtils.createMockDidRecord({
+          primary_key: dsMockUtils.createMockAccountId(address),
+          roles: [],
+          secondary_keys: [],
+        })
+      );
+      dsMockUtils.createQueryStub('identity', 'isDidFrozen');
+
+      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId());
+
+      let result = await account.isFrozen();
+      expect(result).toBe(false);
+
+      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId(address));
+
+      result = await account.isFrozen();
+      expect(result).toBe(false);
+
+      const otherAddress = 'otherAddress';
+
+      result = await entityMockUtils
+        .getAccountInstance({
+          address: otherAddress,
+          getIdentity: entityMockUtils.getIdentityInstance({
+            areScondaryKeysFrozen: false,
+          }),
+        })
+        .isFrozen();
+      expect(result).toBe(false);
+
+      result = await entityMockUtils
+        .getAccountInstance({
+          address: otherAddress,
+          getIdentity: entityMockUtils.getIdentityInstance({
+            areScondaryKeysFrozen: true,
+          }),
+        })
+        .isFrozen();
+      expect(result).toBe(true);
+    });
+  });
 });
