@@ -71,7 +71,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
    * @hidden
    * Checks if a value is of type [[UniqueIdentifiers]]
    */
-  public static isUniqueIdentifiers(identifier: object): identifier is UniqueIdentifiers {
+  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did } = identifier as UniqueIdentifiers;
 
     return typeof did === 'string';

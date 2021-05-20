@@ -76,13 +76,13 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
       dsMockUtils.createApolloQueryStub(eventByAddedTrustedClaimIssuer(variables), {
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         eventByAddedTrustedClaimIssuer: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
           event_idx: eventIdx,
         },
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       const result = await trustedClaimIssuer.addedAt();

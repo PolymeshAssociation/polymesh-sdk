@@ -84,7 +84,7 @@ describe('DividendDistribution class', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           from: {
             kind: 'Default',
             did: 'someDid',
@@ -96,7 +96,7 @@ describe('DividendDistribution class', () => {
           payment_at: new Date(new Date().getTime() + 60 * 60 * 1000).getTime(),
           expires_at: null,
           reclaimed: false,
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });

@@ -60,7 +60,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     rawClaimIssuers = claimIssuerDids.map(did =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         trusted_for: dsMockUtils.createMockTrustedFor('Any'),
       })
     );
@@ -126,7 +126,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     const alternativeClaimIssuers: TrustedIssuer[] = rawClaimIssuers.map(({ issuer }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer,
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         trusted_for: dsMockUtils.createMockTrustedFor({ Specific: [] }),
       })
     );

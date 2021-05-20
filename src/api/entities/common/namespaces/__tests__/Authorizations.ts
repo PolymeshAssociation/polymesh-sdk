@@ -72,7 +72,7 @@ describe('Authorizations class', () => {
       const rawSignatory = dsMockUtils.createMockSignatory();
       const rawAuthorizationType = dsMockUtils.createMockAuthorizationType(filter);
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
 
       const authParams = [
         {

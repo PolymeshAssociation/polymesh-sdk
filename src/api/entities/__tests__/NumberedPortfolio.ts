@@ -142,13 +142,13 @@ describe('NumberedPortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
           event_idx: eventIdx,
         },
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       const result = await numberedPortfolio.createdAt();

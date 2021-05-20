@@ -100,7 +100,7 @@ describe('Instruction class', () => {
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         instruction_id: dsMockUtils.createMockU64(1),
         status: dsMockUtils.createMockInstructionStatus(status),
         venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
@@ -108,7 +108,7 @@ describe('Instruction class', () => {
         trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
         value_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(valueDate.getTime())),
         settlement_type: dsMockUtils.createMockSettlementType(type),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       const instructionDetailsStub = dsMockUtils
@@ -161,7 +161,7 @@ describe('Instruction class', () => {
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         instruction_id: dsMockUtils.createMockU64(1),
         status: dsMockUtils.createMockInstructionStatus(status),
         venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
@@ -169,7 +169,7 @@ describe('Instruction class', () => {
         trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
         value_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(valueDate.getTime())),
         settlement_type: dsMockUtils.createMockSettlementType(type),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       const instructionDetailsStub = dsMockUtils
@@ -194,13 +194,13 @@ describe('Instruction class', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           ...queryResult,
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           trade_date: dsMockUtils.createMockOption(),
           value_date: dsMockUtils.createMockOption(),
           settlement_type: dsMockUtils.createMockSettlementType({
             SettleOnBlock: dsMockUtils.createMockU32(endBlock.toNumber()),
           }),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       );
 
@@ -223,7 +223,7 @@ describe('Instruction class', () => {
         .withArgs(rawId)
         .resolves(
           dsMockUtils.createMockInstruction({
-            /* eslint-disable @typescript-eslint/camelcase */
+            /* eslint-disable @typescript-eslint/naming-convention */
             instruction_id: dsMockUtils.createMockU64(),
             status: dsMockUtils.createMockInstructionStatus('Unknown'),
             venue_id: dsMockUtils.createMockU64(),
@@ -231,7 +231,7 @@ describe('Instruction class', () => {
             trade_date: dsMockUtils.createMockOption(),
             value_date: dsMockUtils.createMockOption(),
             settlement_type: dsMockUtils.createMockSettlementType(),
-            /* eslint-enable @typescript-eslint/camelcase */
+            /* eslint-enable @typescript-eslint/naming-convention */
           })
         );
 
@@ -281,7 +281,7 @@ describe('Instruction class', () => {
     beforeEach(() => {
       instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
         returnValue: dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           instruction_id: dsMockUtils.createMockU64(1),
           venue_id: dsMockUtils.createMockU64(1),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
@@ -291,7 +291,7 @@ describe('Instruction class', () => {
           ),
           trade_date: dsMockUtils.createMockOption(),
           value_date: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
       dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
@@ -300,7 +300,7 @@ describe('Instruction class', () => {
     test('should throw an error if the instruction does not exist', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           instruction_id: dsMockUtils.createMockU64(),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
@@ -308,7 +308,7 @@ describe('Instruction class', () => {
           created_at: dsMockUtils.createMockOption(),
           trade_date: dsMockUtils.createMockOption(),
           value_date: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       );
       return expect(instruction.getAffirmations()).rejects.toThrow(
@@ -343,7 +343,7 @@ describe('Instruction class', () => {
       dsMockUtils.createQueryStub('settlement', 'instructionLegs');
       instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
         returnValue: dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           instruction_id: dsMockUtils.createMockU64(1),
           venue_id: dsMockUtils.createMockU64(1),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
@@ -353,7 +353,7 @@ describe('Instruction class', () => {
           ),
           trade_date: dsMockUtils.createMockOption(),
           value_date: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
     });
@@ -396,7 +396,7 @@ describe('Instruction class', () => {
     test('should throw an error if the instruction does not exist', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           instruction_id: dsMockUtils.createMockU64(),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
@@ -404,7 +404,7 @@ describe('Instruction class', () => {
           created_at: dsMockUtils.createMockOption(),
           trade_date: dsMockUtils.createMockOption(),
           value_date: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       );
       return expect(instruction.getLegs()).rejects.toThrow(

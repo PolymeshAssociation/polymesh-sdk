@@ -142,7 +142,7 @@ describe('Account class', () => {
         callId,
       });
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const transactionsQueryResponse: ExtrinsicResult = {
         totalCount: 20,
         items: [
@@ -167,7 +167,7 @@ describe('Account class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);

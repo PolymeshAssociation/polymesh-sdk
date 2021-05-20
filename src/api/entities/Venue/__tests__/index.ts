@@ -132,7 +132,7 @@ describe('Venue class', () => {
               creator: dsMockUtils.createMockIdentityId(owner),
               instructions: [],
               details: dsMockUtils.createMockVenueDetails(description),
-              // eslint-disable-next-line @typescript-eslint/camelcase
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               venue_type: dsMockUtils.createMockVenueType(type),
             })
           )
@@ -185,7 +185,7 @@ describe('Venue class', () => {
               creator: dsMockUtils.createMockIdentityId(owner),
               instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
               details: dsMockUtils.createMockVenueDetails(description),
-              // eslint-disable-next-line @typescript-eslint/camelcase
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               venue_type: dsMockUtils.createMockVenueType(type),
             })
           )

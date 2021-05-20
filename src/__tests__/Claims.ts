@@ -119,7 +119,7 @@ describe('Claims Class', () => {
           ],
         },
       ];
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: targetDid,
         issuer: issuerDid,
@@ -148,7 +148,7 @@ describe('Claims Class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
@@ -236,13 +236,14 @@ describe('Claims Class', () => {
           ],
         },
       ];
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: targetDid,
         issuer: issuerDid,
         issuance_date: date,
         last_update_date: date,
       };
+      /* eslint-enable @typescript-eslint/naming-convention */
       const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
         totalCount: 25,
         items: [
@@ -271,7 +272,6 @@ describe('Claims Class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
@@ -555,13 +555,14 @@ describe('Claims Class', () => {
           ],
         },
       ];
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: did,
         issuer: issuerDid,
         issuance_date: date,
         last_update_date: date,
       };
+      /* eslint-enable @typescript-eslint/naming-convention */
       const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
         totalCount: 25,
         items: [
@@ -577,7 +578,6 @@ describe('Claims Class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
@@ -771,13 +771,15 @@ describe('Claims Class', () => {
         ],
       },
     ];
-    /* eslint-disable @typescript-eslint/camelcase */
+
+    /* eslint-disable @typescript-eslint/naming-convention */
     const commonClaimData = {
       targetDID: did,
       issuer: issuerDid,
       issuance_date: date,
       last_update_date: date,
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
     const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
       totalCount: 25,
       items: [
@@ -794,7 +796,6 @@ describe('Claims Class', () => {
         },
       ],
     };
-    /* eslint-enabled @typescript-eslint/camelcase */
 
     dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 

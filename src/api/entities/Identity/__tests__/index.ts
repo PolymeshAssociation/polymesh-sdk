@@ -344,7 +344,7 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       tokensStub.withArgs(rawTicker).resolves(
         dsMockUtils.createMockSecurityToken({
           owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
@@ -355,7 +355,7 @@ describe('Identity class', () => {
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     test('should return the balance of a given token', async () => {
@@ -478,13 +478,13 @@ describe('Identity class', () => {
 
     beforeEach(() => {
       didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
         primary_key: dsMockUtils.createMockAccountId(accountId),
         secondary_keys: [],
       });
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
     });
 
     test('should return a PrimaryKey', async () => {
@@ -746,7 +746,7 @@ describe('Identity class', () => {
 
       userAuthsStub.entries = entriesStub;
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const instructionDetailsStub = dsMockUtils.createQueryStub(
         'settlement',
         'instructionDetails',
@@ -797,7 +797,7 @@ describe('Identity class', () => {
       ]);
 
       instructionDetailsStub.multi = multiStub;
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await identity.getPendingInstructions();
 
@@ -892,17 +892,6 @@ describe('Identity class', () => {
           details: detailsTemplate,
         },
         {
-          distribution: entityMockUtils.getDividendDistributionInstance(distributionTemplate),
-          details: { ...detailsTemplate, remainingFunds: new BigNumber(0) },
-        },
-        {
-          distribution: entityMockUtils.getDividendDistributionInstance({
-            ...distributionTemplate,
-            perShare: new BigNumber(1000),
-          }),
-          details: detailsTemplate,
-        },
-        {
           distribution: entityMockUtils.getDividendDistributionInstance({
             ...distributionTemplate,
             id: new BigNumber(5),
@@ -923,7 +912,8 @@ describe('Identity class', () => {
 
     test('should return all distributions where the Identity can claim funds', async () => {
       const holderPaidStub = dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid');
-      // eslint-disable-next-line @typescript-eslint/camelcase
+
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       const rawCaId = dsMockUtils.createMockCAId({ ticker: 'HOLDER_PAID', local_id: 5 });
       const rawIdentityId = dsMockUtils.createMockIdentityId('someDid');
 
