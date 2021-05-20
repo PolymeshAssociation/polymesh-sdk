@@ -538,46 +538,28 @@ export class Identity extends Entity<UniqueIdentifiers> {
      * We filter distributions out if:
      *   - They have expired
      *   - They have not begun
-     *   - They have not enough remaining funds to pay this Identity's share
      *   - This Identity has already been paid
      */
     return P.filter(
       distributions,
-      async ({ distribution, details: { remainingFunds } }): Promise<boolean> => {
-        const { expiryDate, perShare, ticker, id: localId, paymentDate } = distribution;
+      async ({ distribution }): Promise<boolean> => {
+        const { expiryDate, ticker, id: localId, paymentDate } = distribution;
 
         const isExpired = expiryDate && expiryDate < now;
         const hasNotStarted = paymentDate > now;
-        const noFunds = remainingFunds.eq(0);
 
-        if (isExpired || noFunds || hasNotStarted) {
+        if (isExpired || hasNotStarted) {
           return false;
         }
 
-        /*
-         * the Checkpoint has to have been already created, otherwise the Distribution wouldn't be in
-         * its payment period and it would have been filtered out in the previous check
-         */
-        const checkpoint = (await distribution.checkpoint()) as Checkpoint;
+        const holderPaid = await context.polymeshApi.query.capitalDistribution.holderPaid(
+          tuple(
+            corporateActionIdentifierToCaId({ ticker, localId }, context),
+            stringToIdentityId(did, context)
+          )
+        );
 
-        const [holderPaid, balanceAtCheckpoint] = await Promise.all([
-          context.polymeshApi.query.capitalDistribution.holderPaid(
-            tuple(
-              corporateActionIdentifierToCaId({ ticker, localId }, context),
-              stringToIdentityId(did, context)
-            )
-          ),
-          checkpoint.balance({ identity: this }),
-        ]);
-
-        if (
-          balanceAtCheckpoint.multipliedBy(perShare).gt(remainingFunds) ||
-          boolToBoolean(holderPaid)
-        ) {
-          return false;
-        }
-
-        return true;
+        return !boolToBoolean(holderPaid);
       }
     );
   }
