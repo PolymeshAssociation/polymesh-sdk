@@ -279,7 +279,7 @@ export class DividendDistribution extends CorporateAction {
    *   the amount it is entitled to and whether it has been paid or not
    *
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be null.
-   *   This is because the Distribution participant cannot be determined without a Checkpoint
+   *   This is because the Distribution participant's corresponding payment cannot be determined without a Checkpoint
    */
   public async getParticipant(args: {
     identity: string | Identity;
