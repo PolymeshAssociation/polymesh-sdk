@@ -98,7 +98,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
     expect(err.message).toBe('Payment date must be after the Checkpoint date');
   });
 
-  test('should throw an error if the payment date is after the expiry date', async () => {
+  test('should throw an error if the checkpoint date is after the expiry date', async () => {
     const checkpoint = new Date(new Date().getTime() + 1000);
     const paymentDate = new Date(checkpoint.getTime() + 2000);
     const args = {
