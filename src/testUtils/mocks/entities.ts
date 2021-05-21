@@ -332,7 +332,6 @@ let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
 let checkpointAllBalancesStub: SinonStub;
-let checkpointBalanceStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
 let checkpointBalanceStub: SinonStub;
 let corporateActionExistsStub: SinonStub;
