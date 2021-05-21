@@ -17,6 +17,7 @@ import {
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
+  DistributionWithDetails,
   Ensured,
   ErrorCode,
   isCddProviderRole,
@@ -32,12 +33,14 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { MAX_CONCURRENT_REQUESTS } from '~/utils/constants';
+import { tuple } from '~/types/utils';
+import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
   boolToBoolean,
   cddStatusToBoolean,
+  corporateActionIdentifierToCaId,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
@@ -505,5 +508,58 @@ export class Identity extends Entity<UniqueIdentifiers> {
     const result = await identity.isDidFrozen(rawIdentityId);
 
     return boolToBoolean(result);
+  }
+
+  /**
+   * Retrieve every Dividend Distribution for which this Identity is eligible and hasn't been paid
+   *
+   * @note uses the middleware
+   * @note this query can be potentially **SLOW** depending on which Tokens this Identity has held
+   */
+  public async getPendingDistributions(): Promise<DistributionWithDetails[]> {
+    const { context, did } = this;
+    let tokens: SecurityToken[] = [];
+    let allFetched = false;
+    let start: number | undefined;
+
+    while (!allFetched) {
+      const { data, next } = await this.getHeldTokens({ size: MAX_PAGE_SIZE, start });
+      start = (next as number) || undefined;
+      allFetched = !next;
+      tokens = [...tokens, ...data];
+    }
+
+    const distributions = await this.context.getDividendDistributionsForTokens({ tokens });
+
+    const now = new Date();
+
+    /*
+     * We filter distributions out if:
+     *   - They have expired
+     *   - They have not begun
+     *   - This Identity has already been paid
+     */
+    return P.filter(
+      distributions,
+      async ({ distribution }): Promise<boolean> => {
+        const { expiryDate, ticker, id: localId, paymentDate } = distribution;
+
+        const isExpired = expiryDate && expiryDate < now;
+        const hasNotStarted = paymentDate > now;
+
+        if (isExpired || hasNotStarted) {
+          return false;
+        }
+
+        const holderPaid = await context.polymeshApi.query.capitalDistribution.holderPaid(
+          tuple(
+            corporateActionIdentifierToCaId({ ticker, localId }, context),
+            stringToIdentityId(did, context)
+          )
+        );
+
+        return !boolToBoolean(holderPaid);
+      }
+    );
   }
 }
