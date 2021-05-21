@@ -278,12 +278,14 @@ export class DividendDistribution extends CorporateAction {
 
   /**
    * Retrieve an Identity that is entitled to dividends in this Distribution (participant),
-   *   the amount it is entitled to and whether it have been paid or not
+   *   the amount it is entitled to and whether it has been paid or not
+   *
+   * @param args.identity - defaults to the current Identity
    *
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be null.
-   *   This is because the Distribution participant cannot be determined without a Checkpoint
+   *   This is because the Distribution participant's corresponding payment cannot be determined without a Checkpoint
    */
-  public async getParticipant(args: {
+  public async getParticipant(args?: {
     identity: string | Identity;
   }): Promise<DistributionParticipant | null> {
     const {
@@ -305,14 +307,13 @@ export class DividendDistribution extends CorporateAction {
     }
 
     const [did, balance] = await Promise.all([
-      getDid(args.identity, context),
+      getDid(args?.identity, context),
       checkpoint.balance(args),
     ]);
 
     const identity = new Identity({ did }, context);
 
-    const isTarget = !!remove([...targetIdentities], ({ did: targetDid }) => did === targetDid)
-      .length;
+    const isTarget = !!targetIdentities.find(({ did: targetDid }) => did === targetDid);
 
     let participant: DistributionParticipant;
 
@@ -335,11 +336,10 @@ export class DividendDistribution extends CorporateAction {
 
     const rawDid = stringToIdentityId(did, context);
     const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
-    const paid = boolToBoolean(await query.capitalDistribution.holderPaid([rawCaId, rawDid]));
+    const holderPaid = await query.capitalDistribution.holderPaid([rawCaId, rawDid]);
+    const paid = boolToBoolean(holderPaid);
 
-    const { amount } = participant;
-
-    return { identity, amount, paid };
+    return { ...participant, paid };
   }
 
   /**
