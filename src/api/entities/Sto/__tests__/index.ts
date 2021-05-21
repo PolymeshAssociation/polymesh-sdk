@@ -103,7 +103,7 @@ describe('Sto class', () => {
 
     const rawFundraiser = dsMockUtils.createMockOption(
       dsMockUtils.createMockFundraiser({
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         creator: dsMockUtils.createMockIdentityId(someDid),
         offering_portfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(someDid),
@@ -127,7 +127,7 @@ describe('Sto class', () => {
         end: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(date.getTime())),
         status: dsMockUtils.createMockFundraiserStatus('Live'),
         minimum_investment: dsMockUtils.createMockBalance(minInvestmentValue.toNumber()),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
 
@@ -290,12 +290,12 @@ describe('Sto class', () => {
         },
       ];
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const investmentQueryResponse: InvestmentResult = {
         totalCount: 1,
         items,
       };
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 

@@ -143,7 +143,7 @@ export class Account extends Entity<UniqueIdentifiers> {
       ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
     }
 
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
       transactions({
         block_id: blockNumber ? blockNumber.toNumber() : undefined,
@@ -194,7 +194,7 @@ export class Account extends Entity<UniqueIdentifiers> {
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
       }
     );
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const next = calculateNextKey(count, size, start);
 
@@ -203,5 +203,26 @@ export class Account extends Entity<UniqueIdentifiers> {
       next,
       count,
     };
+  }
+
+  /**
+   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary key of the Identity unfreezes all secondary keys
+   */
+  public async isFrozen(): Promise<boolean> {
+    const { address } = this;
+
+    const identity = await this.getIdentity();
+
+    if (identity === null) {
+      return false;
+    }
+
+    const primaryKey = await identity.getPrimaryKey();
+
+    if (address === primaryKey) {
+      return false;
+    }
+
+    return identity.areSecondaryKeysFrozen();
   }
 }

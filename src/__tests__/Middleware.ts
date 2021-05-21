@@ -44,7 +44,6 @@ describe('Middleware Class', () => {
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
-
       dsMockUtils.createApolloQueryStub(
         eventByIndexedArgs({
           ...variables,
@@ -53,13 +52,13 @@ describe('Middleware Class', () => {
           eventArg2: undefined,
         }),
         {
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           eventByIndexedArgs: {
             block_id: blockNumber.toNumber(),
             block: { datetime: blockDate },
             event_idx: eventIdx,
           },
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }
       );
 
@@ -106,7 +105,7 @@ describe('Middleware Class', () => {
           skip: undefined,
         }),
         {
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           eventsByIndexedArgs: [
             {
               block_id: blockNumber.toNumber(),
@@ -114,7 +113,7 @@ describe('Middleware Class', () => {
               event_idx: eventIdx,
             },
           ],
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }
       );
 
@@ -154,7 +153,7 @@ describe('Middleware Class', () => {
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         transactionByHash: {
           module_id: ModuleIdEnum.Asset,
           call_id: CallIdEnum.RegisterTicker,
@@ -165,7 +164,7 @@ describe('Middleware Class', () => {
           address,
           success: 0,
         },
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       let result = await middleware.getTransactionByHash(variable);
@@ -182,7 +181,7 @@ describe('Middleware Class', () => {
       });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         transactionByHash: {
           module_id: ModuleIdEnum.Asset,
           call_id: CallIdEnum.RegisterTicker,
@@ -193,7 +192,7 @@ describe('Middleware Class', () => {
           address: null,
           success: 0,
         },
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       result = await middleware.getTransactionByHash(variable);

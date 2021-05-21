@@ -100,7 +100,7 @@ describe('Documents class', () => {
           dsMockUtils.createMockDocument({
             uri: dsMockUtils.createMockDocumentUri(uri),
             name: dsMockUtils.createMockDocumentName(name),
-            /* eslint-disable @typescript-eslint/camelcase */
+            /* eslint-disable @typescript-eslint/naming-convention */
             content_hash: dsMockUtils.createMockDocumentHash(contentHash),
             doc_type: dsMockUtils.createMockOption(
               type ? dsMockUtils.createMockDocumentType(type) : null
@@ -108,7 +108,7 @@ describe('Documents class', () => {
             filing_date: dsMockUtils.createMockOption(
               filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
             ),
-            /* eslint-enable @typescript-eslint/camelcase */
+            /* eslint-enable @typescript-eslint/naming-convention */
           })
         )
       );

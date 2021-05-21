@@ -154,7 +154,7 @@ export class TransactionQueue<
       });
     }
 
-    this.queue = [...this.transactions] as PolymeshTransactionArray<TransactionArgs>;
+    this.queue = ([...this.transactions] as unknown) as PolymeshTransactionArray<TransactionArgs>;
     this.updateStatus(TransactionQueueStatus.Running);
 
     let procRes: ProcedureReturnType;

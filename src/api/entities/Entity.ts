@@ -5,13 +5,13 @@ import { serialize, unserialize } from '~/utils/internal';
 /**
  * Represents an object or resource in the Polymesh Ecosystem with its own set of properties and functionality
  */
-export class Entity<UniqueIdentifiers extends object> {
+export class Entity<UniqueIdentifiers> {
   /**
    * Generate the Entity's UUID from its identifying properties
    *
    * @param identifiers
    */
-  public static generateUuid<Identifiers extends object>(identifiers: Identifiers): string {
+  public static generateUuid<Identifiers>(identifiers: Identifiers): string {
     return serialize(this.name, identifiers);
   }
 
@@ -20,7 +20,7 @@ export class Entity<UniqueIdentifiers extends object> {
    *
    * @param serialized - UUID to unserialize
    */
-  public static unserialize<Identifiers extends object>(serialized: string): Identifiers {
+  public static unserialize<Identifiers>(serialized: string): Identifiers {
     const unserialized = unserialize<Identifiers>(serialized);
 
     if (!this.isUniqueIdentifiers(unserialized)) {
@@ -58,7 +58,7 @@ export class Entity<UniqueIdentifiers extends object> {
   /**
    * Whether this Entity is the same as another one
    */
-  public isEqual(entity: Entity<object>): boolean {
+  public isEqual(entity: Entity<unknown>): boolean {
     return this.uuid === entity.uuid;
   }
 }

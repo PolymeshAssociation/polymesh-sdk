@@ -115,7 +115,7 @@ describe('modifyCaCheckpoint procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const id = new BigNumber(1);
 
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
 
     sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);

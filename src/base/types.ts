@@ -1,3 +1,5 @@
+/* istanbul ignore file: already being tested somewhere else */
+
 import { PolymeshError as PolymeshErrorClass } from './PolymeshError';
 import { PolymeshTransaction as PolymeshTransactionClass } from './PolymeshTransaction';
 import { TransactionQueue as TransactionQueueClass } from './TransactionQueue';

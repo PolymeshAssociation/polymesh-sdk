@@ -1,5 +1,4 @@
 {
-  "mode": "file",
   "out": "docs",
   "theme": "gitbook",
   "exclude": [
@@ -17,6 +16,5 @@
     "src/context/index.ts"
   ],
   "excludeExternals": true,
-  "excludePrivate": true,
-  "ignoreCompilerErrors": true
+  "excludePrivate": true
 }

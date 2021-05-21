@@ -297,6 +297,7 @@ export class DividendDistribution extends CorporateAction {
 
     const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         CAId: { ticker, localId: id.toNumber() },
         fromDate: null,
         toDate: null,

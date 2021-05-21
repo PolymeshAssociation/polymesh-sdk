@@ -63,7 +63,7 @@ export async function prepareLinkCaDocs(
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const rawCAId = { ticker, local_id: caId };
 
   this.addTransaction(corporateAction.linkCaDoc, {}, rawCAId, docIdsToLink);
