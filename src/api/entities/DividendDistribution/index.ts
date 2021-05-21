@@ -162,7 +162,7 @@ export class DividendDistribution extends CorporateAction {
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
    *
-   * @note due to performance issues, we can not validate if there are enough remaining funds to pay a dividend
+   * @note due to performance issues, we do not validate that the distribution has enough remaining funds to pay the corresponding amount to the supplied Identities
    */
   public pay: ProcedureMethod<PayDividendsParams, void>;
 
