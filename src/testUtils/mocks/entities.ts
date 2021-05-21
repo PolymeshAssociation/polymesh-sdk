@@ -811,6 +811,11 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
     remainingFunds: new BigNumber(100),
     fundsReclaimed: false,
   },
+  getParticipant: {
+    identity: ('someIdentity' as unknown) as Identity,
+    amount: new BigNumber(100),
+    paid: false,
+  },
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
 // NOTE uncomment in Governance v2 upgrade
@@ -1518,6 +1523,12 @@ function initCorporateAction(opts?: CorporateActionOptions): void {
  */
 function configureDividendDistribution(opts: DividendDistributionOptions): void {
   const checkpoint = opts.checkpoint || mockInstanceContainer.checkpoint;
+  const details = { ...defaultDividendDistributionOptions.details, ...opts.details };
+  const getParticipant = {
+    ...defaultDividendDistributionOptions.getParticipant,
+    ...opts.getParticipant,
+  };
+
   const dividendDistribution = ({
     id: opts.id,
     ticker: opts.ticker,
@@ -1533,8 +1544,8 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     maxAmount: opts.maxAmount,
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
-    details: dividendDistributionDetailsStub.resolves(opts.details),
-    getParticipant: dividendDistributionGetParticipantStub.resolves(opts.getParticipant),
+    details: dividendDistributionDetailsStub.resolves(details),
+    getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
     checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
   } as unknown) as MockDividendDistribution;
 
@@ -2574,10 +2585,14 @@ export function getDividendDistributionConstructorStub(): SinonStub {
  * Retrieve the stub of the `DividendDistribution.getParticipant` method
  */
 export function getDividendDistributionGetParticipantStub(
-  getParticipant?: DistributionParticipant
+  getParticipant?: Partial<DistributionParticipant>
 ): SinonStub {
   if (getParticipant) {
-    return dividendDistributionGetParticipantStub.resolves(getParticipant);
+    return dividendDistributionGetParticipantStub.resolves({
+      ...defaultDividendDistributionOptions.getParticipant,
+      ...getParticipant,
+    });
   }
-  return dividendDistributionGetParticipantStub;
+
+  return dividendDistributionGetParticipantStub.resolves(getParticipant);
 }
