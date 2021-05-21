@@ -30,9 +30,7 @@ export async function prepareClaimDividends(
 
   assertDistributionOpen(paymentDate, expiryDate);
 
-  const identity = await context.getCurrentIdentity();
-
-  const participant = await distribution.getParticipant({ identity });
+  const participant = await distribution.getParticipant();
 
   if (!participant) {
     throw new PolymeshError({
