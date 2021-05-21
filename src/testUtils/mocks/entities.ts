@@ -2447,7 +2447,7 @@ export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBal
  * @hidden
  * Retrieve the stub of the `Checkpoint.balance` method
  */
-export function getCheckpointBalanceStub(balance?: ResultSet<BigNumber>): SinonStub {
+export function getCheckpointBalanceStub(balance?: BigNumber): SinonStub {
   if (balance) {
     return checkpointBalanceStub.resolves(balance);
   }

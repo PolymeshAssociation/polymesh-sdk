@@ -391,6 +391,14 @@ describe('DividendDistribution class', () => {
         amount: balance.multipliedBy(dividendDistribution.perShare),
         paid: false,
       });
+
+      result = await dividendDistribution.getParticipant();
+
+      expect(result).toEqual({
+        identity: entityMockUtils.getIdentityInstance(),
+        amount: balance.multipliedBy(dividendDistribution.perShare),
+        paid: false,
+      });
     });
 
     test("should return null if the distribution checkpoint hasn't been created yet", async () => {
