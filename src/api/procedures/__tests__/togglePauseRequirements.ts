@@ -46,7 +46,7 @@ describe('togglePauseRequirements procedure', () => {
       returnValue: [],
     });
     assetCompliancesStub.withArgs(rawTicker).resolves({
-      // eslint-disable-next-line @typescript-eslint/camelcase
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       is_paused: true,
     });
     boolToBooleanStub.returns(true);
@@ -77,7 +77,7 @@ describe('togglePauseRequirements procedure', () => {
 
   test('should throw an error if pause is set to false and the asset compliance requirements are already unpaused', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      // eslint-disable-next-line @typescript-eslint/camelcase
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       is_paused: false,
     });
 
@@ -95,7 +95,7 @@ describe('togglePauseRequirements procedure', () => {
 
   test('should add a pause asset compliance transaction to the queue', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      // eslint-disable-next-line @typescript-eslint/camelcase
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       is_paused: false,
     });
 

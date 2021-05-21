@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-/* eslint-disable @typescript-eslint/camelcase */
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
@@ -150,13 +150,14 @@ import {
   ClaimData,
   ClaimType,
   CountryCode as CountryCodeEnum,
+  DistributionWithDetails,
   ExtrinsicData,
   KeyringPair,
   ResultSet,
   SecondaryKey,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
-import { Mutable, tuple } from '~/types/utils';
+import { ArgsType, Mutable, tuple } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
 
@@ -187,6 +188,20 @@ function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
 }
 
 let apolloConstructorStub: SinonStub;
+
+export type MockContext = Mocked<Context>;
+
+export enum MockTxStatus {
+  Ready = 'Ready',
+  Succeeded = 'Succeeded',
+  Failed = 'Failed',
+  Aborted = 'Aborted',
+  Rejected = 'Rejected',
+  Intermediate = 'Intermediate',
+  InBlock = 'InBlock',
+  BatchFailed = 'BatchFailed',
+  FinalizedFailed = 'FinalizedFailed',
+}
 
 const MockApolloClientClass = class {
   /**
@@ -272,12 +287,13 @@ interface ContextOptions {
   isArchiveNode?: boolean;
   ss58Format?: number;
   areScondaryKeysFrozen?: boolean;
+  getDividendDistributionsForTokens?: DistributionWithDetails[];
   isFrozen?: boolean;
 }
 
 interface Pair {
   address: string;
-  meta: object;
+  meta: Record<string, unknown>;
   publicKey: string;
   isLocked?: boolean;
 }
@@ -301,20 +317,6 @@ export interface StubQuery {
   at: SinonStub;
   multi: SinonStub;
   size: SinonStub;
-}
-
-export type MockContext = Mocked<Context>;
-
-export enum MockTxStatus {
-  Ready = 'Ready',
-  Succeeded = 'Succeeded',
-  Failed = 'Failed',
-  Aborted = 'Aborted',
-  Rejected = 'Rejected',
-  Intermediate = 'Intermediate',
-  InBlock = 'InBlock',
-  BatchFailed = 'BatchFailed',
-  FinalizedFailed = 'FinalizedFailed',
 }
 
 export enum TxFailReason {
@@ -453,19 +455,19 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   throw new Error(`There is no receipt associated with status ${status}`);
 };
 
-export const mockPolkadotModule = (path: string) => (): object => ({
+export const mockPolkadotModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   ApiPromise: MockApiPromiseClass,
   WsProvider: MockWsProviderClass,
   Keyring: MockKeyringClass,
 });
 
-export const mockContextModule = (path: string) => (): object => ({
+export const mockContextModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Context: MockContextClass,
 });
 
-export const mockApolloModule = (path: string) => (): object => ({
+export const mockApolloModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   ApolloClient: MockApolloClientClass,
 });
@@ -549,6 +551,7 @@ const defaultContextOptions: ContextOptions = {
   isArchiveNode: true,
   ss58Format: 42,
   areScondaryKeysFrozen: false,
+  getDividendDistributionsForTokens: [],
   isFrozen: false,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
@@ -636,6 +639,9 @@ function configureContext(opts: ContextOptions): void {
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
+    getDividendDistributionsForTokens: sinon
+      .stub()
+      .resolves(opts.getDividendDistributionsForTokens),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
@@ -977,7 +983,7 @@ export function createTxStub<
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: any): SinonStub {
+export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
   const instance = mockInstanceContainer.apolloInstance;
   const stub = sinon.stub();
 
@@ -1179,7 +1185,7 @@ export function updateTxStatus<
  * @hidden
  * Make calls to `Middleware.query` throw an error
  */
-export function throwOnMiddlewareQuery(err?: object): void {
+export function throwOnMiddlewareQuery(err?: unknown): void {
   const instance = mockInstanceContainer.apolloInstance;
 
   if (err) {
@@ -1297,7 +1303,7 @@ function isOption<T extends Codec>(codec: any): codec is Option<T> {
 /**
  * @hidden
  */
-const createMockCodec = (codec: object, isEmpty: boolean): Codec => {
+const createMockCodec = (codec: unknown, isEmpty: boolean): Codec => {
   const clone = cloneDeep(codec) as Mutable<Codec>;
   (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
@@ -2479,7 +2485,7 @@ export const createMockVenue = (venue?: {
     creator: createMockIdentityId(),
     instructions: [],
     details: createMockVenueDetails(),
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     venue_type: createMockVenueType(),
   };
 

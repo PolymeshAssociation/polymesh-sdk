@@ -92,7 +92,7 @@ describe('SecurityToken class', () => {
 
     beforeEach(() => {
       rawToken = dsMockUtils.createMockSecurityToken({
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         owner_did: dsMockUtils.createMockIdentityId(owner),
         name: dsMockUtils.createMockAssetName(ticker),
         asset_type: dsMockUtils.createMockAssetType(assetType),
@@ -101,7 +101,7 @@ describe('SecurityToken class', () => {
         primary_issuance_agent: dsMockUtils.createMockOption(
           dsMockUtils.createMockIdentityId(primaryIssuanceAgent)
         ),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
       context = dsMockUtils.getContextInstance();
       securityToken = new SecurityToken({ ticker }, context);
@@ -125,14 +125,14 @@ describe('SecurityToken class', () => {
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(owner),
           name: dsMockUtils.createMockAssetName(ticker),
           asset_type: dsMockUtils.createMockAssetType(assetType),
           divisible: dsMockUtils.createMockBool(isDivisible),
           total_supply: dsMockUtils.createMockBalance(totalSupply),
           primary_issuance_agent: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
 
@@ -143,7 +143,7 @@ describe('SecurityToken class', () => {
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/camelcase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/naming-convention
       (rawToken as any).primary_issuance_agent = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('asset', 'tokens').callsFake(async (_, cbFunc) => {
@@ -201,7 +201,7 @@ describe('SecurityToken class', () => {
       const ticker = 'TEST';
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
-      const makeDivisible: true = true;
+      const makeDivisible = true as const;
 
       const args = {
         makeDivisible,
@@ -370,13 +370,13 @@ describe('SecurityToken class', () => {
       const securityToken = new SecurityToken({ ticker }, context);
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
           event_idx: eventIdx,
         },
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       const result = await securityToken.createdAt();

@@ -23,7 +23,7 @@ function writeDefinitions(schemaObj) {
 
   fs.writeFileSync(
     path.resolve(typesDir, 'definitions.ts'),
-    `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(
+    `/* eslint-disable @typescript-eslint/naming-convention */\nexport default ${util.inspect(
       { rpc: {}, types },
       {
         compact: false,
@@ -35,11 +35,14 @@ function writeDefinitions(schemaObj) {
 
   fs.writeFileSync(
     path.resolve(definitionsDir, 'schema.ts'),
-    `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(schemaObj, {
-      compact: false,
-      depth: null,
-      maxArrayLength: null,
-    })}`
+    `/* eslint-disable @typescript-eslint/naming-convention */\nexport default ${util.inspect(
+      schemaObj,
+      {
+        compact: false,
+        depth: null,
+        maxArrayLength: null,
+      }
+    )}`
   );
 
   let defExports = "export { default as polymesh } from './polymesh/definitions'\n";
@@ -52,7 +55,7 @@ function writeDefinitions(schemaObj) {
 
     fs.writeFileSync(
       path.resolve(moduleDir, 'definitions.ts'),
-      `/* eslint-disable @typescript-eslint/camelcase */\nexport default ${util.inspect(
+      `/* eslint-disable @typescript-eslint/naming-convention */\nexport default ${util.inspect(
         { rpc, types: {} },
         {
           compact: false,

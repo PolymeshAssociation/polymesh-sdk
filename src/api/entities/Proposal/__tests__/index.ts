@@ -93,11 +93,11 @@ describe('Proposal class', () => {
 //       const fakeResult = true;
 
 //       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
-//         /* eslint-disable @typescript-eslint/camelcase */
+//         /* eslint-disable @typescript-eslint/naming-convention */
 //         eventByIndexedArgs: {
 //           block_id: 'someBlockId',
 //         },
-//         /* eslint-enable @typescript-eslint/camelcase */
+//         /* eslint-enable @typescript-eslint/naming-convention */
 //       });
 
 //       const result = await proposal.identityHasVoted();
@@ -263,7 +263,7 @@ describe('Proposal class', () => {
 //         returnValue: dsMockUtils.createMockOption(
 //           dsMockUtils.createMockPipsMetadata({
 //             proposer: dsMockUtils.createMockAccountId(),
-//             // eslint-disable-next-line @typescript-eslint/camelcase
+//             // eslint-disable-next-line @typescript-eslint/naming-convention
 //             cool_off_until: rawCoolOff,
 //             end: dsMockUtils.createMockU32(),
 //           })
@@ -288,7 +288,7 @@ describe('Proposal class', () => {
 //         returnValue: dsMockUtils.createMockOption(
 //           dsMockUtils.createMockPipsMetadata({
 //             proposer: dsMockUtils.createMockAccountId(),
-//             // eslint-disable-next-line @typescript-eslint/camelcase
+//             // eslint-disable-next-line @typescript-eslint/naming-convention
 //             cool_off_until: rawCoolOff,
 //             end: rawEnd,
 //           })
@@ -314,7 +314,7 @@ describe('Proposal class', () => {
 //         returnValue: dsMockUtils.createMockOption(
 //           dsMockUtils.createMockPipsMetadata({
 //             proposer: dsMockUtils.createMockAccountId(),
-//             // eslint-disable-next-line @typescript-eslint/camelcase
+//             // eslint-disable-next-line @typescript-eslint/naming-convention
 //             cool_off_until: rawCoolOff,
 //             end: rawEnd,
 //           })
@@ -360,7 +360,7 @@ describe('Proposal class', () => {
 //         returnValue: dsMockUtils.createMockOption(
 //           dsMockUtils.createMockPipsMetadata({
 //             proposer: dsMockUtils.createMockAccountId(),
-//             // eslint-disable-next-line @typescript-eslint/camelcase
+//             // eslint-disable-next-line @typescript-eslint/naming-convention
 //             cool_off_until: dsMockUtils.createMockU32(),
 //             end: rawEnd,
 //           })

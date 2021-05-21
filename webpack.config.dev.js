@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable */
 const path = require('path');
 const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -24,9 +24,9 @@ const devConfig = {
     rules: [
       {
         test: /\.ts$/,
-        loader: 'awesome-typescript-loader',
+        loader: 'ts-loader',
         options: {
-          configFileName: 'tsconfig.dev.json',
+          configFile: 'tsconfig.dev.json',
         },
       },
       {

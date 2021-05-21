@@ -172,7 +172,7 @@ describe('Requirements class', () => {
         Identity: dsMockUtils.createMockIdentityId(tokenDid),
       });
       const conditionForBoth = dsMockUtils.createMockCondition({
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         condition_type: dsMockUtils.createMockConditionType({
           IsAnyOf: [
             dsMockUtils.createMockClaim({
@@ -190,7 +190,7 @@ describe('Requirements class', () => {
         {
           requirements: [
             dsMockUtils.createMockComplianceRequirement({
-              /* eslint-disable @typescript-eslint/camelcase */
+              /* eslint-disable @typescript-eslint/naming-convention */
               sender_conditions: [
                 dsMockUtils.createMockCondition({
                   condition_type: dsMockUtils.createMockConditionType({
@@ -223,7 +223,7 @@ describe('Requirements class', () => {
                 }),
               ],
               id: dsMockUtils.createMockU32(2),
-              /* eslint-enable @typescript-eslint/camelcase */
+              /* eslint-enable @typescript-eslint/naming-convention */
             }),
           ],
         } as AssetCompliance,
@@ -372,7 +372,7 @@ describe('Requirements class', () => {
       dsMockUtils
         .createQueryStub('complianceManager', 'assetCompliances')
         .withArgs(rawTicker)
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         .resolves({ is_paused: mockBool });
 
       const result = await requeriments.arePaused();

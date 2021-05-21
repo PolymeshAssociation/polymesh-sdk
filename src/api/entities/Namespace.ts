@@ -5,7 +5,7 @@ import { Context, Entity } from '~/internal';
  *
  * Represents a namespace within an Entity with the purpose of grouping related functionality
  */
-export class Namespace<Parent extends Entity<{}>> {
+export class Namespace<Parent extends Entity<unknown>> {
   protected parent: Parent;
 
   protected context: Context;

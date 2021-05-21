@@ -48,7 +48,7 @@ interface AddTransactionOpts<Values extends unknown[]> extends AddTransactionOpt
 export class Procedure<
   Args extends unknown = void,
   ReturnValue extends unknown = void,
-  Storage extends unknown = {}
+  Storage extends unknown = Record<string, unknown>
 > {
   private prepareTransactions: (
     this: Procedure<Args, ReturnValue, Storage>,
@@ -462,15 +462,15 @@ export class Procedure<
    *   used by both `prepareTransactions` and `checkAuthorization`
    */
   public get storage(): Storage {
-    const { _storage } = this;
+    const { _storage: storage } = this;
 
-    if (!_storage) {
+    if (!storage) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Attempt to access storage before it was set',
       });
     }
 
-    return _storage;
+    return storage;
   }
 }
