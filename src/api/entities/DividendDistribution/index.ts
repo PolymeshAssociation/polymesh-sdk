@@ -335,9 +335,7 @@ export class DividendDistribution extends CorporateAction {
     const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
     const paid = boolToBoolean(await query.capitalDistribution.holderPaid([rawCaId, rawDid]));
 
-    const { amount } = participant;
-
-    return { identity, amount, paid };
+    return { ...participant, paid };
   }
 
   /**
