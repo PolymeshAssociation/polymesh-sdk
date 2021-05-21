@@ -129,7 +129,10 @@ describe('claimDividends procedure', () => {
   });
 
   test('should throw an error if the current Identity is not included in the Distribution', async () => {
-    distribution = entityMockUtils.getDividendDistributionInstance();
+    distribution = entityMockUtils.getDividendDistributionInstance({
+      paymentDate,
+      getParticipant: null,
+    });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 

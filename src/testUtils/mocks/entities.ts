@@ -260,7 +260,7 @@ interface DividendDistributionOptions {
   expiryDate?: null | Date;
   paymentDate?: Date;
   details?: Partial<DividendDistributionDetails>;
-  getParticipant?: Partial<DistributionParticipant>;
+  getParticipant?: Partial<DistributionParticipant> | null;
 }
 
 let identityConstructorStub: SinonStub;
@@ -1524,10 +1524,6 @@ function initCorporateAction(opts?: CorporateActionOptions): void {
 function configureDividendDistribution(opts: DividendDistributionOptions): void {
   const checkpoint = opts.checkpoint || mockInstanceContainer.checkpoint;
   const details = { ...defaultDividendDistributionOptions.details, ...opts.details };
-  const getParticipant = {
-    ...defaultDividendDistributionOptions.getParticipant,
-    ...opts.getParticipant,
-  };
 
   const dividendDistribution = ({
     id: opts.id,
@@ -1545,7 +1541,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
     details: dividendDistributionDetailsStub.resolves(details),
-    getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
+    getParticipant: dividendDistributionGetParticipantStub.resolves(opts.getParticipant),
     checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
   } as unknown) as MockDividendDistribution;
 
