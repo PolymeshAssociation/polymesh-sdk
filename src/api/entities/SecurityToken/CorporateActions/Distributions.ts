@@ -9,8 +9,7 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { CorporateActionParams, DistributionWithDetails } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { CorporateActionParams, DistributionWithDetails, ProcedureMethod } from '~/types';
 import {
   balanceToBigNumber,
   boolToBoolean,

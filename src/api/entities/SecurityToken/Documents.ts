@@ -5,8 +5,7 @@ import {
   setTokenDocuments,
   SetTokenDocumentsParams,
 } from '~/internal';
-import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { PaginationOptions, ProcedureMethod, ResultSet, TokenDocument } from '~/types';
 import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 

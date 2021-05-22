@@ -10,8 +10,8 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod, TrustedClaimIssuerOperation } from '~/types/internal';
+import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 

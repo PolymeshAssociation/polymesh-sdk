@@ -19,8 +19,14 @@ import {
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import {
+  Ensured,
+  EventIdentifier,
+  ProcedureMethod,
+  SubCallback,
+  TokenIdentifier,
+  UnsubCallback,
+} from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,

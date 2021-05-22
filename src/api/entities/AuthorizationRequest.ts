@@ -9,8 +9,7 @@ import {
   Entity,
   Identity,
 } from '~/internal';
-import { Authorization, AuthorizationType, Signer } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { Authorization, AuthorizationType, ProcedureMethod, Signer } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {

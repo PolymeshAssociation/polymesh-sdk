@@ -13,8 +13,7 @@ import {
   ModifyVenueParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, InstructionStatus } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ErrorCode, InstructionStatus, ProcedureMethod } from '~/types';
 import {
   identityIdToString,
   meshVenueTypeToVenueType,

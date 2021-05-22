@@ -6,9 +6,9 @@ import {
 import {
   ActiveTransferRestrictions,
   PercentageTransferRestriction,
+  ProcedureMethod,
   TransferRestrictionType,
 } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
 
 /**
  * Handles all Percentage Transfer Restriction related functionality

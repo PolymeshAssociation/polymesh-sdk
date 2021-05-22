@@ -35,12 +35,12 @@ import {
   ErrorCode,
   MiddlewareConfig,
   NetworkProperties,
+  ProcedureMethod,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
 import {
   moduleAddressToString,
   signerToString,
