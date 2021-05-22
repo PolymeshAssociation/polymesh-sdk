@@ -22,7 +22,7 @@ const methodRegex = /\*\/\n\s+?public (\w+?)!?: (ProcedureMethod<[\w\W]+?>);/gs;
 const importRegex = /(import .+? from '.+?';\n)\n/s;
 
 /**
- * Get type arguments from a ProcedureMethod type declaration
+ * Get type arguments from a `ProcedureMethod` type declaration
  *
  * - calling the function with `ProcedureMethod<Foo, Bar, Baz>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: 'Baz' }`
  * - calling the function with `ProcedureMethod<Foo, Bar>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: undefined }`
