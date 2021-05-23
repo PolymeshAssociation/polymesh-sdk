@@ -217,6 +217,7 @@ interface CheckpointOptions {
   totalSupply?: BigNumber;
   exists?: boolean;
   allBalances?: ResultSet<IdentityBalance>;
+  balance?: BigNumber;
 }
 
 interface CheckpointScheduleOptions {
@@ -247,6 +248,7 @@ interface DividendDistributionOptions {
   ticker?: string;
   declarationDate?: Date;
   description?: string;
+  checkpoint?: Checkpoint | CheckpointSchedule;
   targets?: CorporateActionTargets;
   defaultTaxWithholding?: BigNumber;
   taxWithholdings?: TaxWithholding[];
@@ -330,10 +332,12 @@ let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
 let checkpointAllBalancesStub: SinonStub;
+let checkpointBalanceStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
 let corporateActionExistsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
+let dividendDistributionCheckpointStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -1401,6 +1405,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     id: opts.id,
     exists: checkpointExistsStub.resolves(opts.exists),
     allBalances: checkpointAllBalancesStub.resolves(allBalances),
+    balance: checkpointBalanceStub.resolves(opts.balance),
   } as unknown) as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
@@ -1421,6 +1426,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
   checkpointTotalSupplyStub = sinon.stub();
   checkpointExistsStub = sinon.stub();
   checkpointAllBalancesStub = sinon.stub();
+  checkpointBalanceStub = sinon.stub();
 
   checkpointOptions = merge({}, defaultCheckpointOptions, opts);
 
@@ -1508,6 +1514,7 @@ function initCorporateAction(opts?: CorporateActionOptions): void {
  * Configure the CorporateAction instance
  */
 function configureDividendDistribution(opts: DividendDistributionOptions): void {
+  const checkpoint = opts.checkpoint || mockInstanceContainer.checkpoint;
   const dividendDistribution = ({
     id: opts.id,
     ticker: opts.ticker,
@@ -1524,6 +1531,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
     details: dividendDistributionDetailsStub.resolves(opts.details),
+    checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
   } as unknown) as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
@@ -1541,6 +1549,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
 function initDividendDistribution(opts?: DividendDistributionOptions): void {
   dividendDistributionConstructorStub = sinon.stub();
   dividendDistributionDetailsStub = sinon.stub();
+  dividendDistributionCheckpointStub = sinon.stub();
 
   dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
 
@@ -2436,6 +2445,17 @@ export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBal
 
 /**
  * @hidden
+ * Retrieve the stub of the `Checkpoint.balance` method
+ */
+export function getCheckpointBalanceStub(balance?: ResultSet<BigNumber>): SinonStub {
+  if (balance) {
+    return checkpointBalanceStub.resolves(balance);
+  }
+  return checkpointBalanceStub;
+}
+
+/**
+ * @hidden
  * Retrieve the Checkpoint constructor stub
  */
 export function getCheckpointConstructorStub(): SinonStub {
@@ -2492,6 +2512,17 @@ export function getCorporateActionInstance(opts?: CorporateActionOptions): MockC
 
 /**
  * @hidden
+ * Retrieve the stub of the `CorporateAction.exists` method
+ */
+export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return corporateActionExistsStub.resolves(exists);
+  }
+  return corporateActionExistsStub;
+}
+
+/**
+ * @hidden
  * Retrieve the CorporateAction constructor stub
  */
 export function getCorporateActionConstructorStub(): SinonStub {
@@ -2514,19 +2545,21 @@ export function getDividendDistributionInstance(
 
 /**
  * @hidden
- * Retrieve the DividendDistribution constructor stub
+ * Retrieve the stub of the `DividendDistribution.checkpoint` method
  */
-export function getDividendDistributionConstructorStub(): SinonStub {
-  return dividendDistributionConstructorStub;
+export function getDividendDistributionCheckpointStub(
+  checkpoint?: Checkpoint | CheckpointSchedule
+): SinonStub {
+  if (checkpoint) {
+    return dividendDistributionCheckpointStub.resolves(checkpoint);
+  }
+  return dividendDistributionCheckpointStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `CorporateAction.exists` method
+ * Retrieve the DividendDistribution constructor stub
  */
-export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
-  if (exists) {
-    return corporateActionExistsStub.resolves(exists);
-  }
-  return corporateActionExistsStub;
+export function getDividendDistributionConstructorStub(): SinonStub {
+  return dividendDistributionConstructorStub;
 }

@@ -150,6 +150,7 @@ import {
   ClaimData,
   ClaimType,
   CountryCode as CountryCodeEnum,
+  DistributionWithDetails,
   ExtrinsicData,
   KeyringPair,
   ResultSet,
@@ -286,6 +287,7 @@ interface ContextOptions {
   isArchiveNode?: boolean;
   ss58Format?: number;
   areScondaryKeysFrozen?: boolean;
+  getDividendDistributionsForTokens?: DistributionWithDetails[];
   isFrozen?: boolean;
 }
 
@@ -549,6 +551,7 @@ const defaultContextOptions: ContextOptions = {
   isArchiveNode: true,
   ss58Format: 42,
   areScondaryKeysFrozen: false,
+  getDividendDistributionsForTokens: [],
   isFrozen: false,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
@@ -636,6 +639,9 @@ function configureContext(opts: ContextOptions): void {
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
+    getDividendDistributionsForTokens: sinon
+      .stub()
+      .resolves(opts.getDividendDistributionsForTokens),
   } as unknown) as MockContext;
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
