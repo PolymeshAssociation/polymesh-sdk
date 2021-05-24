@@ -1,4 +1,5 @@
 {
+  "mode": "file",
   "out": "docs",
   "theme": "gitbook",
   "exclude": [

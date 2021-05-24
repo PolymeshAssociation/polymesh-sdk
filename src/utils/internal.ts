@@ -34,6 +34,7 @@ import {
   NextKey,
   PaginationOptions,
   ProcedureAuthorizationStatus,
+  ProcedureMethod,
   Scope,
   UiKeyring,
 } from '~/types';
@@ -42,7 +43,6 @@ import {
   Falsyable,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
-  ProcedureMethod,
 } from '~/types/internal';
 import { ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {

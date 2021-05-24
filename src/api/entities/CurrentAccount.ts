@@ -2,8 +2,7 @@ import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { Account, Context, CurrentIdentity, leaveIdentity } from '~/internal';
-import { Permissions, PermissionsLike, TxTags } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { Permissions, PermissionsLike, ProcedureMethod, TxTags } from '~/types';
 import {
   permissionsLikeToPermissions,
   portfolioToPortfolioId,

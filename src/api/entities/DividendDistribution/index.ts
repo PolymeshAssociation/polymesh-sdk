@@ -29,9 +29,9 @@ import {
   Ensured,
   ErrorCode,
   IdentityBalance,
+  ProcedureMethod,
   TargetTreatment,
 } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {

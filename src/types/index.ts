@@ -18,6 +18,7 @@ import {
   /*, Proposal */
   SecurityToken,
   Sto,
+  TransactionQueue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
 
@@ -928,6 +929,15 @@ export interface ScheduleWithDetails {
 export interface DistributionWithDetails {
   distribution: DividendDistribution;
   details: DividendDistributionDetails;
+}
+
+export interface ProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args: MethodArgs): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
+  checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
 
 export { TxTags, TxTag };
