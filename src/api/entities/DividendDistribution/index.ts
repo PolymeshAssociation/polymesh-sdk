@@ -161,6 +161,8 @@ export class DividendDistribution extends CorporateAction {
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
+   *
+   * @note due to performance issues, we do not validate that the distribution has enough remaining funds to pay the corresponding amount to the supplied Identities
    */
   public pay: ProcedureMethod<PayDividendsParams, void>;
 
@@ -304,8 +306,6 @@ export class DividendDistribution extends CorporateAction {
       return null;
     }
 
-    const isExclusion = treatment === TargetTreatment.Exclude;
-
     const [did, balance] = await Promise.all([
       getDid(args?.identity, context),
       checkpoint.balance(args),
@@ -316,6 +316,8 @@ export class DividendDistribution extends CorporateAction {
     const isTarget = !!targetIdentities.find(({ did: targetDid }) => did === targetDid);
 
     let participant: DistributionParticipant;
+
+    const isExclusion = treatment === TargetTreatment.Exclude;
 
     if (balance.gt(0) && xor(isTarget, isExclusion)) {
       participant = {

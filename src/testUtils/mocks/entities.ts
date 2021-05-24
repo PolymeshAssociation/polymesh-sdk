@@ -38,6 +38,7 @@ import {
   CorporateActionKind,
   CorporateActionTargets,
   CountTransferRestriction,
+  DistributionParticipant,
   DividendDistributionDetails,
   ExtrinsicData,
   IdentityBalance,
@@ -259,6 +260,7 @@ interface DividendDistributionOptions {
   expiryDate?: null | Date;
   paymentDate?: Date;
   details?: Partial<DividendDistributionDetails>;
+  getParticipant?: Partial<DistributionParticipant> | null;
 }
 
 let identityConstructorStub: SinonStub;
@@ -337,6 +339,7 @@ let checkpointBalanceStub: SinonStub;
 let corporateActionExistsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
+let dividendDistributionGetParticipantStub: SinonStub;
 let dividendDistributionCheckpointStub: SinonStub;
 
 const MockIdentityClass = class {
@@ -807,6 +810,10 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
   details: {
     remainingFunds: new BigNumber(100),
     fundsReclaimed: false,
+  },
+  getParticipant: {
+    amount: new BigNumber(100),
+    paid: false,
   },
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
@@ -1514,7 +1521,12 @@ function initCorporateAction(opts?: CorporateActionOptions): void {
  * Configure the CorporateAction instance
  */
 function configureDividendDistribution(opts: DividendDistributionOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const checkpoint = opts.checkpoint || mockInstanceContainer.checkpoint;
+  const getParticipant = opts.getParticipant
+    ? { ...defaultDividendDistributionOptions.getParticipant, ...opts.getParticipant }
+    : null;
+
   const dividendDistribution = ({
     id: opts.id,
     ticker: opts.ticker,
@@ -1530,7 +1542,8 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     maxAmount: opts.maxAmount,
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
-    details: dividendDistributionDetailsStub.resolves(opts.details),
+    details: dividendDistributionDetailsStub.resolves(details),
+    getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
     checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
   } as unknown) as MockDividendDistribution;
 
@@ -1549,6 +1562,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
 function initDividendDistribution(opts?: DividendDistributionOptions): void {
   dividendDistributionConstructorStub = sinon.stub();
   dividendDistributionDetailsStub = sinon.stub();
+  dividendDistributionGetParticipantStub = sinon.stub();
   dividendDistributionCheckpointStub = sinon.stub();
 
   dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
@@ -2562,4 +2576,21 @@ export function getDividendDistributionCheckpointStub(
  */
 export function getDividendDistributionConstructorStub(): SinonStub {
   return dividendDistributionConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DividendDistribution.getParticipant` method
+ */
+export function getDividendDistributionGetParticipantStub(
+  getParticipant?: Partial<DistributionParticipant>
+): SinonStub {
+  if (getParticipant) {
+    return dividendDistributionGetParticipantStub.resolves({
+      ...defaultDividendDistributionOptions.getParticipant,
+      ...getParticipant,
+    });
+  }
+
+  return dividendDistributionGetParticipantStub.resolves(getParticipant);
 }
