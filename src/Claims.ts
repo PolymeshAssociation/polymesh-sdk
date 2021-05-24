@@ -18,12 +18,13 @@ import {
   Ensured,
   IdentityWithClaims,
   InvestorUniquenessClaim,
+  ProcedureMethod,
   ResultSet,
   Scope,
   ScopedClaim,
   ScopeType,
 } from '~/types';
-import { ClaimOperation, ProcedureMethod } from '~/types/internal';
+import { ClaimOperation } from '~/types/internal';
 import {
   scopeToMiddlewareScope,
   signerToString,

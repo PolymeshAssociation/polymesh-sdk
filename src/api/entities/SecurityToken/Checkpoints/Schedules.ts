@@ -10,8 +10,7 @@ import {
   RemoveCheckpointScheduleParams,
   SecurityToken,
 } from '~/internal';
-import { CalendarPeriod, ScheduleWithDetails } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { CalendarPeriod, ProcedureMethod, ScheduleWithDetails } from '~/types';
 import {
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,

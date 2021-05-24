@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Context, issueTokens, Namespace, SecurityToken } from '~/internal';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**

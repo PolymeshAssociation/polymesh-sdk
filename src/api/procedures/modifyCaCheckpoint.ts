@@ -1,12 +1,12 @@
+import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
   CorporateAction,
-  PolymeshError,
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { checkpointToRecordDateSpec, corporateActionIdentifierToCaId } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
@@ -40,24 +40,7 @@ export async function prepareModifyCaCheckpoint(
     corporateAction: { id: localId, ticker },
   } = args;
 
-  if (!(checkpoint instanceof Date)) {
-    const exists = await checkpoint.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message:
-          checkpoint instanceof Checkpoint
-            ? "Checkpoint doesn't exist"
-            : "Checkpoint Schedule doesn't exist",
-      });
-    }
-  } else if (checkpoint <= new Date()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Checkpoint date must be in the future',
-    });
-  }
+  await assertCaCheckpointValid(checkpoint);
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
   const rawRecordDateSpec = optionize(checkpointToRecordDateSpec)(checkpoint, context);

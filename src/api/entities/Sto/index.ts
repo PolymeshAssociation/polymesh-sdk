@@ -16,8 +16,14 @@ import {
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import {
+  Ensured,
+  ErrorCode,
+  ProcedureMethod,
+  ResultSet,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 

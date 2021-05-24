@@ -16,7 +16,7 @@ import {
   removeCorporateActionsAgent,
   SecurityToken,
 } from '~/internal';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod } from '~/types';
 import {
   identityIdToString,
   permillToBigNumber,

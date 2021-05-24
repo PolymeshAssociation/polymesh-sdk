@@ -11,8 +11,7 @@ import {
   SetAssetRequirementsParams,
   togglePauseRequirements,
 } from '~/internal';
-import { Compliance, Requirement, SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { Compliance, ProcedureMethod, Requirement, SubCallback, UnsubCallback } from '~/types';
 import {
   assetComplianceResultToCompliance,
   boolToBoolean,

@@ -13,8 +13,7 @@ import {
   ModifyCaCheckpointParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ErrorCode, ProcedureMethod } from '~/types';
 import {
   numberToU32,
   storedScheduleToCheckpointScheduleParams,

@@ -6,8 +6,7 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { DistributionWithDetails } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { DistributionWithDetails, ProcedureMethod } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**

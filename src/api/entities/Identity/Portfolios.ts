@@ -10,8 +10,7 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, PaginationOptions, ResultSet } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ErrorCode, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
 import { identityIdToString, stringToIdentityId, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
