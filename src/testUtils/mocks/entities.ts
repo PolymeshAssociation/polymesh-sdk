@@ -812,7 +812,6 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
     fundsReclaimed: false,
   },
   getParticipant: {
-    identity: ('someIdentity' as unknown) as Identity,
     amount: new BigNumber(100),
     paid: false,
   },
@@ -1522,8 +1521,11 @@ function initCorporateAction(opts?: CorporateActionOptions): void {
  * Configure the CorporateAction instance
  */
 function configureDividendDistribution(opts: DividendDistributionOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const checkpoint = opts.checkpoint || mockInstanceContainer.checkpoint;
-  const details = { ...defaultDividendDistributionOptions.details, ...opts.details };
+  const getParticipant = opts.getParticipant
+    ? { ...defaultDividendDistributionOptions.getParticipant, ...opts.getParticipant }
+    : null;
 
   const dividendDistribution = ({
     id: opts.id,
@@ -1541,7 +1543,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
     details: dividendDistributionDetailsStub.resolves(details),
-    getParticipant: dividendDistributionGetParticipantStub.resolves(opts.getParticipant),
+    getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
     checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
   } as unknown) as MockDividendDistribution;
 

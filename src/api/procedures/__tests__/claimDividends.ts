@@ -27,18 +27,7 @@ describe('claimDividends procedure', () => {
   let claimDividendsTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
-    entityMockUtils.initMocks({
-      dividendDistributionOptions: {
-        targets: {
-          identities: [],
-          treatment: TargetTreatment.Exclude,
-        },
-        ticker,
-        id,
-        paymentDate,
-        expiryDate,
-      },
-    });
+    entityMockUtils.initMocks();
     dsMockUtils.initMocks({ contextOptions: { did } });
     procedureMockUtils.initMocks();
 
@@ -50,16 +39,6 @@ describe('claimDividends procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     claimDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'claim');
     mockContext = dsMockUtils.getContextInstance();
-    distribution = entityMockUtils.getDividendDistributionInstance({
-      ticker,
-      id,
-      paymentDate,
-      expiryDate,
-      targets: {
-        identities: [],
-        treatment: TargetTreatment.Exclude,
-      },
-    });
   });
 
   afterEach(() => {
