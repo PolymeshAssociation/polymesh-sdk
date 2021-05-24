@@ -1,3 +1,4 @@
+import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -44,27 +45,7 @@ export async function prepareModifyDistributionCheckpoint(
   }
 
   if (!(checkpoint instanceof Checkpoint)) {
-    let checkpointDate;
-
-    if (checkpoint instanceof Date) {
-      if (checkpoint <= new Date()) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'Checkpoint date must be in the future',
-        });
-      }
-
-      checkpointDate = checkpoint;
-    } else {
-      ({ nextCheckpointDate: checkpointDate } = await checkpoint.details());
-    }
-
-    if (checkpointDate >= paymentDate) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Checkpoint date must be before the payment date',
-      });
-    }
+    await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
   }
 
   if (expiryDate && expiryDate < now) {

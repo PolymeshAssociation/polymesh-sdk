@@ -11,6 +11,7 @@ import {
   Context,
   CorporateAction,
   DefaultPortfolio,
+  Identity,
   modifyDistributionCheckpoint,
   ModifyDistributionCheckpointParams,
   NumberedPortfolio,
@@ -39,7 +40,7 @@ import {
   corporateActionIdentifierToCaId,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { createProcedureMethod, xor } from '~/utils/internal';
+import { createProcedureMethod, getDid, xor } from '~/utils/internal';
 
 import { DistributionParticipant } from './types';
 
@@ -271,6 +272,72 @@ export class DividendDistribution extends CorporateAction {
     const paidStatuses = await this.getParticipantStatuses(participants);
 
     return paidStatuses.map((paid, index) => ({ ...participants[index], paid }));
+  }
+
+  /**
+   * Retrieve an Identity that is entitled to dividends in this Distribution (participant),
+   *   the amount it is entitled to and whether it has been paid or not
+   *
+   * @param args.identity - defaults to the current Identity
+   *
+   * @note if the Distribution Checkpoint hasn't been created yet, the result will be null.
+   *   This is because the Distribution participant's corresponding payment cannot be determined without a Checkpoint
+   */
+  public async getParticipant(args?: {
+    identity: string | Identity;
+  }): Promise<DistributionParticipant | null> {
+    const {
+      id: localId,
+      ticker,
+      targets: { identities: targetIdentities, treatment },
+      paymentDate,
+      perShare,
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const checkpoint = await this.checkpoint();
+
+    if (checkpoint instanceof CheckpointSchedule) {
+      return null;
+    }
+
+    const isExclusion = treatment === TargetTreatment.Exclude;
+
+    const [did, balance] = await Promise.all([
+      getDid(args?.identity, context),
+      checkpoint.balance(args),
+    ]);
+
+    const identity = new Identity({ did }, context);
+
+    const isTarget = !!targetIdentities.find(({ did: targetDid }) => did === targetDid);
+
+    let participant: DistributionParticipant;
+
+    if (balance.gt(0) && xor(isTarget, isExclusion)) {
+      participant = {
+        identity,
+        amount: balance.multipliedBy(perShare),
+        paid: false,
+      };
+    } else {
+      return null;
+    }
+
+    // participant can't be paid before the payment date
+    if (paymentDate < new Date()) {
+      return participant;
+    }
+
+    const rawDid = stringToIdentityId(did, context);
+    const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+    const holderPaid = await query.capitalDistribution.holderPaid([rawCaId, rawDid]);
+    const paid = boolToBoolean(holderPaid);
+
+    return { ...participant, paid };
   }
 
   /**

@@ -2,7 +2,11 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { CAId } from 'polymesh-types/types';
 
-import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import {
+  assertCaCheckpointValid,
+  assertCaTargetsValid,
+  assertCaTaxWithholdingsValid,
+} from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -113,6 +117,10 @@ export async function prepareInitiateCorporateAction(
         maxLength: maxDetailsLength.toNumber(),
       },
     });
+  }
+
+  if (checkpoint) {
+    await assertCaCheckpointValid(checkpoint);
   }
 
   const rawTicker = stringToTicker(ticker, context);

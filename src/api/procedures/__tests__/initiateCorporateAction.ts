@@ -253,6 +253,32 @@ describe('initiateCorporateAction procedure', () => {
     );
 
     expect(result).toEqual(rawCaId);
+
+    await prepareInitiateCorporateAction.call(proc, {
+      ticker,
+      kind,
+      declarationDate,
+      description,
+      targets,
+      defaultTaxWithholding,
+      taxWithholdings,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      initiateCorporateActionTransaction,
+      sinon.match({
+        resolvers: sinon.match.array,
+      }),
+      rawTicker,
+      rawKind,
+      rawDeclDate,
+      null,
+      rawDetails,
+      rawTargets,
+      rawTax,
+      rawWithholdings
+    );
   });
 
   describe('caIdResolver', () => {
