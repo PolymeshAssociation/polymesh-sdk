@@ -1608,26 +1608,31 @@ describe('Context class', () => {
       ];
 
       const distributions = [
-        dsMockUtils.createMockDistribution({
-          from: { kind: 'Default', did: 'someDid' },
-          currency: 'USD',
-          per_share: 10000000,
-          amount: 500000000000,
-          remaining: 400000000000,
-          reclaimed: false,
-          payment_at: new Date('10/14/1987').getTime(),
-          expires_at: null,
-        }),
-        dsMockUtils.createMockDistribution({
-          from: { kind: { User: dsMockUtils.createMockU64(2) }, did: 'someDid' },
-          currency: 'CAD',
-          per_share: 20000000,
-          amount: 300000000000,
-          remaining: 200000000000,
-          reclaimed: false,
-          payment_at: new Date('11/26/1989').getTime(),
-          expires_at: null,
-        }),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockDistribution({
+            from: { kind: 'Default', did: 'someDid' },
+            currency: 'USD',
+            per_share: 10000000,
+            amount: 500000000000,
+            remaining: 400000000000,
+            reclaimed: false,
+            payment_at: new Date('10/14/1987').getTime(),
+            expires_at: null,
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockDistribution({
+            from: { kind: { User: dsMockUtils.createMockU64(2) }, did: 'someDid' },
+            currency: 'CAD',
+            per_share: 20000000,
+            amount: 300000000000,
+            remaining: 200000000000,
+            reclaimed: false,
+            payment_at: new Date('11/26/1989').getTime(),
+            expires_at: null,
+          })
+        ),
+        dsMockUtils.createMockOption(),
       ];
 
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
