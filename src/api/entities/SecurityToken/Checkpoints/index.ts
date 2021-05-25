@@ -65,7 +65,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
       paginationOpts,
     });
 
-    const checkpointsMultiParams: [CheckpointId, Ticker][] = [];
+    const checkpointsMultiParams: [Ticker, CheckpointId][] = [];
     const checkpoints: { checkpoint: Checkpoint; totalSupply: BigNumber }[] = [];
 
     entries.forEach(
@@ -75,7 +75,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
         },
         balance,
       ]) => {
-        checkpointsMultiParams.push(tuple(id, rawTicker));
+        checkpointsMultiParams.push(tuple(rawTicker, id));
         checkpoints.push({
           checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
           totalSupply: balanceToBigNumber(balance),

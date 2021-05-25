@@ -1,6 +1,6 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
-import { getTypeDef } from '@polkadot/types';
+import { getTypeDef,Option  } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
@@ -701,20 +701,29 @@ export class Context {
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
         requestChunk.map(paramChunk =>
-          query.capitalDistribution.distributions.multi<Distribution>(paramChunk)
+          query.capitalDistribution.distributions.multi<Option<Distribution>>(paramChunk)
         )
       )
     );
 
-    return flattenDeep<Distribution>(distributions).map((distribution, index) => {
-      const { reclaimed, remaining } = distribution;
-      return {
+    const result: DistributionWithDetails[] = [];
+
+    flattenDeep<Option<Distribution>>(distributions).forEach((distribution, index) => {
+      if (distribution.isNone) {
+        return;
+      }
+
+      const dist = distribution.unwrap();
+
+      const { reclaimed, remaining } = dist;
+
+      result.push({
         distribution: new DividendDistribution(
           {
             ticker: tickers[index],
             id: corporateActionIds[index],
             ...corporateActionParams[index],
-            ...distributionToDividendDistributionParams(distribution, this),
+            ...distributionToDividendDistributionParams(dist, this),
           },
           this
         ),
@@ -722,8 +731,10 @@ export class Context {
           remainingFunds: balanceToBigNumber(remaining),
           fundsReclaimed: boolToBoolean(reclaimed),
         },
-      };
+      });
     });
+
+    return result;
   }
 
   /**
