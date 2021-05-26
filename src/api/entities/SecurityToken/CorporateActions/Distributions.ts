@@ -1,3 +1,4 @@
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { CAId, Distribution } from 'polymesh-types/types';
 
@@ -105,19 +106,27 @@ export class Distributions extends Namespace<SecurityToken> {
       }
     );
 
-    const distributions = await query.capitalDistribution.distributions.multi<Distribution>(
+    const distributions = await query.capitalDistribution.distributions.multi<Option<Distribution>>(
       distributionsMultiParams
     );
 
-    return distributions.map((distribution, index) => {
-      const { reclaimed, remaining } = distribution;
-      return {
+    const result: DistributionWithDetails[] = [];
+
+    distributions.forEach((distribution, index) => {
+      if (distribution.isNone) {
+        return;
+      }
+
+      const dist = distribution.unwrap();
+      const { reclaimed, remaining } = dist;
+
+      result.push({
         distribution: new DividendDistribution(
           {
             ticker,
             id: corporateActionIds[index],
             ...corporateActionParams[index],
-            ...distributionToDividendDistributionParams(distribution, context),
+            ...distributionToDividendDistributionParams(dist, context),
           },
           context
         ),
@@ -125,7 +134,9 @@ export class Distributions extends Namespace<SecurityToken> {
           remainingFunds: balanceToBigNumber(remaining),
           fundsReclaimed: boolToBoolean(reclaimed),
         },
-      };
+      });
     });
+
+    return result;
   }
 }
