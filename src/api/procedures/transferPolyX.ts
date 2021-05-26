@@ -85,7 +85,7 @@ export async function prepareTransferPolyX(
     });
   }
 
-  const rawAmount = numberToBalance(amount, context, false);
+  const rawAmount = numberToBalance(amount, context);
 
   if (memo) {
     this.addTransaction(
