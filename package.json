@@ -26,8 +26,8 @@
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
     "@commitlint/config-conventional": "^7.6.0",
-    "@graphql-codegen/cli": "1.21.4",
-    "@graphql-codegen/typescript": "1.16.0",
+    "@graphql-codegen/cli": "1.21.5",
+    "@graphql-codegen/typescript": "1.22.1",
     "@polkadot/typegen": "3.5.1",
     "@semantic-release/changelog": "5.0.1",
     "@types/bluebird": "^3.5.30",
