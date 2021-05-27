@@ -1,5 +1,7 @@
 export type Maybe<T> = T | null;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: string;
@@ -7,384 +9,66 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  Object: any;
-  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
-  DateTime: string;
   /** The `BigInt` scalar type represents non-fractional signed whole numeric values. BigInt can represent values between -(2^53) + 1 and 2^53 - 1.  */
   BigInt: any;
   /** Converts strings into boolean */
   CustomBoolean: boolean;
+  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
+  DateTime: string;
+  Object: any;
 };
 
-export type Query = {
-  __typename?: 'Query';
-  /** Returns true as a heartbeat */
-  heartbeat: Scalars['Boolean'];
-  /** Get the chain  information */
-  chainInfo?: Maybe<ChainInfo>;
-  latestBlock: Block;
-  /** Get all blocks */
-  blocks?: Maybe<Array<Maybe<Block>>>;
-  /** Get a block by block number */
-  blockById?: Maybe<Block>;
-  /** Get a block by hash */
-  blockByHash?: Maybe<Block>;
-  /** Get events by moduleId and eventId */
-  events?: Maybe<Array<Maybe<Event>>>;
-  /** Get staking events by stashAccount, stakingEventIds, fromDate, toDate */
-  stakingEvents?: Maybe<StakingEventResult>;
-  /** Get settlements where a portfolio is envolved */
-  settlements?: Maybe<SettlementResult>;
-  /** Get event where trustedClaimIssuer was added */
-  eventByAddedTrustedClaimIssuer?: Maybe<Event>;
-  /** Get a single event by any of its indexed arguments. If there is more than one result, it returns the most recent by block. */
-  eventByIndexedArgs?: Maybe<Event>;
-  /** Get events by any of its indexed arguments */
-  eventsByIndexedArgs?: Maybe<Array<Maybe<Event>>>;
-  /** Get transactions */
-  transactions: ExtrinsicResult;
-  /** Get transaction by hash */
-  transactionByHash?: Maybe<Extrinsic>;
-  /** Get transaction by number */
-  transactionById?: Maybe<Extrinsic>;
-  /** Get account by address */
-  accountByAddress?: Maybe<Account>;
-  /** Get Bridged event by Ethereum transaction hash */
-  bridgedEventByTxHash?: Maybe<Event>;
-  /** Get all POLYX transfers sent by the given did and/or account */
-  polyxTransfersSent: Array<PolyxTransfer>;
-  /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
-  didsWithClaims: IdentityWithClaimsResult;
-  /** Get issuer dids with at least one claim for given target */
-  issuerDidsWithClaimsByTarget: IdentityWithClaimsResult;
-  /** Get all scopes with at least one claim for a given identityId */
-  scopesByIdentity: Array<ClaimScope>;
-  /** Get all token tickers where given Did is a default Trusted Claim Issuer */
-  tokensByTrustedClaimIssuer: Array<Scalars['String']>;
-  /** Get all tickers of tokens that were held at some point by the given did */
-  tokensHeldByDid: StringResult;
-  /** Get all POLYX transfers (send) failed by the given account */
-  polyxTransfersFailed: Array<FailedPolyxTransfer>;
-  /** Get all POLYX transfers received by the given did and/or account */
-  polyxTransfersReceived: Array<PolyxTransfer>;
-  /** Get all token transfers received by the given account */
-  tokenTransfersReceived: Array<TokenTransfer>;
-  /** Get all token transfers sent by the given did */
-  tokenTransfersSent: Array<TokenTransfer>;
-  /** Get all Token transfers (send) failed by the given account */
-  tokenTransfersFailed: Array<FailedTokenTransfer>;
-  /** Get all authorizations with their status optionally filtered by did, account key or type */
-  authorizations: Array<Authorization>;
-  /** Get the current vote results for given pipId */
-  referendumVotes: VoteResult;
-  /** Get a proposal by its pipId */
-  proposal: Proposal;
-  /** Fetch governance proposals */
-  proposals?: Maybe<ProposalResult>;
-  /** Get the current voters list for given pipId */
-  proposalVotes: Array<ProposalVote>;
-  /** Get investments related to sto id */
-  investments?: Maybe<InvestmentResult>;
-  investmentsAggregated?: Maybe<InvestmentResult>;
-  corporateActionsWithTicker?: Maybe<CorporateActionsWithTickerResult>;
-  corporateActionsWithCAId?: Maybe<CorporateActionsWithCaIdResult>;
-  getWithholdingTaxesOfCA?: Maybe<WithholdingTaxesOfCa>;
-  getHistoryOfClaimsForCA?: Maybe<HistoryOfClaimsForCaResults>;
-  getInstructionIdsForVenue?: Maybe<InstructionIdsForVenueResults>;
-  getItnRewardRankings?: Maybe<ItnRewardRankingResult>;
-  getDidItnRewardRanking?: Maybe<Array<Maybe<ItnRewardRanking>>>;
-  getDidItnRewardActions?: Maybe<DidItnRewardActions>;
-  updateItnRewardRankings: Scalars['Boolean'];
-  getFailedBlocks?: Maybe<FailedBlocksResult>;
-};
-
-export type QueryBlocksArgs = {
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryBlockByIdArgs = {
-  blockId?: Maybe<Scalars['Int']>;
-};
-
-export type QueryBlockByHashArgs = {
-  blockHash?: Maybe<Scalars['String']>;
-};
-
-export type QueryEventsArgs = {
-  moduleId: ModuleIdEnum;
-  eventId: EventIdEnum;
-  fromBlock: Scalars['Int'];
-  toBlock: Scalars['Int'];
-};
-
-export type QueryStakingEventsArgs = {
-  stashAccount?: Maybe<Scalars['String']>;
-  stakingEventIds?: Maybe<Array<Maybe<StakingEventIdEnum>>>;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QuerySettlementsArgs = {
-  identityId: Scalars['String'];
-  portfolioNumber?: Maybe<Scalars['String']>;
-  addressFilter?: Maybe<Scalars['String']>;
-  tickerFilter?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryEventByAddedTrustedClaimIssuerArgs = {
-  ticker: Scalars['String'];
-  identityId: Scalars['String'];
-};
-
-export type QueryEventByIndexedArgsArgs = {
-  moduleId: ModuleIdEnum;
-  eventId: EventIdEnum;
-  eventArg0?: Maybe<Scalars['String']>;
-  eventArg1?: Maybe<Scalars['String']>;
-  eventArg2?: Maybe<Scalars['String']>;
-};
-
-export type QueryEventsByIndexedArgsArgs = {
-  moduleId: ModuleIdEnum;
-  eventId: EventIdEnum;
-  eventArg0?: Maybe<Scalars['String']>;
-  eventArg1?: Maybe<Scalars['String']>;
-  eventArg2?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryTransactionsArgs = {
-  block_id?: Maybe<Scalars['Int']>;
+export type Account = {
+  __typename?: 'Account';
+  id?: Maybe<Scalars['String']>;
   address?: Maybe<Scalars['String']>;
-  module_id?: Maybe<ModuleIdEnum>;
-  call_id?: Maybe<CallIdEnum>;
-  success?: Maybe<Scalars['Boolean']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-  orderBy?: Maybe<TransactionOrderByInput>;
+  created_at_block?: Maybe<Scalars['Int']>;
+  balance?: Maybe<Scalars['Float']>;
+  count_reaped?: Maybe<Scalars['Int']>;
+  is_contract?: Maybe<Scalars['Boolean']>;
+  is_nominator?: Maybe<Scalars['Boolean']>;
+  is_reaped?: Maybe<Scalars['Boolean']>;
+  is_validator?: Maybe<Scalars['Boolean']>;
+  updated_at_block?: Maybe<Scalars['Int']>;
+  transactions?: Maybe<Array<Maybe<Extrinsic>>>;
 };
 
-export type QueryTransactionByHashArgs = {
-  transactionHash?: Maybe<Scalars['String']>;
-};
-
-export type QueryTransactionByIdArgs = {
-  blockId?: Maybe<Scalars['Int']>;
-  transactionIdx?: Maybe<Scalars['Int']>;
-};
-
-export type QueryAccountByAddressArgs = {
-  address?: Maybe<Scalars['String']>;
-};
-
-export type QueryBridgedEventByTxHashArgs = {
-  ethTransactionHash: Scalars['String'];
-};
-
-export type QueryPolyxTransfersSentArgs = {
-  did?: Maybe<Scalars['String']>;
-  account?: Maybe<Scalars['String']>;
+export type AccountTransactionsArgs = {
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
 
-export type QueryDidsWithClaimsArgs = {
-  dids?: Maybe<Array<Scalars['String']>>;
-  scope?: Maybe<ScopeInput>;
-  trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
-  claimTypes?: Maybe<Array<ClaimTypeEnum>>;
-  includeExpired?: Maybe<Scalars['Boolean']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
+export enum AuthStatusEnum {
+  Pending = 'Pending',
+  Consumed = 'Consumed',
+  Rejected = 'Rejected',
+  Revoked = 'Revoked',
+  Expired = 'Expired',
+}
 
-export type QueryIssuerDidsWithClaimsByTargetArgs = {
-  target: Scalars['String'];
-  scope?: Maybe<ScopeInput>;
-  trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
-  claimTypes?: Maybe<Array<ClaimTypeEnum>>;
-  includeExpired?: Maybe<Scalars['Boolean']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
+export enum AuthTypeEnum {
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
+  TransferTicker = 'TransferTicker',
+  AddMultiSigSigner = 'AddMultiSigSigner',
+  TransferAssetOwnership = 'TransferAssetOwnership',
+  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
+  JoinIdentity = 'JoinIdentity',
+  PortfolioCustody = 'PortfolioCustody',
+  Custom = 'Custom',
+  NoData = 'NoData',
+}
 
-export type QueryScopesByIdentityArgs = {
-  did: Scalars['String'];
-};
-
-export type QueryTokensByTrustedClaimIssuerArgs = {
-  claimIssuerDid: Scalars['String'];
-  order?: Maybe<Order>;
-};
-
-export type QueryTokensHeldByDidArgs = {
-  did: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-  order?: Maybe<Order>;
-};
-
-export type QueryPolyxTransfersFailedArgs = {
-  account: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryPolyxTransfersReceivedArgs = {
-  did?: Maybe<Scalars['String']>;
-  account?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryTokenTransfersReceivedArgs = {
-  did: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryTokenTransfersSentArgs = {
-  did: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryTokenTransfersFailedArgs = {
-  account: Scalars['String'];
-  ticker?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryAuthorizationsArgs = {
-  did?: Maybe<Scalars['String']>;
-  accountKey?: Maybe<Scalars['String']>;
-  authorizationTypes?: Maybe<Array<AuthTypeEnum>>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryReferendumVotesArgs = {
-  proposalId: Scalars['Int'];
-};
-
-export type QueryProposalArgs = {
-  pipId: Scalars['Int'];
-};
-
-export type QueryProposalsArgs = {
-  state?: Maybe<ProposalStateEnum>;
-  snapshot?: Maybe<SnapshotEnum>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-  orderBy?: Maybe<ProposalOrderByInput>;
-};
-
-export type QueryProposalVotesArgs = {
-  pipId: Scalars['Int'];
-  vote?: Maybe<Scalars['Boolean']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-  orderBy?: Maybe<ProposalVotesOrderByInput>;
-};
-
-export type QueryInvestmentsArgs = {
-  stoId: Scalars['Int'];
-  ticker: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryInvestmentsAggregatedArgs = {
-  stoId: Scalars['Int'];
-  ticker: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryCorporateActionsWithTickerArgs = {
-  identityId?: Maybe<Scalars['String']>;
-  ticker?: Maybe<Scalars['String']>;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryCorporateActionsWithCaIdArgs = {
-  identityId?: Maybe<Scalars['String']>;
-  eventDid?: Maybe<Scalars['String']>;
-  CAId?: Maybe<CaId>;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryGetWithholdingTaxesOfCaArgs = {
-  CAId: CaId;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
-};
-
-export type QueryGetHistoryOfClaimsForCaArgs = {
-  CAId: CaId;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryGetInstructionIdsForVenueArgs = {
-  venueId: Scalars['String'];
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
-};
-
-export type QueryGetItnRewardRankingsArgs = {
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryGetDidItnRewardRankingArgs = {
-  did: Scalars['String'];
-  neighborRange?: Maybe<Scalars['Int']>;
-};
-
-export type QueryGetDidItnRewardActionsArgs = {
-  did: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-  groupByAction?: Maybe<Scalars['Boolean']>;
-};
-
-export type QueryGetFailedBlocksArgs = {
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type ChainInfo = {
-  __typename?: 'ChainInfo';
-  /** Chain information */
-  implementationName?: Maybe<Scalars['String']>;
-  specName?: Maybe<Scalars['String']>;
-  implementationVersion?: Maybe<Scalars['Int']>;
-  specVersion?: Maybe<Scalars['Int']>;
-  epochDuration?: Maybe<Scalars['Int']>;
-  expectedBlockTime?: Maybe<Scalars['Int']>;
-  minimumPeriod?: Maybe<Scalars['Int']>;
-  existentialDeposit?: Maybe<Scalars['Int']>;
-  transferFee?: Maybe<Scalars['Int']>;
-  creationFee?: Maybe<Scalars['Int']>;
-  transactionBaseFee?: Maybe<Scalars['Int']>;
-  transactionByteFee?: Maybe<Scalars['Int']>;
-  sessionsPerEra?: Maybe<Scalars['Int']>;
+export type Authorization = {
+  __typename?: 'Authorization';
+  authId: Scalars['Int'];
+  fromDID: Scalars['String'];
+  toDID?: Maybe<Scalars['String']>;
+  toKey?: Maybe<Scalars['String']>;
+  type: AuthTypeEnum;
+  data?: Maybe<Scalars['String']>;
+  expiry?: Maybe<Scalars['BigInt']>;
+  status: AuthStatusEnum;
 };
 
 export type Block = {
@@ -437,422 +121,15 @@ export type Block = {
   inherents?: Maybe<Array<Maybe<Extrinsic>>>;
 };
 
-export type Event = {
-  __typename?: 'Event';
-  /** Blockchain event */
-  block_id: Scalars['Int'];
-  event_idx: Scalars['Int'];
-  extrinsic_idx?: Maybe<Scalars['Int']>;
-  type?: Maybe<Scalars['String']>;
-  spec_version_id?: Maybe<Scalars['Int']>;
-  module_id?: Maybe<ModuleIdEnum>;
-  event_id?: Maybe<EventIdEnum>;
-  system?: Maybe<Scalars['Int']>;
-  module?: Maybe<Scalars['Int']>;
-  phase?: Maybe<Scalars['Int']>;
-  attributes?: Maybe<Scalars['Object']>;
-  event_arg_0?: Maybe<Scalars['String']>;
-  event_arg_1?: Maybe<Scalars['String']>;
-  event_arg_2?: Maybe<Scalars['String']>;
-  claim_type?: Maybe<ClaimTypeEnum>;
-  claim_scope?: Maybe<Scope>;
-  claim_issuer?: Maybe<Scalars['String']>;
-  claim_expiry?: Maybe<Scalars['String']>;
-  codec_error?: Maybe<Scalars['Int']>;
-  block?: Maybe<Block>;
-  extrinsic?: Maybe<Extrinsic>;
+export type CaId = {
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
 };
 
-export enum ModuleIdEnum {
-  System = 'system',
-  Babe = 'babe',
-  Timestamp = 'timestamp',
-  Indices = 'indices',
-  Balances = 'balances',
-  Transactionpayment = 'transactionpayment',
-  Authorship = 'authorship',
-  Staking = 'staking',
-  Offences = 'offences',
-  Session = 'session',
-  Finalitytracker = 'finalitytracker',
-  Grandpa = 'grandpa',
-  Imonline = 'imonline',
-  Authoritydiscovery = 'authoritydiscovery',
-  Randomnesscollectiveflip = 'randomnesscollectiveflip',
-  Historical = 'historical',
-  Sudo = 'sudo',
-  Multisig = 'multisig',
-  Basecontracts = 'basecontracts',
-  Contracts = 'contracts',
-  Treasury = 'treasury',
-  Polymeshcommittee = 'polymeshcommittee',
-  Committeemembership = 'committeemembership',
-  Pips = 'pips',
-  Technicalcommittee = 'technicalcommittee',
-  Technicalcommitteemembership = 'technicalcommitteemembership',
-  Upgradecommittee = 'upgradecommittee',
-  Upgradecommitteemembership = 'upgradecommitteemembership',
-  Asset = 'asset',
-  Dividend = 'dividend',
-  Identity = 'identity',
-  Bridge = 'bridge',
-  Compliancemanager = 'compliancemanager',
-  Voting = 'voting',
-  Stocapped = 'stocapped',
-  Exemption = 'exemption',
-  Settlement = 'settlement',
-  Sto = 'sto',
-  Cddserviceproviders = 'cddserviceproviders',
-  Statistics = 'statistics',
-  Protocolfee = 'protocolfee',
-  Utility = 'utility',
-  Portfolio = 'portfolio',
-  Confidential = 'confidential',
-  Permissions = 'permissions',
-  Scheduler = 'scheduler',
-  Corporateaction = 'corporateaction',
-  Corporateballot = 'corporateballot',
-  Capitaldistribution = 'capitaldistribution',
-  Checkpoint = 'checkpoint',
-  Testnet = 'testnet',
+export enum CacheControlScope {
+  Public = 'PUBLIC',
+  Private = 'PRIVATE',
 }
-
-export enum EventIdEnum {
-  ExtrinsicSuccess = 'ExtrinsicSuccess',
-  ExtrinsicFailed = 'ExtrinsicFailed',
-  CodeUpdated = 'CodeUpdated',
-  NewAccount = 'NewAccount',
-  KilledAccount = 'KilledAccount',
-  IndexAssigned = 'IndexAssigned',
-  IndexFreed = 'IndexFreed',
-  IndexFrozen = 'IndexFrozen',
-  Endowed = 'Endowed',
-  Transfer = 'Transfer',
-  BalanceSet = 'BalanceSet',
-  AccountBalanceBurned = 'AccountBalanceBurned',
-  Reserved = 'Reserved',
-  Unreserved = 'Unreserved',
-  ReserveRepatriated = 'ReserveRepatriated',
-  EraPayout = 'EraPayout',
-  Reward = 'Reward',
-  Slash = 'Slash',
-  OldSlashingReportDiscarded = 'OldSlashingReportDiscarded',
-  StakingElection = 'StakingElection',
-  SolutionStored = 'SolutionStored',
-  Bonded = 'Bonded',
-  Unbonded = 'Unbonded',
-  Nominated = 'Nominated',
-  Withdrawn = 'Withdrawn',
-  PermissionedValidatorAdded = 'PermissionedValidatorAdded',
-  PermissionedValidatorRemoved = 'PermissionedValidatorRemoved',
-  PermissionedValidatorStatusChanged = 'PermissionedValidatorStatusChanged',
-  PermissionedIdentityAdded = 'PermissionedIdentityAdded',
-  PermissionedIdentityRemoved = 'PermissionedIdentityRemoved',
-  InvalidatedNominators = 'InvalidatedNominators',
-  CommissionCapUpdated = 'CommissionCapUpdated',
-  IndividualCommissionEnabled = 'IndividualCommissionEnabled',
-  GlobalCommissionUpdated = 'GlobalCommissionUpdated',
-  MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
-  RewardPaymentSchedulingInterrupted = 'RewardPaymentSchedulingInterrupted',
-  SlashingAllowedForChanged = 'SlashingAllowedForChanged',
-  Offence = 'Offence',
-  NewSession = 'NewSession',
-  NewAuthorities = 'NewAuthorities',
-  Paused = 'Paused',
-  Resumed = 'Resumed',
-  HeartbeatReceived = 'HeartbeatReceived',
-  AllGood = 'AllGood',
-  SomeOffline = 'SomeOffline',
-  SlashingParamsUpdated = 'SlashingParamsUpdated',
-  Sudid = 'Sudid',
-  KeyChanged = 'KeyChanged',
-  SudoAsDone = 'SudoAsDone',
-  MultiSigCreated = 'MultiSigCreated',
-  ProposalAdded = 'ProposalAdded',
-  ProposalExecuted = 'ProposalExecuted',
-  MultiSigSignerAdded = 'MultiSigSignerAdded',
-  MultiSigSignerAuthorized = 'MultiSigSignerAuthorized',
-  MultiSigSignerRemoved = 'MultiSigSignerRemoved',
-  MultiSigSignaturesRequiredChanged = 'MultiSigSignaturesRequiredChanged',
-  ProposalApproved = 'ProposalApproved',
-  ProposalRejectionVote = 'ProposalRejectionVote',
-  ProposalRejected = 'ProposalRejected',
-  ProposalExecutionFailed = 'ProposalExecutionFailed',
-  Instantiated = 'Instantiated',
-  Evicted = 'Evicted',
-  Restored = 'Restored',
-  CodeStored = 'CodeStored',
-  ScheduleUpdated = 'ScheduleUpdated',
-  ContractExecution = 'ContractExecution',
-  InstantiationFeeChanged = 'InstantiationFeeChanged',
-  InstantiationFreezed = 'InstantiationFreezed',
-  InstantiationUnFreezed = 'InstantiationUnFreezed',
-  TemplateOwnershipTransferred = 'TemplateOwnershipTransferred',
-  TemplateUsageFeeChanged = 'TemplateUsageFeeChanged',
-  TemplateInstantiationFeeChanged = 'TemplateInstantiationFeeChanged',
-  TemplateMetaUrlChanged = 'TemplateMetaUrlChanged',
-  PutCodeFlagChanged = 'PutCodeFlagChanged',
-  TreasuryDisbursement = 'TreasuryDisbursement',
-  TreasuryReimbursement = 'TreasuryReimbursement',
-  Proposed = 'Proposed',
-  Voted = 'Voted',
-  VoteRetracted = 'VoteRetracted',
-  FinalVotes = 'FinalVotes',
-  Approved = 'Approved',
-  Rejected = 'Rejected',
-  Executed = 'Executed',
-  Closed = 'Closed',
-  ReleaseCoordinatorUpdated = 'ReleaseCoordinatorUpdated',
-  ExpiresAfterUpdated = 'ExpiresAfterUpdated',
-  VoteThresholdUpdated = 'VoteThresholdUpdated',
-  VoteEnactReferendum = 'VoteEnactReferendum',
-  VoteRejectReferendum = 'VoteRejectReferendum',
-  MemberAdded = 'MemberAdded',
-  MemberRemoved = 'MemberRemoved',
-  MemberRevoked = 'MemberRevoked',
-  MembersSwapped = 'MembersSwapped',
-  MembersReset = 'MembersReset',
-  ActiveLimitChanged = 'ActiveLimitChanged',
-  Dummy = 'Dummy',
-  HistoricalPipsPruned = 'HistoricalPipsPruned',
-  ProposalCreated = 'ProposalCreated',
-  ProposalDetailsAmended = 'ProposalDetailsAmended',
-  ProposalBondAdjusted = 'ProposalBondAdjusted',
-  ProposalStateUpdated = 'ProposalStateUpdated',
-  PipClosed = 'PipClosed',
-  ExecutionScheduled = 'ExecutionScheduled',
-  ReferendumCreated = 'ReferendumCreated',
-  ReferendumScheduled = 'ReferendumScheduled',
-  ReferendumStateUpdated = 'ReferendumStateUpdated',
-  DefaultEnactmentPeriodChanged = 'DefaultEnactmentPeriodChanged',
-  MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
-  QuorumThresholdChanged = 'QuorumThresholdChanged',
-  ProposalCoolOffPeriodChanged = 'ProposalCoolOffPeriodChanged',
-  PendingPipExpiryChanged = 'PendingPipExpiryChanged',
-  MaxPipSkipCountChanged = 'MaxPipSkipCountChanged',
-  ActivePipLimitChanged = 'ActivePipLimitChanged',
-  ProposalDurationChanged = 'ProposalDurationChanged',
-  ProposalRefund = 'ProposalRefund',
-  SnapshotCleared = 'SnapshotCleared',
-  SnapshotTaken = 'SnapshotTaken',
-  PipSkipped = 'PipSkipped',
-  SnapshotResultsEnacted = 'SnapshotResultsEnacted',
-  Approval = 'Approval',
-  Issued = 'Issued',
-  Redeemed = 'Redeemed',
-  ControllerTransfer = 'ControllerTransfer',
-  ControllerRedemption = 'ControllerRedemption',
-  AssetCreated = 'AssetCreated',
-  IdentifiersUpdated = 'IdentifiersUpdated',
-  DivisibilityChanged = 'DivisibilityChanged',
-  TransferWithData = 'TransferWithData',
-  IsIssuable = 'IsIssuable',
-  TickerRegistered = 'TickerRegistered',
-  TickerTransferred = 'TickerTransferred',
-  AssetOwnershipTransferred = 'AssetOwnershipTransferred',
-  AssetFrozen = 'AssetFrozen',
-  AssetUnfrozen = 'AssetUnfrozen',
-  AssetRenamed = 'AssetRenamed',
-  FundingRoundSet = 'FundingRoundSet',
-  ExtensionAdded = 'ExtensionAdded',
-  ExtensionArchived = 'ExtensionArchived',
-  ExtensionUnArchive = 'ExtensionUnArchive',
-  CheckpointCreated = 'CheckpointCreated',
-  PrimaryIssuanceAgentTransferred = 'PrimaryIssuanceAgentTransferred',
-  PrimaryIssuanceAgentTransfered = 'PrimaryIssuanceAgentTransfered',
-  DocumentAdded = 'DocumentAdded',
-  DocumentRemoved = 'DocumentRemoved',
-  ExtensionRemoved = 'ExtensionRemoved',
-  ClassicTickerClaimed = 'ClassicTickerClaimed',
-  DividendCreated = 'DividendCreated',
-  DividendCanceled = 'DividendCanceled',
-  DividendPaidOutToUser = 'DividendPaidOutToUser',
-  DividendRemainingClaimed = 'DividendRemainingClaimed',
-  DidCreated = 'DidCreated',
-  SecondaryKeysAdded = 'SecondaryKeysAdded',
-  SecondaryKeysRemoved = 'SecondaryKeysRemoved',
-  SignerLeft = 'SignerLeft',
-  SecondaryKeyPermissionsUpdated = 'SecondaryKeyPermissionsUpdated',
-  SecondaryPermissionsUpdated = 'SecondaryPermissionsUpdated',
-  PrimaryKeyUpdated = 'PrimaryKeyUpdated',
-  ClaimAdded = 'ClaimAdded',
-  ClaimRevoked = 'ClaimRevoked',
-  DidStatus = 'DidStatus',
-  CddStatus = 'CddStatus',
-  AssetDidRegistered = 'AssetDidRegistered',
-  AuthorizationAdded = 'AuthorizationAdded',
-  AuthorizationRevoked = 'AuthorizationRevoked',
-  AuthorizationRejected = 'AuthorizationRejected',
-  AuthorizationConsumed = 'AuthorizationConsumed',
-  OffChainAuthorizationRevoked = 'OffChainAuthorizationRevoked',
-  CddRequirementForPrimaryKeyUpdated = 'CddRequirementForPrimaryKeyUpdated',
-  CddClaimsInvalidated = 'CddClaimsInvalidated',
-  SecondaryKeysFrozen = 'SecondaryKeysFrozen',
-  SecondaryKeysUnfrozen = 'SecondaryKeysUnfrozen',
-  UnexpectedError = 'UnexpectedError',
-  ControllerChanged = 'ControllerChanged',
-  AdminChanged = 'AdminChanged',
-  TimelockChanged = 'TimelockChanged',
-  Bridged = 'Bridged',
-  Frozen = 'Frozen',
-  Unfrozen = 'Unfrozen',
-  FrozenTx = 'FrozenTx',
-  UnfrozenTx = 'UnfrozenTx',
-  ExemptedUpdated = 'ExemptedUpdated',
-  BridgeLimitUpdated = 'BridgeLimitUpdated',
-  TxsHandled = 'TxsHandled',
-  BridgeTxScheduled = 'BridgeTxScheduled',
-  ComplianceRequirementCreated = 'ComplianceRequirementCreated',
-  ComplianceRequirementRemoved = 'ComplianceRequirementRemoved',
-  AssetComplianceReplaced = 'AssetComplianceReplaced',
-  AssetComplianceReset = 'AssetComplianceReset',
-  AssetComplianceResumed = 'AssetComplianceResumed',
-  AssetCompliancePaused = 'AssetCompliancePaused',
-  ComplianceRequirementChanged = 'ComplianceRequirementChanged',
-  TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
-  TrustedDefaultClaimIssuerRemoved = 'TrustedDefaultClaimIssuerRemoved',
-  BallotCreated = 'BallotCreated',
-  VoteCast = 'VoteCast',
-  BallotCancelled = 'BallotCancelled',
-  AssetPurchased = 'AssetPurchased',
-  ExemptionListModified = 'ExemptionListModified',
-  VenueCreated = 'VenueCreated',
-  VenueUpdated = 'VenueUpdated',
-  InstructionCreated = 'InstructionCreated',
-  InstructionAuthorized = 'InstructionAuthorized',
-  InstructionUnauthorized = 'InstructionUnauthorized',
-  InstructionAffirmed = 'InstructionAffirmed',
-  AffirmationWithdrawn = 'AffirmationWithdrawn',
-  InstructionRejected = 'InstructionRejected',
-  ReceiptClaimed = 'ReceiptClaimed',
-  ReceiptUnclaimed = 'ReceiptUnclaimed',
-  VenueFiltering = 'VenueFiltering',
-  VenuesAllowed = 'VenuesAllowed',
-  VenuesBlocked = 'VenuesBlocked',
-  LegFailedExecution = 'LegFailedExecution',
-  InstructionFailed = 'InstructionFailed',
-  InstructionExecuted = 'InstructionExecuted',
-  VenueUnauthorized = 'VenueUnauthorized',
-  FundraiserCreated = 'FundraiserCreated',
-  FundsRaised = 'FundsRaised',
-  FundraiserWindowModifed = 'FundraiserWindowModifed',
-  FundraiserClosed = 'FundraiserClosed',
-  TransferManagerAdded = 'TransferManagerAdded',
-  TransferManagerRemoved = 'TransferManagerRemoved',
-  ExemptionsAdded = 'ExemptionsAdded',
-  ExemptionsRemoved = 'ExemptionsRemoved',
-  FeeSet = 'FeeSet',
-  CoefficientSet = 'CoefficientSet',
-  FeeCharged = 'FeeCharged',
-  BatchInterrupted = 'BatchInterrupted',
-  BatchOptimisticFailed = 'BatchOptimisticFailed',
-  BatchCompleted = 'BatchCompleted',
-  PortfolioCreated = 'PortfolioCreated',
-  PortfolioDeleted = 'PortfolioDeleted',
-  MovedBetweenPortfolios = 'MovedBetweenPortfolios',
-  PortfolioRenamed = 'PortfolioRenamed',
-  UserPortfolios = 'UserPortfolios',
-  PortfolioCustodianChanged = 'PortfolioCustodianChanged',
-  RangeProofAdded = 'RangeProofAdded',
-  RangeProofVerified = 'RangeProofVerified',
-  Scheduled = 'Scheduled',
-  Canceled = 'Canceled',
-  Dispatched = 'Dispatched',
-  MaxDetailsLengthChanged = 'MaxDetailsLengthChanged',
-  DefaultTargetIdentitiesChanged = 'DefaultTargetIdentitiesChanged',
-  DefaultWithholdingTaxChanged = 'DefaultWithholdingTaxChanged',
-  DidWithholdingTaxChanged = 'DidWithholdingTaxChanged',
-  CaaTransferred = 'CAATransferred',
-  CaInitiated = 'CAInitiated',
-  CaLinkedToDoc = 'CALinkedToDoc',
-  CaRemoved = 'CARemoved',
-  RecordDateChanged = 'RecordDateChanged',
-  Created = 'Created',
-  RangeChanged = 'RangeChanged',
-  MetaChanged = 'MetaChanged',
-  RcvChanged = 'RCVChanged',
-  Removed = 'Removed',
-  BenefitClaimed = 'BenefitClaimed',
-  Reclaimed = 'Reclaimed',
-  MaximumSchedulesComplexityChanged = 'MaximumSchedulesComplexityChanged',
-  ScheduleCreated = 'ScheduleCreated',
-  ScheduleRemoved = 'ScheduleRemoved',
-  CustodyTransfer = 'CustodyTransfer',
-  CustodyAllowanceChanged = 'CustodyAllowanceChanged',
-  TreasuryDidSet = 'TreasuryDidSet',
-  SigningKeysAdded = 'SigningKeysAdded',
-  SigningKeysRemoved = 'SigningKeysRemoved',
-  SigningPermissionsUpdated = 'SigningPermissionsUpdated',
-  MasterKeyUpdated = 'MasterKeyUpdated',
-  CddRequirementForMasterKeyUpdated = 'CddRequirementForMasterKeyUpdated',
-  SigningKeysFrozen = 'SigningKeysFrozen',
-  SigningKeysUnfrozen = 'SigningKeysUnfrozen',
-  NewAssetRuleCreated = 'NewAssetRuleCreated',
-  AssetRuleRemoved = 'AssetRuleRemoved',
-  AssetRulesReplaced = 'AssetRulesReplaced',
-  AssetRulesReset = 'AssetRulesReset',
-  AssetRulesResumed = 'AssetRulesResumed',
-  AssetRulesPaused = 'AssetRulesPaused',
-  AssetRuleChanged = 'AssetRuleChanged',
-}
-
-export enum ClaimTypeEnum {
-  Accredited = 'Accredited',
-  Affiliate = 'Affiliate',
-  BuyLockup = 'BuyLockup',
-  SellLockup = 'SellLockup',
-  CustomerDueDiligence = 'CustomerDueDiligence',
-  KnowYourCustomer = 'KnowYourCustomer',
-  Jurisdiction = 'Jurisdiction',
-  Exempted = 'Exempted',
-  Blocked = 'Blocked',
-  InvestorUniqueness = 'InvestorUniqueness',
-  NoData = 'NoData',
-  InvestorUniquenessV2 = 'InvestorUniquenessV2',
-}
-
-export type Scope = {
-  __typename?: 'Scope';
-  type: ClaimScopeTypeEnum;
-  value: Scalars['String'];
-};
-
-export enum ClaimScopeTypeEnum {
-  Identity = 'Identity',
-  Ticker = 'Ticker',
-  Custom = 'Custom',
-}
-
-export type Extrinsic = {
-  __typename?: 'Extrinsic';
-  /** Extrinsic details */
-  block_id: Scalars['Int'];
-  extrinsic_idx: Scalars['Int'];
-  extrinsic_length?: Maybe<Scalars['String']>;
-  extrinsic_version?: Maybe<Scalars['String']>;
-  signed?: Maybe<Scalars['Int']>;
-  unsigned?: Maybe<Scalars['Int']>;
-  address_length?: Maybe<Scalars['String']>;
-  address?: Maybe<Scalars['String']>;
-  account_index?: Maybe<Scalars['String']>;
-  signature?: Maybe<Scalars['String']>;
-  nonce?: Maybe<Scalars['Int']>;
-  era?: Maybe<Scalars['String']>;
-  call?: Maybe<Scalars['String']>;
-  module_id: ModuleIdEnum;
-  call_id: CallIdEnum;
-  params: Array<Maybe<Scalars['Object']>>;
-  success: Scalars['Int'];
-  error?: Maybe<Scalars['Int']>;
-  spec_version_id: Scalars['Int'];
-  codec_error?: Maybe<Scalars['Int']>;
-  extrinsic_hash?: Maybe<Scalars['String']>;
-  account_idx?: Maybe<Scalars['Int']>;
-  signedby_address?: Maybe<Scalars['Int']>;
-  signedby_index?: Maybe<Scalars['Int']>;
-  block?: Maybe<Block>;
-  addressAccount?: Maybe<Account>;
-};
 
 export enum CallIdEnum {
   FillBlock = 'fill_block',
@@ -1190,145 +467,22 @@ export enum CallIdEnum {
   BatchChangeAssetRule = 'batch_change_asset_rule',
 }
 
-export type Account = {
-  __typename?: 'Account';
-  id?: Maybe<Scalars['String']>;
-  address?: Maybe<Scalars['String']>;
-  created_at_block?: Maybe<Scalars['Int']>;
-  balance?: Maybe<Scalars['Float']>;
-  count_reaped?: Maybe<Scalars['Int']>;
-  is_contract?: Maybe<Scalars['Boolean']>;
-  is_nominator?: Maybe<Scalars['Boolean']>;
-  is_reaped?: Maybe<Scalars['Boolean']>;
-  is_validator?: Maybe<Scalars['Boolean']>;
-  updated_at_block?: Maybe<Scalars['Int']>;
-  transactions?: Maybe<Array<Maybe<Extrinsic>>>;
-};
-
-export type AccountTransactionsArgs = {
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export enum StakingEventIdEnum {
-  Bonded = 'Bonded',
-  Unbonded = 'Unbonded',
-  Nominated = 'Nominated',
-  Reward = 'Reward',
-  Slash = 'Slash',
-}
-
-export type StakingEventResult = {
-  __typename?: 'StakingEventResult';
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<StakingEvent>>>;
-};
-
-export type StakingEvent = {
-  __typename?: 'StakingEvent';
-  date?: Maybe<Scalars['DateTime']>;
-  blockId?: Maybe<Scalars['BigInt']>;
-  transactionId?: Maybe<Scalars['String']>;
-  eventId?: Maybe<StakingEventIdEnum>;
-  identityId?: Maybe<Scalars['String']>;
-  stashAccount?: Maybe<Scalars['String']>;
-  amount?: Maybe<Scalars['BigInt']>;
-  nominatedValidators?: Maybe<Array<Maybe<Scalars['String']>>>;
-};
-
-export type SettlementResult = {
-  __typename?: 'SettlementResult';
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<Settlement>>>;
-};
-
-export type Settlement = {
-  __typename?: 'Settlement';
-  /** Settlement */
-  block_id: Scalars['Int'];
-  result: SettlementResultEnum;
-  addresses?: Maybe<Array<Scalars['String']>>;
-  legs: Array<Maybe<SettlementLeg>>;
-};
-
-export enum SettlementResultEnum {
-  None = 'None',
-  Executed = 'Executed',
-  Failed = 'Failed',
-  Rejected = 'Rejected',
-}
-
-export type SettlementLeg = {
-  __typename?: 'SettlementLeg';
-  /** SettlementLeg */
-  ticker: Scalars['String'];
-  amount: Scalars['String'];
-  direction: SettlementDirectionEnum;
-  from: Portfolio;
-  to: Portfolio;
-};
-
-export enum SettlementDirectionEnum {
-  None = 'None',
-  Incoming = 'Incoming',
-  Outgoing = 'Outgoing',
-}
-
-export type Portfolio = {
-  __typename?: 'Portfolio';
-  did: Scalars['String'];
-  kind: Scalars['String'];
-};
-
-export type TransactionOrderByInput = {
-  field: TransactionOrderFields;
-  order: Order;
-};
-
-export enum TransactionOrderFields {
-  BlockId = 'block_id',
-  Address = 'address',
-  ModuleId = 'module_id',
-  CallId = 'call_id',
-}
-
-export enum Order {
-  Asc = 'ASC',
-  Desc = 'DESC',
-}
-
-export type ExtrinsicResult = {
-  __typename?: 'ExtrinsicResult';
-  totalCount: Scalars['Int'];
-  items: Array<Extrinsic>;
-};
-
-export type PolyxTransfer = {
-  __typename?: 'PolyxTransfer';
-  blockId: Scalars['Int'];
-  eventIdx: Scalars['Int'];
-  fromDID: Scalars['String'];
-  fromAccount: Scalars['String'];
-  toDID: Scalars['String'];
-  toAccount: Scalars['String'];
-  balance: Scalars['Float'];
-};
-
-export type ScopeInput = {
-  type: ClaimScopeTypeEnum;
-  value: Scalars['String'];
-};
-
-export type IdentityWithClaimsResult = {
-  __typename?: 'IdentityWithClaimsResult';
-  totalCount: Scalars['Int'];
-  items: Array<IdentityWithClaims>;
-};
-
-export type IdentityWithClaims = {
-  __typename?: 'IdentityWithClaims';
-  did: Scalars['String'];
-  claims: Array<Claim>;
+export type ChainInfo = {
+  __typename?: 'ChainInfo';
+  /** Chain information */
+  implementationName?: Maybe<Scalars['String']>;
+  specName?: Maybe<Scalars['String']>;
+  implementationVersion?: Maybe<Scalars['Int']>;
+  specVersion?: Maybe<Scalars['Int']>;
+  epochDuration?: Maybe<Scalars['Int']>;
+  expectedBlockTime?: Maybe<Scalars['Int']>;
+  minimumPeriod?: Maybe<Scalars['Int']>;
+  existentialDeposit?: Maybe<Scalars['Int']>;
+  transferFee?: Maybe<Scalars['Int']>;
+  creationFee?: Maybe<Scalars['Int']>;
+  transactionBaseFee?: Maybe<Scalars['Int']>;
+  transactionByteFee?: Maybe<Scalars['Int']>;
+  sessionsPerEra?: Maybe<Scalars['Int']>;
 };
 
 export type Claim = {
@@ -1350,10 +504,415 @@ export type ClaimScope = {
   ticker?: Maybe<Scalars['String']>;
 };
 
-export type StringResult = {
-  __typename?: 'StringResult';
+export enum ClaimScopeTypeEnum {
+  Identity = 'Identity',
+  Ticker = 'Ticker',
+  Custom = 'Custom',
+}
+
+export enum ClaimTypeEnum {
+  Accredited = 'Accredited',
+  Affiliate = 'Affiliate',
+  BuyLockup = 'BuyLockup',
+  SellLockup = 'SellLockup',
+  CustomerDueDiligence = 'CustomerDueDiligence',
+  KnowYourCustomer = 'KnowYourCustomer',
+  Jurisdiction = 'Jurisdiction',
+  Exempted = 'Exempted',
+  Blocked = 'Blocked',
+  InvestorUniqueness = 'InvestorUniqueness',
+  NoData = 'NoData',
+  InvestorUniquenessV2 = 'InvestorUniquenessV2',
+}
+
+export type CorporateActionsWithCaId = {
+  __typename?: 'CorporateActionsWithCAId';
+  eventId: Scalars['String'];
+  datetime: Scalars['String'];
+  identityId?: Maybe<Scalars['String']>;
+  eventDid?: Maybe<Scalars['String']>;
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
+  arg?: Maybe<Scalars['String']>;
+};
+
+export type CorporateActionsWithCaIdResult = {
+  __typename?: 'CorporateActionsWithCAIdResult';
   totalCount: Scalars['Int'];
-  items: Array<Scalars['String']>;
+  items?: Maybe<Array<Maybe<CorporateActionsWithCaId>>>;
+};
+
+export type CorporateActionsWithTicker = {
+  __typename?: 'CorporateActionsWithTicker';
+  eventId: Scalars['String'];
+  datetime: Scalars['String'];
+  identityId: Scalars['String'];
+  ticker: Scalars['String'];
+  arg1?: Maybe<Scalars['String']>;
+  arg2?: Maybe<Scalars['String']>;
+};
+
+export type CorporateActionsWithTickerResult = {
+  __typename?: 'CorporateActionsWithTickerResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<CorporateActionsWithTicker>>>;
+};
+
+export type DidItnRewardActions = {
+  __typename?: 'DidItnRewardActions';
+  did: Scalars['String'];
+  total: Scalars['Int'];
+  rank: Scalars['Int'];
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<ItnRewardAction>>>;
+};
+
+export type Event = {
+  __typename?: 'Event';
+  /** Blockchain event */
+  block_id: Scalars['Int'];
+  event_idx: Scalars['Int'];
+  extrinsic_idx?: Maybe<Scalars['Int']>;
+  type?: Maybe<Scalars['String']>;
+  spec_version_id?: Maybe<Scalars['Int']>;
+  module_id?: Maybe<ModuleIdEnum>;
+  event_id?: Maybe<EventIdEnum>;
+  system?: Maybe<Scalars['Int']>;
+  module?: Maybe<Scalars['Int']>;
+  phase?: Maybe<Scalars['Int']>;
+  attributes?: Maybe<Scalars['Object']>;
+  event_arg_0?: Maybe<Scalars['String']>;
+  event_arg_1?: Maybe<Scalars['String']>;
+  event_arg_2?: Maybe<Scalars['String']>;
+  claim_type?: Maybe<ClaimTypeEnum>;
+  claim_scope?: Maybe<Scope>;
+  claim_issuer?: Maybe<Scalars['String']>;
+  claim_expiry?: Maybe<Scalars['String']>;
+  codec_error?: Maybe<Scalars['Int']>;
+  block?: Maybe<Block>;
+  extrinsic?: Maybe<Extrinsic>;
+};
+
+export enum EventIdEnum {
+  ExtrinsicSuccess = 'ExtrinsicSuccess',
+  ExtrinsicFailed = 'ExtrinsicFailed',
+  CodeUpdated = 'CodeUpdated',
+  NewAccount = 'NewAccount',
+  KilledAccount = 'KilledAccount',
+  IndexAssigned = 'IndexAssigned',
+  IndexFreed = 'IndexFreed',
+  IndexFrozen = 'IndexFrozen',
+  Endowed = 'Endowed',
+  Transfer = 'Transfer',
+  BalanceSet = 'BalanceSet',
+  AccountBalanceBurned = 'AccountBalanceBurned',
+  Reserved = 'Reserved',
+  Unreserved = 'Unreserved',
+  ReserveRepatriated = 'ReserveRepatriated',
+  EraPayout = 'EraPayout',
+  Reward = 'Reward',
+  Slash = 'Slash',
+  OldSlashingReportDiscarded = 'OldSlashingReportDiscarded',
+  StakingElection = 'StakingElection',
+  SolutionStored = 'SolutionStored',
+  Bonded = 'Bonded',
+  Unbonded = 'Unbonded',
+  Nominated = 'Nominated',
+  Withdrawn = 'Withdrawn',
+  PermissionedValidatorAdded = 'PermissionedValidatorAdded',
+  PermissionedValidatorRemoved = 'PermissionedValidatorRemoved',
+  PermissionedValidatorStatusChanged = 'PermissionedValidatorStatusChanged',
+  PermissionedIdentityAdded = 'PermissionedIdentityAdded',
+  PermissionedIdentityRemoved = 'PermissionedIdentityRemoved',
+  InvalidatedNominators = 'InvalidatedNominators',
+  CommissionCapUpdated = 'CommissionCapUpdated',
+  IndividualCommissionEnabled = 'IndividualCommissionEnabled',
+  GlobalCommissionUpdated = 'GlobalCommissionUpdated',
+  MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
+  RewardPaymentSchedulingInterrupted = 'RewardPaymentSchedulingInterrupted',
+  SlashingAllowedForChanged = 'SlashingAllowedForChanged',
+  Offence = 'Offence',
+  NewSession = 'NewSession',
+  NewAuthorities = 'NewAuthorities',
+  Paused = 'Paused',
+  Resumed = 'Resumed',
+  HeartbeatReceived = 'HeartbeatReceived',
+  AllGood = 'AllGood',
+  SomeOffline = 'SomeOffline',
+  SlashingParamsUpdated = 'SlashingParamsUpdated',
+  Sudid = 'Sudid',
+  KeyChanged = 'KeyChanged',
+  SudoAsDone = 'SudoAsDone',
+  MultiSigCreated = 'MultiSigCreated',
+  ProposalAdded = 'ProposalAdded',
+  ProposalExecuted = 'ProposalExecuted',
+  MultiSigSignerAdded = 'MultiSigSignerAdded',
+  MultiSigSignerAuthorized = 'MultiSigSignerAuthorized',
+  MultiSigSignerRemoved = 'MultiSigSignerRemoved',
+  MultiSigSignaturesRequiredChanged = 'MultiSigSignaturesRequiredChanged',
+  ProposalApproved = 'ProposalApproved',
+  ProposalRejectionVote = 'ProposalRejectionVote',
+  ProposalRejected = 'ProposalRejected',
+  ProposalExecutionFailed = 'ProposalExecutionFailed',
+  Instantiated = 'Instantiated',
+  Evicted = 'Evicted',
+  Restored = 'Restored',
+  CodeStored = 'CodeStored',
+  ScheduleUpdated = 'ScheduleUpdated',
+  ContractExecution = 'ContractExecution',
+  InstantiationFeeChanged = 'InstantiationFeeChanged',
+  InstantiationFreezed = 'InstantiationFreezed',
+  InstantiationUnFreezed = 'InstantiationUnFreezed',
+  TemplateOwnershipTransferred = 'TemplateOwnershipTransferred',
+  TemplateUsageFeeChanged = 'TemplateUsageFeeChanged',
+  TemplateInstantiationFeeChanged = 'TemplateInstantiationFeeChanged',
+  TemplateMetaUrlChanged = 'TemplateMetaUrlChanged',
+  PutCodeFlagChanged = 'PutCodeFlagChanged',
+  TreasuryDisbursement = 'TreasuryDisbursement',
+  TreasuryReimbursement = 'TreasuryReimbursement',
+  Proposed = 'Proposed',
+  Voted = 'Voted',
+  VoteRetracted = 'VoteRetracted',
+  FinalVotes = 'FinalVotes',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  Executed = 'Executed',
+  Closed = 'Closed',
+  ReleaseCoordinatorUpdated = 'ReleaseCoordinatorUpdated',
+  ExpiresAfterUpdated = 'ExpiresAfterUpdated',
+  VoteThresholdUpdated = 'VoteThresholdUpdated',
+  VoteEnactReferendum = 'VoteEnactReferendum',
+  VoteRejectReferendum = 'VoteRejectReferendum',
+  MemberAdded = 'MemberAdded',
+  MemberRemoved = 'MemberRemoved',
+  MemberRevoked = 'MemberRevoked',
+  MembersSwapped = 'MembersSwapped',
+  MembersReset = 'MembersReset',
+  ActiveLimitChanged = 'ActiveLimitChanged',
+  Dummy = 'Dummy',
+  HistoricalPipsPruned = 'HistoricalPipsPruned',
+  ProposalCreated = 'ProposalCreated',
+  ProposalDetailsAmended = 'ProposalDetailsAmended',
+  ProposalBondAdjusted = 'ProposalBondAdjusted',
+  ProposalStateUpdated = 'ProposalStateUpdated',
+  PipClosed = 'PipClosed',
+  ExecutionScheduled = 'ExecutionScheduled',
+  ReferendumCreated = 'ReferendumCreated',
+  ReferendumScheduled = 'ReferendumScheduled',
+  ReferendumStateUpdated = 'ReferendumStateUpdated',
+  DefaultEnactmentPeriodChanged = 'DefaultEnactmentPeriodChanged',
+  MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
+  QuorumThresholdChanged = 'QuorumThresholdChanged',
+  ProposalCoolOffPeriodChanged = 'ProposalCoolOffPeriodChanged',
+  PendingPipExpiryChanged = 'PendingPipExpiryChanged',
+  MaxPipSkipCountChanged = 'MaxPipSkipCountChanged',
+  ActivePipLimitChanged = 'ActivePipLimitChanged',
+  ProposalDurationChanged = 'ProposalDurationChanged',
+  ProposalRefund = 'ProposalRefund',
+  SnapshotCleared = 'SnapshotCleared',
+  SnapshotTaken = 'SnapshotTaken',
+  PipSkipped = 'PipSkipped',
+  SnapshotResultsEnacted = 'SnapshotResultsEnacted',
+  Approval = 'Approval',
+  Issued = 'Issued',
+  Redeemed = 'Redeemed',
+  ControllerTransfer = 'ControllerTransfer',
+  ControllerRedemption = 'ControllerRedemption',
+  AssetCreated = 'AssetCreated',
+  IdentifiersUpdated = 'IdentifiersUpdated',
+  DivisibilityChanged = 'DivisibilityChanged',
+  TransferWithData = 'TransferWithData',
+  IsIssuable = 'IsIssuable',
+  TickerRegistered = 'TickerRegistered',
+  TickerTransferred = 'TickerTransferred',
+  AssetOwnershipTransferred = 'AssetOwnershipTransferred',
+  AssetFrozen = 'AssetFrozen',
+  AssetUnfrozen = 'AssetUnfrozen',
+  AssetRenamed = 'AssetRenamed',
+  FundingRoundSet = 'FundingRoundSet',
+  ExtensionAdded = 'ExtensionAdded',
+  ExtensionArchived = 'ExtensionArchived',
+  ExtensionUnArchive = 'ExtensionUnArchive',
+  CheckpointCreated = 'CheckpointCreated',
+  PrimaryIssuanceAgentTransferred = 'PrimaryIssuanceAgentTransferred',
+  PrimaryIssuanceAgentTransfered = 'PrimaryIssuanceAgentTransfered',
+  DocumentAdded = 'DocumentAdded',
+  DocumentRemoved = 'DocumentRemoved',
+  ExtensionRemoved = 'ExtensionRemoved',
+  ClassicTickerClaimed = 'ClassicTickerClaimed',
+  DividendCreated = 'DividendCreated',
+  DividendCanceled = 'DividendCanceled',
+  DividendPaidOutToUser = 'DividendPaidOutToUser',
+  DividendRemainingClaimed = 'DividendRemainingClaimed',
+  DidCreated = 'DidCreated',
+  SecondaryKeysAdded = 'SecondaryKeysAdded',
+  SecondaryKeysRemoved = 'SecondaryKeysRemoved',
+  SignerLeft = 'SignerLeft',
+  SecondaryKeyPermissionsUpdated = 'SecondaryKeyPermissionsUpdated',
+  SecondaryPermissionsUpdated = 'SecondaryPermissionsUpdated',
+  PrimaryKeyUpdated = 'PrimaryKeyUpdated',
+  ClaimAdded = 'ClaimAdded',
+  ClaimRevoked = 'ClaimRevoked',
+  DidStatus = 'DidStatus',
+  CddStatus = 'CddStatus',
+  AssetDidRegistered = 'AssetDidRegistered',
+  AuthorizationAdded = 'AuthorizationAdded',
+  AuthorizationRevoked = 'AuthorizationRevoked',
+  AuthorizationRejected = 'AuthorizationRejected',
+  AuthorizationConsumed = 'AuthorizationConsumed',
+  OffChainAuthorizationRevoked = 'OffChainAuthorizationRevoked',
+  CddRequirementForPrimaryKeyUpdated = 'CddRequirementForPrimaryKeyUpdated',
+  CddClaimsInvalidated = 'CddClaimsInvalidated',
+  SecondaryKeysFrozen = 'SecondaryKeysFrozen',
+  SecondaryKeysUnfrozen = 'SecondaryKeysUnfrozen',
+  UnexpectedError = 'UnexpectedError',
+  ControllerChanged = 'ControllerChanged',
+  AdminChanged = 'AdminChanged',
+  TimelockChanged = 'TimelockChanged',
+  Bridged = 'Bridged',
+  Frozen = 'Frozen',
+  Unfrozen = 'Unfrozen',
+  FrozenTx = 'FrozenTx',
+  UnfrozenTx = 'UnfrozenTx',
+  ExemptedUpdated = 'ExemptedUpdated',
+  BridgeLimitUpdated = 'BridgeLimitUpdated',
+  TxsHandled = 'TxsHandled',
+  BridgeTxScheduled = 'BridgeTxScheduled',
+  ComplianceRequirementCreated = 'ComplianceRequirementCreated',
+  ComplianceRequirementRemoved = 'ComplianceRequirementRemoved',
+  AssetComplianceReplaced = 'AssetComplianceReplaced',
+  AssetComplianceReset = 'AssetComplianceReset',
+  AssetComplianceResumed = 'AssetComplianceResumed',
+  AssetCompliancePaused = 'AssetCompliancePaused',
+  ComplianceRequirementChanged = 'ComplianceRequirementChanged',
+  TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
+  TrustedDefaultClaimIssuerRemoved = 'TrustedDefaultClaimIssuerRemoved',
+  BallotCreated = 'BallotCreated',
+  VoteCast = 'VoteCast',
+  BallotCancelled = 'BallotCancelled',
+  AssetPurchased = 'AssetPurchased',
+  ExemptionListModified = 'ExemptionListModified',
+  VenueCreated = 'VenueCreated',
+  VenueUpdated = 'VenueUpdated',
+  InstructionCreated = 'InstructionCreated',
+  InstructionAuthorized = 'InstructionAuthorized',
+  InstructionUnauthorized = 'InstructionUnauthorized',
+  InstructionAffirmed = 'InstructionAffirmed',
+  AffirmationWithdrawn = 'AffirmationWithdrawn',
+  InstructionRejected = 'InstructionRejected',
+  ReceiptClaimed = 'ReceiptClaimed',
+  ReceiptUnclaimed = 'ReceiptUnclaimed',
+  VenueFiltering = 'VenueFiltering',
+  VenuesAllowed = 'VenuesAllowed',
+  VenuesBlocked = 'VenuesBlocked',
+  LegFailedExecution = 'LegFailedExecution',
+  InstructionFailed = 'InstructionFailed',
+  InstructionExecuted = 'InstructionExecuted',
+  VenueUnauthorized = 'VenueUnauthorized',
+  FundraiserCreated = 'FundraiserCreated',
+  FundsRaised = 'FundsRaised',
+  FundraiserWindowModifed = 'FundraiserWindowModifed',
+  FundraiserClosed = 'FundraiserClosed',
+  TransferManagerAdded = 'TransferManagerAdded',
+  TransferManagerRemoved = 'TransferManagerRemoved',
+  ExemptionsAdded = 'ExemptionsAdded',
+  ExemptionsRemoved = 'ExemptionsRemoved',
+  FeeSet = 'FeeSet',
+  CoefficientSet = 'CoefficientSet',
+  FeeCharged = 'FeeCharged',
+  BatchInterrupted = 'BatchInterrupted',
+  BatchOptimisticFailed = 'BatchOptimisticFailed',
+  BatchCompleted = 'BatchCompleted',
+  PortfolioCreated = 'PortfolioCreated',
+  PortfolioDeleted = 'PortfolioDeleted',
+  MovedBetweenPortfolios = 'MovedBetweenPortfolios',
+  PortfolioRenamed = 'PortfolioRenamed',
+  UserPortfolios = 'UserPortfolios',
+  PortfolioCustodianChanged = 'PortfolioCustodianChanged',
+  RangeProofAdded = 'RangeProofAdded',
+  RangeProofVerified = 'RangeProofVerified',
+  Scheduled = 'Scheduled',
+  Canceled = 'Canceled',
+  Dispatched = 'Dispatched',
+  MaxDetailsLengthChanged = 'MaxDetailsLengthChanged',
+  DefaultTargetIdentitiesChanged = 'DefaultTargetIdentitiesChanged',
+  DefaultWithholdingTaxChanged = 'DefaultWithholdingTaxChanged',
+  DidWithholdingTaxChanged = 'DidWithholdingTaxChanged',
+  CaaTransferred = 'CAATransferred',
+  CaInitiated = 'CAInitiated',
+  CaLinkedToDoc = 'CALinkedToDoc',
+  CaRemoved = 'CARemoved',
+  RecordDateChanged = 'RecordDateChanged',
+  Created = 'Created',
+  RangeChanged = 'RangeChanged',
+  MetaChanged = 'MetaChanged',
+  RcvChanged = 'RCVChanged',
+  Removed = 'Removed',
+  BenefitClaimed = 'BenefitClaimed',
+  Reclaimed = 'Reclaimed',
+  MaximumSchedulesComplexityChanged = 'MaximumSchedulesComplexityChanged',
+  ScheduleCreated = 'ScheduleCreated',
+  ScheduleRemoved = 'ScheduleRemoved',
+  CustodyTransfer = 'CustodyTransfer',
+  CustodyAllowanceChanged = 'CustodyAllowanceChanged',
+  TreasuryDidSet = 'TreasuryDidSet',
+  SigningKeysAdded = 'SigningKeysAdded',
+  SigningKeysRemoved = 'SigningKeysRemoved',
+  SigningPermissionsUpdated = 'SigningPermissionsUpdated',
+  MasterKeyUpdated = 'MasterKeyUpdated',
+  CddRequirementForMasterKeyUpdated = 'CddRequirementForMasterKeyUpdated',
+  SigningKeysFrozen = 'SigningKeysFrozen',
+  SigningKeysUnfrozen = 'SigningKeysUnfrozen',
+  NewAssetRuleCreated = 'NewAssetRuleCreated',
+  AssetRuleRemoved = 'AssetRuleRemoved',
+  AssetRulesReplaced = 'AssetRulesReplaced',
+  AssetRulesReset = 'AssetRulesReset',
+  AssetRulesResumed = 'AssetRulesResumed',
+  AssetRulesPaused = 'AssetRulesPaused',
+  AssetRuleChanged = 'AssetRuleChanged',
+}
+
+export type Extrinsic = {
+  __typename?: 'Extrinsic';
+  /** Extrinsic details */
+  block_id: Scalars['Int'];
+  extrinsic_idx: Scalars['Int'];
+  extrinsic_length?: Maybe<Scalars['String']>;
+  extrinsic_version?: Maybe<Scalars['String']>;
+  signed?: Maybe<Scalars['Int']>;
+  unsigned?: Maybe<Scalars['Int']>;
+  address_length?: Maybe<Scalars['String']>;
+  address?: Maybe<Scalars['String']>;
+  account_index?: Maybe<Scalars['String']>;
+  signature?: Maybe<Scalars['String']>;
+  nonce?: Maybe<Scalars['Int']>;
+  era?: Maybe<Scalars['String']>;
+  call?: Maybe<Scalars['String']>;
+  module_id: ModuleIdEnum;
+  call_id: CallIdEnum;
+  params: Array<Maybe<Scalars['Object']>>;
+  success: Scalars['Int'];
+  error?: Maybe<Scalars['Int']>;
+  spec_version_id: Scalars['Int'];
+  codec_error?: Maybe<Scalars['Int']>;
+  extrinsic_hash?: Maybe<Scalars['String']>;
+  account_idx?: Maybe<Scalars['Int']>;
+  signedby_address?: Maybe<Scalars['Int']>;
+  signedby_index?: Maybe<Scalars['Int']>;
+  block?: Maybe<Block>;
+  addressAccount?: Maybe<Account>;
+};
+
+export type ExtrinsicResult = {
+  __typename?: 'ExtrinsicResult';
+  totalCount: Scalars['Int'];
+  items: Array<Extrinsic>;
+};
+
+export type FailedBlocksResult = {
+  __typename?: 'FailedBlocksResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<Scalars['Int']>>>;
 };
 
 export type FailedPolyxTransfer = {
@@ -1364,17 +923,6 @@ export type FailedPolyxTransfer = {
   toAccount: Scalars['String'];
   balance: Scalars['Float'];
   description?: Maybe<Scalars['String']>;
-};
-
-export type TokenTransfer = {
-  __typename?: 'TokenTransfer';
-  callerDID: Scalars['String'];
-  ticker: Scalars['String'];
-  fromDID: Scalars['String'];
-  toDID: Scalars['String'];
-  balance: Scalars['Float'];
-  blockId: Scalars['Int'];
-  eventIdx: Scalars['Int'];
 };
 
 export type FailedTokenTransfer = {
@@ -1388,114 +936,40 @@ export type FailedTokenTransfer = {
   data?: Maybe<Scalars['String']>;
 };
 
-export enum AuthTypeEnum {
-  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
-  RotatePrimaryKey = 'RotatePrimaryKey',
-  TransferTicker = 'TransferTicker',
-  AddMultiSigSigner = 'AddMultiSigSigner',
-  TransferAssetOwnership = 'TransferAssetOwnership',
-  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
-  JoinIdentity = 'JoinIdentity',
-  PortfolioCustody = 'PortfolioCustody',
-  Custom = 'Custom',
-  NoData = 'NoData',
-}
-
-export type Authorization = {
-  __typename?: 'Authorization';
-  authId: Scalars['Int'];
-  fromDID: Scalars['String'];
-  toDID?: Maybe<Scalars['String']>;
-  toKey?: Maybe<Scalars['String']>;
-  type: AuthTypeEnum;
-  data?: Maybe<Scalars['String']>;
-  expiry?: Maybe<Scalars['BigInt']>;
-  status: AuthStatusEnum;
-};
-
-export enum AuthStatusEnum {
-  Pending = 'Pending',
-  Consumed = 'Consumed',
-  Rejected = 'Rejected',
-  Revoked = 'Revoked',
-  Expired = 'Expired',
-}
-
-export type VoteResult = {
-  __typename?: 'VoteResult';
-  ayes: Array<Scalars['String']>;
-  nays: Array<Scalars['String']>;
-};
-
-export type Proposal = {
-  __typename?: 'Proposal';
-  /** Proposal */
+export type HistoryOfPaymentEventsForCa = {
+  __typename?: 'HistoryOfPaymentEventsForCA';
   blockId: Scalars['Int'];
-  proposalId: Scalars['Int'];
-  state: ProposalStateEnum;
-  identityId: Scalars['String'];
-  balance: Scalars['BigInt'];
-  url: Scalars['String'];
-  description: Scalars['String'];
-  votesCount: Scalars['Int'];
-};
-
-export enum ProposalStateEnum {
-  All = 'All',
-  Pending = 'Pending',
-  Rejected = 'Rejected',
-  Scheduled = 'Scheduled',
-  Failed = 'Failed',
-  Executed = 'Executed',
-  Expired = 'Expired',
-}
-
-export enum SnapshotEnum {
-  All = 'All',
-  InSnapshot = 'InSnapshot',
-  NotInSnapshot = 'NotInSnapshot',
-}
-
-export type ProposalOrderByInput = {
-  field: ProposalOrderFields;
-  order: Order;
-};
-
-export enum ProposalOrderFields {
-  ProposalId = 'proposalId',
-  VotesCount = 'votesCount',
-}
-
-export type ProposalResult = {
-  __typename?: 'ProposalResult';
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<Proposal>>>;
-};
-
-export type ProposalVotesOrderByInput = {
-  field: ProposalVotesOrderFields;
-  order: Order;
-};
-
-export enum ProposalVotesOrderFields {
-  BlockId = 'block_id',
-  Vote = 'vote',
-  Weight = 'weight',
-}
-
-export type ProposalVote = {
-  __typename?: 'ProposalVote';
-  blockId: Scalars['Int'];
+  eventId: Scalars['String'];
   eventIdx: Scalars['Int'];
-  account: Scalars['String'];
-  vote: Scalars['CustomBoolean'];
-  weight: Scalars['BigInt'];
+  eventDid: Scalars['String'];
+  datetime: Scalars['String'];
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
+  balance: Scalars['Int'];
+  tax: Scalars['Int'];
 };
 
-export type InvestmentResult = {
-  __typename?: 'InvestmentResult';
+export type HistoryOfPaymentEventsForCaResults = {
+  __typename?: 'HistoryOfPaymentEventsForCAResults';
   totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<Investment>>>;
+  items?: Maybe<Array<Maybe<HistoryOfPaymentEventsForCa>>>;
+};
+
+export type IdentityWithClaims = {
+  __typename?: 'IdentityWithClaims';
+  did: Scalars['String'];
+  claims: Array<Claim>;
+};
+
+export type IdentityWithClaimsResult = {
+  __typename?: 'IdentityWithClaimsResult';
+  totalCount: Scalars['Int'];
+  items: Array<IdentityWithClaims>;
+};
+
+export type InstructionIdsForVenueResults = {
+  __typename?: 'InstructionIdsForVenueResults';
+  items?: Maybe<Array<Scalars['Int']>>;
 };
 
 export type Investment = {
@@ -1507,92 +981,10 @@ export type Investment = {
   raiseTokenAmount: Scalars['BigInt'];
 };
 
-export type CorporateActionsWithTickerResult = {
-  __typename?: 'CorporateActionsWithTickerResult';
+export type InvestmentResult = {
+  __typename?: 'InvestmentResult';
   totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<CorporateActionsWithTicker>>>;
-};
-
-export type CorporateActionsWithTicker = {
-  __typename?: 'CorporateActionsWithTicker';
-  eventId: Scalars['String'];
-  datetime: Scalars['String'];
-  identityId: Scalars['String'];
-  ticker: Scalars['String'];
-  arg1?: Maybe<Scalars['String']>;
-  arg2?: Maybe<Scalars['String']>;
-};
-
-export type CaId = {
-  ticker: Scalars['String'];
-  localId: Scalars['Int'];
-};
-
-export type CorporateActionsWithCaIdResult = {
-  __typename?: 'CorporateActionsWithCAIdResult';
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<CorporateActionsWithCaId>>>;
-};
-
-export type CorporateActionsWithCaId = {
-  __typename?: 'CorporateActionsWithCAId';
-  eventId: Scalars['String'];
-  datetime: Scalars['String'];
-  identityId?: Maybe<Scalars['String']>;
-  eventDid?: Maybe<Scalars['String']>;
-  ticker: Scalars['String'];
-  localId: Scalars['Int'];
-  arg?: Maybe<Scalars['String']>;
-};
-
-export type WithholdingTaxesOfCa = {
-  __typename?: 'WithholdingTaxesOfCA';
-  taxes: Scalars['Float'];
-};
-
-export type HistoryOfClaimsForCaResults = {
-  __typename?: 'HistoryOfClaimsForCAResults';
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<HistoryOfClaimsForCa>>>;
-};
-
-export type HistoryOfClaimsForCa = {
-  __typename?: 'HistoryOfClaimsForCA';
-  blockId: Scalars['Int'];
-  eventId: Scalars['String'];
-  eventDid: Scalars['String'];
-  datetime: Scalars['String'];
-  ticker: Scalars['String'];
-  localId: Scalars['Int'];
-  balance: Scalars['Int'];
-  tax: Scalars['Int'];
-};
-
-export type InstructionIdsForVenueResults = {
-  __typename?: 'InstructionIdsForVenueResults';
-  items?: Maybe<Array<Scalars['Int']>>;
-};
-
-export type ItnRewardRankingResult = {
-  __typename?: 'ItnRewardRankingResult';
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<ItnRewardRanking>>>;
-};
-
-export type ItnRewardRanking = {
-  __typename?: 'ItnRewardRanking';
-  did: Scalars['String'];
-  total: Scalars['Int'];
-  rank: Scalars['Int'];
-};
-
-export type DidItnRewardActions = {
-  __typename?: 'DidItnRewardActions';
-  did: Scalars['String'];
-  total: Scalars['Int'];
-  rank: Scalars['Int'];
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<ItnRewardAction>>>;
+  items?: Maybe<Array<Maybe<Investment>>>;
 };
 
 export type ItnRewardAction = {
@@ -1610,16 +1002,629 @@ export enum ItnRewardActionType {
   SecondaryKey = 'SecondaryKey',
   ReserveTokenTicker = 'ReserveTokenTicker',
   SecurityToken = 'SecurityToken',
-  CreateSto = 'CreateSTO',
+  ComplianceRequirement = 'ComplianceRequirement',
+  TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
+  ClaimAdded = 'ClaimAdded',
 }
 
-export type FailedBlocksResult = {
-  __typename?: 'FailedBlocksResult';
-  totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<Scalars['Int']>>>;
+export type ItnRewardRanking = {
+  __typename?: 'ItnRewardRanking';
+  did: Scalars['String'];
+  total: Scalars['Int'];
+  rank: Scalars['Int'];
 };
 
-export enum CacheControlScope {
-  Public = 'PUBLIC',
-  Private = 'PRIVATE',
+export type ItnRewardRankingResult = {
+  __typename?: 'ItnRewardRankingResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<ItnRewardRanking>>>;
+};
+
+export enum ModuleIdEnum {
+  System = 'system',
+  Babe = 'babe',
+  Timestamp = 'timestamp',
+  Indices = 'indices',
+  Balances = 'balances',
+  Transactionpayment = 'transactionpayment',
+  Authorship = 'authorship',
+  Staking = 'staking',
+  Offences = 'offences',
+  Session = 'session',
+  Finalitytracker = 'finalitytracker',
+  Grandpa = 'grandpa',
+  Imonline = 'imonline',
+  Authoritydiscovery = 'authoritydiscovery',
+  Randomnesscollectiveflip = 'randomnesscollectiveflip',
+  Historical = 'historical',
+  Sudo = 'sudo',
+  Multisig = 'multisig',
+  Basecontracts = 'basecontracts',
+  Contracts = 'contracts',
+  Treasury = 'treasury',
+  Polymeshcommittee = 'polymeshcommittee',
+  Committeemembership = 'committeemembership',
+  Pips = 'pips',
+  Technicalcommittee = 'technicalcommittee',
+  Technicalcommitteemembership = 'technicalcommitteemembership',
+  Upgradecommittee = 'upgradecommittee',
+  Upgradecommitteemembership = 'upgradecommitteemembership',
+  Asset = 'asset',
+  Dividend = 'dividend',
+  Identity = 'identity',
+  Bridge = 'bridge',
+  Compliancemanager = 'compliancemanager',
+  Voting = 'voting',
+  Stocapped = 'stocapped',
+  Exemption = 'exemption',
+  Settlement = 'settlement',
+  Sto = 'sto',
+  Cddserviceproviders = 'cddserviceproviders',
+  Statistics = 'statistics',
+  Protocolfee = 'protocolfee',
+  Utility = 'utility',
+  Portfolio = 'portfolio',
+  Confidential = 'confidential',
+  Permissions = 'permissions',
+  Scheduler = 'scheduler',
+  Corporateaction = 'corporateaction',
+  Corporateballot = 'corporateballot',
+  Capitaldistribution = 'capitaldistribution',
+  Checkpoint = 'checkpoint',
+  Testnet = 'testnet',
 }
+
+export enum Order {
+  Asc = 'ASC',
+  Desc = 'DESC',
+}
+
+export type PolyxTransfer = {
+  __typename?: 'PolyxTransfer';
+  blockId: Scalars['Int'];
+  eventIdx: Scalars['Int'];
+  fromDID: Scalars['String'];
+  fromAccount: Scalars['String'];
+  toDID: Scalars['String'];
+  toAccount: Scalars['String'];
+  balance: Scalars['Float'];
+};
+
+export type Portfolio = {
+  __typename?: 'Portfolio';
+  did: Scalars['String'];
+  kind: Scalars['String'];
+};
+
+export type Proposal = {
+  __typename?: 'Proposal';
+  /** Proposal */
+  blockId: Scalars['Int'];
+  proposalId: Scalars['Int'];
+  state: ProposalStateEnum;
+  identityId: Scalars['String'];
+  balance: Scalars['BigInt'];
+  url: Scalars['String'];
+  description: Scalars['String'];
+  votesCount: Scalars['Int'];
+};
+
+export type ProposalOrderByInput = {
+  field: ProposalOrderFields;
+  order: Order;
+};
+
+export enum ProposalOrderFields {
+  ProposalId = 'proposalId',
+  VotesCount = 'votesCount',
+}
+
+export type ProposalResult = {
+  __typename?: 'ProposalResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<Proposal>>>;
+};
+
+export enum ProposalStateEnum {
+  All = 'All',
+  Pending = 'Pending',
+  Rejected = 'Rejected',
+  Scheduled = 'Scheduled',
+  Failed = 'Failed',
+  Executed = 'Executed',
+  Expired = 'Expired',
+}
+
+export type ProposalVote = {
+  __typename?: 'ProposalVote';
+  blockId: Scalars['Int'];
+  eventIdx: Scalars['Int'];
+  account: Scalars['String'];
+  vote: Scalars['CustomBoolean'];
+  weight: Scalars['BigInt'];
+};
+
+export type ProposalVotesOrderByInput = {
+  field: ProposalVotesOrderFields;
+  order: Order;
+};
+
+export enum ProposalVotesOrderFields {
+  BlockId = 'block_id',
+  Vote = 'vote',
+  Weight = 'weight',
+}
+
+export type Query = {
+  __typename?: 'Query';
+  /** Returns true as a heartbeat */
+  heartbeat: Scalars['Boolean'];
+  /** Get the chain  information */
+  chainInfo?: Maybe<ChainInfo>;
+  latestBlock: Block;
+  /** Get all blocks */
+  blocks?: Maybe<Array<Maybe<Block>>>;
+  /** Get a block by block number */
+  blockById?: Maybe<Block>;
+  /** Get a block by hash */
+  blockByHash?: Maybe<Block>;
+  /** Get events by moduleId and eventId */
+  events?: Maybe<Array<Maybe<Event>>>;
+  /** Get staking events by stashAccount, stakingEventIds, fromDate, toDate */
+  stakingEvents?: Maybe<StakingEventResult>;
+  /** Get settlements where a portfolio is envolved */
+  settlements?: Maybe<SettlementResult>;
+  /** Get event where trustedClaimIssuer was added */
+  eventByAddedTrustedClaimIssuer?: Maybe<Event>;
+  /** Get a single event by any of its indexed arguments. If there is more than one result, it returns the most recent by block. */
+  eventByIndexedArgs?: Maybe<Event>;
+  /** Get events by any of its indexed arguments */
+  eventsByIndexedArgs?: Maybe<Array<Maybe<Event>>>;
+  /** Get transactions */
+  transactions: ExtrinsicResult;
+  /** Get transaction by hash */
+  transactionByHash?: Maybe<Extrinsic>;
+  /** Get transaction by number */
+  transactionById?: Maybe<Extrinsic>;
+  /** Get account by address */
+  accountByAddress?: Maybe<Account>;
+  /** Get Bridged event by Ethereum transaction hash */
+  bridgedEventByTxHash?: Maybe<Event>;
+  /** Get all POLYX transfers sent by the given did and/or account */
+  polyxTransfersSent: Array<PolyxTransfer>;
+  /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
+  didsWithClaims: IdentityWithClaimsResult;
+  /** Get issuer dids with at least one claim for given target */
+  issuerDidsWithClaimsByTarget: IdentityWithClaimsResult;
+  /** Get all scopes with at least one claim for a given identityId */
+  scopesByIdentity: Array<ClaimScope>;
+  /** Get all token tickers where given Did is a default Trusted Claim Issuer */
+  tokensByTrustedClaimIssuer: Array<Scalars['String']>;
+  /** Get all tickers of tokens that were held at some point by the given did */
+  tokensHeldByDid: StringResult;
+  /** Get all POLYX transfers (send) failed by the given account */
+  polyxTransfersFailed: Array<FailedPolyxTransfer>;
+  /** Get all POLYX transfers received by the given did and/or account */
+  polyxTransfersReceived: Array<PolyxTransfer>;
+  /** Get all token transfers received by the given account */
+  tokenTransfersReceived: Array<TokenTransfer>;
+  /** Get all token transfers sent by the given did */
+  tokenTransfersSent: Array<TokenTransfer>;
+  /** Get all Token transfers (send) failed by the given account */
+  tokenTransfersFailed: Array<FailedTokenTransfer>;
+  /** Get all authorizations with their status optionally filtered by did, account key or type */
+  authorizations: Array<Authorization>;
+  /** Get the current vote results for given pipId */
+  referendumVotes: VoteResult;
+  /** Get a proposal by its pipId */
+  proposal: Proposal;
+  /** Fetch governance proposals */
+  proposals?: Maybe<ProposalResult>;
+  /** Get the current voters list for given pipId */
+  proposalVotes: Array<ProposalVote>;
+  /** Get investments related to sto id */
+  investments?: Maybe<InvestmentResult>;
+  investmentsAggregated?: Maybe<InvestmentResult>;
+  corporateActionsWithTicker?: Maybe<CorporateActionsWithTickerResult>;
+  corporateActionsWithCAId?: Maybe<CorporateActionsWithCaIdResult>;
+  getWithholdingTaxesOfCA: WithholdingTaxesOfCa;
+  getHistoryOfPaymentEventsForCA: HistoryOfPaymentEventsForCaResults;
+  getInstructionIdsForVenue?: Maybe<InstructionIdsForVenueResults>;
+  getItnRewardRankings?: Maybe<ItnRewardRankingResult>;
+  getDidItnRewardRanking?: Maybe<Array<Maybe<ItnRewardRanking>>>;
+  getDidItnRewardActions?: Maybe<DidItnRewardActions>;
+  updateItnRewardRankings: Scalars['Boolean'];
+  getFailedBlocks?: Maybe<FailedBlocksResult>;
+};
+
+export type QueryBlocksArgs = {
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryBlockByIdArgs = {
+  blockId?: Maybe<Scalars['Int']>;
+};
+
+export type QueryBlockByHashArgs = {
+  blockHash?: Maybe<Scalars['String']>;
+};
+
+export type QueryEventsArgs = {
+  moduleId: ModuleIdEnum;
+  eventId: EventIdEnum;
+  fromBlock: Scalars['Int'];
+  toBlock: Scalars['Int'];
+};
+
+export type QueryStakingEventsArgs = {
+  stashAccount?: Maybe<Scalars['String']>;
+  stakingEventIds?: Maybe<Array<Maybe<StakingEventIdEnum>>>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QuerySettlementsArgs = {
+  identityId: Scalars['String'];
+  portfolioNumber?: Maybe<Scalars['String']>;
+  addressFilter?: Maybe<Scalars['String']>;
+  tickerFilter?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryEventByAddedTrustedClaimIssuerArgs = {
+  ticker: Scalars['String'];
+  identityId: Scalars['String'];
+};
+
+export type QueryEventByIndexedArgsArgs = {
+  moduleId: ModuleIdEnum;
+  eventId: EventIdEnum;
+  eventArg0?: Maybe<Scalars['String']>;
+  eventArg1?: Maybe<Scalars['String']>;
+  eventArg2?: Maybe<Scalars['String']>;
+};
+
+export type QueryEventsByIndexedArgsArgs = {
+  moduleId: ModuleIdEnum;
+  eventId: EventIdEnum;
+  eventArg0?: Maybe<Scalars['String']>;
+  eventArg1?: Maybe<Scalars['String']>;
+  eventArg2?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryTransactionsArgs = {
+  block_id?: Maybe<Scalars['Int']>;
+  address?: Maybe<Scalars['String']>;
+  module_id?: Maybe<ModuleIdEnum>;
+  call_id?: Maybe<CallIdEnum>;
+  success?: Maybe<Scalars['Boolean']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  orderBy?: Maybe<TransactionOrderByInput>;
+};
+
+export type QueryTransactionByHashArgs = {
+  transactionHash?: Maybe<Scalars['String']>;
+};
+
+export type QueryTransactionByIdArgs = {
+  blockId?: Maybe<Scalars['Int']>;
+  transactionIdx?: Maybe<Scalars['Int']>;
+};
+
+export type QueryAccountByAddressArgs = {
+  address?: Maybe<Scalars['String']>;
+};
+
+export type QueryBridgedEventByTxHashArgs = {
+  ethTransactionHash: Scalars['String'];
+};
+
+export type QueryPolyxTransfersSentArgs = {
+  did?: Maybe<Scalars['String']>;
+  account?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryDidsWithClaimsArgs = {
+  dids?: Maybe<Array<Scalars['String']>>;
+  scope?: Maybe<ScopeInput>;
+  trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
+  claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryIssuerDidsWithClaimsByTargetArgs = {
+  target: Scalars['String'];
+  scope?: Maybe<ScopeInput>;
+  trustedClaimIssuers?: Maybe<Array<Scalars['String']>>;
+  claimTypes?: Maybe<Array<ClaimTypeEnum>>;
+  includeExpired?: Maybe<Scalars['Boolean']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryScopesByIdentityArgs = {
+  did: Scalars['String'];
+};
+
+export type QueryTokensByTrustedClaimIssuerArgs = {
+  claimIssuerDid: Scalars['String'];
+  order?: Maybe<Order>;
+};
+
+export type QueryTokensHeldByDidArgs = {
+  did: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  order?: Maybe<Order>;
+};
+
+export type QueryPolyxTransfersFailedArgs = {
+  account: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryPolyxTransfersReceivedArgs = {
+  did?: Maybe<Scalars['String']>;
+  account?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryTokenTransfersReceivedArgs = {
+  did: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryTokenTransfersSentArgs = {
+  did: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryTokenTransfersFailedArgs = {
+  account: Scalars['String'];
+  ticker?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryAuthorizationsArgs = {
+  did?: Maybe<Scalars['String']>;
+  accountKey?: Maybe<Scalars['String']>;
+  authorizationTypes?: Maybe<Array<AuthTypeEnum>>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryReferendumVotesArgs = {
+  proposalId: Scalars['Int'];
+};
+
+export type QueryProposalArgs = {
+  pipId: Scalars['Int'];
+};
+
+export type QueryProposalsArgs = {
+  state?: Maybe<ProposalStateEnum>;
+  snapshot?: Maybe<SnapshotEnum>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  orderBy?: Maybe<ProposalOrderByInput>;
+};
+
+export type QueryProposalVotesArgs = {
+  pipId: Scalars['Int'];
+  vote?: Maybe<Scalars['Boolean']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  orderBy?: Maybe<ProposalVotesOrderByInput>;
+};
+
+export type QueryInvestmentsArgs = {
+  stoId: Scalars['Int'];
+  ticker: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryInvestmentsAggregatedArgs = {
+  stoId: Scalars['Int'];
+  ticker: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryCorporateActionsWithTickerArgs = {
+  identityId?: Maybe<Scalars['String']>;
+  ticker?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryCorporateActionsWithCaIdArgs = {
+  identityId?: Maybe<Scalars['String']>;
+  eventDid?: Maybe<Scalars['String']>;
+  CAId?: Maybe<CaId>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetWithholdingTaxesOfCaArgs = {
+  CAId: CaId;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+};
+
+export type QueryGetHistoryOfPaymentEventsForCaArgs = {
+  CAId: CaId;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetInstructionIdsForVenueArgs = {
+  venueId: Scalars['String'];
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
+};
+
+export type QueryGetItnRewardRankingsArgs = {
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetDidItnRewardRankingArgs = {
+  did: Scalars['String'];
+  neighborRange?: Maybe<Scalars['Int']>;
+};
+
+export type QueryGetDidItnRewardActionsArgs = {
+  did: Scalars['String'];
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  groupByAction?: Maybe<Scalars['Boolean']>;
+};
+
+export type QueryGetFailedBlocksArgs = {
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+};
+
+export type Scope = {
+  __typename?: 'Scope';
+  type: ClaimScopeTypeEnum;
+  value: Scalars['String'];
+};
+
+export type ScopeInput = {
+  type: ClaimScopeTypeEnum;
+  value: Scalars['String'];
+};
+
+export type Settlement = {
+  __typename?: 'Settlement';
+  /** Settlement */
+  block_id: Scalars['Int'];
+  result: SettlementResultEnum;
+  addresses?: Maybe<Array<Scalars['String']>>;
+  legs: Array<Maybe<SettlementLeg>>;
+};
+
+export enum SettlementDirectionEnum {
+  None = 'None',
+  Incoming = 'Incoming',
+  Outgoing = 'Outgoing',
+}
+
+export type SettlementLeg = {
+  __typename?: 'SettlementLeg';
+  /** SettlementLeg */
+  ticker: Scalars['String'];
+  amount: Scalars['String'];
+  direction: SettlementDirectionEnum;
+  from: Portfolio;
+  to: Portfolio;
+};
+
+export type SettlementResult = {
+  __typename?: 'SettlementResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<Settlement>>>;
+};
+
+export enum SettlementResultEnum {
+  None = 'None',
+  Executed = 'Executed',
+  Failed = 'Failed',
+  Rejected = 'Rejected',
+}
+
+export enum SnapshotEnum {
+  All = 'All',
+  InSnapshot = 'InSnapshot',
+  NotInSnapshot = 'NotInSnapshot',
+}
+
+export type StakingEvent = {
+  __typename?: 'StakingEvent';
+  date?: Maybe<Scalars['DateTime']>;
+  blockId?: Maybe<Scalars['BigInt']>;
+  transactionId?: Maybe<Scalars['String']>;
+  eventId?: Maybe<StakingEventIdEnum>;
+  identityId?: Maybe<Scalars['String']>;
+  stashAccount?: Maybe<Scalars['String']>;
+  amount?: Maybe<Scalars['BigInt']>;
+  nominatedValidators?: Maybe<Array<Maybe<Scalars['String']>>>;
+};
+
+export enum StakingEventIdEnum {
+  Bonded = 'Bonded',
+  Unbonded = 'Unbonded',
+  Nominated = 'Nominated',
+  Reward = 'Reward',
+  Slash = 'Slash',
+}
+
+export type StakingEventResult = {
+  __typename?: 'StakingEventResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<StakingEvent>>>;
+};
+
+export type StringResult = {
+  __typename?: 'StringResult';
+  totalCount: Scalars['Int'];
+  items: Array<Scalars['String']>;
+};
+
+export type TokenTransfer = {
+  __typename?: 'TokenTransfer';
+  callerDID: Scalars['String'];
+  ticker: Scalars['String'];
+  fromDID: Scalars['String'];
+  toDID: Scalars['String'];
+  balance: Scalars['Float'];
+  blockId: Scalars['Int'];
+  eventIdx: Scalars['Int'];
+};
+
+export type TransactionOrderByInput = {
+  field: TransactionOrderFields;
+  order: Order;
+};
+
+export enum TransactionOrderFields {
+  BlockId = 'block_id',
+  Address = 'address',
+  ModuleId = 'module_id',
+  CallId = 'call_id',
+}
+
+export type VoteResult = {
+  __typename?: 'VoteResult';
+  ayes: Array<Scalars['String']>;
+  nays: Array<Scalars['String']>;
+};
+
+export type WithholdingTaxesOfCa = {
+  __typename?: 'WithholdingTaxesOfCA';
+  taxes: Scalars['Float'];
+};
