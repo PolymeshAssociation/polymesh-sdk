@@ -365,8 +365,6 @@ export class DividendDistribution extends CorporateAction {
       getWithholdingTaxesOfCa({
         // eslint-disable-next-line @typescript-eslint/naming-convention
         CAId: { ticker, localId: id.toNumber() },
-        fromDate: null,
-        toDate: null,
       })
     );
 
