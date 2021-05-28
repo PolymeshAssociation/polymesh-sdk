@@ -187,7 +187,7 @@ describe('TrustedClaimIssuers class', () => {
         claimIssuers.push(
           dsMockUtils.createMockTrustedIssuer({
             issuer: dsMockUtils.createMockIdentityId(did),
-            // eslint-disable-next-line @typescript-eslint/camelcase
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             trusted_for: dsMockUtils.createMockTrustedFor('Any'),
           })
         );

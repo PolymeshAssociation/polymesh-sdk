@@ -17,6 +17,5 @@
     "src/context/index.ts"
   ],
   "excludeExternals": true,
-  "excludePrivate": true,
-  "ignoreCompilerErrors": true
+  "excludePrivate": true
 }

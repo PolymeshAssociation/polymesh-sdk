@@ -1,6 +1,6 @@
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
-import { getTypeDef } from '@polkadot/types';
+import { getTypeDef,Option  } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
@@ -8,11 +8,19 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { flatMap, flatten } from 'lodash';
+import { chunk, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { DidRecord, ProtocolOp, TxTag } from 'polymesh-types/types';
+import { CAId, DidRecord, Distribution, ProtocolOp, TxTag } from 'polymesh-types/types';
 
-import { Account, CurrentAccount, CurrentIdentity, Identity, PolymeshError } from '~/internal';
+import {
+  Account,
+  CurrentAccount,
+  CurrentIdentity,
+  DividendDistribution,
+  Identity,
+  PolymeshError,
+  SecurityToken,
+} from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -22,6 +30,8 @@ import {
   ClaimType,
   CommonKeyring,
   ComplexTransactionArgument,
+  CorporateActionParams,
+  DistributionWithDetails,
   Ensured,
   ErrorCode,
   KeyringPair,
@@ -36,12 +46,21 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { DEFAULT_SS58_FORMAT, ROOT_TYPES } from '~/utils/constants';
+import {
+  DEFAULT_SS58_FORMAT,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  ROOT_TYPES,
+} from '~/utils/constants';
 import {
   balanceToBigNumber,
+  boolToBoolean,
   claimTypeToMeshClaimType,
+  corporateActionIdentifierToCaId,
+  distributionToDividendDistributionParams,
   identityIdToString,
   meshClaimToClaim,
+  meshCorporateActionToCorporateActionParams,
   meshPermissionsToPermissions,
   momentToDate,
   numberToU32,
@@ -50,7 +69,9 @@ import {
   signerToString,
   signerValueToSigner,
   stringToIdentityId,
+  stringToTicker,
   textToString,
+  tickerToString,
   txTagToProtocolOp,
   u8ToBigNumber,
   u32ToBigNumber,
@@ -629,6 +650,95 @@ export class Context {
 
   /**
    * @hidden
+   */
+  public async getDividendDistributionsForTokens(args: {
+    tokens: SecurityToken[];
+  }): Promise<DistributionWithDetails[]> {
+    const {
+      polymeshApi: { query },
+    } = this;
+    const { tokens } = args;
+    const distributionsMultiParams: CAId[] = [];
+    const corporateActionParams: CorporateActionParams[] = [];
+    const corporateActionIds: BigNumber[] = [];
+    const tickers: string[] = [];
+
+    const tokenChunks = chunk(tokens, MAX_CONCURRENT_REQUESTS);
+
+    await P.each(tokenChunks, async tokenChunk => {
+      const corporateActions = await Promise.all(
+        tokenChunk.map(({ ticker }) =>
+          query.corporateAction.corporateActions.entries(stringToTicker(ticker, this))
+        )
+      );
+      const unpredictableCas = flatten(corporateActions).filter(
+        ([, action]) => action.unwrap().kind.isUnpredictableBenefit
+      );
+
+      unpredictableCas.forEach(
+        ([
+          {
+            args: [rawTicker, rawId],
+          },
+          corporateAction,
+        ]) => {
+          const localId = u32ToBigNumber(rawId);
+          const ticker = tickerToString(rawTicker);
+          tickers.push(ticker);
+          corporateActionIds.push(localId);
+          distributionsMultiParams.push(corporateActionIdentifierToCaId({ ticker, localId }, this));
+          const action = corporateAction.unwrap();
+          corporateActionParams.push(meshCorporateActionToCorporateActionParams(action, this));
+        }
+      );
+    });
+
+    /*
+     * Divide the requests to account for practical limits
+     */
+    const paramChunks = chunk(distributionsMultiParams, MAX_PAGE_SIZE);
+    const requestChunks = chunk(paramChunks, MAX_CONCURRENT_REQUESTS);
+    const distributions = await P.mapSeries(requestChunks, requestChunk =>
+      Promise.all(
+        requestChunk.map(paramChunk =>
+          query.capitalDistribution.distributions.multi<Option<Distribution>>(paramChunk)
+        )
+      )
+    );
+
+    const result: DistributionWithDetails[] = [];
+
+    flattenDeep<Option<Distribution>>(distributions).forEach((distribution, index) => {
+      if (distribution.isNone) {
+        return;
+      }
+
+      const dist = distribution.unwrap();
+
+      const { reclaimed, remaining } = dist;
+
+      result.push({
+        distribution: new DividendDistribution(
+          {
+            ticker: tickers[index],
+            id: corporateActionIds[index],
+            ...corporateActionParams[index],
+            ...distributionToDividendDistributionParams(dist, this),
+          },
+          this
+        ),
+        details: {
+          remainingFunds: balanceToBigNumber(remaining),
+          fundsReclaimed: boolToBoolean(reclaimed),
+        },
+      });
+    });
+
+    return result;
+  }
+
+  /**
+   * @hidden
    *
    * @note no claimTypes value means ALL claim types
    */
@@ -655,7 +765,7 @@ export class Context {
       claimTypes.map(claimType => {
         return {
           target: signerToString(target),
-          // eslint-disable-next-line @typescript-eslint/camelcase
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           claim_type: claimTypeToMeshClaimType(claimType, this),
         };
       })
@@ -731,7 +841,7 @@ export class Context {
     didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
         ({
-          targetDID,
+          targetDID: target,
           issuer,
           issuance_date: issuanceDate,
           expiry,
@@ -741,7 +851,7 @@ export class Context {
           cdd_id: cddId,
         }) => {
           data.push({
-            target: new Identity({ did: targetDID }, this),
+            target: new Identity({ did: target }, this),
             issuer: new Identity({ did: issuer }, this),
             issuedAt: new Date(issuanceDate),
             expiry: expiry ? new Date(expiry) : null,
@@ -824,16 +934,16 @@ export class Context {
    * @throws if the middleware is not enabled
    */
   public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
-    const { _middlewareApi } = this;
+    const { _middlewareApi: api } = this;
 
-    if (!_middlewareApi) {
+    if (!api) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Cannot perform this action without an active middleware connection',
       });
     }
 
-    return _middlewareApi;
+    return api;
   }
 
   /**

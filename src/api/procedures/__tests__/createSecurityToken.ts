@@ -130,7 +130,7 @@ describe('createSecurityToken procedure', () => {
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockDocumentName(docName),
         uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         content_hash: dsMockUtils.createMockDocumentHash(contentHash),
         doc_type: dsMockUtils.createMockOption(
           type ? dsMockUtils.createMockDocumentType(type) : null
@@ -138,7 +138,7 @@ describe('createSecurityToken procedure', () => {
         filing_date: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
         ),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
@@ -164,6 +164,9 @@ describe('createSecurityToken procedure', () => {
 
     dsMockUtils.createQueryStub('asset', 'tickerConfig', {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
+    });
+    dsMockUtils.createQueryStub('asset', 'classicTickers', {
+      returnValue: dsMockUtils.createMockOption(),
     });
 
     transaction = dsMockUtils.createTxStub('asset', 'createAsset');
@@ -233,7 +236,7 @@ describe('createSecurityToken procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       transaction,
-      {},
+      { fee: undefined },
       rawName,
       rawTicker,
       rawTotalSupply,
@@ -253,7 +256,7 @@ describe('createSecurityToken procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
       transaction,
-      {},
+      { fee: undefined },
       rawName,
       rawTicker,
       rawTotalSupply,
@@ -262,6 +265,36 @@ describe('createSecurityToken procedure', () => {
       [],
       null
     );
+  });
+
+  test('should waive protocol fees if the token was created in Ethereum', async () => {
+    dsMockUtils.createQueryStub('asset', 'classicTickers', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockClassicTickerRegistration({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          eth_owner: 'someAddress',
+          is_created: true,
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      ),
+    });
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+
+    const result = await prepareCreateSecurityToken.call(proc, args);
+
+    sinon.assert.calledWith(
+      addTransactionStub.firstCall,
+      transaction,
+      { fee: new BigNumber(0) },
+      rawName,
+      rawTicker,
+      rawTotalSupply,
+      rawIsDivisible,
+      rawType,
+      rawIdentifiers,
+      rawFundingRound
+    );
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should add a document add transaction to the queue', async () => {

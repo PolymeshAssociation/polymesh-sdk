@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 import { CheckpointId, Moment, Ticker } from 'polymesh-types/types';
 
 import { Checkpoint, Context, createCheckpoint, Namespace, SecurityToken } from '~/internal';
-import { CheckpointWithData, PaginationOptions, ResultSet } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { CheckpointWithData, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
@@ -66,7 +65,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
       paginationOpts,
     });
 
-    const checkpointsMultiParams: [CheckpointId, Ticker][] = [];
+    const checkpointsMultiParams: [Ticker, CheckpointId][] = [];
     const checkpoints: { checkpoint: Checkpoint; totalSupply: BigNumber }[] = [];
 
     entries.forEach(
@@ -76,7 +75,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
         },
         balance,
       ]) => {
-        checkpointsMultiParams.push(tuple(id, rawTicker));
+        checkpointsMultiParams.push(tuple(rawTicker, id));
         checkpoints.push({
           checkpoint: new Checkpoint({ id: u64ToBigNumber(id), ticker }, context),
           totalSupply: balanceToBigNumber(balance),

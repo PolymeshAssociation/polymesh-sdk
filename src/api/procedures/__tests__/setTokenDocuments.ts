@@ -63,7 +63,7 @@ describe('setTokenDocuments procedure', () => {
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockDocumentName(name),
         uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         content_hash: dsMockUtils.createMockDocumentHash(contentHash),
         doc_type: dsMockUtils.createMockOption(
           type ? dsMockUtils.createMockDocumentType(type) : null
@@ -71,7 +71,7 @@ describe('setTokenDocuments procedure', () => {
         filing_date: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
         ),
-        /* eslint-enabled @typescript-eslint/camelcase */
+        /* eslint-enabled @typescript-eslint/naming-convention */
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>

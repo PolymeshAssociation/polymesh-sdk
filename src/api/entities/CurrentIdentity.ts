@@ -13,8 +13,7 @@ import {
   toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
-import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod, SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**

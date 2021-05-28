@@ -1,8 +1,7 @@
 import { remove } from 'lodash';
 
 import { Context, launchSto, LaunchStoParams, Namespace, SecurityToken, Sto } from '~/internal';
-import { StoStatus, StoWithDetails } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod, StoStatus, StoWithDetails } from '~/types';
 import { fundraiserToStoDetails, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 

@@ -9,8 +9,8 @@ import {
   SecurityToken,
   Venue,
 } from '~/internal';
-import { ErrorCode, PaginationOptions, ResultSet } from '~/types';
-import { InstructionAffirmationOperation, ProcedureMethod } from '~/types/internal';
+import { ErrorCode, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
+import { InstructionAffirmationOperation } from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,

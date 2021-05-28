@@ -9,9 +9,10 @@ import {
   Identity,
   reserveTicker,
   SecurityToken,
+  transferTickerOwnership,
+  TransferTickerOwnershipParams,
 } from '~/internal';
-import { SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -62,6 +63,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
 
     this.createToken = createProcedureMethod(
       { getProcedureAndArgs: args => [createSecurityToken, { ...args, ticker }] },
+      context
+    );
+
+    this.transferOwnership = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferTickerOwnership, { ticker, ...args }] },
       context
     );
   }
@@ -172,4 +178,19 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    *   - Ticker Owner
    */
   public createToken: ProcedureMethod<CreateSecurityTokenParams, SecurityToken>;
+
+  /**
+   * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted
+   *   by the destinatary
+   *
+   * @param args.expiry - date at which the authorization request for transfer expires (optional)
+   *
+   * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
+   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Ticker Owner
+   */
+  public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, TickerReservation>;
 }

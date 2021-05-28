@@ -3,9 +3,9 @@ import { AddCountTransferRestrictionParams, SetCountTransferRestrictionsParams }
 import {
   ActiveTransferRestrictions,
   CountTransferRestriction,
+  ProcedureMethod,
   TransferRestrictionType,
 } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
 
 /**
  * Handles all Count Transfer Restriction related functionality

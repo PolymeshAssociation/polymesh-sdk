@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
+import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -14,6 +14,7 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
+  SecurityToken,
 } from '~/internal';
 import { CorporateActionKind, ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -130,20 +131,7 @@ export async function prepareConfigureDividendDistribution(
   }
 
   if (!(checkpoint instanceof Checkpoint)) {
-    let checkpointDate;
-
-    if (checkpoint instanceof Date) {
-      checkpointDate = checkpoint;
-    } else {
-      ({ nextCheckpointDate: checkpointDate } = await checkpoint.details());
-    }
-
-    if (checkpointDate >= paymentDate) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Payment date must be after the Checkpoint date',
-      });
-    }
+    await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
   }
 
   const [{ free }] = await portfolio.getTokenBalances({ tokens: [currency] });

@@ -166,7 +166,7 @@ describe('Offerings class', () => {
       fundraisers = [
         dsMockUtils.createMockFundraiser({
           creator: dsMockUtils.createMockIdentityId(creator.did),
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           offering_portfolio: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(offeringPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -192,7 +192,7 @@ describe('Offerings class', () => {
         }),
         dsMockUtils.createMockFundraiser({
           creator: dsMockUtils.createMockIdentityId(creator.did),
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           offering_portfolio: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(offeringPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),

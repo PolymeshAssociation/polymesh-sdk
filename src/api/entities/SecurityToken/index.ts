@@ -19,8 +19,14 @@ import {
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import {
+  Ensured,
+  EventIdentifier,
+  ProcedureMethod,
+  SubCallback,
+  TokenIdentifier,
+  UnsubCallback,
+} from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
@@ -196,7 +202,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = ({
       name,
       total_supply,
@@ -217,7 +223,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
           : owner,
       };
     };
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 

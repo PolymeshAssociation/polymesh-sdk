@@ -2,13 +2,15 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
+  assertCaCheckpointValid,
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
+  assertDistributionDatesValid,
   assertInstructionValid,
   assertPortfolioExists,
   assertSecondaryKeys,
 } from '~/api/procedures/utils';
-import { Context, Instruction } from '~/internal';
+import { CheckpointSchedule, Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
@@ -408,5 +410,157 @@ describe('assertCaTaxWithholdingsValid', () => {
         mockContext
       )
     ).not.toThrow();
+  });
+});
+
+describe('assertCaCheckpointValid', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if date is in the past', async () => {
+    let checkpoint = new Date(new Date().getTime() - 100000);
+
+    let error;
+    try {
+      await assertCaCheckpointValid(checkpoint);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Checkpoint date must be in the future');
+
+    checkpoint = new Date(new Date().getTime() + 100000);
+
+    return expect(assertCaCheckpointValid(checkpoint)).resolves.not.toThrow();
+  });
+
+  test('should throw an error if the checkpoint does not exist', async () => {
+    let checkpoint = entityMockUtils.getCheckpointInstance({
+      exists: false,
+    });
+
+    let error;
+    try {
+      await assertCaCheckpointValid(checkpoint);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("Checkpoint doesn't exist");
+
+    checkpoint = entityMockUtils.getCheckpointInstance({
+      exists: true,
+    });
+
+    return expect(assertCaCheckpointValid(checkpoint)).resolves.not.toThrow();
+  });
+
+  test('should throw an error if checkpoint schedule no longer exists', async () => {
+    const checkpoint = entityMockUtils.getCheckpointScheduleInstance({
+      exists: false,
+    });
+
+    let error;
+    try {
+      await assertCaCheckpointValid(checkpoint);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("Checkpoint Schedule doesn't exist");
+  });
+});
+
+describe('assertCaCheckpointValid', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
+    const date = new Date(new Date().getTime());
+
+    let checkpoint: CheckpointSchedule | Date = date;
+    const paymentDate = new Date(new Date().getTime() - 100000);
+    const expiryDate = new Date();
+
+    let error;
+    try {
+      await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Payment date must be after the Checkpoint date');
+
+    checkpoint = entityMockUtils.getCheckpointScheduleInstance({
+      details: {
+        nextCheckpointDate: date,
+      },
+    });
+    try {
+      await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Payment date must be after the Checkpoint date');
+  });
+
+  test('should throw an error if the expiry date is earlier than the Checkpoint date', async () => {
+    const date = new Date(new Date().getTime() - 100000);
+
+    let checkpoint: CheckpointSchedule | Date = date;
+    const paymentDate = new Date(new Date().getTime());
+    const expiryDate = new Date(new Date().getTime() - 200000);
+
+    let error;
+    try {
+      await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Expiry date must be after the Checkpoint date');
+
+    checkpoint = entityMockUtils.getCheckpointScheduleInstance({
+      details: {
+        nextCheckpointDate: date,
+      },
+    });
+
+    try {
+      await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Expiry date must be after the Checkpoint date');
+
+    checkpoint = entityMockUtils.getCheckpointScheduleInstance({
+      details: {
+        nextCheckpointDate: new Date(new Date().getTime() - 300000),
+      },
+    });
+
+    return expect(
+      assertDistributionDatesValid(checkpoint, paymentDate, expiryDate)
+    ).resolves.not.toThrow();
   });
 });

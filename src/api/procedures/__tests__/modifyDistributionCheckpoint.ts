@@ -6,7 +6,7 @@ import {
   Params,
   prepareModifyDistributionCheckpoint,
 } from '~/api/procedures/modifyDistributionCheckpoint';
-import { Context } from '~/internal';
+import { Context, modifyCaCheckpoint } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
@@ -76,10 +76,13 @@ describe('modifyDistributionCheckpoint procedure', () => {
     expect(err.message).toBe('Distribution is already in its payment period');
   });
 
-  test('should throw an error if checkpoint date is not in the future', async () => {
+  test('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
+    const checkpoint = new Date(new Date().getTime() + 1000);
     const args = {
-      distribution: entityMockUtils.getDividendDistributionInstance(),
-      checkpoint: new Date('10/10/2010'),
+      distribution: entityMockUtils.getDividendDistributionInstance({
+        paymentDate: new Date(checkpoint.getTime() - 100),
+      }),
+      checkpoint,
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -92,17 +95,20 @@ describe('modifyDistributionCheckpoint procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Checkpoint date must be in the future');
+    expect(err.message).toBe('Payment date must be after the Checkpoint date');
   });
 
-  test('should throw an error if checkpoint date is after the payment date', async () => {
+  test('should throw an error if the checkpoint date is after the expiry date', async () => {
+    const checkpoint = new Date(new Date().getTime() + 1000);
+    const paymentDate = new Date(checkpoint.getTime() + 2000);
     const args = {
       distribution: entityMockUtils.getDividendDistributionInstance({
-        paymentDate: new Date(new Date().getTime() + 100000),
+        paymentDate,
+        expiryDate: new Date(checkpoint.getTime() - 1000),
       }),
       checkpoint: entityMockUtils.getCheckpointScheduleInstance({
         details: {
-          nextCheckpointDate: new Date(new Date().getTime() + 200000),
+          nextCheckpointDate: checkpoint,
         },
       }),
     };
@@ -117,19 +123,20 @@ describe('modifyDistributionCheckpoint procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Checkpoint date must be before the payment date');
+    expect(err.message).toBe('Expiry date must be after the Checkpoint date');
   });
 
   test('should throw an error if the distribution has already expired', async () => {
-    const expiryDate = new Date('1/1/2020');
-    const paymentDate = new Date(new Date().getTime() + 200000);
+    const checkpoint = new Date(new Date().getTime() - 100000);
+    const expiryDate = new Date(checkpoint.getTime() + 10000);
+    const paymentDate = new Date(new Date().getTime() + 20000);
 
     const args = {
       distribution: entityMockUtils.getDividendDistributionInstance({
         expiryDate,
         paymentDate,
       }),
-      checkpoint: new Date(new Date().getTime() + 100000),
+      checkpoint,
     };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -164,7 +171,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
 
     await prepareModifyDistributionCheckpoint.call(proc, args);
 
-    sinon.assert.calledWith(addProcedureStub, proc, {
+    sinon.assert.calledWith(addProcedureStub, modifyCaCheckpoint(), {
       checkpoint,
       corporateAction: distribution,
     });
