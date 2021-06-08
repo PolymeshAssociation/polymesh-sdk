@@ -403,12 +403,11 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   test('should add a distribute transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
-      mockContext,
-      { portfolio: originPortfolio }
-    );
+    let proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
+      portfolio: originPortfolio,
+    });
 
-    let result = await prepareConfigureDividendDistribution.call(proc, {
+    const result = await prepareConfigureDividendDistribution.call(proc, {
       ticker,
       declarationDate,
       checkpoint,
@@ -441,7 +440,21 @@ describe('configureDividendDistribution procedure', () => {
 
     expect(result).toEqual(distribution);
 
-    result = await prepareConfigureDividendDistribution.call(proc, {
+    proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
+      portfolio: entityMockUtils.getDefaultPortfolioInstance({
+        did: 'someDid',
+        tokenBalances: [
+          {
+            token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+            total: new BigNumber(1000001),
+            locked: new BigNumber(0),
+            free: new BigNumber(1000001),
+          },
+        ],
+      }),
+    });
+
+    await prepareConfigureDividendDistribution.call(proc, {
       ticker,
       declarationDate,
       checkpoint,
@@ -449,7 +462,6 @@ describe('configureDividendDistribution procedure', () => {
       targets,
       defaultTaxWithholding,
       taxWithholdings,
-      originPortfolio: originPortfolio.id,
       currency,
       perShare,
       maxAmount,
@@ -463,15 +475,13 @@ describe('configureDividendDistribution procedure', () => {
         resolvers: sinon.match.array,
       }),
       rawCaId,
-      rawPortfolioNumber,
+      null,
       rawCurrency,
       rawPerShare,
       rawAmount,
       rawPaymentAt,
       null
     );
-
-    expect(result).toEqual(distribution);
   });
 
   describe('dividendDistributionResolver', () => {
