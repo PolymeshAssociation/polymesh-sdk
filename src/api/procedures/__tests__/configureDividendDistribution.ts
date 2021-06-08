@@ -440,6 +440,37 @@ describe('configureDividendDistribution procedure', () => {
 
     expect(result).toEqual(distribution);
 
+    await prepareConfigureDividendDistribution.call(proc, {
+      ticker,
+      declarationDate,
+      checkpoint,
+      description,
+      targets,
+      defaultTaxWithholding,
+      taxWithholdings,
+      originPortfolio: originPortfolio.id,
+      currency,
+      perShare,
+      maxAmount,
+      paymentDate,
+      expiryDate,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      distributeTransaction,
+      sinon.match({
+        resolvers: sinon.match.array,
+      }),
+      rawCaId,
+      rawPortfolioNumber,
+      rawCurrency,
+      rawPerShare,
+      rawAmount,
+      rawPaymentAt,
+      rawExpiresAt
+    );
+
     proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: entityMockUtils.getDefaultPortfolioInstance({
         did: 'someDid',
