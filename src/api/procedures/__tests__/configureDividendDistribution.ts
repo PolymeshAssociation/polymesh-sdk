@@ -75,7 +75,7 @@ describe('configureDividendDistribution procedure', () => {
   let perShare: BigNumber;
   let maxAmount: BigNumber;
   let paymentDate: Date;
-  let expiryDate: null | Date;
+  let expiryDate: Date;
 
   let rawPortfolioNumber: PortfolioNumber;
   let rawCurrency: Ticker;
@@ -367,13 +367,48 @@ describe('configureDividendDistribution procedure', () => {
     });
   });
 
+  test('should throw an error if the origin Portfolio does not exist', async () => {
+    const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
+      mockContext,
+      {
+        portfolio: entityMockUtils.getNumberedPortfolioInstance({
+          exists: false,
+        }),
+      }
+    );
+
+    let err;
+
+    try {
+      await prepareConfigureDividendDistribution.call(proc, {
+        ticker,
+        declarationDate,
+        checkpoint: entityMockUtils.getCheckpointInstance(),
+        description,
+        targets,
+        defaultTaxWithholding,
+        taxWithholdings,
+        originPortfolio,
+        currency,
+        perShare,
+        maxAmount,
+        paymentDate,
+        expiryDate,
+      });
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe("The Portfolio doesn't exist");
+  });
+
   test('should add a distribute transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
     );
 
-    const result = await prepareConfigureDividendDistribution.call(proc, {
+    let result = await prepareConfigureDividendDistribution.call(proc, {
       ticker,
       declarationDate,
       checkpoint,
@@ -402,6 +437,38 @@ describe('configureDividendDistribution procedure', () => {
       rawAmount,
       rawPaymentAt,
       rawExpiresAt
+    );
+
+    expect(result).toEqual(distribution);
+
+    result = await prepareConfigureDividendDistribution.call(proc, {
+      ticker,
+      declarationDate,
+      checkpoint,
+      description,
+      targets,
+      defaultTaxWithholding,
+      taxWithholdings,
+      originPortfolio: originPortfolio.id,
+      currency,
+      perShare,
+      maxAmount,
+      paymentDate,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      distributeTransaction,
+      sinon.match({
+        resolvers: sinon.match.array,
+      }),
+      rawCaId,
+      rawPortfolioNumber,
+      rawCurrency,
+      rawPerShare,
+      rawAmount,
+      rawPaymentAt,
+      null
     );
 
     expect(result).toEqual(distribution);
@@ -552,6 +619,15 @@ describe('configureDividendDistribution procedure', () => {
 
       expect(result).toEqual({
         portfolio: originPortfolio,
+      });
+
+      const portfolioId = new BigNumber(1);
+      result = await boundFunc({ originPortfolio: portfolioId } as Params);
+
+      expect(result).toEqual({
+        portfolio: entityMockUtils.getNumberedPortfolioInstance({
+          id: portfolioId,
+        }),
       });
 
       result = await boundFunc({} as Params);

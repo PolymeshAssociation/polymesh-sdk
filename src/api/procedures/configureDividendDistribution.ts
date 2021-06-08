@@ -29,7 +29,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -61,12 +61,12 @@ export type ConfigureDividendDistributionParams = Omit<
   'kind' | 'checkpoint'
 > & {
   checkpoint: Checkpoint | Date | CheckpointSchedule;
-  originPortfolio?: NumberedPortfolio;
+  originPortfolio?: NumberedPortfolio | BigNumber;
   currency: string;
   perShare: BigNumber;
   maxAmount: BigNumber;
   paymentDate: Date;
-  expiryDate: null | Date;
+  expiryDate?: Date;
 };
 
 /**
@@ -104,7 +104,7 @@ export async function prepareConfigureDividendDistribution(
     perShare,
     maxAmount,
     paymentDate,
-    expiryDate,
+    expiryDate = null,
     checkpoint,
     ...corporateActionArgs
   } = args;
@@ -134,6 +134,17 @@ export async function prepareConfigureDividendDistribution(
     await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
   }
 
+  if (portfolio instanceof NumberedPortfolio) {
+    const exists = await portfolio.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Portfolio doesn't exist",
+      });
+    }
+  }
+
   const [{ free }] = await portfolio.getTokenBalances({ tokens: [currency] });
 
   if (free.lt(maxAmount)) {
@@ -153,12 +164,17 @@ export async function prepareConfigureDividendDistribution(
     ...corporateActionArgs,
   });
 
-  const rawPortfolioNumber = originPortfolio && numberToU64(originPortfolio.id, context);
+  const rawPortfolioNumber =
+    originPortfolio &&
+    numberToU64(
+      originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
+      context
+    );
   const rawCurrency = stringToTicker(currency, context);
   const rawPerShare = numberToBalance(perShare, context);
   const rawAmount = numberToBalance(maxAmount, context);
   const rawPaymentAt = dateToMoment(paymentDate, context);
-  const rawExpiresAt = expiryDate && dateToMoment(expiryDate, context);
+  const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
   const [dividendDistribution] = this.addTransaction(
     tx.capitalDistribution.distribute,
@@ -213,8 +229,14 @@ export async function prepareStorage(
 
   const { did } = await context.getCurrentIdentity();
 
+  let portfolio = originPortfolio || new DefaultPortfolio({ did }, context);
+
+  if (portfolio instanceof BigNumber) {
+    portfolio = new NumberedPortfolio({ id: portfolio, did }, context);
+  }
+
   return {
-    portfolio: originPortfolio || new DefaultPortfolio({ did }, context),
+    portfolio,
   };
 }
 
