@@ -166,7 +166,7 @@ export async function prepareConfigureDividendDistribution(
 
   const rawPortfolioNumber =
     originPortfolio &&
-    numberToU64(
+    optionize(numberToU64)(
       originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
       context
     );

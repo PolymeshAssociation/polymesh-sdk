@@ -132,14 +132,14 @@ export async function prepareInitiateCorporateAction(
   const rawDetails = stringToText(description, context);
   const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
   const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
-  const rawWithholdings = taxWithholdings
-    ? taxWithholdings.map(({ identity, percentage }) =>
-        tuple(
-          stringToIdentityId(signerToString(identity), context),
-          percentageToPermill(percentage, context)
-        )
+  const rawWithholdings =
+    taxWithholdings &&
+    taxWithholdings.map(({ identity, percentage }) =>
+      tuple(
+        stringToIdentityId(signerToString(identity), context),
+        percentageToPermill(percentage, context)
       )
-    : null;
+    );
 
   const [caId] = this.addTransaction(
     tx.corporateAction.initiateCorporateAction,
