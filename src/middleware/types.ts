@@ -528,7 +528,7 @@ export enum ClaimTypeEnum {
 export type CorporateActionsWithCaId = {
   __typename?: 'CorporateActionsWithCAId';
   eventId: Scalars['String'];
-  datetime: Scalars['String'];
+  datetime: Scalars['DateTime'];
   identityId?: Maybe<Scalars['String']>;
   eventDid?: Maybe<Scalars['String']>;
   ticker: Scalars['String'];
@@ -545,7 +545,7 @@ export type CorporateActionsWithCaIdResult = {
 export type CorporateActionsWithTicker = {
   __typename?: 'CorporateActionsWithTicker';
   eventId: Scalars['String'];
-  datetime: Scalars['String'];
+  datetime: Scalars['DateTime'];
   identityId: Scalars['String'];
   ticker: Scalars['String'];
   arg1?: Maybe<Scalars['String']>;
@@ -942,7 +942,7 @@ export type HistoryOfPaymentEventsForCa = {
   eventId: Scalars['String'];
   eventIdx: Scalars['Int'];
   eventDid: Scalars['String'];
-  datetime: Scalars['String'];
+  datetime: Scalars['DateTime'];
   ticker: Scalars['String'];
   localId: Scalars['Int'];
   balance: Scalars['Int'];
@@ -1005,6 +1005,8 @@ export enum ItnRewardActionType {
   ComplianceRequirement = 'ComplianceRequirement',
   TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
   ClaimAdded = 'ClaimAdded',
+  DistributeAnAsset = 'DistributeAnAsset',
+  AcceptATransferFromAnotherUser = 'AcceptATransferFromAnotherUser',
 }
 
 export type ItnRewardRanking = {
@@ -1227,7 +1229,7 @@ export type Query = {
   investmentsAggregated?: Maybe<InvestmentResult>;
   corporateActionsWithTicker?: Maybe<CorporateActionsWithTickerResult>;
   corporateActionsWithCAId?: Maybe<CorporateActionsWithCaIdResult>;
-  getWithholdingTaxesOfCA: WithholdingTaxesOfCa;
+  getWithholdingTaxesOfCA?: Maybe<WithholdingTaxesOfCa>;
   getHistoryOfPaymentEventsForCA: HistoryOfPaymentEventsForCaResults;
   getInstructionIdsForVenue?: Maybe<InstructionIdsForVenueResults>;
   getItnRewardRankings?: Maybe<ItnRewardRankingResult>;
@@ -1260,8 +1262,8 @@ export type QueryEventsArgs = {
 export type QueryStakingEventsArgs = {
   stashAccount?: Maybe<Scalars['String']>;
   stakingEventIds?: Maybe<Array<Maybe<StakingEventIdEnum>>>;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['DateTime']>;
+  toDate?: Maybe<Scalars['DateTime']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -1450,8 +1452,8 @@ export type QueryInvestmentsAggregatedArgs = {
 export type QueryCorporateActionsWithTickerArgs = {
   identityId?: Maybe<Scalars['String']>;
   ticker?: Maybe<Scalars['String']>;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['DateTime']>;
+  toDate?: Maybe<Scalars['DateTime']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -1460,30 +1462,30 @@ export type QueryCorporateActionsWithCaIdArgs = {
   identityId?: Maybe<Scalars['String']>;
   eventDid?: Maybe<Scalars['String']>;
   CAId?: Maybe<CaId>;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['DateTime']>;
+  toDate?: Maybe<Scalars['DateTime']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
 
 export type QueryGetWithholdingTaxesOfCaArgs = {
   CAId: CaId;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['DateTime']>;
+  toDate?: Maybe<Scalars['DateTime']>;
 };
 
 export type QueryGetHistoryOfPaymentEventsForCaArgs = {
   CAId: CaId;
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['DateTime']>;
+  toDate?: Maybe<Scalars['DateTime']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
 
 export type QueryGetInstructionIdsForVenueArgs = {
   venueId: Scalars['String'];
-  fromDate?: Maybe<Scalars['String']>;
-  toDate?: Maybe<Scalars['String']>;
+  fromDate?: Maybe<Scalars['DateTime']>;
+  toDate?: Maybe<Scalars['DateTime']>;
 };
 
 export type QueryGetItnRewardRankingsArgs = {

@@ -253,8 +253,6 @@ describe('DividendDistribution class', () => {
       dsMockUtils.createApolloQueryStub(
         getWithholdingTaxesOfCa({
           CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
         }),
         {
           getWithholdingTaxesOfCA: {
