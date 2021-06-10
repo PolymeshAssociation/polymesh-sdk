@@ -624,7 +624,7 @@ export function getWithholdingTaxesOfCa(
   variables: QueryGetWithholdingTaxesOfCaArgs
 ): GraphqlQuery<QueryGetWithholdingTaxesOfCaArgs> {
   const query = gql`
-    query GetWithholdingTaxesOfCAQuery($CAId: CAId!, $fromDate: String, $toDate: String) {
+    query GetWithholdingTaxesOfCAQuery($CAId: CAId!, $fromDate: DateTime, $toDate: DateTime) {
       getWithholdingTaxesOfCA(CAId: $CAId, fromDate: $fromDate, toDate: $toDate) {
         taxes
       }
