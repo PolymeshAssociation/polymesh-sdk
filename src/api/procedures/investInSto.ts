@@ -21,9 +21,21 @@ import {
 } from '~/utils/conversion';
 
 export interface InvestInStoParams {
+  /**
+   * portfolio in which the purchased Tokens will be stored
+   */
   purchasePortfolio: PortfolioLike;
+  /**
+   * portfolio from which funds will be withdrawn to pay for the Tokens
+   */
   fundingPortfolio: PortfolioLike;
+  /**
+   * amount of tokens to purchase
+   */
   purchaseAmount: BigNumber;
+  /**
+   * maximum average price to pay per Token (optional)
+   */
   maxPrice?: BigNumber;
 }
 

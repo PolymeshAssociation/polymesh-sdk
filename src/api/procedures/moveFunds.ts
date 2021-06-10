@@ -11,7 +11,13 @@ import {
 } from '~/utils/conversion';
 
 export interface MoveFundsParams {
+  /**
+   * portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
+   */
   to?: BigNumber | DefaultPortfolio | NumberedPortfolio;
+  /**
+   * list of tokens (and their corresponding amounts) that will be moved
+   */
   items: PortfolioMovement[];
 }
 
