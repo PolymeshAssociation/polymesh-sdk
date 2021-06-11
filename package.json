@@ -21,7 +21,7 @@
     "semantic-release": "semantic-release",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "format": "cross-env prettier-eslint $PWD\"/src/**/*.{ts,tsx,js,jsx}\" --write",
-    "ts-node": "npx ts-node@8.2.0 -r tsconfig-paths/register"
+    "ts-node": "npx ts-node@8.2.0 -r tsconfig-paths/register -r dotenv/config"
   },
   "devDependencies": {
     "@commitlint/cli": "^7.6.1",
