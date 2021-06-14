@@ -61,7 +61,7 @@ export interface InitiateCorporateActionParams {
     identities: (string | Identity)[];
   };
   defaultTaxWithholding?: BigNumber;
-  taxWithholdings: (Omit<TaxWithholding, 'identity'> & {
+  taxWithholdings?: (Omit<TaxWithholding, 'identity'> & {
     identity: string | Identity;
   })[];
 }
@@ -91,13 +91,15 @@ export async function prepareInitiateCorporateAction(
     description,
     targets = null,
     defaultTaxWithholding = null,
-    taxWithholdings,
+    taxWithholdings = null,
   } = args;
 
   if (targets) {
     assertCaTargetsValid(targets, context);
   }
-  assertCaTaxWithholdingsValid(taxWithholdings, context);
+  if (taxWithholdings) {
+    assertCaTaxWithholdingsValid(taxWithholdings, context);
+  }
 
   if (declarationDate > new Date()) {
     throw new PolymeshError({
@@ -130,12 +132,14 @@ export async function prepareInitiateCorporateAction(
   const rawDetails = stringToText(description, context);
   const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
   const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
-  const rawWithholdings = taxWithholdings.map(({ identity, percentage }) =>
-    tuple(
-      stringToIdentityId(signerToString(identity), context),
-      percentageToPermill(percentage, context)
-    )
-  );
+  const rawWithholdings =
+    taxWithholdings &&
+    taxWithholdings.map(({ identity, percentage }) =>
+      tuple(
+        stringToIdentityId(signerToString(identity), context),
+        percentageToPermill(percentage, context)
+      )
+    );
 
   const [caId] = this.addTransaction(
     tx.corporateAction.initiateCorporateAction,
