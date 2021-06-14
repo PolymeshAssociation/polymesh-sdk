@@ -20,7 +20,7 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { getHistoryOfClaimsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
 import {
@@ -389,8 +389,8 @@ export class DividendDistribution extends CorporateAction {
 
     const { size, start } = opts;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'getHistoryOfClaimsForCA'>>(
-      getHistoryOfClaimsForCa({
+    const result = await context.queryMiddleware<Ensured<Query, 'getHistoryOfPaymentEventsForCA'>>(
+      getHistoryOfPaymentEventsForCa({
         CAId: { ticker, localId: id.toNumber() },
         fromDate: null,
         toDate: null,
@@ -400,11 +400,11 @@ export class DividendDistribution extends CorporateAction {
     );
 
     const {
-      data: { getHistoryOfClaimsForCA: getHistoryOfClaimsForCaResult },
+      data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
     } = result;
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { items, totalCount: count } = getHistoryOfClaimsForCaResult!;
+    const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult!;
 
     const data: DistributionPayment[] = [];
     let next = null;
@@ -416,7 +416,7 @@ export class DividendDistribution extends CorporateAction {
 
         data.push({
           blockNumber: new BigNumber(blockId),
-          date: new Date(`${datetime}Z`),
+          date: new Date(datetime),
           target: new Identity({ did }, context),
           amount: new BigNumber(balance),
           withheldTax: new BigNumber(tax),

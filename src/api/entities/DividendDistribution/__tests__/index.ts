@@ -10,7 +10,7 @@ import {
   Entity,
   TransactionQueue,
 } from '~/internal';
-import { getHistoryOfClaimsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -461,7 +461,7 @@ describe('DividendDistribution class', () => {
       const tax = new BigNumber(10);
 
       dsMockUtils.createApolloQueryStub(
-        getHistoryOfClaimsForCa({
+        getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
           fromDate: null,
           toDate: null,
@@ -469,7 +469,7 @@ describe('DividendDistribution class', () => {
           skip: undefined,
         }),
         {
-          getHistoryOfClaimsForCA: {
+          getHistoryOfPaymentEventsForCA: {
             totalCount: 1,
             items: [
               {
@@ -498,7 +498,7 @@ describe('DividendDistribution class', () => {
       ]);
 
       dsMockUtils.createApolloQueryStub(
-        getHistoryOfClaimsForCa({
+        getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
           fromDate: null,
           toDate: null,
@@ -506,7 +506,7 @@ describe('DividendDistribution class', () => {
           skip: undefined,
         }),
         {
-          getHistoryOfClaimsForCA: {
+          getHistoryOfPaymentEventsForCA: {
             totalCount: 1,
             items: undefined,
           },
@@ -520,7 +520,7 @@ describe('DividendDistribution class', () => {
 
     test('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryStub(
-        getHistoryOfClaimsForCa({
+        getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
           fromDate: null,
           toDate: null,
@@ -528,7 +528,7 @@ describe('DividendDistribution class', () => {
           skip: undefined,
         }),
         {
-          getHistoryOfClaimsForCA: {
+          getHistoryOfPaymentEventsForCA: {
             totalCount: 0,
             items: [],
           },

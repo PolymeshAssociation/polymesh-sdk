@@ -4,7 +4,7 @@ import {
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
-  QueryGetHistoryOfClaimsForCaArgs,
+  QueryGetHistoryOfPaymentEventsForCaArgs,
   QueryGetWithholdingTaxesOfCaArgs,
   QueryInvestmentsArgs,
   QueryIssuerDidsWithClaimsByTargetArgs,
@@ -643,18 +643,18 @@ export function getWithholdingTaxesOfCa(
  *
  * Get history of claims for a distribution
  */
-export function getHistoryOfClaimsForCa(
-  variables: QueryGetHistoryOfClaimsForCaArgs
-): GraphqlQuery<QueryGetHistoryOfClaimsForCaArgs> {
+export function getHistoryOfPaymentEventsForCa(
+  variables: QueryGetHistoryOfPaymentEventsForCaArgs
+): GraphqlQuery<QueryGetHistoryOfPaymentEventsForCaArgs> {
   const query = gql`
-    query GetHistoryOfClaimsForCAQuery(
+    query GetHistoryOfPaymentEventsForCAQuery(
       $CAId: CaId!
       $fromDate: String
       $toDate: String
       $count: Int
       $skip: Int
     ) {
-      getHistoryOfClaimsForCA(
+      getHistoryOfPaymentEventsForCA(
         CAId: $CAId
         fromDate: $fromDate
         toDate: $toDate
