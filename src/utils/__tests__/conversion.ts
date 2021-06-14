@@ -1157,6 +1157,38 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    const tickers = ['BTICKER', 'ATICKER', 'CTICKER'];
+
+    value = {
+      tokens: tickers.map(t => entityMockUtils.getSecurityTokenInstance({ ticker: t })),
+      transactions: [TxTags.identity.AddClaim],
+      transactionGroups: [],
+      portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+    };
+
+    const extrinsic = [
+      /* eslint-disable @typescript-eslint/naming-convention */
+      {
+        pallet_name: 'Identity',
+        dispatchable_names: ['add_claim'],
+      },
+      /* eslint-enable @typescript-eslint/naming-convention */
+    ];
+
+    const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
+    createTypeStub
+      .withArgs('Permissions', {
+        asset: [rawTickers[1], rawTickers[0], rawTickers[2]],
+        extrinsic,
+        portfolio: [rawPortfolioId],
+      })
+      .returns(fakeResult);
+
+    tickers.forEach((t, i) => createTypeStub.withArgs('Ticker', t).returns(rawTickers[i]));
+
+    result = permissionsToMeshPermissions(value, context);
+    expect(result).toEqual(fakeResult);
   });
 
   test('meshPermissionsToPermissions should convert a polkadot Permissions object to a Permissions', () => {
