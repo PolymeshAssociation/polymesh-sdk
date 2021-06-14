@@ -7,7 +7,7 @@ generates:
     config:
       defaultMapper: any
       scalars:
-        DateTime: Date
+        DateTime: string
         JSON: '{ [key: string]: any }'
         CustomBoolean: boolean
     plugins:

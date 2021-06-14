@@ -132,7 +132,7 @@ describe('Venue class', () => {
               creator: dsMockUtils.createMockIdentityId(owner),
               instructions: [],
               details: dsMockUtils.createMockVenueDetails(description),
-              // eslint-disable-next-line @typescript-eslint/camelcase
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               venue_type: dsMockUtils.createMockVenueType(type),
             })
           )
@@ -185,7 +185,7 @@ describe('Venue class', () => {
               creator: dsMockUtils.createMockIdentityId(owner),
               instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
               details: dsMockUtils.createMockVenueDetails(description),
-              // eslint-disable-next-line @typescript-eslint/camelcase
+              // eslint-disable-next-line @typescript-eslint/naming-convention
               venue_type: dsMockUtils.createMockVenueType(type),
             })
           )
@@ -291,6 +291,33 @@ describe('Venue class', () => {
         .resolves(expectedQueue);
 
       const queue = await venue.addInstructions({ instructions });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: modify', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const description = 'someDetails';
+      const type = VenueType.Other;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { venueId: id, description, type },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await venue.modify({ description, type });
 
       expect(queue).toBe(expectedQueue);
     });

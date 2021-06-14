@@ -79,7 +79,7 @@ describe('Settlements class', () => {
     settlements = new Settlements(mockSecurityToken, mockContext);
     ticker = mockSecurityToken.ticker;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    accountId = mockContext.currentPair?.address!;
+    accountId = mockContext.currentPair!.address;
     rawAccountId = dsMockUtils.createMockAccountId(accountId);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawToDid = dsMockUtils.createMockIdentityId(toDid);

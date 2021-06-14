@@ -34,6 +34,7 @@ import {
   NextKey,
   PaginationOptions,
   ProcedureAuthorizationStatus,
+  ProcedureMethod,
   Scope,
   UiKeyring,
 } from '~/types';
@@ -42,7 +43,6 @@ import {
   Falsyable,
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
-  ProcedureMethod,
 } from '~/types/internal';
 import { ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
@@ -72,7 +72,7 @@ export async function delay(amount: number): Promise<void> {
  * @hidden
  * Convert an entity type and its unique Identifiers to a base64 string
  */
-export function serialize<UniqueIdentifiers extends object>(
+export function serialize<UniqueIdentifiers>(
   entityType: string,
   uniqueIdentifiers: UniqueIdentifiers
 ): string {
@@ -83,7 +83,7 @@ export function serialize<UniqueIdentifiers extends object>(
  * @hidden
  * Convert a uuid string to an Identifier object
  */
-export function unserialize<UniqueIdentifiers extends object>(id: string): UniqueIdentifiers {
+export function unserialize<UniqueIdentifiers>(id: string): UniqueIdentifiers {
   const unserialized = Buffer.from(id, 'base64').toString('utf8');
 
   const matched = unserialized.match(/^.*?:(.*)/);
@@ -402,7 +402,7 @@ export function createProcedureMethod<
   MethodArgs,
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
-  Storage = {}
+  Storage = Record<string, unknown>
 >(
   args: {
     getProcedureAndArgs: (
@@ -422,7 +422,7 @@ export function createProcedureMethod<
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   ReturnValue,
-  Storage = {}
+  Storage = Record<string, unknown>
 >(
   args: {
     getProcedureAndArgs: (
@@ -444,7 +444,7 @@ export function createProcedureMethod<
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   ReturnValue = ProcedureReturnValue,
-  Storage = {}
+  Storage = Record<string, unknown>
 >(
   args: {
     getProcedureAndArgs: (
@@ -611,11 +611,11 @@ export function periodComplexity(period: CalendarPeriod): number {
  * @hidden
  * Transform a conversion util into a version that returns null if the input is falsy
  */
-export function optionize<InputType, OutputType>(
-  converter: (input: InputType, context: Context) => OutputType
-): (val: InputType | null | undefined, context: Context) => OutputType | null {
-  return (value: InputType | null | undefined, context: Context): OutputType | null => {
+export function optionize<InputType, OutputType, RestType extends unknown[]>(
+  converter: (input: InputType, ...rest: RestType) => OutputType
+): (val: InputType | null | undefined, ...rest: RestType) => OutputType | null {
+  return (value: InputType | null | undefined, ...rest: RestType): OutputType | null => {
     const data = value ?? null;
-    return data && converter(data, context);
+    return data && converter(data, ...rest);
   };
 }

@@ -9,10 +9,11 @@ import {
   Entity,
   Identity,
   Instruction,
+  modifyVenue,
+  ModifyVenueParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, InstructionStatus } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ErrorCode, InstructionStatus, ProcedureMethod } from '~/types';
 import {
   identityIdToString,
   meshVenueTypeToVenueType,
@@ -74,6 +75,11 @@ export class Venue extends Entity<UniqueIdentifiers> {
 
     this.addInstructions = createProcedureMethod(
       { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: id }] },
+      context
+    );
+
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyVenue, { ...args, venueId: id }] },
       context
     );
   }
@@ -178,11 +184,6 @@ export class Venue extends Entity<UniqueIdentifiers> {
   /**
    * Creates a settlement Instruction in this Venue
    *
-   * @param args.legs - array of token movements (amount, from, to, token)
-   * @param args.tradeDate - date at which the trade was agreed upon (optional, for offchain trades)
-   * @param args.valueDate - date at which the trade was executed (optional, for offchain trades)
-   * @param args.endBlock - block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
-   *
    * @note required role:
    *   - Venue Owner
    */
@@ -191,14 +192,16 @@ export class Venue extends Entity<UniqueIdentifiers> {
   /**
    * Creates a batch of settlement Instructions in this Venue
    *
-   * @param args.instructions - array of Instructions
-   * @param args.instructions.legs - array of token movements (amount, from, to, token)
-   * @param args.instructions.tradeDate - date at which the trade was agreed upon (optional, for offchain trades)
-   * @param args.instructions.valueDate - date at which the trade was executed (optional, for offchain trades)
-   * @param args.instructions.endBlock - block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
-   *
    * @note required role:
    *   - Venue Owner
    */
   public addInstructions: ProcedureMethod<AddInstructionsParams, Instruction[]>;
+
+  /**
+   * Modify description and type
+   *
+   * @note required role:
+   *   - Venue Owner
+   */
+  public modify: ProcedureMethod<ModifyVenueParams, void>;
 }

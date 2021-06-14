@@ -10,8 +10,8 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod, TrustedClaimIssuerOperation } from '~/types/internal';
+import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -73,8 +73,6 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * This requires two transactions
    *
-   * @param args.claimIssuerDids - array of Identity IDs of the default Trusted Claim Issuers
-   *
    * @note required role:
    *   - Security Token Owner
    */
@@ -83,8 +81,6 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   /**
    * Add the supplied Identities to the Security Token's list of trusted claim issuers
    *
-   * @param args.claimIssuers - array of [[TrustedClaimIssuer | Trusted Claim Issuers]]
-   *
    * @note required role:
    *   - Security Token Owner
    */
@@ -92,8 +88,6 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
 
   /**
    * Remove the supplied Identities from the Security Token's list of trusted claim issuers   *
-   *
-   * @param args.claimIssuers - array of Identities (or DIDs) of the default claim issuers
    *
    * @note required role:
    *   - Security Token Owner

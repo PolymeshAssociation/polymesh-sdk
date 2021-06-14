@@ -18,6 +18,7 @@ import {
   /*, Proposal */
   SecurityToken,
   Sto,
+  TransactionQueue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
 
@@ -95,23 +96,9 @@ export interface TickerOwnerRole {
   ticker: string;
 }
 
-/**
- * @hidden
- */
-export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
-  return role.type === RoleType.TickerOwner;
-}
-
 export interface TokenOwnerRole {
   type: RoleType.TokenOwner;
   ticker: string;
-}
-
-/**
- * @hidden
- */
-export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
-  return role.type === RoleType.TokenOwner;
 }
 
 export interface TokenPiaRole {
@@ -119,34 +106,13 @@ export interface TokenPiaRole {
   ticker: string;
 }
 
-/**
- * @hidden
- */
-export function isTokenPiaRole(role: Role): role is TokenPiaRole {
-  return role.type === RoleType.TokenPia;
-}
-
 export interface TokenCaaRole {
   type: RoleType.TokenCaa;
   ticker: string;
 }
 
-/**
- * @hidden
- */
-export function isTokenCaaRole(role: Role): role is TokenCaaRole {
-  return role.type === RoleType.TokenCaa;
-}
-
 export interface CddProviderRole {
   type: RoleType.CddProvider;
-}
-
-/**
- * @hidden
- */
-export function isCddProviderRole(role: Role): role is CddProviderRole {
-  return role.type === RoleType.CddProvider;
 }
 
 export interface VenueOwnerRole {
@@ -154,23 +120,9 @@ export interface VenueOwnerRole {
   venueId: BigNumber;
 }
 
-/**
- * @hidden
- */
-export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
-  return role.type === RoleType.VenueOwner;
-}
-
 export interface PortfolioCustodianRole {
   type: RoleType.PortfolioCustodian;
   portfolioId: PortfolioId;
-}
-
-/**
- * @hidden
- */
-export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
-  return role.type === RoleType.PortfolioCustodian;
 }
 
 export type Role =
@@ -181,6 +133,55 @@ export type Role =
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole;
+
+/**
+ * @hidden
+ */
+export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
+  return role.type === RoleType.PortfolioCustodian;
+}
+
+/**
+ * @hidden
+ */
+export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
+  return role.type === RoleType.VenueOwner;
+}
+
+/**
+ * @hidden
+ */
+export function isCddProviderRole(role: Role): role is CddProviderRole {
+  return role.type === RoleType.CddProvider;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenCaaRole(role: Role): role is TokenCaaRole {
+  return role.type === RoleType.TokenCaa;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenPiaRole(role: Role): role is TokenPiaRole {
+  return role.type === RoleType.TokenPia;
+}
+
+/**
+ * @hidden
+ */
+export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
+  return role.type === RoleType.TokenOwner;
+}
+
+/**
+ * @hidden
+ */
+export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
+  return role.type === RoleType.TickerOwner;
+}
 
 export enum KnownTokenType {
   EquityCommon = 'EquityCommon',
@@ -246,23 +247,6 @@ export enum AuthorizationType {
   NoData = 'NoData',
 }
 
-/**
- * Authorization request data corresponding to type
- */
-export type Authorization =
-  | { type: AuthorizationType.NoData }
-  | { type: AuthorizationType.JoinIdentity; value: Permissions }
-  | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
-  | {
-      type: Exclude<
-        AuthorizationType,
-        | AuthorizationType.NoData
-        | AuthorizationType.JoinIdentity
-        | AuthorizationType.PortfolioCustody
-      >;
-      value: string;
-    };
-
 export enum ConditionTarget {
   Sender = 'Sender',
   Receiver = 'Receiver',
@@ -270,7 +254,7 @@ export enum ConditionTarget {
 }
 
 export enum ScopeType {
-  // eslint-disable-next-line no-shadow
+  // eslint-disable-next-line @typescript-eslint/no-shadow
   Identity = 'Identity',
   Ticker = 'Ticker',
   Custom = 'Custom',
@@ -368,7 +352,7 @@ export interface ExtrinsicData {
   address: string | null;
   nonce: number;
   txTag: TxTag;
-  params: object[];
+  params: Record<string, unknown>[];
   success: boolean;
   specVersionId: number;
   extrinsicHash: string;
@@ -638,110 +622,6 @@ export interface Fees {
 }
 
 /**
- * Permissions a Secondary Key has over the Identity. A null value means the key has
- *   all permissions of that type (i.e. if `tokens` is null, the key has permissions over all
- *   of the Identity's Security Tokens)
- */
-export interface Permissions {
-  /**
-   * list of Security Tokens over which this key has permissions
-   */
-  tokens: SecurityToken[] | null;
-  /**
-   * list of Transactions this key can execute
-   */
-  transactions: TxTag[] | null;
-  /**
-   * list of Transaction Groups this key can execute. Having permissions over a TxGroup
-   *   means having permissions over every TxTag in said group. Transaction permissions are the result of
-   *   combining these with the `transactions` array. If `transactions` is null, then this value is redundant
-   */
-  transactionGroups: TxGroup[];
-  /* list of Portfolios over which this key has permissions */
-  portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
-}
-
-export enum TransactionArgumentType {
-  Did = 'Did',
-  Address = 'Address',
-  Text = 'Text',
-  Boolean = 'Boolean',
-  Number = 'Number',
-  Balance = 'Balance',
-  Date = 'Date',
-  Array = 'Array',
-  Tuple = 'Tuple',
-  SimpleEnum = 'SimpleEnum',
-  RichEnum = 'RichEnum',
-  Object = 'Object',
-  Unknown = 'Unknown',
-  Null = 'Null',
-}
-
-export interface PlainTransactionArgument {
-  type: Exclude<
-    TransactionArgumentType,
-    | TransactionArgumentType.Array
-    | TransactionArgumentType.Tuple
-    | TransactionArgumentType.SimpleEnum
-    | TransactionArgumentType.RichEnum
-    | TransactionArgumentType.Object
-  >;
-}
-
-export interface ArrayTransactionArgument {
-  type: TransactionArgumentType.Array;
-  internal: TransactionArgument;
-}
-
-export interface SimpleEnumTransactionArgument {
-  type: TransactionArgumentType.SimpleEnum;
-  internal: string[];
-}
-
-export interface ComplexTransactionArgument {
-  type:
-    | TransactionArgumentType.RichEnum
-    | TransactionArgumentType.Object
-    | TransactionArgumentType.Tuple;
-  internal: TransactionArgument[];
-}
-
-export type TransactionArgument = {
-  name: string;
-  optional: boolean;
-  _rawType: TypeDef;
-} & (
-  | PlainTransactionArgument
-  | ArrayTransactionArgument
-  | SimpleEnumTransactionArgument
-  | ComplexTransactionArgument
-);
-
-export type Signer = Identity | Account;
-
-// NOTE uncomment in Governance v2 upgrade
-// export interface ProposalWithDetails {
-//   proposal: Proposal;
-//   details: ProposalDetails;
-// }
-
-export interface StoWithDetails {
-  sto: Sto;
-  details: StoDetails;
-}
-
-export interface CheckpointWithCreationDate {
-  checkpoint: Checkpoint;
-  createdAt: Date;
-}
-
-export interface SecondaryKey {
-  signer: Signer;
-  permissions: Permissions;
-}
-
-/**
  * Transaction Groups (for permissions purposes)
  */
 export enum TxGroup {
@@ -824,16 +704,127 @@ export enum TxGroup {
 }
 
 /**
- * Permissions to grant to a Signer over an Identity
- *
- * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
- *   and appended to the `transactions` array. If `transactions` is null, then the value of `transactionGroups` is redundant
+ * Permissions a Secondary Key has over the Identity. A null value means the key has
+ *   all permissions of that type (i.e. if `tokens` is null, the key has permissions over all
+ *   of the Identity's Security Tokens)
  */
-export interface PermissionsLike {
-  tokens?: (string | SecurityToken)[] | null;
-  transactions?: TxTag[] | null;
-  transactionGroups?: TxGroup[];
-  portfolios?: PortfolioLike[] | null;
+export interface Permissions {
+  /**
+   * list of Security Tokens over which this key has permissions
+   */
+  tokens: SecurityToken[] | null;
+  /**
+   * list of Transactions this key can execute
+   */
+  transactions: TxTag[] | null;
+  /**
+   * list of Transaction Groups this key can execute. Having permissions over a TxGroup
+   *   means having permissions over every TxTag in said group. Transaction permissions are the result of
+   *   combining these with the `transactions` array. If `transactions` is null, then this value is redundant
+   */
+  transactionGroups: TxGroup[];
+  /* list of Portfolios over which this key has permissions */
+  portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
+}
+
+/**
+ * Authorization request data corresponding to type
+ */
+export type Authorization =
+  | { type: AuthorizationType.NoData }
+  | { type: AuthorizationType.JoinIdentity; value: Permissions }
+  | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
+  | {
+      type: Exclude<
+        AuthorizationType,
+        | AuthorizationType.NoData
+        | AuthorizationType.JoinIdentity
+        | AuthorizationType.PortfolioCustody
+      >;
+      value: string;
+    };
+
+export enum TransactionArgumentType {
+  Did = 'Did',
+  Address = 'Address',
+  Text = 'Text',
+  Boolean = 'Boolean',
+  Number = 'Number',
+  Balance = 'Balance',
+  Date = 'Date',
+  Array = 'Array',
+  Tuple = 'Tuple',
+  SimpleEnum = 'SimpleEnum',
+  RichEnum = 'RichEnum',
+  Object = 'Object',
+  Unknown = 'Unknown',
+  Null = 'Null',
+}
+
+export interface PlainTransactionArgument {
+  type: Exclude<
+    TransactionArgumentType,
+    | TransactionArgumentType.Array
+    | TransactionArgumentType.Tuple
+    | TransactionArgumentType.SimpleEnum
+    | TransactionArgumentType.RichEnum
+    | TransactionArgumentType.Object
+  >;
+}
+
+export interface ArrayTransactionArgument {
+  type: TransactionArgumentType.Array;
+  // eslint-disable-next-line no-use-before-define
+  internal: TransactionArgument;
+}
+
+export interface SimpleEnumTransactionArgument {
+  type: TransactionArgumentType.SimpleEnum;
+  internal: string[];
+}
+
+export interface ComplexTransactionArgument {
+  type:
+    | TransactionArgumentType.RichEnum
+    | TransactionArgumentType.Object
+    | TransactionArgumentType.Tuple;
+  // eslint-disable-next-line no-use-before-define
+  internal: TransactionArgument[];
+}
+
+export type TransactionArgument = {
+  name: string;
+  optional: boolean;
+  _rawType: TypeDef;
+} & (
+  | PlainTransactionArgument
+  | ArrayTransactionArgument
+  | SimpleEnumTransactionArgument
+  | ComplexTransactionArgument
+);
+
+export type Signer = Identity | Account;
+
+// NOTE uncomment in Governance v2 upgrade
+// export interface ProposalWithDetails {
+//   proposal: Proposal;
+//   details: ProposalDetails;
+// }
+
+export interface StoWithDetails {
+  sto: Sto;
+  details: StoDetails;
+}
+
+export interface CheckpointWithData {
+  checkpoint: Checkpoint;
+  createdAt: Date;
+  totalSupply: BigNumber;
+}
+
+export interface SecondaryKey {
+  signer: Signer;
+  permissions: Permissions;
 }
 
 export type PortfolioLike =
@@ -843,6 +834,31 @@ export type PortfolioLike =
   | DefaultPortfolio
   | { identity: string | Identity; id: BigNumber };
 
+/**
+ * Permissions to grant to a Signer over an Identity
+ *
+ * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
+ *   and appended to the `transactions` array. If `transactions` is null, then the value of `transactionGroups` is redundant
+ */
+export interface PermissionsLike {
+  /**
+   * array of Security Tokens on which to grant permissions. A null value represents full permissions
+   */
+  tokens?: (string | SecurityToken)[] | null;
+  /**
+   * array of transaction tags that the Secondary Key has permission to execute. A null value represents full permissions
+   */
+  transactions?: TxTag[] | null;
+  /**
+   * array of transaction groups that the Secondary Key has permission to execute.
+   */
+  transactionGroups?: TxGroup[];
+  /**
+   * array of Portfolios for which to grant permissions. A null value represents full permissions
+   */
+  portfolios?: PortfolioLike[] | null;
+}
+
 export interface PortfolioMovement {
   token: string | SecurityToken;
   amount: BigNumber;
@@ -851,14 +867,24 @@ export interface PortfolioMovement {
 export interface ProcedureAuthorizationStatus {
   permissions: boolean;
   roles: boolean;
+  accountFrozen: boolean;
 }
 
 interface TransferRestrictionBase {
+  /**
+   * array of Scope IDs that are exempted from the Restriction
+   */
   exemptedScopeIds?: string[];
 }
 
 interface TransferRestrictionInputBase {
+  /**
+   * array of Scope IDs that are exempted from the Restriction
+   */
   exemptedScopeIds?: string[];
+  /**
+   * array of Identities (or DIDs) that are exempted from the Restriction
+   */
   exemptedIdentities?: (Identity | string)[];
 }
 
@@ -871,10 +897,16 @@ export interface PercentageTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+  /**
+   * limit on the amount of different (unique) investors that can hold the Security Token at once
+   */
   count: BigNumber;
 }
 
 export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
+  /**
+   * limit on the proportion of the total supply of the Security Token that can be held by a single investor at once
+   */
   percentage: BigNumber;
 }
 
@@ -932,6 +964,15 @@ export interface DistributionPayment {
   target: Identity;
   amount: BigNumber;
   withheldTax: BigNumber;
+}
+
+export interface ProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args: MethodArgs): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
+  checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
 
 export { TxTags, TxTag };

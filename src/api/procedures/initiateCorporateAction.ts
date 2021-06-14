@@ -2,7 +2,11 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { CAId } from 'polymesh-types/types';
 
-import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import {
+  assertCaCheckpointValid,
+  assertCaTargetsValid,
+  assertCaTaxWithholdingsValid,
+} from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -57,7 +61,7 @@ export interface InitiateCorporateActionParams {
     identities: (string | Identity)[];
   };
   defaultTaxWithholding?: BigNumber;
-  taxWithholdings: (Omit<TaxWithholding, 'identity'> & {
+  taxWithholdings?: (Omit<TaxWithholding, 'identity'> & {
     identity: string | Identity;
   })[];
 }
@@ -87,13 +91,15 @@ export async function prepareInitiateCorporateAction(
     description,
     targets = null,
     defaultTaxWithholding = null,
-    taxWithholdings,
+    taxWithholdings = null,
   } = args;
 
   if (targets) {
     assertCaTargetsValid(targets, context);
   }
-  assertCaTaxWithholdingsValid(taxWithholdings, context);
+  if (taxWithholdings) {
+    assertCaTaxWithholdingsValid(taxWithholdings, context);
+  }
 
   if (declarationDate > new Date()) {
     throw new PolymeshError({
@@ -115,6 +121,10 @@ export async function prepareInitiateCorporateAction(
     });
   }
 
+  if (checkpoint) {
+    await assertCaCheckpointValid(checkpoint);
+  }
+
   const rawTicker = stringToTicker(ticker, context);
   const rawKind = corporateActionKindToCaKind(kind, context);
   const rawDeclDate = dateToMoment(declarationDate, context);
@@ -122,12 +132,14 @@ export async function prepareInitiateCorporateAction(
   const rawDetails = stringToText(description, context);
   const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
   const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
-  const rawWithholdings = taxWithholdings.map(({ identity, percentage }) =>
-    tuple(
-      stringToIdentityId(signerToString(identity), context),
-      percentageToPermill(percentage, context)
-    )
-  );
+  const rawWithholdings =
+    taxWithholdings &&
+    taxWithholdings.map(({ identity, percentage }) =>
+      tuple(
+        stringToIdentityId(signerToString(identity), context),
+        percentageToPermill(percentage, context)
+      )
+    );
 
   const [caId] = this.addTransaction(
     tx.corporateAction.initiateCorporateAction,

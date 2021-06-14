@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+/* eslint-disable @typescript-eslint/naming-convention */
 
 import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
@@ -37,6 +38,7 @@ import {
   CorporateActionKind,
   CorporateActionTargets,
   CountTransferRestriction,
+  DistributionParticipant,
   DividendDistributionDetails,
   ExtrinsicData,
   IdentityBalance,
@@ -66,6 +68,25 @@ import {
   // TxTags,
 } from '~/types';
 
+type MockIdentity = Mocked<Identity>;
+type MockCurrentIdentity = Mocked<CurrentIdentity>;
+type MockAccount = Mocked<Account>;
+type MockCurrentAccount = Mocked<CurrentAccount>;
+type MockTickerReservation = Mocked<TickerReservation>;
+type MockSecurityToken = Mocked<SecurityToken>;
+type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
+// NOTE uncomment in Governance v2 upgrade
+// type MockProposal = Mocked<Proposal>;
+type MockVenue = Mocked<Venue>;
+type MockInstruction = Mocked<Instruction>;
+type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
+type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
+type MockSto = Mocked<Sto>;
+type MockCheckpoint = Mocked<Checkpoint>;
+type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
+type MockCorporateAction = Mocked<CorporateAction>;
+type MockDividendDistribution = Mocked<DividendDistribution>;
+
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
   currentIdentity: {} as MockCurrentIdentity,
@@ -87,25 +108,6 @@ const mockInstanceContainer = {
   dividendDistribution: {} as MockDividendDistribution,
 };
 
-type MockIdentity = Mocked<Identity>;
-type MockCurrentIdentity = Mocked<CurrentIdentity>;
-type MockAccount = Mocked<Account>;
-type MockCurrentAccount = Mocked<CurrentAccount>;
-type MockTickerReservation = Mocked<TickerReservation>;
-type MockSecurityToken = Mocked<SecurityToken>;
-type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
-// NOTE uncomment in Governance v2 upgrade
-// type MockProposal = Mocked<Proposal>;
-type MockVenue = Mocked<Venue>;
-type MockInstruction = Mocked<Instruction>;
-type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
-type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
-type MockSto = Mocked<Sto>;
-type MockCheckpoint = Mocked<Checkpoint>;
-type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
-type MockCorporateAction = Mocked<CorporateAction>;
-type MockDividendDistribution = Mocked<DividendDistribution>;
-
 interface IdentityOptions {
   did?: string;
   hasRoles?: boolean;
@@ -118,6 +120,7 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface CurrentIdentityOptions extends IdentityOptions {
@@ -215,6 +218,7 @@ interface CheckpointOptions {
   totalSupply?: BigNumber;
   exists?: boolean;
   allBalances?: ResultSet<IdentityBalance>;
+  balance?: BigNumber;
 }
 
 interface CheckpointScheduleOptions {
@@ -237,6 +241,7 @@ interface CorporateActionOptions {
   targets?: CorporateActionTargets;
   defaultTaxWithholding?: BigNumber;
   taxWithholdings?: TaxWithholding[];
+  exists?: boolean;
 }
 
 interface DividendDistributionOptions {
@@ -244,6 +249,7 @@ interface DividendDistributionOptions {
   ticker?: string;
   declarationDate?: Date;
   description?: string;
+  checkpoint?: Checkpoint | CheckpointSchedule;
   targets?: CorporateActionTargets;
   defaultTaxWithholding?: BigNumber;
   taxWithholdings?: TaxWithholding[];
@@ -254,6 +260,7 @@ interface DividendDistributionOptions {
   expiryDate?: null | Date;
   paymentDate?: Date;
   details?: Partial<DividendDistributionDetails>;
+  getParticipant?: Partial<DistributionParticipant> | null;
 }
 
 let identityConstructorStub: SinonStub;
@@ -291,6 +298,7 @@ let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
 let identityGetTokenBalanceStub: SinonStub;
+let identityAreSecondaryKeysFrozenStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
 let currentIdentityHasValidCddStub: SinonStub;
@@ -299,6 +307,7 @@ let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
 let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetScopeIdStub: SinonStub;
 let currentIdentityGetSecondaryKeysStub: SinonStub;
+let currentIdentityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -326,8 +335,12 @@ let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
 let checkpointAllBalancesStub: SinonStub;
 let checkpointScheduleDetailsStub: SinonStub;
+let checkpointBalanceStub: SinonStub;
+let corporateActionExistsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
+let dividendDistributionGetParticipantStub: SinonStub;
+let dividendDistributionCheckpointStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -482,87 +495,87 @@ const MockDividendDistributionClass = class {
   }
 };
 
-export const mockIdentityModule = (path: string) => (): object => ({
+export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
 });
 
-export const mockCurrentIdentityModule = (path: string) => (): object => ({
+export const mockCurrentIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CurrentIdentity: MockCurrentIdentityClass,
 });
 
-export const mockAccountModule = (path: string) => (): object => ({
+export const mockAccountModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Account: MockAccountClass,
 });
 
-export const mockCurrentAccountModule = (path: string) => (): object => ({
+export const mockCurrentAccountModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CurrentAccount: MockCurrentAccountClass,
 });
 
-export const mockTickerReservationModule = (path: string) => (): object => ({
+export const mockTickerReservationModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   TickerReservation: MockTickerReservationClass,
 });
 
-export const mockSecurityTokenModule = (path: string) => (): object => ({
+export const mockSecurityTokenModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   SecurityToken: MockSecurityTokenClass,
 });
 
-export const mockAuthorizationRequestModule = (path: string) => (): object => ({
+export const mockAuthorizationRequestModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   AuthorizationRequest: MockAuthorizationRequestClass,
 });
 
-export const mockProposalModule = (path: string) => (): object => ({
+export const mockProposalModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Proposal: MockProposalClass,
 });
 
-export const mockVenueModule = (path: string) => (): object => ({
+export const mockVenueModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Venue: MockVenueClass,
 });
 
-export const mockInstructionModule = (path: string) => (): object => ({
+export const mockInstructionModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Instruction: MockInstructionClass,
 });
 
-export const mockNumberedPortfolioModule = (path: string) => (): object => ({
+export const mockNumberedPortfolioModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   NumberedPortfolio: MockNumberedPortfolioClass,
 });
 
-export const mockDefaultPortfolioModule = (path: string) => (): object => ({
+export const mockDefaultPortfolioModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
-export const mockStoModule = (path: string) => (): object => ({
+export const mockStoModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Sto: MockStoClass,
 });
 
-export const mockCheckpointModule = (path: string) => (): object => ({
+export const mockCheckpointModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Checkpoint: MockCheckpointClass,
 });
 
-export const mockCheckpointScheduleModule = (path: string) => (): object => ({
+export const mockCheckpointScheduleModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CheckpointSchedule: MockCheckpointScheduleClass,
 });
 
-export const mockCorporateActionModule = (path: string) => (): object => ({
+export const mockCorporateActionModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   CorporateAction: MockCorporateActionClass,
 });
 
-export const mockDividendDistributionModule = (path: string) => (): object => ({
+export const mockDividendDistributionModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   DividendDistribution: MockDividendDistributionClass,
 });
@@ -577,6 +590,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getVenues: [],
   getScopeId: 'someScopeId',
   getTokenBalance: new BigNumber(100),
+  areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
@@ -589,6 +603,7 @@ const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
+  areScondaryKeysFrozen: false,
 };
 let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -773,6 +788,7 @@ const defaultCorporateActionOptions: CorporateActionOptions = {
   },
   defaultTaxWithholding: new BigNumber(10),
   taxWithholdings: [],
+  exists: true,
 };
 let corporateActionOptions = defaultCorporateActionOptions;
 const defaultDividendDistributionOptions: DividendDistributionOptions = {
@@ -794,6 +810,10 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
   details: {
     remainingFunds: new BigNumber(100),
     fundsReclaimed: false,
+  },
+  getParticipant: {
+    amount: new BigNumber(100),
+    paid: false,
   },
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
@@ -1115,6 +1135,7 @@ function configureIdentity(opts: IdentityOptions): void {
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
     getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
+    areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1139,6 +1160,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
   identityGetTokenBalanceStub = sinon.stub();
+  identityAreSecondaryKeysFrozenStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -1212,6 +1234,9 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
     },
     getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
+    areSecondaryKeysFrozen: currentIdentityAreSecondaryKeysFrozenStub.resolves(
+      opts.areScondaryKeysFrozen
+    ),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.currentIdentity, identity);
@@ -1239,6 +1264,7 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetScopeIdStub = sinon.stub();
   currentIdentityGetSecondaryKeysStub = sinon.stub();
+  currentIdentityAreSecondaryKeysFrozenStub = sinon.stub();
 
   currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
 
@@ -1386,6 +1412,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     id: opts.id,
     exists: checkpointExistsStub.resolves(opts.exists),
     allBalances: checkpointAllBalancesStub.resolves(allBalances),
+    balance: checkpointBalanceStub.resolves(opts.balance),
   } as unknown) as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
@@ -1406,6 +1433,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
   checkpointTotalSupplyStub = sinon.stub();
   checkpointExistsStub = sinon.stub();
   checkpointAllBalancesStub = sinon.stub();
+  checkpointBalanceStub = sinon.stub();
 
   checkpointOptions = merge({}, defaultCheckpointOptions, opts);
 
@@ -1464,6 +1492,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
     targets: opts.targets,
     defaultTaxWithholding: opts.defaultTaxWithholding,
     taxWithholdings: opts.taxWithholdings,
+    exists: corporateActionExistsStub.resolves(opts.exists),
   } as unknown) as MockCorporateAction;
 
   Object.assign(mockInstanceContainer.corporateAction, corporateAction);
@@ -1480,6 +1509,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
  */
 function initCorporateAction(opts?: CorporateActionOptions): void {
   corporateActionConstructorStub = sinon.stub();
+  corporateActionExistsStub = sinon.stub();
 
   corporateActionOptions = merge({}, defaultCorporateActionOptions, opts);
 
@@ -1491,6 +1521,12 @@ function initCorporateAction(opts?: CorporateActionOptions): void {
  * Configure the CorporateAction instance
  */
 function configureDividendDistribution(opts: DividendDistributionOptions): void {
+  const details = { owner: mockInstanceContainer.identity, ...opts.details };
+  const checkpoint = opts.checkpoint || mockInstanceContainer.checkpoint;
+  const getParticipant = opts.getParticipant
+    ? { ...defaultDividendDistributionOptions.getParticipant, ...opts.getParticipant }
+    : null;
+
   const dividendDistribution = ({
     id: opts.id,
     ticker: opts.ticker,
@@ -1506,7 +1542,9 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     maxAmount: opts.maxAmount,
     expiryDate: opts.expiryDate,
     paymentDate: opts.paymentDate,
-    details: dividendDistributionDetailsStub.resolves(opts.details),
+    details: dividendDistributionDetailsStub.resolves(details),
+    getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
+    checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
   } as unknown) as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
@@ -1524,6 +1562,8 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
 function initDividendDistribution(opts?: DividendDistributionOptions): void {
   dividendDistributionConstructorStub = sinon.stub();
   dividendDistributionDetailsStub = sinon.stub();
+  dividendDistributionGetParticipantStub = sinon.stub();
+  dividendDistributionCheckpointStub = sinon.stub();
 
   dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
 
@@ -1935,6 +1975,14 @@ export function getCurrentIdentityGetScopeIdStub(): SinonStub {
  */
 export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
   return currentIdentityAuthorizationsGetReceivedStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `CurrentIdentity.areSecondaryKeysFrozen` method
+ */
+export function getCurrentIdentityAreSecondaryKeysFrozenStub(): SinonStub {
+  return currentIdentityAreSecondaryKeysFrozenStub;
 }
 
 /**
@@ -2411,6 +2459,17 @@ export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBal
 
 /**
  * @hidden
+ * Retrieve the stub of the `Checkpoint.balance` method
+ */
+export function getCheckpointBalanceStub(balance?: BigNumber): SinonStub {
+  if (balance) {
+    return checkpointBalanceStub.resolves(balance);
+  }
+  return checkpointBalanceStub;
+}
+
+/**
+ * @hidden
  * Retrieve the Checkpoint constructor stub
  */
 export function getCheckpointConstructorStub(): SinonStub {
@@ -2467,6 +2526,17 @@ export function getCorporateActionInstance(opts?: CorporateActionOptions): MockC
 
 /**
  * @hidden
+ * Retrieve the stub of the `CorporateAction.exists` method
+ */
+export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return corporateActionExistsStub.resolves(exists);
+  }
+  return corporateActionExistsStub;
+}
+
+/**
+ * @hidden
  * Retrieve the CorporateAction constructor stub
  */
 export function getCorporateActionConstructorStub(): SinonStub {
@@ -2489,8 +2559,38 @@ export function getDividendDistributionInstance(
 
 /**
  * @hidden
+ * Retrieve the stub of the `DividendDistribution.checkpoint` method
+ */
+export function getDividendDistributionCheckpointStub(
+  checkpoint?: Checkpoint | CheckpointSchedule
+): SinonStub {
+  if (checkpoint) {
+    return dividendDistributionCheckpointStub.resolves(checkpoint);
+  }
+  return dividendDistributionCheckpointStub;
+}
+
+/**
+ * @hidden
  * Retrieve the DividendDistribution constructor stub
  */
 export function getDividendDistributionConstructorStub(): SinonStub {
   return dividendDistributionConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DividendDistribution.getParticipant` method
+ */
+export function getDividendDistributionGetParticipantStub(
+  getParticipant?: Partial<DistributionParticipant>
+): SinonStub {
+  if (getParticipant) {
+    return dividendDistributionGetParticipantStub.resolves({
+      ...defaultDividendDistributionOptions.getParticipant,
+      ...getParticipant,
+    });
+  }
+
+  return dividendDistributionGetParticipantStub.resolves(getParticipant);
 }

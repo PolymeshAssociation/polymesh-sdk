@@ -10,9 +10,14 @@ export type ProcedureFunc<Args extends unknown, ReturnValue, Storage> = () => Pr
   Storage
 >;
 
-export type UnionOfProcedureFuncs<Args extends unknown, ReturnValue, Storage> = Args extends object
+export type UnionOfProcedureFuncs<Args extends unknown, ReturnValue, Storage> = Args extends unknown
   ? ProcedureFunc<Args, ReturnValue, Storage>
   : never;
+
+/**
+ * Less strict version of Parameters<T>
+ */
+export type ArgsType<T> = T extends (...args: infer A) => unknown ? A : never;
 
 /**
  * Create a literal tuple type from a list of arguments

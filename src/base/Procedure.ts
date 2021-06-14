@@ -48,7 +48,7 @@ interface AddTransactionOpts<Values extends unknown[]> extends AddTransactionOpt
 export class Procedure<
   Args extends unknown = void,
   ReturnValue extends unknown = void,
-  Storage extends unknown = {}
+  Storage extends unknown = Record<string, unknown>
 > {
   private prepareTransactions: (
     this: Procedure<Args, ReturnValue, Storage>,
@@ -131,9 +131,7 @@ export class Procedure<
   }
 
   /**
-   *
-   * @param args
-   * @param context
+   * @hidden
    */
   private async _checkAuthorization(
     args: Args,
@@ -161,9 +159,12 @@ export class Procedure<
       signerAllowed = signerPermissions;
     }
 
+    const accountFrozen = await context.getCurrentAccount().isFrozen();
+
     return {
       roles: identityAllowed,
       permissions: signerAllowed,
+      accountFrozen,
     };
   }
 
@@ -204,7 +205,17 @@ export class Procedure<
 
       await this.setup(procArgs, context);
 
-      const { roles, permissions } = await this._checkAuthorization(procArgs, context);
+      const { roles, permissions, accountFrozen } = await this._checkAuthorization(
+        procArgs,
+        context
+      );
+
+      if (accountFrozen) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message: "Current Account can't execute this procedure because it is frozen",
+        });
+      }
 
       if (!permissions) {
         throw new PolymeshError({
@@ -451,15 +462,15 @@ export class Procedure<
    *   used by both `prepareTransactions` and `checkAuthorization`
    */
   public get storage(): Storage {
-    const { _storage } = this;
+    const { _storage: storage } = this;
 
-    if (!_storage) {
+    if (!storage) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Attempt to access storage before it was set',
       });
     }
 
-    return _storage;
+    return storage;
   }
 }

@@ -1,13 +1,16 @@
 import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
+import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, ScopeId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, Entity, Identity } from '~/internal';
+import { Context, Entity, Identity, SecurityToken } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
+  DistributionWithDetails,
   Order,
   PortfolioCustodianRole,
   Role,
@@ -49,7 +52,7 @@ jest.mock(
 );
 
 describe('Identity class', () => {
-  let context: Context;
+  let context: MockContext;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
 
@@ -341,7 +344,7 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       tokensStub.withArgs(rawTicker).resolves(
         dsMockUtils.createMockSecurityToken({
           owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
@@ -352,7 +355,7 @@ describe('Identity class', () => {
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     test('should return the balance of a given token', async () => {
@@ -475,13 +478,13 @@ describe('Identity class', () => {
 
     beforeEach(() => {
       didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       rawDidRecord = dsMockUtils.createMockDidRecord({
         roles: [],
         primary_key: dsMockUtils.createMockAccountId(accountId),
         secondary_keys: [],
       });
-      /* eslint-enabled @typescript-eslint/camelcase */
+      /* eslint-enabled @typescript-eslint/naming-convention */
     });
 
     test('should return a PrimaryKey', async () => {
@@ -743,7 +746,7 @@ describe('Identity class', () => {
 
       userAuthsStub.entries = entriesStub;
 
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       const instructionDetailsStub = dsMockUtils.createQueryStub(
         'settlement',
         'instructionDetails',
@@ -794,7 +797,7 @@ describe('Identity class', () => {
       ]);
 
       instructionDetailsStub.multi = multiStub;
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await identity.getPendingInstructions();
 
@@ -802,6 +805,139 @@ describe('Identity class', () => {
       expect(result[0].id).toEqual(id1);
       expect(result[1].id).toEqual(id2);
       expect(result[2].id).toEqual(id4);
+    });
+  });
+
+  describe('method: areSecondaryKeysFrozen', () => {
+    let frozenStub: sinon.SinonStub;
+    let boolValue: boolean;
+    let rawBoolValue: bool;
+
+    beforeAll(() => {
+      boolValue = true;
+      rawBoolValue = dsMockUtils.createMockBool(boolValue);
+    });
+
+    beforeEach(() => {
+      frozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen');
+    });
+
+    test('should return whether secondary key is frozen or not', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      frozenStub.resolves(rawBoolValue);
+
+      const result = await identity.areSecondaryKeysFrozen();
+
+      expect(result).toBe(boolValue);
+    });
+
+    test('should allow subscription', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const unsubCallback = 'unsubCallBack';
+
+      frozenStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawBoolValue);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await identity.areSecondaryKeysFrozen(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, boolValue);
+    });
+  });
+
+  describe('method: getPendingDistributions', () => {
+    let tokens: SecurityToken[];
+    let distributions: DistributionWithDetails[];
+    let expectedDistribution: DistributionWithDetails;
+
+    beforeAll(() => {
+      tokens = [
+        entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER_1' }),
+        entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER_2' }),
+      ];
+      const distributionTemplate = {
+        expiryDate: null,
+        perShare: new BigNumber(1),
+        checkpoint: entityMockUtils.getCheckpointInstance({
+          balance: new BigNumber(1000),
+        }),
+        paymentDate: new Date('10/14/1987'),
+      };
+      const detailsTemplate = {
+        remainingFunds: new BigNumber(10000),
+        fundsReclaimed: false,
+      };
+      expectedDistribution = {
+        distribution: entityMockUtils.getDividendDistributionInstance(distributionTemplate),
+        details: detailsTemplate,
+      };
+      distributions = [
+        expectedDistribution,
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance({
+            ...distributionTemplate,
+            expiryDate: new Date('10/14/1987'),
+          }),
+          details: detailsTemplate,
+        },
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance({
+            ...distributionTemplate,
+            paymentDate: new Date(new Date().getTime() + 3 * 60 * 1000),
+          }),
+          details: detailsTemplate,
+        },
+        {
+          distribution: entityMockUtils.getDividendDistributionInstance({
+            ...distributionTemplate,
+            id: new BigNumber(5),
+            ticker: 'HOLDER_PAID',
+          }),
+          details: detailsTemplate,
+        },
+      ];
+    });
+
+    beforeEach(() => {
+      context.getDividendDistributionsForTokens.withArgs({ tokens }).resolves(distributions);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return all distributions where the Identity can claim funds', async () => {
+      const holderPaidStub = dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid');
+
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const rawCaId = dsMockUtils.createMockCAId({ ticker: 'HOLDER_PAID', local_id: 5 });
+      const rawIdentityId = dsMockUtils.createMockIdentityId('someDid');
+
+      sinon
+        .stub(utilsConversionModule, 'stringToIdentityId')
+        .withArgs('someDid', context)
+        .returns(rawIdentityId);
+      sinon
+        .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
+        .withArgs({ ticker: 'HOLDER_PAID', localId: new BigNumber(5) }, context)
+        .returns(rawCaId);
+
+      holderPaidStub.resolves(dsMockUtils.createMockBool(false));
+      holderPaidStub.withArgs([rawCaId, rawIdentityId]).resolves(dsMockUtils.createMockBool(true));
+
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      const heldTokensStub = sinon.stub(identity, 'getHeldTokens');
+      heldTokensStub.onFirstCall().resolves({ data: [tokens[0]], next: 1 });
+      heldTokensStub.onSecondCall().resolves({ data: [tokens[1]], next: null });
+
+      const result = await identity.getPendingDistributions();
+
+      expect(result).toEqual([expectedDistribution]);
     });
   });
 });

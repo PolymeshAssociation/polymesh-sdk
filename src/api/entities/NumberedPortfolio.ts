@@ -9,10 +9,14 @@ import {
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
-import { numberToU64, stringToIdentityId, textToString } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { Ensured, EventIdentifier, ProcedureMethod } from '~/types';
+import {
+  middlewareEventToEventIdentifier,
+  numberToU64,
+  stringToIdentityId,
+  textToString,
+} from '~/utils/conversion';
+import { createProcedureMethod, optionize } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -107,7 +111,9 @@ export class NumberedPortfolio extends Portfolio {
       context,
     } = this;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
         moduleId: ModuleIdEnum.Portfolio,
         eventId: EventIdEnum.PortfolioCreated,
@@ -116,18 +122,7 @@ export class NumberedPortfolio extends Portfolio {
       })
     );
 
-    if (result.data.eventByIndexedArgs) {
-      // TODO remove null check once types fixed
-      /* eslint-disable @typescript-eslint/no-non-null-assertion */
-      return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
-        blockDate: result.data.eventByIndexedArgs.block!.datetime,
-        eventIndex: result.data.eventByIndexedArgs.event_idx,
-      };
-      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
-    }
-
-    return null;
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**

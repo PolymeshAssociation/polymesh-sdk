@@ -11,10 +11,12 @@ import {
   modifyCorporateActionsAgent,
   ModifyCorporateActionsAgentParams,
   Namespace,
+  removeCorporateAction,
+  RemoveCorporateActionParams,
   removeCorporateActionsAgent,
   SecurityToken,
 } from '~/internal';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod } from '~/types';
 import {
   identityIdToString,
   permillToBigNumber,
@@ -56,11 +58,15 @@ export class CorporateActions extends Namespace<SecurityToken> {
       { getProcedureAndArgs: () => [removeCorporateActionsAgent, { ticker }] },
       context
     );
+
+    this.remove = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeCorporateAction, { ticker, ...args }] },
+      context
+    );
   }
 
   /**
    * Assign default values for targets, global tax withholding percentage and per-identity tax withholding perecentages.
-   *
    *
    * @note These values are applied to every Corporate Action that is created until they are modified. Modifying these values
    *   does not impact existing Corporate Actions.
@@ -70,9 +76,6 @@ export class CorporateActions extends Namespace<SecurityToken> {
 
   /**
    * Assign a new Corporate Actions Agent for the Security Token
-   *
-   * @param args.target - identity to be set as Corporate Actions Agent
-   * @param args.requestExpiry - date at which the authorization request to modify the Corporate Actions Agent expires (optional, never expires if a date is not provided)
    *
    * @note this may create AuthorizationRequests which have to be accepted by
    *   the corresponding Account. An Account or Identity can
@@ -92,6 +95,14 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *   - Security Token Owner
    */
   public removeAgent: ProcedureMethod<void, void>;
+
+  /**
+   * Remove a Corporate Action
+   *
+   * @note required role:
+   *   - Corporate Actions Agent
+   */
+  public remove: ProcedureMethod<RemoveCorporateActionParams, void>;
 
   /**
    * Retrieve the Security Token's Corporate Actions agent

@@ -11,8 +11,7 @@ import {
   SetAssetRequirementsParams,
   togglePauseRequirements,
 } from '~/internal';
-import { Compliance, Requirement, SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { Compliance, ProcedureMethod, Requirement, SubCallback, UnsubCallback } from '~/types';
 import {
   assetComplianceResultToCompliance,
   boolToBoolean,
@@ -57,9 +56,6 @@ export class Requirements extends Namespace<SecurityToken> {
    * Configure asset compliance requirements for the Security Token. This operation will replace all existing requirements with a new requirement set
    *
    * This requires two transactions
-   *
-   * @param args.requirements - array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
-   * while conditions inside each array are *AND* between them
    *
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.

@@ -6,6 +6,7 @@ import {
   CalendarPeriod as MeshCalendarPeriod,
   CddId,
   ComplianceRequirement,
+  EcdsaSignature,
   InvestorZKProofData,
   Memo,
   MovePortfolioItem,
@@ -58,7 +59,13 @@ import {
   Venue,
 } from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
-import { CallIdEnum, ClaimScopeTypeEnum, ClaimTypeEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  ClaimScopeTypeEnum,
+  ClaimTypeEnum,
+  Event as MiddlewareEvent,
+  ModuleIdEnum,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AffirmationStatus,
@@ -156,6 +163,7 @@ import {
   meshPermissionsToPermissions,
   meshScopeToScope,
   meshVenueTypeToVenueType,
+  middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   // middlewareProposalToProposalDetails,
@@ -196,6 +204,7 @@ import {
   stringToDocumentName,
   stringToDocumentType,
   stringToDocumentUri,
+  stringToEcdsaSignature,
   stringToFundingRoundName,
   stringToIdentityId,
   stringToInvestorZKProofData,
@@ -637,6 +646,32 @@ describe('stringToIdentityId and identityIdToString', () => {
     const identityId = dsMockUtils.createMockIdentityId(fakeResult);
 
     const result = identityIdToString(identityId);
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('stringToEcdsaSignature', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should convert a signature string into a polkadot EcdsaSignature object', () => {
+    const signature = 'hexSig';
+    const fakeResult = ('sig' as unknown) as EcdsaSignature;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.getCreateTypeStub().withArgs('EcdsaSignature', signature).returns(fakeResult);
+
+    const result = stringToEcdsaSignature(signature, context);
+
     expect(result).toBe(fakeResult);
   });
 });
@@ -1103,7 +1138,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       .withArgs('Permissions', {
         asset: [rawTicker],
         extrinsic: [
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           {
             pallet_name: 'Identity',
             dispatchable_names: ['add_claim'],
@@ -1112,13 +1147,45 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
             pallet_name: 'Sto',
             dispatchable_names: ['create_fundraiser', 'invest'],
           },
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         ],
         portfolio: [rawPortfolioId],
       })
       .returns(fakeResult);
     createTypeStub.withArgs('Ticker', ticker).returns(rawTicker);
     createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
+
+    result = permissionsToMeshPermissions(value, context);
+    expect(result).toEqual(fakeResult);
+
+    const tickers = ['BTICKER', 'ATICKER', 'CTICKER'];
+
+    value = {
+      tokens: tickers.map(t => entityMockUtils.getSecurityTokenInstance({ ticker: t })),
+      transactions: [TxTags.identity.AddClaim],
+      transactionGroups: [],
+      portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+    };
+
+    const extrinsic = [
+      /* eslint-disable @typescript-eslint/naming-convention */
+      {
+        pallet_name: 'Identity',
+        dispatchable_names: ['add_claim'],
+      },
+      /* eslint-enable @typescript-eslint/naming-convention */
+    ];
+
+    const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
+    createTypeStub
+      .withArgs('Permissions', {
+        asset: [rawTickers[1], rawTickers[0], rawTickers[2]],
+        extrinsic,
+        portfolio: [rawPortfolioId],
+      })
+      .returns(fakeResult);
+
+    tickers.forEach((t, i) => createTypeStub.withArgs('Ticker', t).returns(rawTickers[i]));
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
@@ -1141,7 +1208,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     let permissions = dsMockUtils.createMockPermissions({
       asset: [dsMockUtils.createMockTicker(ticker)],
       extrinsic: [
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         dsMockUtils.createMockPalletPermissions({
           pallet_name: dsMockUtils.createMockPalletName('Identity'),
           dispatchable_names: [dsMockUtils.createMockDispatchableName('add_claim')],
@@ -1150,7 +1217,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           pallet_name: dsMockUtils.createMockPalletName('Confidential'),
           dispatchable_names: null,
         }),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       ],
       portfolio: [
         dsMockUtils.createMockPortfolioId({
@@ -2041,11 +2108,11 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       .withArgs('Document', {
         uri: stringToDocumentUri(uri, context),
         name: stringToDocumentName(name, context),
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         content_hash: stringToDocumentHash(contentHash, context),
         doc_type: null,
         filing_date: null,
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
       .returns(fakeResult);
 
@@ -2057,11 +2124,11 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       .withArgs('Document', {
         uri: stringToDocumentUri(uri, context),
         name: stringToDocumentName(name, context),
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         content_hash: stringToDocumentHash(contentHash, context),
         doc_type: stringToDocumentType(type, context),
         filing_date: dateToMoment(filedAt, context),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
       .returns(fakeResult);
 
@@ -2084,11 +2151,11 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
     let doc = dsMockUtils.createMockDocument({
       uri: dsMockUtils.createMockDocumentUri(uri),
       name: dsMockUtils.createMockDocumentName(name),
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       content_hash: dsMockUtils.createMockDocumentHash(contentHash),
       doc_type: dsMockUtils.createMockOption(),
       filing_date: dsMockUtils.createMockOption(),
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     let result = documentToTokenDocument(doc);
@@ -2103,11 +2170,11 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
     doc = dsMockUtils.createMockDocument({
       uri: dsMockUtils.createMockDocumentUri(uri),
       name: dsMockUtils.createMockDocumentName(name),
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       content_hash: dsMockUtils.createMockDocumentHash(contentHash),
       doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
       filing_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(filedAt.getTime())),
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     result = documentToTokenDocument(doc);
@@ -2141,7 +2208,7 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('AuthIdentifier', {
-        // eslint-disable-next-line @typescript-eslint/camelcase
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         auth_id: numberToU64(authId, context),
         signatory: signerValueToSignatory(target, context),
       })
@@ -2163,7 +2230,7 @@ describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
       signatory: dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(target.value),
       }),
-      // eslint-disable-next-line @typescript-eslint/camelcase
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       auth_id: dsMockUtils.createMockU64(authId.toNumber()),
     });
 
@@ -2214,7 +2281,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
     const context = dsMockUtils.getContextInstance();
     let result = granularCanTransferResultToTransferBreakdown(
       dsMockUtils.createMockGranularCanTransferResult({
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         invalid_granularity: true,
         self_transfer: true,
         invalid_receiver_cdd: true,
@@ -2245,7 +2312,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         }),
         result: false,
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       }),
       context
     );
@@ -2281,7 +2348,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
 
     result = granularCanTransferResultToTransferBreakdown(
       dsMockUtils.createMockGranularCanTransferResult({
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         invalid_granularity: false,
         self_transfer: false,
         invalid_receiver_cdd: false,
@@ -2312,7 +2379,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         }),
         result: false,
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       }),
       context
     );
@@ -2802,6 +2869,26 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   });
 });
 
+describe('middlewareEventToEventIdentifier', () => {
+  test('should convert a middleware Event object to an EventIdentifier', () => {
+    const event = {
+      /* eslint-disable @typescript-eslint/naming-convention */
+      block_id: 3000,
+      event_idx: 3,
+      /* eslint-enable @typescript-eslint/naming-convention */
+      block: {
+        datetime: new Date('10/14/1987').toISOString(),
+      },
+    } as MiddlewareEvent;
+
+    expect(middlewareEventToEventIdentifier(event)).toEqual({
+      blockNumber: new BigNumber(3000),
+      blockDate: new Date('10/14/1987'),
+      eventIndex: 3,
+    });
+  });
+});
+
 describe('stringToCddId and cddIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2947,7 +3034,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         .withArgs(
           'Condition',
           sinon.match({
-            // eslint-disable-next-line @typescript-eslint/camelcase
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             condition_type: sinon.match.has(meshType),
           })
         )
@@ -2956,7 +3043,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
 
     createTypeStub
       .withArgs('ComplianceRequirement', {
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         sender_conditions: [
           'meshConditionIsPresent',
           'meshConditionIsNoneOf',
@@ -2968,7 +3055,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           'meshConditionIsIdentity',
         ],
         id: numberToU32(value.id, context),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
       .returns(fakeResult);
 
@@ -3056,7 +3143,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const scope = dsMockUtils.createMockScope({
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(identity.did),
@@ -3128,7 +3215,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
       ],
       id: dsMockUtils.createMockU32(1),
     });
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const result = complianceRequirementToRequirement(
       complianceRequirement,
@@ -3447,7 +3534,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const scope = dsMockUtils.createMockScope({
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
@@ -3538,7 +3625,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       id: dsMockUtils.createMockU32(1),
       result: dsMockUtils.createMockBool(false),
     });
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const result = complianceRequirementResultToRequirementCompliance(
       complianceRequirement,
@@ -3640,7 +3727,7 @@ describe('assetComplianceResultToCompliance', () => {
     const scope = dsMockUtils.createMockScope({
       Identity: dsMockUtils.createMockIdentityId(tokenDid),
     });
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
@@ -3648,7 +3735,7 @@ describe('assetComplianceResultToCompliance', () => {
       })
     );
     const rawConditions = [
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
           condition_type: dsMockUtils.createMockConditionType({
@@ -3701,7 +3788,7 @@ describe('assetComplianceResultToCompliance', () => {
       id: dsMockUtils.createMockU32(1),
       result: dsMockUtils.createMockBool(false),
     });
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     let assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
       paused: dsMockUtils.createMockBool(true),
@@ -4385,7 +4472,7 @@ describe('toIdentityWithClaimsArray', () => {
         ],
       },
     ];
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const commonClaimData = {
       targetDID: targetDid,
       issuer: issuerDid,
@@ -4409,7 +4496,7 @@ describe('toIdentityWithClaimsArray', () => {
         ],
       },
     ];
-    /* eslint-enabled @typescript-eslint/camelcase */
+    /* eslint-enabled @typescript-eslint/naming-convention */
 
     const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
 

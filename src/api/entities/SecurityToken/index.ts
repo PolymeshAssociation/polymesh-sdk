@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 
 import {
@@ -20,8 +19,14 @@ import {
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier, SubCallback, TokenIdentifier, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import {
+  Ensured,
+  EventIdentifier,
+  ProcedureMethod,
+  SubCallback,
+  TokenIdentifier,
+  UnsubCallback,
+} from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
@@ -31,11 +36,12 @@ import {
   boolToBoolean,
   fundingRoundNameToString,
   identityIdToString,
+  middlewareEventToEventIdentifier,
   stringToTicker,
   tickerToDid,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, padString } from '~/utils/internal';
+import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
 import { Checkpoints } from './Checkpoints';
 import { Compliance } from './Compliance';
@@ -152,8 +158,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Transfer ownership of the Security Token to another Identity. This generates an authorization request that must be accepted
    *   by the destinatary
    *
-   * @param args.expiry - date at which the authorization request for transfer expires (optional)
-   *
    * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
@@ -166,7 +170,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Modify some properties of the Security Token
    *
-   * @param args.makeDivisible - makes an indivisible token divisible
    * @throws if the passed values result in no changes being made to the token
    *
    * @note required role:
@@ -196,7 +199,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = ({
       name,
       total_supply,
@@ -217,7 +220,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
           : owner,
       };
     };
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 
@@ -310,7 +313,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
@@ -318,17 +323,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       })
     );
 
-    if (result.data.eventByIndexedArgs) {
-      // TODO remove null check once types fixed
-      return {
-        blockNumber: new BigNumber(result.data.eventByIndexedArgs.block_id),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        blockDate: result.data.eventByIndexedArgs.block!.datetime,
-        eventIndex: result.data.eventByIndexedArgs.event_idx,
-      };
-    }
-
-    return null;
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**
@@ -382,9 +377,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   /**
    * Assign a new primary issuance agent for the Security Token
-   *
-   * @param args.target - identity to be set as primary issuance agent
-   * @param args.requestExpiry - date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
    *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
@@ -458,9 +450,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   /**
    * Force a transfer from a given Portfolio to the PIA’s default Portfolio
-   *
-   * @param args.originPortfolio - portfolio (or portfolio ID) from which tokens will be transferred
-   * @param args.amount - amount of tokens to transfer
    *
    * @note required role:
    *   - Security Token Primary Issuance Agent

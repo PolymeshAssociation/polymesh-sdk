@@ -13,8 +13,7 @@ import {
   ModifyCaCheckpointParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ErrorCode, ProcedureMethod } from '~/types';
 import {
   numberToU32,
   storedScheduleToCheckpointScheduleParams,
@@ -138,8 +137,6 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
 
   /**
    * Link a list of documents to this corporate action
-   *
-   * @param args.documents - list of documents
    *
    * @note any previous links are removed in favor of the new list
    * @note required role:

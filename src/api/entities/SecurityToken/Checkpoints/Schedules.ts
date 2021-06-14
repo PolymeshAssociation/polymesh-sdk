@@ -10,8 +10,7 @@ import {
   RemoveCheckpointScheduleParams,
   SecurityToken,
 } from '~/internal';
-import { CalendarPeriod, ScheduleWithDetails } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { CalendarPeriod, ProcedureMethod, ScheduleWithDetails } from '~/types';
 import {
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
@@ -55,8 +54,6 @@ export class Schedules extends Namespace<SecurityToken> {
 
   /**
    * Remove the supplied Checkpoint Schedule for a given Security Token
-   *
-   * @param args.schedule - Schedule (or ID) of the schedule to be removed
    *
    * @note required role:
    *   - Security Token Owner

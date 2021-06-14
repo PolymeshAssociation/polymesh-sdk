@@ -76,14 +76,14 @@ describe('setAssetRequirements procedure', () => {
     rawComplianceRequirement = senderConditions.map(
       (sConditions, index) =>
         ({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           sender_conditions: sConditions,
           receiver_conditions: receiverConditions[index],
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         } as ComplianceRequirement)
     );
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
     args = {
       ticker,
       requirements,
@@ -122,11 +122,11 @@ describe('setAssetRequirements procedure', () => {
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     requirements.forEach((condition, index) => {
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
-        /* eslint-disable @typescript-eslint/camelcase */
+        /* eslint-disable @typescript-eslint/naming-convention */
         sender_conditions: senderConditions[index],
         receiver_conditions: receiverConditions[index],
         id: dsMockUtils.createMockU32(1),
-        /* eslint-enable @typescript-eslint/camelcase */
+        /* eslint-enable @typescript-eslint/naming-convention */
       });
       requirementToComplianceRequirementStub
         .withArgs({ conditions: condition, id: 1 }, mockContext)
@@ -134,10 +134,10 @@ describe('setAssetRequirements procedure', () => {
       complianceRequirementToRequirementStub
         .withArgs(
           sinon.match({
-            /* eslint-disable @typescript-eslint/camelcase */
+            /* eslint-disable @typescript-eslint/naming-convention */
             sender_conditions: senderConditions[index],
             receiver_conditions: receiverConditions[index],
-            /* eslint-enable @typescript-eslint/camelcase */
+            /* eslint-enable @typescript-eslint/naming-convention */
           }),
           mockContext
         )
