@@ -113,8 +113,6 @@ export abstract class TransferRestrictionBase<
   /**
    * Add a Transfer Restriction of the corresponding type to this Security Token
    *
-   * @param args.exempted - array of Scope IDs that are exempted from the Restriction
-   *
    * @note the result is the total amount of restrictions after the procedure has run
    *
    * @note required role:
@@ -124,8 +122,6 @@ export abstract class TransferRestrictionBase<
 
   /**
    * Sets all Transfer Restrictions of the corresponding type on this Security Token
-   *
-   * @param args.restrictions - array of Transfer Restrictions with their corresponding exemptions (if applicable)
    *
    * @note the result is the total amount of restrictions after the procedure has run
    *
