@@ -14,7 +14,6 @@ import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
   boolToBoolean,
-  numberToBalance,
   stringToAssetName,
   stringToFundingRoundName,
   stringToTicker,
@@ -57,7 +56,6 @@ export async function prepareCreateSecurityToken(
   const {
     ticker,
     name,
-    totalSupply,
     isDivisible,
     tokenType,
     tokenIdentifiers = [],
@@ -88,7 +86,6 @@ export async function prepareCreateSecurityToken(
     });
   }
 
-  const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawType = tokenTypeToAssetType(tokenType, context);
@@ -111,7 +108,6 @@ export async function prepareCreateSecurityToken(
     { fee },
     rawName,
     rawTicker,
-    rawTotalSupply,
     rawIsDivisible,
     rawType,
     rawIdentifiers,

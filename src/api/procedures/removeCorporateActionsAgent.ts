@@ -42,7 +42,7 @@ export async function prepareRemoveCorporateActionsAgent(
     });
   }
 
-  this.addTransaction(corporateAction.resetCaa, {}, stringToTicker(ticker, context));
+  this.addTransaction(corporateAction.removeCa, {}, stringToTicker(ticker, context));
 }
 
 /**

@@ -2,13 +2,19 @@ import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { Account, Context, CurrentIdentity, leaveIdentity } from '~/internal';
-import { Permissions, PermissionsLike, ProcedureMethod, TxTags } from '~/types';
 import {
-  permissionsLikeToPermissions,
-  portfolioToPortfolioId,
-  signerToString,
-} from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+  DefaultPortfolio,
+  ModuleName,
+  NumberedPortfolio,
+  Permissions,
+  PermissionType,
+  ProcedureMethod,
+  SimplePermissions,
+  TxTag,
+  TxTags,
+} from '~/types';
+import { portfolioToPortfolioId, signerToString } from '~/utils/conversion';
+import { createProcedureMethod, isModuleOrTagMatch } from '~/utils/internal';
 
 /**
  * Represents the current account that is bound to the SDK instance
@@ -71,11 +77,8 @@ export class CurrentAccount extends Account {
   /**
    * Check if this Account possesses certain Permissions for its corresponding Identity
    */
-  public async hasPermissions(permissions: PermissionsLike): Promise<boolean> {
-    const { tokens, transactions, portfolios } = permissionsLikeToPermissions(
-      permissions,
-      this.context
-    );
+  public async hasPermissions(permissions: SimplePermissions): Promise<boolean> {
+    const { tokens, transactions, portfolios } = permissions;
 
     const {
       tokens: currentTokens,
@@ -89,27 +92,37 @@ export class CurrentAccount extends Account {
     } else if (tokens === null) {
       hasTokens = false;
     } else {
-      hasTokens = tokens.length === 0 || !differenceBy(tokens, currentTokens, 'ticker').length;
+      const { type: tokensType, values: tokensValues } = currentTokens;
+
+      if (tokens.length === 0) {
+        hasTokens = true;
+      } else {
+        if (tokensType === PermissionType.Include) {
+          hasTokens = !differenceBy(tokens, tokensValues, 'ticker').length;
+        } else {
+          hasTokens = differenceBy(tokens, tokensValues, 'ticker').length === tokens.length;
+        }
+      }
     }
 
     // these transactions are allowed to any account, independent of permissions
-    const exemptedTransactions = [
+    const exemptedTransactions: (TxTag | ModuleName)[] = [
       ...difference(Object.values(TxTags.balances), [
         TxTags.balances.DepositBlockRewardReserveBalance,
         TxTags.balances.BurnAccountBalance,
       ]),
-      ...Object.values(TxTags.staking),
-      ...Object.values(TxTags.sudo),
-      ...Object.values(TxTags.session),
-      ...Object.values(TxTags.authorship),
-      ...Object.values(TxTags.babe),
-      ...Object.values(TxTags.finalityTracker),
-      ...Object.values(TxTags.grandpa),
-      ...Object.values(TxTags.imOnline),
-      ...Object.values(TxTags.indices),
-      ...Object.values(TxTags.scheduler),
-      ...Object.values(TxTags.system),
-      ...Object.values(TxTags.timestamp),
+      ModuleName.Staking,
+      ModuleName.Sudo,
+      ModuleName.Session,
+      ModuleName.Authorship,
+      ModuleName.Babe,
+      ModuleName.FinalityTracker,
+      ModuleName.Grandpa,
+      ModuleName.ImOnline,
+      ModuleName.Indices,
+      ModuleName.Scheduler,
+      ModuleName.System,
+      ModuleName.Timestamp,
     ];
 
     let hasTransactions;
@@ -118,9 +131,35 @@ export class CurrentAccount extends Account {
     } else if (transactions === null) {
       hasTransactions = false;
     } else {
-      hasTransactions =
-        transactions.length === 0 ||
-        !difference(transactions, union(currentTransactions, exemptedTransactions)).length;
+      const {
+        type: transactionsType,
+        values: transactionsValues,
+        exceptions = [],
+      } = currentTransactions;
+      if (transactions.length === 0) {
+        hasTransactions = true;
+      } else {
+        if (transactionsType === PermissionType.Include) {
+          const includedTransactions = differenceWith(
+            union(transactionsValues, exemptedTransactions),
+            exceptions,
+            isModuleOrTagMatch
+          );
+          hasTransactions = transactions.every(
+            tag => !!includedTransactions.find(included => isModuleOrTagMatch(included, tag))
+          );
+        } else {
+          const excludedTransactions = differenceWith(
+            transactionsValues,
+            exemptedTransactions,
+            exceptions,
+            isModuleOrTagMatch
+          );
+          hasTransactions = !transactions.some(
+            tag => !!excludedTransactions.find(excluded => isModuleOrTagMatch(excluded, tag))
+          );
+        }
+      }
     }
 
     let hasPortfolios;
@@ -129,14 +168,28 @@ export class CurrentAccount extends Account {
     } else if (portfolios === null) {
       hasPortfolios = false;
     } else {
-      hasPortfolios =
-        portfolios.length === 0 ||
-        !differenceWith(portfolios, currentPortfolios, (a, b) => {
+      const { type: portfoliosType, values: portfoliosValues } = currentPortfolios;
+
+      if (portfolios.length === 0) {
+        hasPortfolios = true;
+      } else {
+        const portfolioComparator = (
+          a: DefaultPortfolio | NumberedPortfolio,
+          b: DefaultPortfolio | NumberedPortfolio
+        ) => {
           const aId = portfolioToPortfolioId(a);
           const bId = portfolioToPortfolioId(b);
 
           return isEqual(aId, bId);
-        }).length;
+        };
+        if (portfoliosType === PermissionType.Include) {
+          hasPortfolios = !differenceWith(portfolios, portfoliosValues, portfolioComparator).length;
+        } else {
+          hasPortfolios =
+            differenceWith(portfolios, portfoliosValues, portfolioComparator).length ===
+            portfolios.length;
+        }
+      }
     }
 
     return hasTokens && hasTransactions && hasPortfolios;

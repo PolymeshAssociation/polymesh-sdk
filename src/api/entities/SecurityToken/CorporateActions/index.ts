@@ -109,33 +109,6 @@ export class CorporateActions extends Namespace<SecurityToken> {
   public remove: ProcedureMethod<RemoveCorporateActionParams, void>;
 
   /**
-   * Retrieve the Security Token's Corporate Actions agent
-   */
-  public async getAgent(): Promise<Identity> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { corporateAction },
-        },
-      },
-      parent: { ticker },
-      context,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-
-    const agent = await corporateAction.agent(rawTicker);
-
-    if (agent.isNone) {
-      const token = new SecurityToken({ ticker }, context);
-      const { owner } = await token.details();
-      return owner;
-    }
-
-    return new Identity({ did: identityIdToString(agent.unwrap()) }, context);
-  }
-
-  /**
    * Retrieve default values for targets, global tax withholding percentage and per-identity tax withholding perecentages.
    *
    *

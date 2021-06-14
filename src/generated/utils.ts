@@ -8,10 +8,7 @@ import { CountryCode } from '~/types';
 /**
  * @hidden
  */
-export function countryCodeToMeshCountryCode(
-  countryCode: CountryCode,
-  context: Context
-): MeshCountryCode {
+export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): MeshCountryCode {
   return context.polymeshApi.createType('CountryCode', countryCode);
 }
 

@@ -12,7 +12,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, padEnd } from 'lodash';
-import { TxTag } from 'polymesh-types/types';
+import { ModuleName, TxTag } from 'polymesh-types/types';
 
 import {
   Context,
@@ -618,4 +618,26 @@ export function optionize<InputType, OutputType, RestType extends unknown[]>(
     const data = value ?? null;
     return data && converter(data, ...rest);
   };
+}
+
+/**
+ * @hidden
+ * Compare two tags/modules and return true if they are equal, or if one is the other one's module
+ */
+export function isModuleOrTagMatch(a: TxTag | ModuleName, b: TxTag | ModuleName): boolean {
+  const aIsTag = a.includes('.');
+  const bIsTag = b.includes('.');
+
+  // a tag b module
+  if (aIsTag && !bIsTag) {
+    return a.split('.')[0] === b;
+  }
+
+  // a module b tag
+  if (!aIsTag && bIsTag) {
+    return a === b.split('.')[0];
+  }
+
+  // both tags or both modules
+  return a === b;
 }

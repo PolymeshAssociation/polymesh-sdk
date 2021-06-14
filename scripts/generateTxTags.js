@@ -8,12 +8,14 @@ const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
 
-const websocket = new w3cwebsocket('wss://pme.polymath.network');
+const websocket = new w3cwebsocket('wss://dev.polymesh.live');
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };
 websocket.onmessage = message => {
   let namespaces = '';
+  let moduleNameEnum = 'export enum ModuleName {';
+  let modulePermissions = 'export type ModulePermissions =';
   let txTag = 'export type TxTag =';
   let txTags = 'export const TxTags = {\n';
 
@@ -45,6 +47,8 @@ websocket.onmessage = message => {
     const moduleNameCamelCase = stringCamelCase(moduleName);
     const moduleNamePascal = stringUpperFirst(moduleNameCamelCase);
 
+    moduleNameEnum = moduleNameEnum.concat(`\n  ${moduleNamePascal} = '${moduleNameCamelCase}',`);
+    modulePermissions = modulePermissions.concat(`\n  | { moduleName: ModuleName.${moduleNamePascal}; permissions: SectionPermissions<${moduleNamePascal}Tx> }`);
     txTag = txTag.concat(`\n  | ${moduleNamePascal}Tx`);
     txTags = txTags.concat(`  ${stringCamelCase(moduleName)}: ${moduleNamePascal}Tx,\n`);
 
@@ -62,12 +66,14 @@ websocket.onmessage = message => {
     namespaces = namespaces.concat('}\n\n');
   });
 
+  moduleNameEnum = moduleNameEnum.concat('\n};');
+  modulePermissions = modulePermissions.concat(';');
   txTag = txTag.concat(';');
   txTags = txTags.concat('};');
 
   fs.appendFileSync(
     path.resolve('src', 'polkadot', 'types.ts'),
-    '\n'.concat(namespaces).concat(`${txTag}\n\n${txTags}\n`)
+    '\n'.concat(namespaces).concat(`${moduleNameEnum}\n\n${txTag}\n\n${txTags}\n`)
   );
 
   rimraf.sync(jsonPath);

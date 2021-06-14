@@ -427,6 +427,7 @@ export enum SettlementTx {
   AffirmWithReceipts = 'settlement.affirmWithReceipts',
   ExecuteScheduledInstruction = 'settlement.executeScheduledInstruction',
   ChangeReceiptValidity = 'settlement.changeReceiptValidity',
+  RescheduleInstruction = 'settlement.rescheduleInstruction',
 }
 
 export enum StoTx {
@@ -466,6 +467,7 @@ export enum PortfolioTx {
   DeletePortfolio = 'portfolio.deletePortfolio',
   MovePortfolioFunds = 'portfolio.movePortfolioFunds',
   RenamePortfolio = 'portfolio.renamePortfolio',
+  QuitPortfolioCustody = 'portfolio.quitPortfolioCustody',
 }
 
 export enum ConfidentialTx {
@@ -532,6 +534,62 @@ export enum TestUtilsTx {
   GetCddOf = 'testUtils.getCddOf',
 }
 
+export enum ExternalAgentsTx {
+  CreateGroup = 'externalAgents.createGroup',
+  SetGroupPermissions = 'externalAgents.setGroupPermissions',
+  RemoveAgent = 'externalAgents.removeAgent',
+  Abdicate = 'externalAgents.abdicate',
+  ChangeGroup = 'externalAgents.changeGroup',
+}
+
+export enum ModuleName {
+  System = 'system',
+  Babe = 'babe',
+  Timestamp = 'timestamp',
+  Indices = 'indices',
+  Balances = 'balances',
+  Authorship = 'authorship',
+  Staking = 'staking',
+  Session = 'session',
+  FinalityTracker = 'finalityTracker',
+  Grandpa = 'grandpa',
+  ImOnline = 'imOnline',
+  Sudo = 'sudo',
+  MultiSig = 'multiSig',
+  Contracts = 'contracts',
+  Treasury = 'treasury',
+  PolymeshCommittee = 'polymeshCommittee',
+  CommitteeMembership = 'committeeMembership',
+  Pips = 'pips',
+  TechnicalCommittee = 'technicalCommittee',
+  TechnicalCommitteeMembership = 'technicalCommitteeMembership',
+  UpgradeCommittee = 'upgradeCommittee',
+  UpgradeCommitteeMembership = 'upgradeCommitteeMembership',
+  Asset = 'asset',
+  Dividend = 'dividend',
+  Identity = 'identity',
+  Bridge = 'bridge',
+  ComplianceManager = 'complianceManager',
+  Voting = 'voting',
+  StoCapped = 'stoCapped',
+  Exemption = 'exemption',
+  Settlement = 'settlement',
+  Sto = 'sto',
+  CddServiceProviders = 'cddServiceProviders',
+  ProtocolFee = 'protocolFee',
+  Utility = 'utility',
+  Portfolio = 'portfolio',
+  Confidential = 'confidential',
+  Scheduler = 'scheduler',
+  CorporateAction = 'corporateAction',
+  CorporateBallot = 'corporateBallot',
+  CapitalDistribution = 'capitalDistribution',
+  Checkpoint = 'checkpoint',
+  Statistics = 'statistics',
+  TestUtils = 'testUtils',
+  ExternalAgents = 'externalAgents',
+};
+
 export type TxTag =
   | SystemTx
   | BabeTx
@@ -576,7 +634,8 @@ export type TxTag =
   | CapitalDistributionTx
   | CheckpointTx
   | StatisticsTx
-  | TestUtilsTx;
+  | TestUtilsTx
+  | ExternalAgentsTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -623,4 +682,5 @@ export const TxTags = {
   checkpoint: CheckpointTx,
   statistics: StatisticsTx,
   testUtils: TestUtilsTx,
+  externalAgents: ExternalAgentsTx,
 };

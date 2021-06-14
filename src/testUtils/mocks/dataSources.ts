@@ -50,7 +50,6 @@ import {
   AssetName,
   AssetOwnershipRelation,
   AssetType,
-  AuthIdentifier,
   Authorization,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
@@ -1823,27 +1822,6 @@ export const createMockSignatory = (
   signatory?: { Identity: IdentityId } | { Account: AccountId }
 ): Signatory => {
   return createMockEnum(signatory) as Signatory;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockAuthIdentifier = (authIdentifier?: {
-  signatory: Signatory;
-  auth_id: u64;
-}): AuthIdentifier => {
-  const identifier = authIdentifier || {
-    signatory: createMockSignatory(),
-    auth_id: createMockU64(),
-  };
-
-  return createMockCodec(
-    {
-      ...identifier,
-    },
-    !authIdentifier
-  ) as AuthIdentifier;
 };
 
 /**

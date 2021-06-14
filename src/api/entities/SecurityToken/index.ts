@@ -209,7 +209,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       divisible,
       owner_did,
       asset_type,
-      primary_issuance_agent,
     }: MeshSecurityToken): SecurityTokenDetails => {
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
       return {
@@ -218,9 +217,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         name: assetNameToString(name),
         owner,
         totalSupply: balanceToBigNumber(total_supply),
-        primaryIssuanceAgent: primary_issuance_agent.isSome
-          ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
-          : owner,
+        primaryIssuanceAgent: owner,
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
