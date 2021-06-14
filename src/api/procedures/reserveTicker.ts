@@ -14,6 +14,9 @@ import { stringToTicker, tickerToString } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 export interface ReserveTickerParams {
+  /**
+   * ticker symbol to reserve
+   */
   ticker: string;
   extendPeriod?: boolean;
 }

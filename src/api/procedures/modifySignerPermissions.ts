@@ -10,8 +10,14 @@ import {
 } from '~/utils/conversion';
 
 export interface ModifySignerPermissionsParams {
+  /**
+   * list of secondary keys
+   */
   secondaryKeys: {
     signer: Signer;
+    /**
+     * list of permissions
+     */
     permissions: PermissionsLike;
   }[];
 }

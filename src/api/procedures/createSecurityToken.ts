@@ -26,10 +26,25 @@ import { batchArguments } from '~/utils/internal';
 
 export interface CreateSecurityTokenParams {
   name: string;
+  /**
+   * amount of tokens that will be minted on creation
+   */
   totalSupply: BigNumber;
+  /**
+   * whether a single token can be divided into decimal parts
+   */
   isDivisible: boolean;
+  /**
+   * type of security that the token represents (i.e. Equity, Debt, Commodity, etc)
+   */
   tokenType: TokenType;
+  /**
+   * array of domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
+   */
   tokenIdentifiers?: TokenIdentifier[];
+  /**
+   * (optional) funding round in which the token currently is (Series A, Series B, etc)
+   */
   fundingRound?: string;
   documents?: TokenDocument[];
 }

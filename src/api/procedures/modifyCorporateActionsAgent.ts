@@ -9,7 +9,13 @@ import {
 } from '~/utils/conversion';
 
 export interface ModifyCorporateActionsAgentParams {
+  /**
+   * identity to be set as Corporate Actions Agent
+   */
   target: string | Identity;
+  /**
+   * date at which the authorization request to modify the Corporate Actions Agent expires (optional, never expires if a date is not provided)
+   */
   requestExpiry?: Date;
 }
 

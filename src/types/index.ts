@@ -841,9 +841,21 @@ export type PortfolioLike =
  *   and appended to the `transactions` array. If `transactions` is null, then the value of `transactionGroups` is redundant
  */
 export interface PermissionsLike {
+  /**
+   * array of Security Tokens on which to grant permissions. A null value represents full permissions
+   */
   tokens?: (string | SecurityToken)[] | null;
+  /**
+   * array of transaction tags that the Secondary Key has permission to execute. A null value represents full permissions
+   */
   transactions?: TxTag[] | null;
+  /**
+   * array of transaction groups that the Secondary Key has permission to execute.
+   */
   transactionGroups?: TxGroup[];
+  /**
+   * array of Portfolios for which to grant permissions. A null value represents full permissions
+   */
   portfolios?: PortfolioLike[] | null;
 }
 
@@ -859,11 +871,20 @@ export interface ProcedureAuthorizationStatus {
 }
 
 interface TransferRestrictionBase {
+  /**
+   * array of Scope IDs that are exempted from the Restriction
+   */
   exemptedScopeIds?: string[];
 }
 
 interface TransferRestrictionInputBase {
+  /**
+   * array of Scope IDs that are exempted from the Restriction
+   */
   exemptedScopeIds?: string[];
+  /**
+   * array of Identities (or DIDs) that are exempted from the Restriction
+   */
   exemptedIdentities?: (Identity | string)[];
 }
 
@@ -876,10 +897,16 @@ export interface PercentageTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+  /**
+   * limit on the amount of different (unique) investors that can hold the Security Token at once
+   */
   count: BigNumber;
 }
 
 export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
+  /**
+   * limit on the proportion of the total supply of the Security Token that can be held by a single investor at once
+   */
   percentage: BigNumber;
 }
 

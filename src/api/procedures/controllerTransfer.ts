@@ -12,7 +12,13 @@ import {
 } from '~/utils/conversion';
 
 export interface ControllerTransferParams {
+  /**
+   * portfolio (or portfolio ID) from which tokens will be transferred
+   */
   originPortfolio: PortfolioLike;
+  /**
+   * amount of tokens to transfer
+   */
   amount: BigNumber;
 }
 
