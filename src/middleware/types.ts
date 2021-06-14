@@ -9,13 +9,13 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  Object: any;
+  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
+  DateTime: string;
   /** The `BigInt` scalar type represents non-fractional signed whole numeric values. BigInt can represent values between -(2^53) + 1 and 2^53 - 1.  */
   BigInt: any;
   /** Converts strings into boolean */
   CustomBoolean: boolean;
-  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
-  DateTime: string;
-  Object: any;
 };
 
 export type Account = {
@@ -38,6 +38,18 @@ export type AccountTransactionsArgs = {
   skip?: Maybe<Scalars['Int']>;
 };
 
+export type Authorization = {
+  __typename?: 'Authorization';
+  authId: Scalars['Int'];
+  fromDID: Scalars['String'];
+  toDID?: Maybe<Scalars['String']>;
+  toKey?: Maybe<Scalars['String']>;
+  type: AuthTypeEnum;
+  data?: Maybe<Scalars['String']>;
+  expiry?: Maybe<Scalars['BigInt']>;
+  status: AuthStatusEnum;
+};
+
 export enum AuthStatusEnum {
   Pending = 'Pending',
   Consumed = 'Consumed',
@@ -58,18 +70,6 @@ export enum AuthTypeEnum {
   Custom = 'Custom',
   NoData = 'NoData',
 }
-
-export type Authorization = {
-  __typename?: 'Authorization';
-  authId: Scalars['Int'];
-  fromDID: Scalars['String'];
-  toDID?: Maybe<Scalars['String']>;
-  toKey?: Maybe<Scalars['String']>;
-  type: AuthTypeEnum;
-  data?: Maybe<Scalars['String']>;
-  expiry?: Maybe<Scalars['BigInt']>;
-  status: AuthStatusEnum;
-};
 
 export type Block = {
   __typename?: 'Block';
@@ -121,15 +121,15 @@ export type Block = {
   inherents?: Maybe<Array<Maybe<Extrinsic>>>;
 };
 
-export type CaId = {
-  ticker: Scalars['String'];
-  localId: Scalars['Int'];
-};
-
 export enum CacheControlScope {
   Public = 'PUBLIC',
   Private = 'PRIVATE',
 }
+
+export type CaId = {
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
+};
 
 export enum CallIdEnum {
   FillBlock = 'fill_block',
@@ -528,7 +528,7 @@ export enum ClaimTypeEnum {
 export type CorporateActionsWithCaId = {
   __typename?: 'CorporateActionsWithCAId';
   eventId: Scalars['String'];
-  datetime: Scalars['DateTime'];
+  datetime: Scalars['String'];
   identityId?: Maybe<Scalars['String']>;
   eventDid?: Maybe<Scalars['String']>;
   ticker: Scalars['String'];
@@ -545,7 +545,7 @@ export type CorporateActionsWithCaIdResult = {
 export type CorporateActionsWithTicker = {
   __typename?: 'CorporateActionsWithTicker';
   eventId: Scalars['String'];
-  datetime: Scalars['DateTime'];
+  datetime: Scalars['String'];
   identityId: Scalars['String'];
   ticker: Scalars['String'];
   arg1?: Maybe<Scalars['String']>;
@@ -936,23 +936,22 @@ export type FailedTokenTransfer = {
   data?: Maybe<Scalars['String']>;
 };
 
-export type HistoryOfPaymentEventsForCa = {
-  __typename?: 'HistoryOfPaymentEventsForCA';
+export type HistoryOfClaimsForCa = {
+  __typename?: 'HistoryOfClaimsForCA';
   blockId: Scalars['Int'];
   eventId: Scalars['String'];
-  eventIdx: Scalars['Int'];
   eventDid: Scalars['String'];
-  datetime: Scalars['DateTime'];
+  datetime: Scalars['String'];
   ticker: Scalars['String'];
   localId: Scalars['Int'];
   balance: Scalars['Int'];
   tax: Scalars['Int'];
 };
 
-export type HistoryOfPaymentEventsForCaResults = {
-  __typename?: 'HistoryOfPaymentEventsForCAResults';
+export type HistoryOfClaimsForCaResults = {
+  __typename?: 'HistoryOfClaimsForCAResults';
   totalCount: Scalars['Int'];
-  items?: Maybe<Array<Maybe<HistoryOfPaymentEventsForCa>>>;
+  items?: Maybe<Array<Maybe<HistoryOfClaimsForCa>>>;
 };
 
 export type IdentityWithClaims = {
@@ -1000,13 +999,6 @@ export enum ItnRewardActionType {
   Onboarding = 'Onboarding',
   PolyxTransfer = 'PolyxTransfer',
   SecondaryKey = 'SecondaryKey',
-  ReserveTokenTicker = 'ReserveTokenTicker',
-  SecurityToken = 'SecurityToken',
-  ComplianceRequirement = 'ComplianceRequirement',
-  TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
-  ClaimAdded = 'ClaimAdded',
-  DistributeAnAsset = 'DistributeAnAsset',
-  AcceptATransferFromAnotherUser = 'AcceptATransferFromAnotherUser',
 }
 
 export type ItnRewardRanking = {
@@ -1230,7 +1222,7 @@ export type Query = {
   corporateActionsWithTicker?: Maybe<CorporateActionsWithTickerResult>;
   corporateActionsWithCAId?: Maybe<CorporateActionsWithCaIdResult>;
   getWithholdingTaxesOfCA?: Maybe<WithholdingTaxesOfCa>;
-  getHistoryOfPaymentEventsForCA: HistoryOfPaymentEventsForCaResults;
+  getHistoryOfClaimsForCA?: Maybe<HistoryOfClaimsForCaResults>;
   getInstructionIdsForVenue?: Maybe<InstructionIdsForVenueResults>;
   getItnRewardRankings?: Maybe<ItnRewardRankingResult>;
   getDidItnRewardRanking?: Maybe<Array<Maybe<ItnRewardRanking>>>;
@@ -1262,8 +1254,8 @@ export type QueryEventsArgs = {
 export type QueryStakingEventsArgs = {
   stashAccount?: Maybe<Scalars['String']>;
   stakingEventIds?: Maybe<Array<Maybe<StakingEventIdEnum>>>;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -1452,8 +1444,8 @@ export type QueryInvestmentsAggregatedArgs = {
 export type QueryCorporateActionsWithTickerArgs = {
   identityId?: Maybe<Scalars['String']>;
   ticker?: Maybe<Scalars['String']>;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
@@ -1462,30 +1454,30 @@ export type QueryCorporateActionsWithCaIdArgs = {
   identityId?: Maybe<Scalars['String']>;
   eventDid?: Maybe<Scalars['String']>;
   CAId?: Maybe<CaId>;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
 
 export type QueryGetWithholdingTaxesOfCaArgs = {
   CAId: CaId;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
 };
 
-export type QueryGetHistoryOfPaymentEventsForCaArgs = {
+export type QueryGetHistoryOfClaimsForCaArgs = {
   CAId: CaId;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
 };
 
 export type QueryGetInstructionIdsForVenueArgs = {
   venueId: Scalars['String'];
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
+  fromDate?: Maybe<Scalars['String']>;
+  toDate?: Maybe<Scalars['String']>;
 };
 
 export type QueryGetItnRewardRankingsArgs = {
