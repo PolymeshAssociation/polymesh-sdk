@@ -41,18 +41,33 @@ import {
 import { filterEventRecords, getTicker, optionize } from '~/utils/internal';
 
 export interface AddInstructionParams {
+  /**
+   * array of token movements (amount, from, to, token)
+   */
   legs: {
     amount: BigNumber;
     from: PortfolioLike;
     to: PortfolioLike;
     token: string | SecurityToken;
   }[];
+  /**
+   * date at which the trade was agreed upon (optional, for offchain trades)
+   */
   tradeDate?: Date;
+  /**
+   * date at which the trade was executed (optional, for offchain trades)
+   */
   valueDate?: Date;
+  /**
+   * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+   */
   endBlock?: BigNumber;
 }
 
 export interface AddInstructionsParams {
+  /**
+   * array of Instructions to be added in the Venue
+   */
   instructions: AddInstructionParams[];
 }
 

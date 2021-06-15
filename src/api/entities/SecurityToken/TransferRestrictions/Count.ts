@@ -16,10 +16,6 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
   /**
    * Add a Count Transfer Restriction to this Security Token
    *
-   * @param args.count - limit on the amount of different (unique) investors that can hold this Security Token at once
-   * @param args.exemptedScopeIds - array of Scope IDs that are exempted from the Restriction
-   * @param args.exemptedIdentities - array of Identities (or DIDs) that are exempted from the Restriction
-   *
    * @note the result is the total amount of restrictions after the procedure has run
    *
    * @note required role:
@@ -29,8 +25,6 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
 
   /**
    * Sets all Count Transfer Restrictions on this Security Token
-   *
-   * @param args.restrictions - array of Count Transfer Restrictions with their corresponding exemptions (if applicable)
    *
    * @note the result is the total amount of restrictions after the procedure has run
    *

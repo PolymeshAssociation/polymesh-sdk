@@ -9,7 +9,13 @@ import {
 } from '~/utils/conversion';
 
 export interface ModifyPrimaryIssuanceAgentParams {
+  /**
+   * identity to be set as primary issuance agent
+   */
   target: string | Identity;
+  /**
+   * date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
+   */
   requestExpiry?: Date;
 }
 

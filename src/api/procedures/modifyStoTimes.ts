@@ -8,7 +8,13 @@ import { dateToMoment, numberToU64, stringToTicker } from '~/utils/conversion';
 
 export type ModifyStoTimesParams =
   | {
+      /**
+       * new start time (optional, will be left the same if not passed)
+       */
       start?: Date;
+      /**
+       * new end time (optional, will be left th same if not passed). A null value means the STO doesn't end
+       */
       end: Date | null;
     }
   | {

@@ -834,7 +834,9 @@ export function permissionsToMeshPermissions(
   let asset: PermissionsEnum<Ticker> = 'Whole';
   if (tokens) {
     const { values: tokenValues, type } = tokens;
-    const tickers = tokenValues.map(({ ticker }) => stringToTicker(ticker, context));
+    const tickers = tokenValues
+      .sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB))
+      .map(({ ticker }) => stringToTicker(ticker, context));
     if (type === PermissionType.Include) {
       asset = {
         These: tickers,

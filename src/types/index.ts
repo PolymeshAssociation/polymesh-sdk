@@ -894,8 +894,17 @@ export type PortfolioLike =
  * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
  */
 export type PermissionsLike = {
+  /**
+   * Security Tokens on which to grant permissions. A null value represents full permissions
+   */
   tokens?: SectionPermissions<string | SecurityToken> | null;
+  /**
+   * Portfolios on which to grant permissions. A null value represents full permissions
+   */
   portfolios?: SectionPermissions<PortfolioLike> | null;
+  /**
+   * transaction that the Secondary Key has permission to execute. A null value represents full permissions
+   */
 } & (
   | {
       transactions?: TransactionPermissions | null;
@@ -917,11 +926,20 @@ export interface ProcedureAuthorizationStatus {
 }
 
 interface TransferRestrictionBase {
+  /**
+   * array of Scope IDs that are exempted from the Restriction
+   */
   exemptedScopeIds?: string[];
 }
 
 interface TransferRestrictionInputBase {
+  /**
+   * array of Scope IDs that are exempted from the Restriction
+   */
   exemptedScopeIds?: string[];
+  /**
+   * array of Identities (or DIDs) that are exempted from the Restriction
+   */
   exemptedIdentities?: (Identity | string)[];
 }
 
@@ -934,10 +952,16 @@ export interface PercentageTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+  /**
+   * limit on the amount of different (unique) investors that can hold the Security Token at once
+   */
   count: BigNumber;
 }
 
 export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
+  /**
+   * limit on the proportion of the total supply of the Security Token that can be held by a single investor at once
+   */
   percentage: BigNumber;
 }
 
@@ -987,6 +1011,14 @@ export interface ScheduleWithDetails {
 export interface DistributionWithDetails {
   distribution: DividendDistribution;
   details: DividendDistributionDetails;
+}
+
+export interface DistributionPayment {
+  blockNumber: BigNumber;
+  date: Date;
+  target: Identity;
+  amount: BigNumber;
+  withheldTax: BigNumber;
 }
 
 export interface ProcedureMethod<

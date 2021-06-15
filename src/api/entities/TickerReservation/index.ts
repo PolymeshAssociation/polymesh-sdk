@@ -168,12 +168,6 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    *
    * @note the issuer DID will be set as the primary issuance agent
    *
-   * @param args.totalSupply - amount of tokens that will be minted on creation
-   * @param args.isDivisible - whether a single token can be divided into decimal parts
-   * @param args.tokenType - type of security that the token represents (i.e. Equity, Debt, Commodity, etc)
-   * @param args.tokenIdentifiers - domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
-   * @param args.fundingRound - (optional) funding round in which the token currently is (Series A, Series B, etc)
-   *
    * @note required role:
    *   - Ticker Owner
    */
@@ -182,8 +176,6 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
   /**
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted
    *   by the destinatary
-   *
-   * @param args.expiry - date at which the authorization request for transfer expires (optional)
    *
    * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can

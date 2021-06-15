@@ -22,11 +22,17 @@ import {
 } from '~/utils/conversion';
 
 export interface SetCountTransferRestrictionsParams {
+  /**
+   * array of Count Transfer Restrictions with their corresponding exemptions (if applicable)
+   */
   restrictions: CountTransferRestrictionInput[];
   type: TransferRestrictionType.Count;
 }
 
 export interface SetPercentageTransferRestrictionsParams {
+  /**
+   * array of Percentage Transfer Restrictions with their corresponding exemptions (if applicable)
+   */
   restrictions: PercentageTransferRestrictionInput[];
   type: TransferRestrictionType.Percentage;
 }
