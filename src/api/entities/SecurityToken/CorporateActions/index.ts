@@ -68,7 +68,6 @@ export class CorporateActions extends Namespace<SecurityToken> {
   /**
    * Assign default values for targets, global tax withholding percentage and per-identity tax withholding perecentages.
    *
-   *
    * @note These values are applied to every Corporate Action that is created until they are modified. Modifying these values
    *   does not impact existing Corporate Actions.
    *   When creating a Corporate Action, values passed explicitly will override these defaults
@@ -77,9 +76,6 @@ export class CorporateActions extends Namespace<SecurityToken> {
 
   /**
    * Assign a new Corporate Actions Agent for the Security Token
-   *
-   * @param args.target - identity to be set as Corporate Actions Agent
-   * @param args.requestExpiry - date at which the authorization request to modify the Corporate Actions Agent expires (optional, never expires if a date is not provided)
    *
    * @note this may create AuthorizationRequests which have to be accepted by
    *   the corresponding Account. An Account or Identity can

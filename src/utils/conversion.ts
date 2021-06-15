@@ -714,7 +714,10 @@ export function permissionsToMeshPermissions(
   }
 
   const value = {
-    asset: tokens?.map(({ ticker }) => stringToTicker(ticker, context)) ?? null,
+    asset:
+      tokens
+        ?.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB))
+        .map(({ ticker }) => stringToTicker(ticker, context)) ?? null,
     extrinsic,
     portfolio:
       portfolios?.map(portfolio =>

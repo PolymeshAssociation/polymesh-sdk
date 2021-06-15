@@ -10,11 +10,15 @@ import {
   Entity,
   TransactionQueue,
 } from '~/internal';
-import { getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
@@ -444,6 +448,94 @@ describe('DividendDistribution class', () => {
       const queue = await dividendDistribution.reclaimFunds();
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getPaymentHistory', () => {
+    test('should return the amount of the withheld tax', async () => {
+      const blockId = new BigNumber(1);
+      const eventId = 'eventId';
+      const datetime = '2020-10-10';
+      const eventDid = 'eventDid';
+      const balance = new BigNumber(100);
+      const tax = new BigNumber(10);
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfPaymentEventsForCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfPaymentEventsForCA: {
+            totalCount: 1,
+            items: [
+              {
+                blockId: blockId.toNumber(),
+                eventId,
+                datetime,
+                eventDid,
+                balance: balance.toNumber(),
+                tax: tax.toNumber(),
+              },
+            ],
+          },
+        }
+      );
+
+      let result = await dividendDistribution.getPaymentHistory();
+
+      expect(result.data).toEqual([
+        {
+          blockNumber: blockId,
+          date: new Date(`${datetime}Z`),
+          target: entityMockUtils.getIdentityInstance({ did: eventDid }),
+          amount: balance,
+          withheldTax: tax,
+        },
+      ]);
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfPaymentEventsForCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfPaymentEventsForCA: {
+            totalCount: 1,
+            items: undefined,
+          },
+        }
+      );
+
+      result = await dividendDistribution.getPaymentHistory();
+
+      expect(result.data).toEqual([]);
+    });
+
+    test('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfPaymentEventsForCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfPaymentEventsForCA: {
+            totalCount: 0,
+            items: [],
+          },
+        }
+      );
+      const result = await dividendDistribution.getPaymentHistory();
+      expect(result.data).toEqual([]);
     });
   });
 });

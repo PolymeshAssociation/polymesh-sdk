@@ -9,13 +9,13 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  Object: any;
+  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
+  DateTime: string;
   /** The `BigInt` scalar type represents non-fractional signed whole numeric values. BigInt can represent values between -(2^53) + 1 and 2^53 - 1.  */
   BigInt: any;
   /** Converts strings into boolean */
   CustomBoolean: boolean;
-  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
-  DateTime: string;
-  Object: any;
 };
 
 export type Account = {
@@ -38,6 +38,18 @@ export type AccountTransactionsArgs = {
   skip?: Maybe<Scalars['Int']>;
 };
 
+export type Authorization = {
+  __typename?: 'Authorization';
+  authId: Scalars['Int'];
+  fromDID: Scalars['String'];
+  toDID?: Maybe<Scalars['String']>;
+  toKey?: Maybe<Scalars['String']>;
+  type: AuthTypeEnum;
+  data?: Maybe<Scalars['String']>;
+  expiry?: Maybe<Scalars['BigInt']>;
+  status: AuthStatusEnum;
+};
+
 export enum AuthStatusEnum {
   Pending = 'Pending',
   Consumed = 'Consumed',
@@ -58,18 +70,6 @@ export enum AuthTypeEnum {
   Custom = 'Custom',
   NoData = 'NoData',
 }
-
-export type Authorization = {
-  __typename?: 'Authorization';
-  authId: Scalars['Int'];
-  fromDID: Scalars['String'];
-  toDID?: Maybe<Scalars['String']>;
-  toKey?: Maybe<Scalars['String']>;
-  type: AuthTypeEnum;
-  data?: Maybe<Scalars['String']>;
-  expiry?: Maybe<Scalars['BigInt']>;
-  status: AuthStatusEnum;
-};
 
 export type Block = {
   __typename?: 'Block';
@@ -121,15 +121,15 @@ export type Block = {
   inherents?: Maybe<Array<Maybe<Extrinsic>>>;
 };
 
-export type CaId = {
-  ticker: Scalars['String'];
-  localId: Scalars['Int'];
-};
-
 export enum CacheControlScope {
   Public = 'PUBLIC',
   Private = 'PRIVATE',
 }
+
+export type CaId = {
+  ticker: Scalars['String'];
+  localId: Scalars['Int'];
+};
 
 export enum CallIdEnum {
   FillBlock = 'fill_block',
