@@ -403,8 +403,7 @@ export class DividendDistribution extends CorporateAction {
       data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
     } = result;
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult!;
+    const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult;
 
     const data: DistributionPayment[] = [];
     let next = null;
