@@ -1,12 +1,7 @@
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TargetTreatment, TxTags } from '~/types';
-import {
-  boolToBoolean,
-  corporateActionIdentifierToCaId,
-  stringToIdentityId,
-} from '~/utils/conversion';
-import { xor } from '~/utils/internal';
+import { ErrorCode, TxTags } from '~/types';
+import { corporateActionIdentifierToCaId } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -24,43 +19,36 @@ export async function prepareClaimDividends(
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: { tx },
     },
     context,
   } = this;
   const {
-    distribution: {
-      targets: { identities, treatment },
-      id: localId,
-      ticker,
-      paymentDate,
-      expiryDate,
-    },
+    distribution,
+    distribution: { id: localId, ticker, paymentDate, expiryDate },
   } = args;
 
   assertDistributionOpen(paymentDate, expiryDate);
 
-  const { did: currentDid } = await context.getCurrentIdentity();
+  const participant = await distribution.getParticipant();
 
-  const found = !!identities.find(({ did }) => did === currentDid);
-
-  if (xor(found, treatment === TargetTreatment.Include)) {
+  if (!participant) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The current Identity is not included in this Distribution',
     });
   }
 
-  const rawDid = stringToIdentityId(currentDid, context);
-  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
-  const alreadyClaimed = await query.capitalDistribution.holderPaid([rawCaId, rawDid]);
+  const { paid } = participant;
 
-  if (boolToBoolean(alreadyClaimed)) {
+  if (paid) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The current Identity has already claimed dividends',
     });
   }
+
+  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
   this.addTransaction(tx.capitalDistribution.claim, {}, rawCaId);
 }

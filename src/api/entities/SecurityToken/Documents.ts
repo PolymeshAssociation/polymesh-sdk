@@ -5,8 +5,7 @@ import {
   setTokenDocuments,
   SetTokenDocumentsParams,
 } from '~/internal';
-import { PaginationOptions, ResultSet, TokenDocument } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { PaginationOptions, ProcedureMethod, ResultSet, TokenDocument } from '~/types';
 import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
@@ -32,8 +31,6 @@ export class Documents extends Namespace<SecurityToken> {
    * Assign a new list of documents to the Security Token by replacing the existing list of documents with the one passed in the parameters
    *
    * This requires two transactions
-   *
-   * @param args.documents - new list of documents
    *
    * @note required role:
    *   - Security Token Owner

@@ -157,14 +157,14 @@ describe('TickerReservation class', () => {
           expiry: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(ownerDid),
           name: dsMockUtils.createMockAssetName('someToken'),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
           divisible: dsMockUtils.createMockBool(true),
           primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(1000),
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         }),
       ]);
 
@@ -246,6 +246,32 @@ describe('TickerReservation class', () => {
         .resolves(expectedQueue);
 
       const queue = await tickerReservation.createToken(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: transferOwnership', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const tickerReservation = new TickerReservation({ ticker }, context);
+      const target = 'someOtherDid';
+      const expiry = new Date('10/10/2022');
+
+      const args = {
+        ticker,
+        target,
+        expiry,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await tickerReservation.transferOwnership(args);
 
       expect(queue).toBe(expectedQueue);
     });

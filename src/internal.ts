@@ -72,7 +72,7 @@ export {
   togglePauseRequirements,
   TogglePauseRequirementsParams,
 } from '~/api/procedures/togglePauseRequirements';
-export { transferPolyX, TransferPolyXParams } from '~/api/procedures/transferPolyX';
+export { transferPolyx, TransferPolyxParams } from '~/api/procedures/transferPolyx';
 export {
   transferTokenOwnership,
   TransferTokenOwnershipParams,
@@ -164,5 +164,11 @@ export {
   ModifyDistributionCheckpointParams,
 } from '~/api/procedures/modifyDistributionCheckpoint';
 export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
+export {
+  transferTickerOwnership,
+  TransferTickerOwnershipParams,
+} from '~/api/procedures/transferTickerOwnership';
 export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
+export { leaveIdentity } from '~/api/procedures/leaveIdentity';
+export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';

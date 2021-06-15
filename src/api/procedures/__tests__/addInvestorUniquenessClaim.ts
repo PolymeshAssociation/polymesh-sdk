@@ -40,7 +40,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let expiry: Date;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
-  let stringToInvestorZKProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
+  let stringToInvestorZkProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
   let scopeClaimProofToMeshScopeClaimProofStub: sinon.SinonStub<
     [ScopeClaimProof, string, Context],
     MeshScopeClaimProof
@@ -87,7 +87,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     claimToMeshClaimStub = sinon.stub(utilsConversionModule, 'claimToMeshClaim');
-    stringToInvestorZKProofDataStub = sinon.stub(
+    stringToInvestorZkProofDataStub = sinon.stub(
       utilsConversionModule,
       'stringToInvestorZKProofData'
     );
@@ -100,6 +100,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     scopeToMeshScopeStub = sinon.stub(utilsConversionModule, 'scopeToMeshScope');
     rawDid = dsMockUtils.createMockIdentityId(did);
     rawTicker = dsMockUtils.createMockTicker(ticker);
+    /* eslint-disable @typescript-eslint/naming-convention */
     rawClaim = dsMockUtils.createMockClaim({
       InvestorUniqueness: [
         dsMockUtils.createMockScope({ Ticker: rawTicker }),
@@ -114,7 +115,6 @@ describe('addInvestorUniquenessClaim procedure', () => {
     rawScopeId = dsMockUtils.createMockScopeId(scopeId);
     rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
     rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
-      /* eslint-disable @typescript-eslint/camelcase */
       proof_scope_id_wellformed: proofScopeIdWellformed,
       proof_scope_id_cdd_id_match: {
         subtract_expressions_res: subtractExpressionsRes,
@@ -122,8 +122,8 @@ describe('addInvestorUniquenessClaim procedure', () => {
         blinded_scope_did_hash: blindedScopeDidHash,
       },
       scope_id: scopeId,
-      /* eslint-enable @typescript-eslint/camelcase */
     });
+    /* eslint-enable @typescript-eslint/naming-convention */
     rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
   });
 
@@ -152,7 +152,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
         mockContext
       )
       .returns(rawClaimV2);
-    stringToInvestorZKProofDataStub.withArgs(proof, mockContext).returns(rawProof);
+    stringToInvestorZkProofDataStub.withArgs(proof, mockContext).returns(rawProof);
     scopeClaimProofToMeshScopeClaimProofStub
       .withArgs(scopeClaimProof, scopeId, mockContext)
       .returns(rawScopeClaimProof);

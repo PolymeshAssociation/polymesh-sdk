@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 import { CheckpointId, Moment, Ticker } from 'polymesh-types/types';
 
 import { Checkpoint, Context, createCheckpoint, Namespace, SecurityToken } from '~/internal';
-import { CheckpointWithData, PaginationOptions, ResultSet } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { CheckpointWithData, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   balanceToBigNumber,

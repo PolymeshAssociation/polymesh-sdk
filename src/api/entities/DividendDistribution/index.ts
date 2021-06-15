@@ -11,6 +11,7 @@ import {
   Context,
   CorporateAction,
   DefaultPortfolio,
+  Identity,
   modifyDistributionCheckpoint,
   ModifyDistributionCheckpointParams,
   NumberedPortfolio,
@@ -19,18 +20,20 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
 import {
   CorporateActionKind,
+  DistributionPayment,
   DividendDistributionDetails,
   Ensured,
   ErrorCode,
   IdentityBalance,
+  ProcedureMethod,
+  ResultSet,
   TargetTreatment,
 } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
@@ -39,7 +42,7 @@ import {
   corporateActionIdentifierToCaId,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { createProcedureMethod, xor } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, xor } from '~/utils/internal';
 
 import { DistributionParticipant } from './types';
 
@@ -160,6 +163,8 @@ export class DividendDistribution extends CorporateAction {
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
+   *
+   * @note due to performance issues, we do not validate that the distribution has enough remaining funds to pay the corresponding amount to the supplied Identities
    */
   public pay: ProcedureMethod<PayDividendsParams, void>;
 
@@ -274,6 +279,72 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
+   * Retrieve an Identity that is entitled to dividends in this Distribution (participant),
+   *   the amount it is entitled to and whether it has been paid or not
+   *
+   * @param args.identity - defaults to the current Identity
+   *
+   * @note if the Distribution Checkpoint hasn't been created yet, the result will be null.
+   *   This is because the Distribution participant's corresponding payment cannot be determined without a Checkpoint
+   */
+  public async getParticipant(args?: {
+    identity: string | Identity;
+  }): Promise<DistributionParticipant | null> {
+    const {
+      id: localId,
+      ticker,
+      targets: { identities: targetIdentities, treatment },
+      paymentDate,
+      perShare,
+      context,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+
+    const checkpoint = await this.checkpoint();
+
+    if (checkpoint instanceof CheckpointSchedule) {
+      return null;
+    }
+
+    const [did, balance] = await Promise.all([
+      getDid(args?.identity, context),
+      checkpoint.balance(args),
+    ]);
+
+    const identity = new Identity({ did }, context);
+
+    const isTarget = !!targetIdentities.find(({ did: targetDid }) => did === targetDid);
+
+    let participant: DistributionParticipant;
+
+    const isExclusion = treatment === TargetTreatment.Exclude;
+
+    if (balance.gt(0) && xor(isTarget, isExclusion)) {
+      participant = {
+        identity,
+        amount: balance.multipliedBy(perShare),
+        paid: false,
+      };
+    } else {
+      return null;
+    }
+
+    // participant can't be paid before the payment date
+    if (paymentDate < new Date()) {
+      return participant;
+    }
+
+    const rawDid = stringToIdentityId(did, context);
+    const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+    const holderPaid = await query.capitalDistribution.holderPaid([rawCaId, rawDid]);
+    const paid = boolToBoolean(holderPaid);
+
+    return { ...participant, paid };
+  }
+
+  /**
    * @hidden
    */
   private fetchDistribution(): Promise<Option<Distribution>> {
@@ -294,9 +365,8 @@ export class DividendDistribution extends CorporateAction {
 
     const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         CAId: { ticker, localId: id.toNumber() },
-        fromDate: null,
-        toDate: null,
       })
     );
 
@@ -304,6 +374,62 @@ export class DividendDistribution extends CorporateAction {
     const { taxes } = result.data.getWithholdingTaxesOfCA!;
 
     return new BigNumber(taxes);
+  }
+
+  /**
+   * Retrieve the payment history for this Distribution
+   *
+   * @note uses the middleware
+   * @note supports pagination
+   */
+  public async getPaymentHistory(
+    opts: { size?: number; start?: number } = {}
+  ): Promise<ResultSet<DistributionPayment>> {
+    const { id, ticker, context } = this;
+
+    const { size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'getHistoryOfPaymentEventsForCA'>>(
+      getHistoryOfPaymentEventsForCa({
+        CAId: { ticker, localId: id.toNumber() },
+        fromDate: null,
+        toDate: null,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
+    } = result;
+
+    const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult;
+
+    const data: DistributionPayment[] = [];
+    let next = null;
+
+    if (items) {
+      items.forEach(item => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { blockId, datetime, eventDid: did, balance, tax } = item!;
+
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          date: new Date(datetime),
+          target: new Identity({ did }, context),
+          amount: new BigNumber(balance),
+          withheldTax: new BigNumber(tax),
+        });
+      });
+
+      next = calculateNextKey(count, size, start);
+    }
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
@@ -315,8 +441,8 @@ export class DividendDistribution extends CorporateAction {
     const { ticker, id: localId, context } = this;
 
     /*
-       For optimization, we separate the participants into chunks that can fit into one multi call
-       and then sequentially perform bunches of said multi requests in parallel
+     * For optimization, we separate the participants into chunks that can fit into one multi call
+     * and then sequentially perform bunches of said multi requests in parallel
      */
     const participantChunks = chunk(participants, MAX_PAGE_SIZE);
     const parallelCallChunks = chunk(participantChunks, MAX_CONCURRENT_REQUESTS);

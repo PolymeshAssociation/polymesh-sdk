@@ -8,6 +8,9 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
 
 export interface LinkCaDocsParams {
+  /**
+   * list of documents
+   */
   documents: TokenDocument[];
 }
 
@@ -63,7 +66,7 @@ export async function prepareLinkCaDocs(
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const rawCAId = { ticker, local_id: caId };
 
   this.addTransaction(corporateAction.linkCaDoc, {}, rawCAId, docIdsToLink);

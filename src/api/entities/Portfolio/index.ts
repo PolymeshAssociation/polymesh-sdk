@@ -14,8 +14,7 @@ import {
 } from '~/internal';
 import { settlements } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ResultSet } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { Ensured, ProcedureMethod, ResultSet } from '~/types';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -121,7 +120,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   }): Promise<PortfolioBalance[]> {
     const {
       owner: { did },
-      _id,
+      _id: number,
       context: {
         polymeshApi: {
           query: { portfolio },
@@ -130,7 +129,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: _id }, context);
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
     const [totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
       portfolio.portfolioAssetBalances.entries(rawPortfolioId),
       portfolio.portfolioLockedAssets.entries(rawPortfolioId),
@@ -198,9 +197,6 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   /**
    * Moves funds from this Portfolio to another one owned by the same Identity
    *
-   * @param args.to - portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
-   * @param args.movements - list of tokens (and their corresponding amounts) that will be moved
-   *
    * @note required role:
    *   - Portfolio Custodian
    */
@@ -216,7 +212,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const {
       owner,
       owner: { did },
-      _id,
+      _id: number,
       context: {
         polymeshApi: {
           query: { portfolio },
@@ -225,7 +221,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: _id }, context);
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
     const portfolioCustodian = await portfolio.portfolioCustodian(rawPortfolioId);
 
     try {
@@ -258,7 +254,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const {
       context,
       owner: { did },
-      _id,
+      _id: number,
     } = this;
 
     const { account, ticker, size, start } = filters;
@@ -266,7 +262,7 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     const result = await context.queryMiddleware<Ensured<Query, 'settlements'>>(
       settlements({
         identityId: did,
-        portfolioNumber: _id ? _id.toString() : null,
+        portfolioNumber: number ? number.toString() : null,
         addressFilter: account ? addressToKey(account, context) : undefined,
         tickerFilter: ticker,
         count: size,

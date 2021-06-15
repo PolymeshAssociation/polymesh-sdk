@@ -9,9 +9,10 @@ import {
   Identity,
   reserveTicker,
   SecurityToken,
+  transferTickerOwnership,
+  TransferTickerOwnershipParams,
 } from '~/internal';
-import { SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -62,6 +63,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
 
     this.createToken = createProcedureMethod(
       { getProcedureAndArgs: args => [createSecurityToken, { ...args, ticker }] },
+      context
+    );
+
+    this.transferOwnership = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferTickerOwnership, { ticker, ...args }] },
       context
     );
   }
@@ -162,14 +168,21 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    *
    * @note the issuer DID will be set as the primary issuance agent
    *
-   * @param args.totalSupply - amount of tokens that will be minted on creation
-   * @param args.isDivisible - whether a single token can be divided into decimal parts
-   * @param args.tokenType - type of security that the token represents (i.e. Equity, Debt, Commodity, etc)
-   * @param args.tokenIdentifiers - domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
-   * @param args.fundingRound - (optional) funding round in which the token currently is (Series A, Series B, etc)
-   *
    * @note required role:
    *   - Ticker Owner
    */
   public createToken: ProcedureMethod<CreateSecurityTokenParams, SecurityToken>;
+
+  /**
+   * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted
+   *   by the destinatary
+   *
+   * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
+   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *
+   * @note required role:
+   *   - Ticker Owner
+   */
+  public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, TickerReservation>;
 }

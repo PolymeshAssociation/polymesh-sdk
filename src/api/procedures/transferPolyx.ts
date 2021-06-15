@@ -10,18 +10,27 @@ import {
   stringToMemo,
 } from '~/utils/conversion';
 
-export interface TransferPolyXParams {
+export interface TransferPolyxParams {
+  /**
+   * account that will receive the POLYX
+   */
   to: string | Account;
+  /**
+   * amount of POLYX to be transferred
+   */
   amount: BigNumber;
+  /**
+   * identifier string to help differentiate transfers
+   */
   memo?: string;
 }
 
 /**
  * @hidden
  */
-export async function prepareTransferPolyX(
-  this: Procedure<TransferPolyXParams>,
-  args: TransferPolyXParams
+export async function prepareTransferPolyx(
+  this: Procedure<TransferPolyxParams>,
+  args: TransferPolyxParams
 ): Promise<void> {
   const {
     context: {
@@ -103,7 +112,7 @@ export async function prepareTransferPolyX(
 /**
  * @hidden
  */
-export function getAuthorization({ memo }: TransferPolyXParams): ProcedureAuthorization {
+export function getAuthorization({ memo }: TransferPolyxParams): ProcedureAuthorization {
   return {
     signerPermissions: {
       transactions: [memo ? TxTags.balances.TransferWithMemo : TxTags.balances.Transfer],
@@ -116,5 +125,5 @@ export function getAuthorization({ memo }: TransferPolyXParams): ProcedureAuthor
 /**
  * @hidden
  */
-export const transferPolyX = (): Procedure<TransferPolyXParams> =>
-  new Procedure(prepareTransferPolyX, getAuthorization);
+export const transferPolyx = (): Procedure<TransferPolyxParams> =>
+  new Procedure(prepareTransferPolyx, getAuthorization);

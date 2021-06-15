@@ -10,6 +10,9 @@ import {
 
 export interface TransferTokenOwnershipParams {
   target: string | Identity;
+  /**
+   * date at which the authorization request for transfer expires (optional)
+   */
   expiry?: Date;
 }
 

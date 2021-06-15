@@ -18,12 +18,13 @@ import {
   Ensured,
   IdentityWithClaims,
   InvestorUniquenessClaim,
+  ProcedureMethod,
   ResultSet,
   Scope,
   ScopedClaim,
   ScopeType,
 } from '~/types';
-import { ClaimOperation, ProcedureMethod } from '~/types/internal';
+import { ClaimOperation } from '~/types/internal';
 import {
   scopeToMiddlewareScope,
   signerToString,
@@ -110,8 +111,6 @@ export class Claims {
   /**
    * Add claims to Identities
    *
-   * @param args.claims - array of claims to be added
-   *
    * @note required roles:
    *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
    */
@@ -119,8 +118,6 @@ export class Claims {
 
   /**
    * Edit claims associated to Identities (only the expiry date can be modified)
-   *
-   * @param args.claims - array of claims to be edited
    *
    * @note required roles:
    *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments
@@ -130,8 +127,6 @@ export class Claims {
 
   /**
    * Revoke claims from Identities
-   *
-   * @param args.claims - array of claims to be revoked
    *
    * @note required roles:
    *   - Customer Due Diligence Provider: if there is at least one CDD claim in the arguments

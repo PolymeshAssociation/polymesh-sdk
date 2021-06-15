@@ -11,9 +11,9 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
-import { PostTransactionValue, TransactionQueue } from '~/internal';
+import { PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CalendarPeriod, Permissions, ProcedureAuthorizationStatus, Role } from '~/types';
+import { CalendarPeriod, Permissions, Role } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -217,15 +217,6 @@ export interface CorporateActionIdentifier {
 export interface ProcedureAuthorization {
   signerPermissions?: Omit<Permissions, 'transactionGroups'> | boolean;
   identityRoles?: Role[] | boolean;
-}
-
-export interface ProcedureMethod<
-  MethodArgs,
-  ProcedureReturnValue,
-  ReturnValue = ProcedureReturnValue
-> {
-  (args: MethodArgs): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
-  checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
 
 export type Falsyable<T> = T | null | undefined;

@@ -13,8 +13,7 @@ import {
   toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
-import { SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import { ProcedureMethod, SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -105,11 +104,6 @@ export class CurrentIdentity extends Identity {
 
   /**
    * Modify all permissions of a list of secondary keys associated with the Identity
-   *
-   * @param args.secondaryKeys.permissions - list of permissions
-   * @param args.secondaryKeys.permissions.tokens - array of Security Tokens on which to grant permissions. A null value represents full permissions
-   * @param args.secondaryKeys.permissions.transactions - array of transaction tags that the Secondary Key has permission to execute. A null value represents full permissions
-   * @param args.secondaryKeys.permissions.portfolios - array of Portfolios for which to grant permissions. A null value represents full permissions
    */
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
@@ -119,11 +113,6 @@ export class CurrentIdentity extends Identity {
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
-   *
-   * @param args.permissions - list of allowed permissions (optional, defaults to no permissions)
-   * @param args.permissions.tokens - array of Security Tokens (or tickers) for which to allow permission. Set null to allow all (optional, no permissions if not passed)
-   * @param args.permissions.transactions - array of tags associated with the transaction that will be executed for which to allow permission. Set null to allow all (optional, no permissions if not passed)
-   * @param args.permissions.portfolios - array of portfolios for which to allow permission. Set null to allow all (optional, no permissions if not passed)
    */
   public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
 

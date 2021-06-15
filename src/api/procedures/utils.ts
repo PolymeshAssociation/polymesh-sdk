@@ -1,6 +1,11 @@
-// import BigNumber from 'bignumber.js';
-
-import { Context, Instruction, NumberedPortfolio, PolymeshError } from '~/internal';
+import {
+  Checkpoint,
+  CheckpointSchedule,
+  Context,
+  Instruction,
+  NumberedPortfolio,
+  PolymeshError,
+} from '~/internal';
 import {
   ErrorCode,
   InputTargets,
@@ -192,6 +197,65 @@ export function assertCaTaxWithholdingsValid(
       data: {
         maxWithholdingEntries,
       },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertCaCheckpointValid(
+  checkpoint: Checkpoint | CheckpointSchedule | Date
+): Promise<void> {
+  if (checkpoint instanceof Date) {
+    if (checkpoint <= new Date()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Checkpoint date must be in the future',
+      });
+    }
+  } else {
+    const exists = await checkpoint.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          checkpoint instanceof Checkpoint
+            ? "Checkpoint doesn't exist"
+            : "Checkpoint Schedule doesn't exist",
+      });
+    }
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertDistributionDatesValid(
+  checkpoint: CheckpointSchedule | Date,
+  paymentDate: Date,
+  expiryDate: Date | null
+): Promise<void> {
+  let checkpointDate: Date;
+
+  if (checkpoint instanceof Date) {
+    checkpointDate = checkpoint;
+  } else {
+    ({ nextCheckpointDate: checkpointDate } = await checkpoint.details());
+  }
+
+  if (paymentDate <= checkpointDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Payment date must be after the Checkpoint date',
+    });
+  }
+
+  if (expiryDate && expiryDate < checkpointDate) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Expiry date must be after the Checkpoint date',
     });
   }
 }

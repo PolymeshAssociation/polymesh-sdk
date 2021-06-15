@@ -53,6 +53,7 @@ import {
   DocumentName,
   DocumentType,
   DocumentUri,
+  EcdsaSignature,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -293,12 +294,14 @@ export function tickerToString(ticker: Ticker): string {
   return removePadding(u8aToString(ticker));
 }
 
+/* eslint-disable @typescript-eslint/naming-convention */
 /**
  * @hidden
  */
 export function stringToInvestorZKProofData(proof: string, context: Context): InvestorZKProofData {
   return context.polymeshApi.createType('InvestorZKProofData', proof);
 }
+/* eslint-disable @typescript-eslint/naming-convention */
 
 /**
  * @hidden
@@ -340,6 +343,13 @@ export function stringToIdentityId(identityId: string, context: Context): Identi
  */
 export function identityIdToString(identityId: IdentityId): string {
   return identityId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToEcdsaSignature(signature: string, context: Context): EcdsaSignature {
+  return context.polymeshApi.createType('EcdsaSignature', signature);
 }
 
 /**
@@ -544,6 +554,7 @@ export function portfolioIdToMeshPortfolioId(
   const { did, number } = portfolioId;
   return context.polymeshApi.createType('PortfolioId', {
     did: stringToIdentityId(did, context),
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     kind: number ? { User: numberToU64(number, context) } : 'Default',
   });
 }
@@ -677,6 +688,7 @@ export function permissionsToMeshPermissions(
   const { tokens, transactions, portfolios } = permissions;
 
   const extrinsicDict: Record<string, string[]> = {};
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
 
   if (transactions) {
@@ -694,15 +706,18 @@ export function permissionsToMeshPermissions(
       });
 
     extrinsic = map(extrinsicDict, (val, key) => ({
-      /* eslint-disable @typescript-eslint/camelcase */
+      /* eslint-disable @typescript-eslint/naming-convention */
       pallet_name: key,
       dispatchable_names: val,
-      /* eslint-enable @typescript-eslint/camelcase */
+      /* eslint-enable @typescript-eslint/naming-convention */
     }));
   }
 
   const value = {
-    asset: tokens?.map(({ ticker }) => stringToTicker(ticker, context)) ?? null,
+    asset:
+      tokens
+        ?.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB))
+        .map(({ ticker }) => stringToTicker(ticker, context)) ?? null,
     extrinsic,
     portfolio:
       portfolios?.map(portfolio =>
@@ -1344,11 +1359,11 @@ export function tokenDocumentToDocument(
   return context.polymeshApi.createType('Document', {
     uri: stringToDocumentUri(uri, context),
     name: stringToDocumentName(name, context),
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     content_hash: stringToDocumentHash(contentHash, context),
     doc_type: type ? stringToDocumentType(type, context) : null,
     filing_date: filedAt ? dateToMoment(filedAt, context) : null,
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
   });
 }
 
@@ -1356,7 +1371,7 @@ export function tokenDocumentToDocument(
  * @hidden
  */
 export function documentToTokenDocument(
-  // eslint-disable-next-line @typescript-eslint/camelcase
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   { uri, content_hash: contentHash, name, doc_type: docType, filing_date: filingDate }: Document
 ): TokenDocument {
   const filedAt = filingDate.unwrapOr(undefined);
@@ -1386,7 +1401,7 @@ export function authTargetToAuthIdentifier(
   context: Context
 ): AuthIdentifier {
   return context.polymeshApi.createType('AuthIdentifier', {
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     auth_id: numberToU64(authId, context),
     signatory: signerValueToSignatory(target, context),
   });
@@ -1677,6 +1692,7 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 export function stringToTargetIdentity(did: string | null, context: Context): TargetIdentity {
   return context.polymeshApi.createType(
     'TargetIdentity',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     did ? { Specific: stringToIdentityId(did, context) } : 'PrimaryIssuanceAgent'
   );
 }
@@ -1764,12 +1780,13 @@ export function trustedClaimIssuerToTrustedIssuer(
   if (!claimTypes) {
     trustedFor = 'Any';
   } else {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     trustedFor = { Specific: claimTypes };
   }
 
   return context.polymeshApi.createType('TrustedIssuer', {
     issuer: stringToIdentityId(did, context),
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     trusted_for: trustedFor,
   });
 }
@@ -1808,7 +1825,7 @@ export function requirementToComplianceRequirement(
     const { target, trustedClaimIssuers = [] } = condition;
 
     const meshCondition = polymeshApi.createType('Condition', {
-      // eslint-disable-next-line @typescript-eslint/camelcase
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       condition_type: {
         [type]: conditionContent,
       },
@@ -1827,11 +1844,11 @@ export function requirementToComplianceRequirement(
   });
 
   return polymeshApi.createType('ComplianceRequirement', {
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     sender_conditions: senderConditions,
     receiver_conditions: receiverConditions,
     id: numberToU32(requirement.id, context),
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
   });
 }
 
@@ -2361,7 +2378,7 @@ export function toIdentityWithClaimsArray(
     identity: new Identity({ did }, context),
     claims: claims.map(
       ({
-        targetDID,
+        targetDID: targetDid,
         issuer,
         issuance_date: issuanceDate,
         expiry,
@@ -2370,7 +2387,7 @@ export function toIdentityWithClaimsArray(
         scope: claimScope,
         cdd_id: cddId,
       }) => ({
-        target: new Identity({ did: targetDID }, context),
+        target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
         expiry: expiry ? new Date(expiry) : null,
@@ -2884,11 +2901,13 @@ export function checkpointToRecordDateSpec(
   let value;
 
   if (checkpoint instanceof Checkpoint) {
+    /* eslint-disable @typescript-eslint/naming-convention */
     value = { Existing: numberToU64(checkpoint.id, context) };
   } else if (checkpoint instanceof Date) {
     value = { Scheduled: dateToMoment(checkpoint, context) };
   } else {
     value = { ExistingSchedule: numberToU64(checkpoint.id, context) };
+    /* eslint-enable @typescript-eslint/naming-convention */
   }
 
   return context.polymeshApi.createType('RecordDateSpec', value);
@@ -2909,19 +2928,19 @@ export function scopeClaimProofToMeshScopeClaimProof(
   } = proof;
 
   const zkProofData = polymeshApi.createType('ZkProofData', {
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
     subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
     blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
   });
 
   return polymeshApi.createType('ScopeClaimProof', {
-    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/naming-convention */
     proof_scope_id_wellformed: stringToSignature(proofScopeIdWellformed, context),
     proof_scope_id_cdd_id_match: zkProofData,
     scope_id: stringToRistrettoPoint(scopeId, context),
-    /* eslint-enable @typescript-eslint/camelcase */
+    /* eslint-enable @typescript-eslint/naming-convention */
   });
 }
 
@@ -2996,7 +3015,7 @@ export function corporateActionIdentifierToCaId(
   const { ticker, localId } = corporateActionIdentifier;
   return context.polymeshApi.createType('CAId', {
     ticker: stringToTicker(ticker, context),
-    // eslint-disable-next-line @typescript-eslint/camelcase
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     local_id: numberToU32(localId, context),
   });
 }

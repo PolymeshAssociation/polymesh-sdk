@@ -16,8 +16,14 @@ import {
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ResultSet, SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
+import {
+  Ensured,
+  ErrorCode,
+  ProcedureMethod,
+  ResultSet,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
@@ -161,9 +167,6 @@ export class Sto extends Entity<UniqueIdentifiers> {
   /**
    * Modify the start/end time of the STO
    *
-   * @param args.start - new start time (optional, will be left the same if not passed)
-   * @param args.end - new end time (optional, will be left th same if not passed). A null value means the STO doesn't end
-   *
    * @throws if:
    *   - Trying to modify the start time on an STO that already started
    *   - Trying to modify anything on an STO that already ended
@@ -176,11 +179,6 @@ export class Sto extends Entity<UniqueIdentifiers> {
 
   /**
    * Invest in the STO
-   *
-   * @param args.purchasePortfolio - portfolio in which the purchased Tokens will be stored
-   * @param args.fundingPortfolio - portfolio from which funds will be withdrawn to pay for the Tokens
-   * @param args.purchaseAmount - amount of tokens to purchase
-   * @param args.maxPrice - maximum average price to pay per Token (optional)
    *
    * @note required roles:
    *   - Purchase Portfolio Custodian

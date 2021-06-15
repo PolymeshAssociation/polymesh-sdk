@@ -1,6 +1,5 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
-import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -12,7 +11,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
+import { Authorization, AuthorizationType, RoleType } from '~/types';
 import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -38,11 +37,7 @@ describe('transferTokenOwnership procedure', () => {
   let args: Params;
 
   beforeAll(() => {
-    dsMockUtils.initMocks({
-      contextOptions: {
-        balance: { free: new BigNumber(500), locked: new BigNumber(0), total: new BigNumber(500) },
-      },
-    });
+    dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
@@ -73,12 +68,6 @@ describe('transferTokenOwnership procedure', () => {
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.Free,
-    });
 
     transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 

@@ -108,7 +108,7 @@ describe('Transaction Queue class', () => {
         {
           args: [12],
           isCritical: true,
-          autoresolve: false as false,
+          autoresolve: false as const,
         },
       ];
       let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -292,7 +292,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: false as false,
+          autoresolve: false as const,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -324,7 +324,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: false as false,
+          autoresolve: false as const,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -358,7 +358,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: false as false,
+          autoresolve: false as const,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);

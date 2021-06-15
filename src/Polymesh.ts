@@ -12,6 +12,8 @@ import { TxTag } from 'polymesh-types/types';
 
 import {
   Account,
+  claimClassicTicker,
+  ClaimClassicTickerParams,
   Context,
   CurrentAccount,
   Identity,
@@ -22,8 +24,8 @@ import {
   ReserveTickerParams,
   SecurityToken,
   TickerReservation,
-  transferPolyX,
-  TransferPolyXParams,
+  transferPolyx,
+  TransferPolyxParams,
 } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import {
@@ -33,12 +35,12 @@ import {
   ErrorCode,
   MiddlewareConfig,
   NetworkProperties,
+  ProcedureMethod,
   SubCallback,
   TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { ProcedureMethod } from '~/types/internal';
 import {
   moduleAddressToString,
   signerToString,
@@ -85,8 +87,8 @@ export class Polymesh {
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
 
-    this.transferPolyX = createProcedureMethod(
-      { getProcedureAndArgs: args => [transferPolyX, args] },
+    this.transferPolyx = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferPolyx, args] },
       context
     );
 
@@ -99,6 +101,13 @@ export class Polymesh {
 
     this.registerIdentity = createProcedureMethod(
       { getProcedureAndArgs: args => [registerIdentity, args] },
+      context
+    );
+
+    this.claimClassicTicker = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [claimClassicTicker, args],
+      },
       context
     );
   }
@@ -260,13 +269,8 @@ export class Polymesh {
 
   /**
    * Transfer an amount of POLYX to a specified Account
-   *
-   * @param args.to - account that will receive the POLYX
-   * @param args.amount - amount of POLYX to be transferred
-   * @param args.memo - identifier string to help differentiate transfers
    */
-
-  public transferPolyX: ProcedureMethod<TransferPolyXParams, void>;
+  public transferPolyx: ProcedureMethod<TransferPolyxParams, void>;
 
   /**
    * Get the free/locked POLYX balance of an Account
@@ -321,13 +325,15 @@ export class Polymesh {
   /**
    * Reserve a ticker symbol to later use in the creation of a Security Token.
    *   The ticker will expire after a set amount of time, after which other users can reserve it
-   *
-   * @param args.ticker - ticker symbol to reserve
-   *
-   * @note required role:
-   *   - Ticker Owner
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
+
+  /**
+   * Claim a ticker symbol that was reserved in Polymath Classic (Ethereum). The Ethereum account
+   *   that owns the ticker must sign a special message that contains the DID of the Identity that will own the ticker
+   *   in Polymesh, and provide the signed data to this call
+   */
+  public claimClassicTicker: ProcedureMethod<ClaimClassicTickerParams, TickerReservation>;
 
   /**
    * Check if a ticker hasn't been reserved
@@ -411,10 +417,17 @@ export class Polymesh {
       context,
     } = this;
 
-    const tickerReservation = await asset.tickers(stringToTicker(ticker, context));
+    const { owner, expiry } = await asset.tickers(stringToTicker(ticker, context));
 
-    if (!tickerReservation.owner.isEmpty) {
-      return new TickerReservation({ ticker }, context);
+    if (!owner.isEmpty) {
+      if (!expiry.isNone) {
+        return new TickerReservation({ ticker }, context);
+      }
+
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `${ticker} token has been created`,
+      });
     }
 
     throw new PolymeshError({
@@ -657,6 +670,7 @@ export class Polymesh {
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
+  /* eslint-disable @typescript-eslint/naming-convention */
   /* istanbul ignore next: only for testing purposes */
   /**
    * Polkadot client
@@ -664,4 +678,5 @@ export class Polymesh {
   public get _polkadotApi(): ApiPromise {
     return this.context.polymeshApi;
   }
+  /* eslint-enable @typescript-eslint/naming-convention */
 }

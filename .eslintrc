@@ -1,3 +1,4 @@
+
 {
   "parser": "@typescript-eslint/parser",
   "env": {
@@ -8,6 +9,55 @@
   },
   "rules": {
     "@typescript-eslint/indent": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/no-shadow": ["error"],
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "default",
+        "format": ["strictCamelCase"]
+      },
+      {
+        "selector": "variable",
+        "format": ["strictCamelCase", "UPPER_CASE"]
+      },
+      {
+        "selector": "parameter",
+        "format": ["strictCamelCase"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "enumMember",
+        "format": ["strictCamelCase", "StrictPascalCase"]
+      },
+      {
+        "selector": "typeLike",
+        "format": ["StrictPascalCase"]
+      },
+
+      {
+        "selector": "typeProperty",
+        "format": ["StrictPascalCase", "strictCamelCase"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "memberLike",
+        "modifiers": ["private"],
+        "format": ["strictCamelCase"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "memberLike",
+        "modifiers": ["protected"],
+        "format": ["strictCamelCase"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "objectLiteralProperty",
+        "format": ["camelCase", "PascalCase"],
+        "leadingUnderscore": "allow"
+      }
+    ],
     "quotes": ["error", "single", { "avoidEscape": true }],
     "require-jsdoc": [
       "warn",
@@ -25,8 +75,9 @@
     "sort-imports": "off",
     "import/order": "off",
     "no-dupe-class-members": "off",
-    "no-shadow": "error",
-    "arrow-parens": "off"
+    "no-shadow": "off",
+    "arrow-parens": "off",
+    "camelcase": "off"
   },
   "plugins": ["@typescript-eslint", "simple-import-sort"],
   "parserOptions": {

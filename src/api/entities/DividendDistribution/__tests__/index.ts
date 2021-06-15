@@ -10,13 +10,22 @@ import {
   Entity,
   TransactionQueue,
 } from '~/internal';
-import { getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 
 describe('DividendDistribution class', () => {
@@ -84,7 +93,7 @@ describe('DividendDistribution class', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
-          /* eslint-disable @typescript-eslint/camelcase */
+          /* eslint-disable @typescript-eslint/naming-convention */
           from: {
             kind: 'Default',
             did: 'someDid',
@@ -96,7 +105,7 @@ describe('DividendDistribution class', () => {
           payment_at: new Date(new Date().getTime() + 60 * 60 * 1000).getTime(),
           expires_at: null,
           reclaimed: false,
-          /* eslint-enable @typescript-eslint/camelcase */
+          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
@@ -248,8 +257,6 @@ describe('DividendDistribution class', () => {
       dsMockUtils.createApolloQueryStub(
         getWithholdingTaxesOfCa({
           CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
         }),
         {
           getWithholdingTaxesOfCA: {
@@ -334,6 +341,101 @@ describe('DividendDistribution class', () => {
     });
   });
 
+  describe('method: getParticipant', () => {
+    test('should return the distribution participant', async () => {
+      const did = 'someDid';
+      const balance = new BigNumber(100);
+      const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
+
+      dividendDistribution.targets = {
+        identities: [excluded],
+        treatment: TargetTreatment.Exclude,
+      };
+      sinon.stub(dividendDistribution, 'checkpoint').resolves(
+        entityMockUtils.getCheckpointInstance({
+          balance,
+        })
+      );
+
+      sinon
+        .stub(utilsConversionModule, 'stringToIdentityId')
+        .returns(dsMockUtils.createMockIdentityId(did));
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      sinon
+        .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
+        .returns(dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() }));
+      /* eslint-enable @typescript-eslint/naming-convention */
+      sinon.stub(utilsConversionModule, 'boolToBoolean').returns(false);
+
+      dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
+        returnValue: false,
+      });
+
+      let result = await dividendDistribution.getParticipant({
+        identity: did,
+      });
+
+      expect(result).toEqual({
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: balance.multipliedBy(dividendDistribution.perShare),
+        paid: false,
+      });
+
+      dividendDistribution.paymentDate = new Date('10/14/1987');
+
+      result = await dividendDistribution.getParticipant({
+        identity: did,
+      });
+
+      expect(result).toEqual({
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: balance.multipliedBy(dividendDistribution.perShare),
+        paid: false,
+      });
+
+      result = await dividendDistribution.getParticipant();
+
+      expect(result).toEqual({
+        identity: entityMockUtils.getIdentityInstance(),
+        amount: balance.multipliedBy(dividendDistribution.perShare),
+        paid: false,
+      });
+    });
+
+    test("should return null if the distribution checkpoint hasn't been created yet", async () => {
+      sinon
+        .stub(dividendDistribution, 'checkpoint')
+        .resolves(entityMockUtils.getCheckpointScheduleInstance());
+
+      const result = await dividendDistribution.getParticipant({
+        identity: 'someDid',
+      });
+
+      expect(result).toEqual(null);
+    });
+
+    test('should return null if the identity is excluded of the distribution', async () => {
+      const did = 'someDid';
+      const excluded = entityMockUtils.getIdentityInstance({ did });
+      dividendDistribution.targets = {
+        identities: [excluded],
+        treatment: TargetTreatment.Exclude,
+      };
+      sinon.stub(dividendDistribution, 'checkpoint').resolves(
+        entityMockUtils.getCheckpointInstance({
+          balance: new BigNumber(10),
+        })
+      );
+
+      const result = await dividendDistribution.getParticipant({
+        identity: did,
+      });
+
+      expect(result).toEqual(null);
+    });
+  });
+
   describe('method: reclaimFunds', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
@@ -346,6 +448,94 @@ describe('DividendDistribution class', () => {
       const queue = await dividendDistribution.reclaimFunds();
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getPaymentHistory', () => {
+    test('should return the amount of the withheld tax', async () => {
+      const blockId = new BigNumber(1);
+      const eventId = 'eventId';
+      const datetime = '2020-10-10';
+      const eventDid = 'eventDid';
+      const balance = new BigNumber(100);
+      const tax = new BigNumber(10);
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfPaymentEventsForCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfPaymentEventsForCA: {
+            totalCount: 1,
+            items: [
+              {
+                blockId: blockId.toNumber(),
+                eventId,
+                datetime,
+                eventDid,
+                balance: balance.toNumber(),
+                tax: tax.toNumber(),
+              },
+            ],
+          },
+        }
+      );
+
+      let result = await dividendDistribution.getPaymentHistory();
+
+      expect(result.data).toEqual([
+        {
+          blockNumber: blockId,
+          date: new Date(`${datetime}Z`),
+          target: entityMockUtils.getIdentityInstance({ did: eventDid }),
+          amount: balance,
+          withheldTax: tax,
+        },
+      ]);
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfPaymentEventsForCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfPaymentEventsForCA: {
+            totalCount: 1,
+            items: undefined,
+          },
+        }
+      );
+
+      result = await dividendDistribution.getPaymentHistory();
+
+      expect(result.data).toEqual([]);
+    });
+
+    test('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfPaymentEventsForCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfPaymentEventsForCA: {
+            totalCount: 0,
+            items: [],
+          },
+        }
+      );
+      const result = await dividendDistribution.getPaymentHistory();
+      expect(result.data).toEqual([]);
     });
   });
 });

@@ -16,7 +16,7 @@ describe('claimDividends procedure', () => {
   const paymentDate = new Date('10/14/1987');
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
@@ -26,21 +26,8 @@ describe('claimDividends procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let claimDividendsTransaction: PolymeshTx<unknown[]>;
 
-  let holderPaidStub: sinon.SinonStub;
-
   beforeAll(() => {
-    entityMockUtils.initMocks({
-      dividendDistributionOptions: {
-        targets: {
-          identities: [],
-          treatment: TargetTreatment.Exclude,
-        },
-        ticker,
-        id,
-        paymentDate,
-        expiryDate,
-      },
-    });
+    entityMockUtils.initMocks();
     dsMockUtils.initMocks({ contextOptions: { did } });
     procedureMockUtils.initMocks();
 
@@ -52,20 +39,6 @@ describe('claimDividends procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     claimDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'claim');
     mockContext = dsMockUtils.getContextInstance();
-    distribution = entityMockUtils.getDividendDistributionInstance({
-      ticker,
-      id,
-      paymentDate,
-      expiryDate,
-      targets: {
-        identities: [],
-        treatment: TargetTreatment.Exclude,
-      },
-    });
-
-    holderPaidStub = dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
-      returnValue: true,
-    });
   });
 
   afterEach(() => {
@@ -136,12 +109,8 @@ describe('claimDividends procedure', () => {
 
   test('should throw an error if the current Identity is not included in the Distribution', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
-      targets: {
-        identities: [entityMockUtils.getIdentityInstance({ did: 'otherDid' })],
-        treatment: TargetTreatment.Include,
-      },
       paymentDate,
-      expiryDate,
+      getParticipant: null,
     });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -159,14 +128,11 @@ describe('claimDividends procedure', () => {
 
   test('should throw an error if the current Identity has already claimed', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
-      expiryDate,
       paymentDate,
-      targets: {
-        identities: [],
-        treatment: TargetTreatment.Exclude,
+      getParticipant: {
+        paid: true,
       },
     });
-    holderPaidStub.resolves(dsMockUtils.createMockBool(true));
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -181,10 +147,19 @@ describe('claimDividends procedure', () => {
     expect(err.message).toBe('The current Identity has already claimed dividends');
   });
 
-  test('should add a stop sto transaction to the queue', async () => {
+  test('should add a claim dividens transaction to the queue', async () => {
+    distribution = entityMockUtils.getDividendDistributionInstance({
+      paymentDate,
+      getParticipant: {
+        paid: false,
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareClaimDividends.call(proc, { distribution });
+    await prepareClaimDividends.call(proc, {
+      distribution,
+    });
 
     sinon.assert.calledWith(addTransactionStub, claimDividendsTransaction, {}, rawCaId);
   });
