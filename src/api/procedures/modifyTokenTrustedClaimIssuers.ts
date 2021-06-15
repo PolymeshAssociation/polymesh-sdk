@@ -14,10 +14,16 @@ import {
 } from '~/utils/conversion';
 
 export interface ModifyTokenTrustedClaimIssuersAddSetParams {
+  /**
+   * array of Identity IDs
+   */
   claimIssuers: { identity: string | Identity; trustedFor?: ClaimType[] }[];
 }
 
 export interface ModifyTokenTrustedClaimIssuersRemoveParams {
+  /**
+   * array of Identities (or DIDs) of the default claim issuers
+   */
   claimIssuers: (string | Identity)[];
 }
 

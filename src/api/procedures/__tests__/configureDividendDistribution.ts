@@ -75,7 +75,7 @@ describe('configureDividendDistribution procedure', () => {
   let perShare: BigNumber;
   let maxAmount: BigNumber;
   let paymentDate: Date;
-  let expiryDate: null | Date;
+  let expiryDate: Date;
 
   let rawPortfolioNumber: PortfolioNumber;
   let rawCurrency: Ticker;
@@ -367,11 +367,45 @@ describe('configureDividendDistribution procedure', () => {
     });
   });
 
-  test('should add a distribute transaction to the queue', async () => {
+  test('should throw an error if the origin Portfolio does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
-      { portfolio: originPortfolio }
+      {
+        portfolio: entityMockUtils.getNumberedPortfolioInstance({
+          exists: false,
+        }),
+      }
     );
+
+    let err;
+
+    try {
+      await prepareConfigureDividendDistribution.call(proc, {
+        ticker,
+        declarationDate,
+        checkpoint: entityMockUtils.getCheckpointInstance(),
+        description,
+        targets,
+        defaultTaxWithholding,
+        taxWithholdings,
+        originPortfolio,
+        currency,
+        perShare,
+        maxAmount,
+        paymentDate,
+        expiryDate,
+      });
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe("The Portfolio doesn't exist");
+  });
+
+  test('should add a distribute transaction to the queue', async () => {
+    let proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
+      portfolio: originPortfolio,
+    });
 
     const result = await prepareConfigureDividendDistribution.call(proc, {
       ticker,
@@ -405,6 +439,80 @@ describe('configureDividendDistribution procedure', () => {
     );
 
     expect(result).toEqual(distribution);
+
+    await prepareConfigureDividendDistribution.call(proc, {
+      ticker,
+      declarationDate,
+      checkpoint,
+      description,
+      targets,
+      defaultTaxWithholding,
+      taxWithholdings,
+      originPortfolio: originPortfolio.id,
+      currency,
+      perShare,
+      maxAmount,
+      paymentDate,
+      expiryDate,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      distributeTransaction,
+      sinon.match({
+        resolvers: sinon.match.array,
+      }),
+      rawCaId,
+      rawPortfolioNumber,
+      rawCurrency,
+      rawPerShare,
+      rawAmount,
+      rawPaymentAt,
+      rawExpiresAt
+    );
+
+    proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
+      portfolio: entityMockUtils.getDefaultPortfolioInstance({
+        did: 'someDid',
+        tokenBalances: [
+          {
+            token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+            total: new BigNumber(1000001),
+            locked: new BigNumber(0),
+            free: new BigNumber(1000001),
+          },
+        ],
+      }),
+    });
+
+    await prepareConfigureDividendDistribution.call(proc, {
+      ticker,
+      declarationDate,
+      checkpoint,
+      description,
+      targets,
+      defaultTaxWithholding,
+      taxWithholdings,
+      currency,
+      perShare,
+      maxAmount,
+      paymentDate,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      distributeTransaction,
+      sinon.match({
+        resolvers: sinon.match.array,
+      }),
+      rawCaId,
+      null,
+      rawCurrency,
+      rawPerShare,
+      rawAmount,
+      rawPaymentAt,
+      null
+    );
   });
 
   describe('dividendDistributionResolver', () => {
@@ -552,6 +660,15 @@ describe('configureDividendDistribution procedure', () => {
 
       expect(result).toEqual({
         portfolio: originPortfolio,
+      });
+
+      const portfolioId = new BigNumber(1);
+      result = await boundFunc({ originPortfolio: portfolioId } as Params);
+
+      expect(result).toEqual({
+        portfolio: entityMockUtils.getNumberedPortfolioInstance({
+          id: portfolioId,
+        }),
       });
 
       result = await boundFunc({} as Params);

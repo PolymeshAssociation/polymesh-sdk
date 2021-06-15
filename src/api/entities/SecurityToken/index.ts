@@ -158,8 +158,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Transfer ownership of the Security Token to another Identity. This generates an authorization request that must be accepted
    *   by the destinatary
    *
-   * @param args.expiry - date at which the authorization request for transfer expires (optional)
-   *
    * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
@@ -172,7 +170,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Modify some properties of the Security Token
    *
-   * @param args.makeDivisible - makes an indivisible token divisible
    * @throws if the passed values result in no changes being made to the token
    *
    * @note required role:
@@ -381,9 +378,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Assign a new primary issuance agent for the Security Token
    *
-   * @param args.target - identity to be set as primary issuance agent
-   * @param args.requestExpiry - date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
-   *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
@@ -456,9 +450,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   /**
    * Force a transfer from a given Portfolio to the PIA’s default Portfolio
-   *
-   * @param args.originPortfolio - portfolio (or portfolio ID) from which tokens will be transferred
-   * @param args.amount - amount of tokens to transfer
    *
    * @note required role:
    *   - Security Token Primary Issuance Agent

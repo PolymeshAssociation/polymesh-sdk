@@ -4,6 +4,7 @@ import {
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
+  QueryGetHistoryOfPaymentEventsForCaArgs,
   QueryGetWithholdingTaxesOfCaArgs,
   QueryInvestmentsArgs,
   QueryIssuerDidsWithClaimsByTargetArgs,
@@ -627,6 +628,50 @@ export function getWithholdingTaxesOfCa(
     query GetWithholdingTaxesOfCAQuery($CAId: CAId!, $fromDate: DateTime, $toDate: DateTime) {
       getWithholdingTaxesOfCA(CAId: $CAId, fromDate: $fromDate, toDate: $toDate) {
         taxes
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get history of claims for a distribution
+ */
+export function getHistoryOfPaymentEventsForCa(
+  variables: QueryGetHistoryOfPaymentEventsForCaArgs
+): GraphqlQuery<QueryGetHistoryOfPaymentEventsForCaArgs> {
+  const query = gql`
+    query GetHistoryOfPaymentEventsForCAQuery(
+      $CAId: CaId!
+      $fromDate: String
+      $toDate: String
+      $count: Int
+      $skip: Int
+    ) {
+      getHistoryOfPaymentEventsForCA(
+        CAId: $CAId
+        fromDate: $fromDate
+        toDate: $toDate
+        count: $count
+        skip: $skip
+      ) {
+        totalCount
+        items {
+          blockId
+          eventId
+          eventDid
+          datetime
+          ticker
+          localId
+          balance
+          tax
+        }
       }
     }
   `;

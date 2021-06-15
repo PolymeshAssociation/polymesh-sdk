@@ -11,8 +11,17 @@ import {
 } from '~/utils/conversion';
 
 export interface TransferPolyxParams {
+  /**
+   * account that will receive the POLYX
+   */
   to: string | Account;
+  /**
+   * amount of POLYX to be transferred
+   */
   amount: BigNumber;
+  /**
+   * identifier string to help differentiate transfers
+   */
   memo?: string;
 }
 

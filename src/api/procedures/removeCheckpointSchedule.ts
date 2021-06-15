@@ -6,6 +6,9 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface RemoveCheckpointScheduleParams {
+  /**
+   * schedule (or ID) of the schedule to be removed
+   */
   schedule: CheckpointSchedule | BigNumber;
 }
 
