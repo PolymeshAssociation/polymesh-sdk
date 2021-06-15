@@ -958,6 +958,14 @@ export interface DistributionWithDetails {
   details: DividendDistributionDetails;
 }
 
+export interface DistributionPayment {
+  blockNumber: BigNumber;
+  date: Date;
+  target: Identity;
+  amount: BigNumber;
+  withheldTax: BigNumber;
+}
+
 export interface ProcedureMethod<
   MethodArgs,
   ProcedureReturnValue,
