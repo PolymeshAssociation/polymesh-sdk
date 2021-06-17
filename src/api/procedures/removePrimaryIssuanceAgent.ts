@@ -30,7 +30,7 @@ export async function prepareRemovePrimaryIssuanceAgent(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  this.addTransaction(asset.removePrimaryIssuanceAgent, {}, rawTicker);
+  // this.addTransaction(asset.removePrimaryIssuanceAgent, {}, rawTicker);
 }
 
 /**

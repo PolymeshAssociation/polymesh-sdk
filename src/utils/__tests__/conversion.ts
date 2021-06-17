@@ -38,6 +38,7 @@ import {
   DocumentUri,
   FundingRoundName,
   IdentityId,
+  ModuleName,
   Permissions as MeshPermissions,
   ProtocolOp,
   Scope as MeshScope,
@@ -86,6 +87,7 @@ import {
   KnownTokenType,
   Permissions,
   PermissionsLike,
+  PermissionType,
   PortfolioMovement,
   Scope,
   ScopeType,
@@ -872,9 +874,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     };
 
     const rawPermissions = dsMockUtils.createMockPermissions({
-      asset: null,
-      extrinsic: null,
-      portfolio: null,
+      asset: dsMockUtils.createMockAssetPermissions('Whole'),
+      portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
     });
 
     createTypeStub.withArgs('Permissions', sinon.match(sinon.match.object)).returns(rawPermissions);
@@ -1011,10 +1013,14 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.JoinIdentity,
-      value: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
+      value: { tokens: null, portfolios: null, transactions: null, transactionGroups: [] },
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      JoinIdentity: dsMockUtils.createMockPermissions({ asset: [], portfolio: [], extrinsic: [] }),
+      JoinIdentity: dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      }),
     });
 
     result = authorizationDataToAuthorization(authorizationData, context);
@@ -1108,9 +1114,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     createTypeStub
       .withArgs('Permissions', {
-        asset: null,
-        extrinsic: null,
-        portfolio: null,
+        asset: 'Whole',
+        extrinsic: 'Whole',
+        portfolio: 'Whole',
       })
       .returns(fakeResult);
 
@@ -1120,10 +1126,19 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const ticker = 'SOMETICKER';
     const did = 'someDid';
     value = {
-      tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
-      transactions: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+      tokens: {
+        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+        type: PermissionType.Include,
+      },
       transactionGroups: [],
-      portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+      portfolios: {
+        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+        type: PermissionType.Include,
+      },
     };
 
     const rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -1133,20 +1148,30 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     });
     createTypeStub
       .withArgs('Permissions', {
-        asset: [rawTicker],
-        extrinsic: [
-          /* eslint-disable @typescript-eslint/naming-convention */
-          {
-            pallet_name: 'Identity',
-            dispatchable_names: ['add_claim'],
-          },
-          {
-            pallet_name: 'Sto',
-            dispatchable_names: ['create_fundraiser', 'invest'],
-          },
-          /* eslint-enable @typescript-eslint/naming-convention */
-        ],
-        portfolio: [rawPortfolioId],
+        asset: {
+          These: [rawTicker],
+        },
+        extrinsic: {
+          These: [
+            /* eslint-disable @typescript-eslint/naming-convention */
+            {
+              pallet_name: 'Identity',
+              dispatchable_names: {
+                These: ['add_claim'],
+              },
+            },
+            {
+              pallet_name: 'Sto',
+              dispatchable_names: {
+                These: ['create_fundraiser', 'invest'],
+              },
+            },
+            /* eslint-enable @typescript-eslint/naming-convention */
+          ],
+        },
+        portfolio: {
+          These: [rawPortfolioId],
+        },
       })
       .returns(fakeResult);
     createTypeStub.withArgs('Ticker', ticker).returns(rawTicker);
@@ -1158,27 +1183,40 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const tickers = ['BTICKER', 'ATICKER', 'CTICKER'];
 
     value = {
-      tokens: tickers.map(t => entityMockUtils.getSecurityTokenInstance({ ticker: t })),
-      transactions: [TxTags.identity.AddClaim],
+      tokens: {
+        values: tickers.map(t => entityMockUtils.getSecurityTokenInstance({ ticker: t })),
+        type: PermissionType.Include,
+      },
+      transactions: {
+        values: [TxTags.identity.AddClaim],
+        type: PermissionType.Include,
+      },
       transactionGroups: [],
-      portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+      portfolios: {
+        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+        type: PermissionType.Include,
+      },
     };
 
-    const extrinsic = [
-      /* eslint-disable @typescript-eslint/naming-convention */
-      {
-        pallet_name: 'Identity',
-        dispatchable_names: ['add_claim'],
-      },
-      /* eslint-enable @typescript-eslint/naming-convention */
-    ];
+    const extrinsic = {
+      These: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Identity',
+          dispatchable_names: {
+            These: ['add_claim'],
+          },
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
 
     const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
     createTypeStub
       .withArgs('Permissions', {
-        asset: [rawTickers[1], rawTickers[0], rawTickers[2]],
+        asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
         extrinsic,
-        portfolio: [rawPortfolioId],
+        portfolio: { These: [rawPortfolioId] },
       })
       .returns(fakeResult);
 
@@ -1193,35 +1231,47 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const ticker = 'someTicker';
     const did = 'someDid';
     let fakeResult: Permissions = {
-      tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
-      transactions: [
-        TxTags.identity.AddClaim,
-        TxTags.confidential.AddRangeProof,
-        TxTags.confidential.AddVerifyRangeProof,
-      ],
-      transactionGroups: [],
-      portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+      tokens: {
+        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        type: PermissionType.Include,
+        values: [ModuleName.Identity, ModuleName.Confidential],
+        exceptions: [],
+      },
+      transactionGroups: [TxGroup.ClaimsManagement],
+      portfolios: {
+        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+        type: PermissionType.Include,
+      },
     };
     let permissions = dsMockUtils.createMockPermissions({
-      asset: [dsMockUtils.createMockTicker(ticker)],
-      extrinsic: [
-        /* eslint-disable @typescript-eslint/naming-convention */
-        dsMockUtils.createMockPalletPermissions({
-          pallet_name: dsMockUtils.createMockPalletName('Identity'),
-          dispatchable_names: [dsMockUtils.createMockDispatchableName('add_claim')],
-        }),
-        dsMockUtils.createMockPalletPermissions({
-          pallet_name: dsMockUtils.createMockPalletName('Confidential'),
-          dispatchable_names: null,
-        }),
-        /* eslint-enable @typescript-eslint/naming-convention */
-      ],
-      portfolio: [
-        dsMockUtils.createMockPortfolioId({
-          did: dsMockUtils.createMockIdentityId(did),
-          kind: dsMockUtils.createMockPortfolioKind('Default'),
-        }),
-      ],
+      asset: dsMockUtils.createMockAssetPermissions({
+        These: [dsMockUtils.createMockTicker(ticker)],
+      }),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions({
+        These: [
+          /* eslint-disable @typescript-eslint/naming-convention */
+          dsMockUtils.createMockPalletPermissions({
+            pallet_name: dsMockUtils.createMockPalletName('Identity'),
+            dispatchable_names: [dsMockUtils.createMockDispatchableName('add_claim')],
+          }),
+          dsMockUtils.createMockPalletPermissions({
+            pallet_name: dsMockUtils.createMockPalletName('Confidential'),
+            dispatchable_names: null,
+          }),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        ],
+      }),
+      portfolio: dsMockUtils.createMockPortfolioPermissions({
+        These: [
+          dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(did),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+        ],
+      }),
     });
 
     let result = meshPermissionsToPermissions(permissions, context);
@@ -1234,9 +1284,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       portfolios: null,
     };
     permissions = dsMockUtils.createMockPermissions({
-      asset: null,
-      extrinsic: null,
-      portfolio: null,
+      asset: dsMockUtils.createMockAssetPermissions('Whole'),
+      portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
     });
 
     result = meshPermissionsToPermissions(permissions, context);
@@ -2179,63 +2229,6 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
   });
 });
 
-describe('authTargetToAuthIdentifier and authIdentifierToAuthTarget', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('authTargetToAuthIdentifier should convert an AuthTarget to a polkadot AuthIdentifer object', () => {
-    const target = { type: SignerType.Identity, value: 'someDid' };
-    const authId = new BigNumber(1);
-    const value = {
-      target,
-      authId,
-    };
-    const fakeResult = ('convertedAuthIdentifier' as unknown) as AuthIdentifier;
-    const context = dsMockUtils.getContextInstance();
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthIdentifier', {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        auth_id: numberToU64(authId, context),
-        signatory: signerValueToSignatory(target, context),
-      })
-      .returns(fakeResult);
-
-    const result = authTargetToAuthIdentifier(value, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-
-  test('authIdentifierToAuthTarget should convert a polkadot AuthIdentifier object to an AuthTarget', () => {
-    const target = { type: SignerType.Identity, value: 'someDid' };
-    const authId = new BigNumber(1);
-    const fakeResult = {
-      target,
-      authId,
-    };
-    const authIdentifier = dsMockUtils.createMockAuthIdentifier({
-      signatory: dsMockUtils.createMockSignatory({
-        Identity: dsMockUtils.createMockIdentityId(target.value),
-      }),
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-    });
-
-    const result = authIdentifierToAuthTarget(authIdentifier);
-    expect(result).toEqual(fakeResult);
-  });
-});
-
 describe('cddStatusToBoolean', () => {
   test('cddStatusToBoolean should convert a valid CDD status to a true boolean', async () => {
     const cddStatusMock = dsMockUtils.createMockCddStatus({
@@ -3012,7 +3005,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         identity: new Identity({ did }, context),
       },
       {
-        type: ConditionType.IsPrimaryIssuanceAgent,
+        type: ConditionType.IsExternalAgent,
         target: ConditionTarget.Receiver,
       },
     ];
@@ -3025,8 +3018,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const createTypeStub = dsMockUtils.getCreateTypeStub();
 
     conditions.forEach(({ type }) => {
-      const meshType =
-        type === ConditionType.IsPrimaryIssuanceAgent ? ConditionType.IsIdentity : type;
+      const meshType = type === ConditionType.IsExternalAgent ? ConditionType.IsIdentity : type;
       createTypeStub
         .withArgs(
           'Condition',
@@ -3127,7 +3119,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         trustedClaimIssuers: issuerDids,
       },
       {
-        type: ConditionType.IsPrimaryIssuanceAgent,
+        type: ConditionType.IsExternalAgent,
         target: ConditionTarget.Receiver,
         trustedClaimIssuers: issuerDids,
       },
@@ -3190,7 +3182,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
       }),
       dsMockUtils.createMockCondition({
         condition_type: dsMockUtils.createMockConditionType({
-          IsIdentity: dsMockUtils.createMockTargetIdentity('PrimaryIssuanceAgent'),
+          IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
         }),
         issuers,
       }),
@@ -3515,7 +3507,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       },
       {
         condition: {
-          type: ConditionType.IsPrimaryIssuanceAgent,
+          type: ConditionType.IsExternalAgent,
           target: ConditionTarget.Receiver,
           trustedClaimIssuers: issuerDids,
         },
@@ -3597,7 +3589,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
           condition_type: dsMockUtils.createMockConditionType({
-            IsIdentity: dsMockUtils.createMockTargetIdentity('PrimaryIssuanceAgent'),
+            IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
           issuers,
         }),
@@ -4090,9 +4082,9 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
     const mockAccountId = dsMockUtils.createMockAccountId(address);
     const mockSignatory = dsMockUtils.createMockSignatory({ Account: mockAccountId });
     const mockPermissions = dsMockUtils.createMockPermissions({
-      asset: null,
-      extrinsic: null,
-      portfolio: null,
+      asset: dsMockUtils.createMockAssetPermissions('Whole'),
+      portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
     });
     const fakeResult = dsMockUtils.createMockSecondaryKey({
       signer: mockSignatory,
@@ -4614,29 +4606,53 @@ describe('permissionsLikeToPermissions', () => {
     const portfolio = new DefaultPortfolio({ did: 'someDid' }, context);
 
     args = {
-      tokens: [firstToken, ticker],
-      transactions: [TxTags.asset.Transfer],
+      tokens: {
+        values: [firstToken, ticker],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        values: [TxTags.asset.Transfer],
+        type: PermissionType.Include,
+      },
       transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
-      portfolios: [portfolio],
+      portfolios: {
+        values: [portfolio],
+        type: PermissionType.Include,
+      },
     };
+
     result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
-      tokens: [firstToken, secondToken],
-      transactions: [
-        TxTags.asset.Transfer,
-        TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
-        TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
-      ],
-      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
-      portfolios: [portfolio],
+      tokens: {
+        values: [firstToken, secondToken],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        values: [TxTags.asset.Transfer],
+        type: PermissionType.Include,
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [portfolio],
+        type: PermissionType.Include,
+      },
     });
 
     result = permissionsLikeToPermissions({}, context);
     expect(result).toEqual({
-      tokens: [],
-      transactions: [],
+      tokens: {
+        values: [],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        values: [],
+        type: PermissionType.Include,
+      },
       transactionGroups: [],
-      portfolios: [],
+      portfolios: {
+        values: [],
+        type: PermissionType.Include,
+      },
     });
   });
 });
@@ -4901,24 +4917,27 @@ describe('txGroupToTxTags', () => {
 describe('txTagsToTxGroups', () => {
   test('should return all completed groups in the tag array', () => {
     expect(
-      txTagsToTxGroups([
-        TxTags.identity.AddInvestorUniquenessClaim,
-        TxTags.portfolio.MovePortfolioFunds,
-        TxTags.settlement.AddInstruction,
-        TxTags.settlement.AddAndAffirmInstruction,
-        TxTags.settlement.AffirmInstruction,
-        TxTags.settlement.RejectInstruction,
-        TxTags.settlement.CreateVenue,
-        TxTags.asset.MakeDivisible,
-        TxTags.asset.RenameAsset,
-        TxTags.asset.SetFundingRound,
-        TxTags.asset.AddDocuments,
-        TxTags.asset.RemoveDocuments,
-        TxTags.asset.Freeze,
-        TxTags.asset.Unfreeze,
-        TxTags.identity.AddAuthorization,
-        TxTags.identity.RemoveAuthorization,
-      ])
+      txTagsToTxGroups({
+        values: [
+          TxTags.identity.AddInvestorUniquenessClaim,
+          TxTags.portfolio.MovePortfolioFunds,
+          TxTags.settlement.AddInstruction,
+          TxTags.settlement.AddAndAffirmInstruction,
+          TxTags.settlement.AffirmInstruction,
+          TxTags.settlement.RejectInstruction,
+          TxTags.settlement.CreateVenue,
+          TxTags.asset.MakeDivisible,
+          TxTags.asset.RenameAsset,
+          TxTags.asset.SetFundingRound,
+          TxTags.asset.AddDocuments,
+          TxTags.asset.RemoveDocuments,
+          TxTags.asset.Freeze,
+          TxTags.asset.Unfreeze,
+          TxTags.identity.AddAuthorization,
+          TxTags.identity.RemoveAuthorization,
+        ],
+        type: PermissionType.Include,
+      })
     ).toEqual([
       TxGroup.AdvancedTokenManagement,
       TxGroup.Distribution,
@@ -4927,17 +4946,20 @@ describe('txTagsToTxGroups', () => {
     ]);
 
     expect(
-      txTagsToTxGroups([
-        TxTags.identity.AddInvestorUniquenessClaim,
-        TxTags.portfolio.MovePortfolioFunds,
-        TxTags.settlement.AddInstruction,
-        TxTags.settlement.AddAndAffirmInstruction,
-        TxTags.settlement.AffirmInstruction,
-        TxTags.settlement.RejectInstruction,
-        TxTags.settlement.CreateVenue,
-        TxTags.identity.AddAuthorization,
-        TxTags.identity.RemoveAuthorization,
-      ])
+      txTagsToTxGroups({
+        values: [
+          TxTags.identity.AddInvestorUniquenessClaim,
+          TxTags.portfolio.MovePortfolioFunds,
+          TxTags.settlement.AddInstruction,
+          TxTags.settlement.AddAndAffirmInstruction,
+          TxTags.settlement.AffirmInstruction,
+          TxTags.settlement.RejectInstruction,
+          TxTags.settlement.CreateVenue,
+          TxTags.identity.AddAuthorization,
+          TxTags.identity.RemoveAuthorization,
+        ],
+        type: PermissionType.Include,
+      })
     ).toEqual([TxGroup.Distribution, TxGroup.PortfolioManagement]);
   });
 });

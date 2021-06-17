@@ -49,6 +49,7 @@ import {
   AssetIdentifier,
   AssetName,
   AssetOwnershipRelation,
+  AssetPermissions,
   AssetType,
   Authorization,
   AuthorizationData,
@@ -84,6 +85,7 @@ import {
   DocumentUri,
   EcdsaSignature,
   EthereumAddress,
+  ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -105,6 +107,7 @@ import {
   PipsMetadata,
   PortfolioId,
   PortfolioKind,
+  PortfolioPermissions,
   PortfolioValidityResult,
   PosRatio,
   PriceTier,
@@ -1916,21 +1919,52 @@ export const createMockPalletPermissions = (permissions?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPermissions = (permissions?: {
-  asset: Ticker[] | null;
-  extrinsic: PalletPermissions[] | null;
-  portfolio: PortfolioId[] | null;
-}): Permissions => {
-  const aux = permissions || { asset: null, extrinsic: null, portfolio: null };
+// export const _createMockPermissions = (permissions?: {
+//   asset: Ticker[] | null;
+//   extrinsic: PalletPermissions[] | null;
+//   portfolio: PortfolioId[] | null;
+// }): Permissions => {
+//   const aux = permissions || { asset: null, extrinsic: null, portfolio: null };
 
-  const { asset, extrinsic, portfolio } = aux;
+//   const { asset, extrinsic, portfolio } = aux;
+
+//   const perms = {
+//     asset: asset ? createMockOption(asset as Vec<Ticker>) : createMockOption(),
+//     extrinsic: extrinsic
+//       ? createMockOption(extrinsic as Vec<PalletPermissions>)
+//       : createMockOption(),
+//     portfolio: portfolio ? createMockOption(portfolio as Vec<PortfolioId>) : createMockOption(),
+//   };
+
+//   return createMockCodec(
+//     {
+//       ...perms,
+//     },
+//     !permissions
+//   ) as Permissions;
+// };
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPermissions = (permissions?: {
+  asset: AssetPermissions;
+  extrinsic: ExtrinsicPermissions;
+  portfolio: PortfolioPermissions;
+}): Permissions => {
+  const auth = permissions || {
+    asset: createMockAssetPermissions(),
+    extrinsic: createMockExtrinsicPermissions(),
+    portfolio: createMockPortfolioPermissions(),
+  };
+
+  const { asset, extrinsic, portfolio } = auth;
 
   const perms = {
-    asset: asset ? createMockOption(asset as Vec<Ticker>) : createMockOption(),
-    extrinsic: extrinsic
-      ? createMockOption(extrinsic as Vec<PalletPermissions>)
-      : createMockOption(),
-    portfolio: portfolio ? createMockOption(portfolio as Vec<PortfolioId>) : createMockOption(),
+    asset,
+    extrinsic,
+    portfolio,
   };
 
   return createMockCodec(
@@ -1939,6 +1973,33 @@ export const createMockPermissions = (permissions?: {
     },
     !permissions
   ) as Permissions;
+};
+
+/**
+ * @hidden
+ */
+export const createMockAssetPermissions = (
+  assetPermissions?: 'Whole' | { These: Ticker[] } | { Except: Ticker[] }
+): AssetPermissions => {
+  return createMockEnum(assetPermissions) as AssetPermissions;
+};
+
+/**
+ * @hidden
+ */
+export const createMockExtrinsicPermissions = (
+  assetPermissions?: 'Whole' | { These: PalletPermissions[] } | { Except: PalletPermissions[] }
+): ExtrinsicPermissions => {
+  return createMockEnum(assetPermissions) as ExtrinsicPermissions;
+};
+
+/**
+ * @hidden
+ */
+export const createMockPortfolioPermissions = (
+  assetPermissions?: 'Whole' | { These: PortfolioId[] } | { Except: PortfolioId[] }
+): PortfolioPermissions => {
+  return createMockEnum(assetPermissions) as PortfolioPermissions;
 };
 
 /**
@@ -2099,7 +2160,7 @@ export const createMockIdentityClaim = (identityClaim?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTargetIdentity = (
-  targetIdentity?: { Specific: IdentityId } | 'PrimaryIssuanceAgent'
+  targetIdentity?: { Specific: IdentityId } | 'ExternalAgent'
 ): TargetIdentity => createMockEnum(targetIdentity) as TargetIdentity;
 
 /**
