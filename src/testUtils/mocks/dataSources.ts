@@ -1919,35 +1919,6 @@ export const createMockPalletPermissions = (permissions?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-// export const _createMockPermissions = (permissions?: {
-//   asset: Ticker[] | null;
-//   extrinsic: PalletPermissions[] | null;
-//   portfolio: PortfolioId[] | null;
-// }): Permissions => {
-//   const aux = permissions || { asset: null, extrinsic: null, portfolio: null };
-
-//   const { asset, extrinsic, portfolio } = aux;
-
-//   const perms = {
-//     asset: asset ? createMockOption(asset as Vec<Ticker>) : createMockOption(),
-//     extrinsic: extrinsic
-//       ? createMockOption(extrinsic as Vec<PalletPermissions>)
-//       : createMockOption(),
-//     portfolio: portfolio ? createMockOption(portfolio as Vec<PortfolioId>) : createMockOption(),
-//   };
-
-//   return createMockCodec(
-//     {
-//       ...perms,
-//     },
-//     !permissions
-//   ) as Permissions;
-// };
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockPermissions = (permissions?: {
   asset: AssetPermissions;
   extrinsic: ExtrinsicPermissions;
