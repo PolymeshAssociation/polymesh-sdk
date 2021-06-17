@@ -78,7 +78,7 @@ export {
   TransferTokenOwnershipParams,
 } from '~/api/procedures/transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from '~/api/procedures/voteOnProposal';
-export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
+// export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
 export { renamePortfolio, RenamePortfolioParams } from '~/api/procedures/renamePortfolio';
 export { moveFunds, MoveFundsParams } from '~/api/procedures/moveFunds';

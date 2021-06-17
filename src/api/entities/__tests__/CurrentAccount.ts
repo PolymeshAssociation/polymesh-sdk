@@ -9,7 +9,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { Permissions, TxTags } from '~/types';
+import { Permissions, PermissionType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -105,17 +105,25 @@ describe('CurrentAccount class', () => {
 
     test("should return the account's permissions if it is a secondary key", async () => {
       const address = 'someAddress';
-      const permissions = { tokens: [], transactions: [], transactionGroups: [], portfolios: [] };
+      const permissions = {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
       context = dsMockUtils.getContextInstance({
         secondaryKeys: [
           { signer: entityMockUtils.getAccountInstance({ address }), permissions },
           {
             signer: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
             permissions: {
-              tokens: [],
-              transactions: [TxTags.identity.AcceptAuthorization],
+              tokens: null,
+              transactions: {
+                values: [TxTags.identity.AcceptAuthorization],
+                type: PermissionType.Include,
+              },
               transactionGroups: [],
-              portfolios: [],
+              portfolios: null,
             },
           },
         ],
@@ -142,10 +150,10 @@ describe('CurrentAccount class', () => {
       expect(result).toEqual(true);
 
       let permissions: Permissions = {
-        tokens: [],
-        transactions: [],
+        tokens: null,
+        transactions: null,
         transactionGroups: [],
-        portfolios: [],
+        portfolios: null,
       };
       context = dsMockUtils.getContextInstance({
         secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
@@ -153,20 +161,18 @@ describe('CurrentAccount class', () => {
 
       account = new CurrentAccount({ address }, context);
 
-      result = await account.hasPermissions({ tokens: [], portfolios: [], transactions: [] });
-
-      expect(result).toEqual(true);
-
       result = await account.hasPermissions({ tokens: null, portfolios: null, transactions: null });
-
-      expect(result).toEqual(false);
+      expect(result).toEqual(true);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
       permissions = {
-        tokens: [token],
-        transactions: [TxTags.asset.CreateAsset],
+        tokens: { values: [token], type: PermissionType.Include },
+        transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Include },
         transactionGroups: [],
-        portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
+          type: PermissionType.Include,
+        },
       };
       context = dsMockUtils.getContextInstance({
         secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],

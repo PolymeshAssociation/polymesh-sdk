@@ -10,6 +10,7 @@ import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import {
   ClaimType,
   CorporateActionKind,
+  PermissionType,
   SecondaryKey,
   Signer,
   TargetTreatment,
@@ -802,7 +803,12 @@ describe('Context class', () => {
       fakeResult = [
         {
           signer: identity,
-          permissions: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
+          permissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
         },
         {
           signer: account,
@@ -826,17 +832,17 @@ describe('Context class', () => {
           dsMockUtils.createMockSecondaryKey({
             signer: signerIdentityId,
             permissions: dsMockUtils.createMockPermissions({
-              asset: [],
-              portfolio: [],
-              extrinsic: [],
+              asset: dsMockUtils.createMockAssetPermissions('Whole'),
+              extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+              portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
             }),
           }),
           dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
             permissions: dsMockUtils.createMockPermissions({
-              asset: null,
-              portfolio: null,
-              extrinsic: null,
+              asset: dsMockUtils.createMockAssetPermissions(),
+              extrinsic: dsMockUtils.createMockExtrinsicPermissions(),
+              portfolio: dsMockUtils.createMockPortfolioPermissions(),
             }),
           }),
         ],

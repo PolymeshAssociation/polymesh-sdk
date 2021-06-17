@@ -104,6 +104,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
    */
   public remove: ProcedureMethod<RemoveCorporateActionParams, void>;
 
+  // TODO @shuffledex
   /**
    * Retrieve the Security Token's Corporate Actions agent
    */

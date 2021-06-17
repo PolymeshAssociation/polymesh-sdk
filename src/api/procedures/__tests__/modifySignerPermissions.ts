@@ -59,17 +59,17 @@ describe('modifySignerPermissions procedure', () => {
       {
         signer: account,
         permissions: {
-          tokens: [],
-          transactions: [],
+          tokens: null,
+          transactions: null,
           transactionGroups: [],
-          portfolios: [],
+          portfolios: null,
         },
       },
     ];
     let fakeMeshPermissions = dsMockUtils.createMockPermissions({
-      asset: [],
-      extrinsic: [],
-      portfolio: [],
+      asset: dsMockUtils.createMockAssetPermissions(),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions(),
+      portfolio: dsMockUtils.createMockPortfolioPermissions(),
     });
 
     const signerValue = {
@@ -112,9 +112,9 @@ describe('modifySignerPermissions procedure', () => {
       },
     ];
     fakeMeshPermissions = dsMockUtils.createMockPermissions({
-      asset: null,
-      extrinsic: null,
-      portfolio: null,
+      asset: dsMockUtils.createMockAssetPermissions('Whole'),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
     });
 
     permissionsToMeshPermissionsStub.returns(fakeMeshPermissions);
@@ -133,9 +133,9 @@ describe('modifySignerPermissions procedure', () => {
       {
         signer: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
         permissions: {
-          tokens: [],
-          transactions: [],
-          portfolios: [],
+          tokens: null,
+          transactions: null,
+          portfolios: null,
         },
       },
     ];
