@@ -1,3 +1,4 @@
+import { Console } from 'console';
 import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
@@ -93,7 +94,6 @@ export class CurrentAccount extends Account {
       hasTokens = false;
     } else {
       const { type: tokensType, values: tokensValues } = currentTokens;
-
       if (tokens.length === 0) {
         hasTokens = true;
       } else {
