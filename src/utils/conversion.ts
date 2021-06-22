@@ -753,20 +753,21 @@ export function permissionsToMeshPermissions(
 
           pallet.tx.push(dispatchableName);
         } else {
-          const pallet = extrinsicDict[tag];
+          const upperTag = stringUpperFirst(tag);
+          const pallet = extrinsicDict[upperTag];
 
           if (pallet) {
             throw new PolymeshError({
               code: ErrorCode.ValidationError,
               message,
               data: {
-                module: tag,
+                module: upperTag,
                 transactions: pallet,
               },
             });
           }
 
-          extrinsicDict[tag] = null;
+          extrinsicDict[upperTag] = null;
         }
       });
 

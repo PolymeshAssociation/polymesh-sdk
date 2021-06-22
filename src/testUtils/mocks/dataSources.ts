@@ -4,19 +4,7 @@
 
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { Signer } from '@polkadot/api/types';
-import {
-  bool,
-  Bytes,
-  Compact,
-  Enum,
-  Option,
-  Text,
-  u8,
-  U8aFixed,
-  u32,
-  u64,
-  Vec,
-} from '@polkadot/types';
+import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
   AccountData,
@@ -77,6 +65,7 @@ import {
   CountryCode,
   DidRecord,
   DispatchableName,
+  DispatchableNames,
   Distribution,
   Document,
   DocumentHash,
@@ -1894,7 +1883,7 @@ export const createMockFundraiserName = (name?: string): FundraiserName =>
  */
 export const createMockPalletPermissions = (permissions?: {
   pallet_name: PalletName;
-  dispatchable_names: DispatchableName[] | null;
+  dispatchable_names: DispatchableNames | null;
 }): PalletPermissions => {
   const aux = permissions || { pallet_name: createMockPalletName(), dispatchable_names: null };
 
@@ -1902,9 +1891,7 @@ export const createMockPalletPermissions = (permissions?: {
 
   const perms = {
     pallet_name,
-    dispatchable_names: dispatchable_names
-      ? createMockOption(dispatchable_names as Vec<DispatchableName>)
-      : createMockOption(),
+    dispatchable_names,
   };
 
   return createMockCodec(
@@ -1971,6 +1958,15 @@ export const createMockPortfolioPermissions = (
   assetPermissions?: 'Whole' | { These: PortfolioId[] } | { Except: PortfolioId[] }
 ): PortfolioPermissions => {
   return createMockEnum(assetPermissions) as PortfolioPermissions;
+};
+
+/**
+ * @hidden
+ */
+export const createMockDispatchableNames = (
+  dispatchableNames?: 'Whole' | { These: DispatchableName[] } | { Except: DispatchableName[] }
+): DispatchableNames => {
+  return createMockEnum(dispatchableNames) as DispatchableNames;
 };
 
 /**
