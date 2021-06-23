@@ -840,9 +840,9 @@ describe('Context class', () => {
           dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
             permissions: dsMockUtils.createMockPermissions({
-              asset: dsMockUtils.createMockAssetPermissions(),
-              extrinsic: dsMockUtils.createMockExtrinsicPermissions(),
-              portfolio: dsMockUtils.createMockPortfolioPermissions(),
+              asset: dsMockUtils.createMockAssetPermissions('Whole'),
+              extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+              portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
             }),
           }),
         ],
