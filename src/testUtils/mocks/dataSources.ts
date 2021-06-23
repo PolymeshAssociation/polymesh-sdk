@@ -1885,14 +1885,7 @@ export const createMockPalletPermissions = (permissions?: {
   pallet_name: PalletName;
   dispatchable_names: DispatchableNames | null;
 }): PalletPermissions => {
-  const aux = permissions || { pallet_name: createMockPalletName(), dispatchable_names: null };
-
-  const { pallet_name, dispatchable_names } = aux;
-
-  const perms = {
-    pallet_name,
-    dispatchable_names,
-  };
+  const perms = permissions || { pallet_name: createMockPalletName(), dispatchable_names: null };
 
   return createMockCodec(
     {

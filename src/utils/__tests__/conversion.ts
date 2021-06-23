@@ -1440,7 +1440,6 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         Except: [dsMockUtils.createMockTicker(ticker)],
       }),
       extrinsic: dsMockUtils.createMockExtrinsicPermissions({
-        // esto
         Except: [
           /* eslint-disable @typescript-eslint/naming-convention */
           dsMockUtils.createMockPalletPermissions({
@@ -4830,7 +4829,6 @@ describe('permissionsLikeToPermissions', () => {
 
     result = permissionsLikeToPermissions(
       {
-        transactions: undefined,
         transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
       },
       context
