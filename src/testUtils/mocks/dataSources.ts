@@ -1924,18 +1924,10 @@ export const createMockPermissions = (permissions?: {
   extrinsic: ExtrinsicPermissions;
   portfolio: PortfolioPermissions;
 }): Permissions => {
-  const auth = permissions || {
+  const perms = permissions || {
     asset: createMockAssetPermissions(),
     extrinsic: createMockExtrinsicPermissions(),
     portfolio: createMockPortfolioPermissions(),
-  };
-
-  const { asset, extrinsic, portfolio } = auth;
-
-  const perms = {
-    asset,
-    extrinsic,
-    portfolio,
   };
 
   return createMockCodec(
