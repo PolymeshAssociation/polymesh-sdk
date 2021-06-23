@@ -1,4 +1,3 @@
-import { Console } from 'console';
 import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
