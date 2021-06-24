@@ -11,7 +11,15 @@ import {
 } from '~/utils/conversion';
 
 export type ModifyTokenParams =
-  | { makeDivisible?: true; name: string; fundingRound?: string; identifiers?: TokenIdentifier[] }
+  | {
+      /**
+       * makes an indivisible token divisible
+       */
+      makeDivisible?: true;
+      name: string;
+      fundingRound?: string;
+      identifiers?: TokenIdentifier[];
+    }
   | { makeDivisible: true; name?: string; fundingRound?: string; identifiers?: TokenIdentifier[] }
   | { makeDivisible?: true; name?: string; fundingRound: string; identifiers?: TokenIdentifier[] }
   | { makeDivisible?: true; name?: string; fundingRound?: string; identifiers: TokenIdentifier[] };

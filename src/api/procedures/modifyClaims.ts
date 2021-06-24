@@ -37,16 +37,25 @@ import {
 } from '~/utils/conversion';
 
 interface AddClaimsParams {
+  /**
+   * array of claims to be added
+   */
   claims: ClaimTarget[];
   operation: ClaimOperation.Add;
 }
 
 interface EditClaimsParams {
+  /**
+   * array of claims to be edited
+   */
   claims: ClaimTarget[];
   operation: ClaimOperation.Edit;
 }
 
 interface RevokeClaimsParams {
+  /**
+   * array of claims to be revoked
+   */
   claims: Omit<ClaimTarget, 'expiry'>[];
   operation: ClaimOperation.Revoke;
 }

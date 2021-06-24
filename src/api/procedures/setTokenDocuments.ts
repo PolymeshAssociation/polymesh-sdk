@@ -12,6 +12,9 @@ import {
 import { batchArguments } from '~/utils/internal';
 
 export interface SetTokenDocumentsParams {
+  /**
+   * list of documents
+   */
   documents: TokenDocument[];
 }
 

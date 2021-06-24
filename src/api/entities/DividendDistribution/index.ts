@@ -20,16 +20,18 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Distribution } from '~/polkadot';
 import {
   CorporateActionKind,
+  DistributionPayment,
   DividendDistributionDetails,
   Ensured,
   ErrorCode,
   IdentityBalance,
   ProcedureMethod,
+  ResultSet,
   TargetTreatment,
 } from '~/types';
 import { tuple } from '~/types/utils';
@@ -40,7 +42,7 @@ import {
   corporateActionIdentifierToCaId,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { createProcedureMethod, getDid, xor } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, xor } from '~/utils/internal';
 
 import { DistributionParticipant } from './types';
 
@@ -365,8 +367,6 @@ export class DividendDistribution extends CorporateAction {
       getWithholdingTaxesOfCa({
         // eslint-disable-next-line @typescript-eslint/naming-convention
         CAId: { ticker, localId: id.toNumber() },
-        fromDate: null,
-        toDate: null,
       })
     );
 
@@ -374,6 +374,62 @@ export class DividendDistribution extends CorporateAction {
     const { taxes } = result.data.getWithholdingTaxesOfCA!;
 
     return new BigNumber(taxes);
+  }
+
+  /**
+   * Retrieve the payment history for this Distribution
+   *
+   * @note uses the middleware
+   * @note supports pagination
+   */
+  public async getPaymentHistory(
+    opts: { size?: number; start?: number } = {}
+  ): Promise<ResultSet<DistributionPayment>> {
+    const { id, ticker, context } = this;
+
+    const { size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'getHistoryOfPaymentEventsForCA'>>(
+      getHistoryOfPaymentEventsForCa({
+        CAId: { ticker, localId: id.toNumber() },
+        fromDate: null,
+        toDate: null,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
+    } = result;
+
+    const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult;
+
+    const data: DistributionPayment[] = [];
+    let next = null;
+
+    if (items) {
+      items.forEach(item => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { blockId, datetime, eventDid: did, balance, tax } = item!;
+
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          date: new Date(datetime),
+          target: new Identity({ did }, context),
+          amount: new BigNumber(balance),
+          withheldTax: new BigNumber(tax),
+        });
+      });
+
+      next = calculateNextKey(count, size, start);
+    }
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**

@@ -8,6 +8,9 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
 
 export interface LinkCaDocsParams {
+  /**
+   * list of documents
+   */
   documents: TokenDocument[];
 }
 
