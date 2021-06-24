@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { CurrentAccount } from '~/api/entities/CurrentAccount';
 import { Account, Context, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -64,6 +65,7 @@ jest.mock(
 describe('Context class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -77,16 +79,19 @@ describe('Context class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   test('should throw an error if accessing the transaction submodule without an active account', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: dsMockUtils.getMiddlewareApi(),
+      keyring: dsMockUtils.getKeyringInstance({ getPairs: [] }),
     });
 
     expect(() => context.polymeshApi.tx).toThrow(
@@ -168,14 +173,12 @@ describe('Context class', () => {
   });
 
   describe('method: create', () => {
-    const hash = 'someBlockHash';
-
     beforeEach(() => {
       dsMockUtils.createQueryStub('balances', 'totalIssuance', {
         returnValue: dsMockUtils.createMockBalance(100),
       });
       dsMockUtils.createQueryStub('system', 'blockHash', {
-        returnValue: dsMockUtils.createMockHash(hash),
+        returnValue: dsMockUtils.createMockHash('someBlockHash'),
       });
     });
 
@@ -191,13 +194,13 @@ describe('Context class', () => {
 
     test('should create a Context object from a seed with Pair attached', async () => {
       const newPair = {
-        address: 'someAddress1',
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         meta: {},
         publicKey: 'publicKey',
       };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromSeed: newPair,
+          getPairs: [newPair],
         },
       });
 
@@ -211,7 +214,13 @@ describe('Context class', () => {
     });
 
     test('should create a Context object from a keyring with Pair attached', async () => {
-      const pairs = [{ address: 'someAddress', meta: {}, publicKey: 'publicKey' }];
+      const pairs = [
+        {
+          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+          meta: {},
+          publicKey: 'publicKey',
+        },
+      ];
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: pairs,
@@ -231,13 +240,13 @@ describe('Context class', () => {
 
     test('should create a Context object from a uri with Pair attached', async () => {
       const newPair = {
-        address: 'someAddress',
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         meta: {},
         publicKey: 'publicKey',
       };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromUri: newPair,
+          getPairs: [newPair],
         },
       });
 
@@ -252,13 +261,13 @@ describe('Context class', () => {
 
     test('should create a Context object from a mnemonic with Pair attached', async () => {
       const newPair = {
-        address: 'someAddress',
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         meta: {},
         publicKey: 'publicKey',
       };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromMnemonic: newPair,
+          getPairs: [newPair],
         },
       });
 
@@ -276,15 +285,9 @@ describe('Context class', () => {
       dsMockUtils.createRpcStub('system', 'properties', {
         returnValue: { ss58Format: dsMockUtils.createMockOption() },
       });
-
-      const newPair = {
-        address: 'someAddress',
-        meta: {},
-        publicKey: 'publicKey',
-      };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromSeed: newPair,
+          getPairs: [],
         },
       });
 
@@ -298,10 +301,10 @@ describe('Context class', () => {
   });
 
   describe('method: getAccounts', () => {
-    test('should retrieve an array of addresses and metadata', async () => {
+    test('should retrieve an array of Accounts', async () => {
       const pairs = [
         {
-          address: '01',
+          address: '5GNWrbft4pJcYSak9tkvUy89e2AKimEwHb6CKaJq81KHEj8e',
           meta: {
             name: 'name 01',
           },
@@ -309,7 +312,7 @@ describe('Context class', () => {
           publicKey: 'publicKey',
         },
         {
-          address: '02',
+          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
           meta: {},
           somethingElse: false,
           publicKey: 'publicKey',
@@ -326,27 +329,47 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      const result = context.getAccounts();
+      let result = context.getAccounts();
       expect(result[0].address).toBe(pairs[0].address);
       expect(result[1].address).toBe(pairs[1].address);
-      expect(result[0].name).toBe(pairs[0].meta.name);
-      expect(result[1].name).toBe(undefined);
-    });
-  });
+      expect(result[0] instanceof CurrentAccount).toBe(true);
+      expect(result[1] instanceof Account).toBe(true);
 
-  describe('method: setPair', () => {
-    test('should throw error if the pair does not exist in the keyring set', async () => {
+      context.setPair(result[1].address);
+
+      result = context.getAccounts();
+      expect(result[1].address).toBe(pairs[0].address);
+      expect(result[0].address).toBe(pairs[1].address);
+      expect(result[0] instanceof CurrentAccount).toBe(true);
+      expect(result[1] instanceof Account).toBe(true);
+    });
+
+    test('should throw an error if there is no Current Account', async () => {
       dsMockUtils.configureMocks({
         keyringOptions: {
-          error: true,
+          getPairs: [],
         },
       });
+
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      await expect(context.setPair('012')).rejects.toThrow(
+      expect(() => context.getAccounts()).toThrow('There is no account associated with the SDK');
+    });
+  });
+
+  describe('method: setPair', () => {
+    test('should throw error if the pair does not exist in the keyring set', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.getKeyringInstance().getPair.throws(new Error('failed'));
+
+      return expect(() => context.setPair('012')).toThrow(
         'The address is not present in the keyring set'
       );
     });
@@ -365,7 +388,7 @@ describe('Context class', () => {
       dsMockUtils.configureMocks({
         keyringOptions: {
           addFromSeed: {
-            address: 'address',
+            address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
             meta: {},
             publicKey,
           },
@@ -384,7 +407,7 @@ describe('Context class', () => {
         .withArgs(newAddress, context)
         .returns(accountId);
 
-      await context.setPair(DUMMY_ACCOUNT_ID);
+      context.setPair(DUMMY_ACCOUNT_ID);
 
       expect(context.currentPair).toEqual(newCurrentPair);
     });
@@ -392,12 +415,17 @@ describe('Context class', () => {
 
   describe('method: accountBalance', () => {
     test('should throw if accountId or currentPair is not set', async () => {
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [],
+        },
+      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      expect(context.accountBalance()).rejects.toThrow(
+      return expect(context.accountBalance()).rejects.toThrow(
         'There is no account associated with the SDK'
       );
     });
@@ -495,18 +523,6 @@ describe('Context class', () => {
   });
 
   describe('method: getCurrentIdentity', () => {
-    beforeAll(() => {
-      entityMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
     test('should return the current Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
@@ -539,20 +555,8 @@ describe('Context class', () => {
   });
 
   describe('method: getCurrentAccount', () => {
-    beforeAll(() => {
-      entityMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
-    test('should return the current account', async () => {
-      const address = 'someAddress';
+    test('should return the current Account', async () => {
+      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const pair = {
         address,
@@ -561,7 +565,7 @@ describe('Context class', () => {
       };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromSeed: pair,
+          getPairs: [pair],
         },
       });
 
@@ -576,6 +580,11 @@ describe('Context class', () => {
     });
 
     test('should throw an error if there is no account associated with the SDK', async () => {
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [],
+        },
+      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -596,13 +605,13 @@ describe('Context class', () => {
   describe('method: getCurrentPair', () => {
     test('should return the current keyring pair', async () => {
       const pair = {
-        address: 'someAddress1',
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         meta: {},
         publicKey: 'publicKey',
       };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromSeed: pair,
+          getPairs: [pair],
         },
       });
 
@@ -618,6 +627,11 @@ describe('Context class', () => {
     });
 
     test("should throw an error if the current pair isn't defined", async () => {
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [],
+        },
+      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -632,14 +646,14 @@ describe('Context class', () => {
   describe('method: getSigner', () => {
     test('should return the signer address if the current pair is locked', async () => {
       const pair = {
-        address: 'someAddress1',
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         meta: {},
         publicKey: 'publicKey',
         isLocked: true,
       };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromSeed: pair,
+          getPairs: [pair],
         },
       });
 
@@ -654,14 +668,14 @@ describe('Context class', () => {
 
     test('should return the signer address if the current pair is locked', async () => {
       const pair = {
-        address: 'someAddress1',
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
         meta: {},
         publicKey: 'publicKey',
         isLocked: false,
       };
       dsMockUtils.configureMocks({
         keyringOptions: {
-          addFromSeed: pair,
+          getPairs: [pair],
         },
       });
 
@@ -788,7 +802,6 @@ describe('Context class', () => {
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      entityMockUtils.initMocks();
       signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
       signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
       signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
@@ -842,14 +855,6 @@ describe('Context class', () => {
         ],
       });
       /* eslint-enabled @typescript-eslint/naming-convention */
-    });
-
-    afterEach(() => {
-      entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
     });
 
     test('should return a list of Signers', async () => {
@@ -1539,6 +1544,83 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: addPair', () => {
+    test('should add a new pair to the keyring via seed', async () => {
+      const newPair = {
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [newPair],
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const accountSeed = '0x7'.padEnd(66, '0');
+
+      context.addPair({ accountSeed });
+
+      sinon.assert.calledTwice(dsMockUtils.getKeyringInstance().addFromSeed);
+    });
+
+    test('should add a new pair to the keyring via mnemonic', async () => {
+      const newPair = {
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [newPair],
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const accountMnemonic = 'something';
+
+      context.addPair({ accountMnemonic });
+
+      sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addFromMnemonic, accountMnemonic);
+    });
+
+    test('should add a new pair to the keyring via uri', async () => {
+      const newPair = {
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [newPair],
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const accountUri = 'something';
+
+      context.addPair({ accountUri });
+
+      sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addFromUri, accountUri);
+    });
+  });
+
   describe('method: getDividendDistributionsForTokens', () => {
     afterAll(() => {
       sinon.restore();
@@ -1679,6 +1761,20 @@ describe('Context class', () => {
       expect(result[1].distribution.maxAmount).toEqual(new BigNumber(300000));
       expect(result[1].distribution.expiryDate).toBe(null);
       expect(result[1].distribution.paymentDate).toEqual(new Date('11/26/1989'));
+    });
+  });
+
+  describe('method: clone', () => {
+    test('should return a cloned instance', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const cloned = context.clone();
+
+      expect(cloned).toEqual(context);
     });
   });
 });

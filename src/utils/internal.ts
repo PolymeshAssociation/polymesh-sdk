@@ -11,7 +11,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, map, padEnd } from 'lodash';
+import { add, chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
 import {
@@ -35,6 +35,7 @@ import {
   PaginationOptions,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
+  ProcedureOpts,
   Scope,
   UiKeyring,
 } from '~/types';
@@ -463,18 +464,20 @@ export function createProcedureMethod<
   const { getProcedureAndArgs, transformer } = args;
 
   const method = (
-    methodArgs: MethodArgs
+    methodArgs: MethodArgs,
+    opts: ProcedureOpts = {}
   ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
-    return proc().prepare({ args: procArgs, transformer }, context);
+    return proc().prepare({ args: procArgs, transformer }, context, opts);
   };
 
   method.checkAuthorization = async (
-    methodArgs: MethodArgs
+    methodArgs: MethodArgs,
+    opts: ProcedureOpts = {}
   ): Promise<ProcedureAuthorizationStatus> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
 
-    return proc().checkAuthorization(procArgs, context);
+    return proc().checkAuthorization(procArgs, context, opts);
   };
 
   return method;

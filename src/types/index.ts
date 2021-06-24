@@ -573,7 +573,7 @@ export interface MiddlewareConfig {
 
 export type CommonKeyring = Pick<
   Keyring,
-  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic'
+  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic' | 'addPair'
 >;
 
 export interface UiKeyring {
@@ -931,13 +931,25 @@ export interface DistributionWithDetails {
   details: DividendDistributionDetails;
 }
 
+export interface ProcedureOpts {
+  /**
+   * Account or address of a signing key to replace the current one (for this procedure only)
+   */
+  signer?: string | Account;
+}
+
 export interface ProcedureMethod<
   MethodArgs,
   ProcedureReturnValue,
   ReturnValue = ProcedureReturnValue
 > {
-  (args: MethodArgs): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
-  checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
+  (args: MethodArgs, opts?: ProcedureOpts): Promise<
+    TransactionQueue<ProcedureReturnValue, ReturnValue>
+  >;
+  checkAuthorization: (
+    args: MethodArgs,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
 }
 
 export { TxTags, TxTag };

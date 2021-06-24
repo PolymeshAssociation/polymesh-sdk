@@ -61,13 +61,13 @@ const createReplacementSignature = (_, funcName, type) => {
    * @note this method is of type [[ProcedureMethod]], which means you can call \`${funcName}.checkAuthorization\`
    *   on it to see whether the Current Account has the required permissions to run it
    */
-  public ${funcName}(args: ${methodArgs}): ${returnType} {
+  public ${funcName}(args: ${methodArgs}, opts?: ProcedureOpts): ${returnType} {
     return {} as ${returnType};
   }`;
 };
 
 const createReplacementImport = (_, importStatement) =>
-  `${importStatement}import { TransactionQueue } from '~/internal';\n\n`;
+  `${importStatement}import { ProcedureOpts } from '~/types';\nimport { TransactionQueue } from '~/internal';\n\n`;
 
 const results = replace.sync({
   files: 'src/**/*.ts',

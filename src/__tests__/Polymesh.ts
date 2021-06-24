@@ -734,6 +734,28 @@ describe('Polymesh Class', () => {
     });
   });
 
+  describe('method: getAccounts', () => {
+    test('should return the list of signer accounts associated to the SDK', async () => {
+      const accounts = [
+        entityMockUtils.getCurrentAccountInstance(),
+        entityMockUtils.getAccountInstance(),
+      ];
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          getAccounts: accounts,
+        },
+      });
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      const result = polymesh.getAccounts();
+
+      expect(result).toEqual(accounts);
+    });
+  });
+
   describe('method: isIdentityValid', () => {
     test('should return true if the supplied Identity exists', async () => {
       const did = 'someDid';
@@ -1139,6 +1161,71 @@ describe('Polymesh Class', () => {
 
       await polymesh.disconnect();
       sinon.assert.calledOnce(dsMockUtils.getContextInstance().disconnect);
+    });
+  });
+
+  describe('method: addSigner', () => {
+    test('should call the underlying addPair function', async () => {
+      const pair = {
+        address: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
+        publicKey: 'someKey',
+        meta: {},
+      };
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          addPair: pair,
+        },
+      });
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      let params:
+        | {
+            accountSeed: string;
+          }
+        | {
+            accountUri: string;
+          }
+        | {
+            accountMnemonic: string;
+          } = { accountSeed: '0x1' };
+
+      let account = polymesh.addSigner(params);
+      expect(account.address).toBe(pair.address);
+
+      params = { accountMnemonic: 'something' };
+
+      account = polymesh.addSigner(params);
+      expect(account.address).toBe(pair.address);
+
+      params = { accountUri: '//Something' };
+
+      account = polymesh.addSigner(params);
+      expect(account.address).toBe(pair.address);
+    });
+  });
+
+  describe('method: setSigner', () => {
+    test('should call the underlying setPair function', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      const address = 'address';
+
+      polymesh.setSigner(address);
+      sinon.assert.calledWith(dsMockUtils.getContextInstance().setPair, address);
     });
   });
 });
