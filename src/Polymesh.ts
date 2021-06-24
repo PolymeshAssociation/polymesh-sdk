@@ -718,8 +718,8 @@ export class Polymesh {
    *
    * @note the key must have been previously added via [[addSigner]]
    */
-  public setSigner(address: string): void {
-    this.context.setPair(address);
+  public setSigner(signer: string | Account): void {
+    this.context.setPair(signerToString(signer));
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

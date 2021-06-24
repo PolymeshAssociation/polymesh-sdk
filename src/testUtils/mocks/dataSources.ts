@@ -262,6 +262,13 @@ interface TxMockData {
   resolved: boolean;
 }
 
+interface Pair {
+  address: string;
+  meta: Record<string, unknown>;
+  publicKey: string;
+  isLocked?: boolean;
+}
+
 interface ContextOptions {
   did?: string;
   withSeed?: boolean;
@@ -291,13 +298,6 @@ interface ContextOptions {
   isFrozen?: boolean;
   addPair?: Pair;
   getAccounts?: Account[];
-}
-
-interface Pair {
-  address: string;
-  meta: Record<string, unknown>;
-  publicKey: string;
-  isLocked?: boolean;
 }
 
 interface KeyringOptions {

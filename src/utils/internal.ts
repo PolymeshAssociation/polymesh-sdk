@@ -11,7 +11,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { add, chunk, groupBy, map, padEnd } from 'lodash';
+import { chunk, groupBy, map, padEnd } from 'lodash';
 import { TxTag } from 'polymesh-types/types';
 
 import {
