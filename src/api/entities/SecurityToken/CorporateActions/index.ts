@@ -120,15 +120,15 @@ export class CorporateActions extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const agent = await corporateAction.agent(rawTicker);
+    // const agent = await corporateAction.agent(rawTicker);
 
-    if (agent.isNone) {
-      const token = new SecurityToken({ ticker }, context);
-      const { owner } = await token.details();
-      return owner;
-    }
+    // if (agent.isNone) {
+    const token = new SecurityToken({ ticker }, context);
+    const { owner } = await token.details();
+    return owner;
+    // }
 
-    return new Identity({ did: identityIdToString(agent.unwrap()) }, context);
+    // return new Identity({ did: identityIdToString(agent.unwrap()) }, context);
   }
 
   /**
