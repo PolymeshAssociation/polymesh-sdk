@@ -1,4 +1,3 @@
-import { AddressOrPair } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 import { TxTag } from 'polymesh-types/types';
 
@@ -10,7 +9,7 @@ import {
   PostTransactionValue,
   TransactionQueue,
 } from '~/internal';
-import { ErrorCode, ProcedureAuthorizationStatus } from '~/types';
+import { ErrorCode, ProcedureAuthorizationStatus, ProcedureOpts } from '~/types';
 import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -19,14 +18,13 @@ import {
   ProcedureAuthorization,
   ResolverFunctionArray,
 } from '~/types/internal';
-import { transactionToTxTag } from '~/utils/conversion';
+import { signerToString, transactionToTxTag } from '~/utils/conversion';
 import { batchArguments } from '~/utils/internal';
 
 interface AddTransactionOptsBase<Values extends unknown[]> {
   fee?: BigNumber;
   resolvers?: ResolverFunctionArray<Values>;
   isCritical?: boolean;
-  signer?: AddressOrPair;
   paidByThirdParty?: boolean;
 }
 
@@ -71,8 +69,7 @@ export class Procedure<
   )[] = [];
 
   private _storage: null | Storage = null;
-
-  public context = {} as Context;
+  private _context: null | Context = null;
 
   /**
    * @hidden
@@ -113,8 +110,18 @@ export class Procedure<
    * @hidden
    * Set the context and storage (if not already set)
    */
-  private async setup(args: Args, context: Context): Promise<void> {
-    this.context = context;
+  private async setup(args: Args, context: Context, opts: ProcedureOpts = {}): Promise<void> {
+    if (!this._context) {
+      const ctx = context.clone();
+      const { signer } = opts;
+
+      if (signer) {
+        ctx.setPair(signerToString(signer));
+      }
+
+      this._context = ctx;
+    }
+
     if (!this._storage) {
       this._storage = await this.prepareStorage(args);
     }
@@ -126,7 +133,7 @@ export class Procedure<
    */
   private cleanup(): void {
     this.transactions = [];
-    this.context = {} as Context;
+    this._context = null;
     this._storage = null;
   }
 
@@ -135,9 +142,12 @@ export class Procedure<
    */
   private async _checkAuthorization(
     args: Args,
-    context: Context
+    context: Context,
+    opts?: ProcedureOpts
   ): Promise<ProcedureAuthorizationStatus> {
-    await this.setup(args, context);
+    await this.setup(args, context, opts);
+
+    const { context: ctx } = this;
 
     const checkAuthorizationResult = await this.getAuthorization(args);
 
@@ -145,7 +155,7 @@ export class Procedure<
 
     let identityAllowed: boolean;
     if (typeof identityRoles !== 'boolean') {
-      const identity = await context.getCurrentIdentity();
+      const identity = await ctx.getCurrentIdentity();
       identityAllowed = await identity.hasRoles(identityRoles);
     } else {
       identityAllowed = identityRoles;
@@ -153,13 +163,13 @@ export class Procedure<
 
     let signerAllowed: boolean;
     if (typeof signerPermissions !== 'boolean') {
-      const account = context.getCurrentAccount();
+      const account = ctx.getCurrentAccount();
       signerAllowed = await account.hasPermissions(signerPermissions);
     } else {
       signerAllowed = signerPermissions;
     }
 
-    const accountFrozen = await context.getCurrentAccount().isFrozen();
+    const accountFrozen = await ctx.getCurrentAccount().isFrozen();
 
     return {
       roles: identityAllowed,
@@ -175,10 +185,11 @@ export class Procedure<
    */
   public async checkAuthorization(
     args: Args,
-    context: Context
+    context: Context,
+    opts?: ProcedureOpts
   ): Promise<ProcedureAuthorizationStatus> {
     try {
-      const status = await this._checkAuthorization(args, context);
+      const status = await this._checkAuthorization(args, context, opts);
 
       return status;
     } finally {
@@ -192,18 +203,21 @@ export class Procedure<
    * @param args.args - arguments required to prepare the queue
    * @param args.transformer - optional function that transforms the Procedure result
    * @param context - context in which the resulting queue will run
+   * @param opts.signer - address that will be used as a signer for this procedure
+   *   (it must have already been added to the keyring)
    */
   public async prepare<QueueReturnType>(
     args: {
       args: Args;
       transformer?: (value: ReturnValue) => QueueReturnType | Promise<QueueReturnType>;
     },
-    context: Context
+    context: Context,
+    opts?: ProcedureOpts
   ): Promise<TransactionQueue<ReturnValue, QueueReturnType>> {
     try {
       const { args: procArgs, transformer } = args;
 
-      await this.setup(procArgs, context);
+      await this.setup(procArgs, context, opts);
 
       const { roles, permissions, accountFrozen } = await this._checkAuthorization(
         procArgs,
@@ -287,14 +301,11 @@ export class Procedure<
       batchSize = null,
     } = options;
     const { context } = this;
-    let { signer } = options;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    if (!signer) {
-      signer = context.getSigner();
-    }
+    const signer = context.getSigner();
 
     const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
 
@@ -341,7 +352,7 @@ export class Procedure<
     args: ProcArgs = {} as ProcArgs
   ): Promise<MaybePostTransactionValue<R>> {
     try {
-      procedure.context = this.context;
+      procedure._context = this.context;
       const returnValue = await procedure.prepareTransactions(args);
 
       const { transactions } = procedure;
@@ -400,14 +411,11 @@ export class Procedure<
       groupByFn,
     } = options;
     const { context } = this;
-    let { signer } = options;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    if (!signer) {
-      signer = context.getSigner();
-    }
+    const signer = context.getSigner();
 
     const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
 
@@ -472,5 +480,22 @@ export class Procedure<
     }
 
     return storage;
+  }
+
+  /**
+   * internal data container. Used to store common fetched/processed data that is
+   *   used by both `prepareTransactions` and `checkAuthorization`
+   */
+  public get context(): Context {
+    const { _context: context } = this;
+
+    if (!context) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Attempt to access context before it was set',
+      });
+    }
+
+    return context;
   }
 }

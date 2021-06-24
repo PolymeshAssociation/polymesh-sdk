@@ -20,9 +20,8 @@ jest.mock(
 describe('Transaction Queue class', () => {
   let context: Context;
 
-  jest.useFakeTimers();
-
   beforeAll(() => {
+    jest.useFakeTimers();
     polymeshTransactionMockUtils.initMocks();
     dsMockUtils.initMocks({ contextOptions: { middlewareEnabled: false } });
   });
@@ -37,6 +36,7 @@ describe('Transaction Queue class', () => {
   });
 
   afterAll(() => {
+    jest.useRealTimers();
     dsMockUtils.cleanup();
   });
 
