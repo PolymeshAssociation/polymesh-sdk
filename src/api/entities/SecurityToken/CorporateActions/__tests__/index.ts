@@ -150,37 +150,38 @@ describe('CorporateActions class', () => {
     });
   });
 
-  describe('method: getAgent', () => {
-    test("should retrieve the Security Token's Corporate Actions agent", async () => {
-      const did = 'someDid';
-      const identityId = dsMockUtils.createMockIdentityId(did);
-      const identity = entityMockUtils.getIdentityInstance({ did });
+  // TODO @shuffledex
+  // describe('method: getAgent', () => {
+  //   test("should retrieve the Security Token's Corporate Actions agent", async () => {
+  //     const did = 'someDid';
+  //     const identityId = dsMockUtils.createMockIdentityId(did);
+  //     const identity = entityMockUtils.getIdentityInstance({ did });
 
-      dsMockUtils.createQueryStub('corporateAction', 'agent', {
-        returnValue: dsMockUtils.createMockOption(identityId),
-      });
+  //     dsMockUtils.createQueryStub('corporateAction', 'agent', {
+  //       returnValue: dsMockUtils.createMockOption(identityId),
+  //     });
 
-      let result = await corporateActions.getAgent();
+  //     let result = await corporateActions.getAgent();
 
-      expect(result).toEqual(identity);
+  //     expect(result).toEqual(identity);
 
-      dsMockUtils.createQueryStub('corporateAction', 'agent', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
+  //     dsMockUtils.createQueryStub('corporateAction', 'agent', {
+  //       returnValue: dsMockUtils.createMockOption(),
+  //     });
 
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            owner: identity,
-          },
-        },
-      });
+  //     entityMockUtils.configureMocks({
+  //       securityTokenOptions: {
+  //         details: {
+  //           owner: identity,
+  //         },
+  //       },
+  //     });
 
-      result = await corporateActions.getAgent();
+  //     result = await corporateActions.getAgent();
 
-      expect(result).toEqual(identity);
-    });
-  });
+  //     expect(result).toEqual(identity);
+  //   });
+  // });
 
   describe('method: getDefaults', () => {
     test("should retrieve the Security Token's Corporate Actions defaults", async () => {

@@ -62,7 +62,7 @@ describe('removeCorporateActionsAgent procedure', () => {
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
 
-    const transaction = dsMockUtils.createTxStub('corporateAction', 'resetCaa');
+    const transaction = dsMockUtils.createTxStub('corporateAction', 'removeCa');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareRemoveCorporateActionsAgent.call(proc, { ticker });

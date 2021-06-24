@@ -75,9 +75,9 @@ describe('inviteAccount procedure', () => {
     });
     const rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       JoinIdentity: dsMockUtils.createMockPermissions({
-        asset: [],
-        extrinsic: [],
-        portfolio: [],
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
       }),
     });
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());

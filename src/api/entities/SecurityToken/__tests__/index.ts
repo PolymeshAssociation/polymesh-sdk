@@ -74,7 +74,6 @@ describe('SecurityToken class', () => {
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
-    let primaryIssuanceAgent: string;
 
     let rawToken: MeshSecurityToken;
 
@@ -87,7 +86,6 @@ describe('SecurityToken class', () => {
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
-      primaryIssuanceAgent = '0xtr34sury';
     });
 
     beforeEach(() => {
@@ -99,7 +97,7 @@ describe('SecurityToken class', () => {
         divisible: dsMockUtils.createMockBool(isDivisible),
         total_supply: dsMockUtils.createMockBalance(totalSupply),
         primary_issuance_agent: dsMockUtils.createMockOption(
-          dsMockUtils.createMockIdentityId(primaryIssuanceAgent)
+          dsMockUtils.createMockIdentityId(owner)
         ),
         /* eslint-enable @typescript-eslint/naming-convention */
       });
@@ -121,7 +119,7 @@ describe('SecurityToken class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgent.did).toBe(primaryIssuanceAgent);
+      expect(details.primaryIssuanceAgent.did).toBe(owner);
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: dsMockUtils.createMockSecurityToken({
@@ -503,24 +501,24 @@ describe('SecurityToken class', () => {
     });
   });
 
-  describe('method: removePrimaryIssuanceAgent', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      const securityToken = new SecurityToken({ ticker }, context);
+  // describe('method: removePrimaryIssuanceAgent', () => {
+  //   test('should prepare the procedure and return the resulting transaction queue', async () => {
+  //     const ticker = 'TICKER';
+  //     const context = dsMockUtils.getContextInstance();
+  //     const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+  //     const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+  //     procedureMockUtils
+  //       .getPrepareStub()
+  //       .withArgs({ args: { ticker }, transformer: undefined }, context)
+  //       .resolves(expectedQueue);
 
-      const queue = await securityToken.removePrimaryIssuanceAgent();
+  //     const queue = await securityToken.removePrimaryIssuanceAgent();
 
-      expect(queue).toBe(expectedQueue);
-    });
-  });
+  //     expect(queue).toBe(expectedQueue);
+  //   });
+  // });
 
   describe('method: redeem', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
