@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Venue } from '~/internal';
+import { Context } from '~/internal';
 import { Settlements } from '~/Settlements';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
