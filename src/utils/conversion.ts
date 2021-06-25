@@ -918,6 +918,7 @@ export function meshPermissionsToPermissions(
       if (dispatchableNames.isExcept) {
         const dispatchables = dispatchableNames.asExcept;
         exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+        txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
         const dispatchables = dispatchableNames.asThese;
         txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
@@ -929,7 +930,7 @@ export function meshPermissionsToPermissions(
     transactions = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: extrinsicType!,
-      values: txValues,
+      values: uniq(txValues),
       exceptions,
     };
   }
