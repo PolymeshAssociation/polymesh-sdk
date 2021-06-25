@@ -220,13 +220,13 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     const groupOfAgent = await externalAgents.groupOfAgent.entries(rawTicker);
 
-    const primaryIssuanceAgents: Identity[] = [];
+    const piaIdentities: Identity[] = [];
 
     groupOfAgent.forEach(([storageKey, agentGroup]) => {
       if (agentGroup.isSome) {
         const rawAgentGroup = agentGroup.unwrap();
         if (rawAgentGroup.isPolymeshV1Pia) {
-          primaryIssuanceAgents.push(
+          piaIdentities.push(
             new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
           );
         }
@@ -235,13 +235,13 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     if (callback) {
       return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken, primaryIssuanceAgents));
+        callback(assembleResult(securityToken, piaIdentities));
       });
     }
 
     const token = await asset.tokens(rawTicker);
 
-    return assembleResult(token, primaryIssuanceAgents);
+    return assembleResult(token, piaIdentities);
   }
 
   /**
