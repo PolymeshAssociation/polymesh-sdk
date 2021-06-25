@@ -10,7 +10,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
-describe('Claims Class', () => {
+describe('Settlements Class', () => {
   let context: Mocked<Context>;
   let settlements: Settlements;
 
