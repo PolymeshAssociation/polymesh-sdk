@@ -11,7 +11,6 @@ import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import {
   ClaimType,
   CorporateActionKind,
-  KeyringPair,
   SecondaryKey,
   Signer,
   TargetTreatment,
