@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Instruction, Venue } from '~/internal';
+import { Context } from '~/internal';
 import { Settlements } from '~/Settlements';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -42,21 +42,18 @@ describe('Settlements Class', () => {
   describe('method: getVenue', () => {
     test('should return a Venue by its id', async () => {
       const venueId = new BigNumber(1);
-      const matchingVenue = new Venue({ id: venueId }, context);
+      const matchingVenue = entityMockUtils.getVenueInstance({ id: venueId });
 
       entityMockUtils.configureMocks({
         venueOptions: { exists: true },
       });
 
-      let result = await settlements.getVenue(venueId);
-      expect(result).toMatchObject(matchingVenue);
-
-      result = await settlements.getVenue(new BigNumber(venueId));
+      const result = await settlements.getVenue(venueId);
       expect(result).toMatchObject(matchingVenue);
     });
 
     test('should throw if Venue does not exist', async () => {
-      const venueId = 1;
+      const venueId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
         venueOptions: { exists: false },
@@ -69,7 +66,7 @@ describe('Settlements Class', () => {
   describe('method: getInstruction', () => {
     test('should return an Instruction by its id', async () => {
       const instructionId = new BigNumber(1);
-      const matchingInstruction = new Instruction({ id: instructionId }, context);
+      const matchingInstruction = entityMockUtils.getInstructionInstance({ id: instructionId });
 
       entityMockUtils.configureMocks({
         instructionOptions: { exists: true },
@@ -80,13 +77,15 @@ describe('Settlements Class', () => {
     });
 
     test('should throw if Instruction does not exist', async () => {
-      const instructionId = 1;
+      const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
         instructionOptions: { exists: false },
       });
 
-      expect(settlements.getVenue(instructionId)).rejects.toThrow("The Instruction doesn't exist");
+      expect(settlements.getInstruction(instructionId)).rejects.toThrow(
+        "The Instruction doesn't exist"
+      );
     });
   });
 });
