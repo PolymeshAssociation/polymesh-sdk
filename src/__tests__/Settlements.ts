@@ -36,22 +36,19 @@ describe('Settlements Class', () => {
 
   describe('method: getVenue', () => {
     test('should return a Venue by its id', async () => {
-      const venueId = 1;
-      const matchingVenue = new Venue({ id: new BigNumber(venueId) }, context);
+      const venueId = new BigNumber(1);
+      const matchingVenue = entityMockUtils.getVenueInstance({ id: venueId });
 
       entityMockUtils.configureMocks({
         venueOptions: { exists: true },
       });
 
-      let result = await settlements.getVenue(venueId);
-      expect(result).toMatchObject(matchingVenue);
-
-      result = await settlements.getVenue(new BigNumber(venueId));
+      const result = await settlements.getVenue(venueId);
       expect(result).toMatchObject(matchingVenue);
     });
 
     test('should throw if Venue does not exist', async () => {
-      const venueId = 1;
+      const venueId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
         venueOptions: { exists: false },

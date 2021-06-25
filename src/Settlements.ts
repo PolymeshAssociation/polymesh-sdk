@@ -22,7 +22,7 @@ export class Settlements {
    *
    * @param id - Identifier number of the venue
    */
-  public async getVenue(id: number | BigNumber): Promise<Venue> {
+  public async getVenue(id: BigNumber): Promise<Venue> {
     const { context } = this;
 
     const venueId = new BigNumber(id);
