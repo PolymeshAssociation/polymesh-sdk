@@ -1425,7 +1425,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       },
       transactions: {
         type: PermissionType.Exclude,
-        values: [],
+        values: [ModuleName.Identity],
         exceptions: [TxTags.identity.AddClaim],
       },
       transactionGroups: [],
