@@ -53,6 +53,7 @@ export async function prepareModifyCorporateActionsAgent(
     });
   }
 
+  // TODO @shuffledex
   if (agent[0].did === signerToString(target)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,

@@ -58,6 +58,7 @@ export async function prepareModifyPrimaryIssuanceAgent(
     });
   }
 
+  // TODO @shuffledex
   if (primaryIssuanceAgents[0].did === signerToString(target)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
