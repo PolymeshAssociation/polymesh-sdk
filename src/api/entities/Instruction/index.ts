@@ -37,8 +37,9 @@ export interface UniqueIdentifiers {
   id: BigNumber;
 }
 
-const notExistsMessage =
-  'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)';
+const notExistsMessage = "Instruction doesn't exist";
+const notPendingMessage =
+  'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain';
 
 /**
  * Represents a settlement Instruction to be executed on a certain Venue
@@ -101,8 +102,36 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve whether the Instruction still exists on chain. Executed/rejected instructions
+   * Retrieve whether the Instruction is still pending on chain. Executed/rejected instructions
    *   are pruned from the storage
+   */
+  public async isPending(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const details = await settlement.instructionDetails(numberToU64(id, context));
+
+    if (details.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
+
+    const status = meshInstructionStatusToInstructionStatus(details.status);
+
+    return status !== InstructionStatus.Unknown;
+  }
+
+  /**
+   * Retrieve whether the Instruction exists on chain
    */
   public async exists(): Promise<boolean> {
     const {
@@ -115,11 +144,9 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { status: rawStatus } = await settlement.instructionDetails(numberToU64(id, context));
+    const details = await settlement.instructionDetails(numberToU64(id, context));
 
-    const status = meshInstructionStatusToInstructionStatus(rawStatus);
-
-    return status !== InstructionStatus.Unknown;
+    return !details.isEmpty;
   }
 
   /**
@@ -145,12 +172,19 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       venue_id: venueId,
     } = await settlement.instructionDetails(numberToU64(id, context));
 
+    if (venueId.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
+
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
     if (status === InstructionStatus.Unknown) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notExistsMessage,
+        message: notPendingMessage,
       });
     }
 
@@ -194,12 +228,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const exists = await this.exists();
+    const isPending = await this.isPending();
 
-    if (!exists) {
+    if (!isPending) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notExistsMessage,
+        message: notPendingMessage,
       });
     }
 
@@ -238,12 +272,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const exists = await this.exists();
+    const isPending = await this.isPending();
 
-    if (!exists) {
+    if (!isPending) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notExistsMessage,
+        message: notPendingMessage,
       });
     }
 

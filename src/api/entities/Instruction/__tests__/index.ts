@@ -73,6 +73,81 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: isPending', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    let numberToU64Stub: sinon.SinonStub;
+
+    beforeAll(() => {
+      numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    });
+
+    beforeEach(() => {
+      numberToU64Stub.withArgs(id, context).returns(rawId);
+    });
+
+    test('should throw if the instruction does not exist', async () => {
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const queryResult = dsMockUtils.createMockInstruction();
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      return expect(instruction.isPending()).rejects.toThrow("Instruction doesn't exist");
+    });
+
+    test('should return whether the instruction is pending', async () => {
+      const status = InstructionStatus.Pending;
+      const createdAt = new Date('10/14/1987');
+      const tradeDate = new Date('11/17/1987');
+      const valueDate = new Date('11/17/1987');
+      const venueId = new BigNumber(1);
+      const type = InstructionType.SettleOnAffirmation;
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const queryResult = dsMockUtils.createMockInstruction({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(status),
+        venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
+        created_at: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(createdAt.getTime())),
+        trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
+        value_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(valueDate.getTime())),
+        settlement_type: dsMockUtils.createMockSettlementType(type),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      const instructionDetailsStub = dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      let result = await instruction.isPending();
+
+      expect(result).toBe(true);
+
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          ...queryResult,
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+        })
+      );
+
+      result = await instruction.isPending();
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: exists', () => {
     afterAll(() => {
       sinon.restore();
@@ -120,12 +195,7 @@ describe('Instruction class', () => {
 
       expect(result).toBe(true);
 
-      instructionDetailsStub.resolves(
-        dsMockUtils.createMockInstruction({
-          ...queryResult,
-          status: dsMockUtils.createMockInstructionStatus('Unknown'),
-        })
-      );
+      instructionDetailsStub.resolves(dsMockUtils.createMockInstruction());
 
       result = await instruction.exists();
 
@@ -221,12 +291,21 @@ describe('Instruction class', () => {
       dsMockUtils
         .createQueryStub('settlement', 'instructionDetails')
         .withArgs(rawId)
+        .resolves(dsMockUtils.createMockInstruction());
+
+      return expect(instruction.details()).rejects.toThrow("Instruction doesn't exist");
+    });
+
+    test('should throw an error if the Instruction is not pending', () => {
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
         .resolves(
           dsMockUtils.createMockInstruction({
             /* eslint-disable @typescript-eslint/naming-convention */
             instruction_id: dsMockUtils.createMockU64(),
             status: dsMockUtils.createMockInstructionStatus('Unknown'),
-            venue_id: dsMockUtils.createMockU64(),
+            venue_id: dsMockUtils.createMockU64(1),
             created_at: dsMockUtils.createMockOption(),
             trade_date: dsMockUtils.createMockOption(),
             value_date: dsMockUtils.createMockOption(),
@@ -236,7 +315,7 @@ describe('Instruction class', () => {
         );
 
       return expect(instruction.details()).rejects.toThrow(
-        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
       );
     });
   });
@@ -298,6 +377,11 @@ describe('Instruction class', () => {
     });
 
     test('should throw an error if the instruction does not exist', () => {
+      instructionDetailsStub.resolves(dsMockUtils.createMockInstruction());
+      return expect(instruction.getAffirmations()).rejects.toThrow("Instruction doesn't exist");
+    });
+
+    test('should throw an error if the instruction is not pending', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
@@ -312,7 +396,7 @@ describe('Instruction class', () => {
         })
       );
       return expect(instruction.getAffirmations()).rejects.toThrow(
-        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
       );
     });
 
@@ -393,7 +477,7 @@ describe('Instruction class', () => {
       expect(leg[0].token).toEqual(entityMockUtils.getSecurityTokenInstance());
     });
 
-    test('should throw an error if the instruction does not exist', () => {
+    test('should throw an error if the instruction is not pending', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
@@ -408,7 +492,7 @@ describe('Instruction class', () => {
         })
       );
       return expect(instruction.getLegs()).rejects.toThrow(
-        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
       );
     });
   });
