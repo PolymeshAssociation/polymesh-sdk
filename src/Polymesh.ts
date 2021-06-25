@@ -28,6 +28,7 @@ import {
   TransferPolyxParams,
 } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
+import { Settlements } from '~/Settlements';
 import {
   AccountBalance,
   CommonKeyring,
@@ -75,6 +76,7 @@ export class Polymesh {
   // public governance: Governance;
   public claims: Claims;
   public middleware: Middleware;
+  public settlements: Settlements;
 
   /**
    * @hidden
@@ -86,6 +88,7 @@ export class Polymesh {
     // this.governance = new Governance(context);
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
+    this.settlements = new Settlements(context);
 
     this.transferPolyx = createProcedureMethod(
       { getProcedureAndArgs: args => [transferPolyx, args] },
