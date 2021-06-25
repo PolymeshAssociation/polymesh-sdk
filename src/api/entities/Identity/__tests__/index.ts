@@ -124,14 +124,23 @@ describe('Identity class', () => {
     });
 
     test('hasRole should check whether the Identity has the Token Owner role', async () => {
-      const identity = new Identity({ did: 'someDid' }, context);
-      const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker: 'someTicker' };
+      const ticker = 'SOMETICKER';
+      const did = 'someDid';
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
+      });
+
+      const identity = new Identity({ did }, context);
+      const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker };
 
       let hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(true);
 
-      identity.did = 'otherDid';
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
 
       hasRole = await identity.hasRole(role);
 
@@ -149,7 +158,7 @@ describe('Identity class', () => {
       entityMockUtils.configureMocks({
         securityTokenOptions: {
           details: {
-            primaryIssuanceAgent: identity,
+            primaryIssuanceAgents: [identity],
           },
         },
       });
@@ -162,7 +171,7 @@ describe('Identity class', () => {
       entityMockUtils.configureMocks({
         securityTokenOptions: {
           details: {
-            primaryIssuanceAgent: new Identity({ did: 'anotherDid' }, context),
+            primaryIssuanceAgents: [new Identity({ did: 'anotherDid' }, context)],
           },
         },
       });
@@ -178,7 +187,7 @@ describe('Identity class', () => {
 
       entityMockUtils.configureMocks({
         securityTokenOptions: {
-          corporateActionsGetAgent: identity,
+          corporateActionsGetAgents: [identity],
         },
       });
 
@@ -188,7 +197,7 @@ describe('Identity class', () => {
 
       entityMockUtils.configureMocks({
         securityTokenOptions: {
-          corporateActionsGetAgent: new Identity({ did: 'otherdid' }, context),
+          corporateActionsGetAgents: [new Identity({ did: 'otherdid' }, context)],
         },
       });
 
@@ -351,7 +360,6 @@ describe('Identity class', () => {
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
-          primary_issuance_agent: dsMockUtils.createMockOption(),
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );

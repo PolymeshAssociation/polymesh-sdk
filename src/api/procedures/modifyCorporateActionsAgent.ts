@@ -43,7 +43,7 @@ export async function prepareModifyCorporateActionsAgent(
 
   const [invalidDids, agent] = await Promise.all([
     context.getInvalidDids([target]),
-    securityToken.corporateActions.getAgent(),
+    securityToken.corporateActions.getAgents(),
   ]);
 
   if (invalidDids.length) {
@@ -53,7 +53,7 @@ export async function prepareModifyCorporateActionsAgent(
     });
   }
 
-  if (agent.did === signerToString(target)) {
+  if (agent[0].did === signerToString(target)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied Identity is already the Corporate Actions Agent',

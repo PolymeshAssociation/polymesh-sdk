@@ -102,7 +102,15 @@ export class Identity extends Entity<UniqueIdentifiers> {
    * Check whether this Identity possesses the specified Role
    */
   public async hasRole(role: Role): Promise<boolean> {
-    const { context, did } = this;
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { externalAgents },
+        },
+      },
+      did,
+    } = this;
 
     if (isTickerOwnerRole(role)) {
       const { ticker } = role;
@@ -114,27 +122,32 @@ export class Identity extends Entity<UniqueIdentifiers> {
     } else if (isTokenOwnerRole(role)) {
       const { ticker } = role;
 
-      const token = new SecurityToken({ ticker }, context);
-      const { owner } = await token.details();
+      const rawTicker = stringToTicker(ticker, context);
+      const rawIdentityId = stringToIdentityId(did, context);
 
-      return owner.did === did;
+      const groupOfAgent = await externalAgents.groupOfAgent(rawTicker, rawIdentityId);
+
+      if (groupOfAgent.isSome) {
+        const agentGroup = groupOfAgent.unwrap();
+        return agentGroup.isFull;
+      }
+
+      return false;
     } else if (isTokenPiaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const { primaryIssuanceAgent } = await token.details();
+      const { primaryIssuanceAgents } = await token.details();
+      console.log(primaryIssuanceAgents);
 
-      if (primaryIssuanceAgent) {
-        return primaryIssuanceAgent.did === did;
-      }
-      return false;
+      return primaryIssuanceAgents.map(({ did: agentDid }) => agentDid).includes(did);
     } else if (isTokenCaaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const agent = await token.corporateActions.getAgent();
+      const agents = await token.corporateActions.getAgents();
 
-      return agent.did === did;
+      return agents.map(({ did: agentDid }) => agentDid).includes(did);
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {

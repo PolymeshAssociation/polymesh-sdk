@@ -235,10 +235,16 @@ export async function prepareStorage(
     offeringPortfolioId = portfolioLikeToPortfolioId(offeringPortfolio);
   } else {
     const token = new SecurityToken({ ticker }, context);
-    const {
-      primaryIssuanceAgent: { did },
-    } = await token.details();
-    offeringPortfolioId = { did };
+    const { primaryIssuanceAgents } = await token.details();
+
+    if (primaryIssuanceAgents.length !== 1) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'There is no a default Primary Issuance Agent for the given asset',
+      });
+    }
+
+    offeringPortfolioId = { did: primaryIssuanceAgents[0].did };
   }
 
   return {

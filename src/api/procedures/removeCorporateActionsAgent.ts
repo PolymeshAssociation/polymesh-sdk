@@ -32,10 +32,10 @@ export async function prepareRemoveCorporateActionsAgent(
 
   const [{ owner }, agent] = await Promise.all([
     securityToken.details(),
-    securityToken.corporateActions.getAgent(),
+    securityToken.corporateActions.getAgents(),
   ]);
 
-  if (owner.did === agent.did) {
+  if (owner.did === agent[0].did) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'There is no set Corporate Actions Agent',

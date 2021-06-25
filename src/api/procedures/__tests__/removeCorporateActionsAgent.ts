@@ -51,7 +51,7 @@ describe('removeCorporateActionsAgent procedure', () => {
   test('should add a remove corporate agent transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+        corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: 'someDid' })],
         details: {
           owner: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
         },
@@ -80,7 +80,7 @@ describe('removeCorporateActionsAgent procedure', () => {
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: identity,
+        corporateActionsGetAgents: [identity],
         details: {
           owner: identity,
         },

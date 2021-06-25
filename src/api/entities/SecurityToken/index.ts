@@ -192,7 +192,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const {
       context: {
         polymeshApi: {
-          query: { asset },
+          query: { asset, externalAgents },
         },
       },
       ticker,
@@ -200,13 +200,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    const assembleResult = ({
-      name,
-      total_supply,
-      divisible,
-      owner_did,
-      asset_type,
-    }: MeshSecurityToken): SecurityTokenDetails => {
+    const assembleResult = (
+      { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
+      primaryIssuanceAgents: Identity[]
+    ): SecurityTokenDetails => {
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
       return {
         assetType: assetTypeToString(asset_type),
@@ -214,23 +211,37 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         name: assetNameToString(name),
         owner,
         totalSupply: balanceToBigNumber(total_supply),
-        // TODO @shuffledex: remove or modify thinking on ExternalAgents
-        primaryIssuanceAgent: owner,
+        primaryIssuanceAgents,
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 
+    const groupOfAgent = await externalAgents.groupOfAgent.entries(rawTicker);
+
+    const primaryIssuanceAgents: Identity[] = [];
+
+    groupOfAgent.forEach(([storageKey, agentGroup]) => {
+      if (agentGroup.isSome) {
+        const rawAgentGroup = agentGroup.unwrap();
+        if (rawAgentGroup.isPolymeshV1Pia) {
+          primaryIssuanceAgents.push(
+            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
+          );
+        }
+      }
+    });
+
     if (callback) {
       return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken));
+        callback(assembleResult(securityToken, primaryIssuanceAgents));
       });
     }
 
     const token = await asset.tokens(rawTicker);
 
-    return assembleResult(token);
+    return assembleResult(token, primaryIssuanceAgents);
   }
 
   /**

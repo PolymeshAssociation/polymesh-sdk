@@ -412,7 +412,7 @@ describe('launchSto procedure', () => {
       entityMockUtils.configureMocks({
         identityOptions: { did },
         securityTokenOptions: {
-          details: { primaryIssuanceAgent: entityMockUtils.getIdentityInstance({ did }) },
+          details: { primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })] },
         },
       });
 
@@ -422,6 +422,14 @@ describe('launchSto procedure', () => {
         offeringPortfolioId,
         raisingPortfolioId,
       });
+    });
+
+    test('should throw an error if primaryIssuanceAgents returns more than one identity', async () => {
+      const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext);
+
+      return expect(
+        prepareStorage.call(proc, { ...args, offeringPortfolio: undefined })
+      ).rejects.toThrow('There is no a default Primary Issuance Agent for the given asset');
     });
   });
 });

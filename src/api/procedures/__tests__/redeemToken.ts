@@ -75,6 +75,7 @@ describe('redeemToken procedure', () => {
       securityTokenOptions: {
         details: {
           isDivisible: true,
+          primaryIssuanceAgents: [new Identity({ did: 'someDid' }, mockContext)],
         },
       },
       defaultPortfolioOptions: {
@@ -100,7 +101,7 @@ describe('redeemToken procedure', () => {
       securityTokenOptions: {
         details: {
           isDivisible: true,
-          primaryIssuanceAgent: new Identity({ did: 'primaryDid' }, mockContext),
+          primaryIssuanceAgents: [new Identity({ did: 'primaryDid' }, mockContext)],
         },
       },
       defaultPortfolioOptions: {
@@ -125,6 +126,11 @@ describe('redeemToken procedure', () => {
 
   test('should throw an error if the security token is not divisible', () => {
     entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        details: {
+          primaryIssuanceAgents: [new Identity({ did: 'primaryDid' }, mockContext)],
+        },
+      },
       defaultPortfolioOptions: {
         tokenBalances: [
           {
@@ -145,13 +151,31 @@ describe('redeemToken procedure', () => {
     ).rejects.toThrow('The Security Token must be divisible');
   });
 
+  test('should throw an error if primaryIssuanceAgents returns more than one identity', () => {
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        details: {
+          primaryIssuanceAgents: [],
+        },
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(
+      prepareRedeemToken.call(proc, {
+        ticker,
+        amount: new BigNumber(100.5),
+      })
+    ).rejects.toThrow('There is no a default Primary Issuance Agent for the given asset');
+  });
+
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
       const params = {
         ticker,
         amount,
       };
-      const ownerDid = 'ownerDid';
       const someDid = 'someDid';
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -160,31 +184,12 @@ describe('redeemToken procedure', () => {
       entityMockUtils.configureMocks({
         securityTokenOptions: {
           details: {
-            owner: new Identity({ did: ownerDid }, mockContext),
+            primaryIssuanceAgents: [new Identity({ did: someDid }, mockContext)],
           },
         },
       });
 
-      let result = await boundFunc(params);
-
-      expect(result).toEqual({
-        identityRoles: [{ type: RoleType.TokenPia, ticker }],
-        signerPermissions: {
-          transactions: [TxTags.asset.Redeem],
-          tokens: [new SecurityToken({ ticker }, mockContext)],
-          portfolios: [new DefaultPortfolio({ did: ownerDid }, mockContext)],
-        },
-      });
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            primaryIssuanceAgent: new Identity({ did: someDid }, mockContext),
-          },
-        },
-      });
-
-      result = await boundFunc(params);
+      const result = await boundFunc(params);
 
       expect(result).toEqual({
         identityRoles: [{ type: RoleType.TokenPia, ticker }],
@@ -194,6 +199,14 @@ describe('redeemToken procedure', () => {
           portfolios: [new DefaultPortfolio({ did: someDid }, mockContext)],
         },
       });
+    });
+
+    test('should throw an error if primaryIssuanceAgents returns more than one identity', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+      return expect(getAuthorization.call(proc, { ticker, amount })).rejects.toThrow(
+        'There is no a default Primary Issuance Agent for the given asset'
+      );
     });
   });
 });
