@@ -90,6 +90,17 @@ interface ConstructorParams {
   ss58Format?: number;
 }
 
+interface AddPairBaseParams {
+  keyring: CommonKeyring;
+}
+
+type AddPairParams = {
+  accountSeed?: string;
+  accountUri?: string;
+  accountMnemonic?: string;
+  pair?: KeyringPair;
+};
+
 /**
  * Context in which the SDK is being used
  *
@@ -264,25 +275,15 @@ export class Context {
   /**
    * Add a signing pair to the Keyring
    */
-  public addPair(params: {
-    accountSeed?: string;
-    accountUri?: string;
-    accountMnemonic?: string;
-    pair?: KeyringPair;
-  }): KeyringPair {
-    return Context._addPair({ ...params, keyring: this.keyring });
+  public addPair(params: AddPairParams): KeyringPair {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return Context._addPair({ ...params, keyring: this.keyring })!;
   }
 
   /**
    * @hidden
    */
-  private static _addPair(params: {
-    accountSeed?: string;
-    accountUri?: string;
-    accountMnemonic?: string;
-    pair?: KeyringPair;
-    keyring: CommonKeyring;
-  }): KeyringPair {
+  private static _addPair(params: AddPairBaseParams & AddPairParams): KeyringPair | undefined {
     const { accountSeed, accountUri, accountMnemonic, keyring, pair } = params;
 
     let newPair: KeyringPair;
@@ -299,13 +300,15 @@ export class Context {
       newPair = keyring.addFromUri(accountUri);
     } else if (accountMnemonic) {
       newPair = keyring.addFromMnemonic(accountMnemonic);
-    } else {
+    } else if (pair) {
       /*
        * NOTE @monitz87: the only way to avoid this assertion is to import the Keyring package
        *   which doesn't make sense just for this
        */
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       newPair = keyring.addPair(pair as any);
+    } else {
+      return;
     }
 
     return newPair;

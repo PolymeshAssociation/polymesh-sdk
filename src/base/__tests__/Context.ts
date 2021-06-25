@@ -11,6 +11,7 @@ import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import {
   ClaimType,
   CorporateActionKind,
+  KeyringPair,
   SecondaryKey,
   Signer,
   TargetTreatment,
@@ -1618,6 +1619,32 @@ describe('Context class', () => {
       context.addPair({ accountUri });
 
       sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addFromUri, accountUri);
+    });
+
+    test('should add a new pair to the keyring via pair', async () => {
+      const newPair = {
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+        meta: {},
+        publicKey: 'publicKey',
+      };
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [newPair],
+        },
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pair = ('something' as unknown) as any;
+
+      context.addPair({ pair });
+
+      sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addPair, pair);
     });
   });
 
