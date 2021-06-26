@@ -42,11 +42,10 @@ export class Settlements {
    *
    * @param id - Identifier number of the instruction
    */
-  public async getInstruction(id: BigNumber): Promise<Instruction> {
+  public async getInstruction(args: { id: BigNumber }): Promise<Instruction> {
     const { context } = this;
 
-    const instructionId = new BigNumber(id);
-    const instruction = new Instruction({ id: instructionId }, context);
+    const instruction = new Instruction(args, context);
 
     const instructionExists = await instruction.exists();
     if (!instructionExists) {

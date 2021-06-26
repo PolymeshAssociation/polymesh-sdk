@@ -72,7 +72,7 @@ describe('Settlements Class', () => {
         instructionOptions: { exists: true },
       });
 
-      const result = await settlements.getInstruction(instructionId);
+      const result = await settlements.getInstruction({ id: instructionId });
       expect(result).toMatchObject(matchingInstruction);
     });
 
@@ -83,7 +83,7 @@ describe('Settlements Class', () => {
         instructionOptions: { exists: false },
       });
 
-      expect(settlements.getInstruction(instructionId)).rejects.toThrow(
+      expect(settlements.getInstruction({ id: instructionId })).rejects.toThrow(
         "The Instruction doesn't exist"
       );
     });
