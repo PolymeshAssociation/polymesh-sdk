@@ -21,10 +21,10 @@ export class Settlements {
    *
    * @param id - Identifier number of the venue
    */
-  public async getVenue(id: BigNumber): Promise<Venue> {
+  public async getVenue(args: { id: BigNumber }): Promise<Venue> {
     const { context } = this;
 
-    const venueId = new BigNumber(id);
+    const { id: venueId } = args;
     const venue = new Venue({ id: venueId }, context);
 
     const venueExists = await venue.exists();

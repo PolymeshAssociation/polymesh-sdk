@@ -48,7 +48,7 @@ describe('Settlements Class', () => {
         venueOptions: { exists: true },
       });
 
-      const result = await settlements.getVenue(venueId);
+      const result = await settlements.getVenue({ id: venueId });
       expect(result).toMatchObject(matchingVenue);
     });
 
@@ -59,7 +59,7 @@ describe('Settlements Class', () => {
         venueOptions: { exists: false },
       });
 
-      expect(settlements.getVenue(venueId)).rejects.toThrow("The Venue doesn't exist");
+      expect(settlements.getVenue({ id: venueId })).rejects.toThrow("The Venue doesn't exist");
     });
   });
 
