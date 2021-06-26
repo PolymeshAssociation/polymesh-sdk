@@ -4,7 +4,8 @@ import { DefaultPortfolio, Identity, NumberedPortfolio, SecurityToken, Venue } f
 
 export enum InstructionStatus {
   Pending = 'Pending',
-  Unknown = 'Unknown',
+  Executed = 'Executed',
+  Failed = 'Failed',
 }
 
 export enum InstructionType {

@@ -10,7 +10,10 @@ import {
   Venue,
 } from '~/internal';
 import { ErrorCode, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import {
+  InstructionAffirmationOperation,
+  InstructionStatus as InternalInstructionStatus,
+} from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -127,7 +130,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const status = meshInstructionStatusToInstructionStatus(details.status);
 
-    return status !== InstructionStatus.Unknown;
+    return status !== InternalInstructionStatus.Unknown;
   }
 
   /**
@@ -181,7 +184,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
-    if (status === InstructionStatus.Unknown) {
+    if (status === InternalInstructionStatus.Unknown) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notPendingMessage,
@@ -189,7 +192,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     }
 
     const details = {
-      status,
+      status: InstructionStatus.Pending,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
