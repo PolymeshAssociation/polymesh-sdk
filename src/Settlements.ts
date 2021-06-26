@@ -40,7 +40,7 @@ export class Settlements {
   /**
    * Retrieve an Instruction by its id
    *
-   * @param id - Identifier number of the instruction
+   * @param id - identifier number of the instruction
    */
   public async getInstruction(args: { id: BigNumber }): Promise<Instruction> {
     const { context } = this;

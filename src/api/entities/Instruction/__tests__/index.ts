@@ -195,7 +195,19 @@ describe('Instruction class', () => {
 
       expect(result).toBe(true);
 
-      instructionDetailsStub.resolves(dsMockUtils.createMockInstruction());
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          instruction_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus(InstructionStatus.Unknown),
+          venue_id: dsMockUtils.createMockU64(),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+          settlement_type: dsMockUtils.createMockSettlementType(),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      );
 
       result = await instruction.exists();
 

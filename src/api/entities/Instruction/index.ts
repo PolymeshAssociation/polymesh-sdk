@@ -158,9 +158,11 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const details = await settlement.instructionDetails(numberToU64(id, context));
+    const { instruction_id: instructionId } = await settlement.instructionDetails(
+      numberToU64(id, context)
+    );
 
-    return !details.isEmpty;
+    return !instructionId.isEmpty;
   }
 
   /**
