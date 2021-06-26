@@ -24,8 +24,7 @@ export class Settlements {
   public async getVenue(args: { id: BigNumber }): Promise<Venue> {
     const { context } = this;
 
-    const { id: venueId } = args;
-    const venue = new Venue({ id: venueId }, context);
+    const venue = new Venue(args, context);
 
     const venueExists = await venue.exists();
     if (!venueExists) {
