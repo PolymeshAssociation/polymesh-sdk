@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, Identity, NumberedPortfolio, SecurityToken, Venue } from '~/internal';
+import { EventIdentifier } from '~/types';
 
 export enum InstructionStatus {
   Pending = 'Pending',
@@ -52,4 +53,9 @@ export enum AffirmationStatus {
 export interface InstructionAffirmation {
   identity: Identity;
   status: AffirmationStatus;
+}
+
+export interface InstructionStatusResult {
+  status: InstructionStatus;
+  eventIdentifier?: EventIdentifier;
 }
