@@ -116,18 +116,20 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const details = await settlement.instructionDetails(numberToU64(id, context));
+    const { instruction_id: instructionId, status } = await settlement.instructionDetails(
+      numberToU64(id, context)
+    );
 
-    if (details.isEmpty) {
+    if (instructionId.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notExistsMessage,
       });
     }
 
-    const status = meshInstructionStatusToInstructionStatus(details.status);
+    const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return status !== InstructionStatus.Unknown;
+    return statusResult !== InstructionStatus.Unknown;
   }
 
   /**

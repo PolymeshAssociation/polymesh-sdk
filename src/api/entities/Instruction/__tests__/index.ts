@@ -315,7 +315,7 @@ describe('Instruction class', () => {
         .resolves(
           dsMockUtils.createMockInstruction({
             /* eslint-disable @typescript-eslint/naming-convention */
-            instruction_id: dsMockUtils.createMockU64(),
+            instruction_id: dsMockUtils.createMockU64(1),
             status: dsMockUtils.createMockInstructionStatus('Unknown'),
             venue_id: dsMockUtils.createMockU64(1),
             created_at: dsMockUtils.createMockOption(),
@@ -397,7 +397,7 @@ describe('Instruction class', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(),
+          instruction_id: dsMockUtils.createMockU64(1),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType(),
@@ -493,7 +493,7 @@ describe('Instruction class', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(),
+          instruction_id: dsMockUtils.createMockU64(1),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType(),
