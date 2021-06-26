@@ -9,26 +9,40 @@ import {
   SecurityToken,
   Venue,
 } from '~/internal';
-import { ErrorCode, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import { eventByIndexedArgs } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import {
+  Ensured,
+  ErrorCode,
+  EventIdentifier,
+  PaginationOptions,
+  ProcedureMethod,
+  ResultSet,
+} from '~/types';
+import {
+  InstructionAffirmationOperation,
+  InstructionStatus as InternalInstructionStatus,
+} from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
+  middlewareEventToEventIdentifier,
   momentToDate,
   numberToU64,
   tickerToString,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, optionize, requestPaginated } from '~/utils/internal';
 
 import {
   InstructionAffirmation,
   InstructionDetails,
   InstructionStatus,
+  InstructionStatusResult,
   InstructionType,
   Leg,
 } from './types';
@@ -129,7 +143,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return statusResult !== InstructionStatus.Unknown;
+    return statusResult !== InternalInstructionStatus.Unknown;
   }
 
   /**
@@ -185,7 +199,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
-    if (status === InstructionStatus.Unknown) {
+    if (status === InternalInstructionStatus.Unknown) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notPendingMessage,
@@ -193,7 +207,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     }
 
     const details = {
-      status,
+      status: InstructionStatus.Pending,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
@@ -312,6 +326,44 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve current status of this Instruction
+   *
+   * @note uses the middleware
+   */
+  public async getStatus(): Promise<InstructionStatusResult> {
+    const isPending = await this.isPending();
+
+    if (isPending) {
+      return {
+        status: InstructionStatus.Pending,
+      };
+    }
+
+    let eventIdentifier = await this.getInstructionEventFromMiddleware(
+      EventIdEnum.InstructionExecuted
+    );
+    if (eventIdentifier) {
+      return {
+        status: InstructionStatus.Executed,
+        eventIdentifier,
+      };
+    }
+
+    eventIdentifier = await this.getInstructionEventFromMiddleware(EventIdEnum.InstructionFailed);
+    if (eventIdentifier) {
+      return {
+        status: InstructionStatus.Failed,
+        eventIdentifier,
+      };
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: "It isn't possible to determine the current status of this Instruction",
+    });
+  }
+
+  /**
    * Reject this instruction
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
@@ -330,4 +382,26 @@ export class Instruction extends Entity<UniqueIdentifiers> {
    * Withdraw affirmation from this instruction (unauthorize)
    */
   public withdraw: ProcedureMethod<void, Instruction>;
+
+  /**
+   * @hidden
+   * Retrieve Instruction status event from middleware
+   */
+  private async getInstructionEventFromMiddleware(
+    eventId: EventIdEnum
+  ): Promise<EventIdentifier | null> {
+    const { id, context } = this;
+
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Settlement,
+        eventId: eventId,
+        eventArg1: id.toString(),
+      })
+    );
+
+    return optionize(middlewareEventToEventIdentifier)(event);
+  }
 }

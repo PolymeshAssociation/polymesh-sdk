@@ -220,3 +220,8 @@ export interface ProcedureAuthorization {
 }
 
 export type Falsyable<T> = T | null | undefined;
+
+export enum InstructionStatus {
+  Pending = 'Pending',
+  Unknown = 'Unknown',
+}
