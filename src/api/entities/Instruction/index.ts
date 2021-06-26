@@ -323,6 +323,8 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
   /**
    * Retrieve current status of this Instruction
+   *
+   * @note uses the middleware
    */
   public async getStatus(): Promise<InstructionStatusResult> {
     const isPending = await this.isPending();
@@ -346,14 +348,14 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     eventIdentifier = await this.getInstructionEventFromMiddleware(EventIdEnum.InstructionFailed);
     if (eventIdentifier) {
       return {
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Failed,
         eventIdentifier,
       };
     }
 
     throw new PolymeshError({
       code: ErrorCode.FatalError,
-      message: "It wasn't possible to determine current status for this instruction",
+      message: "It isn't possible to determine the current status of this Instruction",
     });
   }
 

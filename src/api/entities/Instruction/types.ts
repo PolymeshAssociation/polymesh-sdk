@@ -55,7 +55,11 @@ export interface InstructionAffirmation {
   status: AffirmationStatus;
 }
 
-export interface InstructionStatusResult {
-  status: InstructionStatus;
-  eventIdentifier?: EventIdentifier;
-}
+export type InstructionStatusResult =
+  | {
+      status: InstructionStatus.Pending;
+    }
+  | {
+      status: Exclude<InstructionStatus, InstructionStatus.Pending>;
+      eventIdentifier: EventIdentifier;
+    };
