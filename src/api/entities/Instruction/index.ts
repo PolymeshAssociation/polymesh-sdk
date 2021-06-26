@@ -130,18 +130,20 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const details = await settlement.instructionDetails(numberToU64(id, context));
+    const { instruction_id: instructionId, status } = await settlement.instructionDetails(
+      numberToU64(id, context)
+    );
 
-    if (details.isEmpty) {
+    if (instructionId.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notExistsMessage,
       });
     }
 
-    const status = meshInstructionStatusToInstructionStatus(details.status);
+    const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return status !== InternalInstructionStatus.Unknown;
+    return statusResult !== InternalInstructionStatus.Unknown;
   }
 
   /**
@@ -389,6 +391,15 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     eventId: EventIdEnum
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
+
+    const a = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Settlement,
+        eventId: eventId,
+        eventArg1: id.toString(),
+      })
+    );
+    console.log(a);
 
     const {
       data: { eventByIndexedArgs: event },

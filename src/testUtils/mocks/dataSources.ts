@@ -1034,6 +1034,29 @@ export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unkn
 
 /**
  * @hidden
+ * Create and return an apollo stub for multiple queries
+ *
+ * @param queries - query and returnData for each stubbed query
+ */
+export function createApolloMultipleQueriesStub(
+  queries: { query: GraphqlQuery<any>; returnData: unknown }[]
+): SinonStub {
+  const instance = mockInstanceContainer.apolloInstance;
+  const stub = sinon.stub();
+
+  queries.forEach(q => {
+    stub.withArgs(q.query).resolves({
+      data: q.returnData,
+    });
+  });
+
+  instance.query = stub;
+
+  return stub;
+}
+
+/**
+ * @hidden
  * Create and return a query stub
  *
  * @param mod - name of the module
