@@ -108,9 +108,9 @@ export class Procedure<
 
   /**
    * @hidden
-   * Set the context and storage (if not already set)
+   * Set the context and storage (if not already set), return the Context
    */
-  private async setup(args: Args, context: Context, opts: ProcedureOpts = {}): Promise<void> {
+  private async setup(args: Args, context: Context, opts: ProcedureOpts = {}): Promise<Context> {
     if (!this._context) {
       const ctx = context.clone();
       const { signer } = opts;
@@ -125,6 +125,8 @@ export class Procedure<
     if (!this._storage) {
       this._storage = await this.prepareStorage(args);
     }
+
+    return this._context;
   }
 
   /**
@@ -145,9 +147,7 @@ export class Procedure<
     context: Context,
     opts?: ProcedureOpts
   ): Promise<ProcedureAuthorizationStatus> {
-    await this.setup(args, context, opts);
-
-    const { context: ctx } = this;
+    const ctx = await this.setup(args, context, opts);
 
     const checkAuthorizationResult = await this.getAuthorization(args);
 
@@ -216,13 +216,9 @@ export class Procedure<
   ): Promise<TransactionQueue<ReturnValue, QueueReturnType>> {
     try {
       const { args: procArgs, transformer } = args;
+      const ctx = await this.setup(procArgs, context, opts);
 
-      await this.setup(procArgs, context, opts);
-
-      const { roles, permissions, accountFrozen } = await this._checkAuthorization(
-        procArgs,
-        context
-      );
+      const { roles, permissions, accountFrozen } = await this._checkAuthorization(procArgs, ctx);
 
       if (accountFrozen) {
         throw new PolymeshError({
@@ -247,10 +243,9 @@ export class Procedure<
       }
 
       const procedureResult = await this.prepareTransactions(procArgs);
-
       return new TransactionQueue(
         { transactions: this.transactions, procedureResult, transformer },
-        context
+        ctx
       );
     } finally {
       this.cleanup();

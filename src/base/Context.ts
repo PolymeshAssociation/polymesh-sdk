@@ -125,6 +125,8 @@ export class Context {
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
+  private _polymeshApi: ApiPromise;
+
   /**
    * @hidden
    */
@@ -146,19 +148,8 @@ export class Context {
     polymeshApi.on('error', callback);
 
     this._middlewareApi = middlewareApi;
-
-    this.polymeshApi = new Proxy(polymeshApi, {
-      get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
-        if (prop === 'tx' && !this.currentPair) {
-          throw new PolymeshError({
-            code: ErrorCode.FatalError,
-            message: 'Cannot perform transactions without an active account',
-          });
-        }
-
-        return target[prop];
-      },
-    });
+    this._polymeshApi = polymeshApi;
+    this.polymeshApi = Context.createPolymeshApiProxy(this);
     this.keyring = keyring;
     this.ss58Format = ss58Format;
 
@@ -168,6 +159,24 @@ export class Context {
       assertFormatValid(currentPair.address, ss58Format);
       this.currentPair = currentPair;
     }
+  }
+
+  /**
+   * @hidden
+   */
+  static createPolymeshApiProxy(ctx: Context): ApiPromise {
+    return new Proxy(ctx._polymeshApi, {
+      get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
+        if (prop === 'tx' && !ctx.currentPair) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Cannot perform transactions without an active account',
+          });
+        }
+
+        return target[prop];
+      },
+    });
   }
 
   /**
@@ -1068,6 +1077,9 @@ export class Context {
    *   Context to Procedures with different signers
    */
   public clone(): Context {
-    return clone(this);
+    const cloned = clone(this);
+    cloned.polymeshApi = Context.createPolymeshApiProxy(cloned);
+
+    return cloned;
   }
 }
