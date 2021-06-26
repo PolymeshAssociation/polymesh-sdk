@@ -192,7 +192,7 @@ describe('Procedure class', () => {
             sinon.match({ tx: tx2, args: [secondaryKeys] }),
           ]),
         }),
-        context
+        { ...context, currentPair: { address: 'something' } }
       );
 
       const func2 = async function (
@@ -202,7 +202,11 @@ describe('Procedure class', () => {
         return this.addProcedure(proc1, args);
       };
 
+      dsMockUtils.reset();
+
       const proc2 = new Procedure(func2);
+
+      context = dsMockUtils.getContextInstance();
 
       queue = await proc2.prepare({ args: procArgs }, context);
       expect(queue).toMatchObject({
