@@ -392,15 +392,6 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
-    const a = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
-      eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Settlement,
-        eventId: eventId,
-        eventArg1: id.toString(),
-      })
-    );
-    console.log(a);
-
     const {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
