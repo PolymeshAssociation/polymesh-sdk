@@ -4,10 +4,15 @@ import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Instruction, TransactionQueue } from '~/internal';
+import { eventByIndexedArgs } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AffirmationStatus, InstructionStatus, InstructionType } from '~/types';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import {
+  InstructionAffirmationOperation,
+  InstructionStatus as InternalInstructionStatus,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -73,7 +78,7 @@ describe('Instruction class', () => {
     });
   });
 
-  describe('method: exists', () => {
+  describe('method: isPending', () => {
     afterAll(() => {
       sinon.restore();
     });
@@ -88,7 +93,19 @@ describe('Instruction class', () => {
       numberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
-    test('should return whether the instruction exists', async () => {
+    test('should throw if the instruction does not exist', async () => {
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(0));
+
+      return expect(instruction.isPending()).rejects.toThrow("Instruction doesn't exist");
+    });
+
+    test('should return whether the instruction is pending', async () => {
       const status = InstructionStatus.Pending;
       const createdAt = new Date('10/14/1987');
       const tradeDate = new Date('11/17/1987');
@@ -98,6 +115,10 @@ describe('Instruction class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
 
       const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/naming-convention */
@@ -116,7 +137,7 @@ describe('Instruction class', () => {
         .withArgs(rawId)
         .resolves(queryResult);
 
-      let result = await instruction.exists();
+      let result = await instruction.isPending();
 
       expect(result).toBe(true);
 
@@ -126,6 +147,42 @@ describe('Instruction class', () => {
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
         })
       );
+
+      result = await instruction.isPending();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: exists', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    let numberToU64Stub: sinon.SinonStub;
+
+    beforeAll(() => {
+      numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    });
+
+    beforeEach(() => {
+      numberToU64Stub.withArgs(id, context).returns(rawId);
+    });
+
+    test('should return whether the instruction exists', async () => {
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const instructionCounterStub = dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
+
+      let result = await instruction.exists();
+
+      expect(result).toBe(true);
+
+      instructionCounterStub.resolves(dsMockUtils.createMockU64(0));
 
       result = await instruction.exists();
 
@@ -159,6 +216,10 @@ describe('Instruction class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
 
       const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/naming-convention */
@@ -219,14 +280,26 @@ describe('Instruction class', () => {
 
     test('should throw an error if the Instruction does not exist', () => {
       dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(0));
+
+      return expect(instruction.details()).rejects.toThrow("Instruction doesn't exist");
+    });
+
+    test('should throw an error if the Instruction is not pending', () => {
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
+
+      dsMockUtils
         .createQueryStub('settlement', 'instructionDetails')
         .withArgs(rawId)
         .resolves(
           dsMockUtils.createMockInstruction({
             /* eslint-disable @typescript-eslint/naming-convention */
-            instruction_id: dsMockUtils.createMockU64(),
+            instruction_id: dsMockUtils.createMockU64(1),
             status: dsMockUtils.createMockInstructionStatus('Unknown'),
-            venue_id: dsMockUtils.createMockU64(),
+            venue_id: dsMockUtils.createMockU64(1),
             created_at: dsMockUtils.createMockOption(),
             trade_date: dsMockUtils.createMockOption(),
             value_date: dsMockUtils.createMockOption(),
@@ -236,7 +309,7 @@ describe('Instruction class', () => {
         );
 
       return expect(instruction.details()).rejects.toThrow(
-        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
       );
     });
   });
@@ -247,6 +320,7 @@ describe('Instruction class', () => {
     let rawStorageKey: [u64, MeshPortfolioId][];
 
     let instructionDetailsStub: sinon.SinonStub;
+    let instructionCounterStub: sinon.SinonStub;
 
     afterAll(() => {
       sinon.restore();
@@ -294,14 +368,23 @@ describe('Instruction class', () => {
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
+      instructionCounterStub = dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
       dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
     });
 
     test('should throw an error if the instruction does not exist', () => {
+      instructionCounterStub.resolves(dsMockUtils.createMockU64(0));
+      instructionDetailsStub.resolves(dsMockUtils.createMockInstruction());
+      return expect(instruction.getAffirmations()).rejects.toThrow("Instruction doesn't exist");
+    });
+
+    test('should throw an error if the instruction is not pending', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(),
+          instruction_id: dsMockUtils.createMockU64(1),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType(),
@@ -312,7 +395,7 @@ describe('Instruction class', () => {
         })
       );
       return expect(instruction.getAffirmations()).rejects.toThrow(
-        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
       );
     });
 
@@ -356,6 +439,9 @@ describe('Instruction class', () => {
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
     });
 
     test("should return the instruction's legs", async () => {
@@ -393,11 +479,11 @@ describe('Instruction class', () => {
       expect(leg[0].token).toEqual(entityMockUtils.getSecurityTokenInstance());
     });
 
-    test('should throw an error if the instruction does not exist', () => {
+    test('should throw an error if the instruction is not pending', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(),
+          instruction_id: dsMockUtils.createMockU64(1),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType(),
@@ -408,7 +494,7 @@ describe('Instruction class', () => {
         })
       );
       return expect(instruction.getLegs()).rejects.toThrow(
-        'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)'
+        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
       );
     });
   });
@@ -484,6 +570,207 @@ describe('Instruction class', () => {
       const queue = await instruction.withdraw();
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getStatus', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    let numberToU64Stub: sinon.SinonStub;
+
+    beforeAll(() => {
+      numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    });
+
+    beforeEach(() => {
+      numberToU64Stub.withArgs(id, context).returns(rawId);
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
+    });
+
+    test('should return Pending Instruction status', async () => {
+      const queryResult = dsMockUtils.createMockInstruction({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Pending),
+        venue_id: dsMockUtils.createMockU64(),
+        created_at: dsMockUtils.createMockOption(),
+        trade_date: dsMockUtils.createMockOption(),
+        value_date: dsMockUtils.createMockOption(),
+        settlement_type: dsMockUtils.createMockSettlementType(),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      const result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.Pending,
+      });
+    });
+
+    test('should return Executed Instruction status', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = 1;
+      const fakeQueryResult = {
+        /* eslint-disable @typescript-eslint/naming-convention */
+        block_id: blockNumber.toNumber(),
+        block: { datetime: blockDate },
+        event_idx: eventIdx,
+        /* eslint-enable @typescript-eslint/naming-convention */
+      };
+      const fakeEventIdentifierResult = { blockNumber, blockDate, eventIndex: eventIdx };
+
+      const queryVariables = {
+        moduleId: ModuleIdEnum.Settlement,
+        eventId: EventIdEnum.InstructionExecuted,
+        eventArg1: id.toString(),
+      };
+
+      // Should return Pending status
+      const queryResult = dsMockUtils.createMockInstruction({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
+        venue_id: dsMockUtils.createMockU64(),
+        created_at: dsMockUtils.createMockOption(),
+        trade_date: dsMockUtils.createMockOption(),
+        value_date: dsMockUtils.createMockOption(),
+        settlement_type: dsMockUtils.createMockSettlementType(),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(queryVariables), {
+        eventByIndexedArgs: fakeQueryResult,
+      });
+
+      const result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.Executed,
+        eventIdentifier: fakeEventIdentifierResult,
+      });
+    });
+
+    test('should return Failed Instruction status', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = 1;
+      const fakeQueryResult = {
+        /* eslint-disable @typescript-eslint/naming-convention */
+        block_id: blockNumber.toNumber(),
+        block: { datetime: blockDate },
+        event_idx: eventIdx,
+        /* eslint-enable @typescript-eslint/naming-convention */
+      };
+      const fakeEventIdentifierResult = { blockNumber, blockDate, eventIndex: eventIdx };
+
+      const queryVariables = {
+        moduleId: ModuleIdEnum.Settlement,
+        eventId: EventIdEnum.InstructionExecuted,
+        eventArg1: id.toString(),
+      };
+
+      // Should return Pending status
+      const queryResult = dsMockUtils.createMockInstruction({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
+        venue_id: dsMockUtils.createMockU64(),
+        created_at: dsMockUtils.createMockOption(),
+        trade_date: dsMockUtils.createMockOption(),
+        value_date: dsMockUtils.createMockOption(),
+        settlement_type: dsMockUtils.createMockSettlementType(),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      dsMockUtils.createApolloMultipleQueriesStub([
+        {
+          query: eventByIndexedArgs(queryVariables),
+          returnData: {
+            eventByIndexedArgs: null,
+          },
+        },
+        {
+          query: eventByIndexedArgs({
+            ...queryVariables,
+            eventId: EventIdEnum.InstructionFailed,
+          }),
+          returnData: {
+            eventByIndexedArgs: fakeQueryResult,
+          },
+        },
+      ]);
+
+      const result = await instruction.getStatus();
+      expect(result).toMatchObject({
+        status: InstructionStatus.Failed,
+        eventIdentifier: fakeEventIdentifierResult,
+      });
+    });
+
+    test("should throw an error if Instruction status couldn't be determied", async () => {
+      const queryVariables = {
+        moduleId: ModuleIdEnum.Settlement,
+        eventId: EventIdEnum.InstructionExecuted,
+        eventArg1: id.toString(),
+      };
+
+      // Should return Pending status
+      const queryResult = dsMockUtils.createMockInstruction({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
+        venue_id: dsMockUtils.createMockU64(),
+        created_at: dsMockUtils.createMockOption(),
+        trade_date: dsMockUtils.createMockOption(),
+        value_date: dsMockUtils.createMockOption(),
+        settlement_type: dsMockUtils.createMockSettlementType(),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      dsMockUtils.createApolloMultipleQueriesStub([
+        {
+          query: eventByIndexedArgs(queryVariables),
+          returnData: {
+            eventByIndexedArgs: null,
+          },
+        },
+        {
+          query: eventByIndexedArgs({
+            ...queryVariables,
+            eventId: EventIdEnum.InstructionFailed,
+          }),
+          returnData: {
+            eventByIndexedArgs: null,
+          },
+        },
+      ]);
+
+      return expect(instruction.getStatus()).rejects.toThrow(
+        "It isn't possible to determine the current status of this Instruction"
+      );
     });
   });
 });

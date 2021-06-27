@@ -10,6 +10,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
+jest.mock(
+  '~/api/entities/Instruction',
+  require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
+);
+
 describe('Settlements Class', () => {
   let context: Mocked<Context>;
   let settlements: Settlements;
@@ -55,6 +60,32 @@ describe('Settlements Class', () => {
       });
 
       expect(settlements.getVenue({ id: venueId })).rejects.toThrow("The Venue doesn't exist");
+    });
+  });
+
+  describe('method: getInstruction', () => {
+    test('should return an Instruction by its id', async () => {
+      const instructionId = new BigNumber(1);
+      const matchingInstruction = entityMockUtils.getInstructionInstance({ id: instructionId });
+
+      entityMockUtils.configureMocks({
+        instructionOptions: { exists: true },
+      });
+
+      const result = await settlements.getInstruction({ id: instructionId });
+      expect(result).toMatchObject(matchingInstruction);
+    });
+
+    test('should throw if Instruction does not exist', async () => {
+      const instructionId = new BigNumber(1);
+
+      entityMockUtils.configureMocks({
+        instructionOptions: { exists: false },
+      });
+
+      expect(settlements.getInstruction({ id: instructionId })).rejects.toThrow(
+        "The Instruction doesn't exist"
+      );
     });
   });
 });

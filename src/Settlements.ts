@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Venue } from '~/api/entities/Venue';
-import { Context, PolymeshError } from '~/internal';
+import { Context, Instruction, PolymeshError, Venue } from '~/internal';
 import { ErrorCode } from '~/types';
 
 /**
@@ -36,5 +35,26 @@ export class Settlements {
     }
 
     return venue;
+  }
+
+  /**
+   * Retrieve an Instruction by its id
+   *
+   * @param id - identifier number of the instruction
+   */
+  public async getInstruction(args: { id: BigNumber }): Promise<Instruction> {
+    const { context } = this;
+
+    const instruction = new Instruction(args, context);
+
+    const instructionExists = await instruction.exists();
+    if (!instructionExists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Instruction doesn't exist",
+      });
+    }
+
+    return instruction;
   }
 }

@@ -202,6 +202,7 @@ interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
   getLegs?: ResultSet<Leg>;
+  isPending?: boolean;
   exists?: boolean;
 }
 
@@ -319,6 +320,7 @@ let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
+let instructionIsPendigStub: SinonStub;
 let instructionExistsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
@@ -723,7 +725,7 @@ const defaultInstructionOptions: InstructionOptions = {
     valueDate: null,
     type: InstructionType.SettleOnAffirmation,
   },
-  exists: false,
+  isPending: false,
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
@@ -1188,6 +1190,7 @@ function configureInstruction(opts: InstructionOptions): void {
     id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
+    isPending: instructionIsPendigStub.resolves(opts.isPending),
     exists: instructionExistsStub.resolves(opts.exists),
   } as unknown) as MockInstruction;
 
@@ -1207,6 +1210,7 @@ function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
   instructionGetLegsStub = sinon.stub();
+  instructionIsPendigStub = sinon.stub();
   instructionExistsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };

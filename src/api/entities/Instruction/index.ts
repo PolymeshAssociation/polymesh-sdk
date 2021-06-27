@@ -9,26 +9,40 @@ import {
   SecurityToken,
   Venue,
 } from '~/internal';
-import { ErrorCode, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import { eventByIndexedArgs } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import {
+  Ensured,
+  ErrorCode,
+  EventIdentifier,
+  PaginationOptions,
+  ProcedureMethod,
+  ResultSet,
+} from '~/types';
+import {
+  InstructionAffirmationOperation,
+  InstructionStatus as InternalInstructionStatus,
+} from '~/types/internal';
 import {
   balanceToBigNumber,
   identityIdToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
+  middlewareEventToEventIdentifier,
   momentToDate,
   numberToU64,
   tickerToString,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, optionize, requestPaginated } from '~/utils/internal';
 
 import {
   InstructionAffirmation,
   InstructionDetails,
   InstructionStatus,
+  InstructionStatusResult,
   InstructionType,
   Leg,
 } from './types';
@@ -37,8 +51,9 @@ export interface UniqueIdentifiers {
   id: BigNumber;
 }
 
-const notExistsMessage =
-  'Instruction no longer exists. This means it was already executed/rejected (execution might have failed)';
+const notExistsMessage = "Instruction doesn't exist";
+const notPendingMessage =
+  'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain';
 
 /**
  * Represents a settlement Instruction to be executed on a certain Venue
@@ -101,10 +116,10 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Retrieve whether the Instruction still exists on chain. Executed/rejected instructions
+   * Retrieve whether the Instruction is still pending on chain. Executed/rejected instructions
    *   are pruned from the storage
    */
-  public async exists(): Promise<boolean> {
+  public async isPending(): Promise<boolean> {
     const {
       context: {
         polymeshApi: {
@@ -115,11 +130,37 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { status: rawStatus } = await settlement.instructionDetails(numberToU64(id, context));
+    const exists = await this.exists();
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
 
-    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+    const { status } = await settlement.instructionDetails(numberToU64(id, context));
 
-    return status !== InstructionStatus.Unknown;
+    const statusResult = meshInstructionStatusToInstructionStatus(status);
+
+    return statusResult !== InternalInstructionStatus.Unknown;
+  }
+
+  /**
+   * Retrieve whether the Instruction exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+    } = this;
+
+    const instructionCounter = await settlement.instructionCounter();
+
+    return id.lte(u64ToBigNumber(instructionCounter));
   }
 
   /**
@@ -136,6 +177,14 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
+    const exists = await this.exists();
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
+
     const {
       status: rawStatus,
       created_at: createdAt,
@@ -147,15 +196,15 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
-    if (status === InstructionStatus.Unknown) {
+    if (status === InternalInstructionStatus.Unknown) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notExistsMessage,
+        message: notPendingMessage,
       });
     }
 
     const details = {
-      status,
+      status: InstructionStatus.Pending,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
@@ -194,12 +243,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const exists = await this.exists();
+    const isPending = await this.isPending();
 
-    if (!exists) {
+    if (!isPending) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notExistsMessage,
+        message: notPendingMessage,
       });
     }
 
@@ -238,12 +287,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const exists = await this.exists();
+    const isPending = await this.isPending();
 
-    if (!exists) {
+    if (!isPending) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notExistsMessage,
+        message: notPendingMessage,
       });
     }
 
@@ -274,6 +323,44 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve current status of this Instruction
+   *
+   * @note uses the middleware
+   */
+  public async getStatus(): Promise<InstructionStatusResult> {
+    const isPending = await this.isPending();
+
+    if (isPending) {
+      return {
+        status: InstructionStatus.Pending,
+      };
+    }
+
+    let eventIdentifier = await this.getInstructionEventFromMiddleware(
+      EventIdEnum.InstructionExecuted
+    );
+    if (eventIdentifier) {
+      return {
+        status: InstructionStatus.Executed,
+        eventIdentifier,
+      };
+    }
+
+    eventIdentifier = await this.getInstructionEventFromMiddleware(EventIdEnum.InstructionFailed);
+    if (eventIdentifier) {
+      return {
+        status: InstructionStatus.Failed,
+        eventIdentifier,
+      };
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: "It isn't possible to determine the current status of this Instruction",
+    });
+  }
+
+  /**
    * Reject this instruction
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
@@ -292,4 +379,26 @@ export class Instruction extends Entity<UniqueIdentifiers> {
    * Withdraw affirmation from this instruction (unauthorize)
    */
   public withdraw: ProcedureMethod<void, Instruction>;
+
+  /**
+   * @hidden
+   * Retrieve Instruction status event from middleware
+   */
+  private async getInstructionEventFromMiddleware(
+    eventId: EventIdEnum
+  ): Promise<EventIdentifier | null> {
+    const { id, context } = this;
+
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Settlement,
+        eventId: eventId,
+        eventArg1: id.toString(),
+      })
+    );
+
+    return optionize(middlewareEventToEventIdentifier)(event);
+  }
 }
