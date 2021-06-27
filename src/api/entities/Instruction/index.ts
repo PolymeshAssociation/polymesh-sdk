@@ -130,16 +130,14 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const { instruction_id: instructionId, status } = await settlement.instructionDetails(
-      numberToU64(id, context)
-    );
-
-    if (instructionId.isEmpty) {
+    if (!(await this.exists())) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notExistsMessage,
       });
     }
+
+    const { status } = await settlement.instructionDetails(numberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
@@ -157,14 +155,11 @@ export class Instruction extends Entity<UniqueIdentifiers> {
         },
       },
       id,
-      context,
     } = this;
 
-    const { instruction_id: instructionId } = await settlement.instructionDetails(
-      numberToU64(id, context)
-    );
+    const instructionCounter = await settlement.instructionCounter();
 
-    return !instructionId.isEmpty;
+    return id.isLessThanOrEqualTo(u64ToBigNumber(instructionCounter));
   }
 
   /**
@@ -181,6 +176,13 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
+    if (!(await this.exists())) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: notExistsMessage,
+      });
+    }
+
     const {
       status: rawStatus,
       created_at: createdAt,
@@ -189,13 +191,6 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       settlement_type: type,
       venue_id: venueId,
     } = await settlement.instructionDetails(numberToU64(id, context));
-
-    if (venueId.isEmpty) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: notExistsMessage,
-      });
-    }
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 

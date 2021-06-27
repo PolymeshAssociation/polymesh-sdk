@@ -98,12 +98,9 @@ describe('Instruction class', () => {
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
-      const queryResult = dsMockUtils.createMockInstruction();
-
       dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(0));
 
       return expect(instruction.isPending()).rejects.toThrow("Instruction doesn't exist");
     });
@@ -118,6 +115,10 @@ describe('Instruction class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
 
       const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/naming-convention */
@@ -169,50 +170,19 @@ describe('Instruction class', () => {
     });
 
     test('should return whether the instruction exists', async () => {
-      const status = InstructionStatus.Pending;
-      const createdAt = new Date('10/14/1987');
-      const tradeDate = new Date('11/17/1987');
-      const valueDate = new Date('11/17/1987');
-      const venueId = new BigNumber(1);
-      const type = InstructionType.SettleOnAffirmation;
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
-      const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(1),
-        status: dsMockUtils.createMockInstructionStatus(status),
-        venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
-        created_at: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(createdAt.getTime())),
-        trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
-        value_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(valueDate.getTime())),
-        settlement_type: dsMockUtils.createMockSettlementType(type),
-        /* eslint-enable @typescript-eslint/naming-convention */
-      });
-
-      const instructionDetailsStub = dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      const instructionCounterStub = dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
 
       let result = await instruction.exists();
 
       expect(result).toBe(true);
 
-      instructionDetailsStub.resolves(
-        dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
-          venue_id: dsMockUtils.createMockU64(),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-          settlement_type: dsMockUtils.createMockSettlementType(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        })
-      );
+      instructionCounterStub.resolves(dsMockUtils.createMockU64(0));
 
       result = await instruction.exists();
 
@@ -246,6 +216,10 @@ describe('Instruction class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
 
       const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/naming-convention */
@@ -306,14 +280,17 @@ describe('Instruction class', () => {
 
     test('should throw an error if the Instruction does not exist', () => {
       dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(dsMockUtils.createMockInstruction());
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(0));
 
       return expect(instruction.details()).rejects.toThrow("Instruction doesn't exist");
     });
 
     test('should throw an error if the Instruction is not pending', () => {
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
+
       dsMockUtils
         .createQueryStub('settlement', 'instructionDetails')
         .withArgs(rawId)
@@ -343,6 +320,7 @@ describe('Instruction class', () => {
     let rawStorageKey: [u64, MeshPortfolioId][];
 
     let instructionDetailsStub: sinon.SinonStub;
+    let instructionCounterStub: sinon.SinonStub;
 
     afterAll(() => {
       sinon.restore();
@@ -390,10 +368,14 @@ describe('Instruction class', () => {
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
+      instructionCounterStub = dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
       dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
     });
 
     test('should throw an error if the instruction does not exist', () => {
+      instructionCounterStub.resolves(dsMockUtils.createMockU64(0));
       instructionDetailsStub.resolves(dsMockUtils.createMockInstruction());
       return expect(instruction.getAffirmations()).rejects.toThrow("Instruction doesn't exist");
     });
@@ -457,6 +439,9 @@ describe('Instruction class', () => {
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
     });
 
     test("should return the instruction's legs", async () => {
@@ -601,6 +586,9 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       numberToU64Stub.withArgs(id, context).returns(rawId);
+      dsMockUtils
+        .createQueryStub('settlement', 'instructionCounter')
+        .resolves(dsMockUtils.createMockU64(10));
     });
 
     test('should return Pending Instruction status', async () => {
