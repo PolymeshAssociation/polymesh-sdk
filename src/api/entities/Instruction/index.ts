@@ -130,7 +130,8 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    if (!(await this.exists())) {
+    const exists = await this.exists();
+    if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notExistsMessage,
@@ -159,7 +160,7 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const instructionCounter = await settlement.instructionCounter();
 
-    return id.isLessThanOrEqualTo(u64ToBigNumber(instructionCounter));
+    return id.lte(u64ToBigNumber(instructionCounter));
   }
 
   /**
@@ -176,7 +177,8 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    if (!(await this.exists())) {
+    const exists = await this.exists();
+    if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
         message: notExistsMessage,
