@@ -393,6 +393,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated in favor of `inviteAgent`
    */
   public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
 

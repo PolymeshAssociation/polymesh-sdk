@@ -656,7 +656,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     restrictions: [],
     availableSlots: 3,
   },
-  corporateActionsGetAgents: [{ did: 'someDid' } as Identity],
+  corporateActionsGetAgents: [],
   corporateActionsGetDefaults: {
     targets: { identities: [], treatment: TargetTreatment.Exclude },
     defaultTaxWithholding: new BigNumber(10),
