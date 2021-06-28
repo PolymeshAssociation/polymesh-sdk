@@ -15,6 +15,8 @@ import {
   PortfolioCustodianRole,
   Role,
   RoleType,
+  SecondaryKey,
+  SubCallback,
   TickerOwnerRole,
   TokenCaaRole,
   TokenOwnerRole,
@@ -938,6 +940,48 @@ describe('Identity class', () => {
       const result = await identity.getPendingDistributions();
 
       expect(result).toEqual([expectedDistribution]);
+    });
+  });
+
+  describe('method: getSecondaryKeys', () => {
+    test('should return a list of Secondaries', async () => {
+      const fakeResult = [
+        {
+          signer: entityMockUtils.getAccountInstance({ address: 'someAddress' }),
+          permissions: {
+            tokens: null,
+            transactions: null,
+            transactionGroups: [],
+            portfolios: null,
+          },
+        },
+      ];
+
+      dsMockUtils.configureMocks({ contextOptions: { secondaryKeys: fakeResult } });
+
+      const did = 'someDid';
+
+      const identity = new Identity({ did }, context);
+
+      const result = await identity.getSecondaryKeys();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      const getSecondaryKeysStub = dsMockUtils
+        .getContextInstance()
+        .getSecondaryKeys.resolves(unsubCallback);
+
+      const did = 'someDid';
+
+      const identity = new Identity({ did }, context);
+
+      const callback = (() => [] as unknown) as SubCallback<SecondaryKey[]>;
+      const result = await identity.getSecondaryKeys(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(getSecondaryKeysStub, callback);
     });
   });
 });

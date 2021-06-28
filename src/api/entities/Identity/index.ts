@@ -30,6 +30,7 @@ import {
   Order,
   ResultSet,
   Role,
+  SecondaryKey,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -561,5 +562,26 @@ export class Identity extends Entity<UniqueIdentifiers> {
         return !boolToBoolean(holderPaid);
       }
     );
+  }
+
+  /**
+   * Get the list of secondary keys related to the Identity
+   *
+   * @note can be subscribed to
+   */
+  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
+  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getSecondaryKeys(
+    callback?: SubCallback<SecondaryKey[]>
+  ): Promise<SecondaryKey[] | UnsubCallback> {
+    const { context } = this;
+
+    if (callback) {
+      return context.getSecondaryKeys(callback);
+    }
+
+    return context.getSecondaryKeys();
   }
 }
