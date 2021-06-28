@@ -13,7 +13,7 @@ import {
   toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
-import { ProcedureMethod, SecondaryKey, Signer, SubCallback, UnsubCallback } from '~/types';
+import { ProcedureMethod, Signer } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -69,27 +69,6 @@ export class CurrentIdentity extends Identity {
       { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }] },
       context
     );
-  }
-
-  /**
-   * Get the list of secondary keys related to the Identity
-   *
-   * @note can be subscribed to
-   */
-  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
-  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getSecondaryKeys(
-    callback?: SubCallback<SecondaryKey[]>
-  ): Promise<SecondaryKey[] | UnsubCallback> {
-    const { context } = this;
-
-    if (callback) {
-      return context.getSecondaryKeys(callback);
-    }
-
-    return context.getSecondaryKeys();
   }
 
   /**
