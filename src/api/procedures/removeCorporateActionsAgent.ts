@@ -1,7 +1,7 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { stringToTicker } from '~/utils/conversion';
+import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -12,6 +12,8 @@ export interface Params {
 
 /**
  * @hidden
+ *
+ * @deprecated
  */
 export async function prepareRemoveCorporateActionsAgent(
   this: Procedure<Params, void>,
@@ -20,7 +22,7 @@ export async function prepareRemoveCorporateActionsAgent(
   const {
     context: {
       polymeshApi: {
-        tx: { corporateAction },
+        tx: { externalAgents },
       },
     },
     context,
@@ -30,19 +32,20 @@ export async function prepareRemoveCorporateActionsAgent(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const [{ owner }, agent] = await Promise.all([
-    securityToken.details(),
-    securityToken.corporateActions.getAgents(),
-  ]);
+  const agents = await securityToken.corporateActions.getAgents();
 
-  if (owner.did === agent[0].did) {
+  if (agents.length !== 1) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'There is no set Corporate Actions Agent',
+      message:
+        'We can not perform this procedure with more than one Corporate Actions Agent involved',
     });
   }
 
-  this.addTransaction(corporateAction.removeCa, {}, stringToTicker(ticker, context));
+  const rawTicker = stringToTicker(ticker, context);
+  const rawIdentityId = stringToIdentityId(agents[0].did, context);
+
+  this.addTransaction(externalAgents.removeAgent, {}, rawTicker, rawIdentityId);
 }
 
 /**

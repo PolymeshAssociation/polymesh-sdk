@@ -138,7 +138,6 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
       const token = new SecurityToken({ ticker }, context);
       const { primaryIssuanceAgents } = await token.details();
-      console.log(primaryIssuanceAgents);
 
       return primaryIssuanceAgents.map(({ did: agentDid }) => agentDid).includes(did);
     } else if (isTokenCaaRole(role)) {
