@@ -930,7 +930,7 @@ export function meshPermissionsToPermissions(
     transactions = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: extrinsicType!,
-      values: uniq(txValues),
+      values: txValues,
       exceptions,
     };
   }
