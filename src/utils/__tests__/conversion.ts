@@ -434,9 +434,11 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     const context = dsMockUtils.getContextInstance();
     const ticker = 'SOMETOKEN';
     const amount = new BigNumber(100);
+    const memo = 'someMessage';
     const token = entityMockUtils.getSecurityTokenInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    const rawMemo = ('memo' as unknown) as Memo;
     const fakeResult = ('MovePortfolioItem' as unknown) as MovePortfolioItem;
 
     let portfolioMovement: PortfolioMovement = {
@@ -456,6 +458,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .withArgs('MovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
+        memo: null,
       })
       .returns(fakeResult);
 
@@ -469,6 +472,29 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     };
 
     result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', memo).returns(rawMemo);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('MovePortfolioItem', {
+        ticker: rawTicker,
+        amount: rawAmount,
+        memo: rawMemo,
+      })
+      .returns(fakeResult);
+
+    portfolioMovement = {
+      token,
+      amount,
+      memo,
+    };
+
+    result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+
+    console.log(result);
 
     expect(result).toBe(fakeResult);
   });

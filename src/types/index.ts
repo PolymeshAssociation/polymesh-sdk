@@ -917,6 +917,7 @@ export type PermissionsLike = {
 export interface PortfolioMovement {
   token: string | SecurityToken;
   amount: BigNumber;
+  memo?: string;
 }
 
 export interface ProcedureAuthorizationStatus {

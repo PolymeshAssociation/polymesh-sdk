@@ -208,6 +208,7 @@ import {
   getTicker,
   isModuleOrTagMatch,
   isPrintableAscii,
+  optionize,
   padString,
   removePadding,
 } from '~/utils/internal';
@@ -2566,10 +2567,11 @@ export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
 ): MovePortfolioItem {
-  const { token, amount } = portfolioItem;
+  const { token, amount, memo } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
     ticker: stringToTicker(getTicker(token), context),
     amount: numberToBalance(amount, context),
+    memo: optionize(stringToMemo)(memo, context),
   });
 }
 
