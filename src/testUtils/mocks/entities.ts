@@ -593,7 +593,7 @@ const defaultIdentityOptions: IdentityOptions = {
   areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
-let currentIdentityOptions: IdentityOptions = defaultIdentityOptions;
+let currentIdentityOptions: IdentityOptions = { ...defaultIdentityOptions };
 const defaultAccountOptions: AccountOptions = {
   address: 'someAddress',
   key: 'someKey',
