@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId, ScopeId, Ticker } from 'polymesh-types/types';
+import { DidRecord, IdentityId, ScopeId, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Identity, SecurityToken } from '~/internal';
@@ -10,19 +10,21 @@ import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/querie
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
+  Account,
   DistributionWithDetails,
   Order,
   PortfolioCustodianRole,
   Role,
   RoleType,
   SecondaryKey,
-  SubCallback,
+  Signer,
   TickerOwnerRole,
   TokenCaaRole,
   TokenOwnerRole,
   TokenPiaRole,
   VenueOwnerRole,
 } from '~/types';
+import { SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -944,44 +946,106 @@ describe('Identity class', () => {
   });
 
   describe('method: getSecondaryKeys', () => {
-    test('should return a list of Secondaries', async () => {
-      const fakeResult = [
+    const did = 'someDid';
+    const accountId = 'someAccountId';
+    const signerValues = [
+      { value: did, type: SignerType.Identity },
+      { value: accountId, type: SignerType.Account },
+    ];
+    const signerIdentityId = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId(did),
+    });
+    const signerAccountId = dsMockUtils.createMockSignatory({
+      Account: dsMockUtils.createMockAccountId(accountId),
+    });
+
+    let account: Account;
+    let fakeIdentity: Identity;
+    let fakeResult: SecondaryKey[];
+
+    let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
+    let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
+    let didRecordsStub: sinon.SinonStub;
+    let rawDidRecord: DidRecord;
+
+    beforeAll(() => {
+      fakeIdentity = entityMockUtils.getIdentityInstance();
+      signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
+      signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
+      signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
+
+      account = entityMockUtils.getAccountInstance({ address: accountId });
+      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
+      signerValueToSignerStub.withArgs(signerValues[0], sinon.match.object).returns(fakeIdentity);
+      signerValueToSignerStub.withArgs(signerValues[1], sinon.match.object).returns(account);
+
+      fakeResult = [
         {
-          signer: entityMockUtils.getAccountInstance({ address: 'someAddress' }),
+          signer: fakeIdentity,
+          permissions: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
+        },
+        {
+          signer: account,
           permissions: {
             tokens: null,
+            portfolios: null,
             transactions: null,
             transactionGroups: [],
-            portfolios: null,
           },
         },
       ];
+    });
 
-      dsMockUtils.configureMocks({ contextOptions: { secondaryKeys: fakeResult } });
+    beforeEach(() => {
+      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
+      /* eslint-disable @typescript-eslint/naming-convention */
+      rawDidRecord = dsMockUtils.createMockDidRecord({
+        roles: [],
+        primary_key: dsMockUtils.createMockAccountId(),
+        secondary_keys: [
+          dsMockUtils.createMockSecondaryKey({
+            signer: signerIdentityId,
+            permissions: dsMockUtils.createMockPermissions({
+              asset: [],
+              portfolio: [],
+              extrinsic: [],
+            }),
+          }),
+          dsMockUtils.createMockSecondaryKey({
+            signer: signerAccountId,
+            permissions: dsMockUtils.createMockPermissions({
+              asset: null,
+              portfolio: null,
+              extrinsic: null,
+            }),
+          }),
+        ],
+      });
+      /* eslint-enabled @typescript-eslint/naming-convention */
+    });
 
-      const did = 'someDid';
-
-      const identity = new Identity({ did }, context);
+    test('should return a list of Signers', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      didRecordsStub.resolves(rawDidRecord);
 
       const result = await identity.getSecondaryKeys();
       expect(result).toEqual(fakeResult);
     });
 
     test('should allow subscription', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
       const unsubCallback = 'unsubCallBack';
 
-      const getSecondaryKeysStub = dsMockUtils
-        .getContextInstance()
-        .getSecondaryKeys.resolves(unsubCallback);
+      didRecordsStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawDidRecord);
+        return unsubCallback;
+      });
 
-      const did = 'someDid';
-
-      const identity = new Identity({ did }, context);
-
-      const callback = (() => [] as unknown) as SubCallback<SecondaryKey[]>;
+      const callback = sinon.stub();
       const result = await identity.getSecondaryKeys(callback);
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(getSecondaryKeysStub, callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 });

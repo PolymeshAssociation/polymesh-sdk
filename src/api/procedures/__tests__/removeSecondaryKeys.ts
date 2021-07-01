@@ -57,7 +57,14 @@ describe('removeSecondaryKeys procedure', () => {
       Account: dsMockUtils.createMockAccountId(signerValue.value),
     });
 
-    mockContext.getSecondaryKeys.resolves(signers.map(signer => ({ signer, permissions: [] })));
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        secondaryKeys: signers.map(signer => ({
+          signer,
+          permissions: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
+        })),
+      },
+    });
 
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);

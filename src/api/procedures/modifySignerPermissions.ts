@@ -38,7 +38,8 @@ export async function prepareModifySignerPermissions(
 
   const { secondaryKeys: signers } = args;
 
-  const secondaryKeys = await context.getSecondaryKeys();
+  const currentIdentity = await context.getCurrentIdentity();
+  const secondaryKeys = await currentIdentity.getSecondaryKeys();
   const signerValues = signers.map(({ signer, permissions }) => {
     return {
       signer: signerToSignerValue(signer),

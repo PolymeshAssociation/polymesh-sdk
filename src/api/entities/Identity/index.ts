@@ -43,10 +43,13 @@ import {
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
+  meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
+  signatoryToSignerValue,
+  signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
@@ -576,12 +579,28 @@ export class Identity extends Entity<UniqueIdentifiers> {
   public async getSecondaryKeys(
     callback?: SubCallback<SecondaryKey[]>
   ): Promise<SecondaryKey[] | UnsubCallback> {
-    const { context } = this;
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
+      return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
+        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), context),
+        permissions: meshPermissionsToPermissions(permissions, context),
+      }));
+    };
 
     if (callback) {
-      return context.getSecondaryKeys(callback);
+      return identity.didRecords(did, records => callback(assembleResult(records)));
     }
 
-    return context.getSecondaryKeys();
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
   }
 }
