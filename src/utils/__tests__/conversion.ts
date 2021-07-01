@@ -1180,6 +1180,77 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
 
+    value = {
+      tokens: null,
+      transactions: {
+        values: [ModuleName.Sto],
+        type: PermissionType.Include,
+        exceptions: [TxTags.sto.Invest, TxTags.sto.Stop],
+      },
+      transactionGroups: [],
+      portfolios: null,
+    };
+
+    createTypeStub
+      .withArgs('Permissions', {
+        asset: 'Whole',
+        extrinsic: {
+          These: [
+            /* eslint-disable @typescript-eslint/naming-convention */
+            {
+              pallet_name: 'Sto',
+              dispatchable_names: { Except: ['invest', 'stop'] },
+            },
+            /* eslint-enable @typescript-eslint/naming-convention */
+          ],
+        },
+        portfolio: 'Whole',
+      })
+      .returns(fakeResult);
+
+    result = permissionsToMeshPermissions(value, context);
+    expect(result).toEqual(fakeResult);
+
+    value = {
+      tokens: {
+        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        type: PermissionType.Exclude,
+      },
+      transactions: {
+        values: [ModuleName.Sto],
+        type: PermissionType.Exclude,
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+        type: PermissionType.Exclude,
+      },
+    };
+
+    createTypeStub
+      .withArgs('Permissions', {
+        asset: {
+          Except: [rawTicker],
+        },
+        extrinsic: {
+          Except: [
+            /* eslint-disable @typescript-eslint/naming-convention */
+            {
+              pallet_name: 'Sto',
+              dispatchable_names: 'Whole',
+            },
+            /* eslint-enable @typescript-eslint/naming-convention */
+          ],
+        },
+        portfolio: {
+          Except: [rawPortfolioId],
+        },
+      })
+      .returns(fakeResult);
+
+    result = permissionsToMeshPermissions(value, context);
+    expect(result).toEqual(fakeResult);
+
     const tickers = ['BTICKER', 'ATICKER', 'CTICKER'];
 
     value = {
@@ -1226,6 +1297,59 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     expect(result).toEqual(fakeResult);
   });
 
+  test('permissionsToMeshPermissions should throw an error if attempting to add permissions for specific transactions as well as the entire module', () => {
+    const value: Permissions = {
+      tokens: null,
+      transactions: {
+        values: [TxTags.sto.Invest, ModuleName.Sto],
+        type: PermissionType.Include,
+      },
+      transactionGroups: [],
+      portfolios: null,
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => permissionsToMeshPermissions(value, context)).toThrow(
+      'Attempting to add permissions for specific transactions as well as the entire module'
+    );
+  });
+
+  test('permissionsToMeshPermissions should throw an error if user simultaneously include and exclude transactions belonging to the same module', () => {
+    const value: Permissions = {
+      tokens: null,
+      transactions: {
+        values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+        type: PermissionType.Exclude,
+        exceptions: [TxTags.sto.Stop],
+      },
+      transactionGroups: [],
+      portfolios: null,
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => permissionsToMeshPermissions(value, context)).toThrow(
+      'Cannot simultaneously include and exclude transactions belonging to the same module'
+    );
+  });
+
+  test('permissionsToMeshPermissions should throw an error if attempting to add a transaction permission exception without its corresponding module being included/excluded', () => {
+    const value: Permissions = {
+      tokens: null,
+      transactions: {
+        values: [],
+        type: PermissionType.Exclude,
+        exceptions: [TxTags.sto.Stop],
+      },
+      transactionGroups: [],
+      portfolios: null,
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => permissionsToMeshPermissions(value, context)).toThrow(
+      'Attempting to add an transaction permission exception without its corresponding module being included/excluded'
+    );
+  });
+
   test('meshPermissionsToPermissions should convert a polkadot Permissions object to a Permissions', () => {
     const context = dsMockUtils.getContextInstance();
     const ticker = 'someTicker';
@@ -1237,10 +1361,10 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       },
       transactions: {
         type: PermissionType.Include,
-        values: [ModuleName.Identity, ModuleName.Confidential],
+        values: [TxTags.identity.AddClaim, ModuleName.Confidential],
         exceptions: [],
       },
-      transactionGroups: [TxGroup.ClaimsManagement],
+      transactionGroups: [],
       portfolios: {
         values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
         type: PermissionType.Include,
@@ -1255,11 +1379,13 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           /* eslint-disable @typescript-eslint/naming-convention */
           dsMockUtils.createMockPalletPermissions({
             pallet_name: dsMockUtils.createMockPalletName('Identity'),
-            dispatchable_names: [dsMockUtils.createMockDispatchableName('add_claim')],
+            dispatchable_names: dsMockUtils.createMockDispatchableNames({
+              These: [dsMockUtils.createMockDispatchableName('add_claim')],
+            }),
           }),
           dsMockUtils.createMockPalletPermissions({
             pallet_name: dsMockUtils.createMockPalletName('Confidential'),
-            dispatchable_names: null,
+            dispatchable_names: dsMockUtils.createMockDispatchableNames('Whole'),
           }),
           /* eslint-enable @typescript-eslint/naming-convention */
         ],
@@ -1287,6 +1413,52 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       asset: dsMockUtils.createMockAssetPermissions('Whole'),
       portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
       extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+    });
+
+    result = meshPermissionsToPermissions(permissions, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      tokens: {
+        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+        type: PermissionType.Exclude,
+      },
+      transactions: {
+        type: PermissionType.Exclude,
+        values: [ModuleName.Identity],
+        exceptions: [TxTags.identity.AddClaim],
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+        type: PermissionType.Exclude,
+      },
+    };
+
+    permissions = dsMockUtils.createMockPermissions({
+      asset: dsMockUtils.createMockAssetPermissions({
+        Except: [dsMockUtils.createMockTicker(ticker)],
+      }),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions({
+        Except: [
+          /* eslint-disable @typescript-eslint/naming-convention */
+          dsMockUtils.createMockPalletPermissions({
+            pallet_name: dsMockUtils.createMockPalletName('Identity'),
+            dispatchable_names: dsMockUtils.createMockDispatchableNames({
+              Except: [dsMockUtils.createMockDispatchableName('add_claim')],
+            }),
+          }),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        ],
+      }),
+      portfolio: dsMockUtils.createMockPortfolioPermissions({
+        Except: [
+          dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(did),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+        ],
+      }),
     });
 
     result = meshPermissionsToPermissions(permissions, context);
@@ -4654,6 +4826,31 @@ describe('permissionsLikeToPermissions', () => {
         type: PermissionType.Include,
       },
     });
+
+    result = permissionsLikeToPermissions(
+      {
+        transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
+      },
+      context
+    );
+    expect(result).toEqual({
+      tokens: {
+        values: [],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        values: [
+          TxTags.complianceManager.AddDefaultTrustedClaimIssuer,
+          TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
+        ],
+        type: PermissionType.Include,
+      },
+      transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
+      portfolios: {
+        values: [],
+        type: PermissionType.Include,
+      },
+    });
   });
 });
 
@@ -4961,6 +5158,17 @@ describe('txTagsToTxGroups', () => {
         type: PermissionType.Include,
       })
     ).toEqual([TxGroup.Distribution, TxGroup.PortfolioManagement]);
+
+    expect(
+      txTagsToTxGroups({
+        values: [
+          TxTags.identity.AddInvestorUniquenessClaim,
+          TxTags.portfolio.MovePortfolioFunds,
+          TxTags.settlement.AddInstruction,
+        ],
+        type: PermissionType.Exclude,
+      })
+    ).toEqual([]);
   });
 });
 

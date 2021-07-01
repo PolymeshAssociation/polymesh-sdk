@@ -753,20 +753,7 @@ export function permissionsToMeshPermissions(
 
           pallet.tx.push(dispatchableName);
         } else {
-          const pallet = extrinsicDict[tag];
-
-          if (pallet) {
-            throw new PolymeshError({
-              code: ErrorCode.ValidationError,
-              message,
-              data: {
-                module: tag,
-                transactions: pallet,
-              },
-            });
-          }
-
-          extrinsicDict[tag] = null;
+          extrinsicDict[stringUpperFirst(tag)] = null;
         }
       });
 
@@ -931,6 +918,7 @@ export function meshPermissionsToPermissions(
       if (dispatchableNames.isExcept) {
         const dispatchables = dispatchableNames.asExcept;
         exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+        txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
         const dispatchables = dispatchableNames.asThese;
         txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];

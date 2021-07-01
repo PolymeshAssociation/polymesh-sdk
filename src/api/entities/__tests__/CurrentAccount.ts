@@ -187,6 +187,45 @@ describe('CurrentAccount class', () => {
       });
 
       expect(result).toEqual(false);
+
+      permissions = {
+        tokens: { values: [token], type: PermissionType.Exclude },
+        transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Exclude },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
+          type: PermissionType.Exclude,
+        },
+      };
+      context = dsMockUtils.getContextInstance({
+        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+      });
+
+      account = new CurrentAccount({ address }, context);
+
+      result = await account.hasPermissions({
+        tokens: [token],
+        portfolios: null,
+        transactions: null,
+      });
+
+      expect(result).toEqual(false);
+
+      result = await account.hasPermissions({
+        tokens: null,
+        portfolios: [],
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toEqual(false);
+
+      result = await account.hasPermissions({
+        tokens: [],
+        portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+        transactions: [],
+      });
+
+      expect(result).toEqual(true);
     });
 
     test('should exempt certain transactions from requiring permissions', async () => {
