@@ -32,16 +32,12 @@ export async function prepareRedeemToken(
   const securityToken = new SecurityToken({ ticker }, context);
   const rawTicker = stringToTicker(ticker, context);
 
-  const { primaryIssuanceAgents, isDivisible } = await securityToken.details();
+  const [{ isDivisible }, { did }] = await Promise.all([
+    securityToken.details(),
+    context.getCurrentIdentity(),
+  ]);
 
-  if (primaryIssuanceAgents.length !== 1) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'There is no a default Primary Issuance Agent for the given asset',
-    });
-  }
-
-  const defaultPortfolio = new DefaultPortfolio({ did: primaryIssuanceAgents[0].did }, context);
+  const defaultPortfolio = new DefaultPortfolio({ did }, context);
 
   const portfolioBalance = await defaultPortfolio.getTokenBalances({ tokens: [ticker] });
 
@@ -76,17 +72,7 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  const securityToken = new SecurityToken({ ticker }, context);
-  const { primaryIssuanceAgents } = await securityToken.details();
-
-  if (primaryIssuanceAgents.length !== 1) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'There is no a default Primary Issuance Agent for the given asset',
-    });
-  }
-
-  const did = primaryIssuanceAgents[0].did;
+  const { did } = await context.getCurrentIdentity();
 
   return {
     identityRoles: [{ type: RoleType.TokenPia, ticker }],

@@ -35,9 +35,8 @@ import { filterEventRecords } from '~/utils/internal';
 export interface LaunchStoParams {
   /**
    * portfolio in which the Tokens to be sold are stored
-   * (optional, defaults to the default portfolio of the Security Token's Primary Issuance Agent)
    */
-  offeringPortfolio?: PortfolioLike;
+  offeringPortfolio: PortfolioLike;
   /**
    * portfolio in which the raised funds will be stored
    */
@@ -225,30 +224,10 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, Sto, Storage>,
-  { offeringPortfolio, ticker, raisingPortfolio }: Params
+  { offeringPortfolio, raisingPortfolio }: Params
 ): Promise<Storage> {
-  const { context } = this;
-
-  let offeringPortfolioId: PortfolioId;
-
-  if (offeringPortfolio) {
-    offeringPortfolioId = portfolioLikeToPortfolioId(offeringPortfolio);
-  } else {
-    const token = new SecurityToken({ ticker }, context);
-    const { primaryIssuanceAgents } = await token.details();
-
-    if (primaryIssuanceAgents.length !== 1) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'There is no a default Primary Issuance Agent for the given asset',
-      });
-    }
-
-    offeringPortfolioId = { did: primaryIssuanceAgents[0].did };
-  }
-
   return {
-    offeringPortfolioId,
+    offeringPortfolioId: portfolioLikeToPortfolioId(offeringPortfolio),
     raisingPortfolioId: portfolioLikeToPortfolioId(raisingPortfolio),
   };
 }

@@ -1,4 +1,11 @@
-import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { Option, StorageKey } from '@polkadot/types';
+import {
+  AgentGroup,
+  Counter,
+  IdentityId,
+  SecurityToken as MeshSecurityToken,
+  Ticker,
+} from 'polymesh-types/types';
 
 import {
   Context,
@@ -202,8 +209,21 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = (
       { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
-      primaryIssuanceAgents: Identity[]
+      groupOfAgents: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
     ): SecurityTokenDetails => {
+      const primaryIssuanceAgents: Identity[] = [];
+
+      groupOfAgents.forEach(([storageKey, agentGroup]) => {
+        if (agentGroup.isSome) {
+          const rawAgentGroup = agentGroup.unwrap();
+          if (rawAgentGroup.isPolymeshV1Pia) {
+            primaryIssuanceAgents.push(
+              new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
+            );
+          }
+        }
+      });
+
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
       return {
         assetType: assetTypeToString(asset_type),
@@ -218,30 +238,22 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const groupOfAgent = await externalAgents.groupOfAgent.entries(rawTicker);
-
-    const piaIdentities: Identity[] = [];
-
-    groupOfAgent.forEach(([storageKey, agentGroup]) => {
-      if (agentGroup.isSome) {
-        const rawAgentGroup = agentGroup.unwrap();
-        if (rawAgentGroup.isPolymeshV1Pia) {
-          piaIdentities.push(
-            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
-          );
-        }
-      }
-    });
+    const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
 
     if (callback) {
+      const groupOfAgents = await groupOfAgentPromise;
+
       return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken, piaIdentities));
+        callback(assembleResult(securityToken, groupOfAgents));
       });
     }
 
-    const token = await asset.tokens(rawTicker);
+    const [token, groupOfAgents] = await Promise.all([
+      asset.tokens(rawTicker),
+      groupOfAgentPromise,
+    ]);
 
-    return assembleResult(token, piaIdentities);
+    return assembleResult(token, groupOfAgents);
   }
 
   /**

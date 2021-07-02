@@ -134,15 +134,12 @@ describe('controllerTransfer procedure', () => {
         did: 'piaDid',
       };
 
+      dsMockUtils.getContextInstance({ did: portfolioId.did });
+
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({
-        ticker,
-        details: {
-          primaryIssuanceAgents: [portfolioId as Identity],
-        },
-      });
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
       const identityRoles = [
         { type: RoleType.TokenPia, ticker },
         {
@@ -159,18 +156,6 @@ describe('controllerTransfer procedure', () => {
           portfolios: [entityMockUtils.getDefaultPortfolioInstance()],
         },
       });
-    });
-
-    test('should throw an error if primaryIssuanceAgents returns more than one identity', async () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-      return expect(
-        getAuthorization.call(proc, {
-          ticker,
-          originPortfolio,
-          amount: new BigNumber(1000),
-        })
-      ).rejects.toThrow('There is no a default Primary Issuance Agent for the given asset');
     });
   });
 });
