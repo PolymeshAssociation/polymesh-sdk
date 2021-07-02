@@ -209,11 +209,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = (
       { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
-      groupOfAgents: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
+      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
     ): SecurityTokenDetails => {
       const primaryIssuanceAgents: Identity[] = [];
 
-      groupOfAgents.forEach(([storageKey, agentGroup]) => {
+      agentGroups.forEach(([storageKey, agentGroup]) => {
         if (agentGroup.isSome) {
           const rawAgentGroup = agentGroup.unwrap();
           if (rawAgentGroup.isPolymeshV1Pia) {
