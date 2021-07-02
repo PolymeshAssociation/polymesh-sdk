@@ -29,7 +29,7 @@ export async function prepareRemoveSecondaryKeys(
 
   const [primaryKey, secondaryKeys] = await Promise.all([
     identity.getPrimaryKey(),
-    context.getSecondaryKeys(),
+    identity.getSecondaryKeys(),
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));

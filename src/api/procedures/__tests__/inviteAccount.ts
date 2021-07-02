@@ -109,15 +109,19 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
+        secondaryKeys: [
+          {
+            signer,
+            permissions: {
+              tokens: [],
+              portfolios: [],
+              transactions: [],
+              transactionGroups: [],
+            },
+          },
+        ],
       },
     });
-
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
 
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
@@ -200,12 +204,21 @@ describe('inviteAccount procedure', () => {
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
 
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        secondaryKeys: [
+          {
+            signer,
+            permissions: {
+              tokens: [],
+              portfolios: [],
+              transactions: [],
+              transactionGroups: [],
+            },
+          },
+        ],
       },
-    ]);
+    });
 
     signerToStringStub.withArgs(signer).returns(args.targetAccount);
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
@@ -251,16 +264,19 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
+        secondaryKeys: [
+          {
+            signer,
+            permissions: {
+              tokens: [],
+              portfolios: [],
+              transactions: [],
+              transactionGroups: [],
+            },
+          },
+        ],
       },
     });
-
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
-
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     signerToStringStub.withArgs(signer).returns(signer.address);

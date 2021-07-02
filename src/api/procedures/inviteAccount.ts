@@ -49,7 +49,7 @@ export async function prepareInviteAccount(
 
   const [authorizationRequests, secondaryKeys, existingIdentity] = await Promise.all([
     currentIdentity.authorizations.getSent(),
-    context.getSecondaryKeys(),
+    currentIdentity.getSecondaryKeys(),
     account.getIdentity(),
   ] as const);
 

@@ -37,7 +37,6 @@ import {
   KeyringPair,
   PlainTransactionArgument,
   ResultSet,
-  SecondaryKey,
   SimpleEnumTransactionArgument,
   SubCallback,
   TransactionArgument,
@@ -61,13 +60,10 @@ import {
   identityIdToString,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
-  meshPermissionsToPermissions,
   momentToDate,
   numberToU32,
   posRatioToBigNumber,
-  signatoryToSignerValue,
   signerToString,
-  signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
   textToString,
@@ -666,41 +662,6 @@ export class Context {
 
       return processType(typeDef, argName);
     });
-  }
-
-  /**
-   * Retrieve the list of secondary keys related to the Account
-   *
-   * @note can be subscribed to
-   */
-  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
-  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getSecondaryKeys(
-    callback?: SubCallback<SecondaryKey[]>
-  ): Promise<SecondaryKey[] | UnsubCallback> {
-    const {
-      polymeshApi: {
-        query: { identity },
-      },
-    } = this;
-
-    const { did } = await this.getCurrentIdentity();
-
-    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
-      return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
-        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), this),
-        permissions: meshPermissionsToPermissions(permissions, this),
-      }));
-    };
-
-    if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
-    }
-
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
   }
 
   /**

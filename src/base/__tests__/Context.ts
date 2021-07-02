@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { DidRecord, ProtocolOp, Signatory, TxTags } from 'polymesh-types/types';
+import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { CurrentAccount } from '~/api/entities/CurrentAccount';
@@ -8,15 +8,8 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import {
-  ClaimType,
-  CorporateActionKind,
-  SecondaryKey,
-  Signer,
-  TargetTreatment,
-  TransactionArgumentType,
-} from '~/types';
-import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
+import { ClaimType, CorporateActionKind, TargetTreatment, TransactionArgumentType } from '~/types';
+import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -775,120 +768,6 @@ describe('Context class', () => {
       result = await context.getTransactionFees(TxTags.asset.Freeze);
 
       expect(result).toEqual(new BigNumber(0));
-    });
-  });
-
-  describe('method: getSecondaryKeys', () => {
-    const did = 'someDid';
-    const accountId = 'someAccountId';
-    const signerValues = [
-      { value: did, type: SignerType.Identity },
-      { value: accountId, type: SignerType.Account },
-    ];
-    const signerIdentityId = dsMockUtils.createMockSignatory({
-      Identity: dsMockUtils.createMockIdentityId(did),
-    });
-    const signerAccountId = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(accountId),
-    });
-
-    let identity: Identity;
-    let account: Account;
-    let fakeResult: SecondaryKey[];
-
-    let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
-    let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
-    let didRecordsStub: sinon.SinonStub;
-    let rawDidRecord: DidRecord;
-
-    beforeAll(() => {
-      signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
-      signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
-      signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
-
-      identity = entityMockUtils.getIdentityInstance({ did });
-      account = entityMockUtils.getAccountInstance({ address: accountId });
-      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
-      signerValueToSignerStub.withArgs(signerValues[0], sinon.match.object).returns(identity);
-      signerValueToSignerStub.withArgs(signerValues[1], sinon.match.object).returns(account);
-
-      fakeResult = [
-        {
-          signer: identity,
-          permissions: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
-        },
-        {
-          signer: account,
-          permissions: {
-            tokens: null,
-            portfolios: null,
-            transactions: null,
-            transactionGroups: [],
-          },
-        },
-      ];
-    });
-
-    beforeEach(() => {
-      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/naming-convention */
-      rawDidRecord = dsMockUtils.createMockDidRecord({
-        roles: [],
-        primary_key: dsMockUtils.createMockAccountId(),
-        secondary_keys: [
-          dsMockUtils.createMockSecondaryKey({
-            signer: signerIdentityId,
-            permissions: dsMockUtils.createMockPermissions({
-              asset: [],
-              portfolio: [],
-              extrinsic: [],
-            }),
-          }),
-          dsMockUtils.createMockSecondaryKey({
-            signer: signerAccountId,
-            permissions: dsMockUtils.createMockPermissions({
-              asset: null,
-              portfolio: null,
-              extrinsic: null,
-            }),
-          }),
-        ],
-      });
-      /* eslint-enabled @typescript-eslint/naming-convention */
-    });
-
-    test('should return a list of Signers', async () => {
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      didRecordsStub.returns(rawDidRecord);
-
-      const result = await context.getSecondaryKeys();
-      expect(result).toEqual(fakeResult);
-    });
-
-    test('should allow subscription', async () => {
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      const unsubCallback = 'unsubCallBack';
-
-      didRecordsStub.callsFake(async (_, cbFunc) => {
-        cbFunc(rawDidRecord);
-        return unsubCallback;
-      });
-
-      const callback = sinon.stub();
-      const result = await context.getSecondaryKeys(callback);
-
-      expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 
