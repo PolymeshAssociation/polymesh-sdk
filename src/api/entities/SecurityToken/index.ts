@@ -248,12 +248,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       });
     }
 
-    const [token, groupOfAgents] = await Promise.all([
-      asset.tokens(rawTicker),
-      groupOfAgentPromise,
-    ]);
+    const [token, groupOfAgent] = await Promise.all([asset.tokens(rawTicker), groupOfAgentPromise]);
 
-    return assembleResult(token, groupOfAgents);
+    return assembleResult(token, groupOfAgent);
   }
 
   /**
