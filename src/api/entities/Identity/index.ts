@@ -146,7 +146,7 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const token = new SecurityToken({ ticker }, context);
       const agents = await token.corporateActions.getAgents();
 
-      return !!agents.map(({ did: agentDid }) => agentDid).includes(did);
+      return !!agents.find(({ did: agentDid }) => agentDid === did);
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {
