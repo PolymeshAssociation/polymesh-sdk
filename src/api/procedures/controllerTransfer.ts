@@ -79,16 +79,8 @@ export async function getAuthorization(
   const { context } = this;
 
   const token = new SecurityToken({ ticker }, context);
-  const { primaryIssuanceAgents } = await token.details();
 
-  if (primaryIssuanceAgents.length !== 1) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'There is no a default Primary Issuance Agent for the given asset',
-    });
-  }
-
-  const did = primaryIssuanceAgents[0].did;
+  const { did } = await context.getCurrentIdentity();
   const portfolioId = { did };
 
   return {
