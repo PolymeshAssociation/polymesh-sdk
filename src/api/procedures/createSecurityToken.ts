@@ -11,9 +11,11 @@ import {
   TokenType,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   booleanToBool,
   boolToBoolean,
+  numberToBalance,
   stringToAssetName,
   stringToFundingRoundName,
   stringToTicker,
@@ -26,9 +28,9 @@ import { batchArguments } from '~/utils/internal';
 export interface CreateSecurityTokenParams {
   name: string;
   /**
-   * amount of tokens that will be minted on creation
+   * amount of tokens that will be minted on creation (optional, default doesn't mint)
    */
-  totalSupply: BigNumber;
+  totalSupply?: BigNumber;
   /**
    * whether a single token can be divided into decimal parts
    */
@@ -71,6 +73,7 @@ export async function prepareCreateSecurityToken(
   const {
     ticker,
     name,
+    totalSupply,
     isDivisible,
     tokenType,
     tokenIdentifiers = [],
@@ -118,16 +121,26 @@ export async function prepareCreateSecurityToken(
     fee = new BigNumber(0);
   }
 
-  this.addTransaction(
-    tx.asset.createAsset,
-    { fee },
-    rawName,
-    rawTicker,
-    rawIsDivisible,
-    rawType,
-    rawIdentifiers,
-    rawFundingRound
-  );
+  if (!totalSupply || (totalSupply && totalSupply.eq(0))) {
+    this.addTransaction(
+      tx.asset.createAsset,
+      { fee },
+      rawName,
+      rawTicker,
+      rawIsDivisible,
+      rawType,
+      rawIdentifiers,
+      rawFundingRound
+    );
+  } else {
+    this.addBatchTransaction(tx.asset.createAsset, { fee }, [
+      tuple(rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound),
+    ]);
+
+    const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
+
+    this.addBatchTransaction(tx.asset.issue, {}, [tuple(rawTicker, rawTotalSupply)]);
+  }
 
   if (documents) {
     const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
