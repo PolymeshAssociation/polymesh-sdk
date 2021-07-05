@@ -230,7 +230,7 @@ describe('createSecurityToken procedure', () => {
   test('should add a token creation transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
-    let result = await prepareCreateSecurityToken.call(proc, args);
+    const result = await prepareCreateSecurityToken.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
@@ -266,7 +266,7 @@ describe('createSecurityToken procedure', () => {
 
     const addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
-    result = await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
+    await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
 
     sinon.assert.calledWith(addBatchTransactionStub, transaction, { fee: undefined }, [
       [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
@@ -274,7 +274,7 @@ describe('createSecurityToken procedure', () => {
 
     const assetIssueTransaction = dsMockUtils.createTxStub('asset', 'issue');
 
-    result = await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
+    await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
 
     sinon.assert.calledWith(addBatchTransactionStub, assetIssueTransaction, {}, [
       [rawTicker, rawTotalSupply],
