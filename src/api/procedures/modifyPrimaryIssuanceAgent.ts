@@ -46,7 +46,7 @@ export async function prepareModifyPrimaryIssuanceAgent(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const [invalidDids, { primaryIssuanceAgent }] = await Promise.all([
+  const [invalidDids, { primaryIssuanceAgents }] = await Promise.all([
     context.getInvalidDids([target]),
     securityToken.details(),
   ]);
@@ -58,7 +58,7 @@ export async function prepareModifyPrimaryIssuanceAgent(
     });
   }
 
-  if (primaryIssuanceAgent.did === signerToString(target)) {
+  if (primaryIssuanceAgents[0].did === signerToString(target)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied Identity is currently the primary issuance agent',

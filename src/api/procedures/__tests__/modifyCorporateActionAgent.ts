@@ -60,7 +60,7 @@ describe('modifyCorporateActionAgent procedure', () => {
   beforeEach(() => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'agentDid' }),
+        corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: 'agentDid' })],
       },
     });
     mockContext = dsMockUtils.getContextInstance();
@@ -100,7 +100,7 @@ describe('modifyCorporateActionAgent procedure', () => {
   test('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: target }),
+        corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: target })],
       },
     });
 

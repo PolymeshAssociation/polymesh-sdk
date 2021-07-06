@@ -33,6 +33,8 @@ import { EventEmitter } from 'events';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 import {
   AffirmationStatus,
+  AgentGroup,
+  AGId,
   AssetComplianceResult,
   AssetIdentifier,
   AssetName,
@@ -1347,6 +1349,16 @@ export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAgentGroup = (
+  agentGroup?: 'Full' | 'ExceptMeta' | 'PolymeshV1Caa' | 'PolymeshV1Pia' | { Custom: AGId }
+): AgentGroup => {
+  return createMockEnum(agentGroup) as AgentGroup;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockEcdsaSignature = (signature?: string | EcdsaSignature): EcdsaSignature => {
   if (isCodec<EcdsaSignature>(signature)) {
     return signature;
@@ -1706,7 +1718,6 @@ export const createMockSecurityToken = (token?: {
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
-  primary_issuance_agent: Option<IdentityId>;
 }): SecurityToken => {
   const st = token || {
     name: createMockAssetName(),
@@ -1714,7 +1725,6 @@ export const createMockSecurityToken = (token?: {
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
     asset_type: createMockAssetType(),
-    primary_issuance_agent: createMockOption(createMockIdentityId()),
   };
   return createMockCodec({ ...st }, !token) as SecurityToken;
 };

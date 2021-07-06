@@ -1,4 +1,11 @@
-import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { Option, StorageKey } from '@polkadot/types';
+import {
+  AgentGroup,
+  Counter,
+  IdentityId,
+  SecurityToken as MeshSecurityToken,
+  Ticker,
+} from 'polymesh-types/types';
 
 import {
   Context,
@@ -192,7 +199,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const {
       context: {
         polymeshApi: {
-          query: { asset },
+          query: { asset, externalAgents },
         },
       },
       ticker,
@@ -200,13 +207,21 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    const assembleResult = ({
-      name,
-      total_supply,
-      divisible,
-      owner_did,
-      asset_type,
-    }: MeshSecurityToken): SecurityTokenDetails => {
+    const assembleResult = (
+      { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
+      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
+    ): SecurityTokenDetails => {
+      const primaryIssuanceAgents: Identity[] = [];
+
+      agentGroups.forEach(([storageKey, agentGroup]) => {
+        const rawAgentGroup = agentGroup.unwrap();
+        if (rawAgentGroup.isPolymeshV1Pia) {
+          primaryIssuanceAgents.push(
+            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
+          );
+        }
+      });
+
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
       return {
         assetType: assetTypeToString(asset_type),
@@ -214,23 +229,26 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         name: assetNameToString(name),
         owner,
         totalSupply: balanceToBigNumber(total_supply),
-        // TODO @shuffledex: remove or modify thinking on ExternalAgents
-        primaryIssuanceAgent: owner,
+        primaryIssuanceAgents,
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 
+    const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
+
     if (callback) {
+      const groupOfAgents = await groupOfAgentPromise;
+
       return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken));
+        callback(assembleResult(securityToken, groupOfAgents));
       });
     }
 
-    const token = await asset.tokens(rawTicker);
+    const [token, groupOfAgent] = await Promise.all([asset.tokens(rawTicker), groupOfAgentPromise]);
 
-    return assembleResult(token);
+    return assembleResult(token, groupOfAgent);
   }
 
   /**
