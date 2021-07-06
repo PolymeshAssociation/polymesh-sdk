@@ -38,7 +38,7 @@ export async function prepareRemovePrimaryIssuanceAgent(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message:
-        'We can not perform this procedure with more than one Primary Issuance Agent involved',
+        'There must be one (and only one) Primary Issuance Agent assigned to this Security Token',
     });
   }
 

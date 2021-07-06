@@ -98,7 +98,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await expect(prepareRemovePrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
-      'We can not perform this procedure with more than one Primary Issuance Agent involved'
+      'There must be one (and only one) Primary Issuance Agent assigned to this Security Token'
     );
   });
 
