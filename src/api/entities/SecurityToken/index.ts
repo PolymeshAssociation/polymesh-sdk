@@ -214,13 +214,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       const primaryIssuanceAgents: Identity[] = [];
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
-        if (agentGroup.isSome) {
-          const rawAgentGroup = agentGroup.unwrap();
-          if (rawAgentGroup.isPolymeshV1Pia) {
-            primaryIssuanceAgents.push(
-              new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
-            );
-          }
+        const rawAgentGroup = agentGroup.unwrap();
+        if (rawAgentGroup.isPolymeshV1Pia) {
+          primaryIssuanceAgents.push(
+            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
+          );
         }
       });
 
