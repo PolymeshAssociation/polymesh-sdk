@@ -19,7 +19,7 @@ import {
   ModifyTokenParams,
   redeemToken,
   RedeemTokenParams,
-  // removePrimaryIssuanceAgent,
+  removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferTokenOwnership,
   TransferTokenOwnershipParams,
@@ -147,10 +147,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
       { getProcedureAndArgs: args => [modifyPrimaryIssuanceAgent, { ticker, ...args }] },
       context
     );
-    // this.removePrimaryIssuanceAgent = createProcedureMethod(
-    //   { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }] },
-    //   context
-    // );
+    this.removePrimaryIssuanceAgent = createProcedureMethod(
+      { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }] },
+      context
+    );
     this.redeem = createProcedureMethod(
       { getProcedureAndArgs: args => [redeemToken, { ticker, ...args }] },
       context
@@ -400,6 +400,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated in favor of `inviteAgent`
    */
   public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
 
@@ -410,8 +412,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated
    */
-  // public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
+  public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
 
   /**
    * Redeem (burn) an amount of this Security Token

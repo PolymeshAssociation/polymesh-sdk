@@ -243,6 +243,7 @@ export enum AuthorizationType {
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   TransferCorporateActionAgent = 'TransferCorporateActionAgent',
+  BecomeAgent = 'BecomeAgent',
   Custom = 'Custom',
   NoData = 'NoData',
 }

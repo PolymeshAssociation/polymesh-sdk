@@ -83,6 +83,8 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated in favor of `inviteAgent`
    */
   public setAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
 
@@ -93,6 +95,8 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated
    */
   public removeAgent: ProcedureMethod<void, void>;
 
