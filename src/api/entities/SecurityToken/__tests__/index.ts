@@ -517,24 +517,24 @@ describe('SecurityToken class', () => {
     });
   });
 
-  // describe('method: removePrimaryIssuanceAgent', () => {
-  //   test('should prepare the procedure and return the resulting transaction queue', async () => {
-  //     const ticker = 'TICKER';
-  //     const context = dsMockUtils.getContextInstance();
-  //     const securityToken = new SecurityToken({ ticker }, context);
+  describe('method: removePrimaryIssuanceAgent', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
 
-  //     const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
-  //     procedureMockUtils
-  //       .getPrepareStub()
-  //       .withArgs({ args: { ticker }, transformer: undefined }, context)
-  //       .resolves(expectedQueue);
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker }, transformer: undefined }, context)
+        .resolves(expectedQueue);
 
-  //     const queue = await securityToken.removePrimaryIssuanceAgent();
+      const queue = await securityToken.removePrimaryIssuanceAgent();
 
-  //     expect(queue).toBe(expectedQueue);
-  //   });
-  // });
+      expect(queue).toBe(expectedQueue);
+    });
+  });
 
   describe('method: redeem', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
