@@ -8,6 +8,7 @@ import {
   Identity,
   moveFunds,
   MoveFundsParams,
+  quitCustody,
   SecurityToken,
   setCustodian,
   SetCustodianParams,
@@ -74,6 +75,10 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     );
     this.moveFunds = createProcedureMethod(
       { getProcedureAndArgs: args => [moveFunds, { ...args, from: this }] },
+      context
+    );
+    this.quitCustody = createProcedureMethod(
+      { getProcedureAndArgs: () => [quitCustody, { portfolio: this }] },
       context
     );
   }
@@ -191,7 +196,6 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Portfolio Custodian
    */
-
   public setCustodian: ProcedureMethod<SetCustodianParams, void>;
 
   /**
@@ -200,8 +204,15 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Portfolio Custodian
    */
-
   public moveFunds: ProcedureMethod<MoveFundsParams, void>;
+
+  /**
+   * Returns the custody of the portfolio to the portfolio owner unilaterally
+   *
+   * @note required role:
+   *   - Portfolio Custodian
+   */
+  public quitCustody: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the custodian Identity of this Portfolio

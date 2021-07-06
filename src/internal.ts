@@ -172,3 +172,4 @@ export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondar
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';
+export { quitCustody } from '~/api/procedures/quitCustody';
