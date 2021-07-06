@@ -123,13 +123,11 @@ export class CorporateActions extends Namespace<SecurityToken> {
     const agentIdentities: Identity[] = [];
 
     groupOfAgent.forEach(([storageKey, agentGroup]) => {
-      if (agentGroup.isSome) {
-        const rawAgentGroup = agentGroup.unwrap();
-        if (rawAgentGroup.isPolymeshV1Caa) {
-          agentIdentities.push(
-            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
-          );
-        }
+      const rawAgentGroup = agentGroup.unwrap();
+      if (rawAgentGroup.isPolymeshV1Caa) {
+        agentIdentities.push(
+          new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
+        );
       }
     });
 

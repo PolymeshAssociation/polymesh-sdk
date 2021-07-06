@@ -172,22 +172,9 @@ describe('CorporateActions class', () => {
         ],
       });
 
-      let result = await corporateActions.getAgents();
+      const result = await corporateActions.getAgents();
 
       expect(result).toEqual([identity]);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
-            dsMockUtils.createMockOption()
-          ),
-        ],
-      });
-
-      result = await corporateActions.getAgents();
-
-      expect(result).toEqual([]);
     });
   });
 

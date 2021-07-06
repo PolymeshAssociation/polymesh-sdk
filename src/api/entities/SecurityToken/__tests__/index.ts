@@ -134,18 +134,6 @@ describe('SecurityToken class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
-            dsMockUtils.createMockOption()
-          ),
-        ],
-      });
-
-      details = await securityToken.details();
-      expect(details.primaryIssuanceAgents).toEqual([]);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        entries: [
-          tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
           ),
         ],
