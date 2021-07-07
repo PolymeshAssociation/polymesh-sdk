@@ -225,13 +225,13 @@ import {
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
   transactionHexToTxTag,
+  transactionPermissionsToTxGroups,
   transactionToTxTag,
   transferManagerToTransferRestriction,
   transferRestrictionToTransferManager,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
   txGroupToTxTags,
-  txTagsToTxGroups,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToBigNumber,
@@ -5137,10 +5137,10 @@ describe('txGroupToTxTags', () => {
   });
 });
 
-describe('txTagsToTxGroups', () => {
+describe('transactionPermissionsToTxGroups', () => {
   test('should return all completed groups in the tag array', () => {
     expect(
-      txTagsToTxGroups({
+      transactionPermissionsToTxGroups({
         values: [
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,
@@ -5169,7 +5169,7 @@ describe('txTagsToTxGroups', () => {
     ]);
 
     expect(
-      txTagsToTxGroups({
+      transactionPermissionsToTxGroups({
         values: [
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,
@@ -5186,7 +5186,7 @@ describe('txTagsToTxGroups', () => {
     ).toEqual([TxGroup.Distribution, TxGroup.PortfolioManagement]);
 
     expect(
-      txTagsToTxGroups({
+      transactionPermissionsToTxGroups({
         values: [
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,

@@ -675,7 +675,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
  * @note tags that don't belong to any group will be ignored.
  *   The same goes for tags that belong to a group that wasn't completed
  */
-export function txTagsToTxGroups(permissions: TransactionPermissions): TxGroup[] {
+export function transactionPermissionsToTxGroups(permissions: TransactionPermissions): TxGroup[] {
   const { values: transactionValues, type, exceptions = [] } = permissions;
   let includedTags: (TxTag | ModuleName)[];
   let excludedTags: (TxTag | ModuleName)[];
@@ -761,7 +761,7 @@ export function permissionsToMeshPermissions(
     exceptions.forEach(exception => {
       const { palletName, dispatchableName } = splitTag(exception);
 
-      let pallet = extrinsicDict[palletName];
+      const pallet = extrinsicDict[palletName];
 
       if (pallet === undefined) {
         throw new PolymeshError({
@@ -770,7 +770,7 @@ export function permissionsToMeshPermissions(
             'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
         });
       } else if (pallet === null) {
-        pallet = extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
+        extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
       } else if (pallet.exception) {
         pallet.tx.push(dispatchableName);
       } else {
@@ -822,9 +822,8 @@ export function permissionsToMeshPermissions(
   let asset: PermissionsEnum<Ticker> = 'Whole';
   if (tokens) {
     const { values: tokenValues, type } = tokens;
-    const tickers = tokenValues
-      .sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB))
-      .map(({ ticker }) => stringToTicker(ticker, context));
+    tokenValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
+    const tickers = tokenValues.map(({ ticker }) => stringToTicker(ticker, context));
     if (type === PermissionType.Include) {
       asset = {
         These: tickers,
@@ -957,7 +956,7 @@ export function meshPermissionsToPermissions(
   return {
     tokens,
     transactions,
-    transactionGroups: transactions ? txTagsToTxGroups(transactions) : [],
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
   };
 }
