@@ -128,6 +128,8 @@ export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
 export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
+export { ExternalAgent } from '~/api/entities/ExternalAgent';
+export { AgentGroup } from '~/api/entities/AgentGroup';
 export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,

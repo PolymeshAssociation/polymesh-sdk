@@ -1,15 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, DefaultTrustedClaimIssuer, Entity } from '~/internal';
+import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsInternalModule from '~/utils/internal';
-
-jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
-);
 
 describe('DefaultTrustedClaimIssuer class', () => {
   let context: Context;
@@ -34,18 +29,17 @@ describe('DefaultTrustedClaimIssuer class', () => {
   });
 
   test('should extend Entity', () => {
-    expect(DefaultTrustedClaimIssuer.prototype instanceof Entity).toBe(true);
+    expect(DefaultTrustedClaimIssuer.prototype instanceof Identity).toBe(true);
   });
 
   describe('constructor', () => {
     test('should assign ticker and Identity to instance', () => {
       const did = 'someDid';
       const ticker = 'SOMETICKER';
-      const identity = entityMockUtils.getIdentityInstance({ did });
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
       expect(trustedClaimIssuer.ticker).toBe(ticker);
-      expect(trustedClaimIssuer.identity).toEqual(identity);
+      expect(trustedClaimIssuer.did).toEqual(did);
     });
   });
 
