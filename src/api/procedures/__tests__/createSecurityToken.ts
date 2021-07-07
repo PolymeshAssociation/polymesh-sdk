@@ -154,7 +154,7 @@ describe('createSecurityToken procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let transaction: PolymeshTx<
+  let createAssetTransaction: PolymeshTx<
     [AssetName, Ticker, Balance, bool, AssetType, Vec<AssetIdentifier>, Option<FundingRoundName>]
   >;
 
@@ -168,7 +168,7 @@ describe('createSecurityToken procedure', () => {
       returnValue: dsMockUtils.createMockOption(),
     });
 
-    transaction = dsMockUtils.createTxStub('asset', 'createAsset');
+    createAssetTransaction = dsMockUtils.createTxStub('asset', 'createAsset');
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -234,7 +234,7 @@ describe('createSecurityToken procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      transaction,
+      createAssetTransaction,
       { fee: undefined },
       rawName,
       rawTicker,
@@ -254,7 +254,7 @@ describe('createSecurityToken procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
-      transaction,
+      createAssetTransaction,
       { fee: undefined },
       rawName,
       rawTicker,
@@ -264,21 +264,11 @@ describe('createSecurityToken procedure', () => {
       null
     );
 
-    const addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
+    const createAssetIssuen = dsMockUtils.createTxStub('asset', 'issue');
 
     await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
 
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, { fee: undefined }, [
-      [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
-    ]);
-
-    const assetIssueTransaction = dsMockUtils.createTxStub('asset', 'issue');
-
-    await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
-
-    sinon.assert.calledWith(addBatchTransactionStub, assetIssueTransaction, {}, [
-      [rawTicker, rawTotalSupply],
-    ]);
+    sinon.assert.calledWith(addTransactionStub, createAssetIssuen, {}, rawTicker, rawTotalSupply);
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {
@@ -298,7 +288,7 @@ describe('createSecurityToken procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
-      transaction,
+      createAssetTransaction,
       { fee: new BigNumber(0) },
       rawName,
       rawTicker,

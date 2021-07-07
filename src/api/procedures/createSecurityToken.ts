@@ -11,7 +11,6 @@ import {
   TokenType,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import {
   booleanToBool,
   boolToBoolean,
@@ -121,25 +120,23 @@ export async function prepareCreateSecurityToken(
     fee = new BigNumber(0);
   }
 
-  if (!totalSupply || (totalSupply && totalSupply.eq(0))) {
-    this.addTransaction(
-      tx.asset.createAsset,
-      { fee },
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      rawIdentifiers,
-      rawFundingRound
-    );
-  } else {
-    this.addBatchTransaction(tx.asset.createAsset, { fee }, [
-      tuple(rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound),
-    ]);
+  // TODO @shuffledex: refactoring with batching mechanism
 
+  this.addTransaction(
+    tx.asset.createAsset,
+    { fee },
+    rawName,
+    rawTicker,
+    rawIsDivisible,
+    rawType,
+    rawIdentifiers,
+    rawFundingRound
+  );
+
+  if (totalSupply && totalSupply.gt(0)) {
     const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
 
-    this.addBatchTransaction(tx.asset.issue, {}, [tuple(rawTicker, rawTotalSupply)]);
+    this.addTransaction(tx.asset.issue, {}, rawTicker, rawTotalSupply);
   }
 
   if (documents) {
