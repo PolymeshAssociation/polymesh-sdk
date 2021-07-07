@@ -1,4 +1,4 @@
-import { Context, Entity, Identity } from '~/internal';
+import { Context, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ClaimType, Ensured, EventIdentifier } from '~/types';
@@ -18,7 +18,7 @@ export interface Params {
 /**
  * Represents a default trusted claim issuer for a specific token in the Polymesh blockchain
  */
-export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
+export class DefaultTrustedClaimIssuer extends Identity {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -28,11 +28,6 @@ export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
 
     return typeof did === 'string' && typeof ticker === 'string';
   }
-
-  /**
-   * identity of the Trusted Claim Issuer
-   */
-  public identity: Identity;
 
   /**
    * claim types for which this Claim Issuer is trusted. An undefined value means that the issuer is trusted for all claim types
@@ -48,13 +43,10 @@ export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
    * @hidden
    */
   public constructor(args: UniqueIdentifiers & Params, context: Context) {
-    const { trustedFor, ...identifiers } = args;
+    const { trustedFor, ticker, ...identifiers } = args;
 
     super(identifiers, context);
 
-    const { did, ticker } = identifiers;
-
-    this.identity = new Identity({ did }, context);
     this.ticker = ticker;
     this.trustedFor = trustedFor;
   }
@@ -66,14 +58,14 @@ export class DefaultTrustedClaimIssuer extends Entity<UniqueIdentifiers> {
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async addedAt(): Promise<EventIdentifier | null> {
-    const { ticker, identity, context } = this;
+    const { ticker, did, context } = this;
 
     const {
       data: { eventByAddedTrustedClaimIssuer: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByAddedTrustedClaimIssuer'>>(
       eventByAddedTrustedClaimIssuer({
         ticker: padString(ticker, MAX_TICKER_LENGTH),
-        identityId: identity.did,
+        identityId: did,
       })
     );
 
