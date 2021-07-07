@@ -121,7 +121,7 @@ export async function prepareCreateSecurityToken(
     fee = new BigNumber(0);
   }
 
-  if (!totalSupply || (totalSupply && totalSupply.eq(0))) {
+  if (!totalSupply || totalSupply.eq(0)) {
     this.addTransaction(
       tx.asset.createAsset,
       { fee },
