@@ -715,6 +715,105 @@ function splitTag(tag: TxTag) {
   return { palletName, dispatchableName };
 }
 
+// eslint-disable-next-line require-jsdoc
+function buildPalletPermissions(
+  transactions: TransactionPermissions
+): PermissionsEnum<PalletPermissions> {
+  const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
+  let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
+  const message =
+    'Attempting to add permissions for specific transactions as well as the entire module';
+  const { values: txValues, exceptions = [], type } = transactions;
+  uniq(txValues)
+    .sort()
+    .forEach(tag => {
+      if (tag.includes('.')) {
+        const { palletName, dispatchableName } = splitTag(tag as TxTag);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        let pallet = extrinsicDict[palletName];
+
+        if (pallet === null) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message,
+            data: {
+              module: palletName,
+              transactions: [dispatchableName],
+            },
+          });
+        } else if (pallet === undefined) {
+          pallet = extrinsicDict[palletName] = { tx: [] };
+        }
+
+        pallet.tx.push(dispatchableName);
+      } else {
+        extrinsicDict[stringUpperFirst(tag)] = null;
+      }
+    });
+
+  exceptions.forEach(exception => {
+    const { palletName, dispatchableName } = splitTag(exception);
+
+    const pallet = extrinsicDict[palletName];
+
+    if (pallet === undefined) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
+      });
+    } else if (pallet === null) {
+      extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
+    } else if (pallet.exception) {
+      pallet.tx.push(dispatchableName);
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          'Cannot simultaneously include and exclude transactions belonging to the same module',
+      });
+    }
+  });
+
+  const pallets: PalletPermissions[] = map(extrinsicDict, (val, key) => {
+    let dispatchables: PermissionsEnum<string>;
+
+    if (val === null) {
+      dispatchables = 'Whole';
+    } else {
+      const { tx, exception } = val;
+
+      if (exception) {
+        dispatchables = {
+          Except: tx,
+        };
+      } else {
+        dispatchables = {
+          These: tx,
+        };
+      }
+    }
+
+    return {
+      /* eslint-disable @typescript-eslint/naming-convention */
+      pallet_name: key,
+      dispatchable_names: dispatchables,
+      /* eslint-enable @typescript-eslint/naming-convention */
+    };
+  });
+  if (type === PermissionType.Include) {
+    extrinsic = {
+      These: pallets,
+    };
+  } else {
+    extrinsic = {
+      Except: pallets,
+    };
+  }
+
+  return extrinsic;
+}
+
 /**
  * @hidden
  */
@@ -724,99 +823,10 @@ export function permissionsToMeshPermissions(
 ): MeshPermissions {
   const { tokens, transactions, portfolios } = permissions;
 
-  const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
   let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
 
   if (transactions) {
-    const message =
-      'Attempting to add permissions for specific transactions as well as the entire module';
-    const { values: txValues, exceptions = [], type } = transactions;
-    uniq(txValues)
-      .sort()
-      .forEach(tag => {
-        if (tag.includes('.')) {
-          const { palletName, dispatchableName } = splitTag(tag as TxTag);
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          let pallet = extrinsicDict[palletName];
-
-          if (pallet === null) {
-            throw new PolymeshError({
-              code: ErrorCode.ValidationError,
-              message,
-              data: {
-                module: palletName,
-                transactions: [dispatchableName],
-              },
-            });
-          } else if (pallet === undefined) {
-            pallet = extrinsicDict[palletName] = { tx: [] };
-          }
-
-          pallet.tx.push(dispatchableName);
-        } else {
-          extrinsicDict[stringUpperFirst(tag)] = null;
-        }
-      });
-
-    exceptions.forEach(exception => {
-      const { palletName, dispatchableName } = splitTag(exception);
-
-      const pallet = extrinsicDict[palletName];
-
-      if (pallet === undefined) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message:
-            'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
-        });
-      } else if (pallet === null) {
-        extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
-      } else if (pallet.exception) {
-        pallet.tx.push(dispatchableName);
-      } else {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message:
-            'Cannot simultaneously include and exclude transactions belonging to the same module',
-        });
-      }
-    });
-
-    const pallets: PalletPermissions[] = map(extrinsicDict, (val, key) => {
-      let dispatchables: PermissionsEnum<string>;
-
-      if (val === null) {
-        dispatchables = 'Whole';
-      } else {
-        const { tx, exception } = val;
-
-        if (exception) {
-          dispatchables = {
-            Except: tx,
-          };
-        } else {
-          dispatchables = {
-            These: tx,
-          };
-        }
-      }
-
-      return {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        pallet_name: key,
-        dispatchable_names: dispatchables,
-        /* eslint-enable @typescript-eslint/naming-convention */
-      };
-    });
-    if (type === PermissionType.Include) {
-      extrinsic = {
-        These: pallets,
-      };
-    } else {
-      extrinsic = {
-        Except: pallets,
-      };
-    }
+    extrinsic = buildPalletPermissions(transactions);
   }
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
