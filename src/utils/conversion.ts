@@ -715,21 +715,20 @@ function splitTag(tag: TxTag) {
   return { palletName, dispatchableName };
 }
 
-// eslint-disable-next-line require-jsdoc
-function buildPalletPermissions(
-  transactions: TransactionPermissions
-): PermissionsEnum<PalletPermissions> {
+/**
+ * @hidden
+ */
+function initExtrinsicDict(
+  txValues: (TxTag | ModuleName)[],
+  message: string
+): Record<string, { tx: string[]; exception?: true } | null> {
   const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
-  let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
-  const message =
-    'Attempting to add permissions for specific transactions as well as the entire module';
-  const { values: txValues, exceptions = [], type } = transactions;
+
   uniq(txValues)
     .sort()
     .forEach(tag => {
       if (tag.includes('.')) {
         const { palletName, dispatchableName } = splitTag(tag as TxTag);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         let pallet = extrinsicDict[palletName];
 
         if (pallet === null) {
@@ -750,6 +749,22 @@ function buildPalletPermissions(
         extrinsicDict[stringUpperFirst(tag)] = null;
       }
     });
+
+  return extrinsicDict;
+}
+
+/**
+ * @hidden
+ */
+function buildPalletPermissions(
+  transactions: TransactionPermissions
+): PermissionsEnum<PalletPermissions> {
+  let extrinsic: PermissionsEnum<PalletPermissions>;
+  const message =
+    'Attempting to add permissions for specific transactions as well as the entire module';
+  const { values: txValues, exceptions = [], type } = transactions;
+
+  const extrinsicDict = initExtrinsicDict(txValues, message);
 
   exceptions.forEach(exception => {
     const { palletName, dispatchableName } = splitTag(exception);
