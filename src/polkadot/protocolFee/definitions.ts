@@ -7,16 +7,16 @@ export default {
         {
           name: 'op',
           type: 'ProtocolOp',
-          isOptional: false,
+          isOptional: false
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true,
-        },
+          isOptional: true
+        }
       ],
-      type: 'CappedFee',
-    },
+      type: 'CappedFee'
+    }
   },
-  types: {},
-};
+  types: {}
+}

@@ -26,6 +26,8 @@ export type Params = { ticker: string } & ModifyCorporateActionsAgentParams;
 
 /**
  * @hidden
+ *
+ * @deprecated in favor of `inviteAgent`
  */
 export async function prepareModifyCorporateActionsAgent(
   this: Procedure<Params, void>,
@@ -41,9 +43,9 @@ export async function prepareModifyCorporateActionsAgent(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const [invalidDids, agent] = await Promise.all([
+  const [invalidDids, agents] = await Promise.all([
     context.getInvalidDids([target]),
-    securityToken.corporateActions.getAgent(),
+    securityToken.corporateActions.getAgents(),
   ]);
 
   if (invalidDids.length) {
@@ -53,10 +55,10 @@ export async function prepareModifyCorporateActionsAgent(
     });
   }
 
-  if (agent.did === signerToString(target)) {
+  if (agents.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The supplied Identity is already the Corporate Actions Agent',
+      message: 'The Corporate Actions Agent must be undefined to perform this procedure',
     });
   }
 
@@ -66,7 +68,7 @@ export async function prepareModifyCorporateActionsAgent(
   );
 
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.TransferCorporateActionAgent, value: ticker },
+    { type: AuthorizationType.BecomeAgent, value: ticker },
     context
   );
 

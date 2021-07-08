@@ -2,32 +2,31 @@
 export default {
   rpc: {
     canTransfer: {
-      description:
-        'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
+      description: 'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
       params: [
         {
           name: 'ticker',
           type: 'Ticker',
-          isOptional: false,
+          isOptional: false
         },
         {
           name: 'from_did',
           type: 'Option<IdentityId>',
-          isOptional: false,
+          isOptional: false
         },
         {
           name: 'to_did',
           type: 'Option<IdentityId>',
-          isOptional: false,
+          isOptional: false
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true,
-        },
+          isOptional: true
+        }
       ],
-      type: 'AssetComplianceResult',
-    },
+      type: 'AssetComplianceResult'
+    }
   },
-  types: {},
-};
+  types: {}
+}

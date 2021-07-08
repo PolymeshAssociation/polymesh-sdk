@@ -105,7 +105,7 @@ describe('issueTokens procedure', () => {
       securityTokenOptions: {
         details: {
           isDivisible,
-          primaryIssuanceAgent: entityMockUtils.getIdentityInstance(),
+          primaryIssuanceAgents: [entityMockUtils.getIdentityInstance()],
         },
       },
     });
