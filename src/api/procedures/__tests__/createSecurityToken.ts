@@ -264,11 +264,11 @@ describe('createSecurityToken procedure', () => {
       null
     );
 
-    const createAssetIssuen = dsMockUtils.createTxStub('asset', 'issue');
+    const issueTransaction = dsMockUtils.createTxStub('asset', 'issue');
 
     await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
 
-    sinon.assert.calledWith(addTransactionStub, createAssetIssuen, {}, rawTicker, rawTotalSupply);
+    sinon.assert.calledWith(addTransactionStub, issueTransaction, {}, rawTicker, rawTotalSupply);
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {
