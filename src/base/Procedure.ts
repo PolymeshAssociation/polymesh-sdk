@@ -165,6 +165,7 @@ export class Procedure<
       roles: identityAllowed,
       permissions: signerAllowed,
       accountFrozen,
+      requiredPermissions: signerPermissions,
     };
   }
 
@@ -205,10 +206,12 @@ export class Procedure<
 
       await this.setup(procArgs, context);
 
-      const { roles, permissions, accountFrozen } = await this._checkAuthorization(
-        procArgs,
-        context
-      );
+      const {
+        roles,
+        permissions,
+        accountFrozen,
+        requiredPermissions,
+      } = await this._checkAuthorization(procArgs, context);
 
       if (accountFrozen) {
         throw new PolymeshError({
@@ -222,6 +225,9 @@ export class Procedure<
           code: ErrorCode.NotAuthorized,
           message:
             "Current Account doesn't have the required permissions to execute this procedure",
+          data: {
+            requiredPermissions,
+          },
         });
       }
 

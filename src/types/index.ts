@@ -928,6 +928,7 @@ export interface ProcedureAuthorizationStatus {
   permissions: boolean;
   roles: boolean;
   accountFrozen: boolean;
+  requiredPermissions: boolean | SimplePermissions;
 }
 
 interface TransferRestrictionBase {
