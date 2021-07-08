@@ -123,16 +123,33 @@ describe('quitCustody procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const id = new BigNumber(1);
       const did = 'someDid';
-      const portfolio: DefaultPortfolio | NumberedPortfolio = new NumberedPortfolio(
+      let portfolio: DefaultPortfolio | NumberedPortfolio = new NumberedPortfolio(
         { id, did },
         mockContext
       );
 
-      const args = {
+      let args = {
         portfolio,
       } as Params;
 
-      const portfolioId: PortfolioId = { did, number: id };
+      let portfolioId: PortfolioId = { did, number: id };
+
+      expect(boundFunc(args)).toEqual({
+        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        signerPermissions: {
+          transactions: [TxTags.portfolio.QuitPortfolioCustody],
+          portfolios: [portfolio],
+          tokens: [],
+        },
+      });
+
+      portfolio = new DefaultPortfolio({ did }, mockContext);
+
+      args = {
+        portfolio,
+      } as Params;
+
+      portfolioId = { did };
 
       expect(boundFunc(args)).toEqual({
         identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
