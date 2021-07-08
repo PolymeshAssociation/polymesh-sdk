@@ -1,8 +1,15 @@
 import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
+import { chunk, flatten, intersectionBy, uniqBy } from 'lodash';
+import {
+  CddStatus,
+  DidRecord,
+  Instruction as MeshInstruction,
+  ModuleName,
+  TxTag,
+  TxTags,
+} from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -28,6 +35,7 @@ import {
   isTokenPiaRole,
   isVenueOwnerRole,
   Order,
+  PermissionType,
   ResultSet,
   Role,
   SubCallback,
@@ -41,6 +49,7 @@ import {
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
+  extrinsicPermissionsToTransactionPermissions,
   identityIdToString,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
@@ -50,7 +59,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
+import { calculateNextKey, getTicker, isModuleOrTagMatch, removePadding } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
@@ -99,18 +108,129 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
-   * Check whether this Identity possesses the specified Role
+   * Check whether this Identity has specific transaction Permissions over a Security Token
    */
-  public async hasRole(role: Role): Promise<boolean> {
+  public async hasTokenPermissions(args: {
+    token: SecurityToken | string;
+    transactions: TxTag[] | null;
+  }): Promise<boolean> {
     const {
-      context,
       context: {
         polymeshApi: {
           query: { externalAgents },
         },
       },
+      context,
       did,
     } = this;
+    const { token, transactions } = args;
+
+    const ticker = getTicker(token);
+    const rawTicker = stringToTicker(ticker, context);
+
+    const groupOption = await externalAgents.groupOfAgent(
+      rawTicker,
+      stringToIdentityId(did, context)
+    );
+
+    if (groupOption.isNone) {
+      return false;
+    }
+
+    const group = groupOption.unwrap();
+
+    if (group.isFull) {
+      return true;
+    }
+
+    if (transactions === null) {
+      return false;
+    }
+
+    /*
+     * Not authorized:
+     *   - externalAgents
+     *   - identity.acceptAuthorization
+     */
+    if (group.isExceptMeta) {
+      return !transactions.some(
+        tag =>
+          tag.split('.')[0] === ModuleName.ExternalAgents ||
+          tag === TxTags.identity.AcceptAuthorization
+      );
+    }
+
+    /*
+     * Authorized:
+     *   - asset.issue
+     *   - asset.redeem
+     *   - asset.controllerTransfer
+     *   - sto (except for sto.invest)
+     */
+    if (group.isPolymeshV1Pia) {
+      return transactions.every(tag => {
+        const isSto = tag.split('.')[0] === ModuleName.Sto && tag !== TxTags.sto.Invest;
+        const isAsset = [TxTags.asset.Issue, TxTags.asset.Redeem, TxTags.asset.ControllerTransfer];
+
+        return isSto || isAsset;
+      });
+    }
+
+    /*
+     * Authorized:
+     *   - corporateAction
+     *   - corporateBallot
+     *   - capitalDistribution
+     */
+    if (group.isPolymeshV1Caa) {
+      return transactions.every(tag =>
+        [
+          ModuleName.CorporateAction,
+          ModuleName.CorporateBallot,
+          ModuleName.CapitalDistribution,
+        ].includes(tag.split('.')[0] as ModuleName)
+      );
+    }
+
+    const groupId = group.asCustom;
+
+    const groupPermissionsOption = await externalAgents.groupPermissions(rawTicker, groupId);
+
+    const permissions = extrinsicPermissionsToTransactionPermissions(
+      groupPermissionsOption.unwrap()
+    );
+
+    if (permissions === null) {
+      return true;
+    }
+
+    const { type, exceptions, values } = permissions;
+
+    /*
+     * if type is include:
+     *  all passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
+     * if type is exclude:
+     *  all passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
+     */
+    const isPresent = (tag: TxTag, flipResult: boolean) => {
+      const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
+      const isInExceptions = !!exceptions?.includes(tag);
+
+      const result = isInValues && !isInExceptions;
+
+      return flipResult ? result : !result;
+    };
+
+    const isInclude = type === PermissionType.Include;
+
+    return transactions.every(tag => isPresent(tag, isInclude));
+  }
+
+  /**
+   * Check whether this Identity possesses the specified Role
+   */
+  public async hasRole(role: Role): Promise<boolean> {
+    const { context, did } = this;
 
     if (isTickerOwnerRole(role)) {
       const { ticker } = role;
@@ -119,27 +239,13 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const { owner } = await reservation.details();
 
       return owner?.did === did;
-    } else if (isTokenOwnerRole(role)) {
-      const { ticker } = role;
-
-      const rawTicker = stringToTicker(ticker, context);
-      const rawIdentityId = stringToIdentityId(did, context);
-
-      const groupOfAgent = await externalAgents.groupOfAgent(rawTicker, rawIdentityId);
-
-      if (groupOfAgent.isSome) {
-        const agentGroup = groupOfAgent.unwrap();
-        return agentGroup.isFull;
-      }
-
-      return false;
     } else if (isTokenPiaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
       const { primaryIssuanceAgents } = await token.details();
 
-      return primaryIssuanceAgents.map(({ did: agentDid }) => agentDid).includes(did);
+      return !!primaryIssuanceAgents.find(({ did: agentDid }) => agentDid === did);
     } else if (isTokenCaaRole(role)) {
       const { ticker } = role;
 
