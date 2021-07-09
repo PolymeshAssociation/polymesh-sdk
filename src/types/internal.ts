@@ -13,7 +13,7 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CalendarPeriod, Permissions, Role } from '~/types';
+import { CalendarPeriod, Role, SimplePermissions } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -215,8 +215,23 @@ export interface CorporateActionIdentifier {
 }
 
 export interface ProcedureAuthorization {
-  signerPermissions?: Omit<Permissions, 'transactionGroups'> | boolean;
+  signerPermissions?: SimplePermissions | boolean;
   identityRoles?: Role[] | boolean;
 }
 
 export type Falsyable<T> = T | null | undefined;
+
+export type PermissionsEnum<P> =
+  | 'Whole'
+  | {
+      These: P[];
+    }
+  | {
+      Except: P[];
+    };
+export type PalletPermissions = {
+  /* eslint-disable @typescript-eslint/naming-convention */
+  pallet_name: string;
+  dispatchable_names: PermissionsEnum<string>;
+  /* eslint-enable @typescript-eslint/naming-convention */
+};

@@ -1,7 +1,7 @@
-import { Procedure, SecurityToken } from '~/internal';
-import { RoleType, TxTags } from '~/types';
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { stringToTicker } from '~/utils/conversion';
+import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -12,6 +12,8 @@ export type Params = {
 
 /**
  * @hidden
+ *
+ * @deprecated
  */
 export async function prepareRemovePrimaryIssuanceAgent(
   this: Procedure<Params, void>,
@@ -20,7 +22,7 @@ export async function prepareRemovePrimaryIssuanceAgent(
   const {
     context: {
       polymeshApi: {
-        tx: { asset },
+        tx: { externalAgents },
       },
     },
     context,
@@ -28,9 +30,22 @@ export async function prepareRemovePrimaryIssuanceAgent(
 
   const { ticker } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const securityToken = new SecurityToken({ ticker }, context);
 
-  this.addTransaction(asset.removePrimaryIssuanceAgent, {}, rawTicker);
+  const { primaryIssuanceAgents } = await securityToken.details();
+
+  if (primaryIssuanceAgents.length !== 1) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'There must be one (and only one) Primary Issuance Agent assigned to this Security Token',
+    });
+  }
+
+  const rawTicker = stringToTicker(ticker, context);
+  const rawIdentityId = stringToIdentityId(primaryIssuanceAgents[0].did, context);
+
+  this.addTransaction(externalAgents.removeAgent, {}, rawTicker, rawIdentityId);
 }
 
 /**

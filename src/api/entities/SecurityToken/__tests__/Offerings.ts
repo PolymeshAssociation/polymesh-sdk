@@ -69,6 +69,7 @@ describe('Offerings class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
       const args = {
+        offeringPortfolio: 'otherDid',
         raisingCurrency: 'USD',
         raisingPortfolio: 'someDid',
         name: 'someName',

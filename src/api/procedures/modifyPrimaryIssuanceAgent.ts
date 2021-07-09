@@ -9,7 +9,13 @@ import {
 } from '~/utils/conversion';
 
 export interface ModifyPrimaryIssuanceAgentParams {
+  /**
+   * identity to be set as primary issuance agent
+   */
   target: string | Identity;
+  /**
+   * date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
+   */
   requestExpiry?: Date;
 }
 
@@ -22,6 +28,8 @@ export type Params = ModifyPrimaryIssuanceAgentParams & {
 
 /**
  * @hidden
+ *
+ * @deprecated in favor of `inviteAgent`
  */
 export async function prepareModifyPrimaryIssuanceAgent(
   this: Procedure<Params, void>,
@@ -40,22 +48,22 @@ export async function prepareModifyPrimaryIssuanceAgent(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const [invalidDids, { primaryIssuanceAgent }] = await Promise.all([
+  const [invalidDids, { primaryIssuanceAgents }] = await Promise.all([
     context.getInvalidDids([target]),
     securityToken.details(),
   ]);
+
+  if (primaryIssuanceAgents.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The Primary Issuance Agents must be undefined to perform this procedure',
+    });
+  }
 
   if (invalidDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied Identity does not exist',
-    });
-  }
-
-  if (primaryIssuanceAgent.did === signerToString(target)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The supplied Identity is currently the primary issuance agent',
     });
   }
 
@@ -65,7 +73,7 @@ export async function prepareModifyPrimaryIssuanceAgent(
   );
 
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.TransferPrimaryIssuanceAgent, value: ticker },
+    { type: AuthorizationType.BecomeAgent, value: ticker },
     context
   );
 

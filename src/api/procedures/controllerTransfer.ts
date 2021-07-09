@@ -12,7 +12,13 @@ import {
 } from '~/utils/conversion';
 
 export interface ControllerTransferParams {
+  /**
+   * portfolio (or portfolio ID) from which tokens will be transferred
+   */
   originPortfolio: PortfolioLike;
+  /**
+   * amount of tokens to transfer
+   */
   amount: BigNumber;
 }
 
@@ -73,10 +79,8 @@ export async function getAuthorization(
   const { context } = this;
 
   const token = new SecurityToken({ ticker }, context);
-  const {
-    primaryIssuanceAgent: { did },
-  } = await token.details();
 
+  const { did } = await context.getCurrentIdentity();
   const portfolioId = { did };
 
   return {

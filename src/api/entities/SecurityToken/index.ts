@@ -1,4 +1,11 @@
-import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { Option, StorageKey } from '@polkadot/types';
+import {
+  AgentGroup,
+  Counter,
+  IdentityId,
+  SecurityToken as MeshSecurityToken,
+  Ticker,
+} from 'polymesh-types/types';
 
 import {
   Context,
@@ -47,6 +54,7 @@ import { Checkpoints } from './Checkpoints';
 import { Compliance } from './Compliance';
 import { CorporateActions } from './CorporateActions';
 import { Documents } from './Documents';
+import { ExternalAgents } from './ExternalAgents';
 import { Issuance } from './Issuance';
 import { Offerings } from './Offerings';
 import { Settlements } from './Settlements';
@@ -98,6 +106,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public offerings: Offerings;
   public checkpoints: Checkpoints;
   public corporateActions: CorporateActions;
+  public externalAgents: ExternalAgents;
 
   /**
    * @hidden
@@ -119,6 +128,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.offerings = new Offerings(this, context);
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
+    this.externalAgents = new ExternalAgents(this, context);
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferTokenOwnership, { ticker, ...args }] },
@@ -158,8 +168,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    * Transfer ownership of the Security Token to another Identity. This generates an authorization request that must be accepted
    *   by the destinatary
    *
-   * @param args.expiry - date at which the authorization request for transfer expires (optional)
-   *
    * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
@@ -172,7 +180,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Modify some properties of the Security Token
    *
-   * @param args.makeDivisible - makes an indivisible token divisible
    * @throws if the passed values result in no changes being made to the token
    *
    * @note required role:
@@ -195,7 +202,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const {
       context: {
         polymeshApi: {
-          query: { asset },
+          query: { asset, externalAgents },
         },
       },
       ticker,
@@ -203,14 +210,21 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    const assembleResult = ({
-      name,
-      total_supply,
-      divisible,
-      owner_did,
-      asset_type,
-      primary_issuance_agent,
-    }: MeshSecurityToken): SecurityTokenDetails => {
+    const assembleResult = (
+      { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
+      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
+    ): SecurityTokenDetails => {
+      const primaryIssuanceAgents: Identity[] = [];
+
+      agentGroups.forEach(([storageKey, agentGroup]) => {
+        const rawAgentGroup = agentGroup.unwrap();
+        if (rawAgentGroup.isPolymeshV1Pia) {
+          primaryIssuanceAgents.push(
+            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
+          );
+        }
+      });
+
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
       return {
         assetType: assetTypeToString(asset_type),
@@ -218,24 +232,26 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         name: assetNameToString(name),
         owner,
         totalSupply: balanceToBigNumber(total_supply),
-        primaryIssuanceAgent: primary_issuance_agent.isSome
-          ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
-          : owner,
+        primaryIssuanceAgents,
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 
+    const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
+
     if (callback) {
+      const groupOfAgents = await groupOfAgentPromise;
+
       return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken));
+        callback(assembleResult(securityToken, groupOfAgents));
       });
     }
 
-    const token = await asset.tokens(rawTicker);
+    const [token, groupOfAgent] = await Promise.all([asset.tokens(rawTicker), groupOfAgentPromise]);
 
-    return assembleResult(token);
+    return assembleResult(token, groupOfAgent);
   }
 
   /**
@@ -381,15 +397,14 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   /**
    * Assign a new primary issuance agent for the Security Token
    *
-   * @param args.target - identity to be set as primary issuance agent
-   * @param args.requestExpiry - date at which the authorization request to modify the primary issuance agent expires (optional, never expires if a date is not provided)
-   *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated in favor of `inviteAgent`
    */
   public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
 
@@ -400,6 +415,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated
    */
   public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
 
@@ -456,9 +473,6 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
 
   /**
    * Force a transfer from a given Portfolio to the PIA’s default Portfolio
-   *
-   * @param args.originPortfolio - portfolio (or portfolio ID) from which tokens will be transferred
-   * @param args.amount - amount of tokens to transfer
    *
    * @note required role:
    *   - Security Token Primary Issuance Agent

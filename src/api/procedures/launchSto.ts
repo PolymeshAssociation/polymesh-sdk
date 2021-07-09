@@ -33,14 +33,42 @@ import { filterEventRecords } from '~/utils/internal';
  * @hidden
  */
 export interface LaunchStoParams {
-  offeringPortfolio?: PortfolioLike;
+  /**
+   * portfolio in which the Tokens to be sold are stored
+   */
+  offeringPortfolio: PortfolioLike;
+  /**
+   * portfolio in which the raised funds will be stored
+   */
   raisingPortfolio: PortfolioLike;
+  /**
+   * ticker symbol of the currency in which the funds are being raised (i.e. 'USD' or 'CAD').
+   *   Other Security Tokens can be used as currency as well
+   */
   raisingCurrency: string;
+  /**
+   * venue through which all offering related trades will be settled
+   *   (optional, defaults to the first `Sto` type Venue owned by the owner of the Offering Portfolio.
+   *   If passed, it must be of type `Sto`)
+   */
   venue?: Venue;
   name: string;
+  /**
+   * start date of the Offering (optional, defaults to right now)
+   */
   start?: Date;
+  /**
+   * end date of the Offering (optional, defaults to never)
+   */
   end?: Date;
+  /**
+   * array of sale tiers. Each tier consists of an amount of Tokens to be sold at a certain price.
+   *   Tokens in a tier can only be bought when all Tokens in previous tiers have been bought
+   */
   tiers: StoTier[];
+  /**
+   * minimum amount that can be spent on this offering
+   */
   minInvestment: BigNumber;
 }
 
@@ -196,24 +224,10 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, Sto, Storage>,
-  { offeringPortfolio, ticker, raisingPortfolio }: Params
+  { offeringPortfolio, raisingPortfolio }: Params
 ): Promise<Storage> {
-  const { context } = this;
-
-  let offeringPortfolioId: PortfolioId;
-
-  if (offeringPortfolio) {
-    offeringPortfolioId = portfolioLikeToPortfolioId(offeringPortfolio);
-  } else {
-    const token = new SecurityToken({ ticker }, context);
-    const {
-      primaryIssuanceAgent: { did },
-    } = await token.details();
-    offeringPortfolioId = { did };
-  }
-
   return {
-    offeringPortfolioId,
+    offeringPortfolioId: portfolioLikeToPortfolioId(offeringPortfolio),
     raisingPortfolioId: portfolioLikeToPortfolioId(raisingPortfolio),
   };
 }

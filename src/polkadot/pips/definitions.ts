@@ -7,15 +7,15 @@ export default {
         {
           name: 'index',
           type: 'u32',
-          isOptional: false,
+          isOptional: false
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true,
-        },
+          isOptional: true
+        }
       ],
-      type: 'VoteCount',
+      type: 'VoteCount'
     },
     proposedBy: {
       description: 'Retrieves proposal indices started by address',
@@ -23,15 +23,15 @@ export default {
         {
           name: 'address',
           type: 'AccountId',
-          isOptional: false,
+          isOptional: false
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true,
-        },
+          isOptional: true
+        }
       ],
-      type: 'Vec<u32>',
+      type: 'Vec<u32>'
     },
     votedOn: {
       description: 'Retrieves proposal address indices voted on',
@@ -39,16 +39,16 @@ export default {
         {
           name: 'address',
           type: 'AccountId',
-          isOptional: false,
+          isOptional: false
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true,
-        },
+          isOptional: true
+        }
       ],
-      type: 'Vec<u32>',
-    },
+      type: 'Vec<u32>'
+    }
   },
-  types: {},
-};
+  types: {}
+}

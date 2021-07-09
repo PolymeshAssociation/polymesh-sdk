@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { TxTags } from 'polymesh-types/types';
+import { ModuleName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
@@ -25,6 +25,7 @@ import {
   getCommonKeyring,
   getDid,
   getTicker,
+  isModuleOrTagMatch,
   isPrintableAscii,
   optionize,
   padString,
@@ -616,5 +617,21 @@ describe('optionize', () => {
 
     result = optionize(toString)(null, 'stillNotNeeded', 2);
     expect(result).toBeNull();
+  });
+});
+
+describe('isModuleOrTagMatch', () => {
+  test("should return true if two tags/modules are equal, or if one is the other one's module", () => {
+    let result = isModuleOrTagMatch(TxTags.identity.AddInvestorUniquenessClaim, ModuleName.Sto);
+    expect(result).toEqual(false);
+
+    result = isModuleOrTagMatch(ModuleName.Sto, TxTags.identity.AddInvestorUniquenessClaim);
+    expect(result).toEqual(false);
+
+    result = isModuleOrTagMatch(
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.identity.AddClaim
+    );
+    expect(result).toEqual(false);
   });
 });

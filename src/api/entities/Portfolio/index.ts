@@ -197,9 +197,6 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
   /**
    * Moves funds from this Portfolio to another one owned by the same Identity
    *
-   * @param args.to - portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
-   * @param args.movements - list of tokens (and their corresponding amounts) that will be moved
-   *
    * @note required role:
    *   - Portfolio Custodian
    */

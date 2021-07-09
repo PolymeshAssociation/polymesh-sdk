@@ -1,36 +1,11 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type {
-  Bytes,
-  Compact,
-  Enum,
-  Option,
-  Struct,
-  Text,
-  U8aFixed,
-  Vec,
-  bool,
-  u16,
-  u32,
-  u64,
-  u8,
-} from '@polkadot/types';
+import type { Bytes, Compact, Enum, Option, Struct, Text, U8aFixed, Vec, bool, u16, u32, u64, u8 } from '@polkadot/types';
 import type { ITuple } from '@polkadot/types/types';
 import type { Signature } from '@polkadot/types/interfaces/extrinsics';
-import type {
-  AccountId,
-  Balance,
-  BlockNumber,
-  Call,
-  H256,
-  H512,
-  Hash,
-  IndicesLookupSource,
-  Perbill,
-  Permill,
-} from '@polkadot/types/interfaces/runtime';
-import type { AccountInfoWithRefCount } from '@polkadot/types/interfaces/system';
+import type { AccountId, Balance, BlockNumber, Call, H256, H512, Hash, IndicesLookupSource, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
+import type { AccountInfoWithRefCount, DispatchError } from '@polkadot/types/interfaces/system';
 
 /** @name AccountInfo */
 export interface AccountInfo extends AccountInfoWithRefCount {}
@@ -45,6 +20,19 @@ export interface AffirmationStatus extends Enum {
   readonly isAffirmed: boolean;
   readonly isRejected: boolean;
 }
+
+/** @name AgentGroup */
+export interface AgentGroup extends Enum {
+  readonly isFull: boolean;
+  readonly isCustom: boolean;
+  readonly asCustom: AGId;
+  readonly isExceptMeta: boolean;
+  readonly isPolymeshV1Caa: boolean;
+  readonly isPolymeshV1Pia: boolean;
+}
+
+/** @name AGId */
+export interface AGId extends u32 {}
 
 /** @name AssetCompliance */
 export interface AssetCompliance extends Struct {
@@ -95,6 +83,15 @@ export interface AssetOwnershipRelation extends Enum {
   readonly isAssetOwned: boolean;
 }
 
+/** @name AssetPermissions */
+export interface AssetPermissions extends Enum {
+  readonly isWhole: boolean;
+  readonly isThese: boolean;
+  readonly asThese: Vec<Ticker>;
+  readonly isExcept: boolean;
+  readonly asExcept: Vec<Ticker>;
+}
+
 /** @name AssetType */
 export interface AssetType extends Enum {
   readonly isEquityCommon: boolean;
@@ -109,12 +106,6 @@ export interface AssetType extends Enum {
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
   readonly isStableCoin: boolean;
-}
-
-/** @name AuthIdentifier */
-export interface AuthIdentifier extends Struct {
-  readonly signatory: Signatory;
-  readonly auth_id: u64;
 }
 
 /** @name Authorization */
@@ -148,6 +139,8 @@ export interface AuthorizationData extends Enum {
   readonly isNoData: boolean;
   readonly isTransferCorporateActionAgent: boolean;
   readonly asTransferCorporateActionAgent: Ticker;
+  readonly isBecomeAgent: boolean;
+  readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
 }
 
 /** @name AuthorizationNonce */
@@ -731,6 +724,15 @@ export interface DidStatus extends Enum {
 /** @name DispatchableName */
 export interface DispatchableName extends Text {}
 
+/** @name DispatchableNames */
+export interface DispatchableNames extends Enum {
+  readonly isWhole: boolean;
+  readonly isThese: boolean;
+  readonly asThese: Vec<DispatchableName>;
+  readonly isExcept: boolean;
+  readonly asExcept: Vec<DispatchableName>;
+}
+
 /** @name Distribution */
 export interface Distribution extends Struct {
   readonly from: PortfolioId;
@@ -788,8 +790,14 @@ export interface DocumentUri extends Text {}
 /** @name EcdsaSignature */
 export interface EcdsaSignature extends U8aFixed {}
 
+/** @name ErrorAt */
+export interface ErrorAt extends ITuple<[u32, DispatchError]> {}
+
 /** @name EthereumAddress */
 export interface EthereumAddress extends U8aFixed {}
+
+/** @name EventCounts */
+export interface EventCounts extends Vec<u32> {}
 
 /** @name EventDid */
 export interface EventDid extends IdentityId {}
@@ -798,6 +806,15 @@ export interface EventDid extends IdentityId {}
 export interface ExtensionAttributes extends Struct {
   readonly usage_fee: Balance;
   readonly version: MetaVersion;
+}
+
+/** @name ExtrinsicPermissions */
+export interface ExtrinsicPermissions extends Enum {
+  readonly isWhole: boolean;
+  readonly isThese: boolean;
+  readonly asThese: Vec<PalletPermissions>;
+  readonly isExcept: boolean;
+  readonly asExcept: Vec<PalletPermissions>;
 }
 
 /** @name ExtVersion */
@@ -920,6 +937,7 @@ export interface Instruction extends Struct {
 export interface InstructionStatus extends Enum {
   readonly isUnknown: boolean;
   readonly isPending: boolean;
+  readonly isFailed: boolean;
 }
 
 /** @name InvestorUid */
@@ -1025,6 +1043,7 @@ export interface MotionTitle extends Text {}
 export interface MovePortfolioItem extends Struct {
   readonly ticker: Ticker;
   readonly amount: Balance;
+  readonly memo: Option<Memo>;
 }
 
 /** @name OffChainSignature */
@@ -1043,7 +1062,7 @@ export interface PalletName extends Text {}
 /** @name PalletPermissions */
 export interface PalletPermissions extends Struct {
   readonly pallet_name: PalletName;
-  readonly dispatchable_names: Option<Vec<DispatchableName>>;
+  readonly dispatchable_names: DispatchableNames;
 }
 
 /** @name Payload */
@@ -1070,9 +1089,9 @@ export interface PermissionedIdentityPrefs extends Struct {
 
 /** @name Permissions */
 export interface Permissions extends Struct {
-  readonly asset: Option<Vec<Ticker>>;
-  readonly extrinsic: Option<Vec<PalletPermissions>>;
-  readonly portfolio: Option<Vec<PortfolioId>>;
+  readonly asset: AssetPermissions;
+  readonly extrinsic: ExtrinsicPermissions;
+  readonly portfolio: PortfolioPermissions;
 }
 
 /** @name Pip */
@@ -1126,6 +1145,15 @@ export interface PortfolioName extends Text {}
 
 /** @name PortfolioNumber */
 export interface PortfolioNumber extends u64 {}
+
+/** @name PortfolioPermissions */
+export interface PortfolioPermissions extends Enum {
+  readonly isWhole: boolean;
+  readonly isThese: boolean;
+  readonly asThese: Vec<PortfolioId>;
+  readonly isExcept: boolean;
+  readonly asExcept: Vec<PortfolioId>;
+}
 
 /** @name PortfolioValidityResult */
 export interface PortfolioValidityResult extends Struct {
@@ -1327,7 +1355,6 @@ export interface SecurityToken extends Struct {
   readonly owner_did: IdentityId;
   readonly divisible: bool;
   readonly asset_type: AssetType;
-  readonly primary_issuance_agent: Option<IdentityId>;
 }
 
 /** @name SettlementType */
@@ -1428,7 +1455,7 @@ export interface TargetIdentities extends Struct {
 
 /** @name TargetIdentity */
 export interface TargetIdentity extends Enum {
-  readonly isPrimaryIssuanceAgent: boolean;
+  readonly isExternalAgent: boolean;
   readonly isSpecific: boolean;
   readonly asSpecific: IdentityId;
 }

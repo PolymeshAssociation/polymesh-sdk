@@ -10,86 +10,12 @@ import type { AuthorityId } from '@polkadot/types/interfaces/consensus';
 import type { CodeHash } from '@polkadot/types/interfaces/contracts';
 import type { AuthorityList } from '@polkadot/types/interfaces/grandpa';
 import type { Kind, OpaqueTimeSlot } from '@polkadot/types/interfaces/offences';
-import type {
-  AccountId,
-  AccountIndex,
-  Balance,
-  BlockNumber,
-  Hash,
-  Moment,
-  Perbill,
-  PhantomData,
-} from '@polkadot/types/interfaces/runtime';
+import type { AccountId, AccountIndex, Balance, BlockNumber, Hash, Moment, Perbill, PhantomData } from '@polkadot/types/interfaces/runtime';
 import type { TaskAddress } from '@polkadot/types/interfaces/scheduler';
 import type { IdentificationTuple, SessionIndex } from '@polkadot/types/interfaces/session';
 import type { ElectionCompute, EraIndex } from '@polkadot/types/interfaces/staking';
-import type {
-  DispatchError,
-  DispatchInfo,
-  DispatchResult,
-} from '@polkadot/types/interfaces/system';
-import type {
-  AssetIdentifier,
-  AssetName,
-  AssetType,
-  AuthorizationData,
-  BallotMeta,
-  BallotTimeRange,
-  BallotVote,
-  BridgeTx,
-  CAId,
-  CheckpointId,
-  ComplianceRequirement,
-  CorporateAction,
-  DispatchableName,
-  Distribution,
-  Document,
-  DocumentId,
-  EventDid,
-  FundingRoundName,
-  Fundraiser,
-  FundraiserName,
-  HandledTxStatus,
-  IdentityClaim,
-  IdentityId,
-  InvestorUid,
-  Leg,
-  MaybeBlock,
-  Memo,
-  MetaUrl,
-  MigrationError,
-  PalletName,
-  Permissions,
-  PipDescription,
-  PipId,
-  PortfolioId,
-  PortfolioName,
-  PortfolioNumber,
-  PosRatio,
-  ProposalData,
-  ProposalState,
-  Proposer,
-  ReceiptMetadata,
-  ScopeId,
-  SecondaryKey,
-  SettlementType,
-  Signatory,
-  SkippedCount,
-  SlashingSwitch,
-  SmartExtensionName,
-  SmartExtensionType,
-  SnapshotId,
-  SnapshottedPip,
-  StoredSchedule,
-  TargetIdentities,
-  Tax,
-  Ticker,
-  TransferManager,
-  TrustedIssuer,
-  Url,
-  VenueDetails,
-  VenueType,
-} from 'polymesh-types/polymesh';
+import type { DispatchError, DispatchInfo, DispatchResult } from '@polkadot/types/interfaces/system';
+import type { AGId, AgentGroup, AssetIdentifier, AssetName, AssetType, AuthorizationData, BallotMeta, BallotTimeRange, BallotVote, BridgeTx, CAId, CheckpointId, ComplianceRequirement, CorporateAction, DispatchableName, Distribution, Document, DocumentId, ErrorAt, EventCounts, EventDid, ExtrinsicPermissions, FundingRoundName, Fundraiser, FundraiserName, HandledTxStatus, IdentityClaim, IdentityId, InvestorUid, Leg, MaybeBlock, Memo, MetaUrl, MigrationError, PalletName, Permissions, PipDescription, PipId, PortfolioId, PortfolioName, PortfolioNumber, PosRatio, ProposalData, ProposalState, Proposer, ReceiptMetadata, ScopeId, SecondaryKey, SettlementType, Signatory, SkippedCount, SlashingSwitch, SmartExtensionName, SmartExtensionType, SnapshotId, SnapshottedPip, StoredSchedule, TargetIdentities, Tax, Ticker, TransferManager, TrustedIssuer, Url, VenueDetails, VenueType } from 'polymesh-types/polymesh';
 import type { ApiTypes } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/events' {
@@ -97,12 +23,9 @@ declare module '@polkadot/api/types/events' {
     asset: {
       /**
        * Event for creation of the asset.
-       * caller DID/ owner DID, ticker, total supply, divisibility, asset type, beneficiary DID
+       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID
        **/
-      AssetCreated: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, Balance, bool, AssetType, IdentityId]
-      >;
+      AssetCreated: AugmentedEvent<ApiType, [IdentityId, Ticker, bool, AssetType, IdentityId]>;
       /**
        * An event emitted when an asset is frozen.
        * Parameter: caller DID, ticker.
@@ -149,10 +72,7 @@ declare module '@polkadot/api/types/events' {
        * Emitted when extension is added successfully.
        * caller DID, ticker, extension AccountId, extension name, type of smart Extension
        **/
-      ExtensionAdded: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, AccountId, SmartExtensionName, SmartExtensionType]
-      >;
+      ExtensionAdded: AugmentedEvent<ApiType, [IdentityId, Ticker, AccountId, SmartExtensionName, SmartExtensionType]>;
       /**
        * Emitted when extension get archived.
        * caller DID, ticker, AccountId
@@ -187,22 +107,11 @@ declare module '@polkadot/api/types/events' {
        * Emit when tokens get issued.
        * caller DID, ticker, beneficiary DID, value, funding round, total issued in this funding round
        **/
-      Issued: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, IdentityId, Balance, FundingRoundName, Balance]
-      >;
+      Issued: AugmentedEvent<ApiType, [IdentityId, Ticker, IdentityId, Balance, FundingRoundName, Balance]>;
       /**
        * Migration error event.
        **/
       MigrationFailure: AugmentedEvent<ApiType, [MigrationError]>;
-      /**
-       * An event emitted when the primary issuance agent of an asset is transferred.
-       * First DID is the old primary issuance agent and the second DID is the new primary issuance agent.
-       **/
-      PrimaryIssuanceAgentTransferred: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, Option<IdentityId>, Option<IdentityId>]
-      >;
       /**
        * Emit when tokens get redeemed.
        * caller DID, ticker,  from DID, value
@@ -227,10 +136,7 @@ declare module '@polkadot/api/types/events' {
        * An additional event to Transfer; emitted when `transfer_with_data` is called.
        * caller DID , ticker, from DID, to DID, value, data
        **/
-      TransferWithData: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, IdentityId, IdentityId, Balance, Bytes]
-      >;
+      TransferWithData: AugmentedEvent<ApiType, [IdentityId, Ticker, IdentityId, IdentityId, Balance, Bytes]>;
     };
     balances: {
       /**
@@ -259,10 +165,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * Transfer succeeded (from_did, from, to_did, to, value, memo).
        **/
-      Transfer: AugmentedEvent<
-        ApiType,
-        [Option<IdentityId>, AccountId, Option<IdentityId>, AccountId, Balance, Option<Memo>]
-      >;
+      Transfer: AugmentedEvent<ApiType, [Option<IdentityId>, AccountId, Option<IdentityId>, AccountId, Balance, Option<Memo>]>;
       /**
        * Some balance was unreserved (moved from reserved to free). \[who, value]
        **/
@@ -288,9 +191,9 @@ declare module '@polkadot/api/types/events' {
       /**
        * Contract has been evicted and is now in tombstone state.
        * \[contract, tombstone\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `contract`: `AccountId`: The account ID of the evicted contract.
        * - `tombstone`: `bool`: True if the evicted contract left behind a tombstone.
        **/
@@ -302,9 +205,9 @@ declare module '@polkadot/api/types/events' {
       /**
        * Restoration for a contract has been successful.
        * \[donor, dest, code_hash, rent_allowance\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `donor`: `AccountId`: Account ID of the restoring contract
        * - `dest`: `AccountId`: Account ID of the restored contract
        * - `code_hash`: `Hash`: Code hash of the restored contract
@@ -355,10 +258,9 @@ declare module '@polkadot/api/types/events' {
       TimelockChanged: AugmentedEvent<ApiType, [IdentityId, BlockNumber]>;
       /**
        * An event emitted after a vector of transactions is handled. The parameter is a vector of
-       * nonces of all processed transactions, each with either the "success" code 0 or its
-       * failure reason (greater than 0).
+       * tuples of recipient account, its nonce, and the status of the processed transaction.
        **/
-      TxsHandled: AugmentedEvent<ApiType, [Vec<ITuple<[u32, HandledTxStatus]>>]>;
+      TxsHandled: AugmentedEvent<ApiType, [Vec<ITuple<[AccountId, u32, HandledTxStatus]>>]>;
       /**
        * Notification of unfreezing the bridge.
        **/
@@ -371,29 +273,26 @@ declare module '@polkadot/api/types/events' {
     capitalDistribution: {
       /**
        * A token holder's benefit of a capital distribution for the given `CAId` was claimed.
-       *
+       * 
        * (Caller DID, Holder/Claimant DID, CA's ID, updated distribution details, DID's benefit, DID's tax %)
        **/
-      BenefitClaimed: AugmentedEvent<
-        ApiType,
-        [EventDid, EventDid, CAId, Distribution, Balance, Tax]
-      >;
+      BenefitClaimed: AugmentedEvent<ApiType, [EventDid, EventDid, CAId, Distribution, Balance, Tax]>;
       /**
        * A capital distribution, with details included,
        * was created by the DID (the CAA) for the CA specified by the `CAId`.
-       *
+       * 
        * (CAA of CAId's ticker, CA's ID, distribution details)
        **/
       Created: AugmentedEvent<ApiType, [EventDid, CAId, Distribution]>;
       /**
        * Stats from `push_benefit` was emitted.
-       *
+       * 
        * (CAA/owner of CA's ticker, CA's ID, max requested DIDs, processed DIDs, failed DIDs)
        **/
       Reclaimed: AugmentedEvent<ApiType, [EventDid, CAId, Balance]>;
       /**
        * A capital distribution was removed.
-       *
+       * 
        * (Ticker's CAA, CA's ID)
        **/
       Removed: AugmentedEvent<ApiType, [EventDid, CAId]>;
@@ -436,28 +335,25 @@ declare module '@polkadot/api/types/events' {
     checkpoint: {
       /**
        * A checkpoint was created.
-       *
+       * 
        * (caller DID, ticker, checkpoint ID, total supply, checkpoint timestamp)
        **/
-      CheckpointCreated: AugmentedEvent<
-        ApiType,
-        [Option<EventDid>, Ticker, CheckpointId, Balance, Moment]
-      >;
+      CheckpointCreated: AugmentedEvent<ApiType, [Option<EventDid>, Ticker, CheckpointId, Balance, Moment]>;
       /**
        * The maximum complexity for an arbitrary ticker's schedule set was changed.
-       *
+       * 
        * (GC DID, the new maximum)
        **/
       MaximumSchedulesComplexityChanged: AugmentedEvent<ApiType, [IdentityId, u64]>;
       /**
        * A checkpoint schedule was created.
-       *
+       * 
        * (caller DID, ticker, schedule)
        **/
       ScheduleCreated: AugmentedEvent<ApiType, [EventDid, Ticker, StoredSchedule]>;
       /**
        * A checkpoint schedule was removed.
-       *
+       * 
        * (caller DID, ticker, schedule)
        **/
       ScheduleRemoved: AugmentedEvent<ApiType, [IdentityId, Ticker, StoredSchedule]>;
@@ -507,10 +403,7 @@ declare module '@polkadot/api/types/events' {
        * Emitted when an asset compliance is replaced.
        * Parameters: caller DID, ticker, new asset compliance.
        **/
-      AssetComplianceReplaced: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, Vec<ComplianceRequirement>]
-      >;
+      AssetComplianceReplaced: AugmentedEvent<ApiType, [IdentityId, Ticker, Vec<ComplianceRequirement>]>;
       /**
        * Emitted when an asset compliance of a ticker is reset.
        * (caller DID, Ticker).
@@ -525,18 +418,12 @@ declare module '@polkadot/api/types/events' {
        * Emitted when compliance requirement get modified/change.
        * (caller DID, Ticker, ComplianceRequirement).
        **/
-      ComplianceRequirementChanged: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, ComplianceRequirement]
-      >;
+      ComplianceRequirementChanged: AugmentedEvent<ApiType, [IdentityId, Ticker, ComplianceRequirement]>;
       /**
        * Emitted when new compliance requirement is created.
        * (caller DID, Ticker, ComplianceRequirement).
        **/
-      ComplianceRequirementCreated: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, ComplianceRequirement]
-      >;
+      ComplianceRequirementCreated: AugmentedEvent<ApiType, [IdentityId, Ticker, ComplianceRequirement]>;
       /**
        * Emitted when a compliance requirement is removed.
        * (caller DID, Ticker, requirement_id).
@@ -578,18 +465,12 @@ declare module '@polkadot/api/types/events' {
        * Emitted when the template instantiation fees gets changed.
        * IdentityId of the owner, Code hash of the template, Old instantiation fee, New instantiation fee.
        **/
-      TemplateInstantiationFeeChanged: AugmentedEvent<
-        ApiType,
-        [IdentityId, CodeHash, Balance, Balance]
-      >;
+      TemplateInstantiationFeeChanged: AugmentedEvent<ApiType, [IdentityId, CodeHash, Balance, Balance]>;
       /**
        * Emitted when the template meta url get changed.
        * IdentityId of the owner, Code hash of the template, old meta url, new meta url.
        **/
-      TemplateMetaUrlChanged: AugmentedEvent<
-        ApiType,
-        [IdentityId, CodeHash, Option<MetaUrl>, Option<MetaUrl>]
-      >;
+      TemplateMetaUrlChanged: AugmentedEvent<ApiType, [IdentityId, CodeHash, Option<MetaUrl>, Option<MetaUrl>]>;
       /**
        * Emitted when the template ownership get transferred.
        * IdentityId of the owner, Code hash of the template, IdentityId of the new owner of the template.
@@ -626,10 +507,7 @@ declare module '@polkadot/api/types/events' {
        * The set of default `TargetIdentities` for a ticker changed.
        * (CAA DID, Ticker, New TargetIdentities)
        **/
-      DefaultTargetIdentitiesChanged: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, TargetIdentities]
-      >;
+      DefaultTargetIdentitiesChanged: AugmentedEvent<ApiType, [IdentityId, Ticker, TargetIdentities]>;
       /**
        * The default withholding tax for a ticker changed.
        * (CAA DID, Ticker, New Tax).
@@ -639,10 +517,7 @@ declare module '@polkadot/api/types/events' {
        * The withholding tax specific to a DID for a ticker changed.
        * (CAA DID, Ticker, Taxed DID, New Tax).
        **/
-      DidWithholdingTaxChanged: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, IdentityId, Option<Tax>]
-      >;
+      DidWithholdingTaxChanged: AugmentedEvent<ApiType, [IdentityId, Ticker, IdentityId, Option<Tax>]>;
       /**
        * The maximum length of `details` in bytes was changed.
        * (GC DID, new length)
@@ -656,40 +531,72 @@ declare module '@polkadot/api/types/events' {
     corporateBallot: {
       /**
        * A corporate ballot was created.
-       *
+       * 
        * (Ticker's CAA, CA's ID, Voting start/end, Ballot metadata, RCV enabled?)
        **/
       Created: AugmentedEvent<ApiType, [IdentityId, CAId, BallotTimeRange, BallotMeta, bool]>;
       /**
        * A corporate ballot changed its metadata.
-       *
+       * 
        * (Ticker's CAA, CA's ID, New metadata)
        **/
       MetaChanged: AugmentedEvent<ApiType, [IdentityId, CAId, BallotMeta]>;
       /**
        * A corporate ballot changed its start/end date range.
-       *
+       * 
        * (Ticker's CAA, CA's ID, Voting start/end)
        **/
       RangeChanged: AugmentedEvent<ApiType, [IdentityId, CAId, BallotTimeRange]>;
       /**
        * A corporate ballot changed its RCV support.
-       *
+       * 
        * (Ticker's CAA, CA's ID, New support)
        **/
       RCVChanged: AugmentedEvent<ApiType, [IdentityId, CAId, bool]>;
       /**
        * A corporate ballot was removed.
-       *
+       * 
        * (Ticker's CAA, CA's ID)
        **/
       Removed: AugmentedEvent<ApiType, [EventDid, CAId]>;
       /**
        * A vote was cast in a corporate ballot.
-       *
+       * 
        * (voter DID, CAId, Votes)
        **/
       VoteCast: AugmentedEvent<ApiType, [IdentityId, CAId, Vec<BallotVote>]>;
+    };
+    externalAgents: {
+      /**
+       * An agent was added.
+       * 
+       * (Caller/Agent DID, Agent's ticker, Agent's group)
+       **/
+      AgentAdded: AugmentedEvent<ApiType, [EventDid, Ticker, AgentGroup]>;
+      /**
+       * An agent was removed.
+       * 
+       * (Caller DID, Agent's ticker, Agent's DID)
+       **/
+      AgentRemoved: AugmentedEvent<ApiType, [EventDid, Ticker, IdentityId]>;
+      /**
+       * An agent's group was changed.
+       * 
+       * (Caller DID, Agent's ticker, Agent's DID, The new group of the agent)
+       **/
+      GroupChanged: AugmentedEvent<ApiType, [EventDid, Ticker, IdentityId, AgentGroup]>;
+      /**
+       * An Agent Group was created.
+       * 
+       * (Caller DID, AG's ticker, AG's ID, AG's permissions)
+       **/
+      GroupCreated: AugmentedEvent<ApiType, [EventDid, Ticker, AGId, ExtrinsicPermissions]>;
+      /**
+       * An Agent Group's permissions was updated.
+       * 
+       * (Caller DID, AG's ticker, AG's ID, AG's new permissions)
+       **/
+      GroupPermissionsUpdated: AugmentedEvent<ApiType, [EventDid, Ticker, AGId, ExtrinsicPermissions]>;
     };
     grandpa: {
       /**
@@ -714,10 +621,7 @@ declare module '@polkadot/api/types/events' {
        * New authorization added.
        * (authorised_by, target_did, target_key, auth_id, authorization_data, expiry)
        **/
-      AuthorizationAdded: AugmentedEvent<
-        ApiType,
-        [IdentityId, Option<IdentityId>, Option<AccountId>, u64, AuthorizationData, Option<Moment>]
-      >;
+      AuthorizationAdded: AugmentedEvent<ApiType, [IdentityId, Option<IdentityId>, Option<AccountId>, u64, AuthorizationData, Option<Moment>]>;
       /**
        * Authorization consumed.
        * (authorized_identity, authorized_key, auth_id)
@@ -757,10 +661,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * Forwarded Call - (calling DID, target DID, pallet name, function name)
        **/
-      ForwardedCall: AugmentedEvent<
-        ApiType,
-        [IdentityId, IdentityId, PalletName, DispatchableName]
-      >;
+      ForwardedCall: AugmentedEvent<ApiType, [IdentityId, IdentityId, PalletName, DispatchableName]>;
       /**
        * Mocked InvestorUid created.
        **/
@@ -775,12 +676,9 @@ declare module '@polkadot/api/types/events' {
        **/
       PrimaryKeyUpdated: AugmentedEvent<ApiType, [IdentityId, AccountId, AccountId]>;
       /**
-       * DID, updated secondary key, previous permissions
+       * DID, updated secondary key, previous permissions, new permissions
        **/
-      SecondaryKeyPermissionsUpdated: AugmentedEvent<
-        ApiType,
-        [IdentityId, SecondaryKey, Permissions]
-      >;
+      SecondaryKeyPermissionsUpdated: AugmentedEvent<ApiType, [IdentityId, SecondaryKey, Permissions, Permissions]>;
       /**
        * DID, new keys
        **/
@@ -835,10 +733,7 @@ declare module '@polkadot/api/types/events' {
        * Event emitted after creation of a multisig.
        * Arguments: caller DID, multisig address, signers (pending approval), signatures required.
        **/
-      MultiSigCreated: AugmentedEvent<
-        ApiType,
-        [IdentityId, AccountId, AccountId, Vec<Signatory>, u64]
-      >;
+      MultiSigCreated: AugmentedEvent<ApiType, [IdentityId, AccountId, AccountId, Vec<Signatory>, u64]>;
       /**
        * Event emitted when the number of required signatures is changed.
        * Arguments: caller DID, multisig, new required signatures.
@@ -912,10 +807,7 @@ declare module '@polkadot/api/types/events' {
        * Default enactment period (in blocks) has been changed.
        * (caller DID, old period, new period)
        **/
-      DefaultEnactmentPeriodChanged: AugmentedEvent<
-        ApiType,
-        [IdentityId, BlockNumber, BlockNumber]
-      >;
+      DefaultEnactmentPeriodChanged: AugmentedEvent<ApiType, [IdentityId, BlockNumber, BlockNumber]>;
       /**
        * Cancelling the PIP execution failed in the scheduler pallet.
        **/
@@ -966,24 +858,12 @@ declare module '@polkadot/api/types/events' {
       PipSkipped: AugmentedEvent<ApiType, [IdentityId, PipId, SkippedCount]>;
       /**
        * A PIP was made with a `Balance` stake.
-       *
+       * 
        * # Parameters:
-       *
+       * 
        * Caller DID, Proposer, PIP ID, deposit, URL, description, expiry time, proposal data.
        **/
-      ProposalCreated: AugmentedEvent<
-        ApiType,
-        [
-          IdentityId,
-          Proposer,
-          PipId,
-          Balance,
-          Option<Url>,
-          Option<PipDescription>,
-          MaybeBlock,
-          ProposalData
-        ]
-      >;
+      ProposalCreated: AugmentedEvent<ApiType, [IdentityId, Proposer, PipId, Balance, Option<Url>, Option<PipDescription>, MaybeBlock, ProposalData]>;
       /**
        * Refund proposal
        * (id, total amount)
@@ -1001,10 +881,7 @@ declare module '@polkadot/api/types/events' {
        * Results (e.g., approved, rejected, and skipped), were enacted for some PIPs.
        * (gc_did, snapshot_id_opt, skipped_pips_with_new_count, rejected_pips, approved_pips)
        **/
-      SnapshotResultsEnacted: AugmentedEvent<
-        ApiType,
-        [IdentityId, Option<SnapshotId>, Vec<ITuple<[PipId, SkippedCount]>>, Vec<PipId>, Vec<PipId>]
-      >;
+      SnapshotResultsEnacted: AugmentedEvent<ApiType, [IdentityId, Option<SnapshotId>, Vec<ITuple<[PipId, SkippedCount]>>, Vec<PipId>, Vec<PipId>]>;
       /**
        * A new snapshot was taken.
        **/
@@ -1035,10 +912,7 @@ declare module '@polkadot/api/types/events' {
        * Final votes on a motion (given hash)
        * caller DID, ProposalIndex, Proposal hash, yes voters, no voter
        **/
-      FinalVotes: AugmentedEvent<
-        ApiType,
-        [IdentityId, ProposalIndex, Hash, Vec<IdentityId>, Vec<IdentityId>]
-      >;
+      FinalVotes: AugmentedEvent<ApiType, [IdentityId, ProposalIndex, Hash, Vec<IdentityId>, Vec<IdentityId>]>;
       /**
        * A motion (given hash) has been proposed (by given account) with a threshold (given `MemberCount`).
        * Parameters: caller DID, proposal index, proposal hash.
@@ -1060,10 +934,7 @@ declare module '@polkadot/api/types/events' {
        * a tally (yes votes, no votes and total seats given respectively as `MemberCount`).
        * caller DID, Proposal index, Proposal hash, current vote, yay vote count, nay vote count, total seats.
        **/
-      Voted: AugmentedEvent<
-        ApiType,
-        [IdentityId, ProposalIndex, Hash, bool, MemberCount, MemberCount, MemberCount]
-      >;
+      Voted: AugmentedEvent<ApiType, [IdentityId, ProposalIndex, Hash, bool, MemberCount, MemberCount, MemberCount]>;
       /**
        * A vote on a motion (given hash) has been retracted.
        * caller DID, ProposalIndex, Proposal hash, vote that was retracted
@@ -1078,7 +949,7 @@ declare module '@polkadot/api/types/events' {
     portfolio: {
       /**
        * A token amount has been moved from one portfolio to another.
-       *
+       * 
        * # Parameters
        * * origin DID
        * * source portfolio
@@ -1086,13 +957,10 @@ declare module '@polkadot/api/types/events' {
        * * asset ticker
        * * asset balance that was moved
        **/
-      MovedBetweenPortfolios: AugmentedEvent<
-        ApiType,
-        [IdentityId, PortfolioId, PortfolioId, Ticker, Balance]
-      >;
+      MovedBetweenPortfolios: AugmentedEvent<ApiType, [IdentityId, PortfolioId, PortfolioId, Ticker, Balance, Option<Memo>]>;
       /**
        * The portfolio has been successfully created.
-       *
+       * 
        * # Parameters
        * * origin DID
        * * portfolio number
@@ -1101,7 +969,7 @@ declare module '@polkadot/api/types/events' {
       PortfolioCreated: AugmentedEvent<ApiType, [IdentityId, PortfolioNumber, PortfolioName]>;
       /**
        * Custody of a portfolio has been given to a different identity
-       *
+       * 
        * # Parameters
        * * origin DID
        * * portfolio id
@@ -1110,7 +978,7 @@ declare module '@polkadot/api/types/events' {
       PortfolioCustodianChanged: AugmentedEvent<ApiType, [IdentityId, PortfolioId, IdentityId]>;
       /**
        * The portfolio has been successfully removed.
-       *
+       * 
        * # Parameters
        * * origin DID
        * * portfolio number
@@ -1118,7 +986,7 @@ declare module '@polkadot/api/types/events' {
       PortfolioDeleted: AugmentedEvent<ApiType, [IdentityId, PortfolioNumber]>;
       /**
        * The portfolio identified with `num` has been renamed to `name`.
-       *
+       * 
        * # Parameters
        * * origin DID
        * * portfolio number
@@ -1127,15 +995,12 @@ declare module '@polkadot/api/types/events' {
       PortfolioRenamed: AugmentedEvent<ApiType, [IdentityId, PortfolioNumber, PortfolioName]>;
       /**
        * All non-default portfolio numbers and names of a DID.
-       *
+       * 
        * # Parameters
        * * origin DID
        * * vector of number-name pairs
        **/
-      UserPortfolios: AugmentedEvent<
-        ApiType,
-        [IdentityId, Vec<ITuple<[PortfolioNumber, PortfolioName]>>]
-      >;
+      UserPortfolios: AugmentedEvent<ApiType, [IdentityId, Vec<ITuple<[PortfolioNumber, PortfolioName]>>]>;
     };
     protocolFee: {
       /**
@@ -1185,10 +1050,7 @@ declare module '@polkadot/api/types/events' {
        * A new instruction has been created
        * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs)
        **/
-      InstructionCreated: AugmentedEvent<
-        ApiType,
-        [IdentityId, u64, u64, SettlementType, Option<Moment>, Option<Moment>, Vec<Leg>]
-      >;
+      InstructionCreated: AugmentedEvent<ApiType, [IdentityId, u64, u64, SettlementType, Option<Moment>, Option<Moment>, Vec<Leg>]>;
       /**
        * Instruction executed successfully(did, instruction_id)
        **/
@@ -1202,16 +1064,18 @@ declare module '@polkadot/api/types/events' {
        **/
       InstructionRejected: AugmentedEvent<ApiType, [IdentityId, u64]>;
       /**
+       * Instruction is rescheduled.
+       * (caller DID, instruction_id)
+       **/
+      InstructionRescheduled: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      /**
        * Execution of a leg failed (did, instruction_id, leg_id)
        **/
       LegFailedExecution: AugmentedEvent<ApiType, [IdentityId, u64, u64]>;
       /**
        * A receipt has been claimed (did, instruction_id, leg_id, receipt_uid, signer, receipt metadata)
        **/
-      ReceiptClaimed: AugmentedEvent<
-        ApiType,
-        [IdentityId, u64, u64, u64, AccountId, ReceiptMetadata]
-      >;
+      ReceiptClaimed: AugmentedEvent<ApiType, [IdentityId, u64, u64, u64, AccountId, ReceiptMetadata]>;
       /**
        * A receipt has been unclaimed (did, instruction_id, leg_id, receipt_uid, signer)
        **/
@@ -1252,7 +1116,7 @@ declare module '@polkadot/api/types/events' {
     staking: {
       /**
        * An account has bonded this amount. [did, stash, amount]
-       *
+       * 
        * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
        * it will not be emitted for staking rewards when they are added to stake.
        **/
@@ -1303,10 +1167,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * When scheduling of reward payments get interrupted.
        **/
-      RewardPaymentSchedulingInterrupted: AugmentedEvent<
-        ApiType,
-        [AccountId, EraIndex, DispatchError]
-      >;
+      RewardPaymentSchedulingInterrupted: AugmentedEvent<ApiType, [AccountId, EraIndex, DispatchError]>;
       /**
        * One validator (and its nominators) has been slashed by the given amount.
        * [validator, amount]
@@ -1342,10 +1203,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * `ScopeId`s were removed from the exemption list.
        **/
-      ExemptionsRemoved: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, TransferManager, Vec<ScopeId>]
-      >;
+      ExemptionsRemoved: AugmentedEvent<ApiType, [IdentityId, Ticker, TransferManager, Vec<ScopeId>]>;
       /**
        * A new transfer manager was added.
        **/
@@ -1380,10 +1238,7 @@ declare module '@polkadot/api/types/events' {
        * A fundraiser window has been modified.
        * (primary issuance agent, fundraiser id, old_start, old_end, new_start, new_end)
        **/
-      FundraiserWindowModified: AugmentedEvent<
-        ApiType,
-        [EventDid, u64, Moment, Option<Moment>, Moment, Option<Moment>]
-      >;
+      FundraiserWindowModified: AugmentedEvent<ApiType, [EventDid, u64, Moment, Option<Moment>, Moment, Option<Moment>]>;
       /**
        * An investor invested in the fundraiser.
        * (Investor, fundraiser_id, offering token, raise token, offering_token_amount, raise_token_amount)
@@ -1447,10 +1302,7 @@ declare module '@polkadot/api/types/events' {
        * Final votes on a motion (given hash)
        * caller DID, ProposalIndex, Proposal hash, yes voters, no voter
        **/
-      FinalVotes: AugmentedEvent<
-        ApiType,
-        [IdentityId, ProposalIndex, Hash, Vec<IdentityId>, Vec<IdentityId>]
-      >;
+      FinalVotes: AugmentedEvent<ApiType, [IdentityId, ProposalIndex, Hash, Vec<IdentityId>, Vec<IdentityId>]>;
       /**
        * A motion (given hash) has been proposed (by given account) with a threshold (given `MemberCount`).
        * Parameters: caller DID, proposal index, proposal hash.
@@ -1472,10 +1324,7 @@ declare module '@polkadot/api/types/events' {
        * a tally (yes votes, no votes and total seats given respectively as `MemberCount`).
        * caller DID, Proposal index, Proposal hash, current vote, yay vote count, nay vote count, total seats.
        **/
-      Voted: AugmentedEvent<
-        ApiType,
-        [IdentityId, ProposalIndex, Hash, bool, MemberCount, MemberCount, MemberCount]
-      >;
+      Voted: AugmentedEvent<ApiType, [IdentityId, ProposalIndex, Hash, bool, MemberCount, MemberCount, MemberCount]>;
       /**
        * A vote on a motion (given hash) has been retracted.
        * caller DID, ProposalIndex, Proposal hash, vote that was retracted
@@ -1572,10 +1421,7 @@ declare module '@polkadot/api/types/events' {
        * Final votes on a motion (given hash)
        * caller DID, ProposalIndex, Proposal hash, yes voters, no voter
        **/
-      FinalVotes: AugmentedEvent<
-        ApiType,
-        [IdentityId, ProposalIndex, Hash, Vec<IdentityId>, Vec<IdentityId>]
-      >;
+      FinalVotes: AugmentedEvent<ApiType, [IdentityId, ProposalIndex, Hash, Vec<IdentityId>, Vec<IdentityId>]>;
       /**
        * A motion (given hash) has been proposed (by given account) with a threshold (given `MemberCount`).
        * Parameters: caller DID, proposal index, proposal hash.
@@ -1597,10 +1443,7 @@ declare module '@polkadot/api/types/events' {
        * a tally (yes votes, no votes and total seats given respectively as `MemberCount`).
        * caller DID, Proposal index, Proposal hash, current vote, yay vote count, nay vote count, total seats.
        **/
-      Voted: AugmentedEvent<
-        ApiType,
-        [IdentityId, ProposalIndex, Hash, bool, MemberCount, MemberCount, MemberCount]
-      >;
+      Voted: AugmentedEvent<ApiType, [IdentityId, ProposalIndex, Hash, bool, MemberCount, MemberCount, MemberCount]>;
       /**
        * A vote on a motion (given hash) has been retracted.
        * caller DID, ProposalIndex, Proposal hash, vote that was retracted
@@ -1650,20 +1493,24 @@ declare module '@polkadot/api/types/events' {
     utility: {
       /**
        * Batch of dispatches completed fully with no error.
+       * Includes a vector of event counts for each dispatch.
        **/
-      BatchCompleted: AugmentedEvent<ApiType, []>;
+      BatchCompleted: AugmentedEvent<ApiType, [EventCounts]>;
       /**
        * Batch of dispatches did not complete fully.
-       * Index of first failing dispatch given, as well as the error.
+       * Includes a vector of event counts for each dispatch and
+       * the index of the first failing dispatch as well as the error.
        **/
-      BatchInterrupted: AugmentedEvent<ApiType, [u32, DispatchError]>;
+      BatchInterrupted: AugmentedEvent<ApiType, [EventCounts, ErrorAt]>;
       /**
        * Batch of dispatches did not complete fully.
-       * Includes any failed dispatches with their indices and their associated error.
+       * Includes a vector of event counts for each call and
+       * a vector of any failed dispatches with their indices and associated error.
        **/
-      BatchOptimisticFailed: AugmentedEvent<ApiType, [Vec<ITuple<[u32, DispatchError]>>]>;
+      BatchOptimisticFailed: AugmentedEvent<ApiType, [EventCounts, Vec<ErrorAt>]>;
     };
   }
 
-  export interface DecoratedEvents<ApiType extends ApiTypes> extends AugmentedEvents<ApiType> {}
+  export interface DecoratedEvents<ApiType extends ApiTypes> extends AugmentedEvents<ApiType> {
+  }
 }
