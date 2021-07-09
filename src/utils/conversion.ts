@@ -214,7 +214,7 @@ export * from '~/generated/utils';
 export function tickerToDid(ticker: string): string {
   return blake2AsHex(
     u8aConcat(stringToU8a('SECURITY_TOKEN:'), u8aFixLength(stringToU8a(ticker), 96, true))
-  );
+  )
 }
 
 /**
