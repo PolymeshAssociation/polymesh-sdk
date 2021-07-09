@@ -50,3 +50,4 @@ export * from './CheckpointSchedule/types';
 export * from './CorporateAction/types';
 export * from './DividendDistribution/types';
 // export * from './Proposal/types';
+export { isEntity } from './Entity';
