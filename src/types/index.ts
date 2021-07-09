@@ -82,7 +82,6 @@ export enum TransactionQueueStatus {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
-  TokenFullAgent = 'TokenFullAgent',
   TokenPia = 'TokenPia',
   TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
