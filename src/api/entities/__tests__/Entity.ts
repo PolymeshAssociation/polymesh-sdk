@@ -3,6 +3,14 @@ import sinon from 'sinon';
 import { Context, Entity } from '~/internal';
 import * as utilsInternalModule from '~/utils/internal';
 
+// eslint-disable-next-line require-jsdoc
+class NonAbstract extends Entity<unknown, boolean> {
+  // eslint-disable-next-line require-jsdoc
+  public toJson(): boolean {
+    return true;
+  }
+}
+
 describe('Entity class', () => {
   const serializeStub = sinon.stub(utilsInternalModule, 'serialize');
   describe('method: generateUuid', () => {
@@ -40,11 +48,11 @@ describe('Entity class', () => {
 
   describe('method: isEqual', () => {
     test('should return whether the entities are the same', () => {
-      serializeStub.withArgs('Entity', { foo: 'bar' }).returns('first');
-      serializeStub.withArgs('Entity', { bar: 'baz' }).returns('second');
+      serializeStub.withArgs('NonAbstract', { foo: 'bar' }).returns('first');
+      serializeStub.withArgs('NonAbstract', { bar: 'baz' }).returns('second');
 
-      const first = new Entity({ foo: 'bar' }, {} as Context);
-      const second = new Entity({ bar: 'baz' }, {} as Context);
+      const first = new NonAbstract({ foo: 'bar' }, {} as Context);
+      const second = new NonAbstract({ bar: 'baz' }, {} as Context);
 
       expect(first.isEqual(first)).toBe(true);
       expect(first.isEqual(second)).toBe(false);

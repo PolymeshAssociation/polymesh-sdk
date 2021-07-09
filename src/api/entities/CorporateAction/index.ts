@@ -29,6 +29,11 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+interface HumanReadable {
+  id: string;
+  ticker: string;
+}
+
 export interface Params {
   kind: CorporateActionKind;
   declarationDate: Date;
@@ -42,7 +47,7 @@ export interface Params {
  * Represents an action initiated by the issuer of a Security Token which may affect the positions of
  *   the Tokenholders
  */
-export class CorporateAction extends Entity<UniqueIdentifiers> {
+export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -237,5 +242,17 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
 
     return query.corporateAction.corporateActions(rawTicker, numberToU32(id, context));
+  }
+
+  /**
+   * Return the Corporate Action's ID and Token ticker
+   */
+  public toJson(): HumanReadable {
+    const { ticker, id } = this;
+
+    return {
+      ticker,
+      id: id.toString(),
+    };
   }
 }

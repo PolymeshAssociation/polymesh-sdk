@@ -34,10 +34,15 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+interface HumanReadable {
+  id: string;
+  ticker: string;
+}
+
 /**
  * Represents a Security Token Offering in the Polymesh blockchain
  */
-export class Sto extends Entity<UniqueIdentifiers> {
+export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -244,6 +249,18 @@ export class Sto extends Entity<UniqueIdentifiers> {
       data,
       next,
       count,
+    };
+  }
+
+  /**
+   * Return the Sto's ID and Token ticker
+   */
+  public toJson(): HumanReadable {
+    const { ticker, id } = this;
+
+    return {
+      ticker,
+      id: id.toString(),
     };
   }
 }

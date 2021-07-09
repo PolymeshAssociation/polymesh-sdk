@@ -22,11 +22,16 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+interface HumanReadable {
+  id: string;
+  ticker: string;
+}
+
 /**
  * Represents a snapshot of the Security Token's holders and their respective balances
  *   at a certain point in time
  */
-export class Checkpoint extends Entity<UniqueIdentifiers> {
+export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -229,5 +234,17 @@ export class Checkpoint extends Entity<UniqueIdentifiers> {
     const rawCheckpointId = await checkpoint.checkpointIdSequence(stringToTicker(ticker, context));
 
     return id.lte(u64ToBigNumber(rawCheckpointId));
+  }
+
+  /**
+   * Return the Checkpoint's ticker and identifier
+   */
+  public toJson(): HumanReadable {
+    const { ticker, id } = this;
+
+    return {
+      ticker,
+      id: id.toString(),
+    };
   }
 }

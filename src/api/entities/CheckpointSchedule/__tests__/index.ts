@@ -271,4 +271,24 @@ describe('CheckpointSchedule class', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const schedule = new CheckpointSchedule(
+        {
+          id: new BigNumber(1),
+          ticker: 'SOME_TICKER',
+          start,
+          period,
+          remaining,
+          nextCheckpointDate,
+        },
+        context
+      );
+      expect(schedule.toJson()).toEqual({
+        id: '1',
+        ticker: 'SOME_TICKER',
+      });
+    });
+  });
 });

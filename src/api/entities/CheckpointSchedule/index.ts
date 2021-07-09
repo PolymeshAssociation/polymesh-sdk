@@ -17,6 +17,11 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+interface HumanReadable {
+  id: string;
+  ticker: string;
+}
+
 export interface Params {
   period: CalendarPeriod;
   start: Date;
@@ -30,7 +35,7 @@ const notExistsMessage = 'Schedule no longer exists. It was either removed or it
  * Represents a Schedule in which Checkpoints are created for a specific
  *  Security Token. Schedules can be set up to create checkpoints
  */
-export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
+export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -190,5 +195,17 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
     const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
     return !!exists;
+  }
+
+  /**
+   * Return the Schedule's ID and Token ticker
+   */
+  public toJson(): HumanReadable {
+    const { ticker, id } = this;
+
+    return {
+      ticker,
+      id: id.toString(),
+    };
   }
 }

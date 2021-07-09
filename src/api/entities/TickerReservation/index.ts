@@ -30,7 +30,7 @@ export interface UniqueIdentifiers {
  *   after a set length of time, after which they can be reserved by another Identity.
  *   A Ticker must be previously reserved by an Identity for that Identity to be able create a Security Token with it
  */
-export class TickerReservation extends Entity<UniqueIdentifiers> {
+export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -185,4 +185,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers> {
    *   - Ticker Owner
    */
   public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, TickerReservation>;
+
+  /**
+   * Return the Reservation's ticker
+   */
+  public toJson(): string {
+    return this.ticker;
+  }
 }

@@ -207,4 +207,20 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: { type: AuthorizationType.NoData },
+        },
+        context
+      );
+      expect(authorizationRequest.toJson()).toBe('1');
+    });
+  });
 });

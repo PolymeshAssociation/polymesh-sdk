@@ -322,6 +322,14 @@ describe('Venue class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const token = new Venue({ id: new BigNumber(1) }, context);
+
+      expect(token.toJson()).toBe('1');
+    });
+  });
 });
 
 describe('addInstructionTransformer', () => {

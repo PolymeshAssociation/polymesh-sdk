@@ -75,7 +75,7 @@ export interface UniqueIdentifiers {
 /**
  * Class used to manage all the Security Token functionality
  */
-export class SecurityToken extends Entity<UniqueIdentifiers> {
+export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -478,4 +478,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *   - Security Token Primary Issuance Agent
    */
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
+
+  /**
+   * Return the Token's ticker
+   */
+  public toJson(): string {
+    return this.ticker;
+  }
 }

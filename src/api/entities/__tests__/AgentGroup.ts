@@ -45,4 +45,11 @@ describe('AgentGroup class', () => {
       expect(AgentGroup.isUniqueIdentifiers({ id: 1 })).toBe(false);
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const agentGroup = new AgentGroup({ id: new BigNumber(1) }, context);
+      expect(agentGroup.toJson()).toBe('1');
+    });
+  });
 });

@@ -9,7 +9,7 @@ export interface UniqueIdentifiers {
 /**
  * Represents an external agent for a Security Token
  */
-export class AgentGroup extends Entity<UniqueIdentifiers> {
+export class AgentGroup extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -31,5 +31,12 @@ export class AgentGroup extends Entity<UniqueIdentifiers> {
     const { id } = identifiers;
 
     this.id = id;
+  }
+
+  /**
+   * Return the Group's ID
+   */
+  public toJson(): string {
+    return this.id.toString();
   }
 }

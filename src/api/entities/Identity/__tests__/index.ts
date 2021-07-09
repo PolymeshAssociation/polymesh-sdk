@@ -948,4 +948,11 @@ describe('Identity class', () => {
       expect(result).toEqual([expectedDistribution]);
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      expect(identity.toJson()).toBe('someDid');
+    });
+  });
 });

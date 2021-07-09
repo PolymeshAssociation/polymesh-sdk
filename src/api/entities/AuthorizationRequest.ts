@@ -28,7 +28,7 @@ export interface Params {
  *   wants to transfer ownership of her asset ALICETOKEN to Bob, an authorization request gets emitted to Bob,
  *   who then has to accept it in order for the ownership transfer to be complete
  */
-export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
+export class AuthorizationRequest extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -148,5 +148,12 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
     const { expiry } = this;
 
     return expiry !== null && expiry < new Date();
+  }
+
+  /**
+   * Return the Authorization's ID
+   */
+  public toJson(): string {
+    return this.authId.toString();
   }
 }

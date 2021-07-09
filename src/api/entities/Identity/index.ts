@@ -65,7 +65,7 @@ export interface UniqueIdentifiers {
 /**
  * Represents an Identity in the Polymesh blockchain
  */
-export class Identity extends Entity<UniqueIdentifiers> {
+export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Checks if a value is of type [[UniqueIdentifiers]]
@@ -573,5 +573,12 @@ export class Identity extends Entity<UniqueIdentifiers> {
         return !boolToBoolean(holderPaid);
       }
     );
+  }
+
+  /**
+   * Return the Identity's DID
+   */
+  public toJson(): string {
+    return this.did;
   }
 }

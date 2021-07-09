@@ -494,8 +494,6 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
 
-    console.log(result);
-
     expect(result).toBe(fakeResult);
   });
 });
