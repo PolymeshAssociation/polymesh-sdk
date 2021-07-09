@@ -7,7 +7,6 @@ import {
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
-  RoleType,
   TransferRestriction,
   TransferRestrictionType,
   TxTags,
@@ -171,8 +170,7 @@ export function getAuthorization(
   }
 
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
       transactions,
       portfolios: [],

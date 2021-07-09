@@ -76,8 +76,8 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TickerOwner, ticker }],
+    permissions: {
       tokens: [],
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],

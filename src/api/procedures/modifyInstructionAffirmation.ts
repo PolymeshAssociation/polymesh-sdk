@@ -161,7 +161,7 @@ export async function getAuthorization(
   }
 
   return {
-    signerPermissions: {
+    permissions: {
       portfolios,
       transactions,
       tokens: [],

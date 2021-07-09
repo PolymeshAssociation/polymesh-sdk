@@ -94,8 +94,8 @@ export function getAuthorization(
   const { context } = this;
   const portfolioId: PortfolioId = { did, number: id };
   return {
-    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-    signerPermissions: {
+    roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [portfolioIdToPortfolio({ did, number: id }, context)],
       tokens: [],

@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, flatten, intersectionBy, uniqBy } from 'lodash';
+import { chunk, flatten, uniqBy } from 'lodash';
 import {
   CddStatus,
   DidRecord,
@@ -31,7 +31,6 @@ import {
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isTokenCaaRole,
-  isTokenOwnerRole,
   isTokenPiaRole,
   isVenueOwnerRole,
   Order,
@@ -170,7 +169,11 @@ export class Identity extends Entity<UniqueIdentifiers> {
     if (group.isPolymeshV1Pia) {
       return transactions.every(tag => {
         const isSto = tag.split('.')[0] === ModuleName.Sto && tag !== TxTags.sto.Invest;
-        const isAsset = [TxTags.asset.Issue, TxTags.asset.Redeem, TxTags.asset.ControllerTransfer];
+        const isAsset = (<TxTag[]>[
+          TxTags.asset.Issue,
+          TxTags.asset.Redeem,
+          TxTags.asset.ControllerTransfer,
+        ]).includes(tag);
 
         return isSto || isAsset;
       });

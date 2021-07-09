@@ -209,11 +209,11 @@ describe('toggleFreezeSto procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const identityRoles = [{ type: RoleType.TokenPia, ticker }];
+      const roles = [{ type: RoleType.TokenPia, ticker }];
 
       expect(boundFunc({ ticker, id, freeze: true })).toEqual({
-        identityRoles,
-        signerPermissions: {
+        roles,
+        permissions: {
           transactions: [TxTags.sto.FreezeFundraiser],
           tokens: [token],
           portfolios: [],
@@ -221,8 +221,8 @@ describe('toggleFreezeSto procedure', () => {
       });
 
       expect(boundFunc({ ticker, id, freeze: false })).toEqual({
-        identityRoles,
-        signerPermissions: {
+        roles,
+        permissions: {
           transactions: [TxTags.sto.UnfreezeFundraiser],
           tokens: [token],
           portfolios: [],

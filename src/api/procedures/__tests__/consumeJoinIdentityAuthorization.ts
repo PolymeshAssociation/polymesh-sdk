@@ -235,15 +235,15 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       let result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: true,
+        roles: true,
       });
 
       args.authRequest.target = new Identity({ did: 'notTheCurrentIdentity' }, mockContext);
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: false,
-        signerPermissions: {
+        roles: false,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.JoinIdentityAsIdentity],
@@ -255,8 +255,8 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: true,
-        signerPermissions: {
+        roles: true,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],

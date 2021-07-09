@@ -65,8 +65,8 @@ export function getAuthorization(
   const { context } = this;
   const portfolioId = { did, number: id };
   return {
-    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-    signerPermissions: {
+    roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    permissions: {
       transactions: [TxTags.portfolio.DeletePortfolio],
       portfolios: [portfolioLikeToPortfolio({ identity: did, id }, context)],
       tokens: [],

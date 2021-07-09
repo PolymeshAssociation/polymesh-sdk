@@ -99,7 +99,7 @@ export function getAuthorization({
   extendPeriod,
 }: ReserveTickerParams): ProcedureAuthorization {
   const auth: ProcedureAuthorization = {
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.asset.RegisterTicker],
       tokens: [],
       portfolios: [],
@@ -107,7 +107,7 @@ export function getAuthorization({
   };
 
   if (extendPeriod) {
-    return { ...auth, identityRoles: [{ type: RoleType.TickerOwner, ticker }] };
+    return { ...auth, roles: [{ type: RoleType.TickerOwner, ticker }] };
   }
 
   return auth;

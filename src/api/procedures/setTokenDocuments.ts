@@ -2,7 +2,7 @@ import { differenceWith, isEqual } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TokenDocument } from '~/types';
+import { ErrorCode, TokenDocument } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   documentToTokenDocument,
@@ -106,8 +106,7 @@ export function getAuthorization(
   }
 
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
       transactions,
       portfolios: [],

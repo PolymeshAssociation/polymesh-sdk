@@ -920,7 +920,8 @@ export interface PortfolioMovement {
 }
 
 export interface ProcedureAuthorizationStatus {
-  permissions: boolean;
+  agentPermissions: boolean;
+  signerPermissions: boolean;
   roles: boolean;
   accountFrozen: boolean;
 }

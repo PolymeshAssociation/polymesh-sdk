@@ -9,7 +9,6 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -122,11 +121,9 @@ describe('toggleFreezeTransfers procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const identityRoles = [{ type: RoleType.TokenOwner, ticker }];
 
       expect(boundFunc({ ticker, freeze: true })).toEqual({
-        identityRoles,
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.asset.Freeze],
           tokens: [token],
           portfolios: [],
@@ -134,8 +131,7 @@ describe('toggleFreezeTransfers procedure', () => {
       });
 
       expect(boundFunc({ ticker, freeze: false })).toEqual({
-        identityRoles,
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.asset.Unfreeze],
           tokens: [token],
           portfolios: [],

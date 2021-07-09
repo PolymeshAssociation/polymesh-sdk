@@ -443,8 +443,8 @@ describe('addInstruction procedure', () => {
       });
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.VenueOwner, venueId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.VenueOwner, venueId }],
+        permissions: {
           tokens: [],
           portfolios: [fromPortfolio, toPortfolio],
           transactions: [TxTags.settlement.AddAndAffirmInstruction],
@@ -464,8 +464,8 @@ describe('addInstruction procedure', () => {
       });
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.VenueOwner, venueId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.VenueOwner, venueId }],
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.settlement.AddInstruction],

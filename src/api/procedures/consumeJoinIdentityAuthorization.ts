@@ -106,17 +106,17 @@ export async function getAuthorization(
     condition = condition || did === issuer.did;
   }
 
-  const identityRoles = condition && !authRequest.isExpired();
+  const roles = condition && !authRequest.isExpired();
 
   if (bypassSignerPermissions) {
     return {
-      identityRoles,
+      roles,
     };
   }
 
   return {
-    identityRoles,
-    signerPermissions: { transactions, tokens: [], portfolios: [] },
+    roles,
+    permissions: { transactions, tokens: [], portfolios: [] },
   };
 }
 

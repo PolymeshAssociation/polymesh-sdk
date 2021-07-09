@@ -155,8 +155,8 @@ export function getAuthorization({ ticker, documents }: Params): ProcedureAuthor
   }
 
   return {
-    identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TickerOwner, ticker }],
+    permissions: {
       transactions,
       tokens: [],
       portfolios: [],

@@ -926,12 +926,13 @@ export function extrinsicPermissionsToTransactionPermissions(
       }
     });
 
-    return {
+    const result = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: extrinsicType!,
       values: txValues,
-      exceptions,
     };
+
+    return exceptions.length ? { ...result, exceptions } : result;
   }
 
   return null;

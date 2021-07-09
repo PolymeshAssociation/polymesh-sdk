@@ -213,8 +213,8 @@ describe('setCustodian procedure', () => {
       let portfolioId: PortfolioId = { did: args.did, number: args.id };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [entityMockUtils.getNumberedPortfolioInstance({ did, id })],
           tokens: [],
@@ -228,8 +228,8 @@ describe('setCustodian procedure', () => {
       portfolioId = { did: args.did };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
           tokens: [],

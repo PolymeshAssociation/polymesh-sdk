@@ -328,8 +328,8 @@ describe('modifyStoTimes procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenPia, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenPia, ticker }],
+        permissions: {
           transactions: [TxTags.sto.ModifyFundraiserWindow],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],

@@ -185,8 +185,8 @@ describe('consumeAuthorizationRequests procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       let result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: true,
-        signerPermissions: {
+        roles: true,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.AcceptAuthorization],
@@ -198,8 +198,8 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: false,
-        signerPermissions: {
+        roles: false,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],
@@ -210,8 +210,8 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: false,
-        signerPermissions: {
+        roles: false,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],
