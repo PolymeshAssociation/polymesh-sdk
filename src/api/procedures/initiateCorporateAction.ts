@@ -167,8 +167,8 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TokenCaa, ticker }],
+    permissions: {
       transactions: [TxTags.corporateAction.InitiateCorporateAction],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],

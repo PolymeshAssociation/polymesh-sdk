@@ -84,11 +84,11 @@ export async function getAuthorization(
   const portfolioId = { did };
 
   return {
-    identityRoles: [
+    roles: [
       { type: RoleType.TokenPia, ticker },
       { type: RoleType.PortfolioCustodian, portfolioId },
     ],
-    signerPermissions: {
+    permissions: {
       tokens: [token],
       transactions: [TxTags.asset.ControllerTransfer],
       portfolios: [new DefaultPortfolio({ did }, context)],

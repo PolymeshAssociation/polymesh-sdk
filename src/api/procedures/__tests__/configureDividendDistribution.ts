@@ -627,14 +627,14 @@ describe('configureDividendDistribution procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [
+        roles: [
           { type: RoleType.TokenCaa, ticker },
           {
             type: RoleType.PortfolioCustodian,
             portfolioId: { did: originPortfolio.owner.did, number: originPortfolio.id },
           },
         ],
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [originPortfolio],

@@ -1,7 +1,7 @@
 import { differenceWith, isEqual } from 'lodash';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TokenIdentifier, TxTags } from '~/types';
+import { ErrorCode, TokenIdentifier, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   stringToAssetName,
@@ -160,8 +160,7 @@ export function getAuthorization(
   }
 
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions,
       portfolios: [],
       tokens: [new SecurityToken({ ticker }, this.context)],

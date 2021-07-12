@@ -1386,7 +1386,6 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       transactions: {
         type: PermissionType.Include,
         values: [TxTags.identity.AddClaim, ModuleName.Confidential],
-        exceptions: [],
       },
       transactionGroups: [],
       portfolios: {

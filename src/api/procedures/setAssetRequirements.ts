@@ -1,7 +1,7 @@
 import { differenceWith, isEqual } from 'lodash';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { Condition, ErrorCode, RoleType, TxTags } from '~/types';
+import { Condition, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   complianceRequirementToRequirement,
@@ -111,8 +111,7 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions: [
         TxTags.complianceManager.ResetAssetCompliance,
         TxTags.complianceManager.AddComplianceRequirement,

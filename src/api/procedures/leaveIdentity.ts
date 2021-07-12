@@ -46,7 +46,7 @@ export async function prepareLeaveIdentity(
  */
 export function getAuthorization(): ProcedureAuthorization {
   return {
-    signerPermissions: {
+    permissions: {
       tokens: [],
       portfolios: [],
       transactions: [TxTags.identity.LeaveIdentityAsKey],

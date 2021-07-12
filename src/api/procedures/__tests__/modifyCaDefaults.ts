@@ -279,8 +279,8 @@ describe('modifyCaDefaults procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenCaa, ticker }],
+        permissions: {
           transactions: [],
           portfolios: [],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
@@ -295,8 +295,8 @@ describe('modifyCaDefaults procedure', () => {
           taxWithholdings: [],
         })
       ).toEqual({
-        identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenCaa, ticker }],
+        permissions: {
           transactions: [
             TxTags.corporateAction.SetDefaultTargets,
             TxTags.corporateAction.SetDefaultWithholdingTax,

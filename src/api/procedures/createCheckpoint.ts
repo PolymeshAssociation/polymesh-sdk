@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Checkpoint, Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
-import { RoleType, TxTags } from '~/types';
+import { TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
@@ -56,8 +56,7 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.checkpoint.CreateCheckpoint],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],

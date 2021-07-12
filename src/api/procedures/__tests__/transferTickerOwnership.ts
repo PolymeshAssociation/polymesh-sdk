@@ -147,8 +147,8 @@ describe('transferTickerOwnership procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TickerOwner, ticker }],
+        permissions: {
           tokens: [],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],

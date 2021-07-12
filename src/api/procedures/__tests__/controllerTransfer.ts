@@ -140,7 +140,7 @@ describe('controllerTransfer procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const identityRoles = [
+      const roles = [
         { type: RoleType.TokenPia, ticker },
         {
           type: RoleType.PortfolioCustodian,
@@ -149,8 +149,8 @@ describe('controllerTransfer procedure', () => {
       ];
 
       expect(await boundFunc({ ticker, originPortfolio, amount })).toEqual({
-        identityRoles,
-        signerPermissions: {
+        roles,
+        permissions: {
           transactions: [TxTags.asset.ControllerTransfer],
           tokens: [token],
           portfolios: [entityMockUtils.getDefaultPortfolioInstance()],

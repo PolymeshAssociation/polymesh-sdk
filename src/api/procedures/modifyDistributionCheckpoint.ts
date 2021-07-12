@@ -74,8 +74,8 @@ export function getAuthorization(
   const { context } = this;
 
   return {
-    identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TokenCaa, ticker }],
+    permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
       tokens: [new SecurityToken({ ticker }, context)],
       portfolios: [],

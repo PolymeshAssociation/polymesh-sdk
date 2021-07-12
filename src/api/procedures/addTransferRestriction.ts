@@ -8,7 +8,6 @@ import {
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
-  RoleType,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
@@ -159,8 +158,7 @@ export function getAuthorization(
   }
 
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
       transactions,
       portfolios: [],

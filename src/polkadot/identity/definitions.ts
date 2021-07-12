@@ -7,20 +7,20 @@ export default {
         {
           name: 'did',
           type: 'IdentityId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'buffer_time',
           type: 'u64',
-          isOptional: true
+          isOptional: true,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'CddStatus'
+      type: 'CddStatus',
     },
     getAssetDid: {
       description: 'function is used to query the given ticker DID',
@@ -28,15 +28,15 @@ export default {
         {
           name: 'ticker',
           type: 'Ticker',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'AssetDidResult'
+      type: 'AssetDidResult',
     },
     getDidRecords: {
       description: 'Used to get the did record values for a given DID',
@@ -44,15 +44,15 @@ export default {
         {
           name: 'did',
           type: 'IdentityId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'DidRecords'
+      type: 'DidRecords',
     },
     getDidStatus: {
       description: 'Retrieve status of the DID',
@@ -60,41 +60,42 @@ export default {
         {
           name: 'did',
           type: 'Vec<IdentityId>',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'Vec<DidStatus>'
+      type: 'Vec<DidStatus>',
     },
     getFilteredAuthorizations: {
-      description: 'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+      description:
+        'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
       params: [
         {
           name: 'signatory',
           type: 'Signatory',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'allow_expired',
           type: 'bool',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'auth_type',
           type: 'AuthorizationType',
-          isOptional: true
+          isOptional: true,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'Vec<Authorization>'
+      type: 'Vec<Authorization>',
     },
     getKeyIdentityData: {
       description: 'Query relation between a signing key and a DID',
@@ -102,16 +103,16 @@ export default {
         {
           name: 'acc',
           type: 'AccountId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'Option<KeyIdentityData>'
-    }
+      type: 'Option<KeyIdentityData>',
+    },
   },
-  types: {}
-}
+  types: {},
+};
