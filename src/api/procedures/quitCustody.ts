@@ -66,12 +66,12 @@ export function getAuthorization(
   }
 
   return {
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.portfolio.QuitPortfolioCustody],
       tokens: [],
       portfolios: [portfolio],
     },
-    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
   };
 }
 

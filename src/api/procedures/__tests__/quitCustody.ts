@@ -135,8 +135,8 @@ describe('quitCustody procedure', () => {
       let portfolioId: PortfolioId = { did, number: id };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
           portfolios: [portfolio],
           tokens: [],
@@ -152,8 +152,8 @@ describe('quitCustody procedure', () => {
       portfolioId = { did };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
           portfolios: [portfolio],
           tokens: [],
