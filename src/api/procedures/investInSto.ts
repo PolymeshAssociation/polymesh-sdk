@@ -206,11 +206,11 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
   } = this;
 
   return {
-    identityRoles: [
+    roles: [
       { type: RoleType.PortfolioCustodian, portfolioId: purchasePortfolioId },
       { type: RoleType.PortfolioCustodian, portfolioId: fundingPortfolioId },
     ],
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.sto.Invest],
       tokens: [],
       portfolios: [

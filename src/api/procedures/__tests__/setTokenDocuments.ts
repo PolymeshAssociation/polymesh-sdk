@@ -13,7 +13,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TokenDocument } from '~/types';
+import { TokenDocument } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -203,8 +203,7 @@ describe('setTokenDocuments procedure', () => {
       let boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
           portfolios: [],
@@ -218,8 +217,7 @@ describe('setTokenDocuments procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc({ ...args, documents: [] })).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [],
           portfolios: [],

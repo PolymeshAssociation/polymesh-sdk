@@ -383,14 +383,14 @@ describe('investInSto procedure', () => {
       portfolioIdToPortfolioStub.withArgs(purchasePortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(fundingPortfolioId, mockContext).returns(portfolios[1]);
 
-      const identityRoles = [
+      const roles = [
         { type: RoleType.PortfolioCustodian, portfolioId: purchasePortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: fundingPortfolioId },
       ];
 
       expect(boundFunc()).toEqual({
-        identityRoles,
-        signerPermissions: {
+        roles,
+        permissions: {
           transactions: [TxTags.sto.Invest],
           tokens: [],
           portfolios,

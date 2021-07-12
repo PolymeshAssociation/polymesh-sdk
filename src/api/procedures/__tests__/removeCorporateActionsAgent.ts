@@ -10,7 +10,6 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -49,48 +48,47 @@ describe('removeCorporateActionsAgent procedure', () => {
   });
 
   test('should add a remove corporate agent transaction to the queue', async () => {
+    const did = 'someDid';
+
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
-        details: {
-          owner: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
-        },
+        corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did })],
       },
     });
 
     const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawIdentityId = dsMockUtils.createMockIdentityId(did);
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
+    sinon.stub(utilsConversionModule, 'stringToIdentityId').returns(rawIdentityId);
 
-    const transaction = dsMockUtils.createTxStub('corporateAction', 'removeCa');
+    const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareRemoveCorporateActionsAgent.call(proc, { ticker });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
   });
 
-  test('should throw an error if attempting to remove the asset owner', async () => {
+  test('should throw an error if Corporate Actions Agent list has more than one identity', async () => {
     const args = {
       id,
       ticker,
     };
-    const did = 'someDid';
-    const identity = entityMockUtils.getIdentityInstance({ did });
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: identity,
-        details: {
-          owner: identity,
-        },
+        corporateActionsGetAgents: [
+          entityMockUtils.getIdentityInstance({ did: 'did' }),
+          entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+        ],
       },
     });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await expect(prepareRemoveCorporateActionsAgent.call(proc, args)).rejects.toThrow(
-      'There is no set Corporate Actions Agent'
+      'There must be one (and only one) Corporate Actions Agent assigned to this Security Token'
     );
   });
 
@@ -103,8 +101,7 @@ describe('removeCorporateActionsAgent procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.corporateAction.ResetCaa],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],

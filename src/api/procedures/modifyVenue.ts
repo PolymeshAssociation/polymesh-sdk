@@ -76,8 +76,8 @@ export function getAuthorization(
   { venueId }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.VenueOwner, venueId }],
-    signerPermissions: {
+    roles: [{ type: RoleType.VenueOwner, venueId }],
+    permissions: {
       tokens: [],
       portfolios: [],
       transactions: [TxTags.settlement.UpdateVenue],

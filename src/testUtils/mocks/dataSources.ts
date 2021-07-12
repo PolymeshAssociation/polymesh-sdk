@@ -33,6 +33,8 @@ import { EventEmitter } from 'events';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 import {
   AffirmationStatus,
+  AgentGroup,
+  AGId,
   AssetComplianceResult,
   AssetIdentifier,
   AssetName,
@@ -259,6 +261,7 @@ interface ContextOptions {
   balance?: AccountBalance;
   hasRoles?: boolean;
   hasPermissions?: boolean;
+  hasTokenPermissions?: boolean;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
   invalidDids?: string[];
@@ -483,6 +486,7 @@ const defaultContextOptions: ContextOptions = {
   },
   hasRoles: true,
   hasPermissions: true,
+  hasTokenPermissions: true,
   validCdd: true,
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
@@ -563,6 +567,7 @@ function configureContext(opts: ContextOptions): void {
   const identity = {
     did: opts.did,
     hasRoles: sinon.stub().resolves(opts.hasRoles),
+    hasTokenPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
     getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
@@ -1347,6 +1352,16 @@ export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockAgentGroup = (
+  agentGroup?: 'Full' | 'ExceptMeta' | 'PolymeshV1Caa' | 'PolymeshV1Pia' | { Custom: AGId }
+): AgentGroup => {
+  return createMockEnum(agentGroup) as AgentGroup;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockEcdsaSignature = (signature?: string | EcdsaSignature): EcdsaSignature => {
   if (isCodec<EcdsaSignature>(signature)) {
     return signature;
@@ -1706,7 +1721,6 @@ export const createMockSecurityToken = (token?: {
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
-  primary_issuance_agent: Option<IdentityId>;
 }): SecurityToken => {
   const st = token || {
     name: createMockAssetName(),
@@ -1714,7 +1728,6 @@ export const createMockSecurityToken = (token?: {
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
     asset_type: createMockAssetType(),
-    primary_issuance_agent: createMockOption(createMockIdentityId()),
   };
   return createMockCodec({ ...st }, !token) as SecurityToken;
 };
@@ -1860,15 +1873,25 @@ export const createMockFundingRoundName = (roundName?: string): FundingRoundName
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPalletName = (name?: string): PalletName =>
-  createMockStringCodec(name) as PalletName;
+export const createMockPalletName = (name?: string | PalletName): PalletName => {
+  if (isCodec<PalletName>(name)) {
+    return name;
+  }
+
+  return createMockStringCodec(name) as PalletName;
+};
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDispatchableName = (name?: string): DispatchableName =>
-  createMockStringCodec(name) as DispatchableName;
+export const createMockDispatchableName = (name?: string | DispatchableName): DispatchableName => {
+  if (isCodec<DispatchableName>(name)) {
+    return name;
+  }
+
+  return createMockStringCodec(name) as DispatchableName;
+};
 
 /**
  * @hidden
@@ -1882,14 +1905,18 @@ export const createMockFundraiserName = (name?: string): FundraiserName =>
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPalletPermissions = (permissions?: {
-  pallet_name: PalletName;
-  dispatchable_names: DispatchableNames | null;
+  pallet_name: PalletName | Parameters<typeof createMockPalletName>[0];
+  dispatchable_names: DispatchableNames | Parameters<typeof createMockDispatchableNames>[0];
 }): PalletPermissions => {
-  const perms = permissions || { pallet_name: createMockPalletName(), dispatchable_names: null };
+  const { pallet_name, dispatchable_names } = permissions || {
+    pallet_name: createMockPalletName(),
+    dispatchable_names: createMockDispatchableNames(),
+  };
 
   return createMockCodec(
     {
-      ...perms,
+      pallet_name: createMockPalletName(pallet_name),
+      dispatchable_names: createMockDispatchableNames(dispatchable_names),
     },
     !permissions
   ) as PalletPermissions;
@@ -1949,8 +1976,16 @@ export const createMockPortfolioPermissions = (
  * @hidden
  */
 export const createMockDispatchableNames = (
-  dispatchableNames?: 'Whole' | { These: DispatchableName[] } | { Except: DispatchableName[] }
+  dispatchableNames?:
+    | 'Whole'
+    | { These: DispatchableName[] }
+    | { Except: DispatchableName[] }
+    | DispatchableNames
 ): DispatchableNames => {
+  if (isCodec<DispatchableNames>(dispatchableNames)) {
+    return dispatchableNames;
+  }
+
   return createMockEnum(dispatchableNames) as DispatchableNames;
 };
 

@@ -2,7 +2,7 @@ import { difference, differenceWith, intersection, isEqual, sortBy } from 'lodas
 import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ClaimType, ErrorCode, RoleType, TrustedClaimIssuer } from '~/types';
+import { ClaimType, ErrorCode, TrustedClaimIssuer } from '~/types';
 import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -210,8 +210,7 @@ export function getAuthorization(
   }
 
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions,
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],

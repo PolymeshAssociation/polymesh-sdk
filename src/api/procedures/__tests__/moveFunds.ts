@@ -345,8 +345,8 @@ describe('moveFunds procedure', () => {
       let portfolioId: PortfolioId = { did, number: fromId };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
           portfolios: [from, new DefaultPortfolio({ did }, mockContext)],
           tokens: [],
@@ -363,8 +363,8 @@ describe('moveFunds procedure', () => {
       portfolioId = { did };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
           portfolios: [from, toPortfolio],
           tokens: [],
@@ -379,8 +379,8 @@ describe('moveFunds procedure', () => {
       portfolioId = { did };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
           portfolios: [from, toPortfolio],
           tokens: [],

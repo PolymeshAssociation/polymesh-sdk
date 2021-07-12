@@ -334,8 +334,8 @@ describe('initiateCorporateAction procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenCaa, ticker }],
+        permissions: {
           transactions: [TxTags.corporateAction.InitiateCorporateAction],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],

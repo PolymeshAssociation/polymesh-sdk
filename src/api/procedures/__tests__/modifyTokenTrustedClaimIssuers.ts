@@ -10,7 +10,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TrustedClaimIssuer } from '~/types';
+import { TrustedClaimIssuer } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -332,8 +332,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       expect(
         boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Add, claimIssuers: [] })
       ).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.complianceManager.AddDefaultTrustedClaimIssuer],
           tokens: [token],
           portfolios: [],
@@ -343,8 +342,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       expect(
         boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Remove, claimIssuers: [] })
       ).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer],
           tokens: [token],
           portfolios: [],
@@ -354,8 +352,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       expect(
         boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Set, claimIssuers: [] })
       ).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [
             TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer,
             TxTags.complianceManager.AddDefaultTrustedClaimIssuer,

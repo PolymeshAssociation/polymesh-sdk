@@ -10,7 +10,7 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, RoleType } from '~/types';
+import { Authorization } from '~/types';
 import { SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -60,7 +60,7 @@ describe('modifyCorporateActionAgent procedure', () => {
   beforeEach(() => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: 'agentDid' }),
+        corporateActionsGetAgents: [],
       },
     });
     mockContext = dsMockUtils.getContextInstance();
@@ -100,7 +100,7 @@ describe('modifyCorporateActionAgent procedure', () => {
   test('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetAgent: entityMockUtils.getIdentityInstance({ did: target }),
+        corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: target })],
       },
     });
 
@@ -113,11 +113,17 @@ describe('modifyCorporateActionAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyCorporateActionsAgent.call(proc, args)).rejects.toThrow(
-      'The supplied Identity is already the Corporate Actions Agent'
+      'The Corporate Actions Agent must be undefined to perform this procedure'
     );
   });
 
   test('should throw an error if the supplied expiry date is not a future date', () => {
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        corporateActionsGetAgents: [],
+      },
+    });
+
     const args = {
       target,
       ticker,
@@ -179,8 +185,7 @@ describe('modifyCorporateActionAgent procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],

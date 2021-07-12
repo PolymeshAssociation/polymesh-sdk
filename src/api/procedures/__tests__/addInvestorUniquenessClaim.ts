@@ -299,7 +299,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc({ ...commonArgs, proof })).toEqual({
-        signerPermissions: {
+        permissions: {
           tokens: [],
           transactions: [TxTags.identity.AddInvestorUniquenessClaim],
           portfolios: [],
@@ -307,7 +307,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
       });
 
       expect(boundFunc({ ...commonArgs, proof: scopeClaimProof })).toEqual({
-        signerPermissions: {
+        permissions: {
           tokens: [],
           transactions: [TxTags.identity.AddInvestorUniquenessClaimV2],
           portfolios: [],

@@ -62,10 +62,8 @@ export async function getAuthorization(
   const { context } = this;
 
   return {
-    identityRoles: [
-      { type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(origin) },
-    ],
-    signerPermissions: {
+    roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(origin) }],
+    permissions: {
       transactions: [TxTags.capitalDistribution.Reclaim],
       tokens: [new SecurityToken({ ticker }, context)],
       portfolios: [origin],

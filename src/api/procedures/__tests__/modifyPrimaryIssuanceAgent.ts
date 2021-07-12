@@ -10,7 +10,7 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, RoleType } from '~/types';
+import { Authorization } from '~/types';
 import { SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -77,6 +77,28 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if the primary issuance agents list is not empty', () => {
+    const args = {
+      target,
+      ticker,
+      requestExpiry: new Date(),
+    };
+
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        details: {
+          primaryIssuanceAgents: [new Identity({ did: 'otherDid' }, mockContext)],
+        },
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(prepareModifyPrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
+      'The Primary Issuance Agents must be undefined to perform this procedure'
+    );
+  });
+
   test("should throw an error if the supplied target doesn't exist", () => {
     const args = {
       target,
@@ -92,27 +114,6 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied target is currently the primary issuance agent', () => {
-    const args = {
-      target,
-      ticker,
-    };
-
-    entityMockUtils.configureMocks({
-      securityTokenOptions: {
-        details: {
-          primaryIssuanceAgent: new Identity({ did: target }, mockContext),
-        },
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    return expect(prepareModifyPrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
-      'The supplied Identity is currently the primary issuance agent'
-    );
-  });
-
   test('should throw an error if the supplied expiry date is not a future date', () => {
     const args = {
       target,
@@ -123,7 +124,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: new Identity({ did: 'otherDid' }, mockContext),
+          primaryIssuanceAgents: [],
         },
       },
     });
@@ -148,7 +149,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: new Identity({ did: 'otherDid' }, mockContext),
+          primaryIssuanceAgents: [],
         },
       },
     });
@@ -170,7 +171,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     entityMockUtils.configureMocks({
       securityTokenOptions: {
         details: {
-          primaryIssuanceAgent: new Identity({ did: 'fakeIdentity' }, mockContext),
+          primaryIssuanceAgents: [],
         },
       },
     });
@@ -210,8 +211,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],

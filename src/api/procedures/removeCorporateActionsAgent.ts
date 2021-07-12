@@ -1,7 +1,7 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { stringToTicker } from '~/utils/conversion';
+import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -12,6 +12,8 @@ export interface Params {
 
 /**
  * @hidden
+ *
+ * @deprecated
  */
 export async function prepareRemoveCorporateActionsAgent(
   this: Procedure<Params, void>,
@@ -20,7 +22,7 @@ export async function prepareRemoveCorporateActionsAgent(
   const {
     context: {
       polymeshApi: {
-        tx: { corporateAction },
+        tx: { externalAgents },
       },
     },
     context,
@@ -30,19 +32,20 @@ export async function prepareRemoveCorporateActionsAgent(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const [{ owner }, agent] = await Promise.all([
-    securityToken.details(),
-    securityToken.corporateActions.getAgent(),
-  ]);
+  const agents = await securityToken.corporateActions.getAgents();
 
-  if (owner.did === agent.did) {
+  if (agents.length !== 1) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'There is no set Corporate Actions Agent',
+      message:
+        'There must be one (and only one) Corporate Actions Agent assigned to this Security Token',
     });
   }
 
-  this.addTransaction(corporateAction.removeCa, {}, stringToTicker(ticker, context));
+  const rawTicker = stringToTicker(ticker, context);
+  const rawIdentityId = stringToIdentityId(agents[0].did, context);
+
+  this.addTransaction(externalAgents.removeAgent, {}, rawTicker, rawIdentityId);
 }
 
 /**
@@ -53,8 +56,7 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.corporateAction.ResetCaa],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],

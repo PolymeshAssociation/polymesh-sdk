@@ -225,13 +225,13 @@ import {
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
   transactionHexToTxTag,
+  transactionPermissionsToTxGroups,
   transactionToTxTag,
   transferManagerToTransferRestriction,
   transferRestrictionToTransferManager,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
   txGroupToTxTags,
-  txTagsToTxGroups,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
   u8ToBigNumber,
@@ -434,9 +434,11 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     const context = dsMockUtils.getContextInstance();
     const ticker = 'SOMETOKEN';
     const amount = new BigNumber(100);
+    const memo = 'someMessage';
     const token = entityMockUtils.getSecurityTokenInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    const rawMemo = ('memo' as unknown) as Memo;
     const fakeResult = ('MovePortfolioItem' as unknown) as MovePortfolioItem;
 
     let portfolioMovement: PortfolioMovement = {
@@ -456,6 +458,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .withArgs('MovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
+        memo: null,
       })
       .returns(fakeResult);
 
@@ -466,6 +469,27 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     portfolioMovement = {
       token,
       amount,
+    };
+
+    result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+
+    expect(result).toBe(fakeResult);
+
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', memo).returns(rawMemo);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('MovePortfolioItem', {
+        ticker: rawTicker,
+        amount: rawAmount,
+        memo: rawMemo,
+      })
+      .returns(fakeResult);
+
+    portfolioMovement = {
+      token,
+      amount,
+      memo,
     };
 
     result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
@@ -1362,7 +1386,6 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       transactions: {
         type: PermissionType.Include,
         values: [TxTags.identity.AddClaim, ModuleName.Confidential],
-        exceptions: [],
       },
       transactionGroups: [],
       portfolios: {
@@ -5111,10 +5134,10 @@ describe('txGroupToTxTags', () => {
   });
 });
 
-describe('txTagsToTxGroups', () => {
+describe('transactionPermissionsToTxGroups', () => {
   test('should return all completed groups in the tag array', () => {
     expect(
-      txTagsToTxGroups({
+      transactionPermissionsToTxGroups({
         values: [
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,
@@ -5143,7 +5166,7 @@ describe('txTagsToTxGroups', () => {
     ]);
 
     expect(
-      txTagsToTxGroups({
+      transactionPermissionsToTxGroups({
         values: [
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,
@@ -5160,7 +5183,7 @@ describe('txTagsToTxGroups', () => {
     ).toEqual([TxGroup.Distribution, TxGroup.PortfolioManagement]);
 
     expect(
-      txTagsToTxGroups({
+      transactionPermissionsToTxGroups({
         values: [
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,

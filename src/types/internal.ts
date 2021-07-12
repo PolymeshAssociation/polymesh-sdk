@@ -215,8 +215,8 @@ export interface CorporateActionIdentifier {
 }
 
 export interface ProcedureAuthorization {
-  signerPermissions?: SimplePermissions | boolean;
-  identityRoles?: Role[] | boolean;
+  permissions?: SimplePermissions | boolean;
+  roles?: Role[] | boolean;
 }
 
 export type Falsyable<T> = T | null | undefined;

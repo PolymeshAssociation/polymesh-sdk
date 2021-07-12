@@ -68,7 +68,7 @@ websocket.onmessage = message => {
     namespaces = namespaces.concat('}\n\n');
   });
 
-  moduleNameEnum = moduleNameEnum.concat('\n};');
+  moduleNameEnum = moduleNameEnum.concat('\n}');
   modulePermissions = modulePermissions.concat(';');
   txTag = txTag.concat(';');
   txTags = txTags.concat('};');

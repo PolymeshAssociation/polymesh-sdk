@@ -78,7 +78,7 @@ export {
   TransferTokenOwnershipParams,
 } from '~/api/procedures/transferTokenOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from '~/api/procedures/voteOnProposal';
-// export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
+export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
 export { renamePortfolio, RenamePortfolioParams } from '~/api/procedures/renamePortfolio';
 export { moveFunds, MoveFundsParams } from '~/api/procedures/moveFunds';
@@ -128,6 +128,8 @@ export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
 export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
+export { ExternalAgent } from '~/api/entities/ExternalAgent';
+export { AgentGroup } from '~/api/entities/AgentGroup';
 export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,
