@@ -1,7 +1,5 @@
 /* istanbul ignore file */
 
-// NOTE uncomment in Governance v2 upgrade
-
 import {
   Account as AccountClass,
   AuthorizationRequest as AuthorizationRequestClass,

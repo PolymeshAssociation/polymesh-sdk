@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import { AgentGroup, Context, Entity } from '~/internal';
+import { Context, Entity, PermissionGroup } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 
-describe('AgentGroup class', () => {
+describe('PermissionGroup class', () => {
   let context: Context;
 
   beforeAll(() => {
@@ -26,13 +26,13 @@ describe('AgentGroup class', () => {
   });
 
   test('should extend Entity', () => {
-    expect(AgentGroup.prototype instanceof Entity).toBe(true);
+    expect(PermissionGroup.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
     test('should assign id to instance', () => {
       const id = new BigNumber(1);
-      const agentGroup = new AgentGroup({ id }, context);
+      const agentGroup = new PermissionGroup({ id }, context);
 
       expect(agentGroup.id).toBe(id);
     });
@@ -40,9 +40,9 @@ describe('AgentGroup class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(AgentGroup.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(true);
-      expect(AgentGroup.isUniqueIdentifiers({})).toBe(false);
-      expect(AgentGroup.isUniqueIdentifiers({ id: 1 })).toBe(false);
+      expect(PermissionGroup.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(true);
+      expect(PermissionGroup.isUniqueIdentifiers({})).toBe(false);
+      expect(PermissionGroup.isUniqueIdentifiers({ id: 1 })).toBe(false);
     });
   });
 

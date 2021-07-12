@@ -54,9 +54,9 @@ import { Checkpoints } from './Checkpoints';
 import { Compliance } from './Compliance';
 import { CorporateActions } from './CorporateActions';
 import { Documents } from './Documents';
-import { ExternalAgents } from './ExternalAgents';
 import { Issuance } from './Issuance';
 import { Offerings } from './Offerings';
+import { Permissions } from './Permissions';
 import { Settlements } from './Settlements';
 import { TokenHolders } from './TokenHolders';
 import { TransferRestrictions } from './TransferRestrictions';
@@ -106,7 +106,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   public offerings: Offerings;
   public checkpoints: Checkpoints;
   public corporateActions: CorporateActions;
-  public externalAgents: ExternalAgents;
+  public permissions: Permissions;
 
   /**
    * @hidden
@@ -128,7 +128,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     this.offerings = new Offerings(this, context);
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
-    this.externalAgents = new ExternalAgents(this, context);
+    this.permissions = new Permissions(this, context);
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferTokenOwnership, { ticker, ...args }] },

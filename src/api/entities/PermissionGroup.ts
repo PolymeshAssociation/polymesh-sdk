@@ -7,9 +7,9 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents an external agent for a Security Token
+ * Represents a group of permissions for a Security Token
  */
-export class AgentGroup extends Entity<UniqueIdentifiers, string> {
+export class PermissionGroup extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
