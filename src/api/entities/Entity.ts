@@ -67,12 +67,3 @@ export abstract class Entity<UniqueIdentifiers, HumanReadable> {
    */
   public abstract toJson(): HumanReadable;
 }
-
-/**
- * Return if value is an Entity
- */
-export function isEntity<Identifiers = unknown, HumanReadable = unknown>(
-  value: unknown
-): value is Entity<Identifiers, HumanReadable> {
-  return value instanceof Entity;
-}

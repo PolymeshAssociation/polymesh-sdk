@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 // NOTE uncomment in Governance v2 upgrade
 
 import {
@@ -10,6 +12,7 @@ import {
   DefaultPortfolio as DefaultPortfolioClass,
   DefaultTrustedClaimIssuer as DefaultTrustedClaimIssuerClass,
   DividendDistribution as DividendDistributionClass,
+  Entity as EntityClass,
   Identity as IdentityClass,
   Instruction as InstructionClass,
   NumberedPortfolio as NumberedPortfolioClass,
@@ -50,4 +53,13 @@ export * from './CheckpointSchedule/types';
 export * from './CorporateAction/types';
 export * from './DividendDistribution/types';
 // export * from './Proposal/types';
-export { isEntity } from './Entity';
+
+/**
+ * Return if value is an Entity
+ */
+export function isEntity<Identifiers = unknown, HumanReadable = unknown>(
+  value: unknown
+): value is EntityClass<Identifiers, HumanReadable> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return typeof (value as any).uuid === 'string';
+}
