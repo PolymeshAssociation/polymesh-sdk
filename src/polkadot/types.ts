@@ -588,7 +588,7 @@ export enum ModuleName {
   Statistics = 'statistics',
   TestUtils = 'testUtils',
   ExternalAgents = 'externalAgents',
-};
+}
 
 export type TxTag =
   | SystemTx

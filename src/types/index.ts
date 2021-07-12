@@ -243,6 +243,7 @@ export enum AuthorizationType {
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   TransferCorporateActionAgent = 'TransferCorporateActionAgent',
+  BecomeAgent = 'BecomeAgent',
   Custom = 'Custom',
   NoData = 'NoData',
 }
@@ -917,6 +918,10 @@ export type PermissionsLike = {
 export interface PortfolioMovement {
   token: string | SecurityToken;
   amount: BigNumber;
+  /**
+   * identifier string to help differentiate transfers
+   */
+  memo?: string;
 }
 
 export interface ProcedureAuthorizationStatus {

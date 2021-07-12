@@ -208,6 +208,7 @@ import {
   getTicker,
   isModuleOrTagMatch,
   isPrintableAscii,
+  optionize,
   padString,
   removePadding,
 } from '~/utils/internal';
@@ -674,7 +675,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
  * @note tags that don't belong to any group will be ignored.
  *   The same goes for tags that belong to a group that wasn't completed
  */
-export function txTagsToTxGroups(permissions: TransactionPermissions): TxGroup[] {
+export function transactionPermissionsToTxGroups(permissions: TransactionPermissions): TxGroup[] {
   const { values: transactionValues, type, exceptions = [] } = permissions;
   let includedTags: (TxTag | ModuleName)[];
   let excludedTags: (TxTag | ModuleName)[];
@@ -717,113 +718,137 @@ function splitTag(tag: TxTag) {
 /**
  * @hidden
  */
+function initExtrinsicDict(
+  txValues: (TxTag | ModuleName)[],
+  message: string
+): Record<string, { tx: string[]; exception?: true } | null> {
+  const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
+
+  uniq(txValues)
+    .sort()
+    .forEach(tag => {
+      if (tag.includes('.')) {
+        const { palletName, dispatchableName } = splitTag(tag as TxTag);
+        let pallet = extrinsicDict[palletName];
+
+        if (pallet === null) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message,
+            data: {
+              module: palletName,
+              transactions: [dispatchableName],
+            },
+          });
+        } else if (pallet === undefined) {
+          pallet = extrinsicDict[palletName] = { tx: [] };
+        }
+
+        pallet.tx.push(dispatchableName);
+      } else {
+        extrinsicDict[stringUpperFirst(tag)] = null;
+      }
+    });
+
+  return extrinsicDict;
+}
+
+/**
+ * @hidden
+ */
+function buildPalletPermissions(
+  transactions: TransactionPermissions
+): PermissionsEnum<PalletPermissions> {
+  let extrinsic: PermissionsEnum<PalletPermissions>;
+  const message =
+    'Attempting to add permissions for specific transactions as well as the entire module';
+  const { values: txValues, exceptions = [], type } = transactions;
+
+  const extrinsicDict = initExtrinsicDict(txValues, message);
+
+  exceptions.forEach(exception => {
+    const { palletName, dispatchableName } = splitTag(exception);
+
+    const pallet = extrinsicDict[palletName];
+
+    if (pallet === undefined) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
+      });
+    } else if (pallet === null) {
+      extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
+    } else if (pallet.exception) {
+      pallet.tx.push(dispatchableName);
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          'Cannot simultaneously include and exclude transactions belonging to the same module',
+      });
+    }
+  });
+
+  const pallets: PalletPermissions[] = map(extrinsicDict, (val, key) => {
+    let dispatchables: PermissionsEnum<string>;
+
+    if (val === null) {
+      dispatchables = 'Whole';
+    } else {
+      const { tx, exception } = val;
+
+      if (exception) {
+        dispatchables = {
+          Except: tx,
+        };
+      } else {
+        dispatchables = {
+          These: tx,
+        };
+      }
+    }
+
+    return {
+      /* eslint-disable @typescript-eslint/naming-convention */
+      pallet_name: key,
+      dispatchable_names: dispatchables,
+      /* eslint-enable @typescript-eslint/naming-convention */
+    };
+  });
+  if (type === PermissionType.Include) {
+    extrinsic = {
+      These: pallets,
+    };
+  } else {
+    extrinsic = {
+      Except: pallets,
+    };
+  }
+
+  return extrinsic;
+}
+
+/**
+ * @hidden
+ */
 export function permissionsToMeshPermissions(
   permissions: Permissions,
   context: Context
 ): MeshPermissions {
   const { tokens, transactions, portfolios } = permissions;
 
-  const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
   let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
 
   if (transactions) {
-    const message =
-      'Attempting to add permissions for specific transactions as well as the entire module';
-    const { values: txValues, exceptions = [], type } = transactions;
-    uniq(txValues)
-      .sort()
-      .forEach(tag => {
-        if (tag.includes('.')) {
-          const { palletName, dispatchableName } = splitTag(tag as TxTag);
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          let pallet = extrinsicDict[palletName];
-
-          if (pallet === null) {
-            throw new PolymeshError({
-              code: ErrorCode.ValidationError,
-              message,
-              data: {
-                module: palletName,
-                transactions: [dispatchableName],
-              },
-            });
-          } else if (pallet === undefined) {
-            pallet = extrinsicDict[palletName] = { tx: [] };
-          }
-
-          pallet.tx.push(dispatchableName);
-        } else {
-          extrinsicDict[stringUpperFirst(tag)] = null;
-        }
-      });
-
-    exceptions.forEach(exception => {
-      const { palletName, dispatchableName } = splitTag(exception);
-
-      let pallet = extrinsicDict[palletName];
-
-      if (pallet === undefined) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message:
-            'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
-        });
-      } else if (pallet === null) {
-        pallet = extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
-      } else if (pallet.exception) {
-        pallet.tx.push(dispatchableName);
-      } else {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message:
-            'Cannot simultaneously include and exclude transactions belonging to the same module',
-        });
-      }
-    });
-
-    const pallets: PalletPermissions[] = map(extrinsicDict, (val, key) => {
-      let dispatchables: PermissionsEnum<string>;
-
-      if (val === null) {
-        dispatchables = 'Whole';
-      } else {
-        const { tx, exception } = val;
-
-        if (exception) {
-          dispatchables = {
-            Except: tx,
-          };
-        } else {
-          dispatchables = {
-            These: tx,
-          };
-        }
-      }
-
-      return {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        pallet_name: key,
-        dispatchable_names: dispatchables,
-        /* eslint-enable @typescript-eslint/naming-convention */
-      };
-    });
-    if (type === PermissionType.Include) {
-      extrinsic = {
-        These: pallets,
-      };
-    } else {
-      extrinsic = {
-        Except: pallets,
-      };
-    }
+    extrinsic = buildPalletPermissions(transactions);
   }
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
   if (tokens) {
     const { values: tokenValues, type } = tokens;
-    const tickers = tokenValues
-      .sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB))
-      .map(({ ticker }) => stringToTicker(ticker, context));
+    tokenValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
+    const tickers = tokenValues.map(({ ticker }) => stringToTicker(ticker, context));
     if (type === PermissionType.Include) {
       asset = {
         These: tickers,
@@ -930,7 +955,7 @@ export function meshPermissionsToPermissions(
     transactions = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: extrinsicType!,
-      values: txValues,
+      values: uniq(txValues),
       exceptions,
     };
   }
@@ -956,7 +981,7 @@ export function meshPermissionsToPermissions(
   return {
     tokens,
     transactions,
-    transactionGroups: transactions ? txTagsToTxGroups(transactions) : [],
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
   };
 }
@@ -2554,10 +2579,11 @@ export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
 ): MovePortfolioItem {
-  const { token, amount } = portfolioItem;
+  const { token, amount, memo } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
     ticker: stringToTicker(getTicker(token), context),
     amount: numberToBalance(amount, context),
+    memo: optionize(stringToMemo)(memo, context),
   });
 }
 

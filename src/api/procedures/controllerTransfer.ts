@@ -79,10 +79,8 @@ export async function getAuthorization(
   const { context } = this;
 
   const token = new SecurityToken({ ticker }, context);
-  const {
-    primaryIssuanceAgent: { did },
-  } = await token.details();
 
+  const { did } = await context.getCurrentIdentity();
   const portfolioId = { did };
 
   return {

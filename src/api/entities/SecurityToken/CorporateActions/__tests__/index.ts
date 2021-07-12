@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import { Context, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TargetTreatment } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { CorporateActions } from '../';
@@ -150,38 +151,32 @@ describe('CorporateActions class', () => {
     });
   });
 
-  // TODO @shuffledex
-  // describe('method: getAgent', () => {
-  //   test("should retrieve the Security Token's Corporate Actions agent", async () => {
-  //     const did = 'someDid';
-  //     const identityId = dsMockUtils.createMockIdentityId(did);
-  //     const identity = entityMockUtils.getIdentityInstance({ did });
+  describe('method: getAgents', () => {
+    test('should retrieve a list of agent identities', async () => {
+      const did = 'someDid';
+      const otherDid = 'otherDid';
+      const fakeTicker = 'TEST';
 
-  //     dsMockUtils.createQueryStub('corporateAction', 'agent', {
-  //       returnValue: dsMockUtils.createMockOption(identityId),
-  //     });
+      const identity = entityMockUtils.getIdentityInstance({ did });
 
-  //     let result = await corporateActions.getAgent();
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Caa'))
+          ),
+          tuple(
+            [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(otherDid)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+          ),
+        ],
+      });
 
-  //     expect(result).toEqual(identity);
+      const result = await corporateActions.getAgents();
 
-  //     dsMockUtils.createQueryStub('corporateAction', 'agent', {
-  //       returnValue: dsMockUtils.createMockOption(),
-  //     });
-
-  //     entityMockUtils.configureMocks({
-  //       securityTokenOptions: {
-  //         details: {
-  //           owner: identity,
-  //         },
-  //       },
-  //     });
-
-  //     result = await corporateActions.getAgent();
-
-  //     expect(result).toEqual(identity);
-  //   });
-  // });
+      expect(result).toEqual([identity]);
+    });
+  });
 
   describe('method: getDefaults', () => {
     test("should retrieve the Security Token's Corporate Actions defaults", async () => {

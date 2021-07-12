@@ -400,23 +400,7 @@ describe('launchSto procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      let result = await boundFunc(args);
-
-      expect(result).toEqual({
-        offeringPortfolioId,
-        raisingPortfolioId,
-      });
-
-      const did = offeringPortfolioId.did;
-
-      entityMockUtils.configureMocks({
-        identityOptions: { did },
-        securityTokenOptions: {
-          details: { primaryIssuanceAgent: entityMockUtils.getIdentityInstance({ did }) },
-        },
-      });
-
-      result = await boundFunc({ ...args, offeringPortfolio: undefined });
+      const result = await boundFunc(args);
 
       expect(result).toEqual({
         offeringPortfolioId,
