@@ -14,12 +14,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  RoleType,
-  TickerReservationStatus,
-  TransferRestriction,
-  TransferRestrictionType,
-} from '~/types';
+import { TickerReservationStatus, TransferRestriction, TransferRestrictionType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -355,8 +350,7 @@ describe('setTransferRestrictions procedure', () => {
       let boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
@@ -378,8 +372,7 @@ describe('setTransferRestrictions procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.statistics.AddExemptedEntities],
           portfolios: [],
@@ -401,8 +394,7 @@ describe('setTransferRestrictions procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.statistics.RemoveTransferManager],
           portfolios: [],
@@ -424,8 +416,7 @@ describe('setTransferRestrictions procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.statistics.RemoveExemptedEntities],
           portfolios: [],

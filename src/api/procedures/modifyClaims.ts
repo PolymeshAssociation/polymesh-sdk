@@ -315,12 +315,12 @@ export function getAuthorization({
   };
   if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {
     return {
-      identityRoles: [{ type: RoleType.CddProvider }],
-      signerPermissions: permissions,
+      roles: [{ type: RoleType.CddProvider }],
+      permissions,
     };
   }
   return {
-    signerPermissions: permissions,
+    permissions,
   };
 }
 

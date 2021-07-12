@@ -54,6 +54,7 @@ import {
   DocumentType,
   DocumentUri,
   EcdsaSignature,
+  ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -890,6 +891,56 @@ export function permissionsToMeshPermissions(
 /**
  * @hidden
  */
+export function extrinsicPermissionsToTransactionPermissions(
+  permissions: ExtrinsicPermissions
+): TransactionPermissions | null {
+  let extrinsicType: PermissionType;
+  let pallets;
+  if (permissions.isThese) {
+    extrinsicType = PermissionType.Include;
+    pallets = permissions.asThese;
+  } else if (permissions.isExcept) {
+    extrinsicType = PermissionType.Exclude;
+    pallets = permissions.asExcept;
+  }
+
+  let txValues: (ModuleName | TxTag)[] = [];
+  let exceptions: TxTag[] = [];
+
+  const formatTxTag = (dispatchable: DispatchableName, moduleName: string): TxTag =>
+    `${moduleName}.${camelCase(textToString(dispatchable))}` as TxTag;
+
+  if (pallets) {
+    pallets.forEach(({ pallet_name: palletName, dispatchable_names: dispatchableNames }) => {
+      const moduleName = stringLowerFirst(textToString(palletName));
+
+      if (dispatchableNames.isExcept) {
+        const dispatchables = dispatchableNames.asExcept;
+        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if (dispatchableNames.isThese) {
+        const dispatchables = dispatchableNames.asThese;
+        txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
+
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
+
+    return exceptions.length ? { ...result, exceptions } : result;
+  }
+
+  return null;
+}
+
+/**
+ * @hidden
+ */
 export function meshPermissionsToPermissions(
   permissions: MeshPermissions,
   context: Context
@@ -920,45 +971,7 @@ export function meshPermissionsToPermissions(
     };
   }
 
-  let extrinsicType: PermissionType;
-  let pallets;
-  if (extrinsic.isThese) {
-    extrinsicType = PermissionType.Include;
-    pallets = extrinsic.asThese;
-  } else if (extrinsic.isExcept) {
-    extrinsicType = PermissionType.Exclude;
-    pallets = extrinsic.asExcept;
-  }
-
-  let txValues: (ModuleName | TxTag)[] = [];
-  let exceptions: TxTag[] = [];
-
-  const formatTxTag = (dispatchable: DispatchableName, moduleName: string): TxTag =>
-    `${moduleName}.${camelCase(textToString(dispatchable))}` as TxTag;
-
-  if (pallets) {
-    pallets.forEach(({ pallet_name: palletName, dispatchable_names: dispatchableNames }) => {
-      const moduleName = stringLowerFirst(textToString(palletName));
-
-      if (dispatchableNames.isExcept) {
-        const dispatchables = dispatchableNames.asExcept;
-        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
-        txValues = [...txValues, moduleName as ModuleName];
-      } else if (dispatchableNames.isThese) {
-        const dispatchables = dispatchableNames.asThese;
-        txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
-      } else {
-        txValues = [...txValues, moduleName as ModuleName];
-      }
-    });
-
-    transactions = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      type: extrinsicType!,
-      values: uniq(txValues),
-      exceptions,
-    };
-  }
+  transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
 
   let portfoliosType: PermissionType;
   let portfolioIds;

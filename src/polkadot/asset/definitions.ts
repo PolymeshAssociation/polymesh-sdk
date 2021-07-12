@@ -7,87 +7,88 @@ export default {
         {
           name: 'sender',
           type: 'AccountId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'from_custodian',
           type: 'Option<IdentityId>',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'from_portfolio',
           type: 'PortfolioId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'to_custodian',
           type: 'Option<IdentityId>',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'to_portfolio',
           type: 'PortfolioId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'ticker',
           type: 'Ticker',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'value',
           type: 'Balance',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'CanTransferResult'
+      type: 'CanTransferResult',
     },
     canTransferGranular: {
-      description: 'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+      description:
+        'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
       params: [
         {
           name: 'from_custodian',
           type: 'Option<IdentityId>',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'from_portfolio',
           type: 'PortfolioId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'to_custodian',
           type: 'Option<IdentityId>',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'to_portfolio',
           type: 'PortfolioId',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'ticker',
           type: 'Ticker',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'value',
           type: 'Balance',
-          isOptional: false
+          isOptional: false,
         },
         {
           name: 'blockHash',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'GranularCanTransferResult'
-    }
+      type: 'GranularCanTransferResult',
+    },
   },
-  types: {}
-}
+  types: {},
+};

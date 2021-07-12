@@ -1,10 +1,35 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Compact, Enum, Option, Struct, Text, U8aFixed, Vec, bool, u16, u32, u64, u8 } from '@polkadot/types';
+import type {
+  Bytes,
+  Compact,
+  Enum,
+  Option,
+  Struct,
+  Text,
+  U8aFixed,
+  Vec,
+  bool,
+  u16,
+  u32,
+  u64,
+  u8,
+} from '@polkadot/types';
 import type { ITuple } from '@polkadot/types/types';
 import type { Signature } from '@polkadot/types/interfaces/extrinsics';
-import type { AccountId, Balance, BlockNumber, Call, H256, H512, Hash, IndicesLookupSource, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
+import type {
+  AccountId,
+  Balance,
+  BlockNumber,
+  Call,
+  H256,
+  H512,
+  Hash,
+  IndicesLookupSource,
+  Perbill,
+  Permill,
+} from '@polkadot/types/interfaces/runtime';
 import type { AccountInfoWithRefCount, DispatchError } from '@polkadot/types/interfaces/system';
 
 /** @name AccountInfo */

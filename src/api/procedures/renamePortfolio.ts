@@ -76,8 +76,8 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const portfolioId = { did, number: id };
   return {
-    identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-    signerPermissions: {
+    roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    permissions: {
       transactions: [TxTags.portfolio.RenamePortfolio],
       portfolios: [new NumberedPortfolio({ did, id }, this.context)],
       tokens: [],

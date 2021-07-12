@@ -1,5 +1,5 @@
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 
@@ -56,8 +56,7 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.corporateAction.ResetCaa],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],

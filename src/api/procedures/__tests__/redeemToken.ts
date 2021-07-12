@@ -160,8 +160,8 @@ describe('redeemToken procedure', () => {
       const result = await boundFunc(params);
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.TokenPia, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenPia, ticker }],
+        permissions: {
           transactions: [TxTags.asset.Redeem],
           tokens: [new SecurityToken({ ticker }, mockContext)],
           portfolios: [new DefaultPortfolio({ did: someDid }, mockContext)],

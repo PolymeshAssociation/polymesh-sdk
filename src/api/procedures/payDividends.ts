@@ -106,8 +106,8 @@ export async function getAuthorization(
   { distribution: { ticker } }: Params
 ): Promise<ProcedureAuthorization> {
   return {
-    identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TokenCaa, ticker }],
+    permissions: {
       transactions: [TxTags.capitalDistribution.PushBenefit],
       tokens: [],
       portfolios: [],

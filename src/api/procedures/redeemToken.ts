@@ -75,8 +75,8 @@ export async function getAuthorization(
   const { did } = await context.getCurrentIdentity();
 
   return {
-    identityRoles: [{ type: RoleType.TokenPia, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TokenPia, ticker }],
+    permissions: {
       transactions: [TxTags.asset.Redeem],
       tokens: [new SecurityToken({ ticker }, context)],
       portfolios: [new DefaultPortfolio({ did }, context)],

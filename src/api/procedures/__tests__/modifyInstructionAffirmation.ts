@@ -378,7 +378,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       let result = await boundFunc(args);
 
       expect(result).toEqual({
-        signerPermissions: {
+        permissions: {
           tokens: [],
           portfolios: [from, to],
           transactions: [TxTags.settlement.AffirmInstruction],
@@ -399,7 +399,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       result = await boundFunc({ ...args, operation: InstructionAffirmationOperation.Reject });
 
       expect(result).toEqual({
-        signerPermissions: {
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.settlement.RejectInstruction],
@@ -409,7 +409,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       result = await boundFunc({ ...args, operation: InstructionAffirmationOperation.Withdraw });
 
       expect(result).toEqual({
-        signerPermissions: {
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.settlement.WithdrawAffirmation],

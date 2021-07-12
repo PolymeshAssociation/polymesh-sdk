@@ -95,8 +95,8 @@ export async function getAuthorization(
   ];
 
   return {
-    identityRoles: authorized.every(res => res),
-    signerPermissions: {
+    roles: authorized.every(res => res),
+    permissions: {
       transactions,
       tokens: [],
       portfolios: [],
