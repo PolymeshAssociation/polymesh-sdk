@@ -93,18 +93,6 @@ describe('Instruction class', () => {
       numberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
-    test('should throw if the instruction does not exist', async () => {
-      const owner = 'someDid';
-
-      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(0));
-
-      return expect(instruction.isPending()).rejects.toThrow("Instruction doesn't exist");
-    });
-
     test('should return whether the instruction is pending', async () => {
       const status = InstructionStatus.Pending;
       const createdAt = new Date('10/14/1987');
@@ -115,10 +103,6 @@ describe('Instruction class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(10));
 
       const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/naming-convention */
@@ -217,10 +201,6 @@ describe('Instruction class', () => {
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(10));
-
       const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/naming-convention */
         instruction_id: dsMockUtils.createMockU64(1),
@@ -278,19 +258,7 @@ describe('Instruction class', () => {
       });
     });
 
-    test('should throw an error if the Instruction does not exist', () => {
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(0));
-
-      return expect(instruction.details()).rejects.toThrow("Instruction doesn't exist");
-    });
-
     test('should throw an error if the Instruction is not pending', () => {
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(10));
-
       dsMockUtils
         .createQueryStub('settlement', 'instructionDetails')
         .withArgs(rawId)
@@ -320,7 +288,6 @@ describe('Instruction class', () => {
     let rawStorageKey: [u64, MeshPortfolioId][];
 
     let instructionDetailsStub: sinon.SinonStub;
-    let instructionCounterStub: sinon.SinonStub;
 
     afterAll(() => {
       sinon.restore();
@@ -368,16 +335,7 @@ describe('Instruction class', () => {
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
-      instructionCounterStub = dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(10));
       dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
-    });
-
-    test('should throw an error if the instruction does not exist', () => {
-      instructionCounterStub.resolves(dsMockUtils.createMockU64(0));
-      instructionDetailsStub.resolves(dsMockUtils.createMockInstruction());
-      return expect(instruction.getAffirmations()).rejects.toThrow("Instruction doesn't exist");
     });
 
     test('should throw an error if the instruction is not pending', () => {
@@ -439,9 +397,6 @@ describe('Instruction class', () => {
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
       });
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(10));
     });
 
     test("should return the instruction's legs", async () => {
@@ -586,9 +541,6 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       numberToU64Stub.withArgs(id, context).returns(rawId);
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(10));
     });
 
     test('should return Pending Instruction status', async () => {
