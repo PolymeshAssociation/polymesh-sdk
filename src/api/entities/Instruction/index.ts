@@ -51,7 +51,6 @@ export interface UniqueIdentifiers {
   id: BigNumber;
 }
 
-const notExistsMessage = "Instruction doesn't exist";
 const notPendingMessage =
   'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain';
 
@@ -130,14 +129,6 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const exists = await this.exists();
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: notExistsMessage,
-      });
-    }
-
     const { status } = await settlement.instructionDetails(numberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
@@ -176,14 +167,6 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       id,
       context,
     } = this;
-
-    const exists = await this.exists();
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: notExistsMessage,
-      });
-    }
 
     const {
       status: rawStatus,
