@@ -12,7 +12,7 @@ import {
 import { CheckpointSchedule, Context, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CalendarUnit, RoleType } from '~/types';
+import { CalendarUnit } from '~/types';
 import { ScheduleSpec } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -203,11 +203,9 @@ describe('createCheckpointSchedule procedure', () => {
       const repetitions = 10;
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const identityRoles = [{ type: RoleType.TokenOwner, ticker }];
 
       expect(boundFunc({ ticker, start, period, repetitions })).toEqual({
-        identityRoles,
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.checkpoint.CreateSchedule],
           tokens: [token],
           portfolios: [],

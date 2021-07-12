@@ -103,8 +103,8 @@ describe('closeSto procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenPia, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenPia, ticker }],
+        permissions: {
           transactions: [TxTags.sto.Stop],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],

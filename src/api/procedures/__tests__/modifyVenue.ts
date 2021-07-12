@@ -140,8 +140,8 @@ describe('modifyVenue procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.VenueOwner, venueId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.VenueOwner, venueId }],
+        permissions: {
           portfolios: [],
           transactions: [TxTags.settlement.UpdateVenue],
           tokens: [],

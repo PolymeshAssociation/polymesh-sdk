@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId, ScopeId, Ticker } from 'polymesh-types/types';
+import { DidRecord, IdentityId, ScopeId, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Identity, SecurityToken } from '~/internal';
@@ -17,7 +17,6 @@ import {
   RoleType,
   TickerOwnerRole,
   TokenCaaRole,
-  TokenOwnerRole,
   TokenPiaRole,
   VenueOwnerRole,
 } from '~/types';
@@ -95,6 +94,179 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: hasTokenPermissions', () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
+    });
+
+    test('should check whether the Identity has the appropriate permissions for the token', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const ticker = 'SOME_TICKER';
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      let result = await identity.hasTokenPermissions({ token, transactions: [] });
+
+      expect(result).toBe(false);
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
+      });
+
+      result = await identity.hasTokenPermissions({ token, transactions: [] });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
+      });
+
+      result = await identity.hasTokenPermissions({ token, transactions: null });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.externalAgents.RemoveAgent],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.identity.AcceptAuthorization],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer],
+      });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup('PolymeshV1Pia')
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.Invest],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.FreezeFundraiser],
+      });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup('PolymeshV1Caa')
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.corporateAction.ChangeRecordDate],
+      });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(1) })
+        ),
+      });
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions('Whole')
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.corporateAction.ChangeRecordDate],
+      });
+
+      expect(result).toBe(true);
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: [
+              dsMockUtils.createMockPalletPermissions({
+                pallet_name: 'asset',
+                dispatchable_names: {
+                  Except: [dsMockUtils.createMockDispatchableName('createAsset')],
+                },
+              }),
+            ],
+          })
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toBe(false);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            Except: [
+              dsMockUtils.createMockPalletPermissions({
+                pallet_name: 'asset',
+                dispatchable_names: 'Whole',
+              }),
+            ],
+          })
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.identity.AddClaim],
+      });
+
+      expect(result).toBe(true);
+      /* eslint-enable @typescript-eslint/naming-convention */
+    });
+  });
+
   describe('method: hasRole and hasRoles', () => {
     beforeAll(() => {
       entityMockUtils.initMocks();
@@ -117,30 +289,6 @@ describe('Identity class', () => {
       expect(hasRole).toBe(true);
 
       identity.did = 'otherDid';
-
-      hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(false);
-    });
-
-    test('hasRole should check whether the Identity has the Token Owner role', async () => {
-      const ticker = 'SOMETICKER';
-      const did = 'someDid';
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
-      });
-
-      const identity = new Identity({ did }, context);
-      const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker };
-
-      let hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
 
       hasRole = await identity.hasRole(role);
 
@@ -275,7 +423,7 @@ describe('Identity class', () => {
     test('hasRole should throw an error if the role is not recognized', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const type = 'Fake' as RoleType;
-      const role = { type, ticker: 'someTicker' } as TokenOwnerRole;
+      const role = { type, ticker: 'someTicker' } as TickerOwnerRole;
 
       const hasRole = identity.hasRole(role);
 

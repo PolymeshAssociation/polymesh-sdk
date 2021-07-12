@@ -326,8 +326,8 @@ describe('getAuthorization', () => {
     } as Params;
 
     expect(getAuthorization(args)).toEqual({
-      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-      signerPermissions: {
+      roles: [{ type: RoleType.TickerOwner, ticker }],
+      permissions: {
         tokens: [],
         portfolios: [],
         transactions: [TxTags.asset.CreateAsset],
@@ -335,8 +335,8 @@ describe('getAuthorization', () => {
     });
 
     expect(getAuthorization({ ...args, documents: [] })).toEqual({
-      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-      signerPermissions: {
+      roles: [{ type: RoleType.TickerOwner, ticker }],
+      permissions: {
         tokens: [],
         portfolios: [],
         transactions: [TxTags.asset.CreateAsset, TxTags.asset.AddDocuments],

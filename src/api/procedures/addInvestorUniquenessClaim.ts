@@ -88,7 +88,7 @@ export function getAuthorization(
   }
 
   return {
-    signerPermissions: {
+    permissions: {
       tokens: [],
       portfolios: [],
       transactions,

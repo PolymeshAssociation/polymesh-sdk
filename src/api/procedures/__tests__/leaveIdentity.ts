@@ -89,7 +89,7 @@ describe('modifyCaCheckpoint procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
-        signerPermissions: {
+        permissions: {
           tokens: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],
           portfolios: [],

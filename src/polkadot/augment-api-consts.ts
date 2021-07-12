@@ -2,7 +2,16 @@
 /* eslint-disable */
 
 import type { Vec, u32, u64 } from '@polkadot/types';
-import type { Balance, BalanceOf, BlockNumber, Moment, Perbill, Permill, RuntimeDbWeight, Weight } from '@polkadot/types/interfaces/runtime';
+import type {
+  Balance,
+  BalanceOf,
+  BlockNumber,
+  Moment,
+  Perbill,
+  Permill,
+  RuntimeDbWeight,
+  Weight,
+} from '@polkadot/types/interfaces/runtime';
 import type { SessionIndex } from '@polkadot/types/interfaces/session';
 import type { EraIndex } from '@polkadot/types/interfaces/staking';
 import type { WeightToFeeCoefficient } from '@polkadot/types/interfaces/support';
@@ -56,7 +65,7 @@ declare module '@polkadot/api/types/consts' {
       /**
        * The amount of funds a contract should deposit in order to offset
        * the cost of one byte.
-       * 
+       *
        * Let's suppose the deposit is 1,000 BU (balance units)/byte and the rent is 1 BU/byte/day,
        * then a contract with 1,000,000 BU that uses 1,000 bytes of storage would pay no rent.
        * But if the balance reduced to 500,000 BU and the storage stayed the same at 1,000,
@@ -65,7 +74,7 @@ declare module '@polkadot/api/types/consts' {
       rentDepositOffset: BalanceOf & AugmentedConst<ApiType>;
       /**
        * Number of block delay an extrinsic claim surcharge has.
-       * 
+       *
        * When claim surcharge is called by an extrinsic the rent is checked
        * for current_block - delay
        **/
@@ -73,7 +82,7 @@ declare module '@polkadot/api/types/consts' {
       /**
        * A size offset for an contract. A just created account with untouched storage will have that
        * much of storage from the perspective of the state rent.
-       * 
+       *
        * This is a simple way to ensure that contracts with empty storage eventually get deleted
        * by making them pay rent. This creates an incentive to remove them early in order to save
        * rent.
@@ -128,10 +137,10 @@ declare module '@polkadot/api/types/consts' {
       bondingDuration: EraIndex & AugmentedConst<ApiType>;
       /**
        * The number of blocks before the end of the era from which election submissions are allowed.
-       * 
+       *
        * Setting this to zero will disable the offchain compute and only on-chain seq-phragmen will
        * be used.
-       * 
+       *
        * This is bounded by being within the last session. Hence, setting it to a value more than the
        * length of a session will be pointless.
        **/
@@ -142,20 +151,20 @@ declare module '@polkadot/api/types/consts' {
       fixedYearlyReward: BalanceOf & AugmentedConst<ApiType>;
       /**
        * Maximum number of balancing iterations to run in the offchain submission.
-       * 
+       *
        * If set to 0, balance_solution will not be executed at all.
        **/
       maxIterations: u32 & AugmentedConst<ApiType>;
       /**
        * The maximum number of nominators rewarded for each validator.
-       * 
+       *
        * For each validator only the `$MaxNominatorRewardedPerValidator` biggest stakers can claim
        * their reward. This used to limit the i/o cost for the nominator payout.
        **/
       maxNominatorRewardedPerValidator: u32 & AugmentedConst<ApiType>;
       /**
        * Maximum number of validators for each permissioned identity.
-       * 
+       *
        * Max number of validators count = `MaxValidatorPerIdentity * Self::validator_count()`.
        **/
       maxValidatorPerIdentity: Permill & AugmentedConst<ApiType>;
@@ -177,7 +186,7 @@ declare module '@polkadot/api/types/consts' {
       sessionsPerEra: SessionIndex & AugmentedConst<ApiType>;
       /**
        * Number of eras that slashes are deferred by, after computation.
-       * 
+       *
        * This should be less than the bonding duration.
        * Set to 0 if slashes should be applied immediately, without opportunity for
        * intervention.
@@ -234,6 +243,5 @@ declare module '@polkadot/api/types/consts' {
     };
   }
 
-  export interface QueryableConsts<ApiType extends ApiTypes> extends AugmentedConsts<ApiType> {
-  }
+  export interface QueryableConsts<ApiType extends ApiTypes> extends AugmentedConsts<ApiType> {}
 }

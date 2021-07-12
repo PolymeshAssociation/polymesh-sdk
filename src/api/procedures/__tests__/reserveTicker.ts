@@ -236,21 +236,21 @@ describe('getAuthorization', () => {
       extendPeriod: true,
     };
 
-    const signerPermissions = {
+    const permissions = {
       transactions: [TxTags.asset.RegisterTicker],
       tokens: [],
       portfolios: [],
     };
 
     expect(getAuthorization(args)).toEqual({
-      identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-      signerPermissions,
+      roles: [{ type: RoleType.TickerOwner, ticker }],
+      permissions,
     });
 
     args.extendPeriod = false;
 
     expect(getAuthorization(args)).toEqual({
-      signerPermissions,
+      permissions,
     });
   });
 });

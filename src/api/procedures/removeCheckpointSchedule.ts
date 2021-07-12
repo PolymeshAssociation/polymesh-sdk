@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { CheckpointSchedule, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
@@ -70,8 +70,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const { context } = this;
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.checkpoint.RemoveSchedule],
       tokens: [new SecurityToken({ ticker }, context)],
       portfolios: [],

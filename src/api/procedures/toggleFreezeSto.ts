@@ -82,8 +82,8 @@ export function getAuthorization(
   { ticker, freeze }: ToggleFreezeStoParams
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TokenPia, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TokenPia, ticker }],
+    permissions: {
       transactions: [freeze ? TxTags.sto.FreezeFundraiser : TxTags.sto.UnfreezeFundraiser],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],

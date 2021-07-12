@@ -494,8 +494,6 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
 
-    console.log(result);
-
     expect(result).toBe(fakeResult);
   });
 });
@@ -1388,7 +1386,6 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       transactions: {
         type: PermissionType.Include,
         values: [TxTags.identity.AddClaim, ModuleName.Confidential],
-        exceptions: [],
       },
       transactionGroups: [],
       portfolios: {

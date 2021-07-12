@@ -147,8 +147,8 @@ describe('deletePortfolio procedure', () => {
         .returns(portfolio);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           tokens: [],
           portfolios: [portfolio],
           transactions: [TxTags.portfolio.DeletePortfolio],

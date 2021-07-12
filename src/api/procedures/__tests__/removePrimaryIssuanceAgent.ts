@@ -9,7 +9,6 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -111,8 +110,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.asset.RemovePrimaryIssuanceAgent],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],

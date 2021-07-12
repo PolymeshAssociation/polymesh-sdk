@@ -10,7 +10,7 @@ import {
   PostTransactionValue,
   TransactionQueue,
 } from '~/internal';
-import { ErrorCode, ProcedureAuthorizationStatus } from '~/types';
+import { ErrorCode, Identity, ProcedureAuthorizationStatus } from '~/types';
 import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -141,29 +141,49 @@ export class Procedure<
 
     const checkAuthorizationResult = await this.getAuthorization(args);
 
-    const { signerPermissions = true, identityRoles = true } = checkAuthorizationResult;
+    const { permissions = true, roles = true } = checkAuthorizationResult;
 
-    let identityAllowed: boolean;
-    if (typeof identityRoles !== 'boolean') {
-      const identity = await context.getCurrentIdentity();
-      identityAllowed = await identity.hasRoles(identityRoles);
+    let identity: Identity;
+    let hasRoles: boolean;
+
+    const fetchIdentity = async (): Promise<Identity> => identity || context.getCurrentIdentity();
+
+    if (typeof roles !== 'boolean') {
+      identity = await fetchIdentity();
+      hasRoles = await identity.hasRoles(roles);
     } else {
-      identityAllowed = identityRoles;
+      hasRoles = roles;
     }
 
-    let signerAllowed: boolean;
-    if (typeof signerPermissions !== 'boolean') {
+    let hasSignerPermissions: boolean;
+    let hasAgentPermissions = true;
+
+    if (typeof permissions !== 'boolean') {
       const account = context.getCurrentAccount();
-      signerAllowed = await account.hasPermissions(signerPermissions);
+      const permissionsPromises = [account.hasPermissions(permissions)];
+
+      const { tokens, transactions } = permissions;
+      // we assume the same permissions are required for each token
+      if (tokens?.length) {
+        identity = await fetchIdentity();
+        permissionsPromises.push(
+          ...tokens.map(token => identity.hasTokenPermissions({ token, transactions }))
+        );
+      }
+      const result = await Promise.all(permissionsPromises);
+      [hasSignerPermissions] = result;
+
+      hasAgentPermissions = result.slice(1).every(perm => perm);
     } else {
-      signerAllowed = signerPermissions;
+      hasSignerPermissions = permissions;
     }
 
     const accountFrozen = await context.getCurrentAccount().isFrozen();
 
     return {
-      roles: identityAllowed,
-      permissions: signerAllowed,
+      roles: hasRoles,
+      signerPermissions: hasSignerPermissions,
+      agentPermissions: hasAgentPermissions,
       accountFrozen,
     };
   }
@@ -205,10 +225,12 @@ export class Procedure<
 
       await this.setup(procArgs, context);
 
-      const { roles, permissions, accountFrozen } = await this._checkAuthorization(
-        procArgs,
-        context
-      );
+      const {
+        roles,
+        signerPermissions,
+        agentPermissions,
+        accountFrozen,
+      } = await this._checkAuthorization(procArgs, context);
 
       if (accountFrozen) {
         throw new PolymeshError({
@@ -217,11 +239,19 @@ export class Procedure<
         });
       }
 
-      if (!permissions) {
+      if (!signerPermissions) {
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
             "Current Account doesn't have the required permissions to execute this procedure",
+        });
+      }
+
+      if (!agentPermissions) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message:
+            "Current Identity doesn't have the required permissions to execute this procedure",
         });
       }
 
