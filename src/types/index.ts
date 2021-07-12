@@ -13,7 +13,6 @@ import {
   CheckpointSchedule,
   DefaultPortfolio,
   DividendDistribution,
-  Entity,
   Identity,
   NumberedPortfolio,
   /*, Proposal */
