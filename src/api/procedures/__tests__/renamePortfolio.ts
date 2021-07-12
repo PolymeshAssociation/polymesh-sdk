@@ -145,8 +145,8 @@ describe('renamePortfolio procedure', () => {
       const portfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id });
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
+        permissions: {
           tokens: [],
           portfolios: [portfolio],
           transactions: [TxTags.portfolio.RenamePortfolio],

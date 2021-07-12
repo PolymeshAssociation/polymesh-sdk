@@ -367,8 +367,8 @@ export async function getAuthorization(
   });
 
   return {
-    identityRoles: [{ type: RoleType.VenueOwner, venueId }],
-    signerPermissions: {
+    roles: [{ type: RoleType.VenueOwner, venueId }],
+    permissions: {
       tokens: [],
       portfolios,
       transactions,

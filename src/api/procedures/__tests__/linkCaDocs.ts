@@ -157,8 +157,8 @@ describe('linkCaDocs procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenCaa, ticker }],
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.corporateAction.LinkCaDoc],
           portfolios: [],

@@ -82,7 +82,6 @@ export enum TransactionQueueStatus {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
-  TokenOwner = 'TokenOwner',
   TokenPia = 'TokenPia',
   TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
@@ -96,16 +95,17 @@ export interface TickerOwnerRole {
   ticker: string;
 }
 
-export interface TokenOwnerRole {
-  type: RoleType.TokenOwner;
-  ticker: string;
-}
-
+/**
+ * @deprecated in favor of external agent permissions
+ */
 export interface TokenPiaRole {
   type: RoleType.TokenPia;
   ticker: string;
 }
 
+/**
+ * @deprecated in favor of external agent permissions
+ */
 export interface TokenCaaRole {
   type: RoleType.TokenCaa;
   ticker: string;
@@ -127,7 +127,6 @@ export interface PortfolioCustodianRole {
 
 export type Role =
   | TickerOwnerRole
-  | TokenOwnerRole
   | TokenPiaRole
   | TokenCaaRole
   | CddProviderRole
@@ -157,6 +156,7 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
 
 /**
  * @hidden
+ * @deprecated
  */
 export function isTokenCaaRole(role: Role): role is TokenCaaRole {
   return role.type === RoleType.TokenCaa;
@@ -164,16 +164,10 @@ export function isTokenCaaRole(role: Role): role is TokenCaaRole {
 
 /**
  * @hidden
+ * @deprecated
  */
 export function isTokenPiaRole(role: Role): role is TokenPiaRole {
   return role.type === RoleType.TokenPia;
-}
-
-/**
- * @hidden
- */
-export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
-  return role.type === RoleType.TokenOwner;
 }
 
 /**
@@ -925,7 +919,8 @@ export interface PortfolioMovement {
 }
 
 export interface ProcedureAuthorizationStatus {
-  permissions: boolean;
+  agentPermissions: boolean;
+  signerPermissions: boolean;
   roles: boolean;
   accountFrozen: boolean;
 }

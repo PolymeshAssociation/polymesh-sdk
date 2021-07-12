@@ -227,8 +227,8 @@ describe('payDividends procedure', () => {
       });
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenCaa, ticker }],
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.capitalDistribution.PushBenefit],

@@ -127,7 +127,7 @@ export async function prepareInviteAccount(
  */
 export const inviteAccount = (): Procedure<InviteAccountParams, void> =>
   new Procedure(prepareInviteAccount, {
-    signerPermissions: {
+    permissions: {
       tokens: [],
       portfolios: [],
       transactions: [TxTags.identity.AddAuthorization],

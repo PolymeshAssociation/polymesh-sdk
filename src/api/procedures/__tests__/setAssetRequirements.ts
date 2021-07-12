@@ -15,7 +15,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Condition, Requirement, RoleType } from '~/types';
+import { Condition, Requirement } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -258,8 +258,7 @@ describe('setAssetRequirements procedure', () => {
       } as Params;
 
       expect(boundFunc(params)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [
             TxTags.complianceManager.ResetAssetCompliance,
             TxTags.complianceManager.AddComplianceRequirement,

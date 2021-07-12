@@ -10,7 +10,6 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -140,8 +139,7 @@ describe('togglePauseRequirements procedure', () => {
       };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.complianceManager.PauseAssetCompliance],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
@@ -151,8 +149,7 @@ describe('togglePauseRequirements procedure', () => {
       args.pause = false;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.complianceManager.ResumeAssetCompliance],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
