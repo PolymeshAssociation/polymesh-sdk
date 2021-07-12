@@ -6,9 +6,9 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents an external agent for a Security Token
+ * Represents an agent for a Security Token
  */
-export class ExternalAgent extends Identity {
+export class Agent extends Identity {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
