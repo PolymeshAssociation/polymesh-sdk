@@ -11,36 +11,35 @@ export type Params = {
   portfolio: DefaultPortfolio | NumberedPortfolio;
 };
 
+export interface Storage {
+  portfolioId: PortfolioId;
+}
+
 /**
  * @hidden
  */
 export async function prepareQuitCustody(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   args: Params
 ): Promise<void> {
   const {
     context: {
       polymeshApi: { tx },
     },
+    storage: { portfolioId },
     context,
   } = this;
 
   const { portfolio } = args;
 
-  const {
-    owner: { did },
-  } = portfolio;
+  const isOwnedBy = await portfolio.isOwnedBy();
 
-  const { did: currentDid } = await context.getCurrentIdentity();
-
-  if (currentDid === did) {
+  if (isOwnedBy) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The Portfolio Custodian is the Current Identity',
+      message: 'The Portfolio owner cannot quit custody',
     });
   }
-
-  const portfolioId = portfolioLikeToPortfolioId(portfolio);
 
   await assertPortfolioExists(portfolioId, context);
 
@@ -53,18 +52,12 @@ export async function prepareQuitCustody(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params>,
+  this: Procedure<Params, void, Storage>,
   { portfolio }: Params
 ): ProcedureAuthorization {
   const {
-    owner: { did },
-  } = portfolio;
-  let portfolioId: PortfolioId = { did };
-
-  if (portfolio instanceof NumberedPortfolio) {
-    portfolioId = { ...portfolioId, number: portfolio.id };
-  }
-
+    storage: { portfolioId },
+  } = this;
   return {
     permissions: {
       transactions: [TxTags.portfolio.QuitPortfolioCustody],
@@ -78,5 +71,17 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const quitCustody = (): Procedure<Params, void> =>
-  new Procedure(prepareQuitCustody, getAuthorization);
+export async function prepareStorage(
+  this: Procedure<Params, void, Storage>,
+  { portfolio }: Params
+): Promise<Storage> {
+  return {
+    portfolioId: portfolioLikeToPortfolioId(portfolio),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const quitCustody = (): Procedure<Params, void, Storage> =>
+  new Procedure(prepareQuitCustody, getAuthorization, prepareStorage);
