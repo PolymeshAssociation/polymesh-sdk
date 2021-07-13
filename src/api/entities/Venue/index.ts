@@ -169,9 +169,9 @@ export class Venue extends Entity<UniqueIdentifiers> {
     );
 
     return P.filter(instructions, async instruction => {
-      const instructionExists = await instruction.exists();
+      const instructionIsPending = await instruction.isPending();
 
-      if (!instructionExists) {
+      if (!instructionIsPending) {
         return false;
       }
 

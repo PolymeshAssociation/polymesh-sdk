@@ -235,3 +235,8 @@ export type PalletPermissions = {
   dispatchable_names: PermissionsEnum<string>;
   /* eslint-enable @typescript-eslint/naming-convention */
 };
+
+export enum InstructionStatus {
+  Pending = 'Pending',
+  Unknown = 'Unknown',
+}

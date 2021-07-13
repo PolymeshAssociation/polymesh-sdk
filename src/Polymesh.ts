@@ -28,6 +28,7 @@ import {
   TransferPolyxParams,
 } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
+import { Settlements } from '~/Settlements';
 import {
   AccountBalance,
   CommonKeyring,
@@ -75,6 +76,7 @@ export class Polymesh {
   // public governance: Governance;
   public claims: Claims;
   public middleware: Middleware;
+  public settlements: Settlements;
 
   /**
    * @hidden
@@ -86,6 +88,7 @@ export class Polymesh {
     // this.governance = new Governance(context);
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
+    this.settlements = new Settlements(context);
 
     this.transferPolyx = createProcedureMethod(
       { getProcedureAndArgs: args => [transferPolyx, args] },
@@ -142,7 +145,6 @@ export class Polymesh {
    * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
    * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
    * @param params.middleware - middleware API URL and key (optional, used for historic queries)
-   * @param params.accountUri - account URI
    */
   static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
 
@@ -468,6 +470,15 @@ export class Polymesh {
   }
 
   /**
+   * Return a list that contains all the signing Accounsts associated to the SDK instance
+   *
+   * @throws — if there is no current account associated to the SDK instance
+   */
+  public getAccounts(): [CurrentAccount, ...Account[]] {
+    return this.context.getAccounts();
+  }
+
+  /**
    * Return whether the supplied Identity/DID exists
    */
   public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
@@ -667,6 +678,51 @@ export class Polymesh {
    */
   public disconnect(): Promise<void> {
     return this.context.disconnect();
+  }
+
+  /**
+   * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
+   *   you must explicitly call `setSigner`
+   *
+   * @param params.accountSeed - hex seed of the account
+   */
+  public addSigner(params: { accountSeed: string }): Account;
+
+  /**
+   * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
+   *   you must explicitly call `setSigner`
+   *
+   * @param params.accountMnemonic - account mnemonic
+   */
+  public addSigner(params: { accountMnemonic: string }): Account;
+
+  /**
+   * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
+   *   you must explicitly call [[setSigner]]
+   *
+   * @param params.accountMnemonic - account mnemonic
+   */
+  public addSigner(params: { accountUri: string }): Account;
+
+  // eslint-disable-next-line require-jsdoc
+  public addSigner(params: {
+    accountSeed?: string;
+    accountUri?: string;
+    accountMnemonic?: string;
+  }): Account {
+    const { context } = this;
+    const { address } = this.context.addPair(params);
+
+    return new Account({ address }, context);
+  }
+
+  /**
+   * Set the SDK's current signing key to the provided address
+   *
+   * @note the key must have been previously added via [[addSigner]]
+   */
+  public setSigner(signer: string | Account): void {
+    this.context.setPair(signerToString(signer));
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

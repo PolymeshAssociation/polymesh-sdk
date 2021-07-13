@@ -142,7 +142,6 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
-  InstructionStatus,
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
@@ -185,6 +184,7 @@ import {
 import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
+  InstructionStatus,
   PalletPermissions,
   PermissionsEnum,
   PolymeshTx,

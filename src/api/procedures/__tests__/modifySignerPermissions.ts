@@ -80,9 +80,11 @@ describe('modifySignerPermissions procedure', () => {
       Account: dsMockUtils.createMockAccountId(signerValue.value),
     });
 
-    mockContext.getSecondaryKeys.resolves(
-      secondaryKeys.map(signer => ({ signer, permissions: [] }))
-    );
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        secondaryKeys,
+      },
+    });
 
     signerToSignerValueStub.returns(signerValue);
 
