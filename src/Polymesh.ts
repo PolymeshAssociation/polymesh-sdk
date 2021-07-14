@@ -472,7 +472,7 @@ export class Polymesh {
   /**
    * Return a list that contains all the signing Accounts associated to the SDK instance
    *
-   * @throws — if there is no current account associated to the SDK instance
+   * @throws — if there is no current Account associated to the SDK instance
    */
   public getAccounts(): [CurrentAccount, ...Account[]] {
     return this.context.getAccounts();
