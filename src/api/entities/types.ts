@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 import {
   Account as AccountClass,
   AuthorizationRequest as AuthorizationRequestClass,

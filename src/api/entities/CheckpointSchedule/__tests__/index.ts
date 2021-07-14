@@ -102,7 +102,7 @@ describe('CheckpointSchedule class', () => {
         context
       );
 
-      expect(schedule.expiryDate).toEqual(new Date('8/14/1988'));
+      expect(schedule.expiryDate).toEqual(new Date('8/14/1988 UTC-1'));
     });
   });
 

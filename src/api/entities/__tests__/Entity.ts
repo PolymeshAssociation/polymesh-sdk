@@ -1,6 +1,7 @@
 import sinon from 'sinon';
 
 import { Context, Entity } from '~/internal';
+import { isEntity } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';
 
 // eslint-disable-next-line require-jsdoc
@@ -12,6 +13,10 @@ class NonAbstract extends Entity<unknown, boolean> {
 }
 
 describe('Entity class', () => {
+  afterAll(() => {
+    sinon.restore();
+  });
+
   const serializeStub = sinon.stub(utilsInternalModule, 'serialize');
   describe('method: generateUuid', () => {
     test("should generate the Entity's UUID", async () => {
@@ -58,5 +63,21 @@ describe('Entity class', () => {
       expect(first.isEqual(second)).toBe(false);
       expect(second.isEqual(first)).toBe(false);
     });
+  });
+});
+
+describe('isEntity', () => {
+  afterAll(() => {
+    sinon.restore();
+  });
+
+  test('should return whether the value is an Entity', () => {
+    const serializeStub = sinon.stub(utilsInternalModule, 'serialize');
+
+    serializeStub.withArgs('NonAbstract', { foo: 'bar' }).returns('uuid');
+
+    const entity = new NonAbstract({ foo: 'bar' }, {} as Context);
+
+    expect(isEntity(entity)).toBe(true);
   });
 });
