@@ -3,9 +3,9 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 import {
   Context,
+  DefaultPortfolio,
   Entity,
   NumberedPortfolio,
   Portfolio,

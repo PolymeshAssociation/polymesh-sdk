@@ -101,13 +101,6 @@ describe('setCustodian procedure', () => {
       },
     });
 
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
-
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
     signerToStringStub.withArgs(target).returns(args.targetIdentity);
@@ -155,13 +148,6 @@ describe('setCustodian procedure', () => {
         },
       },
     });
-
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);

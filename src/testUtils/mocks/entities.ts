@@ -120,11 +120,8 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
-  areScondaryKeysFrozen?: boolean;
-}
-
-interface CurrentIdentityOptions extends IdentityOptions {
   getSecondaryKeys?: SecondaryKey[];
+  areScondaryKeysFrozen?: boolean;
 }
 
 interface TickerReservationOptions {
@@ -202,6 +199,7 @@ interface InstructionOptions {
   id?: BigNumber;
   details?: Partial<InstructionDetails>;
   getLegs?: ResultSet<Leg>;
+  isPending?: boolean;
   exists?: boolean;
 }
 
@@ -298,6 +296,7 @@ let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
 let identityGetTokenBalanceStub: SinonStub;
+let identityGetSecondaryKeysStub: SinonStub;
 let identityAreSecondaryKeysFrozenStub: SinonStub;
 let currentIdentityHasRolesStub: SinonStub;
 let currentIdentityHasRoleStub: SinonStub;
@@ -306,7 +305,6 @@ let currentIdentityGetPrimaryKeyStub: SinonStub;
 let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
 let currentIdentityGetVenuesStub: SinonStub;
 let currentIdentityGetScopeIdStub: SinonStub;
-let currentIdentityGetSecondaryKeysStub: SinonStub;
 let currentIdentityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
@@ -319,6 +317,7 @@ let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
+let instructionIsPendigStub: SinonStub;
 let instructionExistsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
@@ -590,22 +589,11 @@ const defaultIdentityOptions: IdentityOptions = {
   getVenues: [],
   getScopeId: 'someScopeId',
   getTokenBalance: new BigNumber(100),
+  getSecondaryKeys: [],
   areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
-const defaultCurrentIdentityOptions: CurrentIdentityOptions = {
-  did: 'someDid',
-  hasValidCdd: true,
-  getPrimaryKey: 'someAddress',
-  getSecondaryKeys: [],
-  authorizations: {
-    getReceived: [],
-  },
-  getVenues: [],
-  getScopeId: 'someScopeId',
-  areScondaryKeysFrozen: false,
-};
-let currentIdentityOptions: CurrentIdentityOptions = defaultCurrentIdentityOptions;
+let currentIdentityOptions: IdentityOptions = { ...defaultIdentityOptions };
 const defaultAccountOptions: AccountOptions = {
   address: 'someAddress',
   key: 'someKey',
@@ -724,7 +712,7 @@ const defaultInstructionOptions: InstructionOptions = {
     valueDate: null,
     type: InstructionType.SettleOnAffirmation,
   },
-  exists: false,
+  isPending: false,
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
@@ -1138,6 +1126,7 @@ function configureIdentity(opts: IdentityOptions): void {
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
     getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
+    getSecondaryKeys: identityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
     areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
   } as unknown) as MockIdentity;
 
@@ -1163,6 +1152,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
   identityGetTokenBalanceStub = sinon.stub();
+  identityGetSecondaryKeysStub = sinon.stub();
   identityAreSecondaryKeysFrozenStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
@@ -1191,6 +1181,7 @@ function configureInstruction(opts: InstructionOptions): void {
     id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
+    isPending: instructionIsPendigStub.resolves(opts.isPending),
     exists: instructionExistsStub.resolves(opts.exists),
   } as unknown) as MockInstruction;
 
@@ -1210,6 +1201,7 @@ function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
   instructionGetLegsStub = sinon.stub();
+  instructionIsPendigStub = sinon.stub();
   instructionExistsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
@@ -1221,14 +1213,13 @@ function initInstruction(opts?: InstructionOptions): void {
  * @hidden
  * Configure the CurrentIdentity instance
  */
-function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
+function configureCurrentIdentity(opts: IdentityOptions): void {
   const identity = ({
     did: opts.did,
     hasRoles: currentIdentityHasRolesStub.resolves(opts.hasRoles),
     hasRole: currentIdentityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
-    getSecondaryKeys: currentIdentityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
     portfolios: {},
     authorizations: {
       getReceived: currentIdentityAuthorizationsGetReceivedStub.resolves(
@@ -1257,7 +1248,7 @@ function configureCurrentIdentity(opts: CurrentIdentityOptions): void {
  * @hidden
  * Initialize the CurrentIdentity instance
  */
-function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
+function initCurrentIdentity(opts?: IdentityOptions): void {
   currentIdentityConstructorStub = sinon.stub();
   currentIdentityHasRolesStub = sinon.stub();
   currentIdentityHasRoleStub = sinon.stub();
@@ -1266,10 +1257,9 @@ function initCurrentIdentity(opts?: CurrentIdentityOptions): void {
   currentIdentityAuthorizationsGetReceivedStub = sinon.stub();
   currentIdentityGetVenuesStub = sinon.stub();
   currentIdentityGetScopeIdStub = sinon.stub();
-  currentIdentityGetSecondaryKeysStub = sinon.stub();
   currentIdentityAreSecondaryKeysFrozenStub = sinon.stub();
 
-  currentIdentityOptions = { ...defaultCurrentIdentityOptions, ...opts };
+  currentIdentityOptions = { ...defaultIdentityOptions, ...opts };
 
   configureCurrentIdentity(currentIdentityOptions);
 }
@@ -1580,7 +1570,7 @@ function initDividendDistribution(opts?: DividendDistributionOptions): void {
  */
 export function configureMocks(opts?: {
   identityOptions?: IdentityOptions;
-  currentIdentityOptions?: CurrentIdentityOptions;
+  currentIdentityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
   currentAccountOptions?: CurrentAccountOptions;
   tickerReservationOptions?: TickerReservationOptions;
@@ -1602,7 +1592,7 @@ export function configureMocks(opts?: {
   configureIdentity(tempIdentityOptions);
 
   const tempCurrentIdentityOptions = {
-    ...defaultCurrentIdentityOptions,
+    ...defaultIdentityOptions,
     ...opts?.currentIdentityOptions,
   };
 
@@ -1712,7 +1702,7 @@ export function configureMocks(opts?: {
  */
 export function initMocks(opts?: {
   identityOptions?: IdentityOptions;
-  currentIdentityOptions?: CurrentIdentityOptions;
+  currentIdentityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
   currentAccountOptions?: CurrentAccountOptions;
   tickerReservationOptions?: TickerReservationOptions;
@@ -1916,9 +1906,9 @@ export function getIdentityGetScopeIdStub(): SinonStub {
  * @hidden
  * Retrieve a Current Identity instance
  */
-export function getCurrentIdentityInstance(opts?: CurrentIdentityOptions): MockCurrentIdentity {
+export function getCurrentIdentityInstance(opts?: IdentityOptions): MockCurrentIdentity {
   if (opts) {
-    configureCurrentIdentity({ ...defaultCurrentIdentityOptions, ...opts });
+    configureCurrentIdentity({ ...defaultIdentityOptions, ...opts });
   }
 
   return new MockCurrentIdentityClass() as MockCurrentIdentity;

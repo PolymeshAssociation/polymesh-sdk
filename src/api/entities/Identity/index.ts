@@ -37,6 +37,7 @@ import {
   PermissionType,
   ResultSet,
   Role,
+  SecondaryKey,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -50,10 +51,13 @@ import {
   corporateActionIdentifierToCaId,
   extrinsicPermissionsToTransactionPermissions,
   identityIdToString,
+  meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
+  signatoryToSignerValue,
+  signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
@@ -682,6 +686,43 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         return !boolToBoolean(holderPaid);
       }
     );
+  }
+
+  /**
+   * Get the list of secondary keys related to the Identity
+   *
+   * @note can be subscribed to
+   */
+  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
+  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getSecondaryKeys(
+    callback?: SubCallback<SecondaryKey[]>
+  ): Promise<SecondaryKey[] | UnsubCallback> {
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
+      return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
+        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), context),
+        permissions: meshPermissionsToPermissions(permissions, context),
+      }));
+    };
+
+    if (callback) {
+      return identity.didRecords(did, records => callback(assembleResult(records)));
+    }
+
+    const didRecords = await identity.didRecords(did);
+    return assembleResult(didRecords);
   }
 
   /**

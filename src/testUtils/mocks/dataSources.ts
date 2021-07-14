@@ -136,7 +136,7 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
-import { AuthorizationRequest, Context, Identity } from '~/internal';
+import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -255,6 +255,13 @@ interface TxMockData {
   resolved: boolean;
 }
 
+interface Pair {
+  address: string;
+  meta: Record<string, unknown>;
+  publicKey: string;
+  isLocked?: boolean;
+}
+
 interface ContextOptions {
   did?: string;
   withSeed?: boolean;
@@ -283,13 +290,8 @@ interface ContextOptions {
   areScondaryKeysFrozen?: boolean;
   getDividendDistributionsForTokens?: DistributionWithDetails[];
   isFrozen?: boolean;
-}
-
-interface Pair {
-  address: string;
-  meta: Record<string, unknown>;
-  publicKey: string;
-  isLocked?: boolean;
+  addPair?: Pair;
+  getAccounts?: Account[];
 }
 
 interface KeyringOptions {
@@ -298,6 +300,7 @@ interface KeyringOptions {
   addFromUri?: Pair;
   addFromSeed?: Pair;
   addFromMnemonic?: Pair;
+  addPair?: Pair;
   /**
    * @hidden
    * Whether keyring functions should throw
@@ -548,14 +551,43 @@ const defaultContextOptions: ContextOptions = {
   areScondaryKeysFrozen: false,
   getDividendDistributionsForTokens: [],
   isFrozen: false,
+  addPair: {
+    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+    meta: {},
+    isLocked: false,
+    publicKey: 'someKey',
+  },
+  getAccounts: [],
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
-  getPair: { address: 'address', meta: {}, publicKey: 'publicKey1' },
-  getPairs: [{ address: 'address', meta: {}, publicKey: 'publicKey2' }],
-  addFromSeed: { address: 'address', meta: {}, publicKey: 'publicKey3' },
-  addFromUri: { address: 'address', meta: {}, publicKey: 'publicKey4' },
-  addFromMnemonic: { address: 'address', meta: {}, publicKey: 'publicKey5' },
+  getPair: {
+    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+    meta: {},
+    publicKey: 'publicKey1',
+  },
+  getPairs: [
+    {
+      address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+      meta: {},
+      publicKey: 'publicKey2',
+    },
+  ],
+  addFromSeed: {
+    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+    meta: {},
+    publicKey: 'publicKey3',
+  },
+  addFromUri: {
+    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+    meta: {},
+    publicKey: 'publicKey4',
+  },
+  addFromMnemonic: {
+    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+    meta: {},
+    publicKey: 'publicKey5',
+  },
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
@@ -612,7 +644,7 @@ function configureContext(opts: ContextOptions): void {
     getCurrentAccount,
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
-    getAccounts: sinon.stub().returns([]),
+    getAccounts: sinon.stub().returns(opts.getAccounts),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as KeyringPair;
     }),
@@ -638,7 +670,10 @@ function configureContext(opts: ContextOptions): void {
     getDividendDistributionsForTokens: sinon
       .stub()
       .resolves(opts.getDividendDistributionsForTokens),
+    addPair: sinon.stub().returns(opts.addPair),
   } as unknown) as MockContext;
+
+  contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
@@ -788,7 +823,7 @@ function initApi(): void {
  * @hidden
  */
 function configureKeyring(opts: KeyringOptions): void {
-  const { error, getPair, getPairs, addFromUri, addFromSeed, addFromMnemonic } = opts;
+  const { error, getPair, getPairs, addFromUri, addFromSeed, addFromMnemonic, addPair } = opts;
 
   const err = new Error('Error');
 
@@ -798,6 +833,7 @@ function configureKeyring(opts: KeyringOptions): void {
     addFromSeed: sinon.stub().returns(addFromSeed),
     addFromUri: sinon.stub().returns(addFromUri),
     addFromMnemonic: sinon.stub().returns(addFromMnemonic),
+    addPair: sinon.stub().returns(addPair),
   };
 
   if (error) {
@@ -985,6 +1021,29 @@ export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unkn
 
   stub.withArgs(query).resolves({
     data: returnData,
+  });
+
+  instance.query = stub;
+
+  return stub;
+}
+
+/**
+ * @hidden
+ * Create and return an apollo stub for multiple queries
+ *
+ * @param queries - query and returnData for each stubbed query
+ */
+export function createApolloMultipleQueriesStub(
+  queries: { query: GraphqlQuery<any>; returnData: unknown }[]
+): SinonStub {
+  const instance = mockInstanceContainer.apolloInstance;
+  const stub = sinon.stub();
+
+  queries.forEach(q => {
+    stub.withArgs(q.query).resolves({
+      data: q.returnData,
+    });
   });
 
   instance.query = stub;
@@ -1251,7 +1310,7 @@ export function getCreateTypeStub(): SinonStub {
  */
 export function getContextInstance(opts?: ContextOptions): MockContext {
   if (opts) {
-    initContext(opts);
+    configureContext({ ...defaultContextOptions, ...opts });
   }
   return mockInstanceContainer.contextInstance;
 }
@@ -1268,11 +1327,11 @@ export function getContextCreateStub(): SinonStub {
  * @hidden
  * Retrieve an instance of the mocked Keyring
  */
-export function getKeyringInstance(opts?: KeyringOptions): Keyring {
+export function getKeyringInstance(opts?: KeyringOptions): Mocked<Keyring> {
   if (opts) {
-    initKeyring(opts);
+    configureKeyring({ ...defaultKeyringOptions, ...opts });
   }
-  return mockInstanceContainer.keyringInstance as Keyring;
+  return mockInstanceContainer.keyringInstance as Mocked<Keyring>;
 }
 
 /**

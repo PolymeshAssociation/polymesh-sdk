@@ -36,6 +36,7 @@ import {
   PaginationOptions,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
+  ProcedureOpts,
   Scope,
   UiKeyring,
 } from '~/types';
@@ -464,18 +465,20 @@ export function createProcedureMethod<
   const { getProcedureAndArgs, transformer } = args;
 
   const method = (
-    methodArgs: MethodArgs
+    methodArgs: MethodArgs,
+    opts: ProcedureOpts = {}
   ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
-    return proc().prepare({ args: procArgs, transformer }, context);
+    return proc().prepare({ args: procArgs, transformer }, context, opts);
   };
 
   method.checkAuthorization = async (
-    methodArgs: MethodArgs
+    methodArgs: MethodArgs,
+    opts: ProcedureOpts = {}
   ): Promise<ProcedureAuthorizationStatus> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
 
-    return proc().checkAuthorization(procArgs, context);
+    return proc().checkAuthorization(procArgs, context, opts);
   };
 
   return method;

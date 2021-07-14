@@ -3,9 +3,8 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 import { getAuthorization, Params, prepareRedeemToken } from '~/api/procedures/redeemToken';
-import { Context, SecurityToken } from '~/internal';
+import { Context, DefaultPortfolio, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, RoleType, TxTags } from '~/types';

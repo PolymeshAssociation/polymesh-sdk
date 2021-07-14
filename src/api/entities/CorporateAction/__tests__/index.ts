@@ -1,8 +1,14 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Checkpoint } from '~/api/entities/Checkpoint';
-import { CheckpointSchedule, Context, CorporateAction, Entity, TransactionQueue } from '~/internal';
+import {
+  Checkpoint,
+  CheckpointSchedule,
+  Context,
+  CorporateAction,
+  Entity,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CalendarUnit,
