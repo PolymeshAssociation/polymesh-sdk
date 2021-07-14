@@ -956,7 +956,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     };
 
     const rawAgentGroup = 'PolymeshV1Pia' as unknown as AgentGroup;
-    createTypeStub.withArgs('AgentGroup', sinon.match(sinon.match.object)).returns(rawAgentGroup);
+    createTypeStub.withArgs('AgentGroup', value.permissionGroup).returns(rawAgentGroup);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -964,6 +964,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value.value, rawAgentGroup
       ] })
       .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
