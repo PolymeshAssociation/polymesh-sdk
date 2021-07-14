@@ -479,4 +479,21 @@ describe('Portfolio class', () => {
       expect(result.next).toBeNull();
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      let portfolio = new Portfolio({ did: 'someDid', id: new BigNumber(1) }, context);
+
+      expect(portfolio.toJson()).toEqual({
+        did: 'someDid',
+        id: '1',
+      });
+
+      portfolio = new Portfolio({ did: 'someDid' }, context);
+
+      expect(portfolio.toJson()).toEqual({
+        did: 'someDid',
+      });
+    });
+  });
 });

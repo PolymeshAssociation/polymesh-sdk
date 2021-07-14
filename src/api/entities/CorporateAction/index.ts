@@ -14,19 +14,30 @@ import {
   PolymeshError,
 } from '~/internal';
 import { ErrorCode, ProcedureMethod } from '~/types';
+import { HumanReadableType } from '~/types/utils';
 import {
   numberToU32,
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
   ticker: string;
+}
+
+export interface HumanReadable {
+  id: string;
+  ticker: string;
+  declarationDate: string;
+  description: string;
+  targets: HumanReadableType<CorporateActionTargets>;
+  defaultTaxWithholding: string;
+  taxWithholdings: HumanReadableType<TaxWithholding[]>;
 }
 
 export interface Params {
@@ -42,7 +53,7 @@ export interface Params {
  * Represents an action initiated by the issuer of a Security Token which may affect the positions of
  *   the Tokenholders
  */
-export class CorporateAction extends Entity<UniqueIdentifiers> {
+export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -237,5 +248,30 @@ export class CorporateAction extends Entity<UniqueIdentifiers> {
     const rawTicker = stringToTicker(ticker, context);
 
     return query.corporateAction.corporateActions(rawTicker, numberToU32(id, context));
+  }
+
+  /**
+   * Return the Corporate Action's static data
+   */
+  public toJson(): HumanReadable {
+    const {
+      ticker,
+      id,
+      declarationDate,
+      description,
+      targets,
+      defaultTaxWithholding,
+      taxWithholdings,
+    } = this;
+
+    return toHumanReadable({
+      ticker,
+      id,
+      declarationDate,
+      defaultTaxWithholding,
+      taxWithholdings,
+      targets,
+      description,
+    });
   }
 }

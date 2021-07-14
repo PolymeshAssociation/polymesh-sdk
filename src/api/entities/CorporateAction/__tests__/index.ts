@@ -53,7 +53,7 @@ describe('CorporateAction class', () => {
 
     id = new BigNumber(1);
     ticker = 'SOME_TICKER';
-    declarationDate = new Date('10/14/1987');
+    declarationDate = new Date('10/14/1987 UTC');
     kind = CorporateActionKind.UnpredictableBenefit;
     description = 'someDescription';
     targets = {
@@ -300,6 +300,23 @@ describe('CorporateAction class', () => {
       const queue = await corporateAction.modifyCheckpoint(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      expect(corporateAction.toJson()).toEqual({
+        id: '1',
+        ticker: 'SOME_TICKER',
+        declarationDate: '1987-10-14T00:00:00.000Z',
+        defaultTaxWithholding: '10',
+        description: 'someDescription',
+        targets: {
+          identities: [],
+          treatment: TargetTreatment.Exclude,
+        },
+        taxWithholdings: [],
+      });
     });
   });
 });

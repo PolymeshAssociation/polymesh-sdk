@@ -5,8 +5,7 @@ import sinon from 'sinon';
 
 import { Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { AuthorizationType } from '~/types';
-import { SignerValue } from '~/types/internal';
+import { AuthorizationType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Authorizations } from '../Authorizations';

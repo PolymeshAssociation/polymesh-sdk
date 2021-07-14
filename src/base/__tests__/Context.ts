@@ -12,10 +12,12 @@ import {
   CorporateActionKind,
   SecondaryKey,
   Signer,
+  SignerType,
+  SignerValue,
   TargetTreatment,
   TransactionArgumentType,
 } from '~/types';
-import { GraphqlQuery, SignerType, SignerValue } from '~/types/internal';
+import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';

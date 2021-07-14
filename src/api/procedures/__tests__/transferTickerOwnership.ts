@@ -11,8 +11,15 @@ import {
 import { Context, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, RoleType, TickerReservationStatus } from '~/types';
-import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
+import {
+  Authorization,
+  AuthorizationType,
+  RoleType,
+  SignerType,
+  SignerValue,
+  TickerReservationStatus,
+} from '~/types';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

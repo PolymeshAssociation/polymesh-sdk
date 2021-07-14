@@ -3,7 +3,11 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
 
-import { Params as CorporateActionParams, UniqueIdentifiers } from '~/api/entities/CorporateAction';
+import {
+  HumanReadable as CorporateActionHumanReadable,
+  Params as CorporateActionParams,
+  UniqueIdentifiers,
+} from '~/api/entities/CorporateAction';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -34,7 +38,7 @@ import {
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { tuple } from '~/types/utils';
+import { HumanReadableType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -42,9 +46,24 @@ import {
   corporateActionIdentifierToCaId,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid, xor } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getDid,
+  toHumanReadable,
+  xor,
+} from '~/utils/internal';
 
 import { DistributionParticipant } from './types';
+
+interface HumanReadable extends CorporateActionHumanReadable {
+  origin: HumanReadableType<DefaultPortfolio | NumberedPortfolio>;
+  currency: string;
+  perShare: string;
+  maxAmount: string;
+  expiryDate: string | null;
+  paymentDate: string;
+}
 
 export interface DividendDistributionParams {
   origin: DefaultPortfolio | NumberedPortfolio;
@@ -466,5 +485,19 @@ export class DividendDistribution extends CorporateAction {
     });
 
     return paidStatuses;
+  }
+
+  /**
+   * Return the Dividend Distribution's static data
+   */
+  public toJson(): HumanReadable {
+    const { origin, currency, perShare, maxAmount, expiryDate, paymentDate } = this;
+
+    const parentReadable = super.toJson();
+
+    return {
+      ...toHumanReadable({ origin, currency, perShare, maxAmount, expiryDate, paymentDate }),
+      ...parentReadable,
+    };
   }
 }

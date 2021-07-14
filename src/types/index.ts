@@ -1030,6 +1030,24 @@ export interface ProcedureMethod<
   checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
 }
 
+export enum SignerType {
+  /* eslint-disable @typescript-eslint/no-shadow */
+  Identity = 'Identity',
+  Account = 'Account',
+  /* eslint-enable @typescript-eslint/no-shadow */
+}
+
+export interface SignerValue {
+  /**
+   * whether the signer is an Account or Identity
+   */
+  type: SignerType;
+  /**
+   * address or DID (depending on whether the signer is an Account or Identity)
+   */
+  value: string;
+}
+
 export { TxTags, TxTag, ModuleName };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';

@@ -7,8 +7,8 @@ import {
   Permissions,
   PermissionsLike,
   PermissionType,
+  SignerType,
 } from '~/types';
-import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,

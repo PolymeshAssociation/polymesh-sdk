@@ -9,11 +9,21 @@ import {
   Entity,
   Identity,
 } from '~/internal';
-import { Authorization, AuthorizationType, ProcedureMethod, Signer } from '~/types';
-import { createProcedureMethod } from '~/utils/internal';
+import { Authorization, AuthorizationType, ProcedureMethod, Signer, SignerValue } from '~/types';
+import { HumanReadableType } from '~/types/utils';
+import { signerToSignerValue } from '~/utils/conversion';
+import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   authId: BigNumber;
+}
+
+interface HumanReadable {
+  issuer: HumanReadableType<Identity>;
+  expiry: string | null;
+  target: SignerValue;
+  data: HumanReadableType<Authorization>;
+  id: string;
 }
 
 export interface Params {
@@ -28,7 +38,7 @@ export interface Params {
  *   wants to transfer ownership of her asset ALICETOKEN to Bob, an authorization request gets emitted to Bob,
  *   who then has to accept it in order for the ownership transfer to be complete
  */
-export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
+export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -148,5 +158,20 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers> {
     const { expiry } = this;
 
     return expiry !== null && expiry < new Date();
+  }
+
+  /**
+   * Return the Authorization's static data
+   */
+  public toJson(): HumanReadable {
+    const { data, issuer, target, expiry, authId } = this;
+
+    return toHumanReadable({
+      id: authId,
+      expiry,
+      data,
+      issuer,
+      target: signerToSignerValue(target),
+    });
   }
 }
