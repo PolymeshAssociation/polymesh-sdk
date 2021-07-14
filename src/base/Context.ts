@@ -320,7 +320,7 @@ export class Context {
   }
 
   /**
-   * Set a pair as the current account keyring pair
+   * Set a pair as the current Account keyring pair
    */
   public setPair(address: string): void {
     const { keyring } = this;
