@@ -700,7 +700,7 @@ export class Polymesh {
    * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
    *   you must explicitly call [[setSigner]]
    *
-   * @param params.accountMnemonic - account mnemonic
+   * @param params.accountUri - account URI
    */
   public addSigner(params: { accountUri: string }): Account;
 
