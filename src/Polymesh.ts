@@ -470,7 +470,7 @@ export class Polymesh {
   }
 
   /**
-   * Return a list that contains all the signing Accounsts associated to the SDK instance
+   * Return a list that contains all the signing Accounts associated to the SDK instance
    *
    * @throws — if there is no current account associated to the SDK instance
    */
