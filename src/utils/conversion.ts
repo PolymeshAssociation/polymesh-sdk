@@ -160,6 +160,8 @@ import {
   SecondaryKey,
   SectionPermissions,
   Signer,
+  SignerType,
+  SignerValue,
   SingleClaimCondition,
   StoBalanceStatus,
   StoDetails,
@@ -191,8 +193,6 @@ import {
   PortfolioId,
   ScheduleSpec,
   ScopeClaimProof,
-  SignerType,
-  SignerValue,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {

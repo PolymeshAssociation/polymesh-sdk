@@ -10,7 +10,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { periodComplexity } from '~/utils/internal';
+import { periodComplexity, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -20,6 +20,10 @@ export interface UniqueIdentifiers {
 interface HumanReadable {
   id: string;
   ticker: string;
+  period: CalendarPeriod | null;
+  start: string;
+  expiryDate: string | null;
+  complexity: number;
 }
 
 export interface Params {
@@ -201,11 +205,15 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
    * Return the Schedule's ID and Token ticker
    */
   public toJson(): HumanReadable {
-    const { ticker, id } = this;
+    const { ticker, id, expiryDate, complexity, start, period } = this;
 
-    return {
+    return toHumanReadable({
       ticker,
-      id: id.toString(),
-    };
+      id,
+      start,
+      expiryDate,
+      period,
+      complexity,
+    });
   }
 }

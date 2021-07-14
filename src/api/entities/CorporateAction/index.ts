@@ -14,13 +14,14 @@ import {
   PolymeshError,
 } from '~/internal';
 import { ErrorCode, ProcedureMethod } from '~/types';
+import { HumanReadableType } from '~/types/utils';
 import {
   numberToU32,
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { CorporateActionKind, CorporateActionTargets, TaxWithholding } from './types';
 
@@ -29,9 +30,14 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   id: string;
   ticker: string;
+  declarationDate: string;
+  description: string;
+  targets: HumanReadableType<CorporateActionTargets>;
+  defaultTaxWithholding: string;
+  taxWithholdings: HumanReadableType<TaxWithholding[]>;
 }
 
 export interface Params {
@@ -245,14 +251,27 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   }
 
   /**
-   * Return the Corporate Action's ID and Token ticker
+   * Return the Corporate Action's static data
    */
   public toJson(): HumanReadable {
-    const { ticker, id } = this;
-
-    return {
+    const {
       ticker,
-      id: id.toString(),
-    };
+      id,
+      declarationDate,
+      description,
+      targets,
+      defaultTaxWithholding,
+      taxWithholdings,
+    } = this;
+
+    return toHumanReadable({
+      ticker,
+      id,
+      declarationDate,
+      defaultTaxWithholding,
+      taxWithholdings,
+      targets,
+      description,
+    });
   }
 }

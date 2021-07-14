@@ -59,5 +59,5 @@ export function isEntity<Identifiers = unknown, HumanReadable = unknown>(
   value: unknown
 ): value is EntityClass<Identifiers, HumanReadable> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return typeof (value as any).uuid === 'string';
+  return !!value && typeof (value as any).uuid === 'string';
 }

@@ -1,6 +1,6 @@
 import { Identity, Procedure, SecurityToken } from '~/internal';
-import { AuthorizationType, TxTags } from '~/types';
-import { ProcedureAuthorization, SignerType } from '~/types/internal';
+import { AuthorizationType, SignerType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,

@@ -19,9 +19,10 @@ import {
   InstructionStatus,
   InstructionType,
   Signer,
+  SignerType,
+  SignerValue,
   TargetTreatment,
 } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

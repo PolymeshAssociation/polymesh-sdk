@@ -24,7 +24,7 @@ import {
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, toHumanReadable } from '~/utils/internal';
 
 import { HistoricSettlement, PortfolioBalance } from './types';
 
@@ -332,6 +332,6 @@ export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
       did,
     };
 
-    return id ? { ...result, id: id.toString() } : result;
+    return id ? toHumanReadable({ ...result, id }) : result;
   }
 }

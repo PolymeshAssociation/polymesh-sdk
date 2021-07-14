@@ -25,7 +25,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { Investment, StoDetails } from './types';
 
@@ -258,9 +258,9 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   public toJson(): HumanReadable {
     const { ticker, id } = this;
 
-    return {
+    return toHumanReadable({
       ticker,
-      id: id.toString(),
-    };
+      id,
+    });
   }
 }

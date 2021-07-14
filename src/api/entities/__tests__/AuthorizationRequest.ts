@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import { AuthorizationRequest, Context, Entity, Identity, TransactionQueue } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { Authorization, AuthorizationType } from '~/types';
+import { Authorization, AuthorizationType, SignerType } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -208,19 +208,47 @@ describe('AuthorizationRequest class', () => {
     });
   });
 
-  describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+  describe('method: isExpired', () => {
+    test('should return whether the request has expired', () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
-          expiry: null,
+          expiry: new Date('10/14/1987'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
           data: { type: AuthorizationType.NoData },
         },
         context
       );
-      expect(authorizationRequest.toJson()).toBe('1');
+      expect(authorizationRequest.isExpired()).toBe(true);
+
+      authorizationRequest.expiry = null;
+      expect(authorizationRequest.isExpired()).toBe(false);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: new Date('10/14/1987'),
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: { type: AuthorizationType.NoData },
+        },
+        context
+      );
+      expect(authorizationRequest.toJson()).toEqual({
+        id: '1',
+        expiry: '1987-10-14T03:00:00.000Z',
+        target: {
+          type: SignerType.Identity,
+          value: 'someDid',
+        },
+        issuer: 'otherDid',
+        data: { type: AuthorizationType.NoData },
+      });
     });
   });
 });

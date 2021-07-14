@@ -36,7 +36,7 @@ describe('CheckpointSchedule class', () => {
     };
     start = new Date('10/14/1987');
     remaining = 11;
-    nextCheckpointDate = new Date('10/14/2030');
+    nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
   });
@@ -97,12 +97,12 @@ describe('CheckpointSchedule class', () => {
           start,
           period: { unit: CalendarUnit.Month, amount: 1 },
           remaining,
-          nextCheckpointDate,
+          nextCheckpointDate: start,
         },
         context
       );
 
-      expect(schedule.expiryDate).toEqual(new Date('8/14/2031'));
+      expect(schedule.expiryDate).toEqual(new Date('8/14/1988'));
     });
   });
 
@@ -288,6 +288,10 @@ describe('CheckpointSchedule class', () => {
       expect(schedule.toJson()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
+        period,
+        start: '1987-10-14T03:00:00.000Z',
+        complexity: 12,
+        expiryDate: schedule.expiryDate?.toISOString(),
       });
     });
   });

@@ -15,7 +15,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { getDid, requestPaginated } from '~/utils/internal';
+import { getDid, requestPaginated, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -242,9 +242,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   public toJson(): HumanReadable {
     const { ticker, id } = this;
 
-    return {
+    return toHumanReadable({
       ticker,
-      id: id.toString(),
-    };
+      id,
+    });
   }
 }

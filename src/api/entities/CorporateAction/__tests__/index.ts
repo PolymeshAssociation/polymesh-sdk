@@ -308,6 +308,14 @@ describe('CorporateAction class', () => {
       expect(corporateAction.toJson()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
+        declarationDate: '1987-10-14T03:00:00.000Z',
+        defaultTaxWithholding: '10',
+        description: 'someDescription',
+        targets: {
+          identities: [],
+          treatment: TargetTreatment.Exclude,
+        },
+        taxWithholdings: [],
       });
     });
   });
