@@ -1,6 +1,6 @@
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { AuthorizationType, ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization, SignerType } from '~/types/internal';
+import { AuthorizationType, ErrorCode, SignerType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,

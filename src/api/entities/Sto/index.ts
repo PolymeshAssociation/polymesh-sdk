@@ -25,7 +25,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { Investment, StoDetails } from './types';
 
@@ -34,10 +34,15 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+interface HumanReadable {
+  id: string;
+  ticker: string;
+}
+
 /**
  * Represents a Security Token Offering in the Polymesh blockchain
  */
-export class Sto extends Entity<UniqueIdentifiers> {
+export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -245,5 +250,17 @@ export class Sto extends Entity<UniqueIdentifiers> {
       next,
       count,
     };
+  }
+
+  /**
+   * Return the Sto's ID and Token ticker
+   */
+  public toJson(): HumanReadable {
+    const { ticker, id } = this;
+
+    return toHumanReadable({
+      ticker,
+      id,
+    });
   }
 }

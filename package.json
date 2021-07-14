@@ -100,7 +100,7 @@
     "bignumber.js": "^9.0.0",
     "bluebird": "^3.7.2",
     "cross-fetch": "^3.0.6",
-    "dayjs": "^1.10.4",
+    "dayjs": "1.10.6",
     "eth-sig-util": "3.0.1",
     "graphql": "14.5.0",
     "graphql-tag": "2.12.4",

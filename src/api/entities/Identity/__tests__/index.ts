@@ -18,12 +18,13 @@ import {
   RoleType,
   SecondaryKey,
   Signer,
+  SignerType,
+  SignerValue,
   TickerOwnerRole,
   TokenCaaRole,
   TokenPiaRole,
   VenueOwnerRole,
 } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -1207,6 +1208,13 @@ describe('Identity class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      expect(identity.toJson()).toBe('someDid');
     });
   });
 });

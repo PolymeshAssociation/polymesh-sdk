@@ -725,4 +725,10 @@ describe('Instruction class', () => {
       );
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      expect(instruction.toJson()).toBe('1');
+    });
+  });
 });

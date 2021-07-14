@@ -13,8 +13,9 @@ import {
   InstructionStatus,
   InstructionType,
   SecondaryKey,
+  SignerValue,
 } from '~/types';
-import { PortfolioId, SignerValue } from '~/types/internal';
+import { PortfolioId } from '~/types/internal';
 import { signerToSignerValue, u64ToBigNumber } from '~/utils/conversion';
 
 // import { Proposal } from '~/internal';

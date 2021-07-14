@@ -10,11 +10,20 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { periodComplexity } from '~/utils/internal';
+import { periodComplexity, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
   ticker: string;
+}
+
+interface HumanReadable {
+  id: string;
+  ticker: string;
+  period: CalendarPeriod | null;
+  start: string;
+  expiryDate: string | null;
+  complexity: number;
 }
 
 export interface Params {
@@ -30,7 +39,7 @@ const notExistsMessage = 'Schedule no longer exists. It was either removed or it
  * Represents a Schedule in which Checkpoints are created for a specific
  *  Security Token. Schedules can be set up to create checkpoints
  */
-export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
+export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -190,5 +199,21 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers> {
     const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
     return !!exists;
+  }
+
+  /**
+   * Return the Schedule's ID and Token ticker
+   */
+  public toJson(): HumanReadable {
+    const { ticker, id, expiryDate, complexity, start, period } = this;
+
+    return toHumanReadable({
+      ticker,
+      id,
+      start,
+      expiryDate,
+      period,
+      complexity,
+    });
   }
 }

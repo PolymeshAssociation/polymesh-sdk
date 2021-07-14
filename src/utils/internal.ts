@@ -11,7 +11,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, map, padEnd } from 'lodash';
+import { chunk, groupBy, map, mapValues, padEnd } from 'lodash';
 import { ModuleName, TxTag } from 'polymesh-types/types';
 
 import {
@@ -31,6 +31,7 @@ import {
   CommonKeyring,
   CountryCode,
   ErrorCode,
+  isEntity,
   NextKey,
   PaginationOptions,
   ProcedureAuthorizationStatus,
@@ -45,7 +46,7 @@ import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
 } from '~/types/internal';
-import { ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
+import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
@@ -643,4 +644,35 @@ export function isModuleOrTagMatch(a: TxTag | ModuleName, b: TxTag | ModuleName)
 
   // both tags or both modules
   return a === b;
+}
+
+/**
+ * Recursively convert a value into a human readable (JSON compliant) version:
+ *   - Entities are converted via their `.toJson` method
+ *   - Dates are converted to ISO strings
+ *   - BigNumbers are converted to numerical strings
+ */
+export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
+  if (isEntity<unknown, HumanReadableType<T>>(obj)) {
+    return obj.toJson();
+  }
+
+  if (obj instanceof BigNumber) {
+    return obj.toString() as HumanReadableType<T>;
+  }
+
+  if (obj instanceof Date) {
+    return obj.toISOString() as HumanReadableType<T>;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(toHumanReadable) as HumanReadableType<T>;
+  }
+
+  if (obj && typeof obj === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return mapValues(obj as any, val => toHumanReadable(val)) as HumanReadableType<T>;
+  }
+
+  return obj as HumanReadableType<T>;
 }

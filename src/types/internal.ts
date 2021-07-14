@@ -13,7 +13,7 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CalendarPeriod, Role, SimplePermissions } from '~/types';
+import { CalendarPeriod, Role, SignerValue, SimplePermissions } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -143,17 +143,6 @@ export interface TransactionSpec<
    * number of elements in the batch (only applicable to batch transactions)
    */
   batchSize: number | null;
-}
-
-export enum SignerType {
-  // eslint-disable-next-line no-shadow
-  Identity = 'Identity',
-  Account = 'Account',
-}
-
-export interface SignerValue {
-  type: SignerType;
-  value: string;
 }
 
 export interface AuthTarget {

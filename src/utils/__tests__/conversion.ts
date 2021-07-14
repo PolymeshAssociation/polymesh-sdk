@@ -91,6 +91,8 @@ import {
   Scope,
   ScopeType,
   Signer,
+  SignerType,
+  SignerValue,
   StoBalanceStatus,
   StoSaleStatus,
   StoTier,
@@ -105,7 +107,7 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
-import { InstructionStatus, ScopeClaimProof, SignerType, SignerValue } from '~/types/internal';
+import { InstructionStatus, ScopeClaimProof } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 

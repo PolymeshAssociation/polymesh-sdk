@@ -57,7 +57,7 @@ const notPendingMessage =
 /**
  * Represents a settlement Instruction to be executed on a certain Venue
  */
-export class Instruction extends Entity<UniqueIdentifiers> {
+export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -383,5 +383,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     );
 
     return optionize(middlewareEventToEventIdentifier)(event);
+  }
+
+  /**
+   * Return the Instruction's ID
+   */
+  public toJson(): string {
+    return this.id.toString();
   }
 }
