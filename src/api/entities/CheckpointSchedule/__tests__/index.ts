@@ -95,14 +95,14 @@ describe('CheckpointSchedule class', () => {
           id,
           ticker,
           start,
-          period: { unit: CalendarUnit.Month, amount: 1 },
-          remaining,
+          period: { unit: CalendarUnit.Year, amount: 1 },
+          remaining: 2,
           nextCheckpointDate: start,
         },
         context
       );
 
-      expect(schedule.expiryDate).toEqual(new Date('8/14/1988 UTC-1'));
+      expect(schedule.expiryDate).toEqual(new Date('10/14/1988 UTC'));
     });
   });
 
