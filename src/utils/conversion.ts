@@ -27,6 +27,7 @@ import {
 } from 'lodash';
 import {
   AffirmationStatus as MeshAffirmationStatus,
+  AgentGroup,
   AssetComplianceResult,
   AssetIdentifier,
   AssetName,
@@ -91,7 +92,7 @@ import {
   TxTag,
   TxTags,
   VenueDetails,
-  VenueType as MeshVenueType,
+  VenueType as MeshVenueType
 } from 'polymesh-types/types';
 
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
@@ -148,6 +149,7 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
+  PermissionGroup,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -180,7 +182,7 @@ import {
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
-  VenueType,
+  VenueType
 } from '~/types';
 import {
   CorporateActionIdentifier,
@@ -1002,6 +1004,13 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
+export function permissionGroupToAgentGroup(permissionGroup: PermissionGroup, context: Context): AgentGroup {
+  return context.polymeshApi.createType('AgentGroup', permissionGroup);
+}
+
+/**
+ * @hidden
+ */
 export function authorizationToAuthorizationData(
   auth: Authorization,
   context: Context
@@ -1014,6 +1023,8 @@ export function authorizationToAuthorizationData(
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
+  } else if (auth.type === AuthorizationType.BecomeAgent) {
+    value = [ auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context) ]
   } else {
     value = auth.value;
   }

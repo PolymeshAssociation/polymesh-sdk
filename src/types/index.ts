@@ -774,6 +774,18 @@ export interface SimplePermissions {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
 
+export enum KnownPermissionGroup {
+  Full = 'Full',
+  ExceptMeta = 'ExceptMeta',
+  PolymeshV1Caa = 'PolymeshV1Caa',
+  PolymeshV1Pia = 'PolymeshV1Pia',
+}
+
+/**
+ * Type of permission group
+ */
+export type PermissionGroup = KnownPermissionGroup | { custom: string };
+
 /**
  * Authorization request data corresponding to type
  */
@@ -781,12 +793,14 @@ export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
+  | { type: AuthorizationType.BecomeAgent; value: string; permissionGroup: PermissionGroup }
   | {
       type: Exclude<
         AuthorizationType,
         | AuthorizationType.NoData
         | AuthorizationType.JoinIdentity
         | AuthorizationType.PortfolioCustody
+        | AuthorizationType.BecomeAgent
       >;
       value: string;
     };

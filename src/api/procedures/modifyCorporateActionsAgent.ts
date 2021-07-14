@@ -1,5 +1,5 @@
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { AuthorizationType, ErrorCode, TxTags } from '~/types';
+import { AuthorizationType, ErrorCode, KnownPermissionGroup, TxTags } from '~/types';
 import { ProcedureAuthorization, SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -68,7 +68,7 @@ export async function prepareModifyCorporateActionsAgent(
   );
 
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.BecomeAgent, value: ticker },
+    { type: AuthorizationType.BecomeAgent, value: ticker, permissionGroup: KnownPermissionGroup.PolymeshV1Caa },
     context
   );
 
