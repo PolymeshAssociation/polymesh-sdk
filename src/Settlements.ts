@@ -19,7 +19,7 @@ export class Settlements {
   /**
    * Retrieve a Venue by its id
    *
-   * @param id - Identifier number of the venue
+   * @param id - identifier number of the Venue
    */
   public async getVenue(args: { id: BigNumber }): Promise<Venue> {
     const { context } = this;
