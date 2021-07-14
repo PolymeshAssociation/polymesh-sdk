@@ -209,9 +209,7 @@ export class Procedure<
     opts?: ProcedureOpts
   ): Promise<ProcedureAuthorizationStatus> {
     try {
-      const status = await this._checkAuthorization(args, context, opts);
-
-      return status;
+      return await this._checkAuthorization(args, context, opts);
     } finally {
       this.cleanup();
     }
