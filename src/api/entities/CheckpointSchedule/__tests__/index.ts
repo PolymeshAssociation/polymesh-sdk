@@ -34,7 +34,7 @@ describe('CheckpointSchedule class', () => {
       unit: CalendarUnit.Month,
       amount: 1,
     };
-    start = new Date('10/14/1987');
+    start = new Date('10/14/1987 UTC');
     remaining = 11;
     nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
@@ -289,7 +289,7 @@ describe('CheckpointSchedule class', () => {
         id: '1',
         ticker: 'SOME_TICKER',
         period,
-        start: '1987-10-14T03:00:00.000Z',
+        start: '1987-10-14T00:00:00.000Z',
         complexity: 12,
         expiryDate: schedule.expiryDate?.toISOString(),
       });

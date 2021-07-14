@@ -213,7 +213,7 @@ describe('AuthorizationRequest class', () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
-          expiry: new Date('10/14/1987'),
+          expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
           data: { type: AuthorizationType.NoData },
@@ -232,7 +232,7 @@ describe('AuthorizationRequest class', () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
-          expiry: new Date('10/14/1987'),
+          expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
           data: { type: AuthorizationType.NoData },
@@ -241,7 +241,7 @@ describe('AuthorizationRequest class', () => {
       );
       expect(authorizationRequest.toJson()).toEqual({
         id: '1',
-        expiry: '1987-10-14T03:00:00.000Z',
+        expiry: '1987-10-14T00:00:00.000Z',
         target: {
           type: SignerType.Identity,
           value: 'someDid',
