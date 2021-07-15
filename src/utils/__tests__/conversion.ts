@@ -2,6 +2,7 @@ import { bool, Bytes, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
+  AgentGroup,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
   CddId,
@@ -83,7 +84,9 @@ import {
   CountryCode,
   DividendDistributionParams,
   InstructionType,
+  KnownPermissionGroup,
   KnownTokenType,
+  PermissionGroup,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -175,6 +178,7 @@ import {
   numberToU64,
   percentageToPermill,
   permillToBigNumber,
+  permissionGroupToAgentGroup,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
@@ -946,6 +950,23 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.BecomeAgent,
+      value: 'TOKEN',
+      permissionGroup: KnownPermissionGroup.PolymeshV1Pia,
+    };
+
+    const rawAgentGroup = ('PolymeshV1Pia' as unknown) as AgentGroup;
+    createTypeStub.withArgs('AgentGroup', value.permissionGroup).returns(rawAgentGroup);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: [value.value, rawAgentGroup] })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
@@ -1079,6 +1100,47 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     authorizationData = dsMockUtils.createMockAuthorizationData('NoData');
 
     result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('permissionGroupToAgentGroup', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('permissionGroupToAgentGroup should convert a PermissionGroup to a polkadot AgentGroup object', () => {
+    let value: PermissionGroup = KnownPermissionGroup.PolymeshV1Pia;
+    const fakeResult = ('convertedAgentGroup' as unknown) as AgentGroup;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', value).returns(fakeResult);
+
+    let result = permissionGroupToAgentGroup(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    const custom = new BigNumber(100);
+    value = { custom };
+
+    const u32FakeResult = ('100' as unknown) as u32;
+
+    dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AgentGroup', { custom: u32FakeResult })
+      .returns(fakeResult);
+
+    result = permissionGroupToAgentGroup(value, context);
+
     expect(result).toEqual(fakeResult);
   });
 });
