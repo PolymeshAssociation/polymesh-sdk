@@ -791,6 +791,13 @@ export enum KnownPermissionGroup {
    *   - capitalDistribution
    */
   PolymeshV1Caa = 'PolymeshV1Caa',
+  /**
+   * authorized:  
+   *   - asset.issue
+   *   - asset.redeem
+   *   - asset.controllerTransfer
+   *   - sto (except for sto.invest)
+   */
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
