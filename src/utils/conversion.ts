@@ -27,6 +27,7 @@ import {
 } from 'lodash';
 import {
   AffirmationStatus as MeshAffirmationStatus,
+  AgentGroup,
   AssetComplianceResult,
   AssetIdentifier,
   AssetName,
@@ -147,6 +148,7 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
+  PermissionGroup,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -1002,6 +1004,21 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
+export function permissionGroupToAgentGroup(
+  permissionGroup: PermissionGroup,
+  context: Context
+): AgentGroup {
+  return context.polymeshApi.createType(
+    'AgentGroup',
+    typeof permissionGroup !== 'object'
+      ? permissionGroup
+      : { custom: numberToU32(permissionGroup.custom, context) }
+  );
+}
+
+/**
+ * @hidden
+ */
 export function authorizationToAuthorizationData(
   auth: Authorization,
   context: Context
@@ -1014,6 +1031,8 @@ export function authorizationToAuthorizationData(
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
+  } else if (auth.type === AuthorizationType.BecomeAgent) {
+    value = [auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context)];
   } else {
     value = auth.value;
   }
