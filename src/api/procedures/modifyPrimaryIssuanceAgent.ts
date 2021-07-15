@@ -73,7 +73,11 @@ export async function prepareModifyPrimaryIssuanceAgent(
   );
 
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.BecomeAgent, value: ticker, permissionGroup: KnownPermissionGroup.PolymeshV1Pia },
+    {
+      type: AuthorizationType.BecomeAgent,
+      value: ticker,
+      permissionGroup: KnownPermissionGroup.PolymeshV1Pia,
+    },
     context
   );
 

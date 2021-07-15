@@ -68,7 +68,11 @@ export async function prepareModifyCorporateActionsAgent(
   );
 
   const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.BecomeAgent, value: ticker, permissionGroup: KnownPermissionGroup.PolymeshV1Caa },
+    {
+      type: AuthorizationType.BecomeAgent,
+      value: ticker,
+      permissionGroup: KnownPermissionGroup.PolymeshV1Caa,
+    },
     context
   );
 

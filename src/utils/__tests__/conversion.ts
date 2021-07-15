@@ -954,17 +954,15 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     value = {
       type: AuthorizationType.BecomeAgent,
       value: 'TOKEN',
-      permissionGroup: KnownPermissionGroup.PolymeshV1Pia
+      permissionGroup: KnownPermissionGroup.PolymeshV1Pia,
     };
 
-    const rawAgentGroup = 'PolymeshV1Pia' as unknown as AgentGroup;
+    const rawAgentGroup = ('PolymeshV1Pia' as unknown) as AgentGroup;
     createTypeStub.withArgs('AgentGroup', value.permissionGroup).returns(rawAgentGroup);
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [
-        value.value, rawAgentGroup
-      ] })
+      .withArgs('AuthorizationData', { [value.type]: [value.value, rawAgentGroup] })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
@@ -1136,7 +1134,10 @@ describe('permissionGroupToAgentGroup', () => {
     const u32FakeResult = ('100' as unknown) as u32;
 
     dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
-    dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', u32FakeResult).returns(fakeResult);
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AgentGroup', { custom: u32FakeResult })
+      .returns(fakeResult);
 
     result = permissionGroupToAgentGroup(value, context);
 

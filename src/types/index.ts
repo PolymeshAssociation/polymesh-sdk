@@ -785,14 +785,14 @@ export enum KnownPermissionGroup {
    */
   ExceptMeta = 'ExceptMeta',
   /**
-   * authorized:  
+   * authorized:
    *   - corporateAction
    *   - corporateBallot
    *   - capitalDistribution
    */
   PolymeshV1Caa = 'PolymeshV1Caa',
   /**
-   * authorized:  
+   * authorized:
    *   - asset.issue
    *   - asset.redeem
    *   - asset.controllerTransfer

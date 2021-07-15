@@ -92,7 +92,7 @@ import {
   TxTag,
   TxTags,
   VenueDetails,
-  VenueType as MeshVenueType
+  VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
@@ -183,7 +183,7 @@ import {
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
-  VenueType
+  VenueType,
 } from '~/types';
 import {
   CorporateActionIdentifier,
@@ -1004,8 +1004,16 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
-export function permissionGroupToAgentGroup(permissionGroup: PermissionGroup, context: Context): AgentGroup {
-  return context.polymeshApi.createType('AgentGroup', typeof permissionGroup !== 'object' ? permissionGroup : numberToU32(permissionGroup.custom, context));
+export function permissionGroupToAgentGroup(
+  permissionGroup: PermissionGroup,
+  context: Context
+): AgentGroup {
+  return context.polymeshApi.createType(
+    'AgentGroup',
+    typeof permissionGroup !== 'object'
+      ? permissionGroup
+      : { custom: numberToU32(permissionGroup.custom, context) }
+  );
 }
 
 /**
@@ -1024,7 +1032,7 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
-    value = [ auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context) ]
+    value = [auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context)];
   } else {
     value = auth.value;
   }
