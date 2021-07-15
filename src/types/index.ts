@@ -804,7 +804,7 @@ export enum KnownPermissionGroup {
 /**
  * Determines the subset of permissions an Agent has over a Security Token
  */
-export type PermissionGroup = KnownPermissionGroup | { custom: string };
+export type PermissionGroup = KnownPermissionGroup | { custom: BigNumber };
 
 /**
  * Authorization request data corresponding to type

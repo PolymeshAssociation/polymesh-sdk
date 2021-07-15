@@ -87,6 +87,7 @@ import {
   InstructionType,
   KnownPermissionGroup,
   KnownTokenType,
+  PermissionGroup,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -1118,13 +1119,25 @@ describe('permissionGroupToAgentGroup', () => {
   });
 
   test('permissionGroupToAgentGroup should convert a PermissionGroup to a polkadot AgentGroup object', () => {
-    const value = KnownPermissionGroup.PolymeshV1Pia;
+    let value: PermissionGroup = KnownPermissionGroup.PolymeshV1Pia;
     const fakeResult = ('convertedAgentGroup' as unknown) as AgentGroup;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', value).returns(fakeResult);
 
-    const result = permissionGroupToAgentGroup(value, context);
+    let result = permissionGroupToAgentGroup(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    const custom = new BigNumber(100);
+    value = { custom };
+
+    const u32FakeResult = ('100' as unknown) as u32;
+
+    dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', u32FakeResult).returns(fakeResult);
+
+    result = permissionGroupToAgentGroup(value, context);
 
     expect(result).toEqual(fakeResult);
   });

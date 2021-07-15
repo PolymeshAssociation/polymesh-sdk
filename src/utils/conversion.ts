@@ -1005,7 +1005,7 @@ export function meshPermissionsToPermissions(
  * @hidden
  */
 export function permissionGroupToAgentGroup(permissionGroup: PermissionGroup, context: Context): AgentGroup {
-  return context.polymeshApi.createType('AgentGroup', permissionGroup);
+  return context.polymeshApi.createType('AgentGroup', typeof permissionGroup !== 'object' ? permissionGroup : numberToU32(permissionGroup.custom, context));
 }
 
 /**
