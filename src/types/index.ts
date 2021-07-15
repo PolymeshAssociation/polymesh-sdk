@@ -779,6 +779,10 @@ export enum KnownPermissionGroup {
    * all transactions authorized
    */
   Full = 'Full',
+  /**
+   * not authorized:
+   *   - externalAgents
+   */
   ExceptMeta = 'ExceptMeta',
   PolymeshV1Caa = 'PolymeshV1Caa',
   PolymeshV1Pia = 'PolymeshV1Pia',
