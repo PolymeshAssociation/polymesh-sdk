@@ -784,6 +784,12 @@ export enum KnownPermissionGroup {
    *   - externalAgents
    */
   ExceptMeta = 'ExceptMeta',
+  /**
+   * authorized:  
+   *   - corporateAction
+   *   - corporateBallot
+   *   - capitalDistribution
+   */
   PolymeshV1Caa = 'PolymeshV1Caa',
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
