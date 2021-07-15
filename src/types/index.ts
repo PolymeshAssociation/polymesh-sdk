@@ -775,6 +775,9 @@ export interface SimplePermissions {
 }
 
 export enum KnownPermissionGroup {
+  /**
+   * all transactions authorized
+   */
   Full = 'Full',
   ExceptMeta = 'ExceptMeta',
   PolymeshV1Caa = 'PolymeshV1Caa',
