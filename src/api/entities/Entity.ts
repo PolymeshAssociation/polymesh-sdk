@@ -5,7 +5,7 @@ import { serialize, unserialize } from '~/utils/internal';
 /**
  * Represents an object or resource in the Polymesh Ecosystem with its own set of properties and functionality
  */
-export class Entity<UniqueIdentifiers> {
+export abstract class Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Generate the Entity's UUID from its identifying properties
    *
@@ -58,7 +58,12 @@ export class Entity<UniqueIdentifiers> {
   /**
    * Whether this Entity is the same as another one
    */
-  public isEqual(entity: Entity<unknown>): boolean {
+  public isEqual(entity: Entity<unknown, unknown>): boolean {
     return this.uuid === entity.uuid;
   }
+
+  /**
+   * Returns Entity data in a human readable (JSON) format
+   */
+  public abstract toJson(): HumanReadable;
 }

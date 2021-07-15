@@ -275,4 +275,13 @@ describe('TickerReservation class', () => {
       expect(queue).toBe(expectedQueue);
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
+
+      expect(token.toJson()).toBe('SOME_TICKER');
+    });
+  });
 });

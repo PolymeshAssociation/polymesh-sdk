@@ -173,7 +173,9 @@ describe('Venue class', () => {
       const owner = 'someDid';
       const instructionId = new BigNumber(1);
 
-      entityMockUtils.configureMocks({ instructionOptions: { id: instructionId, exists: true } });
+      entityMockUtils.configureMocks({
+        instructionOptions: { id: instructionId, isPending: true },
+      });
       sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
@@ -195,7 +197,9 @@ describe('Venue class', () => {
 
       expect(result[0].id).toEqual(instructionId);
 
-      entityMockUtils.configureMocks({ instructionOptions: { id: instructionId, exists: false } });
+      entityMockUtils.configureMocks({
+        instructionOptions: { id: instructionId, isPending: false, exists: true },
+      });
 
       result = await venue.getPendingInstructions();
       expect(result.length).toBe(0);
@@ -320,6 +324,14 @@ describe('Venue class', () => {
       const queue = await venue.modify({ description, type });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const token = new Venue({ id: new BigNumber(1) }, context);
+
+      expect(token.toJson()).toBe('1');
     });
   });
 });

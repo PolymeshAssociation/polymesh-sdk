@@ -57,7 +57,7 @@ describe('DividendDistribution class', () => {
 
     id = new BigNumber(1);
     ticker = 'SOME_TICKER';
-    declarationDate = new Date('10/14/1987');
+    declarationDate = new Date('10/14/1987 UTC');
     description = 'something';
     targets = {
       identities: [entityMockUtils.getIdentityInstance()],
@@ -536,6 +536,35 @@ describe('DividendDistribution class', () => {
       );
       const result = await dividendDistribution.getPaymentHistory();
       expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      dividendDistribution.targets = {
+        treatment: TargetTreatment.Exclude,
+        identities: [],
+      };
+      expect(dividendDistribution.toJson()).toEqual({
+        id: '1',
+        ticker: 'SOME_TICKER',
+        declarationDate: '1987-10-14T00:00:00.000Z',
+        defaultTaxWithholding: '10',
+        description: 'something',
+        targets: {
+          identities: [],
+          treatment: TargetTreatment.Exclude,
+        },
+        taxWithholdings: [],
+        currency: 'USD',
+        expiryDate: null,
+        paymentDate: dividendDistribution.paymentDate.toISOString(),
+        maxAmount: '10000',
+        origin: {
+          did: 'someDid',
+        },
+        perShare: '10',
+      });
     });
   });
 });

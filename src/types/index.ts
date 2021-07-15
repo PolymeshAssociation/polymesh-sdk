@@ -568,7 +568,7 @@ export interface MiddlewareConfig {
 
 export type CommonKeyring = Pick<
   Keyring,
-  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic'
+  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic' | 'addPair'
 >;
 
 export interface UiKeyring {
@@ -1021,13 +1021,43 @@ export interface DistributionPayment {
   withheldTax: BigNumber;
 }
 
+export interface ProcedureOpts {
+  /**
+   * Account or address of a signing key to replace the current one (for this procedure only)
+   */
+  signer?: string | Account;
+}
+
 export interface ProcedureMethod<
   MethodArgs,
   ProcedureReturnValue,
   ReturnValue = ProcedureReturnValue
 > {
-  (args: MethodArgs): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
-  checkAuthorization: (args: MethodArgs) => Promise<ProcedureAuthorizationStatus>;
+  (args: MethodArgs, opts?: ProcedureOpts): Promise<
+    TransactionQueue<ProcedureReturnValue, ReturnValue>
+  >;
+  checkAuthorization: (
+    args: MethodArgs,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
+export enum SignerType {
+  /* eslint-disable @typescript-eslint/no-shadow */
+  Identity = 'Identity',
+  Account = 'Account',
+  /* eslint-enable @typescript-eslint/no-shadow */
+}
+
+export interface SignerValue {
+  /**
+   * whether the signer is an Account or Identity
+   */
+  type: SignerType;
+  /**
+   * address or DID (depending on whether the signer is an Account or Identity)
+   */
+  value: string;
 }
 
 export { TxTags, TxTag, ModuleName };

@@ -45,4 +45,11 @@ describe('PermissionGroup class', () => {
       expect(PermissionGroup.isUniqueIdentifiers({ id: 1 })).toBe(false);
     });
   });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const agentGroup = new PermissionGroup({ id: new BigNumber(1) }, context);
+      expect(agentGroup.toJson()).toBe('1');
+    });
+  });
 });

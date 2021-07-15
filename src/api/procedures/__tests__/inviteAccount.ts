@@ -7,8 +7,14 @@ import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context, InviteAccountParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import {
+  Authorization,
+  AuthorizationType,
+  Identity,
+  ResultSet,
+  SignerType,
+  SignerValue,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -109,15 +115,19 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
+        secondaryKeys: [
+          {
+            signer,
+            permissions: {
+              tokens: null,
+              portfolios: null,
+              transactions: null,
+              transactionGroups: [],
+            },
+          },
+        ],
       },
     });
-
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
 
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
@@ -200,12 +210,21 @@ describe('inviteAccount procedure', () => {
     const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
 
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        secondaryKeys: [
+          {
+            signer,
+            permissions: {
+              tokens: null,
+              portfolios: null,
+              transactions: null,
+              transactionGroups: [],
+            },
+          },
+        ],
       },
-    ]);
+    });
 
     signerToStringStub.withArgs(signer).returns(args.targetAccount);
     signerToStringStub.withArgs(args.targetAccount).returns(args.targetAccount);
@@ -251,16 +270,19 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
+        secondaryKeys: [
+          {
+            signer,
+            permissions: {
+              tokens: null,
+              portfolios: null,
+              transactions: null,
+              transactionGroups: [],
+            },
+          },
+        ],
       },
     });
-
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
-
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     signerToStringStub.withArgs(signer).returns(signer.address);

@@ -2,9 +2,14 @@ import { QueryableStorage } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 import { CAId } from 'polymesh-types/polymesh';
 
-import { CorporateAction } from '~/api/entities/CorporateAction';
-import { DividendDistribution } from '~/api/entities/DividendDistribution';
-import { Context, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import {
+  Context,
+  CorporateAction,
+  DividendDistribution,
+  PolymeshError,
+  Procedure,
+  SecurityToken,
+} from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
