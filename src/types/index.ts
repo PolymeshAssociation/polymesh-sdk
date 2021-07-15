@@ -782,7 +782,7 @@ export enum KnownPermissionGroup {
 }
 
 /**
- * Type of permission group
+ * Determines the subset of permissions an Agent has over a Security Token
  */
 export type PermissionGroup = KnownPermissionGroup | { custom: string };
 
