@@ -70,7 +70,7 @@ describe('quitCustody procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Portfolio owner cannot quit custody', async () => {
+  test('should throw an error if the current Identity is the Portfolio owner', async () => {
     const portfolio = new NumberedPortfolio({ id, did }, mockContext);
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
