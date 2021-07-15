@@ -241,7 +241,9 @@ describe('Account class', () => {
           secondary_keys: [],
         })
       );
-      dsMockUtils.createQueryStub('identity', 'isDidFrozen');
+      const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
+        returnValue: dsMockUtils.createMockBool(false),
+      });
 
       keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId());
 
@@ -254,26 +256,21 @@ describe('Account class', () => {
       expect(result).toBe(false);
 
       const otherAddress = 'otherAddress';
+      account = new Account({ address: otherAddress }, context);
 
-      result = await entityMockUtils
-        .getAccountInstance({
-          address: otherAddress,
-          getIdentity: entityMockUtils.getIdentityInstance({
-            areScondaryKeysFrozen: false,
-          }),
-        })
-        .isFrozen();
+      result = await account.isFrozen();
       expect(result).toBe(false);
 
-      result = await entityMockUtils
-        .getAccountInstance({
-          address: otherAddress,
-          getIdentity: entityMockUtils.getIdentityInstance({
-            areScondaryKeysFrozen: true,
-          }),
-        })
-        .isFrozen();
+      isDidFrozenStub.resolves(dsMockUtils.createMockBool(true));
+
+      result = await account.isFrozen();
       expect(result).toBe(true);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      expect(account.toJson()).toBe(account.address);
     });
   });
 });

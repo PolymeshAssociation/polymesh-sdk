@@ -8,8 +8,7 @@ import {
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Signer } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import { Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryKeys procedure', () => {
@@ -57,7 +56,19 @@ describe('removeSecondaryKeys procedure', () => {
       Account: dsMockUtils.createMockAccountId(signerValue.value),
     });
 
-    mockContext.getSecondaryKeys.resolves(signers.map(signer => ({ signer, permissions: [] })));
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        secondaryKeys: signers.map(signer => ({
+          signer,
+          permissions: {
+            tokens: null,
+            transactions: null,
+            transactionGroups: [],
+            portfolios: null,
+          },
+        })),
+      },
+    });
 
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);

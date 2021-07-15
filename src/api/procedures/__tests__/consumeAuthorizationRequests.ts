@@ -11,8 +11,7 @@ import {
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType } from '~/types';
-import { SignerValue } from '~/types/internal';
+import { Authorization, AuthorizationType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeAuthorizationRequests procedure', () => {

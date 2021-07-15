@@ -8,8 +8,7 @@ import {
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryKey, Signer } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import { SecondaryKey, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {
@@ -80,9 +79,11 @@ describe('modifySignerPermissions procedure', () => {
       Account: dsMockUtils.createMockAccountId(signerValue.value),
     });
 
-    mockContext.getSecondaryKeys.resolves(
-      secondaryKeys.map(signer => ({ signer, permissions: [] }))
-    );
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        secondaryKeys,
+      },
+    });
 
     signerToSignerValueStub.returns(signerValue);
 

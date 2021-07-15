@@ -39,7 +39,7 @@ export function addInstructionTransformer([instruction]: Instruction[]): Instruc
 /**
  * Represents a Venue through which settlements are handled
  */
-export class Venue extends Entity<UniqueIdentifiers> {
+export class Venue extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -169,9 +169,9 @@ export class Venue extends Entity<UniqueIdentifiers> {
     );
 
     return P.filter(instructions, async instruction => {
-      const instructionExists = await instruction.exists();
+      const instructionIsPending = await instruction.isPending();
 
-      if (!instructionExists) {
+      if (!instructionIsPending) {
         return false;
       }
 
@@ -204,4 +204,11 @@ export class Venue extends Entity<UniqueIdentifiers> {
    *   - Venue Owner
    */
   public modify: ProcedureMethod<ModifyVenueParams, void>;
+
+  /**
+   * Return the Venue's ID
+   */
+  public toJson(): string {
+    return this.id.toString();
+  }
 }

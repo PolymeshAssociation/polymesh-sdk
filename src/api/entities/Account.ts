@@ -28,7 +28,7 @@ export interface UniqueIdentifiers {
 /**
  * Represents an account in the Polymesh blockchain. Accounts can hold POLYX, control Identities and vote on proposals (among other things)
  */
-export class Account extends Entity<UniqueIdentifiers> {
+export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -224,5 +224,12 @@ export class Account extends Entity<UniqueIdentifiers> {
     }
 
     return identity.areSecondaryKeysFrozen();
+  }
+
+  /**
+   * Return the Account's address
+   */
+  public toJson(): string {
+    return this.address;
   }
 }

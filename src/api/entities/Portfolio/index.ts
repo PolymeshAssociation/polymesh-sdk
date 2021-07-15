@@ -24,7 +24,7 @@ import {
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, toHumanReadable } from '~/utils/internal';
 
 import { HistoricSettlement, PortfolioBalance } from './types';
 
@@ -33,10 +33,15 @@ export interface UniqueIdentifiers {
   id?: BigNumber;
 }
 
+interface HumanReadable {
+  did: string;
+  id?: string;
+}
+
 /**
  * Represents a base Portfolio for a specific Identity in the Polymesh blockchain
  */
-export class Portfolio extends Entity<UniqueIdentifiers> {
+export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -312,5 +317,21 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       next,
       count,
     };
+  }
+
+  /**
+   * Return the Portfolio ID and owner DID
+   */
+  public toJson(): HumanReadable {
+    const {
+      _id: id,
+      owner: { did },
+    } = this;
+
+    const result = {
+      did,
+    };
+
+    return id ? toHumanReadable({ ...result, id }) : result;
   }
 }

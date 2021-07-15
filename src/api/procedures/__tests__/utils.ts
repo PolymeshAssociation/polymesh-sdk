@@ -19,9 +19,10 @@ import {
   InstructionStatus,
   InstructionType,
   Signer,
+  SignerType,
+  SignerValue,
   TargetTreatment,
 } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -160,7 +161,7 @@ describe('assertInstructionValid', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
-          status: InstructionStatus.Unknown,
+          status: InstructionStatus.Executed,
         } as InstructionDetails,
       },
     });

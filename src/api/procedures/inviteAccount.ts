@@ -7,8 +7,8 @@ import {
   Permissions,
   PermissionsLike,
   PermissionType,
+  SignerType,
 } from '~/types';
-import { SignerType } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -55,7 +55,7 @@ export async function prepareInviteAccount(
 
   const [authorizationRequests, secondaryKeys, existingIdentity] = await Promise.all([
     currentIdentity.authorizations.getSent(),
-    context.getSecondaryKeys(),
+    currentIdentity.getSecondaryKeys(),
     account.getIdentity(),
   ] as const);
 

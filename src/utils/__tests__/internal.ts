@@ -40,7 +40,13 @@ import {
 } from '../internal';
 
 describe('delay', () => {
-  jest.useFakeTimers();
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
 
   test('should resolve after the supplied timeout', () => {
     const delayPromise = delay(5000);
@@ -491,11 +497,11 @@ describe('createProcedureMethod', () => {
     const procArgs = 1;
     await method(procArgs);
 
-    sinon.assert.calledWithExactly(prepare, { args: procArgs, transformer }, context);
+    sinon.assert.calledWithExactly(prepare, { args: procArgs, transformer }, context, {});
 
     await method.checkAuthorization(procArgs);
 
-    sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
+    sinon.assert.calledWithExactly(checkAuthorization, procArgs, context, {});
   });
 });
 

@@ -143,7 +143,6 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
-  InstructionStatus,
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
@@ -162,6 +161,8 @@ import {
   SecondaryKey,
   SectionPermissions,
   Signer,
+  SignerType,
+  SignerValue,
   SingleClaimCondition,
   StoBalanceStatus,
   StoDetails,
@@ -187,14 +188,13 @@ import {
 import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
+  InstructionStatus,
   PalletPermissions,
   PermissionsEnum,
   PolymeshTx,
   PortfolioId,
   ScheduleSpec,
   ScopeClaimProof,
-  SignerType,
-  SignerValue,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
