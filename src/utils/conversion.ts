@@ -891,6 +891,17 @@ export function permissionsToMeshPermissions(
 /**
  * @hidden
  */
+export function transactionPermissionsToExtrinsicPermissions(
+  transactionPermissions: TransactionPermissions,
+  context: Context
+): ExtrinsicPermissions {
+  const value = buildPalletPermissions(transactionPermissions);
+  return context.polymeshApi.createType('ExtrinsicPermissions', value);
+}
+
+/**
+ * @hidden
+ */
 export function extrinsicPermissionsToTransactionPermissions(
   permissions: ExtrinsicPermissions
 ): TransactionPermissions | null {
