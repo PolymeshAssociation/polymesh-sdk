@@ -895,8 +895,10 @@ export function transactionPermissionsToExtrinsicPermissions(
   transactionPermissions: TransactionPermissions,
   context: Context
 ): ExtrinsicPermissions {
-  const value = buildPalletPermissions(transactionPermissions);
-  return context.polymeshApi.createType('ExtrinsicPermissions', value);
+  return context.polymeshApi.createType(
+    'ExtrinsicPermissions',
+    buildPalletPermissions(transactionPermissions)
+  );
 }
 
 /**

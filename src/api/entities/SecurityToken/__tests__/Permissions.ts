@@ -1,9 +1,8 @@
-import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { CreateGroupParams, Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { TransactionPermissions, UnscopedClaim } from '~/types';
+import { TransactionPermissions } from '~/types';
 
 import { Permissions } from '../Permissions';
 
@@ -47,7 +46,7 @@ describe('Issuance class', () => {
 
       const args = {
         ticker: token.ticker,
-        permissions: { transactions : {} as TransactionPermissions }
+        permissions: { transactions: {} as TransactionPermissions },
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;

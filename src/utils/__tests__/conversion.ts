@@ -7,6 +7,7 @@ import {
   CddId,
   ComplianceRequirement,
   EcdsaSignature,
+  ExtrinsicPermissions,
   InvestorZKProofData,
   Memo,
   MovePortfolioItem,
@@ -226,6 +227,7 @@ import {
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
   transactionHexToTxTag,
+  transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
   transactionToTxTag,
   transferManagerToTransferRestriction,
@@ -6257,6 +6259,39 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       .returns(fakeResult);
 
     const result = scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('transactionPermissionsToExtrinsicPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('transactionPermissionsToExtrinsicPermissions should convert a TransactionPermissions to a polkadot ExtrinsicPermissions object', () => {
+    const value = {
+      values: [TxTags.sto.Invest],
+      type: PermissionType.Include,
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeResult = ('convertedExtrinsicPermissions' as unknown) as ExtrinsicPermissions;
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeResult);
+
+    const result = transactionPermissionsToExtrinsicPermissions(value, context);
 
     expect(result).toEqual(fakeResult);
   });

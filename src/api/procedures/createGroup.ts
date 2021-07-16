@@ -1,20 +1,26 @@
-
-
 import { Procedure, SecurityToken } from '~/internal';
-import { TransactionPermissions, TxTags } from '~/types';
+import { TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { permissionsLikeToPermissions, stringToTicker, transactionPermissionsToExtrinsicPermissions } from '~/utils/conversion';
+import {
+  permissionsLikeToPermissions,
+  stringToTicker,
+  transactionPermissionsToExtrinsicPermissions,
+} from '~/utils/conversion';
 
 export interface CreateGroupParams {
-  permissions: {
-    transactions: TransactionPermissions;
-  }
+  permissions:
+    | {
+        transactions: TransactionPermissions;
+      }
+    | {
+        transactionGroups: TxGroup[];
+      };
 }
 
 /**
  * @hidden
  */
- export type Params = CreateGroupParams & {
+export type Params = CreateGroupParams & {
   ticker: string;
 };
 
@@ -37,8 +43,11 @@ export async function prepareCreateGroup(
 
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(transactions!, context);
+  const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    transactions!,
+    context
+  );
 
   this.addTransaction(externalAgents.createGroup, {}, rawTicker, rawExtrinsicPermissions);
 }
