@@ -236,14 +236,12 @@ export class Procedure<
       const { args: procArgs, transformer } = args;
       const ctx = await this.setup(procArgs, context, opts);
 
-      await this.setup(procArgs, context);
-
       const {
         roles,
         signerPermissions,
         agentPermissions,
         accountFrozen,
-      } = await this._checkAuthorization(procArgs, context);
+      } = await this._checkAuthorization(procArgs, ctx);
 
       if (accountFrozen) {
         throw new PolymeshError({
