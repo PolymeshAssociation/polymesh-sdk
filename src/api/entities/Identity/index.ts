@@ -260,8 +260,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const { fullAgents } = await token.details();
-      const agents = await token.corporateActions.getAgents();
+
+      const [{ fullAgents }, agents] = await Promise.all([
+        token.details(),
+        token.corporateActions.getAgents(),
+      ]);
 
       return (
         !!fullAgents.find(({ did: agentDid }) => agentDid === did) ||
