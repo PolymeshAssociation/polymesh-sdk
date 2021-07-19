@@ -332,6 +332,20 @@ describe('Identity class', () => {
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+
+      entityMockUtils.reset();
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgents: [new Identity({ did: 'anotherDid' }, context)],
+            fullAgents: [identity],
+          },
+        },
+      });
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
     });
 
     test('hasRole should check whether the Identity has the Token CAA role', async () => {
@@ -357,6 +371,19 @@ describe('Identity class', () => {
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          corporateActionsGetAgents: [new Identity({ did: 'otherdid' }, context)],
+          details: {
+            fullAgents: [identity],
+          },
+        },
+      });
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
     });
 
     test('hasRole should check whether the Identity has the CDD Provider role', async () => {
