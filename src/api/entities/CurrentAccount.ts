@@ -91,7 +91,7 @@ export class CurrentAccount extends Account {
       hasTokens = true;
     } else if (tokens === null) {
       hasTokens = false;
-    } else {
+    } else if (tokens) {
       const { type: tokensType, values: tokensValues } = currentTokens;
       if (tokens.length === 0) {
         hasTokens = true;
@@ -102,6 +102,8 @@ export class CurrentAccount extends Account {
           hasTokens = differenceBy(tokens, tokensValues, 'ticker').length === tokens.length;
         }
       }
+    } else {
+      hasTokens = true;
     }
 
     // these transactions are allowed to any account, independent of permissions
@@ -129,7 +131,7 @@ export class CurrentAccount extends Account {
       hasTransactions = true;
     } else if (transactions === null) {
       hasTransactions = false;
-    } else {
+    } else if (transactions) {
       const {
         type: transactionsType,
         values: transactionsValues,
@@ -159,6 +161,8 @@ export class CurrentAccount extends Account {
           );
         }
       }
+    } else {
+      hasTransactions = true;
     }
 
     let hasPortfolios;
@@ -166,7 +170,7 @@ export class CurrentAccount extends Account {
       hasPortfolios = true;
     } else if (portfolios === null) {
       hasPortfolios = false;
-    } else {
+    } else if (portfolios) {
       const { type: portfoliosType, values: portfoliosValues } = currentPortfolios;
 
       if (portfolios.length === 0) {
@@ -189,6 +193,8 @@ export class CurrentAccount extends Account {
             portfolios.length;
         }
       }
+    } else {
+      hasPortfolios = true;
     }
 
     return hasTokens && hasTransactions && hasPortfolios;

@@ -226,6 +226,10 @@ describe('CurrentAccount class', () => {
       });
 
       expect(result).toEqual(true);
+
+      result = await account.hasPermissions({});
+
+      expect(result).toEqual(true);
     });
 
     test('should exempt certain transactions from requiring permissions', async () => {
