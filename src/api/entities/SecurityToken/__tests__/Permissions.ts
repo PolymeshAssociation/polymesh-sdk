@@ -1,8 +1,12 @@
+import { StorageKey } from '@polkadot/types';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TransactionPermissions } from '~/types';
+import { tuple } from '~/types/utils';
+import * as utilsInternalModule from '~/utils/internal';
 
 import { Permissions } from '../Permissions';
 
@@ -59,6 +63,40 @@ describe('Issuance class', () => {
       const queue = await permission.createGroup(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getGroups', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should retrieve all the group permissions of the Security Token', async () => {
+      const id = new BigNumber(1);
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const permission = new Permissions(token, context);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions');
+
+      const rawEntries = [
+        tuple(
+          ({
+            args: [dsMockUtils.createMockTicker(), dsMockUtils.createMockU32(id.toNumber())],
+          } as unknown) as StorageKey,
+          dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
+        ),
+      ];
+
+      sinon
+        .stub(utilsInternalModule, 'requestPaginated')
+        .resolves({ entries: rawEntries, lastKey: null });
+
+      const result = await permission.getGroups();
+
+      expect(result.data.length).toEqual(1);
+      expect(result.data[0].id).toEqual(id);
+      expect(result.next).toBeNull();
     });
   });
 });

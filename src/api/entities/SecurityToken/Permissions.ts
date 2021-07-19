@@ -1,6 +1,14 @@
-import { Context, createGroup, CreateGroupParams, Namespace, SecurityToken } from '~/internal';
-import { ProcedureMethod } from '~/types';
-import { createProcedureMethod } from '~/utils/internal';
+import {
+  Context,
+  createGroup,
+  CreateGroupParams,
+  Namespace,
+  PermissionGroup,
+  SecurityToken,
+} from '~/internal';
+import { PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
+import { stringToTicker, u32ToBigNumber } from '~/utils/conversion';
+import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Security Token Permissions related functionality
@@ -24,4 +32,36 @@ export class Permissions extends Namespace<SecurityToken> {
    * Create a Security Token Agent Group
    */
   public createGroup: ProcedureMethod<CreateGroupParams, void>;
+
+  /**
+   * Retrieve all group permissions of the Security Token
+   *
+   * @note supports pagination
+   */
+  public async getGroups(paginationOpts?: PaginationOptions): Promise<ResultSet<PermissionGroup>> {
+    const {
+      context: {
+        polymeshApi: { query },
+      },
+      context,
+      parent: { ticker },
+    } = this;
+
+    const { entries, lastKey: next } = await requestPaginated(
+      query.externalAgents.groupPermissions,
+      {
+        arg: stringToTicker(ticker, context),
+        paginationOpts,
+      }
+    );
+
+    const data: PermissionGroup[] = entries.map(
+      ([storageKey]) => new PermissionGroup({ id: u32ToBigNumber(storageKey.args[1]) }, context)
+    );
+
+    return {
+      data,
+      next,
+    };
+  }
 }
