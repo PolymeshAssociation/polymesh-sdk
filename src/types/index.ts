@@ -774,6 +774,38 @@ export interface SimplePermissions {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
 
+export enum KnownPermissionGroup {
+  /**
+   * all transactions authorized
+   */
+  Full = 'Full',
+  /**
+   * not authorized:
+   *   - externalAgents
+   */
+  ExceptMeta = 'ExceptMeta',
+  /**
+   * authorized:
+   *   - corporateAction
+   *   - corporateBallot
+   *   - capitalDistribution
+   */
+  PolymeshV1Caa = 'PolymeshV1Caa',
+  /**
+   * authorized:
+   *   - asset.issue
+   *   - asset.redeem
+   *   - asset.controllerTransfer
+   *   - sto (except for sto.invest)
+   */
+  PolymeshV1Pia = 'PolymeshV1Pia',
+}
+
+/**
+ * Determines the subset of permissions an Agent has over a Security Token
+ */
+export type PermissionGroup = KnownPermissionGroup | { custom: BigNumber };
+
 /**
  * Authorization request data corresponding to type
  */
@@ -781,12 +813,14 @@ export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
+  | { type: AuthorizationType.BecomeAgent; value: string; permissionGroup: PermissionGroup }
   | {
       type: Exclude<
         AuthorizationType,
         | AuthorizationType.NoData
         | AuthorizationType.JoinIdentity
         | AuthorizationType.PortfolioCustody
+        | AuthorizationType.BecomeAgent
       >;
       value: string;
     };

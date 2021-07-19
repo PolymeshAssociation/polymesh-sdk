@@ -307,6 +307,22 @@ describe('Portfolio class', () => {
     });
   });
 
+  describe('method: quitCustody', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const portfolio = new Portfolio({ did: 'someDid' }, context);
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { portfolio }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await portfolio.quitCustody();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: setCustodian', () => {
     let did: string;
     let id: BigNumber;
