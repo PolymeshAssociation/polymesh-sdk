@@ -997,7 +997,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'archiveExtension', {
+      dsMockUtils.createTxStub('asset', 'claimClassicTicker', {
         meta: {
           args: [
             {
@@ -1008,15 +1008,15 @@ describe('Context class', () => {
         },
       });
 
-      expect(context.getTransactionArguments({ tag: TxTags.asset.ArchiveExtension })).toMatchObject(
-        [
-          {
-            type: TransactionArgumentType.Unknown,
-            name: 'someArg',
-            optional: false,
-          },
-        ]
-      );
+      expect(
+        context.getTransactionArguments({ tag: TxTags.asset.ClaimClassicTicker })
+      ).toMatchObject([
+        {
+          type: TransactionArgumentType.Unknown,
+          name: 'someArg',
+          optional: false,
+        },
+      ]);
     });
   });
 

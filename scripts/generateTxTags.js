@@ -1,5 +1,5 @@
 /* eslint-disable */
-const { Metadata } = require('@polkadot/metadata/Metadata');
+const { Metadata } = require('@polkadot/types');
 const { w3cwebsocket } = require('websocket');
 const { TypeRegistry } = require('@polkadot/types/create');
 const { stringCamelCase, stringUpperFirst } = require('@polkadot/util');
@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
 
-const websocket = new w3cwebsocket('wss://pmf.polymath.network');
+const websocket = new w3cwebsocket('wss://dev.polymesh.live');
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };
