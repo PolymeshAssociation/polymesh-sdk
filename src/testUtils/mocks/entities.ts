@@ -657,6 +657,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     totalSupply: new BigNumber(1000000),
     isDivisible: false,
     primaryIssuanceAgents: [],
+    fullAgents: [],
   },
   currentFundingRound: 'Series A',
   isFrozen: false,

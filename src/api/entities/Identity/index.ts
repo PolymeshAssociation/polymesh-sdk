@@ -250,16 +250,26 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const { primaryIssuanceAgents } = await token.details();
+      const { primaryIssuanceAgents, fullAgents } = await token.details();
 
-      return !!primaryIssuanceAgents.find(({ did: agentDid }) => agentDid === did);
+      return (
+        !!fullAgents.find(({ did: agentDid }) => agentDid === did) ||
+        !!primaryIssuanceAgents.find(({ did: agentDid }) => agentDid === did)
+      );
     } else if (isTokenCaaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const agents = await token.corporateActions.getAgents();
 
-      return !!agents.find(({ did: agentDid }) => agentDid === did);
+      const [{ fullAgents }, agents] = await Promise.all([
+        token.details(),
+        token.corporateActions.getAgents(),
+      ]);
+
+      return (
+        !!fullAgents.find(({ did: agentDid }) => agentDid === did) ||
+        !!agents.find(({ did: agentDid }) => agentDid === did)
+      );
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {

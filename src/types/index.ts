@@ -765,13 +765,13 @@ export interface SimplePermissions {
   /**
    * list of required Security Tokens permissions
    */
-  tokens: SecurityToken[] | null;
+  tokens?: SecurityToken[] | null;
   /**
    * list of required Transaction permissions
    */
-  transactions: TxTag[] | null;
+  transactions?: TxTag[] | null;
   /* list of required Portfolio permissions */
-  portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
+  portfolios?: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
 
 export enum KnownPermissionGroup {
