@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
 
 import { Authorizations, Context, Entity, Identity } from '~/internal';
-import { transactions } from '~/middleware/queries';
+import { transactions as MiddlewareTransactions } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
@@ -155,7 +155,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
-      transactions({
+      MiddlewareTransactions({
         block_id: blockNumber ? blockNumber.toNumber() : undefined,
         address: addressToKey(address, context),
         module_id: moduleId,
