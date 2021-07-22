@@ -1094,6 +1094,11 @@ export interface SignerValue {
   value: string;
 }
 
+export interface GroupDetails {
+  permissions: TransactionPermissions;
+  groups: TxGroup[];
+}
+
 export { TxTags, TxTag, ModuleName };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';

@@ -1,5 +1,7 @@
-import { Procedure, SecurityToken } from '~/internal';
-import { TransactionPermissions, TxGroup, TxTags } from '~/types';
+import { isEqual } from 'lodash';
+
+import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
@@ -27,8 +29,15 @@ export type Params = CreateGroupParams & {
 /**
  * @hidden
  */
+export interface Storage {
+  token: SecurityToken;
+}
+
+/**
+ * @hidden
+ */
 export async function prepareCreateGroup(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   args: Params
 ): Promise<void> {
   const {
@@ -38,11 +47,35 @@ export async function prepareCreateGroup(
       },
     },
     context,
+    storage: { token },
   } = this;
   const { ticker, permissions } = args;
 
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
+
+  const { data: groups } = await token.permissions.getGroups();
+
+  const currentTransactionPermissions: TransactionPermissions[] = [];
+
+  await Promise.all(
+    groups.map(async group => {
+      const details = await group.details();
+      currentTransactionPermissions.push(details.permissions);
+    })
+  );
+
+  if (
+    currentTransactionPermissions.some(transactionPermission =>
+      isEqual(transactionPermission, transactions)
+    )
+  ) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Already exists a group with exactly the same permissions',
+    });
+  }
+
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     transactions!,
@@ -55,15 +88,14 @@ export async function prepareCreateGroup(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params, void>,
-  { ticker }: Params
-): ProcedureAuthorization {
-  const { context } = this;
+export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
+  const {
+    storage: { token },
+  } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.CreateGroup],
-      tokens: [new SecurityToken({ ticker }, context)],
+      tokens: [token],
       portfolios: [],
     },
   };
@@ -72,5 +104,19 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const createGroup = (): Procedure<Params, void> =>
-  new Procedure(prepareCreateGroup, getAuthorization);
+export function prepareStorage(
+  this: Procedure<Params, void, Storage>,
+  { ticker }: Params
+): Storage {
+  const { context } = this;
+
+  return {
+    token: new SecurityToken({ ticker }, context),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const createGroup = (): Procedure<Params, void, Storage> =>
+  new Procedure(prepareCreateGroup, getAuthorization, prepareStorage);

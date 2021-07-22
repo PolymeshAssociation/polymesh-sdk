@@ -41,12 +41,14 @@ import {
   DistributionParticipant,
   DividendDistributionDetails,
   ExtrinsicData,
+  GroupDetails,
   IdentityBalance,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
   Leg,
   PercentageTransferRestriction,
+  PermissionGroup,
   PortfolioBalance,
   ResultSet,
   ScheduleDetails,
@@ -75,6 +77,7 @@ type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
+type MockPermissionGroup = Mocked<PermissionGroup>;
 // NOTE uncomment in Governance v2 upgrade
 // type MockProposal = Mocked<Proposal>;
 type MockVenue = Mocked<Venue>;
@@ -93,6 +96,7 @@ const mockInstanceContainer = {
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
   authorizationRequest: {} as MockAuthorizationRequest,
+  permissionGroup: {} as MockPermissionGroup,
   // NOTE uncomment in Governance v2 upgrade
   // proposal: {} as MockProposal,
   account: {} as MockAccount,
@@ -140,6 +144,7 @@ interface SecurityTokenOptions {
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
+  permissionsGetGroups?: ResultSet<PermissionGroup>;
 }
 
 interface AuthorizationRequestOptions {
@@ -148,6 +153,10 @@ interface AuthorizationRequestOptions {
   issuer?: Identity;
   expiry?: Date | null;
   data?: Authorization;
+}
+
+interface PermissionGroupOptions {
+  details?: GroupDetails;
 }
 
 interface ProposalOptions {
@@ -268,6 +277,7 @@ let currentAccountConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
+let permissionGroupConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
 let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
@@ -288,6 +298,7 @@ let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let securityTokenCorporateActionsGetAgentsStub: SinonStub;
 let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
+let securityTokenPermissionsGetGroupsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -340,6 +351,7 @@ let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
 let dividendDistributionGetParticipantStub: SinonStub;
 let dividendDistributionCheckpointStub: SinonStub;
+let permissionGroupDetailsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -401,6 +413,15 @@ const MockAuthorizationRequestClass = class {
    */
   constructor(...args: unknown[]) {
     return authorizationRequestConstructorStub(...args);
+  }
+};
+
+const MockPermissionGroupClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return permissionGroupConstructorStub(...args);
   }
 };
 
@@ -529,6 +550,11 @@ export const mockAuthorizationRequestModule = (path: string) => (): Record<strin
   AuthorizationRequest: MockAuthorizationRequestClass,
 });
 
+export const mockPermissionGroupModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  PermissionGroup: MockPermissionGroupClass,
+});
+
 export const mockProposalModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Proposal: MockProposalClass,
@@ -650,6 +676,10 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     defaultTaxWithholding: new BigNumber(10),
     taxWithholdings: [],
   },
+  permissionsGetGroups: {
+    data: [],
+    next: null,
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -660,6 +690,10 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
+const defaultPermissionGroupOptions: PermissionGroupOptions = {
+  details: {} as GroupDetails,
+};
+let permissionGroupOptions = defaultPermissionGroupOptions;
 const defaultVenueOptions: VenueOptions = {
   id: new BigNumber(1),
   details: {
@@ -1009,6 +1043,36 @@ function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
 
 /**
  * @hidden
+ * Configure the Permission Group instance
+ */
+function configurePermissionGroup(opts: PermissionGroupOptions): void {
+  const permissionGroup = ({
+    details: permissionGroupDetailsStub.resolves(opts.details),
+  } as unknown) as MockPermissionGroup;
+
+  Object.assign(mockInstanceContainer.permissionGroup, permissionGroup);
+  permissionGroupConstructorStub.callsFake(args => {
+    const value = merge({}, permissionGroup, args);
+    Object.setPrototypeOf(value, require('~/internal').PermissionGroup.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Permission Group instance
+ */
+function initPermissionGroup(opts?: PermissionGroupOptions): void {
+  permissionGroupConstructorStub = sinon.stub();
+  permissionGroupDetailsStub = sinon.stub();
+
+  permissionGroupOptions = { ...defaultPermissionGroupOptions, ...opts };
+
+  configurePermissionGroup(permissionGroupOptions);
+}
+
+/**
+ * @hidden
  * Configure the Security Token instance
  */
 function configureSecurityToken(opts: SecurityTokenOptions): void {
@@ -1042,6 +1106,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
         opts.corporateActionsGetDefaults
       ),
     },
+    permissions: {
+      getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
+    },
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -1067,6 +1134,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
   securityTokenCorporateActionsGetAgentsStub = sinon.stub();
   securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
+  securityTokenPermissionsGetGroupsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1708,6 +1776,7 @@ export function initMocks(opts?: {
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
+  permissionGroupOptions?: PermissionGroupOptions;
   proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
@@ -1739,6 +1808,9 @@ export function initMocks(opts?: {
 
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
+
+  // Permission Group
+  initPermissionGroup(opts?.permissionGroupOptions);
 
   // Instruction Request
   initInstruction(opts?.instructionOptions);
@@ -1787,6 +1859,7 @@ export function cleanup(): void {
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
+  mockInstanceContainer.permissionGroup = {} as MockPermissionGroup;
   // NOTE uncomment in Governance v2 upgrade
   // mockInstanceContainer.proposal = {} as MockProposal;
   mockInstanceContainer.venue = {} as MockVenue;
@@ -2242,6 +2315,20 @@ export function getSecurityTokenCorporateActionsGetDefaultsStub(
 
 /**
  * @hidden
+ * Retrieve the stub of the `SecurityToken.permissions.getGroups` method
+ */
+export function getSecurityTokenPermissionsGetGroupsStub(
+  groups?: Partial<ResultSet<PermissionGroup>>
+): SinonStub {
+  if (groups) {
+    return securityTokenPermissionsGetGroupsStub.resolves(groups);
+  }
+
+  return securityTokenPermissionsGetGroupsStub;
+}
+
+/**
+ * @hidden
  * Retrieve an Authorization Request instance
  */
 export function getAuthorizationRequestInstance(
@@ -2252,6 +2339,18 @@ export function getAuthorizationRequestInstance(
   }
 
   return new MockAuthorizationRequestClass() as MockAuthorizationRequest;
+}
+
+/**
+ * @hidden
+ * Retrieve a PermissionGroup instance
+ */
+export function getPermissionGroupInstance(opts?: PermissionGroupOptions): MockPermissionGroup {
+  if (opts) {
+    configurePermissionGroup({ ...defaultPermissionGroupOptions, ...opts });
+  }
+
+  return new MockPermissionGroupClass() as MockPermissionGroup;
 }
 
 /**
@@ -2586,4 +2685,15 @@ export function getDividendDistributionGetParticipantStub(
   }
 
   return dividendDistributionGetParticipantStub.resolves(getParticipant);
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `PermissionGroup.details` method
+ */
+export function getPermissionGroupDetailsStub(details?: GroupDetails): SinonStub {
+  if (details) {
+    return permissionGroupDetailsStub.resolves(details);
+  }
+  return permissionGroupDetailsStub;
 }

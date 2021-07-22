@@ -7,7 +7,7 @@ import {
   SecurityToken,
 } from '~/internal';
 import { PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
-import { stringToTicker, u32ToBigNumber } from '~/utils/conversion';
+import { stringToTicker, tickerToString, u32ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
@@ -56,7 +56,11 @@ export class Permissions extends Namespace<SecurityToken> {
     );
 
     const data: PermissionGroup[] = entries.map(
-      ([storageKey]) => new PermissionGroup({ id: u32ToBigNumber(storageKey.args[1]) }, context)
+      ([storageKey]) =>
+        new PermissionGroup(
+          { ticker: tickerToString(storageKey.args[0]), id: u32ToBigNumber(storageKey.args[1]) },
+          context
+        )
     );
 
     return {

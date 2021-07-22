@@ -73,8 +73,11 @@ describe('Issuance class', () => {
 
     test('should retrieve all the group permissions of the Security Token', async () => {
       const id = new BigNumber(1);
+      const ticker = 'TICKERNAME';
       const context = dsMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance();
+      const token = entityMockUtils.getSecurityTokenInstance({
+        ticker,
+      });
       const permission = new Permissions(token, context);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions');
@@ -82,7 +85,7 @@ describe('Issuance class', () => {
       const rawEntries = [
         tuple(
           ({
-            args: [dsMockUtils.createMockTicker(), dsMockUtils.createMockU32(id.toNumber())],
+            args: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id.toNumber())],
           } as unknown) as StorageKey,
           dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
         ),
