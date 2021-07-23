@@ -812,6 +812,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
     expect((result as Account).address).toBe(value);
 
     value = 'someDid';
+
     signerValue = { type: SignerType.Identity, value };
 
     result = signerValueToSigner(signerValue, context);
@@ -4217,6 +4218,7 @@ describe('transactionToTxTag', () => {
 //   });
 // });
 
+// NOTE uncomment in Governance v2 upgrade
 // describe('meshProposalStateToProposalState', () => {
 //   beforeAll(() => {
 //     dsMockUtils.initMocks();
@@ -4230,43 +4232,42 @@ describe('transactionToTxTag', () => {
 //     dsMockUtils.cleanup();
 //   });
 
-//   // NOTE uncomment in Governance v2 upgrade
-//   // test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
-//   //   let fakeResult: ProposalState = ProposalState.Cancelled;
+//   test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+//     let fakeResult: ProposalState = ProposalState.Cancelled;
 
-//   //   let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     let proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//   //   let result = meshProposalStateToProposalState(proposalState);
-//   //   expect(result).toEqual(fakeResult);
+//     let result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-//   //   fakeResult = ProposalState.Killed;
+//     fakeResult = ProposalState.Killed;
 
-//   //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//   //   result = meshProposalStateToProposalState(proposalState);
-//   //   expect(result).toEqual(fakeResult);
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-//   //   fakeResult = ProposalState.Pending;
+//     fakeResult = ProposalState.Pending;
 
-//   //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//   //   result = meshProposalStateToProposalState(proposalState);
-//   //   expect(result).toEqual(fakeResult);
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-//   //   fakeResult = ProposalState.Referendum;
+//     fakeResult = ProposalState.Referendum;
 
-//   //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//   //   result = meshProposalStateToProposalState(proposalState);
-//   //   expect(result).toEqual(fakeResult);
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-//   //   fakeResult = ProposalState.Rejected;
+//     fakeResult = ProposalState.Rejected;
 
-//   //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//   //   result = meshProposalStateToProposalState(proposalState);
-//   //   expect(result).toEqual(fakeResult);
-//   // });
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
+//   });
 // });
 
 describe('meshAffirmationStatusToAffirmationStatus', () => {
