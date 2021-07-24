@@ -61,11 +61,9 @@ describe('Context class', () => {
   });
 
   beforeEach(() => {
+    dsMockUtils.setConstMock('system', 'ss58Prefix', { returnValue: dsMockUtils.createMockU8(42) });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
       returnValue: dsMockUtils.createMockIdentityId('someDid'),
-    });
-    dsMockUtils.createRpcStub('system', 'properties', {
-      returnValue: { ss58Format: dsMockUtils.createMockOption(dsMockUtils.createMockU8(42)) },
     });
   });
 
@@ -274,9 +272,6 @@ describe('Context class', () => {
     });
 
     test('should create a Context object without Pair attached', async () => {
-      dsMockUtils.createRpcStub('system', 'properties', {
-        returnValue: { ss58Format: dsMockUtils.createMockOption() },
-      });
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: [],

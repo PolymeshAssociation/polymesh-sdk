@@ -113,6 +113,7 @@ import {
 import { InstructionStatus, ScopeClaimProof } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import { padString } from '~/utils/internal';
 
 import {
   accountIdToString,
@@ -451,7 +452,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', ticker).returns(rawTicker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -521,7 +522,7 @@ describe('stringToTicker and tickerToString', () => {
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', value).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(value, 12)).returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
@@ -1262,7 +1263,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       })
       .returns(fakeResult);
-    createTypeStub.withArgs('Ticker', ticker).returns(rawTicker);
+    createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
     createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
 
     result = permissionsToMeshPermissions(value, context);
@@ -1379,7 +1380,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       })
       .returns(fakeResult);
 
-    tickers.forEach((t, i) => createTypeStub.withArgs('Ticker', t).returns(rawTickers[i]));
+    tickers.forEach((ticker, i) =>
+      createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTickers[i])
+    );
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
@@ -6126,7 +6129,7 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId.toNumber());
     const fakeResult = ('CAId' as unknown) as CAId;
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', args.ticker).returns(ticker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
     dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
 
     dsMockUtils
