@@ -2,12 +2,19 @@ import {
   Context,
   createGroup,
   CreateGroupParams,
+  Identity,
   Namespace,
   PermissionGroup,
   SecurityToken,
 } from '~/internal';
-import { PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
-import { stringToTicker, tickerToString, u32ToBigNumber } from '~/utils/conversion';
+import { ExternalAgent, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
+import {
+  agentGroupToPermissionGroup,
+  identityIdToString,
+  stringToTicker,
+  tickerToString,
+  u32ToBigNumber,
+} from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 
 /**
@@ -67,5 +74,34 @@ export class Permissions extends Namespace<SecurityToken> {
       data,
       next,
     };
+  }
+
+  /**
+   * Retrieve a list of external agents of the Security Token
+   */
+  public async getAgents(): Promise<ExternalAgent[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { externalAgents },
+        },
+      },
+      parent: { ticker },
+      context,
+    } = this;
+
+    const groupOfAgent = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
+
+    const agentIdentities: ExternalAgent[] = [];
+
+    groupOfAgent.forEach(([storageKey, agentGroup]) => {
+      const rawAgentGroup = agentGroup.unwrap();
+      agentIdentities.push({
+        identity: new Identity({ did: identityIdToString(storageKey.args[1]) }, context),
+        group: agentGroupToPermissionGroup(rawAgentGroup),
+      });
+    });
+
+    return agentIdentities;
   }
 }

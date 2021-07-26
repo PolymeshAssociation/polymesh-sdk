@@ -2,9 +2,9 @@ import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { Context, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { TransactionPermissions } from '~/types';
+import { KnownPermissionGroup, TransactionPermissions } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -16,10 +16,23 @@ jest.mock(
 );
 
 describe('Issuance class', () => {
+  let ticker: string;
+  let token: SecurityToken;
+  let context: Context;
+  let permission: Permissions;
+
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
+
+    ticker = 'SOME_TOKEN';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    token = entityMockUtils.getSecurityTokenInstance({ ticker });
+    permission = new Permissions(token, context);
   });
 
   afterEach(() => {
@@ -44,10 +57,6 @@ describe('Issuance class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance();
-      const permission = new Permissions(token, context);
-
       const args = {
         ticker: token.ticker,
         permissions: { transactions: {} as TransactionPermissions },
@@ -73,13 +82,6 @@ describe('Issuance class', () => {
 
     test('should retrieve all the group permissions of the Security Token', async () => {
       const id = new BigNumber(1);
-      const ticker = 'TICKERNAME';
-      const context = dsMockUtils.getContextInstance();
-      const token = entityMockUtils.getSecurityTokenInstance({
-        ticker,
-      });
-      const permission = new Permissions(token, context);
-
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions');
 
       const rawEntries = [
@@ -100,6 +102,33 @@ describe('Issuance class', () => {
       expect(result.data.length).toEqual(1);
       expect(result.data[0].id).toEqual(id);
       expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: getAgents', () => {
+    test('should retrieve a list of agent identities', async () => {
+      const did = 'someDid';
+      const otherDid = 'otherDid';
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Caa'))
+          ),
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+          ),
+        ],
+      });
+
+      const result = await permission.getAgents();
+
+      expect(result[0].identity.did).toEqual(did);
+      expect(result[1].identity.did).toEqual(otherDid);
+      expect(result[0].group).toEqual(KnownPermissionGroup.PolymeshV1Caa);
+      expect(result[1].group).toEqual(KnownPermissionGroup.PolymeshV1Pia);
     });
   });
 });

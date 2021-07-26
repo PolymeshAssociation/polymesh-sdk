@@ -3,6 +3,7 @@ import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
+  AGId,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
   CddId,
@@ -118,6 +119,7 @@ import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '
 import {
   accountIdToString,
   addressToKey,
+  agentGroupToPermissionGroup,
   assetComplianceResultToCompliance,
   assetIdentifierToTokenIdentifier,
   assetNameToString,
@@ -1106,7 +1108,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 });
 
-describe('permissionGroupToAgentGroup', () => {
+describe('permissionGroupToAgentGroup and agentGroupToPermissionGroup', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1144,6 +1146,35 @@ describe('permissionGroupToAgentGroup', () => {
     result = permissionGroupToAgentGroup(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('agentGroupToPermissionGroup should convert a polkadot AgentGroup object to an PermissionGroup', () => {
+    let agentGroup = dsMockUtils.createMockAgentGroup('Full');
+
+    let result = agentGroupToPermissionGroup(agentGroup);
+    expect(result).toEqual(KnownPermissionGroup.Full);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
+
+    result = agentGroupToPermissionGroup(agentGroup);
+    expect(result).toEqual(KnownPermissionGroup.ExceptMeta);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
+
+    result = agentGroupToPermissionGroup(agentGroup);
+    expect(result).toEqual(KnownPermissionGroup.PolymeshV1Caa);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+
+    result = agentGroupToPermissionGroup(agentGroup);
+    expect(result).toEqual(KnownPermissionGroup.PolymeshV1Pia);
+
+    const id = new BigNumber(1);
+    const rawAgId = dsMockUtils.createMockU32(id.toNumber()) as AGId;
+    agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
+
+    result = agentGroupToPermissionGroup(agentGroup);
+    expect(result).toEqual({ custom: id });
   });
 });
 

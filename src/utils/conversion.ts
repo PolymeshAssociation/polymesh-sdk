@@ -146,6 +146,7 @@ import {
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
+  KnownPermissionGroup,
   KnownTokenType,
   MultiClaimCondition,
   PermissionGroup,
@@ -1027,6 +1028,23 @@ export function permissionGroupToAgentGroup(
       ? permissionGroup
       : { custom: numberToU32(permissionGroup.custom, context) }
   );
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(agentGroup: AgentGroup): PermissionGroup {
+  if (agentGroup.isFull) {
+    return KnownPermissionGroup.Full;
+  } else if (agentGroup.isExceptMeta) {
+    return KnownPermissionGroup.ExceptMeta;
+  } else if (agentGroup.isPolymeshV1Caa) {
+    return KnownPermissionGroup.PolymeshV1Caa;
+  } else if (agentGroup.isPolymeshV1Pia) {
+    return KnownPermissionGroup.PolymeshV1Pia;
+  } else {
+    return { custom: u32ToBigNumber(agentGroup.asCustom) };
+  }
 }
 
 /**
