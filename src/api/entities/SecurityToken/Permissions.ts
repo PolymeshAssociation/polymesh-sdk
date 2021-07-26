@@ -33,12 +33,22 @@ export class Permissions extends Namespace<SecurityToken> {
       { getProcedureAndArgs: args => [createGroup, { ticker, ...args }] },
       context
     );
+
+    this.inviteAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [inviteAccount, { ticker, ...args }] },
+      context
+    );
   }
 
   /**
    * Create a Security Token Agent Group
    */
   public createGroup: ProcedureMethod<CreateGroupParams, void>;
+
+  /**
+   * Invite a new external agent to this Security Token
+   */
+  public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
 
   /**
    * Retrieve all group permissions of the Security Token
