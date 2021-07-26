@@ -1380,8 +1380,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       })
       .returns(fakeResult);
 
-    tickers.forEach((ticker, i) =>
-      createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTickers[i])
+    tickers.forEach((t, i) =>
+      createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
     );
 
     result = permissionsToMeshPermissions(value, context);
