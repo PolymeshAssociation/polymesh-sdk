@@ -27,6 +27,7 @@ import {
   DistributionWithDetails,
   Ensured,
   ErrorCode,
+  GroupedInstructions,
   isCddProviderRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
@@ -562,7 +563,81 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve all Instructions where this Identity is a participant,
+   *   grouped by status
+   */
+  public async getInstructions(): Promise<GroupedInstructions> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      did,
+      portfolios,
+      context,
+    } = this;
+
+    const ownedPortfolios = await portfolios.getPortfolios();
+
+    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
+      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
+      this.portfolios.getCustodiedPortfolios(),
+    ]);
+
+    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
+
+    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
+
+    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+
+    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
+
+    const affirmed: Instruction[] = [];
+    const rejected: Instruction[] = [];
+    const pending: Instruction[] = [];
+    const failed: Instruction[] = [];
+
+    await P.each(portfolioIdChunks, async portfolioIdChunk => {
+      const auths = await P.map(portfolioIdChunk, portfolioId =>
+        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+      );
+
+      const uniqueEntries = uniqBy(
+        flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
+        ({ id }) => id.toNumber()
+      );
+      const instructions = await settlement.instructionDetails.multi<MeshInstruction>(
+        uniqueEntries.map(({ id }) => id)
+      );
+
+      uniqueEntries.forEach(({ id, status }, index) => {
+        const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
+
+        if (instructions[index].status.isFailed) {
+          failed.push(instruction);
+        } else if (status.isAffirmed) {
+          affirmed.push(instruction);
+        } else if (status.isRejected) {
+          rejected.push(instruction);
+        } else if (status.isPending) {
+          pending.push(instruction);
+        }
+      });
+    });
+
+    return {
+      affirmed,
+      rejected,
+      pending,
+      failed,
+    };
+  }
+
+  /**
    * Retrieve all pending Instructions involving this Identity
+   *
+   * @deprecated in favor of `getInstructions`
    */
   public async getPendingInstructions(): Promise<Instruction[]> {
     const {
