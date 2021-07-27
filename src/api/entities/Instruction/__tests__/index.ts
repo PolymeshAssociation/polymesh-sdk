@@ -4,7 +4,7 @@ import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Instruction, TransactionQueue } from '~/internal';
-import { eventByIndexedArgs, settlements } from '~/middleware/queries';
+import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
