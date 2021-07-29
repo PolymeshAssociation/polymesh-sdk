@@ -122,6 +122,14 @@ describe('createGroup procedure', () => {
                 transactionGroups: [],
               },
             }),
+            entityMockUtils.getCustomPermissionGroupInstance({
+              ticker,
+              id: new BigNumber(2),
+              getPermissions: {
+                transactions: null,
+                transactionGroups: [],
+              },
+            }),
           ],
           next: null,
         },

@@ -285,6 +285,28 @@ interface DividendDistributionOptions {
   getParticipant?: Partial<DistributionParticipant> | null;
 }
 
+interface MockOptions {
+  identityOptions?: IdentityOptions;
+  currentIdentityOptions?: IdentityOptions;
+  accountOptions?: AccountOptions;
+  currentAccountOptions?: CurrentAccountOptions;
+  tickerReservationOptions?: TickerReservationOptions;
+  securityTokenOptions?: SecurityTokenOptions;
+  authorizationRequestOptions?: AuthorizationRequestOptions;
+  proposalOptions?: ProposalOptions;
+  venueOptions?: VenueOptions;
+  instructionOptions?: InstructionOptions;
+  numberedPortfolioOptions?: NumberedPortfolioOptions;
+  defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
+  checkpointOptions?: CheckpointOptions;
+  checkpointScheduleOptions?: CheckpointScheduleOptions;
+  corporateActionOptions?: CorporateActionOptions;
+  dividendDistributionOptions?: DividendDistributionOptions;
+  customPermissionGroupOptions?: CustomPermissionGroupOptions;
+  knownPermissionGroupOptions?: KnownPermissionGroupOptions;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -1745,27 +1767,7 @@ function initDividendDistribution(opts?: DividendDistributionOptions): void {
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
-export function configureMocks(opts?: {
-  identityOptions?: IdentityOptions;
-  currentIdentityOptions?: IdentityOptions;
-  accountOptions?: AccountOptions;
-  currentAccountOptions?: CurrentAccountOptions;
-  tickerReservationOptions?: TickerReservationOptions;
-  securityTokenOptions?: SecurityTokenOptions;
-  authorizationRequestOptions?: AuthorizationRequestOptions;
-  proposalOptions?: ProposalOptions;
-  venueOptions?: VenueOptions;
-  instructionOptions?: InstructionOptions;
-  numberedPortfolioOptions?: NumberedPortfolioOptions;
-  defaultPortfolioOptions?: DefaultPortfolioOptions;
-  stoOptions?: StoOptions;
-  checkpointOptions?: CheckpointOptions;
-  checkpointScheduleOptions?: CheckpointScheduleOptions;
-  corporateActionOptions?: CorporateActionOptions;
-  dividendDistributionOptions?: DividendDistributionOptions;
-  customPermissionGroupOptions?: CustomPermissionGroupOptions;
-  knownPermissionGroupOptions?: KnownPermissionGroupOptions;
-}): void {
+export function configureMocks(opts?: MockOptions): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
   configureIdentity(tempIdentityOptions);
@@ -1891,27 +1893,7 @@ export function configureMocks(opts?: {
  *
  * Initialize the factory by adding default all-purpose functionality to the mock manager
  */
-export function initMocks(opts?: {
-  identityOptions?: IdentityOptions;
-  currentIdentityOptions?: IdentityOptions;
-  accountOptions?: AccountOptions;
-  currentAccountOptions?: CurrentAccountOptions;
-  tickerReservationOptions?: TickerReservationOptions;
-  securityTokenOptions?: SecurityTokenOptions;
-  authorizationRequestOptions?: AuthorizationRequestOptions;
-  proposalOptions?: ProposalOptions;
-  venueOptions?: VenueOptions;
-  instructionOptions?: InstructionOptions;
-  numberedPortfolioOptions?: NumberedPortfolioOptions;
-  defaultPortfolioOptions?: DefaultPortfolioOptions;
-  stoOptions?: StoOptions;
-  checkpointOptions?: CheckpointOptions;
-  checkpointScheduleOptions?: CheckpointScheduleOptions;
-  corporateActionOptions?: CorporateActionOptions;
-  dividendDistributionOptions?: DividendDistributionOptions;
-  customPermissionGroupOptions?: CustomPermissionGroupOptions;
-  knownPermissionGroupOptions?: KnownPermissionGroupOptions;
-}): void {
+export function initMocks(opts?: MockOptions): void {
   // Identity
   initIdentity(opts?.identityOptions);
 
