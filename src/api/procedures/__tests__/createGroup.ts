@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
@@ -113,10 +114,12 @@ describe('createGroup procedure', () => {
         ticker,
         permissionsGetGroups: {
           data: [
-            entityMockUtils.getPermissionGroupInstance({
-              details: {
-                permissions: permissions.transactions,
-                groups: [],
+            entityMockUtils.getCustomPermissionGroupInstance({
+              ticker,
+              id: new BigNumber(1),
+              getPermissions: {
+                transactions: permissions.transactions,
+                transactionGroups: [],
               },
             }),
           ],
