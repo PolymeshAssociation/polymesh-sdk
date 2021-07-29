@@ -118,6 +118,23 @@ describe('Procedure class', () => {
         accountFrozen: false,
       });
 
+      context = dsMockUtils.getContextInstance({ hasTokenPermissions: true });
+      authFunc.resolves({
+        roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        permissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          portfolios: null,
+        },
+      });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        agentPermissions: true,
+        signerPermissions: true,
+        roles: true,
+        accountFrozen: false,
+      });
+
       procedure = new Procedure(prepareFunc, { permissions: true, roles: true });
 
       result = await procedure.checkAuthorization(args, context);
