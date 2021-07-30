@@ -102,6 +102,7 @@ import {
   Checkpoint,
   CheckpointSchedule,
   Context,
+  CustomPermissionGroup,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
@@ -146,10 +147,10 @@ import {
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
-  KnownPermissionGroup,
   KnownTokenType,
   MultiClaimCondition,
   PermissionGroup,
+  PermissionGroupType,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -1035,13 +1036,13 @@ export function permissionGroupToAgentGroup(
  */
 export function agentGroupToPermissionGroup(agentGroup: AgentGroup): PermissionGroup {
   if (agentGroup.isFull) {
-    return KnownPermissionGroup.Full;
+    return PermissionGroupType.Full;
   } else if (agentGroup.isExceptMeta) {
-    return KnownPermissionGroup.ExceptMeta;
+    return PermissionGroupType.ExceptMeta;
   } else if (agentGroup.isPolymeshV1Caa) {
-    return KnownPermissionGroup.PolymeshV1Caa;
+    return PermissionGroupType.PolymeshV1Caa;
   } else if (agentGroup.isPolymeshV1Pia) {
-    return KnownPermissionGroup.PolymeshV1Pia;
+    return PermissionGroupType.PolymeshV1Pia;
   } else {
     return { custom: u32ToBigNumber(agentGroup.asCustom) };
   }
@@ -1063,7 +1064,13 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
-    value = [auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context)];
+    if (auth.value instanceof CustomPermissionGroup) {
+      const { ticker, id } = auth.value;
+      value = [ticker, permissionGroupToAgentGroup({ custom: id }, context)];
+    } else {
+      const { ticker, type } = auth.value;
+      value = [ticker, permissionGroupToAgentGroup(type, context)];
+    }
   } else {
     value = auth.value;
   }

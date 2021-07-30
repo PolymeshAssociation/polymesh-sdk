@@ -1,85 +1,20 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity } from '~/internal';
-import { GroupDetails } from '~/types';
-import {
-  extrinsicPermissionsToTransactionPermissions,
-  numberToU32,
-  stringToTicker,
-  transactionPermissionsToTxGroups,
-} from '~/utils/conversion';
+import { Entity } from '~/internal';
+import { GroupPermissions, PermissionGroupType } from '~/types';
 
 export interface UniqueIdentifiers {
-  id: BigNumber;
   ticker: string;
+  id?: BigNumber;
+  type?: PermissionGroupType;
 }
 
 /**
  * Represents a group of permissions for a Security Token
  */
-export class PermissionGroup extends Entity<UniqueIdentifiers, string> {
+export abstract class PermissionGroup extends Entity<UniqueIdentifiers, unknown> {
   /**
-   * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Retrieve the Permissions associated with this Permission Group
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { id, ticker } = identifier as UniqueIdentifiers;
-
-    return id instanceof BigNumber && typeof ticker === 'string';
-  }
-
-  public id: BigNumber;
-  public ticker: string;
-
-  /**
-   * @hidden
-   */
-  public constructor(identifiers: UniqueIdentifiers, context: Context) {
-    super(identifiers, context);
-
-    const { id, ticker } = identifiers;
-
-    this.id = id;
-    this.ticker = ticker;
-  }
-
-  /**
-   * Return the Group's ID
-   */
-  public toJson(): string {
-    return this.id.toString();
-  }
-
-  /**
-   * Retrieve information specific to this Permission Group
-   */
-  public async details(): Promise<GroupDetails> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { externalAgents },
-        },
-      },
-      context,
-      ticker,
-      id,
-    } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-    const rawAgId = numberToU32(id, context);
-
-    const rawGroupPermissions = await externalAgents.groupPermissions(rawTicker, rawAgId);
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transactionPermissions = extrinsicPermissionsToTransactionPermissions(
-      rawGroupPermissions.unwrap()
-    )!;
-
-    const txGroups = transactionPermissionsToTxGroups(transactionPermissions);
-
-    return {
-      permissions: transactionPermissions,
-      groups: txGroups,
-    };
-  }
+  public abstract getPermissions(): Promise<GroupPermissions>;
 }

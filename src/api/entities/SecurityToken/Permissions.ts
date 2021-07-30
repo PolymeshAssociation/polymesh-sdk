@@ -2,9 +2,9 @@ import {
   Context,
   createGroup,
   CreateGroupParams,
+  CustomPermissionGroup,
   Identity,
   Namespace,
-  PermissionGroup,
   SecurityToken,
 } from '~/internal';
 import { ExternalAgent, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
@@ -51,11 +51,13 @@ export class Permissions extends Namespace<SecurityToken> {
   public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
 
   /**
-   * Retrieve all group permissions of the Security Token
+   * Retrieve all custom group permissions of the Security Token
    *
    * @note supports pagination
    */
-  public async getGroups(paginationOpts?: PaginationOptions): Promise<ResultSet<PermissionGroup>> {
+  public async getGroups(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<CustomPermissionGroup>> {
     const {
       context: {
         polymeshApi: { query },
@@ -72,9 +74,9 @@ export class Permissions extends Namespace<SecurityToken> {
       }
     );
 
-    const data: PermissionGroup[] = entries.map(
+    const data: CustomPermissionGroup[] = entries.map(
       ([storageKey]) =>
-        new PermissionGroup(
+        new CustomPermissionGroup(
           { ticker: tickerToString(storageKey.args[0]), id: u32ToBigNumber(storageKey.args[1]) },
           context
         )

@@ -174,7 +174,7 @@ export class Procedure<
 
       const { tokens, transactions } = permissions;
       // we assume the same permissions are required for each token
-      if (tokens?.length) {
+      if (tokens?.length && transactions?.length) {
         identity = await fetchIdentity();
         permissionsPromises.push(
           ...tokens.map(token => identity.hasTokenPermissions({ token, transactions }))

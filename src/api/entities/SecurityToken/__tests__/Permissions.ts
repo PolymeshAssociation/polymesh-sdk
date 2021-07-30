@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { Context, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { KnownPermissionGroup, TransactionPermissions } from '~/types';
+import { PermissionGroupType, TransactionPermissions } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -127,8 +127,8 @@ describe('Issuance class', () => {
 
       expect(result[0].identity.did).toEqual(did);
       expect(result[1].identity.did).toEqual(otherDid);
-      expect(result[0].group).toEqual(KnownPermissionGroup.PolymeshV1Caa);
-      expect(result[1].group).toEqual(KnownPermissionGroup.PolymeshV1Pia);
+      expect(result[0].group).toEqual(PermissionGroupType.PolymeshV1Caa);
+      expect(result[1].group).toEqual(PermissionGroupType.PolymeshV1Pia);
     });
   });
 });

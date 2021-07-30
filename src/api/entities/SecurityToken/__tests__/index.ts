@@ -110,6 +110,14 @@ describe('SecurityToken class', () => {
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
           ),
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(owner)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
+          ),
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta'))
+          ),
         ],
       });
     });
@@ -129,6 +137,7 @@ describe('SecurityToken class', () => {
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
       expect(details.primaryIssuanceAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
+      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did: owner })]);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         entries: [
@@ -141,6 +150,7 @@ describe('SecurityToken class', () => {
 
       details = await securityToken.details();
       expect(details.primaryIssuanceAgents).toEqual([]);
+      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
     });
 
     test('should allow subscription', async () => {
@@ -167,6 +177,7 @@ describe('SecurityToken class', () => {
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
+          fullAgents: [entityMockUtils.getIdentityInstance({ did: owner })],
         })
       );
     });
