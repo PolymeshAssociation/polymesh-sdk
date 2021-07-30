@@ -87,27 +87,6 @@ describe('createGroup procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a create group transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        ticker,
-      }),
-    });
-
-    await prepareCreateGroup.call(proc, {
-      ticker,
-      permissions: { transactions: permissions.transactions },
-    });
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsCreateGroupTransaction,
-      {},
-      rawTicker,
-      rawExtrinsicPermissions
-    );
-  });
-
   test('should throw an error if already exists a group with exactly the same permissions', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
@@ -119,14 +98,6 @@ describe('createGroup procedure', () => {
               id: new BigNumber(1),
               getPermissions: {
                 transactions: permissions.transactions,
-                transactionGroups: [],
-              },
-            }),
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: new BigNumber(2),
-              getPermissions: {
-                transactions: null,
                 transactionGroups: [],
               },
             }),
@@ -142,6 +113,40 @@ describe('createGroup procedure', () => {
         permissions: { transactions: permissions.transactions },
       })
     ).rejects.toThrow('Already exists a group with exactly the same permissions');
+  });
+
+  test('should add a create group transaction to the queue', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      token: entityMockUtils.getSecurityTokenInstance({
+        ticker,
+        permissionsGetGroups: {
+          data: [
+            entityMockUtils.getCustomPermissionGroupInstance({
+              ticker,
+              id: new BigNumber(2),
+              getPermissions: {
+                transactions: null,
+                transactionGroups: [],
+              },
+            }),
+          ],
+          next: null,
+        },
+      }),
+    });
+
+    await prepareCreateGroup.call(proc, {
+      ticker,
+      permissions: { transactions: permissions.transactions },
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      externalAgentsCreateGroupTransaction,
+      {},
+      rawTicker,
+      rawExtrinsicPermissions
+    );
   });
 
   describe('prepareStorage', () => {
