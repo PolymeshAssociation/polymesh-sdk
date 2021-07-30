@@ -102,6 +102,7 @@ import {
   Checkpoint,
   CheckpointSchedule,
   Context,
+  CustomPermissionGroup,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
@@ -1063,7 +1064,13 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
-    value = [auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context)];
+    if (auth.value instanceof CustomPermissionGroup) {
+      const { ticker, id } = auth.value;
+      value = [ticker, permissionGroupToAgentGroup({ custom: id }, context)];
+    } else {
+      const { ticker, type } = auth.value;
+      value = [ticker, permissionGroupToAgentGroup(type, context)];
+    }
   } else {
     value = auth.value;
   }

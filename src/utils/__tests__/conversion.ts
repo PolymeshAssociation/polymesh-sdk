@@ -86,9 +86,9 @@ import {
   CountryCode,
   DividendDistributionParams,
   InstructionType,
-  KnownPermissionGroup,
   KnownTokenType,
   PermissionGroup,
+  PermissionGroupType,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -955,18 +955,46 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
 
+    const ticker = 'TICKERNAME';
+    const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
+      ticker,
+      type: PermissionGroupType.Full,
+    });
+
     value = {
       type: AuthorizationType.BecomeAgent,
-      value: 'TOKEN',
-      permissionGroup: KnownPermissionGroup.PolymeshV1Pia,
+      value: knownPermissionGroup,
     };
 
-    const rawAgentGroup = ('PolymeshV1Pia' as unknown) as AgentGroup;
-    createTypeStub.withArgs('AgentGroup', value.permissionGroup).returns(rawAgentGroup);
+    let rawAgentGroup = ('Full' as unknown) as AgentGroup;
+    createTypeStub.withArgs('AgentGroup', knownPermissionGroup.type).returns(rawAgentGroup);
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [value.value, rawAgentGroup] })
+      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
+
+    const id = new BigNumber(1);
+    const customPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
+      ticker,
+      id,
+    });
+
+    value = {
+      type: AuthorizationType.BecomeAgent,
+      value: customPermissionGroup,
+    };
+
+    rawAgentGroup = ('Full' as unknown) as AgentGroup;
+    createTypeStub.withArgs('u32', id.toString()).returns(id);
+    createTypeStub.withArgs('AgentGroup', { custom: id }).returns(rawAgentGroup);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
@@ -1122,7 +1150,7 @@ describe('permissionGroupToAgentGroup and agentGroupToPermissionGroup', () => {
   });
 
   test('permissionGroupToAgentGroup should convert a PermissionGroup to a polkadot AgentGroup object', () => {
-    let value: PermissionGroup = KnownPermissionGroup.PolymeshV1Pia;
+    let value: PermissionGroup = PermissionGroupType.PolymeshV1Pia;
     const fakeResult = ('convertedAgentGroup' as unknown) as AgentGroup;
     const context = dsMockUtils.getContextInstance();
 

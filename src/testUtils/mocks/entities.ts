@@ -14,10 +14,12 @@ import {
   CorporateAction,
   CurrentAccount,
   CurrentIdentity,
+  CustomPermissionGroup,
   DefaultPortfolio,
   DividendDistribution,
   Identity,
   Instruction,
+  KnownPermissionGroup,
   NumberedPortfolio,
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
@@ -41,7 +43,7 @@ import {
   DistributionParticipant,
   DividendDistributionDetails,
   ExtrinsicData,
-  GroupDetails,
+  GroupPermissions,
   IdentityBalance,
   InstructionDetails,
   InstructionStatus,
@@ -49,6 +51,7 @@ import {
   Leg,
   PercentageTransferRestriction,
   PermissionGroup,
+  PermissionGroupType,
   PortfolioBalance,
   ResultSet,
   ScheduleDetails,
@@ -89,6 +92,8 @@ type MockCheckpoint = Mocked<Checkpoint>;
 type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
 type MockCorporateAction = Mocked<CorporateAction>;
 type MockDividendDistribution = Mocked<DividendDistribution>;
+type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
+type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -105,6 +110,8 @@ const mockInstanceContainer = {
   instruction: {} as MockInstruction,
   numberedPortfolio: {} as MockNumberedPortfolio,
   defaultPortfolio: {} as MockDefaultPortfolio,
+  customPermissionGroup: {} as MockCustomPermissionGroup,
+  knownPermissionGroup: {} as MockKnownPermissionGroup,
   sto: {} as MockSto,
   checkpoint: {} as MockCheckpoint,
   checkpointSchedule: {} as MockCheckpointSchedule,
@@ -144,7 +151,7 @@ interface SecurityTokenOptions {
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
-  permissionsGetGroups?: ResultSet<PermissionGroup>;
+  permissionsGetGroups?: ResultSet<CustomPermissionGroup>;
 }
 
 interface AuthorizationRequestOptions {
@@ -153,10 +160,6 @@ interface AuthorizationRequestOptions {
   issuer?: Identity;
   expiry?: Date | null;
   data?: Authorization;
-}
-
-interface PermissionGroupOptions {
-  details?: GroupDetails;
 }
 
 interface ProposalOptions {
@@ -202,6 +205,18 @@ interface DefaultPortfolioOptions {
   custodian?: Identity;
   uuid?: string;
   isCustodiedBy?: boolean;
+}
+
+interface CustomPermissionGroupOptions {
+  ticker: string;
+  id: BigNumber;
+  getPermissions?: GroupPermissions;
+}
+
+interface KnownPermissionGroupOptions {
+  ticker: string;
+  type: PermissionGroupType;
+  getPermissions?: GroupPermissions;
 }
 
 interface InstructionOptions {
@@ -270,6 +285,28 @@ interface DividendDistributionOptions {
   getParticipant?: Partial<DistributionParticipant> | null;
 }
 
+type MockOptions = {
+  identityOptions?: IdentityOptions;
+  currentIdentityOptions?: IdentityOptions;
+  accountOptions?: AccountOptions;
+  currentAccountOptions?: CurrentAccountOptions;
+  tickerReservationOptions?: TickerReservationOptions;
+  securityTokenOptions?: SecurityTokenOptions;
+  authorizationRequestOptions?: AuthorizationRequestOptions;
+  proposalOptions?: ProposalOptions;
+  venueOptions?: VenueOptions;
+  instructionOptions?: InstructionOptions;
+  numberedPortfolioOptions?: NumberedPortfolioOptions;
+  defaultPortfolioOptions?: DefaultPortfolioOptions;
+  stoOptions?: StoOptions;
+  checkpointOptions?: CheckpointOptions;
+  checkpointScheduleOptions?: CheckpointScheduleOptions;
+  corporateActionOptions?: CorporateActionOptions;
+  dividendDistributionOptions?: DividendDistributionOptions;
+  customPermissionGroupOptions?: CustomPermissionGroupOptions;
+  knownPermissionGroupOptions?: KnownPermissionGroupOptions;
+}
+
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
@@ -288,6 +325,8 @@ let checkpointConstructorStub: SinonStub;
 let checkpointScheduleConstructorStub: SinonStub;
 let corporateActionConstructorStub: SinonStub;
 let dividendDistributionConstructorStub: SinonStub;
+let customPermissionGroupConstructorStub: SinonStub;
+let knownPermissionGroupConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -351,7 +390,8 @@ let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
 let dividendDistributionGetParticipantStub: SinonStub;
 let dividendDistributionCheckpointStub: SinonStub;
-let permissionGroupDetailsStub: SinonStub;
+let customPermissionGroupGetPermissionsStub: SinonStub;
+let knownPermissionGroupGetPermissionsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -515,6 +555,24 @@ const MockDividendDistributionClass = class {
   }
 };
 
+const MockCustomPermissionGroupClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return customPermissionGroupConstructorStub(...args);
+  }
+};
+
+const MockKnownPermissionGroupClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return knownPermissionGroupConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -605,6 +663,16 @@ export const mockDividendDistributionModule = (path: string) => (): Record<strin
   DividendDistribution: MockDividendDistributionClass,
 });
 
+export const mockCustomPermissionGroupModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  CustomPermissionGroup: MockCustomPermissionGroupClass,
+});
+
+export const mockKnownPermissionGroupModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  KnownPermissionGroup: MockKnownPermissionGroupClass,
+});
+
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
@@ -657,6 +725,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     totalSupply: new BigNumber(1000000),
     isDivisible: false,
     primaryIssuanceAgents: [],
+    fullAgents: [],
   },
   currentFundingRound: 'Series A',
   isFrozen: false,
@@ -690,10 +759,6 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   expiry: null,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
-const defaultPermissionGroupOptions: PermissionGroupOptions = {
-  details: {} as GroupDetails,
-};
-let permissionGroupOptions = defaultPermissionGroupOptions;
 const defaultVenueOptions: VenueOptions = {
   id: new BigNumber(1),
   details: {
@@ -737,6 +802,24 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
   isCustodiedBy: true,
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
+const defaultCustomPermissionGroupOptions: CustomPermissionGroupOptions = {
+  ticker: 'SOME_TICKER',
+  id: new BigNumber(1),
+  getPermissions: {
+    transactions: null,
+    transactionGroups: [],
+  },
+};
+let customPermissionGroupOptions = defaultCustomPermissionGroupOptions;
+const defaultKnownPermissionGroupOptions: KnownPermissionGroupOptions = {
+  ticker: 'SOME_TICKER',
+  type: ('someType' as unknown) as PermissionGroupType,
+  getPermissions: {
+    transactions: null,
+    transactionGroups: [],
+  },
+};
+let knownPermissionGroupOptions = defaultKnownPermissionGroupOptions;
 const defaultInstructionOptions: InstructionOptions = {
   id: new BigNumber(1),
   details: {
@@ -1010,6 +1093,84 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
 
 /**
  * @hidden
+ * Configure the Custom Permission Group instance
+ */
+function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): void {
+  const customPermissionGroup = ({
+    id: opts.id,
+    ticker: opts.ticker,
+    getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
+  } as unknown) as MockCustomPermissionGroup;
+
+  Object.assign(mockInstanceContainer.customPermissionGroup, customPermissionGroup);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  customPermissionGroupConstructorStub.callsFake(args => {
+    const value = merge({}, customPermissionGroup, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(
+      entities.CustomPermissionGroup.prototype,
+      entities.PermissionGroup.prototype
+    );
+    Object.setPrototypeOf(value, entities.CustomPermissionGroup.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the CustomPermissionGroup instance
+ */
+function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
+  customPermissionGroupConstructorStub = sinon.stub();
+  customPermissionGroupGetPermissionsStub = sinon.stub();
+
+  customPermissionGroupOptions = { ...defaultCustomPermissionGroupOptions, ...opts };
+
+  configureCustomPermissionGroup(customPermissionGroupOptions);
+}
+
+/**
+ * @hidden
+ * Configure the Known Permission Group instance
+ */
+function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void {
+  const knownPermissionGroup = ({
+    ticker: opts.ticker,
+    type: opts.type,
+    getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
+  } as unknown) as MockKnownPermissionGroup;
+
+  Object.assign(mockInstanceContainer.knownPermissionGroup, knownPermissionGroup);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  knownPermissionGroupConstructorStub.callsFake(args => {
+    const value = merge({}, knownPermissionGroup, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(
+      entities.KnownPermissionGroup.prototype,
+      entities.PermissionGroup.prototype
+    );
+    Object.setPrototypeOf(value, entities.KnownPermissionGroup.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the KnownPermissionGroup instance
+ */
+function initKnownPermissionGroup(opts?: KnownPermissionGroupOptions): void {
+  knownPermissionGroupConstructorStub = sinon.stub();
+  knownPermissionGroupGetPermissionsStub = sinon.stub();
+
+  knownPermissionGroupOptions = { ...defaultKnownPermissionGroupOptions, ...opts };
+
+  configureKnownPermissionGroup(knownPermissionGroupOptions);
+}
+
+/**
+ * @hidden
  * Configure the Authorization Request instance
  */
 function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void {
@@ -1039,36 +1200,6 @@ function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
   authorizationRequestOptions = { ...defaultAuthorizationRequestOptions, ...opts };
 
   configureAuthorizationRequest(authorizationRequestOptions);
-}
-
-/**
- * @hidden
- * Configure the Permission Group instance
- */
-function configurePermissionGroup(opts: PermissionGroupOptions): void {
-  const permissionGroup = ({
-    details: permissionGroupDetailsStub.resolves(opts.details),
-  } as unknown) as MockPermissionGroup;
-
-  Object.assign(mockInstanceContainer.permissionGroup, permissionGroup);
-  permissionGroupConstructorStub.callsFake(args => {
-    const value = merge({}, permissionGroup, args);
-    Object.setPrototypeOf(value, require('~/internal').PermissionGroup.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Permission Group instance
- */
-function initPermissionGroup(opts?: PermissionGroupOptions): void {
-  permissionGroupConstructorStub = sinon.stub();
-  permissionGroupDetailsStub = sinon.stub();
-
-  permissionGroupOptions = { ...defaultPermissionGroupOptions, ...opts };
-
-  configurePermissionGroup(permissionGroupOptions);
 }
 
 /**
@@ -1636,25 +1767,7 @@ function initDividendDistribution(opts?: DividendDistributionOptions): void {
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
-export function configureMocks(opts?: {
-  identityOptions?: IdentityOptions;
-  currentIdentityOptions?: IdentityOptions;
-  accountOptions?: AccountOptions;
-  currentAccountOptions?: CurrentAccountOptions;
-  tickerReservationOptions?: TickerReservationOptions;
-  securityTokenOptions?: SecurityTokenOptions;
-  authorizationRequestOptions?: AuthorizationRequestOptions;
-  proposalOptions?: ProposalOptions;
-  venueOptions?: VenueOptions;
-  instructionOptions?: InstructionOptions;
-  numberedPortfolioOptions?: NumberedPortfolioOptions;
-  defaultPortfolioOptions?: DefaultPortfolioOptions;
-  stoOptions?: StoOptions;
-  checkpointOptions?: CheckpointOptions;
-  checkpointScheduleOptions?: CheckpointScheduleOptions;
-  corporateActionOptions?: CorporateActionOptions;
-  dividendDistributionOptions?: DividendDistributionOptions;
-}): void {
+export function configureMocks(opts?: MockOptions): void {
   const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
 
   configureIdentity(tempIdentityOptions);
@@ -1726,6 +1839,18 @@ export function configureMocks(opts?: {
   };
   configureDefaultPortfolio(tempDefaultPortfolioOptions);
 
+  const tempCustomPermissionGroupOptions = {
+    ...defaultCustomPermissionGroupOptions,
+    ...opts?.customPermissionGroupOptions,
+  };
+  configureCustomPermissionGroup(tempCustomPermissionGroupOptions);
+
+  const tempKnownPermissionGroupOptions = {
+    ...defaultKnownPermissionGroupOptions,
+    ...opts?.knownPermissionGroupOptions,
+  };
+  configureKnownPermissionGroup(tempKnownPermissionGroupOptions);
+
   const tempInstructionOptions = {
     ...defaultInstructionOptions,
     ...opts?.instructionOptions,
@@ -1768,26 +1893,7 @@ export function configureMocks(opts?: {
  *
  * Initialize the factory by adding default all-purpose functionality to the mock manager
  */
-export function initMocks(opts?: {
-  identityOptions?: IdentityOptions;
-  currentIdentityOptions?: IdentityOptions;
-  accountOptions?: AccountOptions;
-  currentAccountOptions?: CurrentAccountOptions;
-  tickerReservationOptions?: TickerReservationOptions;
-  securityTokenOptions?: SecurityTokenOptions;
-  authorizationRequestOptions?: AuthorizationRequestOptions;
-  permissionGroupOptions?: PermissionGroupOptions;
-  proposalOptions?: ProposalOptions;
-  venueOptions?: VenueOptions;
-  instructionOptions?: InstructionOptions;
-  numberedPortfolioOptions?: NumberedPortfolioOptions;
-  defaultPortfolioOptions?: DefaultPortfolioOptions;
-  stoOptions?: StoOptions;
-  checkpointOptions?: CheckpointOptions;
-  checkpointScheduleOptions?: CheckpointScheduleOptions;
-  corporateActionOptions?: CorporateActionOptions;
-  dividendDistributionOptions?: DividendDistributionOptions;
-}): void {
+export function initMocks(opts?: MockOptions): void {
   // Identity
   initIdentity(opts?.identityOptions);
 
@@ -1809,9 +1915,6 @@ export function initMocks(opts?: {
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
 
-  // Permission Group
-  initPermissionGroup(opts?.permissionGroupOptions);
-
   // Instruction Request
   initInstruction(opts?.instructionOptions);
 
@@ -1827,6 +1930,12 @@ export function initMocks(opts?: {
 
   // DefaultPortfolio
   initDefaultPortfolio(opts?.defaultPortfolioOptions);
+
+  // CustomPermissionGroup
+  initCustomPermissionGroup(opts?.customPermissionGroupOptions);
+
+  // KnownPermissionGroup
+  initKnownPermissionGroup(opts?.knownPermissionGroupOptions);
 
   // Instruction
   initInstruction(opts?.instructionOptions);
@@ -1896,6 +2005,8 @@ export function reset(): void {
     checkpointScheduleOptions,
     corporateActionOptions,
     dividendDistributionOptions,
+    customPermissionGroupOptions,
+    knownPermissionGroupOptions,
   });
 }
 
@@ -2343,18 +2454,6 @@ export function getAuthorizationRequestInstance(
 
 /**
  * @hidden
- * Retrieve a PermissionGroup instance
- */
-export function getPermissionGroupInstance(opts?: PermissionGroupOptions): MockPermissionGroup {
-  if (opts) {
-    configurePermissionGroup({ ...defaultPermissionGroupOptions, ...opts });
-  }
-
-  return new MockPermissionGroupClass() as MockPermissionGroup;
-}
-
-/**
- * @hidden
  * Retrieve a Proposal instance
  */
 // NOTE uncomment in Governance v2 upgrade
@@ -2417,6 +2516,34 @@ export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): Moc
   }
 
   return new MockDefaultPortfolioClass() as MockDefaultPortfolio;
+}
+
+/**
+ * @hidden
+ * Retrieve a CustomPermissionGroup instance
+ */
+export function getCustomPermissionGroupInstance(
+  opts?: CustomPermissionGroupOptions
+): MockCustomPermissionGroup {
+  if (opts) {
+    configureCustomPermissionGroup({ ...defaultCustomPermissionGroupOptions, ...opts });
+  }
+
+  return new MockCustomPermissionGroupClass() as MockCustomPermissionGroup;
+}
+
+/**
+ * @hidden
+ * Retrieve a KnownPermissionGroup instance
+ */
+export function getKnownPermissionGroupInstance(
+  opts?: KnownPermissionGroupOptions
+): MockKnownPermissionGroup {
+  if (opts) {
+    configureKnownPermissionGroup({ ...defaultKnownPermissionGroupOptions, ...opts });
+  }
+
+  return new MockKnownPermissionGroupClass() as MockKnownPermissionGroup;
 }
 
 /**
@@ -2689,11 +2816,26 @@ export function getDividendDistributionGetParticipantStub(
 
 /**
  * @hidden
- * Retrieve the stub of the `PermissionGroup.details` method
+ * Retrieve the stub of the `CustomPermissionGroup.getPermissions` method
  */
-export function getPermissionGroupDetailsStub(details?: GroupDetails): SinonStub {
-  if (details) {
-    return permissionGroupDetailsStub.resolves(details);
+export function getCustomPermissionGroupGetPermissionsStub(
+  getPermissions?: GroupPermissions
+): SinonStub {
+  if (getPermissions) {
+    return customPermissionGroupGetPermissionsStub.resolves(getPermissions);
   }
-  return permissionGroupDetailsStub;
+  return customPermissionGroupGetPermissionsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `KnownPermissionGroup.getPermissions` method
+ */
+export function getKnownPermissionGroupGetPermissionsStub(
+  getPermissions?: GroupPermissions
+): SinonStub {
+  if (getPermissions) {
+    return knownPermissionGroupGetPermissionsStub.resolves(getPermissions);
+  }
+  return knownPermissionGroupGetPermissionsStub;
 }

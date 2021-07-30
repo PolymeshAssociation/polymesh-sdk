@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
@@ -86,10 +87,51 @@ describe('createGroup procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if already exists a group with exactly the same permissions', async () => {
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      token: entityMockUtils.getSecurityTokenInstance({
+        ticker,
+        permissionsGetGroups: {
+          data: [
+            entityMockUtils.getCustomPermissionGroupInstance({
+              ticker,
+              id: new BigNumber(1),
+              getPermissions: {
+                transactions: permissions.transactions,
+                transactionGroups: [],
+              },
+            }),
+          ],
+          next: null,
+        },
+      }),
+    });
+
+    expect(
+      prepareCreateGroup.call(proc, {
+        ticker,
+        permissions: { transactions: permissions.transactions },
+      })
+    ).rejects.toThrow('Already exists a group with exactly the same permissions');
+  });
+
   test('should add a create group transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         ticker,
+        permissionsGetGroups: {
+          data: [
+            entityMockUtils.getCustomPermissionGroupInstance({
+              ticker,
+              id: new BigNumber(2),
+              getPermissions: {
+                transactions: null,
+                transactionGroups: [],
+              },
+            }),
+          ],
+          next: null,
+        },
       }),
     });
 
@@ -105,32 +147,6 @@ describe('createGroup procedure', () => {
       rawTicker,
       rawExtrinsicPermissions
     );
-  });
-
-  test('should throw an error if already exists a group with exactly the same permissions', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        ticker,
-        permissionsGetGroups: {
-          data: [
-            entityMockUtils.getPermissionGroupInstance({
-              details: {
-                permissions: permissions.transactions,
-                groups: [],
-              },
-            }),
-          ],
-          next: null,
-        },
-      }),
-    });
-
-    expect(
-      prepareCreateGroup.call(proc, {
-        ticker,
-        permissions: { transactions: permissions.transactions },
-      })
-    ).rejects.toThrow('Already exists a group with exactly the same permissions');
   });
 
   describe('prepareStorage', () => {

@@ -10,6 +10,7 @@ export interface SecurityTokenDetails {
   owner: Identity;
   totalSupply: BigNumber;
   primaryIssuanceAgents: Identity[];
+  fullAgents: Identity[];
 }
 
 /**

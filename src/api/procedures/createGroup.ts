@@ -60,8 +60,10 @@ export async function prepareCreateGroup(
 
   await Promise.all(
     groups.map(async group => {
-      const details = await group.details();
-      currentTransactionPermissions.push(details.permissions);
+      const { transactions: groupTransactions } = await group.getPermissions();
+      if (groupTransactions) {
+        currentTransactionPermissions.push(groupTransactions);
+      }
     })
   );
 

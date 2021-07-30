@@ -130,6 +130,8 @@ export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 export { Agent } from '~/api/entities/Agent';
 export { PermissionGroup } from '~/api/entities/PermissionGroup';
+export { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
+export { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,

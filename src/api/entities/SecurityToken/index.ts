@@ -215,6 +215,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
     ): SecurityTokenDetails => {
       const primaryIssuanceAgents: Identity[] = [];
+      const fullAgents: Identity[] = [];
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
@@ -222,6 +223,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
           primaryIssuanceAgents.push(
             new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
           );
+        } else if (rawAgentGroup.isFull) {
+          fullAgents.push(new Identity({ did: identityIdToString(storageKey.args[1]) }, context));
         }
       });
 
@@ -233,6 +236,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
         owner,
         totalSupply: balanceToBigNumber(total_supply),
         primaryIssuanceAgents,
+        fullAgents,
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
