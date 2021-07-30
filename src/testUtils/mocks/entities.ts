@@ -285,7 +285,7 @@ interface DividendDistributionOptions {
   getParticipant?: Partial<DistributionParticipant> | null;
 }
 
-interface MockOptions {
+type MockOptions = {
   identityOptions?: IdentityOptions;
   currentIdentityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
