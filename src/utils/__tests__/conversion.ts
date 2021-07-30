@@ -1180,22 +1180,22 @@ describe('permissionGroupToAgentGroup and agentGroupToPermissionGroup', () => {
     let agentGroup = dsMockUtils.createMockAgentGroup('Full');
 
     let result = agentGroupToPermissionGroup(agentGroup);
-    expect(result).toEqual(KnownPermissionGroup.Full);
+    expect(result).toEqual(PermissionGroupType.Full);
 
     agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
 
     result = agentGroupToPermissionGroup(agentGroup);
-    expect(result).toEqual(KnownPermissionGroup.ExceptMeta);
+    expect(result).toEqual(PermissionGroupType.ExceptMeta);
 
     agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
 
     result = agentGroupToPermissionGroup(agentGroup);
-    expect(result).toEqual(KnownPermissionGroup.PolymeshV1Caa);
+    expect(result).toEqual(PermissionGroupType.PolymeshV1Caa);
 
     agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
 
     result = agentGroupToPermissionGroup(agentGroup);
-    expect(result).toEqual(KnownPermissionGroup.PolymeshV1Pia);
+    expect(result).toEqual(PermissionGroupType.PolymeshV1Pia);
 
     const id = new BigNumber(1);
     const rawAgId = dsMockUtils.createMockU32(id.toNumber()) as AGId;
