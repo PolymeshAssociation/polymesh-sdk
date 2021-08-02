@@ -2587,7 +2587,7 @@ export const createMockVenue = (venue?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockInstructionStatus = (
-  instructionStatus?: 'Pending' | 'Unknown'
+  instructionStatus?: 'Pending' | 'Unknown' | 'Failed'
 ): InstructionStatus => {
   return createMockEnum(instructionStatus) as InstructionStatus;
 };
