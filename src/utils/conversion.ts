@@ -2548,6 +2548,10 @@ export function meshInstructionStatusToInstructionStatus(
     return InstructionStatus.Pending;
   }
 
+  if (status.isFailed) {
+    return InstructionStatus.Failed;
+  }
+
   return InstructionStatus.Unknown;
 }
 
