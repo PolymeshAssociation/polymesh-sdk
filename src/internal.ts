@@ -178,3 +178,4 @@ export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';
 export { createGroup, CreateGroupParams } from '~/api/procedures/createGroup';
 export { quitCustody } from '~/api/procedures/quitCustody';
+export { inviteExternalAgent, InviteExternalAgentParams } from '~/api/procedures/inviteExternalAgent';
