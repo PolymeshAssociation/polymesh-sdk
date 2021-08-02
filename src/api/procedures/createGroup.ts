@@ -1,13 +1,24 @@
+import { ISubmittableResult } from '@polkadot/types/types';
 import { isEqual } from 'lodash';
 
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import {
+  Context,
+  CustomPermissionGroup,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+  SecurityToken,
+} from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   stringToTicker,
+  tickerToString,
   transactionPermissionsToExtrinsicPermissions,
+  u64ToBigNumber,
 } from '~/utils/conversion';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateGroupParams {
   permissions:
@@ -36,10 +47,24 @@ export interface Storage {
 /**
  * @hidden
  */
+export const createCreateGroupResolver = (context: Context) => (
+  receipt: ISubmittableResult
+): CustomPermissionGroup => {
+  const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
+
+  return new CustomPermissionGroup(
+    { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+    context
+  );
+};
+
+/**
+ * @hidden
+ */
 export async function prepareCreateGroup(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, CustomPermissionGroup, Storage>,
   args: Params
-): Promise<void> {
+): Promise<PostTransactionValue<CustomPermissionGroup>> {
   const {
     context: {
       polymeshApi: {
@@ -84,13 +109,24 @@ export async function prepareCreateGroup(
     context
   );
 
-  this.addTransaction(externalAgents.createGroup, {}, rawTicker, rawExtrinsicPermissions);
+  const [customPermissionGroup] = this.addTransaction(
+    externalAgents.createGroup,
+    {
+      resolvers: [createCreateGroupResolver(context)],
+    },
+    rawTicker,
+    rawExtrinsicPermissions
+  );
+
+  return customPermissionGroup;
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<Params, CustomPermissionGroup, Storage>
+): ProcedureAuthorization {
   const {
     storage: { token },
   } = this;
@@ -107,7 +143,7 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, CustomPermissionGroup, Storage>,
   { ticker }: Params
 ): Storage {
   const { context } = this;
@@ -120,5 +156,5 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const createGroup = (): Procedure<Params, void, Storage> =>
+export const createGroup = (): Procedure<Params, CustomPermissionGroup, Storage> =>
   new Procedure(prepareCreateGroup, getAuthorization, prepareStorage);
