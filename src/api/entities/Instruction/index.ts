@@ -6,6 +6,7 @@ import {
   Entity,
   Identity,
   modifyInstructionAffirmation,
+  rescheduleInstruction,
   SecurityToken,
   Venue,
 } from '~/internal';
@@ -109,6 +110,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Withdraw },
         ],
+      },
+      context
+    );
+
+    this.reschedule = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [rescheduleInstruction, { id }],
       },
       context
     );
@@ -389,6 +397,11 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Withdraw affirmation from this instruction (unauthorize)
    */
   public withdraw: ProcedureMethod<void, Instruction>;
+
+  /**
+   * Schedule a failed Instructi oto rwaa
+   */
+  public reschedule: ProcedureMethod<void, Instruction>;
 
   /**
    * @hidden
