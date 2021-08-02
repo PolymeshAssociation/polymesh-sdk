@@ -38,7 +38,7 @@ export class Permissions extends Namespace<SecurityToken> {
   /**
    * Create a Security Token Agent Group
    */
-  public createGroup: ProcedureMethod<CreateGroupParams, void>;
+  public createGroup: ProcedureMethod<CreateGroupParams, CustomPermissionGroup>;
 
   /**
    * Retrieve all custom group permissions of the Security Token

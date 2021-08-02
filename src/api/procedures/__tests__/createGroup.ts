@@ -1,19 +1,22 @@
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
+  createCreateGroupResolver,
   getAuthorization,
   Params,
   prepareCreateGroup,
   prepareStorage,
   Storage,
 } from '~/api/procedures/createGroup';
-import { Context } from '~/internal';
+import { Context, CustomPermissionGroup } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PermissionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Sto',
@@ -87,25 +90,43 @@ describe('createGroup procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if already exists a group with exactly the same permissions', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        ticker,
-        permissionsGetGroups: {
-          data: [
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: new BigNumber(1),
-              getPermissions: {
-                transactions: permissions.transactions,
-                transactionGroups: [],
-              },
-            }),
-          ],
-          next: null,
-        },
-      }),
+  describe('createCreateGroupResolver', () => {
+    const agId = new BigNumber(1);
+    const rawAgId = dsMockUtils.createMockU64(agId.toNumber());
+    sinon
+      .stub(utilsInternalModule, 'filterEventRecords')
+      .returns([dsMockUtils.createMockIEvent(['someDid', rawTicker, rawAgId])]);
+
+    test('should return the new CustomPermissionGroup', () => {
+      const result = createCreateGroupResolver(mockContext)({} as ISubmittableResult);
+
+      expect(result.id).toEqual(agId);
+      expect(result.ticker).toEqual(ticker);
     });
+  });
+
+  test('should throw an error if already exists a group with exactly the same permissions', async () => {
+    const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
+      mockContext,
+      {
+        token: entityMockUtils.getSecurityTokenInstance({
+          ticker,
+          permissionsGetGroups: {
+            data: [
+              entityMockUtils.getCustomPermissionGroupInstance({
+                ticker,
+                id: new BigNumber(1),
+                getPermissions: {
+                  transactions: permissions.transactions,
+                  transactionGroups: [],
+                },
+              }),
+            ],
+            next: null,
+          },
+        }),
+      }
+    );
 
     expect(
       prepareCreateGroup.call(proc, {
@@ -116,24 +137,27 @@ describe('createGroup procedure', () => {
   });
 
   test('should add a create group transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        ticker,
-        permissionsGetGroups: {
-          data: [
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: new BigNumber(2),
-              getPermissions: {
-                transactions: null,
-                transactionGroups: [],
-              },
-            }),
-          ],
-          next: null,
-        },
-      }),
-    });
+    const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
+      mockContext,
+      {
+        token: entityMockUtils.getSecurityTokenInstance({
+          ticker,
+          permissionsGetGroups: {
+            data: [
+              entityMockUtils.getCustomPermissionGroupInstance({
+                ticker,
+                id: new BigNumber(2),
+                getPermissions: {
+                  transactions: null,
+                  transactionGroups: [],
+                },
+              }),
+            ],
+            next: null,
+          },
+        }),
+      }
+    );
 
     await prepareCreateGroup.call(proc, {
       ticker,
@@ -143,7 +167,7 @@ describe('createGroup procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       externalAgentsCreateGroupTransaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawTicker,
       rawExtrinsicPermissions
     );
@@ -151,7 +175,9 @@ describe('createGroup procedure', () => {
 
   describe('prepareStorage', () => {
     test('should return the security token', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
+        mockContext
+      );
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({ ticker } as Params);
@@ -164,11 +190,14 @@ describe('createGroup procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        token: entityMockUtils.getSecurityTokenInstance({
-          ticker,
-        }),
-      });
+      const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
+        mockContext,
+        {
+          token: entityMockUtils.getSecurityTokenInstance({
+            ticker,
+          }),
+        }
+      );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
