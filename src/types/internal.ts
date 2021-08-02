@@ -228,4 +228,5 @@ export type PalletPermissions = {
 export enum InstructionStatus {
   Pending = 'Pending',
   Unknown = 'Unknown',
+  Failed = 'Failed',
 }
