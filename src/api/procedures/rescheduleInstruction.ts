@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
 
 import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, InstructionDetails, InstructionStatus, RoleType } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ErrorCode, InstructionStatus } from '~/types';
 import { numberToU64 } from '~/utils/conversion';
 
 /**
@@ -16,16 +15,8 @@ export interface Params {
 /**
  * @hidden
  */
-export interface Storage {
-  instructionDetails: InstructionDetails;
-  instruction: Instruction;
-}
-
-/**
- * @hidden
- */
 export async function prepareRescheduleInstruction(
-  this: Procedure<Params, Instruction, Storage>,
+  this: Procedure<Params, Instruction>,
   args: Params
 ): Promise<Instruction> {
   const {
@@ -33,12 +24,11 @@ export async function prepareRescheduleInstruction(
       polymeshApi: { tx },
     },
     context,
-    storage: {
-      instructionDetails: { status },
-      instruction,
-    },
   } = this;
   const { id } = args;
+
+  const instruction = new Instruction({ id }, context);
+  const { status } = await instruction.details();
 
   if (status !== InstructionStatus.Failed) {
     throw new PolymeshError({
@@ -60,44 +50,9 @@ export async function prepareRescheduleInstruction(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params, Instruction, Storage>
-): ProcedureAuthorization {
-  const {
-    storage: {
-      instructionDetails: {
-        venue: { id },
-      },
-    },
-  } = this;
-
-  return {
-    roles: [{ type: RoleType.VenueOwner, venueId: id }],
+export const rescheduleInstruction = (): Procedure<Params, Instruction> =>
+  new Procedure(prepareRescheduleInstruction, {
     permissions: {
       transactions: [TxTags.settlement.RescheduleInstruction],
     },
-  };
-}
-
-/**
- * @hidden
- */
-export async function prepareStorage(
-  this: Procedure<Params, Instruction, Storage>,
-  { id }: Params
-): Promise<Storage> {
-  const { context } = this;
-  const instruction = new Instruction({ id }, context);
-  const instructionDetails = await instruction.details();
-
-  return {
-    instruction,
-    instructionDetails,
-  };
-}
-
-/**
- * @hidden
- */
-export const rescheduleInstruction = (): Procedure<Params, Instruction, Storage> =>
-  new Procedure(prepareRescheduleInstruction, getAuthorization);
+  });
