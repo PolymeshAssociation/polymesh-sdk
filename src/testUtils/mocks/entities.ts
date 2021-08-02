@@ -305,7 +305,7 @@ type MockOptions = {
   dividendDistributionOptions?: DividendDistributionOptions;
   customPermissionGroupOptions?: CustomPermissionGroupOptions;
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
-}
+};
 
 let identityConstructorStub: SinonStub;
 let currentIdentityConstructorStub: SinonStub;

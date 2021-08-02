@@ -1,7 +1,14 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import { isEqual } from 'lodash';
 
-import { Context, CustomPermissionGroup, PolymeshError, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
+import {
+  Context,
+  CustomPermissionGroup,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+  SecurityToken,
+} from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -40,14 +47,15 @@ export interface Storage {
 /**
  * @hidden
  */
- export const createCreateGroupResolver = (
-  context: Context
-) => (receipt: ISubmittableResult): CustomPermissionGroup => {
+export const createCreateGroupResolver = (context: Context) => (
+  receipt: ISubmittableResult
+): CustomPermissionGroup => {
   const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
 
-  const result = new CustomPermissionGroup({ id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) }, context)
-
-  return result;
+  return new CustomPermissionGroup(
+    { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+    context
+  );
 };
 
 /**
@@ -101,17 +109,24 @@ export async function prepareCreateGroup(
     context
   );
 
-  const [customPermissionGroup] = this.addTransaction(externalAgents.createGroup, {
-    resolvers: [createCreateGroupResolver(context)],
-  }, rawTicker, rawExtrinsicPermissions);
+  const [customPermissionGroup] = this.addTransaction(
+    externalAgents.createGroup,
+    {
+      resolvers: [createCreateGroupResolver(context)],
+    },
+    rawTicker,
+    rawExtrinsicPermissions
+  );
 
-  return customPermissionGroup
+  return customPermissionGroup;
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, CustomPermissionGroup, Storage>): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<Params, CustomPermissionGroup, Storage>
+): ProcedureAuthorization {
   const {
     storage: { token },
   } = this;
