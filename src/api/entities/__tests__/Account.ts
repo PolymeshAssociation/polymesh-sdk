@@ -6,7 +6,7 @@ import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, TxTags } from '~/types';
+import { AccountBalance, Permissions, PermissionType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -271,6 +271,169 @@ describe('Account class', () => {
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       expect(account.toJson()).toBe(account.address);
+    });
+  });
+
+  describe('method: getPermissions', () => {
+    test('should return full permissions if the account is the primary key', async () => {
+      context = dsMockUtils.getContextInstance({ primaryKey: address });
+
+      account = new Account({ address }, context);
+
+      const result = await account.getPermissions();
+
+      expect(result).toEqual({
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      });
+    });
+
+    test("should return the account's permissions if it is a secondary key", async () => {
+      const permissions = {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
+      context = dsMockUtils.getContextInstance({
+        secondaryKeys: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+          {
+            signer: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+            permissions: {
+              tokens: null,
+              transactions: {
+                values: [TxTags.identity.AcceptAuthorization],
+                type: PermissionType.Include,
+              },
+              transactionGroups: [],
+              portfolios: null,
+            },
+          },
+        ],
+      });
+
+      account = new Account({ address }, context);
+
+      const result = await account.getPermissions();
+
+      expect(result).toEqual(permissions);
+    });
+  });
+
+  describe('method: hasPermissions', () => {
+    test('should return whether the Account has the passed permissions', async () => {
+      context = dsMockUtils.getContextInstance({ primaryKey: address });
+
+      account = new Account({ address }, context);
+
+      let result = await account.hasPermissions({ tokens: [], portfolios: [], transactions: [] });
+
+      expect(result).toEqual(true);
+
+      let permissions: Permissions = {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
+      context = dsMockUtils.getContextInstance({
+        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+      });
+
+      account = new Account({ address }, context);
+
+      result = await account.hasPermissions({ tokens: null, portfolios: null, transactions: null });
+      expect(result).toEqual(true);
+
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+      permissions = {
+        tokens: { values: [token], type: PermissionType.Include },
+        transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Include },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
+          type: PermissionType.Include,
+        },
+      };
+      context = dsMockUtils.getContextInstance({
+        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+      });
+
+      account = new Account({ address }, context);
+
+      result = await account.hasPermissions({
+        tokens: [token],
+        portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toEqual(false);
+
+      permissions = {
+        tokens: { values: [token], type: PermissionType.Exclude },
+        transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Exclude },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
+          type: PermissionType.Exclude,
+        },
+      };
+      context = dsMockUtils.getContextInstance({
+        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+      });
+
+      account = new Account({ address }, context);
+
+      result = await account.hasPermissions({
+        tokens: [token],
+        portfolios: null,
+        transactions: null,
+      });
+
+      expect(result).toEqual(false);
+
+      result = await account.hasPermissions({
+        tokens: null,
+        portfolios: [],
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toEqual(false);
+
+      result = await account.hasPermissions({
+        tokens: [],
+        portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+        transactions: [],
+      });
+
+      expect(result).toEqual(true);
+
+      result = await account.hasPermissions({});
+
+      expect(result).toEqual(true);
+    });
+
+    test('should exempt certain transactions from requiring permissions', async () => {
+      context = dsMockUtils.getContextInstance({ primaryKey: address });
+
+      account = new Account({ address }, context);
+
+      const result = await account.hasPermissions({
+        tokens: [],
+        portfolios: [],
+        transactions: [
+          TxTags.balances.Transfer,
+          TxTags.balances.TransferWithMemo,
+          TxTags.staking.AddPermissionedValidator,
+          TxTags.sudo.SetKey,
+          TxTags.session.PurgeKeys,
+        ],
+      });
+
+      expect(result).toEqual(true);
     });
   });
 });
