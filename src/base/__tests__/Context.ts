@@ -61,11 +61,9 @@ describe('Context class', () => {
   });
 
   beforeEach(() => {
+    dsMockUtils.setConstMock('system', 'ss58Prefix', { returnValue: dsMockUtils.createMockU8(42) });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
       returnValue: dsMockUtils.createMockIdentityId('someDid'),
-    });
-    dsMockUtils.createRpcStub('system', 'properties', {
-      returnValue: { ss58Format: dsMockUtils.createMockOption(dsMockUtils.createMockU8(42)) },
     });
   });
 
@@ -300,9 +298,6 @@ describe('Context class', () => {
     });
 
     test('should create a Context object without Pair attached', async () => {
-      dsMockUtils.createRpcStub('system', 'properties', {
-        returnValue: { ss58Format: dsMockUtils.createMockOption() },
-      });
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: [],
@@ -1023,7 +1018,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'archiveExtension', {
+      dsMockUtils.createTxStub('asset', 'claimClassicTicker', {
         meta: {
           args: [
             {
@@ -1034,15 +1029,15 @@ describe('Context class', () => {
         },
       });
 
-      expect(context.getTransactionArguments({ tag: TxTags.asset.ArchiveExtension })).toMatchObject(
-        [
-          {
-            type: TransactionArgumentType.Unknown,
-            name: 'someArg',
-            optional: false,
-          },
-        ]
-      );
+      expect(
+        context.getTransactionArguments({ tag: TxTags.asset.ClaimClassicTicker })
+      ).toMatchObject([
+        {
+          type: TransactionArgumentType.Unknown,
+          name: 'someArg',
+          optional: false,
+        },
+      ]);
     });
   });
 
