@@ -1,8 +1,8 @@
-import { TxTags } from 'polymesh-types/types';
+import { AuthorizationData, TxTags } from 'polymesh-types/types';
 
 import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
-import { createGroup, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Context, createGroup, Identity, PolymeshError, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
 import { AuthorizationType, ErrorCode, SignerType, TransactionPermissions, TxGroup } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -18,14 +18,15 @@ export interface InviteExternalAgentParams {
   permissions:
     | KnownPermissionGroup
     | CustomPermissionGroup
-    | (
-        | {
-            transactions: TransactionPermissions;
-          }
-        | {
-            transactionGroups: TxGroup[];
-          }
-      );
+    | {
+        transactions: TransactionPermissions;
+      }
+    | {
+        transactionGroups: TxGroup[];
+      };
+  /**
+   * date at which the authorization request for transfer expires (optional)
+   */
   expiry?: Date;
 }
 
@@ -46,6 +47,22 @@ export interface Storage {
 /**
  * @hidden
  */
+const authorizationDataResolver = (
+  value: KnownPermissionGroup | CustomPermissionGroup,
+  context: Context
+): AuthorizationData => {
+  return authorizationToAuthorizationData(
+    {
+      type: AuthorizationType.BecomeAgent,
+      value,
+    },
+    context
+  );
+};
+
+/**
+ * @hidden
+ */
 export async function prepareInviteExternalAgent(
   this: Procedure<Params, void, Storage>,
   args: Params
@@ -62,19 +79,19 @@ export async function prepareInviteExternalAgent(
 
   const { ticker, target, permissions, expiry } = args;
 
-  const [getAgents, did] = await Promise.all([
+  const [currentAgent, did] = await Promise.all([
     token.permissions.getAgents(),
     getDid(target, context),
   ]);
 
-  const isCurrentAgent = getAgents
+  const isAgent = currentAgent
     .map(({ identity: agentIdentity }) => agentIdentity.did)
     .includes(did);
 
-  if (isCurrentAgent) {
+  if (isAgent) {
     throw new PolymeshError({
       code: ErrorCode.IdentityNotPresent,
-      message: 'The target identity is already an External Agent',
+      message: 'The target Identity is already an External Agent',
     });
   }
 
@@ -83,21 +100,22 @@ export async function prepareInviteExternalAgent(
     context
   );
 
-  const value =
-    permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup
-      ? permissions
-      : (((await this.addProcedure(createGroup(), {
-          ticker,
-          permissions,
-        })) as unknown) as CustomPermissionGroup);
+  let rawAuthorizationData;
 
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.BecomeAgent,
-      value,
-    },
-    context
-  );
+  if (permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup) {
+    rawAuthorizationData = authorizationDataResolver(permissions, context);
+  } else {
+    // We know this procedure returns a PostTransactionValue, so this assertion is necessary
+    const createGroupResult = await this.addProcedure(createGroup(), {
+      ticker,
+      permissions,
+    }) as PostTransactionValue<CustomPermissionGroup>;
+
+    rawAuthorizationData = createGroupResult.transform(customPermissionGroup => {
+      return authorizationDataResolver(customPermissionGroup, context);
+    })
+  }
+
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
   this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);

@@ -752,10 +752,12 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     data: [],
     next: null,
   },
-  permissionsGetAgents: [{
-    identity: {did: 'someDid'} as Identity,
-    group: PermissionGroupType.Full
-  }]
+  permissionsGetAgents: [
+    {
+      identity: { did: 'someDid' } as Identity,
+      group: PermissionGroupType.Full,
+    },
+  ],
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -1246,7 +1248,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     },
     permissions: {
       getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
-      getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents)
+      getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
     },
   } as unknown) as MockSecurityToken;
 
@@ -2451,7 +2453,7 @@ export function getSecurityTokenPermissionsGetGroupsStub(
  * @hidden
  * Retrieve the stub of the `SecurityToken.permissions.getAgents` method
  */
- export function getSecurityTokenPermissionsGetAgentsStub(
+export function getSecurityTokenPermissionsGetAgentsStub(
   agents?: Partial<ExternalAgent>
 ): SinonStub {
   if (agents) {

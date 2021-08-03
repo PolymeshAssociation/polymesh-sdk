@@ -20,6 +20,7 @@ describe('Issuance class', () => {
   let token: SecurityToken;
   let context: Context;
   let permission: Permissions;
+  let target: string;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -27,6 +28,7 @@ describe('Issuance class', () => {
     procedureMockUtils.initMocks();
 
     ticker = 'SOME_TOKEN';
+    target = 'someDid';
   });
 
   beforeEach(() => {
@@ -70,6 +72,31 @@ describe('Issuance class', () => {
         .resolves(expectedQueue);
 
       const queue = await permission.createGroup(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: inviteAgent', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        ticker: token.ticker,
+        target,
+        permissions: { transactions: {} as TransactionPermissions },
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await permission.inviteAgent(args);
 
       expect(queue).toBe(expectedQueue);
     });
