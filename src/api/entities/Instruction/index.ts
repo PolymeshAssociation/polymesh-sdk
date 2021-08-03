@@ -6,6 +6,7 @@ import {
   Entity,
   Identity,
   modifyInstructionAffirmation,
+  rescheduleInstruction,
   SecurityToken,
   Venue,
 } from '~/internal';
@@ -51,13 +52,13 @@ export interface UniqueIdentifiers {
   id: BigNumber;
 }
 
-const notPendingMessage =
-  'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain';
+const executedMessage =
+  'Instruction has already been executed/rejected and it was purged from chain';
 
 /**
  * Represents a settlement Instruction to be executed on a certain Venue
  */
-export class Instruction extends Entity<UniqueIdentifiers> {
+export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -112,11 +113,42 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       },
       context
     );
+
+    this.reschedule = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [rescheduleInstruction, { id }],
+      },
+      context
+    );
   }
 
   /**
-   * Retrieve whether the Instruction is still pending on chain. Executed/rejected instructions
-   *   are pruned from the storage
+   * Retrieve whether the Instruction has already been executed and pruned from
+   *   the chain.
+   */
+  public async isExecuted(): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const [{ status }, exists] = await Promise.all([
+      settlement.instructionDetails(numberToU64(id, context)),
+      this.exists(),
+    ]);
+
+    const statusResult = meshInstructionStatusToInstructionStatus(status);
+
+    return statusResult === InternalInstructionStatus.Unknown && exists;
+  }
+
+  /**
+   * Retrieve whether the Instruction is still pending on chain
    */
   public async isPending(): Promise<boolean> {
     const {
@@ -133,11 +165,11 @@ export class Instruction extends Entity<UniqueIdentifiers> {
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return statusResult !== InternalInstructionStatus.Unknown;
+    return statusResult === InternalInstructionStatus.Pending;
   }
 
   /**
-   * Retrieve whether the Instruction exists on chain
+   * Retrieve whether the Instruction exists on chain (or existed and was pruned)
    */
   public async exists(): Promise<boolean> {
     const {
@@ -182,12 +214,15 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     if (status === InternalInstructionStatus.Unknown) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notPendingMessage,
+        message: executedMessage,
       });
     }
 
     const details = {
-      status: InstructionStatus.Pending,
+      status:
+        status === InternalInstructionStatus.Pending
+          ? InstructionStatus.Pending
+          : InstructionStatus.Failed,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
@@ -226,12 +261,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const isPending = await this.isPending();
+    const isExecuted = await this.isExecuted();
 
-    if (!isPending) {
+    if (isExecuted) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notPendingMessage,
+        message: executedMessage,
       });
     }
 
@@ -270,12 +305,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
       context,
     } = this;
 
-    const isPending = await this.isPending();
+    const isExecuted = await this.isExecuted();
 
-    if (!isPending) {
+    if (isExecuted) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: notPendingMessage,
+        message: executedMessage,
       });
     }
 
@@ -364,6 +399,11 @@ export class Instruction extends Entity<UniqueIdentifiers> {
   public withdraw: ProcedureMethod<void, Instruction>;
 
   /**
+   * Schedule a failed Instructi oto rwaa
+   */
+  public reschedule: ProcedureMethod<void, Instruction>;
+
+  /**
    * @hidden
    * Retrieve Instruction status event from middleware
    */
@@ -383,5 +423,12 @@ export class Instruction extends Entity<UniqueIdentifiers> {
     );
 
     return optionize(middlewareEventToEventIdentifier)(event);
+  }
+
+  /**
+   * Return the Instruction's ID
+   */
+  public toJson(): string {
+    return this.id.toString();
   }
 }

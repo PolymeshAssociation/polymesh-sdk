@@ -2,7 +2,14 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
+import {
+  CddStatus,
+  DidRecord,
+  Instruction as MeshInstruction,
+  ModuleName,
+  TxTag,
+  TxTags,
+} from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -20,14 +27,15 @@ import {
   DistributionWithDetails,
   Ensured,
   ErrorCode,
+  GroupedInstructions,
   isCddProviderRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isTokenCaaRole,
-  isTokenOwnerRole,
   isTokenPiaRole,
   isVenueOwnerRole,
   Order,
+  PermissionType,
   ResultSet,
   Role,
   SecondaryKey,
@@ -42,6 +50,7 @@ import {
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
+  extrinsicPermissionsToTransactionPermissions,
   identityIdToString,
   meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
@@ -54,7 +63,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
+import { calculateNextKey, getTicker, isModuleOrTagMatch, removePadding } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
@@ -69,7 +78,7 @@ export interface UniqueIdentifiers {
 /**
  * Represents an Identity in the Polymesh blockchain
  */
-export class Identity extends Entity<UniqueIdentifiers> {
+export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Checks if a value is of type [[UniqueIdentifiers]]
@@ -103,6 +112,129 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Check whether this Identity has specific transaction Permissions over a Security Token
+   */
+  public async hasTokenPermissions(args: {
+    token: SecurityToken | string;
+    transactions: TxTag[] | null;
+  }): Promise<boolean> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { externalAgents },
+        },
+      },
+      context,
+      did,
+    } = this;
+    const { token, transactions } = args;
+
+    const ticker = getTicker(token);
+    const rawTicker = stringToTicker(ticker, context);
+
+    const groupOption = await externalAgents.groupOfAgent(
+      rawTicker,
+      stringToIdentityId(did, context)
+    );
+
+    if (groupOption.isNone) {
+      return false;
+    }
+
+    const group = groupOption.unwrap();
+
+    if (group.isFull) {
+      return true;
+    }
+
+    if (transactions === null) {
+      return false;
+    }
+
+    /*
+     * Not authorized:
+     *   - externalAgents
+     *   - identity.acceptAuthorization
+     */
+    if (group.isExceptMeta) {
+      return !transactions.some(
+        tag =>
+          tag.split('.')[0] === ModuleName.ExternalAgents ||
+          tag === TxTags.identity.AcceptAuthorization
+      );
+    }
+
+    /*
+     * Authorized:
+     *   - asset.issue
+     *   - asset.redeem
+     *   - asset.controllerTransfer
+     *   - sto (except for sto.invest)
+     */
+    if (group.isPolymeshV1Pia) {
+      return transactions.every(tag => {
+        const isSto = tag.split('.')[0] === ModuleName.Sto && tag !== TxTags.sto.Invest;
+        const isAsset = (<TxTag[]>[
+          TxTags.asset.Issue,
+          TxTags.asset.Redeem,
+          TxTags.asset.ControllerTransfer,
+        ]).includes(tag);
+
+        return isSto || isAsset;
+      });
+    }
+
+    /*
+     * Authorized:
+     *   - corporateAction
+     *   - corporateBallot
+     *   - capitalDistribution
+     */
+    if (group.isPolymeshV1Caa) {
+      return transactions.every(tag =>
+        [
+          ModuleName.CorporateAction,
+          ModuleName.CorporateBallot,
+          ModuleName.CapitalDistribution,
+        ].includes(tag.split('.')[0] as ModuleName)
+      );
+    }
+
+    const groupId = group.asCustom;
+
+    const groupPermissionsOption = await externalAgents.groupPermissions(rawTicker, groupId);
+
+    const permissions = extrinsicPermissionsToTransactionPermissions(
+      groupPermissionsOption.unwrap()
+    );
+
+    if (permissions === null) {
+      return true;
+    }
+
+    const { type, exceptions, values } = permissions;
+
+    /*
+     * if type is include:
+     *  all passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
+     * if type is exclude:
+     *  all passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
+     */
+    const isPresent = (tag: TxTag, flipResult: boolean) => {
+      const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
+      const isInExceptions = !!exceptions?.includes(tag);
+
+      const result = isInValues && !isInExceptions;
+
+      return flipResult ? result : !result;
+    };
+
+    const isInclude = type === PermissionType.Include;
+
+    return transactions.every(tag => isPresent(tag, isInclude));
+  }
+
+  /**
    * Check whether this Identity possesses the specified Role
    */
   public async hasRole(role: Role): Promise<boolean> {
@@ -115,30 +247,30 @@ export class Identity extends Entity<UniqueIdentifiers> {
       const { owner } = await reservation.details();
 
       return owner?.did === did;
-    } else if (isTokenOwnerRole(role)) {
-      const { ticker } = role;
-
-      const token = new SecurityToken({ ticker }, context);
-      const { owner } = await token.details();
-
-      return owner.did === did;
     } else if (isTokenPiaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const { primaryIssuanceAgent } = await token.details();
+      const { primaryIssuanceAgents, fullAgents } = await token.details();
 
-      if (primaryIssuanceAgent) {
-        return primaryIssuanceAgent.did === did;
-      }
-      return false;
+      return (
+        !!fullAgents.find(({ did: agentDid }) => agentDid === did) ||
+        !!primaryIssuanceAgents.find(({ did: agentDid }) => agentDid === did)
+      );
     } else if (isTokenCaaRole(role)) {
       const { ticker } = role;
 
       const token = new SecurityToken({ ticker }, context);
-      const agent = await token.corporateActions.getAgent();
 
-      return agent.did === did;
+      const [{ fullAgents }, agents] = await Promise.all([
+        token.details(),
+        token.corporateActions.getAgents(),
+      ]);
+
+      return (
+        !!fullAgents.find(({ did: agentDid }) => agentDid === did) ||
+        !!agents.find(({ did: agentDid }) => agentDid === did)
+      );
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {
@@ -431,7 +563,81 @@ export class Identity extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve all Instructions where this Identity is a participant,
+   *   grouped by status
+   */
+  public async getInstructions(): Promise<GroupedInstructions> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      did,
+      portfolios,
+      context,
+    } = this;
+
+    const ownedPortfolios = await portfolios.getPortfolios();
+
+    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
+      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
+      this.portfolios.getCustodiedPortfolios(),
+    ]);
+
+    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
+
+    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
+
+    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+
+    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
+
+    const affirmed: Instruction[] = [];
+    const rejected: Instruction[] = [];
+    const pending: Instruction[] = [];
+    const failed: Instruction[] = [];
+
+    await P.each(portfolioIdChunks, async portfolioIdChunk => {
+      const auths = await P.map(portfolioIdChunk, portfolioId =>
+        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
+      );
+
+      const uniqueEntries = uniqBy(
+        flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
+        ({ id }) => id.toNumber()
+      );
+      const instructions = await settlement.instructionDetails.multi<MeshInstruction>(
+        uniqueEntries.map(({ id }) => id)
+      );
+
+      uniqueEntries.forEach(({ id, status }, index) => {
+        const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
+
+        if (instructions[index].status.isFailed) {
+          failed.push(instruction);
+        } else if (status.isAffirmed) {
+          affirmed.push(instruction);
+        } else if (status.isRejected) {
+          rejected.push(instruction);
+        } else if (status.isPending) {
+          pending.push(instruction);
+        }
+      });
+    });
+
+    return {
+      affirmed,
+      rejected,
+      pending,
+      failed,
+    };
+  }
+
+  /**
    * Retrieve all pending Instructions involving this Identity
+   *
+   * @deprecated in favor of `getInstructions`
    */
   public async getPendingInstructions(): Promise<Instruction[]> {
     const {
@@ -602,5 +808,12 @@ export class Identity extends Entity<UniqueIdentifiers> {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
+  }
+
+  /**
+   * Return the Identity's DID
+   */
+  public toJson(): string {
+    return this.did;
   }
 }

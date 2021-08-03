@@ -1,7 +1,7 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { TxTag, TxTags } from 'polymesh-types/types';
+import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
 import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
@@ -14,6 +14,7 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   Identity,
+  Instruction,
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
@@ -82,7 +83,6 @@ export enum TransactionQueueStatus {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
-  TokenOwner = 'TokenOwner',
   TokenPia = 'TokenPia',
   TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
@@ -96,16 +96,17 @@ export interface TickerOwnerRole {
   ticker: string;
 }
 
-export interface TokenOwnerRole {
-  type: RoleType.TokenOwner;
-  ticker: string;
-}
-
+/**
+ * @deprecated in favor of external agent permissions
+ */
 export interface TokenPiaRole {
   type: RoleType.TokenPia;
   ticker: string;
 }
 
+/**
+ * @deprecated in favor of external agent permissions
+ */
 export interface TokenCaaRole {
   type: RoleType.TokenCaa;
   ticker: string;
@@ -127,7 +128,6 @@ export interface PortfolioCustodianRole {
 
 export type Role =
   | TickerOwnerRole
-  | TokenOwnerRole
   | TokenPiaRole
   | TokenCaaRole
   | CddProviderRole
@@ -157,6 +157,7 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
 
 /**
  * @hidden
+ * @deprecated
  */
 export function isTokenCaaRole(role: Role): role is TokenCaaRole {
   return role.type === RoleType.TokenCaa;
@@ -164,16 +165,10 @@ export function isTokenCaaRole(role: Role): role is TokenCaaRole {
 
 /**
  * @hidden
+ * @deprecated
  */
 export function isTokenPiaRole(role: Role): role is TokenPiaRole {
   return role.type === RoleType.TokenPia;
-}
-
-/**
- * @hidden
- */
-export function isTokenOwnerRole(role: Role): role is TokenOwnerRole {
-  return role.type === RoleType.TokenOwner;
 }
 
 /**
@@ -243,6 +238,7 @@ export enum AuthorizationType {
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   TransferCorporateActionAgent = 'TransferCorporateActionAgent',
+  BecomeAgent = 'BecomeAgent',
   Custom = 'Custom',
   NoData = 'NoData',
 }
@@ -376,7 +372,7 @@ export enum ConditionType {
   IsAbsent = 'IsAbsent',
   IsAnyOf = 'IsAnyOf',
   IsNoneOf = 'IsNoneOf',
-  IsPrimaryIssuanceAgent = 'IsPrimaryIssuanceAgent',
+  IsExternalAgent = 'IsExternalAgent',
   IsIdentity = 'IsIdentity',
 }
 
@@ -397,15 +393,15 @@ export type IdentityCondition = ConditionBase & {
   identity: Identity;
 };
 
-export type PrimaryIssuanceAgentCondition = ConditionBase & {
-  type: ConditionType.IsPrimaryIssuanceAgent;
+export type ExternalAgentCondition = ConditionBase & {
+  type: ConditionType.IsExternalAgent;
 };
 
 export type Condition =
   | SingleClaimCondition
   | MultiClaimCondition
   | IdentityCondition
-  | PrimaryIssuanceAgentCondition;
+  | ExternalAgentCondition;
 
 /**
  * @hidden
@@ -703,6 +699,40 @@ export enum TxGroup {
   StoManagement = 'StoManagement',
 }
 
+export enum PermissionType {
+  Include = 'Include',
+  Exclude = 'Exclude',
+}
+
+/**
+ * Signer/agent permissions for a specific type
+ *
+ * @param T - type of Permissions (Security Token, Transaction, Portfolio, etc)
+ */
+export interface SectionPermissions<T> {
+  /**
+   * Values to be included/excluded
+   */
+  values: T[];
+  /**
+   * Whether the permissions are inclusive or exclusive
+   */
+  type: PermissionType;
+}
+
+/**
+ * Permissions related to Transactions. Can include/exclude individual transactions or entire modules
+ */
+export interface TransactionPermissions extends SectionPermissions<TxTag | ModuleName> {
+  /**
+   * Transactions to be exempted from inclusion/exclusion. This allows more granularity when
+   *   setting permissions. For example, let's say we want to include only the `asset` and `staking` modules,
+   *   but exclude the `asset.registerTicker` transaction. We could add both modules to `values`, and add
+   *   `TxTags.asset.registerTicker` to `exceptions`
+   */
+  exceptions?: TxTag[];
+}
+
 /**
  * Permissions a Secondary Key has over the Identity. A null value means the key has
  *   all permissions of that type (i.e. if `tokens` is null, the key has permissions over all
@@ -710,22 +740,72 @@ export enum TxGroup {
  */
 export interface Permissions {
   /**
-   * list of Security Tokens over which this key has permissions
+   * Security Tokens over which this key has permissions
    */
-  tokens: SecurityToken[] | null;
+  tokens: SectionPermissions<SecurityToken> | null;
   /**
-   * list of Transactions this key can execute
+   * Transactions this key can execute
    */
-  transactions: TxTag[] | null;
+  transactions: TransactionPermissions | null;
   /**
    * list of Transaction Groups this key can execute. Having permissions over a TxGroup
-   *   means having permissions over every TxTag in said group. Transaction permissions are the result of
-   *   combining these with the `transactions` array. If `transactions` is null, then this value is redundant
+   *   means having permissions over every TxTag in said group. Partial group permissions are not
+   *   covered by this value. For a full picture of transaction permissions, see the `transactions` property
    */
   transactionGroups: TxGroup[];
   /* list of Portfolios over which this key has permissions */
-  portfolios: (DefaultPortfolio | NumberedPortfolio)[] | null;
+  portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null;
 }
+
+/**
+ * This represents positive permissions (i.e. only "includes"). It is used
+ *   for specifying procedure requirements and querying if an account has certain
+ *   permissions
+ */
+export interface SimplePermissions {
+  /**
+   * list of required Security Tokens permissions
+   */
+  tokens?: SecurityToken[] | null;
+  /**
+   * list of required Transaction permissions
+   */
+  transactions?: TxTag[] | null;
+  /* list of required Portfolio permissions */
+  portfolios?: (DefaultPortfolio | NumberedPortfolio)[] | null;
+}
+
+export enum KnownPermissionGroup {
+  /**
+   * all transactions authorized
+   */
+  Full = 'Full',
+  /**
+   * not authorized:
+   *   - externalAgents
+   */
+  ExceptMeta = 'ExceptMeta',
+  /**
+   * authorized:
+   *   - corporateAction
+   *   - corporateBallot
+   *   - capitalDistribution
+   */
+  PolymeshV1Caa = 'PolymeshV1Caa',
+  /**
+   * authorized:
+   *   - asset.issue
+   *   - asset.redeem
+   *   - asset.controllerTransfer
+   *   - sto (except for sto.invest)
+   */
+  PolymeshV1Pia = 'PolymeshV1Pia',
+}
+
+/**
+ * Determines the subset of permissions an Agent has over a Security Token
+ */
+export type PermissionGroup = KnownPermissionGroup | { custom: BigNumber };
 
 /**
  * Authorization request data corresponding to type
@@ -734,12 +814,14 @@ export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
+  | { type: AuthorizationType.BecomeAgent; value: string; permissionGroup: PermissionGroup }
   | {
       type: Exclude<
         AuthorizationType,
         | AuthorizationType.NoData
         | AuthorizationType.JoinIdentity
         | AuthorizationType.PortfolioCustody
+        | AuthorizationType.BecomeAgent
       >;
       value: string;
     };
@@ -837,35 +919,43 @@ export type PortfolioLike =
 /**
  * Permissions to grant to a Signer over an Identity
  *
+ * @link [[Permissions]]
+ *
  * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
- *   and appended to the `transactions` array. If `transactions` is null, then the value of `transactionGroups` is redundant
  */
-export interface PermissionsLike {
+export type PermissionsLike = {
   /**
-   * array of Security Tokens on which to grant permissions. A null value represents full permissions
+   * Security Tokens on which to grant permissions. A null value represents full permissions
    */
-  tokens?: (string | SecurityToken)[] | null;
+  tokens?: SectionPermissions<string | SecurityToken> | null;
   /**
-   * array of transaction tags that the Secondary Key has permission to execute. A null value represents full permissions
+   * Portfolios on which to grant permissions. A null value represents full permissions
    */
-  transactions?: TxTag[] | null;
+  portfolios?: SectionPermissions<PortfolioLike> | null;
   /**
-   * array of transaction groups that the Secondary Key has permission to execute.
+   * transaction that the Secondary Key has permission to execute. A null value represents full permissions
    */
-  transactionGroups?: TxGroup[];
-  /**
-   * array of Portfolios for which to grant permissions. A null value represents full permissions
-   */
-  portfolios?: PortfolioLike[] | null;
-}
+} & (
+  | {
+      transactions?: TransactionPermissions | null;
+    }
+  | {
+      transactionGroups?: TxGroup[];
+    }
+);
 
 export interface PortfolioMovement {
   token: string | SecurityToken;
   amount: BigNumber;
+  /**
+   * identifier string to help differentiate transfers
+   */
+  memo?: string;
 }
 
 export interface ProcedureAuthorizationStatus {
-  permissions: boolean;
+  agentPermissions: boolean;
+  signerPermissions: boolean;
   roles: boolean;
   accountFrozen: boolean;
 }
@@ -987,7 +1077,46 @@ export interface ProcedureMethod<
   ) => Promise<ProcedureAuthorizationStatus>;
 }
 
-export { TxTags, TxTag };
+export enum SignerType {
+  /* eslint-disable @typescript-eslint/no-shadow */
+  Identity = 'Identity',
+  Account = 'Account',
+  /* eslint-enable @typescript-eslint/no-shadow */
+}
+
+export interface SignerValue {
+  /**
+   * whether the signer is an Account or Identity
+   */
+  type: SignerType;
+  /**
+   * address or DID (depending on whether the signer is an Account or Identity)
+   */
+  value: string;
+}
+
+export interface GroupedInstructions {
+  /**
+   * Instructions that have already been affirmed by the Identity
+   */
+  affirmed: Instruction[];
+  /**
+   * Instructions that have already been rejected by the Identity
+   */
+  rejected: Instruction[];
+  /**
+   * Instructions that still need to be affirmed/rejected by the Identity
+   */
+  pending: Instruction[];
+  /**
+   * Instructions that failed in their execution (can be rescheduled).
+   *   This group supercedes the other three, so for example, a failed Instruction
+   *   might also belong in the `affirmed` group, but it will only be included in this one
+   */
+  failed: Instruction[];
+}
+
+export { TxTags, TxTag, ModuleName };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';

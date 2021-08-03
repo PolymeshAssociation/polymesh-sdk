@@ -1,6 +1,13 @@
 import { Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
-import { AuthorizationType, ErrorCode, RoleType, TickerReservationStatus, TxTags } from '~/types';
-import { ProcedureAuthorization, SignerType } from '~/types/internal';
+import {
+  AuthorizationType,
+  ErrorCode,
+  RoleType,
+  SignerType,
+  TickerReservationStatus,
+  TxTags,
+} from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -76,8 +83,8 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TickerOwner, ticker }],
+    permissions: {
       tokens: [],
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],

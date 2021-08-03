@@ -188,8 +188,8 @@ describe('modifyDistributionCheckpoint procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenCaa, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenCaa, ticker }],
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],

@@ -7,8 +7,14 @@ import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context, InviteAccountParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Identity, ResultSet } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import {
+  Authorization,
+  AuthorizationType,
+  Identity,
+  ResultSet,
+  SignerType,
+  SignerValue,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -75,9 +81,9 @@ describe('inviteAccount procedure', () => {
     });
     const rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       JoinIdentity: dsMockUtils.createMockPermissions({
-        asset: [],
-        extrinsic: [],
-        portfolio: [],
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
       }),
     });
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
@@ -113,9 +119,9 @@ describe('inviteAccount procedure', () => {
           {
             signer,
             permissions: {
-              tokens: [],
-              portfolios: [],
-              transactions: [],
+              tokens: null,
+              portfolios: null,
+              transactions: null,
               transactionGroups: [],
             },
           },
@@ -210,9 +216,9 @@ describe('inviteAccount procedure', () => {
           {
             signer,
             permissions: {
-              tokens: [],
-              portfolios: [],
-              transactions: [],
+              tokens: null,
+              portfolios: null,
+              transactions: null,
               transactionGroups: [],
             },
           },
@@ -268,9 +274,9 @@ describe('inviteAccount procedure', () => {
           {
             signer,
             permissions: {
-              tokens: [],
-              portfolios: [],
-              transactions: [],
+              tokens: null,
+              portfolios: null,
+              transactions: null,
               transactionGroups: [],
             },
           },

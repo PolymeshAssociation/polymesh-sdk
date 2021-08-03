@@ -1,6 +1,6 @@
 import { Identity, Procedure, SecurityToken } from '~/internal';
-import { AuthorizationType, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization, SignerType } from '~/types/internal';
+import { AuthorizationType, SignerType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -65,8 +65,7 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],

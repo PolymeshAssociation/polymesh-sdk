@@ -13,7 +13,7 @@ import {
   toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
-import { ProcedureMethod, Signer } from '~/types';
+import { PermissionType, ProcedureMethod, Signer } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -41,7 +41,11 @@ export class CurrentIdentity extends Identity {
           const signers = secondaryKeys.map(signer => {
             return {
               signer,
-              permissions: { tokens: [], transactions: [], portfolios: [] },
+              permissions: {
+                tokens: { type: PermissionType.Include, values: [] },
+                transactions: { type: PermissionType.Include, values: [] },
+                portfolios: { type: PermissionType.Include, values: [] },
+              },
             };
           });
           return [modifySignerPermissions, { secondaryKeys: signers }];

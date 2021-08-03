@@ -78,11 +78,7 @@ describe('registerIdentity procedure', () => {
       signer: dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(secondaryKeys[0].signer.did),
       }),
-      permissions: dsMockUtils.createMockPermissions({
-        asset: null,
-        extrinsic: null,
-        portfolio: null,
-      }),
+      permissions: dsMockUtils.createMockPermissions(),
     });
 
     const proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);

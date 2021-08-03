@@ -162,7 +162,6 @@ describe('TickerReservation class', () => {
           name: dsMockUtils.createMockAssetName('someToken'),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
           divisible: dsMockUtils.createMockBool(true),
-          primary_issuance_agent: dsMockUtils.createMockOption(),
           total_supply: dsMockUtils.createMockBalance(1000),
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
@@ -274,6 +273,15 @@ describe('TickerReservation class', () => {
       const queue = await tickerReservation.transferOwnership(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
+
+      expect(token.toJson()).toBe('SOME_TICKER');
     });
   });
 });

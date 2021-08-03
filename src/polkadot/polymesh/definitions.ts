@@ -10,6 +10,8 @@ export default {
     },
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
+    EventCounts: 'Vec<u32>',
+    ErrorAt: '(u32, DispatchError)',
     InvestorUid: '[u8; 16]',
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
@@ -79,18 +81,45 @@ export default {
       owner_did: 'IdentityId',
       divisible: 'bool',
       asset_type: 'AssetType',
-      primary_issuance_agent: 'Option<IdentityId>',
     },
     PalletName: 'Text',
     DispatchableName: 'Text',
+    AssetPermissions: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<Ticker>',
+        Except: 'Vec<Ticker>',
+      },
+    },
+    PortfolioPermissions: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<PortfolioId>',
+        Except: 'Vec<PortfolioId>',
+      },
+    },
+    DispatchableNames: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<DispatchableName>',
+        Except: 'Vec<DispatchableName>',
+      },
+    },
     PalletPermissions: {
       pallet_name: 'PalletName',
-      dispatchable_names: 'Option<Vec<DispatchableName>>',
+      dispatchable_names: 'DispatchableNames',
+    },
+    ExtrinsicPermissions: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<PalletPermissions>',
+        Except: 'Vec<PalletPermissions>',
+      },
     },
     Permissions: {
-      asset: 'Option<Vec<Ticker>>',
-      extrinsic: 'Option<Vec<PalletPermissions>>',
-      portfolio: 'Option<Vec<PortfolioId>>',
+      asset: 'AssetPermissions',
+      extrinsic: 'ExtrinsicPermissions',
+      portfolio: 'PortfolioPermissions',
     },
     LegacyPalletPermissions: {
       pallet_name: 'PalletName',
@@ -657,11 +686,8 @@ export default {
         Custom: 'Ticker',
         NoData: '',
         TransferCorporateActionAgent: 'Ticker',
+        BecomeAgent: '(Ticker, AgentGroup)',
       },
-    },
-    AuthIdentifier: {
-      signatory: 'Signatory',
-      auth_id: 'u64',
     },
     SmartExtensionType: {
       _enum: {
@@ -937,6 +963,7 @@ export default {
       _enum: {
         Unknown: '',
         Pending: '',
+        Failed: '',
       },
     },
     LegStatus: {
@@ -1003,6 +1030,7 @@ export default {
     MovePortfolioItem: {
       ticker: 'Ticker',
       amount: 'Balance',
+      memo: 'Option<Memo>',
     },
     WeightToFeeCoefficient: {
       coeffInteger: 'Balance',
@@ -1012,7 +1040,7 @@ export default {
     },
     TargetIdentity: {
       _enum: {
-        PrimaryIssuanceAgent: '',
+        ExternalAgent: '',
         Specific: 'IdentityId',
       },
     },
@@ -1156,6 +1184,16 @@ export default {
     TransferManagerResult: {
       tm: 'TransferManager',
       result: 'bool',
+    },
+    AGId: 'u32',
+    AgentGroup: {
+      _enum: {
+        Full: '',
+        Custom: 'AGId',
+        ExceptMeta: '',
+        PolymeshV1CAA: '',
+        PolymeshV1PIA: '',
+      },
     },
   },
 };

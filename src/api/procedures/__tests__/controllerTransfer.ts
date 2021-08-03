@@ -8,7 +8,7 @@ import {
   Params,
   prepareControllerTransfer,
 } from '~/api/procedures/controllerTransfer';
-import { Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
+import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, RoleType } from '~/types';
@@ -134,16 +134,13 @@ describe('controllerTransfer procedure', () => {
         did: 'piaDid',
       };
 
+      dsMockUtils.getContextInstance({ did: portfolioId.did });
+
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({
-        ticker,
-        details: {
-          primaryIssuanceAgent: portfolioId as Identity,
-        },
-      });
-      const identityRoles = [
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const roles = [
         { type: RoleType.TokenPia, ticker },
         {
           type: RoleType.PortfolioCustodian,
@@ -152,8 +149,8 @@ describe('controllerTransfer procedure', () => {
       ];
 
       expect(await boundFunc({ ticker, originPortfolio, amount })).toEqual({
-        identityRoles,
-        signerPermissions: {
+        roles,
+        permissions: {
           transactions: [TxTags.asset.ControllerTransfer],
           tokens: [token],
           portfolios: [entityMockUtils.getDefaultPortfolioInstance()],

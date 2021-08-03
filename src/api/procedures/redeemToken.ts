@@ -32,12 +32,12 @@ export async function prepareRedeemToken(
   const securityToken = new SecurityToken({ ticker }, context);
   const rawTicker = stringToTicker(ticker, context);
 
-  const { owner, primaryIssuanceAgent, isDivisible } = await securityToken.details();
+  const [{ isDivisible }, { did }] = await Promise.all([
+    securityToken.details(),
+    context.getCurrentIdentity(),
+  ]);
 
-  const defaultPortfolio = new DefaultPortfolio(
-    { did: primaryIssuanceAgent ? primaryIssuanceAgent.did : owner.did },
-    context
-  );
+  const defaultPortfolio = new DefaultPortfolio({ did }, context);
 
   const portfolioBalance = await defaultPortfolio.getTokenBalances({ tokens: [ticker] });
 
@@ -72,20 +72,14 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  const securityToken = new SecurityToken({ ticker }, context);
-  const { owner, primaryIssuanceAgent } = await securityToken.details();
+  const { did } = await context.getCurrentIdentity();
 
   return {
-    identityRoles: [{ type: RoleType.TokenPia, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TokenPia, ticker }],
+    permissions: {
       transactions: [TxTags.asset.Redeem],
       tokens: [new SecurityToken({ ticker }, context)],
-      portfolios: [
-        new DefaultPortfolio(
-          { did: primaryIssuanceAgent ? primaryIssuanceAgent.did : owner.did },
-          context
-        ),
-      ],
+      portfolios: [new DefaultPortfolio({ did }, context)],
     },
   };
 }

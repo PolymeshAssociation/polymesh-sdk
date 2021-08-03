@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { CurrentAccount } from '~/api/entities/CurrentAccount';
-import { Account, Context, Identity } from '~/internal';
+import { Account, Context, CurrentAccount, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';

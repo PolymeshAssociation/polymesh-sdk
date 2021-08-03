@@ -78,6 +78,76 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: isExecuted', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    let numberToU64Stub: sinon.SinonStub;
+    let instructionCounterStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    });
+
+    beforeEach(() => {
+      instructionCounterStub = dsMockUtils.createQueryStub('settlement', 'instructionCounter', {
+        returnValue: dsMockUtils.createMockU64(1000),
+      });
+      numberToU64Stub.withArgs(id, context).returns(rawId);
+    });
+
+    test('should return whether the instruction is executed', async () => {
+      const status = InternalInstructionStatus.Unknown;
+      const createdAt = new Date('10/14/1987');
+      const tradeDate = new Date('11/17/1987');
+      const valueDate = new Date('11/17/1987');
+      const venueId = new BigNumber(1);
+      const type = InstructionType.SettleOnAffirmation;
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const queryResult = dsMockUtils.createMockInstruction({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        instruction_id: dsMockUtils.createMockU64(1),
+        status: dsMockUtils.createMockInstructionStatus(status),
+        venue_id: dsMockUtils.createMockU64(venueId.toNumber()),
+        created_at: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(createdAt.getTime())),
+        trade_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(tradeDate.getTime())),
+        value_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(valueDate.getTime())),
+        settlement_type: dsMockUtils.createMockSettlementType(type),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      const instructionDetailsStub = dsMockUtils
+        .createQueryStub('settlement', 'instructionDetails')
+        .withArgs(rawId)
+        .resolves(queryResult);
+
+      let result = await instruction.isExecuted();
+
+      expect(result).toBe(true);
+
+      instructionCounterStub.resolves(dsMockUtils.createMockU64(0));
+
+      result = await instruction.isExecuted();
+
+      expect(result).toBe(false);
+
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          ...queryResult,
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+        })
+      );
+
+      result = await instruction.isExecuted();
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: isPending', () => {
     afterAll(() => {
       sinon.restore();
@@ -190,7 +260,7 @@ describe('Instruction class', () => {
     });
 
     test('should return the Instruction details', async () => {
-      const status = InstructionStatus.Pending;
+      let status = InstructionStatus.Pending;
       const createdAt = new Date('10/14/1987');
       const tradeDate = new Date('11/17/1987');
       const valueDate = new Date('11/17/1987');
@@ -256,6 +326,27 @@ describe('Instruction class', () => {
         endBlock,
         venue,
       });
+
+      status = InstructionStatus.Failed;
+      type = InstructionType.SettleOnAffirmation;
+
+      instructionDetailsStub.resolves(
+        dsMockUtils.createMockInstruction({
+          ...queryResult,
+          status: dsMockUtils.createMockInstructionStatus(status),
+        })
+      );
+
+      result = await instruction.details();
+
+      expect(result).toEqual({
+        status,
+        createdAt,
+        tradeDate,
+        valueDate,
+        type,
+        venue,
+      });
     });
 
     test('should throw an error if the Instruction is not pending', () => {
@@ -277,7 +368,7 @@ describe('Instruction class', () => {
         );
 
       return expect(instruction.details()).rejects.toThrow(
-        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
+        'Instruction has already been executed/rejected and it was purged from chain'
       );
     });
   });
@@ -320,6 +411,9 @@ describe('Instruction class', () => {
     });
 
     beforeEach(() => {
+      dsMockUtils.createQueryStub('settlement', 'instructionCounter', {
+        returnValue: dsMockUtils.createMockU64(1000),
+      });
       instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
         returnValue: dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
@@ -353,7 +447,7 @@ describe('Instruction class', () => {
         })
       );
       return expect(instruction.getAffirmations()).rejects.toThrow(
-        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
+        'Instruction has already been executed/rejected and it was purged from chain'
       );
     });
 
@@ -380,6 +474,9 @@ describe('Instruction class', () => {
     });
 
     beforeEach(() => {
+      dsMockUtils.createQueryStub('settlement', 'instructionCounter', {
+        returnValue: dsMockUtils.createMockU64(1000),
+      });
       numberToU64Stub.withArgs(id, context).returns(rawId);
       dsMockUtils.createQueryStub('settlement', 'instructionLegs');
       instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
@@ -449,7 +546,7 @@ describe('Instruction class', () => {
         })
       );
       return expect(instruction.getLegs()).rejects.toThrow(
-        'Instruction is not pending. This means it was already executed/rejected (execution might have failed) and it was purged from chain'
+        'Instruction has already been executed/rejected and it was purged from chain'
       );
     });
   });
@@ -523,6 +620,31 @@ describe('Instruction class', () => {
         .resolves(expectedQueue);
 
       const queue = await instruction.withdraw();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: reschedule', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { id },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await instruction.reschedule();
 
       expect(queue).toBe(expectedQueue);
     });
@@ -723,6 +845,12 @@ describe('Instruction class', () => {
       return expect(instruction.getStatus()).rejects.toThrow(
         "It isn't possible to determine the current status of this Instruction"
       );
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      expect(instruction.toJson()).toBe('1');
     });
   });
 });

@@ -138,7 +138,7 @@ interface SecurityTokenOptions {
   getIdentifiers?: TokenIdentifier[];
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
-  corporateActionsGetAgent?: Identity;
+  corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
 }
 
@@ -286,7 +286,7 @@ let securityTokenTransfersCanTransferStub: SinonStub;
 let securityTokenGetIdentifiersStub: SinonStub;
 let securityTokenTransferRestrictionsCountGetStub: SinonStub;
 let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
-let securityTokenCorporateActionsGetAgentStub: SinonStub;
+let securityTokenCorporateActionsGetAgentsStub: SinonStub;
 let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
@@ -630,6 +630,8 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     name: 'TOKEN_NAME',
     totalSupply: new BigNumber(1000000),
     isDivisible: false,
+    primaryIssuanceAgents: [],
+    fullAgents: [],
   },
   currentFundingRound: 'Series A',
   isFrozen: false,
@@ -643,7 +645,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     restrictions: [],
     availableSlots: 3,
   },
-  corporateActionsGetAgent: { did: 'someDid' } as Identity,
+  corporateActionsGetAgents: [],
   corporateActionsGetDefaults: {
     targets: { identities: [], treatment: TargetTreatment.Exclude },
     defaultTaxWithholding: new BigNumber(10),
@@ -1034,7 +1036,9 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
       },
     },
     corporateActions: {
-      getAgent: securityTokenCorporateActionsGetAgentStub.resolves(opts.corporateActionsGetAgent),
+      getAgents: securityTokenCorporateActionsGetAgentsStub.resolves(
+        opts.corporateActionsGetAgents
+      ),
       getDefaults: securityTokenCorporateActionsGetDefaultsStub.resolves(
         opts.corporateActionsGetDefaults
       ),
@@ -1062,7 +1066,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenGetIdentifiersStub = sinon.stub();
   securityTokenTransferRestrictionsCountGetStub = sinon.stub();
   securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
-  securityTokenCorporateActionsGetAgentStub = sinon.stub();
+  securityTokenCorporateActionsGetAgentsStub = sinon.stub();
   securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
@@ -2213,14 +2217,14 @@ export function getSecurityTokenTransferRestrictionsPercentageGetStub(
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.corporateActions.getAgent` method
+ * Retrieve the stub of the `SecurityToken.corporateActions.getAgents` method
  */
-export function getSecurityTokenCorporateActionsGetAgentStub(agent?: Identity): SinonStub {
+export function getSecurityTokenCorporateActionsGetAgentsStub(agent?: Identity): SinonStub {
   if (agent) {
-    return securityTokenCorporateActionsGetAgentStub.resolves(agent);
+    return securityTokenCorporateActionsGetAgentsStub.resolves(agent);
   }
 
-  return securityTokenCorporateActionsGetAgentStub;
+  return securityTokenCorporateActionsGetAgentsStub;
 }
 
 /**

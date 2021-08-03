@@ -3,9 +3,8 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 import { getAuthorization, Params, prepareRedeemToken } from '~/api/procedures/redeemToken';
-import { Context, Identity, SecurityToken } from '~/internal';
+import { Context, DefaultPortfolio, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, RoleType, TxTags } from '~/types';
@@ -100,7 +99,6 @@ describe('redeemToken procedure', () => {
       securityTokenOptions: {
         details: {
           isDivisible: true,
-          primaryIssuanceAgent: new Identity({ did: 'primaryDid' }, mockContext),
         },
       },
       defaultPortfolioOptions: {
@@ -151,44 +149,18 @@ describe('redeemToken procedure', () => {
         ticker,
         amount,
       };
-      const ownerDid = 'ownerDid';
       const someDid = 'someDid';
+
+      dsMockUtils.getContextInstance({ did: someDid });
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            owner: new Identity({ did: ownerDid }, mockContext),
-          },
-        },
-      });
-
-      let result = await boundFunc(params);
+      const result = await boundFunc(params);
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.TokenPia, ticker }],
-        signerPermissions: {
-          transactions: [TxTags.asset.Redeem],
-          tokens: [new SecurityToken({ ticker }, mockContext)],
-          portfolios: [new DefaultPortfolio({ did: ownerDid }, mockContext)],
-        },
-      });
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            primaryIssuanceAgent: new Identity({ did: someDid }, mockContext),
-          },
-        },
-      });
-
-      result = await boundFunc(params);
-
-      expect(result).toEqual({
-        identityRoles: [{ type: RoleType.TokenPia, ticker }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TokenPia, ticker }],
+        permissions: {
           transactions: [TxTags.asset.Redeem],
           tokens: [new SecurityToken({ ticker }, mockContext)],
           portfolios: [new DefaultPortfolio({ did: someDid }, mockContext)],

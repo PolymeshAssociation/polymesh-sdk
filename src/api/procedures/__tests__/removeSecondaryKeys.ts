@@ -8,8 +8,7 @@ import {
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Signer } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import { Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryKeys procedure', () => {
@@ -61,7 +60,12 @@ describe('removeSecondaryKeys procedure', () => {
       contextOptions: {
         secondaryKeys: signers.map(signer => ({
           signer,
-          permissions: { tokens: [], portfolios: [], transactions: [], transactionGroups: [] },
+          permissions: {
+            tokens: null,
+            transactions: null,
+            transactionGroups: [],
+            portfolios: null,
+          },
         })),
       },
     });

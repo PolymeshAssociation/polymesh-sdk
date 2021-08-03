@@ -1,6 +1,6 @@
 import { Context, CurrentIdentity, Identity, TransactionQueue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { VenueType } from '~/types';
+import { PermissionType, VenueType } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -65,7 +65,11 @@ describe('CurrentIdentity class', () => {
       const secondaryKeys = [
         {
           signer: signers[0],
-          permissions: { tokens: [], transactions: [], portfolios: [] },
+          permissions: {
+            tokens: { type: PermissionType.Include, values: [] },
+            transactions: { type: PermissionType.Include, values: [] },
+            portfolios: { type: PermissionType.Include, values: [] },
+          },
         },
       ];
 
@@ -90,7 +94,7 @@ describe('CurrentIdentity class', () => {
       const secondaryKeys = [
         {
           signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
-          permissions: { tokens: [], transactions: [], portfolios: [] },
+          permissions: { tokens: null, transactions: null, portfolios: null },
         },
       ];
 

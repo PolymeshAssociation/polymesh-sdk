@@ -470,9 +470,9 @@ export class Polymesh {
   }
 
   /**
-   * Return a list that contains all the signing Accounsts associated to the SDK instance
+   * Return a list that contains all the signing Accounts associated to the SDK instance
    *
-   * @throws — if there is no current account associated to the SDK instance
+   * @throws — if there is no current Account associated to the SDK instance
    */
   public getAccounts(): [CurrentAccount, ...Account[]] {
     return this.context.getAccounts();
@@ -700,7 +700,7 @@ export class Polymesh {
    * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
    *   you must explicitly call [[setSigner]]
    *
-   * @param params.accountMnemonic - account mnemonic
+   * @param params.accountUri - account URI
    */
   public addSigner(params: { accountUri: string }): Account;
 

@@ -58,7 +58,7 @@ export async function prepareClaimDividends(
  */
 export const claimDividends = (): Procedure<Params, void> =>
   new Procedure(prepareClaimDividends, {
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.capitalDistribution.Claim],
       tokens: [],
       portfolios: [],

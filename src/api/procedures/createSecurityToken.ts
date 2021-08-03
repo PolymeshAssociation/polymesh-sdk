@@ -27,9 +27,9 @@ import { batchArguments } from '~/utils/internal';
 export interface CreateSecurityTokenParams {
   name: string;
   /**
-   * amount of tokens that will be minted on creation
+   * amount of tokens that will be minted on creation (optional, default doesn't mint)
    */
-  totalSupply: BigNumber;
+  totalSupply?: BigNumber;
   /**
    * whether a single token can be divided into decimal parts
    */
@@ -103,7 +103,6 @@ export async function prepareCreateSecurityToken(
     });
   }
 
-  const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawType = tokenTypeToAssetType(tokenType, context);
@@ -121,17 +120,24 @@ export async function prepareCreateSecurityToken(
     fee = new BigNumber(0);
   }
 
+  // TODO @shuffledex: refactoring with batching mechanism
+
   this.addTransaction(
     tx.asset.createAsset,
     { fee },
     rawName,
     rawTicker,
-    rawTotalSupply,
     rawIsDivisible,
     rawType,
     rawIdentifiers,
     rawFundingRound
   );
+
+  if (totalSupply && totalSupply.gt(0)) {
+    const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
+
+    this.addTransaction(tx.asset.issue, {}, rawTicker, rawTotalSupply);
+  }
 
   if (documents) {
     const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
@@ -159,8 +165,8 @@ export function getAuthorization({ ticker, documents }: Params): ProcedureAuthor
   }
 
   return {
-    identityRoles: [{ type: RoleType.TickerOwner, ticker }],
-    signerPermissions: {
+    roles: [{ type: RoleType.TickerOwner, ticker }],
+    permissions: {
       transactions,
       tokens: [],
       portfolios: [],

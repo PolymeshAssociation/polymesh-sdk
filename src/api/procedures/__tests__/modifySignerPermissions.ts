@@ -8,8 +8,7 @@ import {
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryKey, Signer } from '~/types';
-import { SignerType, SignerValue } from '~/types/internal';
+import { SecondaryKey, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {
@@ -59,17 +58,17 @@ describe('modifySignerPermissions procedure', () => {
       {
         signer: account,
         permissions: {
-          tokens: [],
-          transactions: [],
+          tokens: null,
+          transactions: null,
           transactionGroups: [],
-          portfolios: [],
+          portfolios: null,
         },
       },
     ];
     let fakeMeshPermissions = dsMockUtils.createMockPermissions({
-      asset: [],
-      extrinsic: [],
-      portfolio: [],
+      asset: dsMockUtils.createMockAssetPermissions(),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions(),
+      portfolio: dsMockUtils.createMockPortfolioPermissions(),
     });
 
     const signerValue = {
@@ -114,9 +113,9 @@ describe('modifySignerPermissions procedure', () => {
       },
     ];
     fakeMeshPermissions = dsMockUtils.createMockPermissions({
-      asset: null,
-      extrinsic: null,
-      portfolio: null,
+      asset: dsMockUtils.createMockAssetPermissions('Whole'),
+      extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
     });
 
     permissionsToMeshPermissionsStub.returns(fakeMeshPermissions);
@@ -135,9 +134,9 @@ describe('modifySignerPermissions procedure', () => {
       {
         signer: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
         permissions: {
-          tokens: [],
-          transactions: [],
-          portfolios: [],
+          tokens: null,
+          transactions: null,
+          portfolios: null,
         },
       },
     ];

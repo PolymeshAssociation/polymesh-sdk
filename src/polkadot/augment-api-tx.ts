@@ -41,6 +41,8 @@ import type {
 } from '@polkadot/types/interfaces/staking';
 import type { Key } from '@polkadot/types/interfaces/system';
 import type {
+  AGId,
+  AgentGroup,
   AssetIdentifier,
   AssetName,
   AssetType,
@@ -60,6 +62,7 @@ import type {
   Condition,
   Document,
   DocumentId,
+  ExtrinsicPermissions,
   FundingRoundName,
   FundraiserName,
   IdentityId,
@@ -123,22 +126,6 @@ declare module '@polkadot/api/types/submittable' {
        * * `auth_id` Authorization ID of the token ownership transfer authorization.
        **/
       acceptAssetOwnershipTransfer: AugmentedSubmittable<
-        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
-      >;
-      /**
-       * This function is used to accept a primary issuance agent transfer.
-       * NB: To reject the transfer, call remove auth function in identity module.
-       *
-       * # Arguments
-       * * `origin` It contains the signing key of the caller (i.e. who signed the transaction to execute this function).
-       * * `auth_id` Authorization ID of primary issuance agent transfer authorization.
-       *
-       * ## Errors
-       * - `NoPrimaryIssuanceAgentTransferAuth` if `auth_id` is not an authorization to transfer
-       * the primary issuance agent.
-       **/
-      acceptPrimaryIssuanceAgentTransfer: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u64]
       >;
@@ -274,15 +261,13 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, Balance, PortfolioId]
       >;
       /**
-       * Initializes a new security token
-       * makes the initiating account the owner of the security token
-       * & the balance of the owner is set to total supply.
+       * Initializes a new security token, with the initiating account as its owner.
+       * The total supply will initially be zero. To mint tokens, use `issue`.
        *
        * # Arguments
        * * `origin` - contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
        * * `name` - the name of the token.
        * * `ticker` - the ticker symbol of the token.
-       * * `total_supply` - the total supply of the token.
        * * `divisible` - a boolean to identify the divisibility status of the token.
        * * `asset_type` - the asset type.
        * * `identifiers` - a vector of asset identifiers.
@@ -294,7 +279,6 @@ declare module '@polkadot/api/types/submittable' {
        * - `FundingRoundNameMaxLengthExceeded` if the name of the funding round is longer that
        * `T::FundingRoundNameMaxLength`.
        * - `AssetAlreadyCreated` if asset was already created.
-       * - `TotalSupplyAboveLimit` if `total_supply > MAX_SUPPLY`.
        * - `TickerTooLong` if `ticker`'s length is greater than `config.max_ticker_length` chain
        * parameter.
        * - `TickerNotAscii` if `ticker` is not yet registered, and contains non-ascii printable characters (from code 32 to 126) or any character after first occurrence of `\0`.
@@ -306,7 +290,6 @@ declare module '@polkadot/api/types/submittable' {
         (
           name: AssetName | string,
           ticker: Ticker | string | Uint8Array,
-          totalSupply: Balance | AnyNumber | Uint8Array,
           divisible: bool | boolean | Uint8Array,
           assetType:
             | AssetType
@@ -336,15 +319,7 @@ declare module '@polkadot/api/types/submittable' {
               )[],
           fundingRound: Option<FundingRoundName> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          AssetName,
-          Ticker,
-          Balance,
-          bool,
-          AssetType,
-          Vec<AssetIdentifier>,
-          Option<FundingRoundName>
-        ]
+        [AssetName, Ticker, bool, AssetType, Vec<AssetIdentifier>, Option<FundingRoundName>]
       >;
       /**
        * Freezes transfers and minting of a given token.
@@ -456,21 +431,6 @@ declare module '@polkadot/api/types/submittable' {
           ticker: Ticker | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<DocumentId>, Ticker]
-      >;
-      /**
-       * Sets the primary issuance agent back to None. The caller must be the asset issuer. The asset
-       * issuer can always update the primary issuance agent using `transfer_primary_issuance_agent`.
-       *
-       * # Arguments
-       * * `origin` - The asset issuer.
-       * * `ticker` - Ticker symbol of the asset.
-       *
-       * # Permissions
-       * * Asset
-       **/
-      removePrimaryIssuanceAgent: AugmentedSubmittable<
-        (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [Ticker]
       >;
       /**
        * Remove the given smart extension id from the list of extension under a given ticker.
@@ -814,6 +774,9 @@ declare module '@polkadot/api/types/submittable' {
        * proposal which causes an error, in which case the error is returned and the rest of
        * proposals are not processed.
        *
+       * ## Errors
+       * - `ControllerNotSet` if `Controlles` was not set.
+       *
        * # Weight
        * `500_000_000 + 7_000_000 * bridge_txs.len()`
        **/
@@ -832,6 +795,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Changes the bridge admin key.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        **/
       changeAdmin: AugmentedSubmittable<
         (admin: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -839,6 +805,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Changes the bridge limit exempted list.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        **/
       changeBridgeExempted: AugmentedSubmittable<
         (
@@ -850,6 +819,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Changes the bridge limits.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        **/
       changeBridgeLimit: AugmentedSubmittable<
         (
@@ -860,6 +832,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Changes the controller account as admin.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        **/
       changeController: AugmentedSubmittable<
         (controller: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -867,6 +842,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Changes the timelock period.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        **/
       changeTimelock: AugmentedSubmittable<
         (timelock: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -874,6 +852,10 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Forces handling a transaction by bypassing the bridge limit and timelock.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
+       * - `NoValidCdd` if `bridge_tx.recipient` does not have a valid CDD claim.
        **/
       forceHandleBridgeTx: AugmentedSubmittable<
         (
@@ -888,11 +870,17 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Freezes transaction handling in the bridge module if it is not already frozen. When the
        * bridge is frozen, attempted transactions get postponed instead of getting handled.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        **/
       freeze: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
        * Freezes given bridge transactions.
        * If any bridge txn is already handled then this function will just ignore it and process next one.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        *
        * # Weight
        * `400_000_000 + 2_000_000 * bridge_txs.len()`
@@ -912,6 +900,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Handles an approved bridge transaction proposal.
+       *
+       * ## Errors
+       * - `BadCaller` if `origin` is not `Self::controller` or  `Self::admin`.
+       * - `TimelockedTx` if the transaction status is `Timelocked`.
+       * - `ProposalAlreadyHandled` if the transaction status is `Handled`.
        **/
       handleBridgeTx: AugmentedSubmittable<
         (
@@ -925,6 +918,11 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Root callable extrinsic, used as an internal call to handle a scheduled timelocked bridge transaction.
+       *
+       * # Errors
+       * - `BadOrigin` if `origin` is not root.
+       * - `ProposalAlreadyHandled` if transaction status is `Handled`.
+       * - `FrozenTx` if transaction status is `Frozen`.
        **/
       handleScheduledBridgeTx: AugmentedSubmittable<
         (
@@ -940,6 +938,9 @@ declare module '@polkadot/api/types/submittable' {
        * Proposes a bridge transaction, which amounts to making a multisig proposal for the
        * bridge transaction if the transaction is new or approving an existing proposal if the
        * transaction has already been proposed.
+       *
+       * ## Errors
+       * - `ControllerNotSet` if `Controlles` was not set.
        **/
       proposeBridgeTx: AugmentedSubmittable<
         (
@@ -953,11 +954,17 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Unfreezes transaction handling in the bridge module if it is frozen.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        **/
       unfreeze: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
        * Unfreezes given bridge transactions.
        * If any bridge txn is already handled then this function will just ignore it and process next one.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
        *
        * # Weight
        * `400_000_000 + 7_000_000 * bridge_txs.len()`
@@ -986,7 +993,7 @@ declare module '@polkadot/api/types/submittable' {
        * All benefits are rounded by truncation (down to first integer below).
        *
        * ## Arguments
-       * - `origin` which must be a holder of for the CAA of `ca_id`.
+       * - `origin` which must be a holder of for a CAA of `ca_id`.
        * - `ca_id` identifies the CA to start a capital distribution for.
        *
        * # Errors
@@ -1014,7 +1021,7 @@ declare module '@polkadot/api/types/submittable' {
        * if provided, or if `None`, then there's no expiry.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` identifies the CA to start a capital distribution for.
        * - `portfolio` specifies the portfolio number of the CAA to distribute `amount` from.
        * - `currency` to withdraw and distribute from the `portfolio`.
@@ -1026,7 +1033,7 @@ declare module '@polkadot/api/types/submittable' {
        * and may be reclaimed by `origin`.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `DistributingAsset` if `ca_id.ticker == currency`.
        * - `ExpiryBeforePayment` if `expires_at.unwrap() <= payment_at`.
        * - `NoSuchCA` if `ca_id` does not identify an existing CA.
@@ -1061,12 +1068,12 @@ declare module '@polkadot/api/types/submittable' {
        * All benefits are rounded by truncation (down to first integer below).
        *
        * ## Arguments
-       * - `origin` which must be a holder of for the CAA of `ca_id`.
+       * - `origin` which must be a holder of for a CAA of `ca_id`.
        * - `ca_id` identifies the CA with a capital distributions to push benefits for.
        * - `holder` to push benefits to.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not the `ticker`'s CAA or owner.
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchDistribution` if there's no capital distribution for `ca_id`.
        * - `CannotClaimBeforeStart` if `now < payment_at`.
        * - `CannotClaimAfterExpiry` if `now > expiry_at.unwrap()`.
@@ -1108,11 +1115,11 @@ declare module '@polkadot/api/types/submittable' {
        * unlocking the full amount in the distributor portfolio.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` identifies the CA with a not-yet-started capital distribution to remove.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchDistribution` if there's no capital distribution for `ca_id`.
        * - `DistributionStarted` if `payment_at <= now`.
        **/
@@ -1241,7 +1248,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `ticker` to create the checkpoint for.
        *
        * # Errors
-       * - `Unauthorized` if the DID of `origin` doesn't own `ticker`.
+       * - `UnauthorizedAgent` if the DID of `origin` isn't a permissioned agent for `ticker`.
        * - `CheckpointOverflow` if the total checkpoint counter would overflow.
        **/
       createCheckpoint: AugmentedSubmittable<
@@ -1260,7 +1267,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `schedule` that will generate checkpoints.
        *
        * # Errors
-       * - `Unauthorized` if the DID of `origin` doesn't own `ticker`.
+       * - `UnauthorizedAgent` if the DID of `origin` isn't a permissioned agent for `ticker`.
        * - `ScheduleDurationTooShort` if the schedule duration is too short.
        * - `InsufficientAccountBalance` if the protocol fee could not be charged.
        * - `ScheduleOverflow` if the schedule ID counter would overflow.
@@ -1290,7 +1297,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `id` of the schedule, when it was created by `created_schedule`.
        *
        * # Errors
-       * - `Unauthorized` if the caller doesn't own the asset.
+       * - `UnauthorizedAgent` if the DID of `origin` isn't a permissioned agent for `ticker`.
        * - `NoCheckpointSchedule` if `id` does not identify a schedule for this `ticker`.
        * - `ScheduleNotRemovable` if `id` exists but is not removable.
        *
@@ -1772,13 +1779,13 @@ declare module '@polkadot/api/types/submittable' {
        * Changes the record date of the CA identified by `ca_id`.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` of the CA to alter.
        * - `record_date`, if any, to calculate the impact of the CA.
        * If provided, this results in a scheduled balance snapshot ("checkpoint") at the date.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchCA` if `id` does not identify an existing CA.
        * - When `record_date.is_some()`, other errors due to checkpoint scheduling may occur.
        *
@@ -1796,7 +1803,7 @@ declare module '@polkadot/api/types/submittable' {
        * Initiates a CA for `ticker` of `kind` with `details` and other provided arguments.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ticker` that the CA is made for.
        * - `kind` of CA being initiated.
        * - `decl_date` of CA bring initialized.
@@ -1812,7 +1819,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Errors
        * - `DetailsTooLong` if `details.len()` goes beyond `max_details_length`.
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `LocalCAIdOverflow` in the unlikely event that so many CAs were created for this `ticker`,
        * that integer overflow would have occured if instead allowed.
        * - `TooManyDidTaxes` if `withholding_tax.unwrap().len()` would go over the limit `MaxDidWhts`.
@@ -1867,12 +1874,12 @@ declare module '@polkadot/api/types/submittable' {
        * Once both exist, they can now be linked together.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `id` of the CA to associate with `docs`.
        * - `docs` to associate with the CA with `id`.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchCA` if `id` does not identify an existing CA.
        * - `NoSuchDoc` if any of `docs` does not identify an existing document.
        *
@@ -1896,11 +1903,11 @@ declare module '@polkadot/api/types/submittable' {
        * `strong_ref_count(schedule_id)` decremented.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` of the CA to remove.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchCA` if `id` does not identify an existing CA.
        *
        * # Permissions
@@ -1913,23 +1920,6 @@ declare module '@polkadot/api/types/submittable' {
         [CAId]
       >;
       /**
-       * Reset the CAA of `ticker` to its owner.
-       *
-       * ## Arguments
-       * - `origin` which must be a signer for the asset owner's DID.
-       * - `ticker` for which the CAA is reset.
-       *
-       * ## Errors
-       * - `Unauthorized` if `origin` isn't `ticker`'s owner.
-       *
-       * # Permissions
-       * * Asset
-       **/
-      resetCaa: AugmentedSubmittable<
-        (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [Ticker]
-      >;
-      /**
        * Set the default CA `TargetIdentities` to `targets`.
        *
        * ## Arguments
@@ -1938,7 +1928,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `targets` the default target identities for a CA.
        *
        * ## Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `TooManyTargetIds` if `targets.identities.len() > T::MaxTargetIds::get()`.
        *
        * # Permissions
@@ -1955,12 +1945,12 @@ declare module '@polkadot/api/types/submittable' {
        * Set the default withholding tax for all DIDs and CAs relevant to this `ticker`.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ticker` that the withholding tax will apply to.
        * - `tax` that should be withheld when distributing dividends, etc.
        *
        * ## Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        *
        * # Permissions
        * * Asset
@@ -1978,13 +1968,13 @@ declare module '@polkadot/api/types/submittable' {
        * Otherwise, if `None`, the default withholding tax will be used.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ticker` that the withholding tax will apply to.
        * - `taxed_did` that will have its withholding tax updated.
        * - `tax` that should be withheld when distributing dividends, etc.
        *
        * ## Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `TooManyDidTaxes` if `Some(tax)` and adding the override would go over the limit `MaxDidWhts`.
        *
        * # Permissions
@@ -2017,14 +2007,14 @@ declare module '@polkadot/api/types/submittable' {
        * See the `BallotMeta` for more.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` identifies the CA to attach the ballot to.
        * - `range` specifies when voting starts and ends.
        * - `meta` specifies the ballot's metadata as aforementioned.
        * - `rcv` specifies whether RCV is enabled for this ballot.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchCA` if `ca_id` does not identify an existing CA.
        * - `CANotNotice` if the CA is not of the `IssuerNotice` kind.
        * - `StartAfterEnd` if `range.start > range.end`.
@@ -2049,12 +2039,12 @@ declare module '@polkadot/api/types/submittable' {
        * Amend the end date of the ballot of the CA identified by `ca_id`.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` identifies the attached ballot's CA.
        * - `end` specifies the new end date of the ballot.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchBallot` if `ca_id` does not identify a ballot.
        * - `VotingAlreadyStarted` if `start >= now`, where `now` is the current time.
        * - `StartAfterEnd` if `start > end`.
@@ -2070,12 +2060,12 @@ declare module '@polkadot/api/types/submittable' {
        * Amend the metadata (title, motions, etc.) of the ballot of the CA identified by `ca_id`.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` identifies the attached ballot's CA.
        * - `meta` specifies the new metadata.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchBallot` if `ca_id` does not identify a ballot.
        * - `VotingAlreadyStarted` if `start >= now`, where `now` is the current time.
        * - `NumberOfChoicesOverflow` if the total choice in `meta` overflows `usize`.
@@ -2092,12 +2082,12 @@ declare module '@polkadot/api/types/submittable' {
        * Amend RCV support for the ballot of the CA identified by `ca_id`.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` identifies the attached ballot's CA.
        * - `rcv` specifies if RCV is to be supported or not.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchBallot` if `ca_id` does not identify a ballot.
        * - `VotingAlreadyStarted` if `start >= now`, where `now` is the current time.
        **/
@@ -2112,11 +2102,11 @@ declare module '@polkadot/api/types/submittable' {
        * Remove the ballot of the CA identified by `ca_id`.
        *
        * ## Arguments
-       * - `origin` which must be a signer for the CAA of `ca_id`.
+       * - `origin` which must be a signer for a CAA of `ca_id`.
        * - `ca_id` identifies the attached ballot's CA.
        *
        * # Errors
-       * - `UnauthorizedAsAgent` if `origin` is not `ticker`'s sole CAA (owner is not necessarily the CAA).
+       * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
        * - `NoSuchBallot` if `ca_id` does not identify a ballot.
        * - `VotingAlreadyStarted` if `start >= now`, where `now` is the current time.
        **/
@@ -2153,6 +2143,146 @@ declare module '@polkadot/api/types/submittable' {
             | (BallotVote | { power?: any; fallback?: any } | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [CAId, Vec<BallotVote>]
+      >;
+    };
+    externalAgents: {
+      /**
+       * Abdicate agentship for `ticker`.
+       *
+       * # Arguments
+       * - `ticker` of which the caller is an agent.
+       *
+       * # Errors
+       * - `NotAnAgent` if the caller is not an agent of `ticker`.
+       * - `RemovingLastFullAgent` if the caller is the last full agent.
+       *
+       * # Permissions
+       * * Asset
+       **/
+      abdicate: AugmentedSubmittable<
+        (ticker: Ticker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [Ticker]
+      >;
+      /**
+       * Change the agent group that `agent` belongs to in `ticker`.
+       *
+       * # Arguments
+       * - `ticker` that has the `agent`.
+       * - `agent` of `ticker` to change the group for.
+       * - `group` that `agent` will belong to in `ticker`.
+       *
+       * # Errors
+       * - `UnauthorizedAgent` if `origin` was not authorized as an agent to call this.
+       * - `NoSuchAG` if `id` does not identify a custom AG.
+       * - `NotAnAgent` if `agent` is not an agent of `ticker`.
+       * - `RemovingLastFullAgent` if `agent` was a `Full` one and is being demoted.
+       *
+       * # Permissions
+       * * Asset
+       * * Agent
+       **/
+      changeGroup: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          agent: IdentityId | string | Uint8Array,
+          group:
+            | AgentGroup
+            | { Full: any }
+            | { Custom: any }
+            | { ExceptMeta: any }
+            | { PolymeshV1CAA: any }
+            | { PolymeshV1PIA: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, IdentityId, AgentGroup]
+      >;
+      /**
+       * Creates a custom agent group (AG) for the given `ticker`.
+       *
+       * The AG will have the permissions as given by `perms`.
+       * This new AG is then assigned `id = AGIdSequence::get() + 1` as its `AGId`,
+       * which you can use as `AgentGroup::Custom(id)` when adding agents for `ticker`.
+       *
+       * # Arguments
+       * - `ticker` to add the custom group for.
+       * - `perms` that the new AG will have.
+       *
+       * # Errors
+       * - `UnauthorizedAgent` if `origin` was not authorized as an agent to call this.
+       * - `TooLong` if `perms` had some string or list length that was too long.
+       * - `LocalAGIdOverflow` if `AGIdSequence::get() + 1` would exceed `u32::MAX`.
+       *
+       * # Permissions
+       * * Asset
+       * * Agent
+       **/
+      createGroup: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          perms:
+            | ExtrinsicPermissions
+            | { Whole: any }
+            | { These: any }
+            | { Except: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, ExtrinsicPermissions]
+      >;
+      /**
+       * Remove the given `agent` from `ticker`.
+       *
+       * # Arguments
+       * - `ticker` that has the `agent` to remove.
+       * - `agent` of `ticker` to remove.
+       *
+       * # Errors
+       * - `UnauthorizedAgent` if `origin` was not authorized as an agent to call this.
+       * - `NotAnAgent` if `agent` is not an agent of `ticker`.
+       * - `RemovingLastFullAgent` if `agent` is the last full one.
+       *
+       * # Permissions
+       * * Asset
+       * * Agent
+       **/
+      removeAgent: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          agent: IdentityId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, IdentityId]
+      >;
+      /**
+       * Updates the permissions of the custom AG identified by `id`, for the given `ticker`.
+       *
+       * # Arguments
+       * - `ticker` the custom AG belongs to.
+       * - `id` for the custom AG within `ticker`.
+       * - `perms` to update the custom AG to.
+       *
+       * # Errors
+       * - `UnauthorizedAgent` if `origin` was not authorized as an agent to call this.
+       * - `TooLong` if `perms` had some string or list length that was too long.
+       * - `NoSuchAG` if `id` does not identify a custom AG.
+       *
+       * # Permissions
+       * * Asset
+       * * Agent
+       **/
+      setGroupPermissions: AugmentedSubmittable<
+        (
+          ticker: Ticker | string | Uint8Array,
+          id: AGId | AnyNumber | Uint8Array,
+          perms:
+            | ExtrinsicPermissions
+            | { Whole: any }
+            | { These: any }
+            | { Except: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Ticker, AGId, ExtrinsicPermissions]
       >;
     };
     finalityTracker: {
@@ -2277,6 +2407,7 @@ declare module '@polkadot/api/types/submittable' {
             | { Custom: any }
             | { NoData: any }
             | { TransferCorporateActionAgent: any }
+            | { BecomeAgent: any }
             | string
             | Uint8Array,
           expiry: Option<Moment> | null | object | string | Uint8Array
@@ -2451,16 +2582,6 @@ declare module '@polkadot/api/types/submittable' {
       changeCddRequirementForMkRotation: AugmentedSubmittable<
         (authRequired: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [bool]
-      >;
-      /**
-       * Creates a call on behalf of another DID.
-       **/
-      forwardedCall: AugmentedSubmittable<
-        (
-          targetDid: IdentityId | string | Uint8Array,
-          proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [IdentityId, Proposal]
       >;
       /**
        * It disables all secondary keys at `did` identity.
@@ -3464,6 +3585,8 @@ declare module '@polkadot/api/types/submittable' {
        * identity. Must be called by the custodian of the sender.
        * Funds from deleted portfolios can also be recovered via this method.
        *
+       * A short memo can be added to to each token amount moved.
+       *
        * # Errors
        * * `PortfolioDoesNotExist` if one or both of the portfolios reference an invalid portfolio.
        * * `destination_is_same_portfolio` if both sender and receiver portfolio are the same
@@ -3480,9 +3603,30 @@ declare module '@polkadot/api/types/submittable' {
           to: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           items:
             | Vec<MovePortfolioItem>
-            | (MovePortfolioItem | { ticker?: any; amount?: any } | string | Uint8Array)[]
+            | (
+                | MovePortfolioItem
+                | { ticker?: any; amount?: any; memo?: any }
+                | string
+                | Uint8Array
+              )[]
         ) => SubmittableExtrinsic<ApiType>,
         [PortfolioId, PortfolioId, Vec<MovePortfolioItem>]
+      >;
+      /**
+       * When called by the custodian of `portfolio_id`,
+       * allows returning the custody of the portfolio to the portfolio owner unilaterally.
+       *
+       * # Errors
+       * * `UnauthorizedCustodian` if the caller is not the current custodian of `portfolio_id`.
+       *
+       * # Permissions
+       * * Portfolio
+       **/
+      quitPortfolioCustody: AugmentedSubmittable<
+        (
+          portfolioId: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PortfolioId]
       >;
       /**
        * Renames a non-default portfolio.
@@ -3916,20 +4060,26 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Arguments
        * * `instruction_id` - Instruction id to reject.
-       * * `portfolios` - Portfolios that the sender controls and wants them to reject this instruction
+       **/
+      rejectInstruction: AugmentedSubmittable<
+        (instructionId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
+      >;
+      /**
+       * Reschedules a failed instruction.
+       *
+       * # Arguments
+       * * `instruction_id` - Target instruction id to reschedule.
        *
        * # Permissions
        * * Portfolio
+       *
+       * # Errors
+       * * `InstructionNotFailed` - Instruction not in a failed state or does not exist.
        **/
-      rejectInstruction: AugmentedSubmittable<
-        (
-          instructionId: u64 | AnyNumber | Uint8Array,
-          portfolios:
-            | Vec<PortfolioId>
-            | (PortfolioId | { did?: any; kind?: any } | string | Uint8Array)[],
-          maxLegsCount: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [u64, Vec<PortfolioId>, u32]
+      rescheduleInstruction: AugmentedSubmittable<
+        (instructionId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
       >;
       /**
        * Enables or disabled venue filtering for a token.
@@ -5812,6 +5962,7 @@ declare module '@polkadot/api/types/submittable' {
        * # Parameters
        * - `calls`: The calls to be dispatched from the same origin.
        *
+       *
        * # Weight
        * - The sum of the weights of the `calls`.
        * - One event.
@@ -5819,7 +5970,8 @@ declare module '@polkadot/api/types/submittable' {
        * This will return `Ok` in all circumstances.
        * To determine the success of the batch, an event is deposited.
        * If any call failed, then `BatchOptimisticFailed` is deposited,
-       * with a vector of `(index, error)`.
+       * with a vector of event counts for each call as well as a vector
+       * of errors.
        * If all were successful, then the `BatchCompleted` event is deposited.
        **/
       batchOptimistic: AugmentedSubmittable<

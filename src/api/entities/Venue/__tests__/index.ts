@@ -12,7 +12,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { VenueType } from '~/types';
+import { InstructionStatus, VenueType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -148,6 +148,73 @@ describe('Venue class', () => {
     });
   });
 
+  describe('method: getInstructions', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test("should throw an error if the venue doesn't exist", async () => {
+      dsMockUtils
+        .createQueryStub('settlement', 'venueInfo')
+        .resolves(dsMockUtils.createMockOption());
+
+      entityMockUtils.configureMocks({
+        numberedPortfolioOptions: {
+          exists: false,
+        },
+      });
+
+      return expect(venue.getInstructions()).rejects.toThrow("The Venue doesn't exist");
+    });
+
+    test("should return the Venue's pending and failed instructions", async () => {
+      const description = 'someDescription';
+      const type = VenueType.Other;
+      const owner = 'someDid';
+      const id1 = new BigNumber(1);
+      const id2 = new BigNumber(2);
+
+      const detailsStub = entityMockUtils.getInstructionDetailsStub();
+      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
+
+      dsMockUtils
+        .createQueryStub('settlement', 'venueInfo')
+        .withArgs(rawId)
+        .resolves(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockVenue({
+              creator: dsMockUtils.createMockIdentityId(owner),
+              instructions: [
+                dsMockUtils.createMockU64(id1.toNumber()),
+                dsMockUtils.createMockU64(id2.toNumber()),
+                dsMockUtils.createMockU64(3),
+              ],
+              details: dsMockUtils.createMockVenueDetails(description),
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              venue_type: dsMockUtils.createMockVenueType(type),
+            })
+          )
+        );
+
+      detailsStub.onFirstCall().resolves({
+        status: InstructionStatus.Pending,
+      });
+      detailsStub.onSecondCall().resolves({
+        status: InstructionStatus.Failed,
+      });
+      detailsStub.onThirdCall().resolves({
+        status: InstructionStatus.Executed,
+      });
+
+      const result = await venue.getInstructions();
+
+      expect(result.pending[0].id).toEqual(id1);
+      expect(result.failed[0].id).toEqual(id2);
+      expect(result.pending).toHaveLength(1);
+      expect(result.failed).toHaveLength(1);
+    });
+  });
+
   describe('method: getPendingInstructions', () => {
     afterAll(() => {
       sinon.restore();
@@ -198,7 +265,13 @@ describe('Venue class', () => {
       expect(result[0].id).toEqual(instructionId);
 
       entityMockUtils.configureMocks({
-        instructionOptions: { id: instructionId, isPending: false, exists: true },
+        instructionOptions: {
+          id: instructionId,
+          exists: true,
+          details: {
+            status: InstructionStatus.Failed,
+          },
+        },
       });
 
       result = await venue.getPendingInstructions();
@@ -324,6 +397,14 @@ describe('Venue class', () => {
       const queue = await venue.modify({ description, type });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const token = new Venue({ id: new BigNumber(1) }, context);
+
+      expect(token.toJson()).toBe('1');
     });
   });
 });

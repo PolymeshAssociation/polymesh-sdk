@@ -27,11 +27,11 @@ import {
 } from 'lodash';
 import {
   AffirmationStatus as MeshAffirmationStatus,
+  AgentGroup,
   AssetComplianceResult,
   AssetIdentifier,
   AssetName,
   AssetType,
-  AuthIdentifier,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CAId,
@@ -47,6 +47,7 @@ import {
   Condition as MeshCondition,
   ConditionType as MeshConditionType,
   CorporateAction as MeshCorporateAction,
+  DispatchableName,
   Distribution,
   Document,
   DocumentHash,
@@ -54,6 +55,7 @@ import {
   DocumentType,
   DocumentUri,
   EcdsaSignature,
+  ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -63,6 +65,7 @@ import {
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
   Memo,
+  ModuleName,
   MovePortfolioItem,
   Permissions as MeshPermissions,
   PipId,
@@ -137,6 +140,7 @@ import {
   DividendDistributionParams,
   ErrorCode,
   EventIdentifier,
+  ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
   InstructionType,
@@ -144,17 +148,21 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
+  PermissionGroup,
   Permissions,
   PermissionsLike,
+  PermissionType,
   PortfolioLike,
   PortfolioMovement,
-  PrimaryIssuanceAgentCondition,
   Requirement,
   RequirementCompliance,
   Scope,
   ScopeType,
   SecondaryKey,
+  SectionPermissions,
   Signer,
+  SignerType,
+  SignerValue,
   SingleClaimCondition,
   StoBalanceStatus,
   StoDetails,
@@ -167,6 +175,7 @@ import {
   TokenIdentifier,
   TokenIdentifierType,
   TokenType,
+  TransactionPermissions,
   TransferBreakdown,
   TransferError,
   TransferRestriction,
@@ -177,16 +186,15 @@ import {
   VenueType,
 } from '~/types';
 import {
-  AuthTarget,
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
   InstructionStatus,
+  PalletPermissions,
+  PermissionsEnum,
   PolymeshTx,
   PortfolioId,
   ScheduleSpec,
   ScopeClaimProof,
-  SignerType,
-  SignerValue,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -201,7 +209,9 @@ import {
   assertIsPositive,
   createClaim,
   getTicker,
+  isModuleOrTagMatch,
   isPrintableAscii,
+  optionize,
   padString,
   removePadding,
 } from '~/utils/internal';
@@ -668,14 +678,158 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
  * @note tags that don't belong to any group will be ignored.
  *   The same goes for tags that belong to a group that wasn't completed
  */
-export function txTagsToTxGroups(tags: TxTag[]): TxGroup[] {
+export function transactionPermissionsToTxGroups(permissions: TransactionPermissions): TxGroup[] {
+  const { values: transactionValues, type, exceptions = [] } = permissions;
+  let includedTags: (TxTag | ModuleName)[];
+  let excludedTags: (TxTag | ModuleName)[];
+  if (type === PermissionType.Include) {
+    includedTags = transactionValues;
+    excludedTags = exceptions;
+  } else {
+    includedTags = exceptions;
+    excludedTags = transactionValues;
+  }
+
   return values(TxGroup)
     .sort()
     .filter(group => {
       const tagsInGroup = txGroupToTxTags(group);
 
-      return tagsInGroup.every(tag => tags.includes(tag));
+      return tagsInGroup.every(tag => {
+        const isExcluded = !!excludedTags.find(excluded => isModuleOrTagMatch(excluded, tag));
+
+        if (isExcluded) {
+          return false;
+        }
+
+        return !!includedTags.find(included => isModuleOrTagMatch(included, tag));
+      });
     });
+}
+
+/**
+ * @hidden
+ */
+function splitTag(tag: TxTag) {
+  const [modName, txName] = tag.split('.');
+  const palletName = stringUpperFirst(modName);
+  const dispatchableName = snakeCase(txName);
+
+  return { palletName, dispatchableName };
+}
+
+/**
+ * @hidden
+ */
+function initExtrinsicDict(
+  txValues: (TxTag | ModuleName)[],
+  message: string
+): Record<string, { tx: string[]; exception?: true } | null> {
+  const extrinsicDict: Record<string, { tx: string[]; exception?: true } | null> = {};
+
+  uniq(txValues)
+    .sort()
+    .forEach(tag => {
+      if (tag.includes('.')) {
+        const { palletName, dispatchableName } = splitTag(tag as TxTag);
+        let pallet = extrinsicDict[palletName];
+
+        if (pallet === null) {
+          throw new PolymeshError({
+            code: ErrorCode.ValidationError,
+            message,
+            data: {
+              module: palletName,
+              transactions: [dispatchableName],
+            },
+          });
+        } else if (pallet === undefined) {
+          pallet = extrinsicDict[palletName] = { tx: [] };
+        }
+
+        pallet.tx.push(dispatchableName);
+      } else {
+        extrinsicDict[stringUpperFirst(tag)] = null;
+      }
+    });
+
+  return extrinsicDict;
+}
+
+/**
+ * @hidden
+ */
+function buildPalletPermissions(
+  transactions: TransactionPermissions
+): PermissionsEnum<PalletPermissions> {
+  let extrinsic: PermissionsEnum<PalletPermissions>;
+  const message =
+    'Attempting to add permissions for specific transactions as well as the entire module';
+  const { values: txValues, exceptions = [], type } = transactions;
+
+  const extrinsicDict = initExtrinsicDict(txValues, message);
+
+  exceptions.forEach(exception => {
+    const { palletName, dispatchableName } = splitTag(exception);
+
+    const pallet = extrinsicDict[palletName];
+
+    if (pallet === undefined) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
+      });
+    } else if (pallet === null) {
+      extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
+    } else if (pallet.exception) {
+      pallet.tx.push(dispatchableName);
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message:
+          'Cannot simultaneously include and exclude transactions belonging to the same module',
+      });
+    }
+  });
+
+  const pallets: PalletPermissions[] = map(extrinsicDict, (val, key) => {
+    let dispatchables: PermissionsEnum<string>;
+
+    if (val === null) {
+      dispatchables = 'Whole';
+    } else {
+      const { tx, exception } = val;
+
+      if (exception) {
+        dispatchables = {
+          Except: tx,
+        };
+      } else {
+        dispatchables = {
+          These: tx,
+        };
+      }
+    }
+
+    return {
+      /* eslint-disable @typescript-eslint/naming-convention */
+      pallet_name: key,
+      dispatchable_names: dispatchables,
+      /* eslint-enable @typescript-eslint/naming-convention */
+    };
+  });
+  if (type === PermissionType.Include) {
+    extrinsic = {
+      These: pallets,
+    };
+  } else {
+    extrinsic = {
+      Except: pallets,
+    };
+  }
+
+  return extrinsic;
 }
 
 /**
@@ -687,45 +841,103 @@ export function permissionsToMeshPermissions(
 ): MeshPermissions {
   const { tokens, transactions, portfolios } = permissions;
 
-  const extrinsicDict: Record<string, string[]> = {};
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  let extrinsic: { pallet_name: string; dispatchable_names: string[] }[] | null = null;
+  let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
 
   if (transactions) {
-    uniq(transactions)
-      .sort()
-      .forEach(tag => {
-        const [modName, txName] = tag.split('.');
+    extrinsic = buildPalletPermissions(transactions);
+  }
 
-        const palletName = stringUpperFirst(modName);
-        const dispatchableName = snakeCase(txName);
+  let asset: PermissionsEnum<Ticker> = 'Whole';
+  if (tokens) {
+    const { values: tokenValues, type } = tokens;
+    tokenValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
+    const tickers = tokenValues.map(({ ticker }) => stringToTicker(ticker, context));
+    if (type === PermissionType.Include) {
+      asset = {
+        These: tickers,
+      };
+    } else {
+      asset = {
+        Except: tickers,
+      };
+    }
+  }
 
-        const pallet = (extrinsicDict[palletName] = extrinsicDict[palletName] || []);
+  let portfolio: PermissionsEnum<MeshPortfolioId> = 'Whole';
+  if (portfolios) {
+    const { values: portfolioValues, type } = portfolios;
+    const portfolioIds = portfolioValues.map(pValue =>
+      portfolioIdToMeshPortfolioId(portfolioToPortfolioId(pValue), context)
+    );
 
-        pallet.push(dispatchableName);
-      });
-
-    extrinsic = map(extrinsicDict, (val, key) => ({
-      /* eslint-disable @typescript-eslint/naming-convention */
-      pallet_name: key,
-      dispatchable_names: val,
-      /* eslint-enable @typescript-eslint/naming-convention */
-    }));
+    if (type === PermissionType.Include) {
+      portfolio = {
+        These: portfolioIds,
+      };
+    } else {
+      portfolio = {
+        Except: portfolioIds,
+      };
+    }
   }
 
   const value = {
-    asset:
-      tokens
-        ?.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB))
-        .map(({ ticker }) => stringToTicker(ticker, context)) ?? null,
+    asset,
     extrinsic,
-    portfolio:
-      portfolios?.map(portfolio =>
-        portfolioIdToMeshPortfolioId(portfolioToPortfolioId(portfolio), context)
-      ) ?? null,
+    portfolio,
   };
 
   return context.polymeshApi.createType('Permissions', value);
+}
+
+/**
+ * @hidden
+ */
+export function extrinsicPermissionsToTransactionPermissions(
+  permissions: ExtrinsicPermissions
+): TransactionPermissions | null {
+  let extrinsicType: PermissionType;
+  let pallets;
+  if (permissions.isThese) {
+    extrinsicType = PermissionType.Include;
+    pallets = permissions.asThese;
+  } else if (permissions.isExcept) {
+    extrinsicType = PermissionType.Exclude;
+    pallets = permissions.asExcept;
+  }
+
+  let txValues: (ModuleName | TxTag)[] = [];
+  let exceptions: TxTag[] = [];
+
+  const formatTxTag = (dispatchable: DispatchableName, moduleName: string): TxTag =>
+    `${moduleName}.${camelCase(textToString(dispatchable))}` as TxTag;
+
+  if (pallets) {
+    pallets.forEach(({ pallet_name: palletName, dispatchable_names: dispatchableNames }) => {
+      const moduleName = stringLowerFirst(textToString(palletName));
+
+      if (dispatchableNames.isExcept) {
+        const dispatchables = dispatchableNames.asExcept;
+        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if (dispatchableNames.isThese) {
+        const dispatchables = dispatchableNames.asThese;
+        txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
+
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
+
+    return exceptions.length ? { ...result, exceptions } : result;
+  }
+
+  return null;
 }
 
 /**
@@ -737,51 +949,71 @@ export function meshPermissionsToPermissions(
 ): Permissions {
   const { asset, extrinsic, portfolio } = permissions;
 
-  let tokens = null;
-  let transactions = null;
-  let portfolios = null;
+  let tokens: SectionPermissions<SecurityToken> | null = null;
+  let transactions: TransactionPermissions | null = null;
+  let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
 
-  if (asset.isSome) {
-    tokens = asset
-      .unwrap()
-      .map(ticker => new SecurityToken({ ticker: tickerToString(ticker) }, context));
+  let tokensType: PermissionType;
+  let securityTokens;
+  if (asset.isThese) {
+    tokensType = PermissionType.Include;
+    securityTokens = asset.asThese;
+  } else if (asset.isExcept) {
+    tokensType = PermissionType.Exclude;
+    securityTokens = asset.asExcept;
   }
 
-  if (extrinsic.isSome) {
-    transactions = extrinsic
-      .unwrap()
-      .reduce<TxTag[]>(
-        (result, { pallet_name: palletName, dispatchable_names: dispatchableNames }) => {
-          const moduleName = stringLowerFirst(textToString(palletName));
-
-          let newTags: TxTag[];
-
-          if (dispatchableNames.isSome) {
-            newTags = dispatchableNames
-              .unwrap()
-              .map(name => `${moduleName}.${camelCase(textToString(name))}` as TxTag);
-          } else {
-            newTags = values(TxTags[moduleName as keyof typeof TxTags]);
-          }
-
-          return [...result, ...newTags];
-        },
-        []
-      );
+  if (securityTokens) {
+    tokens = {
+      values: securityTokens.map(
+        ticker => new SecurityToken({ ticker: tickerToString(ticker) }, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: tokensType!,
+    };
   }
 
-  if (portfolio.isSome) {
-    portfolios = portfolio
-      .unwrap()
-      .map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context));
+  transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
+
+  let portfoliosType: PermissionType;
+  let portfolioIds;
+  if (portfolio.isThese) {
+    portfoliosType = PermissionType.Include;
+    portfolioIds = portfolio.asThese;
+  } else if (portfolio.isExcept) {
+    portfoliosType = PermissionType.Exclude;
+    portfolioIds = portfolio.asExcept;
+  }
+
+  if (portfolioIds) {
+    portfolios = {
+      values: portfolioIds.map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context)),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: portfoliosType!,
+    };
   }
 
   return {
     tokens,
     transactions,
-    transactionGroups: transactions ? txTagsToTxGroups(transactions) : [],
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
   };
+}
+
+/**
+ * @hidden
+ */
+export function permissionGroupToAgentGroup(
+  permissionGroup: PermissionGroup,
+  context: Context
+): AgentGroup {
+  return context.polymeshApi.createType(
+    'AgentGroup',
+    typeof permissionGroup !== 'object'
+      ? permissionGroup
+      : { custom: numberToU32(permissionGroup.custom, context) }
+  );
 }
 
 /**
@@ -799,6 +1031,8 @@ export function authorizationToAuthorizationData(
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
+  } else if (auth.type === AuthorizationType.BecomeAgent) {
+    value = [auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context)];
   } else {
     value = auth.value;
   }
@@ -1396,33 +1630,6 @@ export function documentToTokenDocument(
 /**
  * @hidden
  */
-export function authTargetToAuthIdentifier(
-  { target, authId }: AuthTarget,
-  context: Context
-): AuthIdentifier {
-  return context.polymeshApi.createType('AuthIdentifier', {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    auth_id: numberToU64(authId, context),
-    signatory: signerValueToSignatory(target, context),
-  });
-}
-
-/**
- * @hidden
- */
-export function authIdentifierToAuthTarget({
-  auth_id: authId,
-  signatory,
-}: AuthIdentifier): AuthTarget {
-  return {
-    authId: u64ToBigNumber(authId),
-    target: signatoryToSignerValue(signatory),
-  };
-}
-
-/**
- * @hidden
- */
 export function cddStatusToBoolean(cddStatus: CddStatus): boolean {
   if (cddStatus.isOk) {
     return true;
@@ -1862,7 +2069,7 @@ function meshConditionTypeToCondition(
   | Pick<SingleClaimCondition, 'type' | 'claim'>
   | Pick<MultiClaimCondition, 'type' | 'claims'>
   | Pick<IdentityCondition, 'type' | 'identity'>
-  | Pick<PrimaryIssuanceAgentCondition, 'type'> {
+  | Pick<ExternalAgentCondition, 'type'> {
   if (meshConditionType.isIsPresent) {
     return {
       type: ConditionType.IsPresent,
@@ -1887,9 +2094,9 @@ function meshConditionTypeToCondition(
   if (meshConditionType.isIsIdentity) {
     const target = meshConditionType.asIsIdentity;
 
-    if (target.isPrimaryIssuanceAgent) {
+    if (target.isExternalAgent) {
       return {
-        type: ConditionType.IsPrimaryIssuanceAgent,
+        type: ConditionType.IsExternalAgent,
       };
     }
 
@@ -2321,6 +2528,10 @@ export function meshInstructionStatusToInstructionStatus(
     return InstructionStatus.Pending;
   }
 
+  if (status.isFailed) {
+    return InstructionStatus.Failed;
+  }
+
   return InstructionStatus.Unknown;
 }
 
@@ -2404,10 +2615,11 @@ export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
 ): MovePortfolioItem {
-  const { token, amount } = portfolioItem;
+  const { token, amount, memo } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
     ticker: stringToTicker(getTicker(token), context),
     amount: numberToBalance(amount, context),
+    memo: optionize(stringToMemo)(memo, context),
   });
 }
 
@@ -2559,38 +2771,62 @@ export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
 ): Permissions {
-  let tokenPermissions: SecurityToken[] | null = [];
-  let transactionPermissions: TxTag[] | null = [];
+  let tokenPermissions: SectionPermissions<SecurityToken> | null = {
+    values: [],
+    type: PermissionType.Include,
+  };
+  let transactionPermissions: TransactionPermissions | null = {
+    values: [],
+    type: PermissionType.Include,
+  };
   let transactionGroupPermissions: TxGroup[] = [];
-  let portfolioPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null = [];
+  let portfolioPermissions: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = {
+    values: [],
+    type: PermissionType.Include,
+  };
 
-  const { tokens, transactions, transactionGroups, portfolios } = permissionsLike;
+  let transactions: TransactionPermissions | null | undefined;
+  let transactionGroups: TxGroup[] | undefined;
+
+  if ('transactions' in permissionsLike) {
+    ({ transactions } = permissionsLike);
+  }
+
+  if ('transactionGroups' in permissionsLike) {
+    ({ transactionGroups } = permissionsLike);
+  }
+
+  const { tokens, portfolios } = permissionsLike;
 
   if (tokens === null) {
     tokenPermissions = null;
   } else if (tokens) {
-    tokenPermissions = tokens.map(ticker =>
-      typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
-    );
+    tokenPermissions = {
+      ...tokens,
+      values: tokens.values.map(ticker =>
+        typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+      ),
+    };
   }
 
   if (transactions !== undefined) {
     transactionPermissions = transactions;
-  }
-
-  if (transactionGroups !== undefined) {
+  } else if (transactionGroups !== undefined) {
     transactionGroupPermissions = uniq(transactionGroups);
     const groupTags = flatten(transactionGroups.map(txGroupToTxTags));
-    transactionPermissions =
-      transactionPermissions && uniq([...transactionPermissions, ...groupTags]);
+    transactionPermissions = {
+      ...transactionPermissions,
+      values: groupTags,
+    };
   }
 
   if (portfolios === null) {
     portfolioPermissions = null;
   } else if (portfolios) {
-    portfolioPermissions = portfolios.map(portfolio =>
-      portfolioLikeToPortfolio(portfolio, context)
-    );
+    portfolioPermissions = {
+      ...portfolios,
+      values: portfolios.values.map(portfolio => portfolioLikeToPortfolio(portfolio, context)),
+    };
   }
 
   return {
