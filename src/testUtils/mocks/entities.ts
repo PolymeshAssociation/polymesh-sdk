@@ -42,6 +42,7 @@ import {
   CountTransferRestriction,
   DistributionParticipant,
   DividendDistributionDetails,
+  ExternalAgent,
   ExtrinsicData,
   GroupPermissions,
   IdentityBalance,
@@ -152,6 +153,7 @@ interface SecurityTokenOptions {
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
   permissionsGetGroups?: ResultSet<CustomPermissionGroup>;
+  permissionsGetAgents?: ExternalAgent[];
 }
 
 interface AuthorizationRequestOptions {
@@ -338,6 +340,7 @@ let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let securityTokenCorporateActionsGetAgentsStub: SinonStub;
 let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let securityTokenPermissionsGetGroupsStub: SinonStub;
+let securityTokenPermissionsGetAgentsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -749,6 +752,10 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     data: [],
     next: null,
   },
+  permissionsGetAgents: [{
+    identity: {did: 'someDid'} as Identity,
+    group: PermissionGroupType.Full
+  }]
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -1239,6 +1246,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     },
     permissions: {
       getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
+      getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents)
     },
   } as unknown) as MockSecurityToken;
 
@@ -1266,6 +1274,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCorporateActionsGetAgentsStub = sinon.stub();
   securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
   securityTokenPermissionsGetGroupsStub = sinon.stub();
+  securityTokenPermissionsGetAgentsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -2436,6 +2445,20 @@ export function getSecurityTokenPermissionsGetGroupsStub(
   }
 
   return securityTokenPermissionsGetGroupsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.permissions.getAgents` method
+ */
+ export function getSecurityTokenPermissionsGetAgentsStub(
+  agents?: Partial<ExternalAgent>
+): SinonStub {
+  if (agents) {
+    return securityTokenPermissionsGetAgentsStub.resolves(agents);
+  }
+
+  return securityTokenPermissionsGetAgentsStub;
 }
 
 /**

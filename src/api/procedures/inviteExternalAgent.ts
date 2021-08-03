@@ -1,21 +1,31 @@
-import { AgentGroup, TxTags } from 'polymesh-types/types';
-import { ISubmittableResult } from '@polkadot/types/types';
+import { TxTags } from 'polymesh-types/types';
+
 import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
-import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { AuthorizationType, ErrorCode, PermissionGroup, TransactionPermissions, TxGroup } from '~/types';
+import { createGroup, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { AuthorizationType, ErrorCode, SignerType, TransactionPermissions, TxGroup } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { authorizationToAuthorizationData, dateToMoment, tickerToString, u64ToBigNumber } from '~/utils/conversion';
-import { filterEventRecords, getDid, optionize } from '~/utils/internal';
+import {
+  authorizationToAuthorizationData,
+  dateToMoment,
+  signerToString,
+  signerValueToSignatory,
+} from '~/utils/conversion';
+import { getDid, optionize } from '~/utils/internal';
 
 export interface InviteExternalAgentParams {
   target: string | Identity;
-  group: KnownPermissionGroup | CustomPermissionGroup | ({
-    transactions: TransactionPermissions;
-  }
-| {
-    transactionGroups: TxGroup[];
-  })
+  permissions:
+    | KnownPermissionGroup
+    | CustomPermissionGroup
+    | (
+        | {
+            transactions: TransactionPermissions;
+          }
+        | {
+            transactionGroups: TxGroup[];
+          }
+      );
   expiry?: Date;
 }
 
@@ -36,41 +46,30 @@ export interface Storage {
 /**
  * @hidden
  */
- export const createCreateGroupResolver = (
-  context: Context
-) => (receipt: ISubmittableResult): CustomPermissionGroup => {
-  const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
-
-  const result = new CustomPermissionGroup({ id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) }, context)
-
-  return result;
-};
-
-/**
- * @hidden
- */
- export async function prepareInviteExternalAgent(
+export async function prepareInviteExternalAgent(
   this: Procedure<Params, void, Storage>,
   args: Params
 ): Promise<void> {
   const {
     context: {
       polymeshApi: {
-        tx: { identity, externalAgents },
+        tx: { identity },
       },
     },
     context,
     storage: { token },
   } = this;
-  
-  const { target, group, expiry } = args;
+
+  const { ticker, target, permissions, expiry } = args;
 
   const [getAgents, did] = await Promise.all([
     token.permissions.getAgents(),
-    getDid(target, context)
+    getDid(target, context),
   ]);
 
-  const isCurrentAgent = getAgents.map(({ identity: agentIdentity }) => agentIdentity.did).includes(did);
+  const isCurrentAgent = getAgents
+    .map(({ identity: agentIdentity }) => agentIdentity.did)
+    .includes(did);
 
   if (isCurrentAgent) {
     throw new PolymeshError({
@@ -79,14 +78,23 @@ export interface Storage {
     });
   }
 
-  if (!(group instanceof KnownPermissionGroup && group instanceof CustomPermissionGroup)) {
-    
-  }
+  const rawSignatory = signerValueToSignatory(
+    { type: SignerType.Identity, value: signerToString(target) },
+    context
+  );
+
+  const value =
+    permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup
+      ? permissions
+      : (((await this.addProcedure(createGroup(), {
+          ticker,
+          permissions,
+        })) as unknown) as CustomPermissionGroup);
 
   const rawAuthorizationData = authorizationToAuthorizationData(
     {
       type: AuthorizationType.BecomeAgent,
-      value: group || // ,
+      value,
     },
     context
   );
@@ -98,7 +106,7 @@ export interface Storage {
 /**
  * @hidden
  */
- export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
+export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   const {
     storage: { token },
   } = this;
@@ -114,7 +122,7 @@ export interface Storage {
 /**
  * @hidden
  */
- export function prepareStorage(
+export function prepareStorage(
   this: Procedure<Params, void, Storage>,
   { ticker }: Params
 ): Storage {
@@ -128,5 +136,5 @@ export interface Storage {
 /**
  * @hidden
  */
- export const inviteExternalAgent = (): Procedure<Params, void, Storage> =>
- new Procedure(prepareInviteExternalAgent, getAuthorization, prepareStorage);
+export const inviteExternalAgent = (): Procedure<Params, void, Storage> =>
+  new Procedure(prepareInviteExternalAgent, getAuthorization, prepareStorage);
