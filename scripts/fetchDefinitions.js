@@ -10,7 +10,7 @@ const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
 const generatedDir = path.resolve('src', 'generated');
 
-const urlPath = 'https://pmf.polymath.network/code';
+const urlPath = 'https://dev.polymesh.live/code';
 
 rimraf.sync(typesDir);
 fs.mkdirSync(typesDir);

@@ -294,7 +294,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
     });
   }
 
-  return context.polymeshApi.createType('Ticker', ticker);
+  return context.polymeshApi.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
 }
 
 /**
