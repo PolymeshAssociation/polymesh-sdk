@@ -230,7 +230,7 @@ describe('Context class', () => {
       expect(context.currentPair).toEqual(pairs[0]);
     });
 
-    test.only('should throw if keyring has incorrect ss58 format set', async () => {
+    test('should throw if keyring has incorrect ss58 format set', async () => {
       const pairs = [
         {
           address: '2HFAAoz9ZGHnLL84ytDhVBXggYv4avQCiS5ajtKLudRhUFrh',
