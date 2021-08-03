@@ -74,6 +74,7 @@ import {
 } from '~/utils/conversion';
 import {
   assertFormatValid,
+  assertKeyringFormatValid,
   calculateNextKey,
   createClaim,
   getCommonKeyring,
@@ -207,6 +208,7 @@ export class Context {
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
+      assertKeyringFormatValid(keyring, ss58Format);
     } else {
       Context._addPair({
         accountSeed,
