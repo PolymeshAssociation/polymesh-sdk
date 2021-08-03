@@ -207,7 +207,7 @@ export class Context {
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
-      ss58Format = undefined;
+      ss58Format = 12;
     } else {
       Context._addPair({
         accountSeed,
