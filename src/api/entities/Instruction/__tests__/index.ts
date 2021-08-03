@@ -625,6 +625,31 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: reschedule', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { id },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await instruction.reschedule();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: getStatus', () => {
     afterAll(() => {
       sinon.restore();
