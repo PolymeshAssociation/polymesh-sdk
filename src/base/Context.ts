@@ -45,11 +45,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import {
-  MAX_CONCURRENT_REQUESTS,
-  MAX_PAGE_SIZE,
-  ROOT_TYPES,
-} from '~/utils/constants';
+import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
   balanceToBigNumber,
   boolToBoolean,
@@ -195,7 +191,7 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    let ss58Format: number | undefined = u8ToBigNumber(
+    const ss58Format: number | undefined = u8ToBigNumber(
       polymeshApi.consts.system.ss58Prefix
     ).toNumber();
 
