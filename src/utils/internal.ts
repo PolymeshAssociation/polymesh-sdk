@@ -553,6 +553,25 @@ export function assertFormatValid(address: string, ss58Format: number): void {
 /**
  * @hidden
  */
+export function assertKeyringFormatValid(keyring: CommonKeyring, ss58Format: number): void {
+  const dummyAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const encodedAddress = keyring.encodeAddress(dummyAddress);
+  const wellEncodedAddress = encodeAddress(dummyAddress, ss58Format);
+
+  if (encodedAddress !== wellEncodedAddress) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: "The supplied keyring is not using the chain's SS58 format",
+      data: {
+        ss58Format,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
 export function getTicker(token: string | SecurityToken): string {
   return typeof token === 'string' ? token : token.ticker;
 }
