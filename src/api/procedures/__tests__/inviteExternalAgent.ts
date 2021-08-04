@@ -11,12 +11,7 @@ import {
 import { Account, Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  Authorization,
-  PermissionGroupType,
-  PermissionType,
-  SignerValue,
-} from '~/types';
+import { Authorization, PermissionGroupType, PermissionType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -161,9 +156,10 @@ describe('inviteExternalAgent procedure', () => {
         ],
       }),
     });
+
     procedureMockUtils.getAddProcedureStub().resolves({
-      transform: () => ({})
-    })
+      transform: (cb: () => AuthorizationData) => cb(),
+    });
 
     await prepareInviteExternalAgent.call(proc, {
       target,

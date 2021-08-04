@@ -2,7 +2,15 @@ import { AuthorizationData, TxTags } from 'polymesh-types/types';
 
 import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
-import { Context, createGroup, Identity, PolymeshError, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
+import {
+  Context,
+  createGroup,
+  Identity,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+  SecurityToken,
+} from '~/internal';
 import { AuthorizationType, ErrorCode, SignerType, TransactionPermissions, TxGroup } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -106,14 +114,13 @@ export async function prepareInviteExternalAgent(
     rawAuthorizationData = authorizationDataResolver(permissions, context);
   } else {
     // We know this procedure returns a PostTransactionValue, so this assertion is necessary
-    const createGroupResult = await this.addProcedure(createGroup(), {
+    const createGroupResult = (await this.addProcedure(createGroup(), {
       ticker,
       permissions,
-    }) as PostTransactionValue<CustomPermissionGroup>;
-
+    })) as PostTransactionValue<CustomPermissionGroup>;
     rawAuthorizationData = createGroupResult.transform(customPermissionGroup => {
       return authorizationDataResolver(customPermissionGroup, context);
-    })
+    });
   }
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
