@@ -86,12 +86,14 @@ export async function prepareCreateGroup(
 
   if (
     currentGroupPermissions.some(({ transactions: transactionPermissions }) => {
-      const orderedTransactionPermissions = transactionPermissions
-        ? transactionPermissions.values.sort()
-        : null;
-      const orderedTransactions = transactions ? transactions.values.sort() : null;
+      if (transactionPermissions) {
+        transactionPermissions.values.sort()
+      }
+      if (transactions) {
+        transactions.values.sort()
+      }
 
-      return isEqual(orderedTransactionPermissions, orderedTransactions);
+      return isEqual(transactionPermissions, transactions);
     })
   ) {
     throw new PolymeshError({
