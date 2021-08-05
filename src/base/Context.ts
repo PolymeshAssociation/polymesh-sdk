@@ -74,6 +74,7 @@ import {
 } from '~/utils/conversion';
 import {
   assertFormatValid,
+  assertKeyringFormatValid,
   calculateNextKey,
   createClaim,
   getCommonKeyring,
@@ -83,7 +84,7 @@ interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
-  ss58Format?: number;
+  ss58Format: number;
 }
 
 interface AddPairBaseParams {
@@ -127,7 +128,7 @@ export class Context {
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, keyring, ss58Format = DEFAULT_SS58_FORMAT } = params;
+    const { polymeshApi, middlewareApi, keyring, ss58Format } = params;
 
     const callback = (): void => {
       polymeshApi.off('disconnected', callback);
@@ -195,7 +196,7 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    let ss58Format: number | undefined;
+    let ss58Format: number;
     const { ss58Format: rawSs58Format } = await polymeshApi.rpc.system.properties();
     if (rawSs58Format.isSome) {
       ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
@@ -207,7 +208,7 @@ export class Context {
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
-      ss58Format = undefined;
+      assertKeyringFormatValid(keyring, ss58Format);
     } else {
       Context._addPair({
         accountSeed,
