@@ -19,7 +19,7 @@ import {
   transactionPermissionsToExtrinsicPermissions,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize, orderTransactionPermissionsValues } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateGroupParams {
   permissions:
@@ -85,10 +85,10 @@ export async function prepareCreateGroup(
   const currentGroupPermissions = await P.map(groups, group => group.getPermissions());
 
   if (
-    currentGroupPermissions.some(({ transactions: transactionPermissions }) =>
+    currentGroupPermissions.some(({ transactions: transactionPermissions }) => 
       isEqual(
-        optionize(orderTransactionPermissionsValues)(transactionPermissions),
-        optionize(orderTransactionPermissionsValues)(transactions)
+        transactionPermissions ? transactionPermissions.values.sort() : null,
+        transactions ? transactions.values.sort() : null
       )
     )
   ) {

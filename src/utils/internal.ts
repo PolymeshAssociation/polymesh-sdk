@@ -696,14 +696,3 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
 
   return obj as HumanReadableType<T>;
 }
-
-/**
- * @hidden
- */
-export function orderTransactionPermissionsValues(
-  transactionPermissions: TransactionPermissions
-): TransactionPermissions {
-  const { values } = transactionPermissions;
-  transactionPermissions.values = values.sort();
-  return transactionPermissions;
-}
