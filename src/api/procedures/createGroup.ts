@@ -87,10 +87,10 @@ export async function prepareCreateGroup(
   if (
     currentGroupPermissions.some(({ transactions: transactionPermissions }) => {
       if (transactionPermissions) {
-        transactionPermissions.values.sort()
+        transactionPermissions.values.sort();
       }
       if (transactions) {
-        transactions.values.sort()
+        transactions.values.sort();
       }
 
       return isEqual(transactionPermissions, transactions);

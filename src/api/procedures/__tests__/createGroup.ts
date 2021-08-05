@@ -56,6 +56,7 @@ describe('createGroup procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let externalAgentsCreateGroupTransaction: PolymeshTx<unknown[]>;
+  let permissionsLikeToPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -63,10 +64,14 @@ describe('createGroup procedure', () => {
     procedureMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'permissionsLikeToPermissions').returns(permissions);
     sinon
       .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
       .returns(rawExtrinsicPermissions);
+
+    permissionsLikeToPermissionsStub = sinon.stub(
+      utilsConversionModule,
+      'permissionsLikeToPermissions'
+    );
   });
 
   beforeEach(() => {
@@ -125,6 +130,8 @@ describe('createGroup procedure', () => {
       }
     );
 
+    permissionsLikeToPermissionsStub.returns(permissions);
+
     expect(
       prepareCreateGroup.call(proc, {
         ticker,
@@ -153,6 +160,8 @@ describe('createGroup procedure', () => {
       }
     );
 
+    permissionsLikeToPermissionsStub.returns(permissions);
+
     await prepareCreateGroup.call(proc, {
       ticker,
       permissions: { transactions: permissions.transactions },
@@ -172,6 +181,16 @@ describe('createGroup procedure', () => {
         transactions: {
           type: PermissionType.Include,
           values: [],
+        },
+      },
+    });
+
+    permissionsLikeToPermissionsStub.returns({
+      permissions,
+      ...{
+        transactions: {
+          type: PermissionType.Include,
+          values: null,
         },
       },
     });
