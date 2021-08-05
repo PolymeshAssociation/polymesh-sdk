@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Identity } from '~/internal';
+import { Agent, Identity } from '~/internal';
 import { Compliance, TransferError, TransferRestriction } from '~/types';
 import { PermissionGroupIdentifier } from '~/types/internal';
 
@@ -49,8 +49,8 @@ export interface TransferBreakdown {
   result: boolean;
 }
 
-export interface ExternalAgent {
-  identity: Identity;
+export interface AgentWithGroup {
+  agent: Agent;
   group: PermissionGroupIdentifier;
 }
 

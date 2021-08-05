@@ -2,7 +2,13 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { Context, KnownPermissionGroup, Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import {
+  Context,
+  KnownPermissionGroup,
+  Namespace,
+  SecurityToken,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType, TransactionPermissions } from '~/types';
 import { tuple } from '~/types/utils';
@@ -18,7 +24,7 @@ describe('Permissions class', () => {
   let ticker: string;
   let token: SecurityToken;
   let context: Context;
-  let permission: Permissions;
+  let permissions: Permissions;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -31,7 +37,7 @@ describe('Permissions class', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     token = entityMockUtils.getSecurityTokenInstance({ ticker });
-    permission = new Permissions(token, context);
+    permissions = new Permissions(token, context);
   });
 
   afterEach(() => {
@@ -68,7 +74,7 @@ describe('Permissions class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await permission.createGroup(args);
+      const queue = await permissions.createGroup(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -91,7 +97,7 @@ describe('Permissions class', () => {
         ],
       });
 
-      const result = await permission.getGroups();
+      const result = await permissions.getGroups();
 
       expect(result.length).toEqual(5);
       result.forEach((group, i) => {
@@ -122,10 +128,10 @@ describe('Permissions class', () => {
         ],
       });
 
-      const result = await permission.getAgents();
+      const result = await permissions.getAgents();
 
-      expect(result[0].identity.did).toEqual(did);
-      expect(result[1].identity.did).toEqual(otherDid);
+      expect(result[0].agent.did).toEqual(did);
+      expect(result[1].agent.did).toEqual(otherDid);
       expect(result[0].group).toEqual(PermissionGroupType.PolymeshV1Caa);
       expect(result[1].group).toEqual(PermissionGroupType.PolymeshV1Pia);
     });

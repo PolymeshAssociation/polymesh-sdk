@@ -1025,7 +1025,7 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
-export function permissionGroupToAgentGroup(
+export function permissionGroupIdentifierToAgentGroup(
   permissionGroup: PermissionGroupIdentifier,
   context: Context
 ): AgentGroup {
@@ -1040,7 +1040,9 @@ export function permissionGroupToAgentGroup(
 /**
  * @hidden
  */
-export function agentGroupToPermissionGroup(agentGroup: AgentGroup): PermissionGroupIdentifier {
+export function agentGroupToPermissionGroupIdentifier(
+  agentGroup: AgentGroup
+): PermissionGroupIdentifier {
   if (agentGroup.isFull) {
     return PermissionGroupType.Full;
   } else if (agentGroup.isExceptMeta) {
@@ -1072,10 +1074,10 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.BecomeAgent) {
     if (auth.value instanceof CustomPermissionGroup) {
       const { ticker, id } = auth.value;
-      value = [ticker, permissionGroupToAgentGroup({ custom: id }, context)];
+      value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
     } else {
       const { ticker, type } = auth.value;
-      value = [ticker, permissionGroupToAgentGroup(type, context)];
+      value = [ticker, permissionGroupIdentifierToAgentGroup(type, context)];
     }
   } else {
     value = auth.value;
