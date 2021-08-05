@@ -8,6 +8,7 @@ import sinon, { SinonStub } from 'sinon';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Agent,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -21,6 +22,7 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
+  PermissionGroup,
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
@@ -32,6 +34,7 @@ import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   ActiveTransferRestrictions,
+  AgentWithGroup,
   Authorization,
   AuthorizationType,
   CalendarPeriod,
@@ -42,7 +45,6 @@ import {
   CountTransferRestriction,
   DistributionParticipant,
   DividendDistributionDetails,
-  ExternalAgent,
   ExtrinsicData,
   GroupPermissions,
   IdentityBalance,
@@ -51,7 +53,6 @@ import {
   InstructionType,
   Leg,
   PercentageTransferRestriction,
-  PermissionGroup,
   PermissionGroupType,
   PortfolioBalance,
   ResultSet,
@@ -152,8 +153,8 @@ interface SecurityTokenOptions {
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
-  permissionsGetGroups?: ResultSet<CustomPermissionGroup>;
-  permissionsGetAgents?: ExternalAgent[];
+  permissionsGetAgents?: AgentWithGroup[];
+  permissionsGetGroups?: (CustomPermissionGroup | KnownPermissionGroup)[];
 }
 
 interface AuthorizationRequestOptions {
@@ -748,20 +749,16 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     defaultTaxWithholding: new BigNumber(10),
     taxWithholdings: [],
   },
-  permissionsGetGroups: {
-    data: [],
-    next: null,
-  },
   permissionsGetAgents: [
     {
-      identity: { did: 'someDid' } as Identity,
+      agent: { did: 'someDid', ticker: 'SOME_TICKER' } as Agent,
       group: PermissionGroupType.Full,
     },
   ],
+  permissionsGetGroups: [],
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
-  authId: new BigNumber(1),
   target: { did: 'targetDid' } as Identity,
   issuer: { did: 'issuerDid' } as Identity,
   data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
@@ -2454,7 +2451,7 @@ export function getSecurityTokenPermissionsGetGroupsStub(
  * Retrieve the stub of the `SecurityToken.permissions.getAgents` method
  */
 export function getSecurityTokenPermissionsGetAgentsStub(
-  agents?: Partial<ExternalAgent>
+  agents?: Partial<AgentWithGroup[]>
 ): SinonStub {
   if (agents) {
     return securityTokenPermissionsGetAgentsStub.resolves(agents);

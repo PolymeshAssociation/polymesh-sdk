@@ -1,7 +1,8 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Identity } from '~/internal';
-import { Compliance, PermissionGroup, TransferError, TransferRestriction } from '~/types';
+import { Agent, Identity } from '~/internal';
+import { Compliance, TransferError, TransferRestriction } from '~/types';
+import { PermissionGroupIdentifier } from '~/types/internal';
 
 export interface SecurityTokenDetails {
   assetType: string;
@@ -48,9 +49,9 @@ export interface TransferBreakdown {
   result: boolean;
 }
 
-export interface ExternalAgent {
-  identity: Identity;
-  group: PermissionGroup;
+export interface AgentWithGroup {
+  agent: Agent;
+  group: PermissionGroupIdentifier;
 }
 
 export * from './CorporateActions/types';

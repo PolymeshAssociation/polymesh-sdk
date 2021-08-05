@@ -34,7 +34,6 @@ export class CustomPermissionGroup extends PermissionGroup {
   }
 
   public id: BigNumber;
-  public ticker: string;
 
   /**
    * @hidden
@@ -42,10 +41,9 @@ export class CustomPermissionGroup extends PermissionGroup {
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { id, ticker } = identifiers;
+    const { id } = identifiers;
 
     this.id = id;
-    this.ticker = ticker;
   }
 
   /**
@@ -79,16 +77,13 @@ export class CustomPermissionGroup extends PermissionGroup {
 
     const rawGroupPermissions = await externalAgents.groupPermissions(rawTicker, rawAgId);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transactionPermissions = extrinsicPermissionsToTransactionPermissions(
-      rawGroupPermissions.unwrap()
-    )!;
+    const transactions = extrinsicPermissionsToTransactionPermissions(rawGroupPermissions.unwrap());
 
-    const txGroups = transactionPermissionsToTxGroups(transactionPermissions);
+    const transactionGroups = transactionPermissionsToTxGroups(transactions);
 
     return {
-      transactions: transactionPermissions,
-      transactionGroups: txGroups,
+      transactions,
+      transactionGroups,
     };
   }
 }

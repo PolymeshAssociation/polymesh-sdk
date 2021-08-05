@@ -16,6 +16,7 @@ import {
   DefaultPortfolio,
   DividendDistribution,
   Identity,
+  Instruction,
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
@@ -570,7 +571,13 @@ export interface MiddlewareConfig {
 
 export type CommonKeyring = Pick<
   Keyring,
-  'getPair' | 'getPairs' | 'addFromSeed' | 'addFromUri' | 'addFromMnemonic' | 'addPair'
+  | 'getPair'
+  | 'getPairs'
+  | 'addFromSeed'
+  | 'addFromUri'
+  | 'addFromMnemonic'
+  | 'addPair'
+  | 'encodeAddress'
 >;
 
 export interface UiKeyring {
@@ -760,6 +767,9 @@ export interface Permissions {
   portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null;
 }
 
+/**
+ * Security Token permissions shared by agents in a group
+ */
 export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
@@ -806,11 +816,6 @@ export enum PermissionGroupType {
    */
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
-
-/**
- * Determines the subset of permissions an Agent has over a Security Token
- */
-export type PermissionGroup = PermissionGroupType | { custom: BigNumber };
 
 /**
  * Authorization request data corresponding to type
@@ -1098,6 +1103,27 @@ export interface SignerValue {
    * address or DID (depending on whether the signer is an Account or Identity)
    */
   value: string;
+}
+
+export interface GroupedInstructions {
+  /**
+   * Instructions that have already been affirmed by the Identity
+   */
+  affirmed: Instruction[];
+  /**
+   * Instructions that have already been rejected by the Identity
+   */
+  rejected: Instruction[];
+  /**
+   * Instructions that still need to be affirmed/rejected by the Identity
+   */
+  pending: Instruction[];
+  /**
+   * Instructions that failed in their execution (can be rescheduled).
+   *   This group supercedes the other three, so for example, a failed Instruction
+   *   might also belong in the `affirmed` group, but it will only be included in this one
+   */
+  failed: Instruction[];
 }
 
 export { TxTags, TxTag, ModuleName };

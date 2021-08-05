@@ -105,25 +105,22 @@ describe('createGroup procedure', () => {
     });
   });
 
-  test('should throw an error if already exists a group with exactly the same permissions', async () => {
+  test('should throw an error if there already exists a group with exactly the same permissions', async () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
         token: entityMockUtils.getSecurityTokenInstance({
           ticker,
-          permissionsGetGroups: {
-            data: [
-              entityMockUtils.getCustomPermissionGroupInstance({
-                ticker,
-                id: new BigNumber(1),
-                getPermissions: {
-                  transactions: permissions.transactions,
-                  transactionGroups: [],
-                },
-              }),
-            ],
-            next: null,
-          },
+          permissionsGetGroups: [
+            entityMockUtils.getCustomPermissionGroupInstance({
+              ticker,
+              id: new BigNumber(1),
+              getPermissions: {
+                transactions: permissions.transactions,
+                transactionGroups: [],
+              },
+            }),
+          ],
         }),
       }
     );
@@ -133,7 +130,7 @@ describe('createGroup procedure', () => {
         ticker,
         permissions: { transactions: permissions.transactions },
       })
-    ).rejects.toThrow('Already exists a group with exactly the same permissions');
+    ).rejects.toThrow('There already exists a group with the exact same permissions');
   });
 
   test('should add a create group transaction to the queue', async () => {
@@ -142,19 +139,16 @@ describe('createGroup procedure', () => {
       {
         token: entityMockUtils.getSecurityTokenInstance({
           ticker,
-          permissionsGetGroups: {
-            data: [
-              entityMockUtils.getCustomPermissionGroupInstance({
-                ticker,
-                id: new BigNumber(2),
-                getPermissions: {
-                  transactions: null,
-                  transactionGroups: [],
-                },
-              }),
-            ],
-            next: null,
-          },
+          permissionsGetGroups: [
+            entityMockUtils.getCustomPermissionGroupInstance({
+              ticker,
+              id: new BigNumber(2),
+              getPermissions: {
+                transactions: null,
+                transactionGroups: [],
+              },
+            }),
+          ],
         }),
       }
     );

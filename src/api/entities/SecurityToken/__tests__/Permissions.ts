@@ -1,12 +1,17 @@
-import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
+import {
+  Context,
+  KnownPermissionGroup,
+  Namespace,
+  SecurityToken,
+  TransactionQueue,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType, TransactionPermissions } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsInternalModule from '~/utils/internal';
 
 import { Permissions } from '../Permissions';
 
@@ -15,12 +20,12 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
-describe('Issuance class', () => {
+describe('Permissions class', () => {
   let ticker: string;
   let token: SecurityToken;
   let context: Context;
-  let permission: Permissions;
   let target: string;
+  let permissions: Permissions;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -34,7 +39,7 @@ describe('Issuance class', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     token = entityMockUtils.getSecurityTokenInstance({ ticker });
-    permission = new Permissions(token, context);
+    permissions = new Permissions(token, context);
   });
 
   afterEach(() => {
@@ -71,7 +76,7 @@ describe('Issuance class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await permission.createGroup(args);
+      const queue = await permissions.createGroup(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -96,7 +101,7 @@ describe('Issuance class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await permission.inviteAgent(args);
+      const queue = await permissions.inviteAgent(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -107,28 +112,28 @@ describe('Issuance class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all the group permissions of the Security Token', async () => {
+    test('should retrieve all the permission groups of the Security Token', async () => {
       const id = new BigNumber(1);
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions');
 
-      const rawEntries = [
-        tuple(
-          ({
-            args: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id.toNumber())],
-          } as unknown) as StorageKey,
-          dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
-        ),
-      ];
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id.toNumber())],
+            dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
+          ),
+        ],
+      });
 
-      sinon
-        .stub(utilsInternalModule, 'requestPaginated')
-        .resolves({ entries: rawEntries, lastKey: null });
+      const result = await permissions.getGroups();
 
-      const result = await permission.getGroups();
-
-      expect(result.data.length).toEqual(1);
-      expect(result.data[0].id).toEqual(id);
-      expect(result.next).toBeNull();
+      expect(result.length).toEqual(5);
+      result.forEach((group, i) => {
+        if (i === 4) {
+          expect(group instanceof CustomPermissionGroup).toBe(true);
+        } else {
+          expect(group instanceof KnownPermissionGroup).toBe(true);
+        }
+      });
     });
   });
 
@@ -150,10 +155,10 @@ describe('Issuance class', () => {
         ],
       });
 
-      const result = await permission.getAgents();
+      const result = await permissions.getAgents();
 
-      expect(result[0].identity.did).toEqual(did);
-      expect(result[1].identity.did).toEqual(otherDid);
+      expect(result[0].agent.did).toEqual(did);
+      expect(result[1].agent.did).toEqual(otherDid);
       expect(result[0].group).toEqual(PermissionGroupType.PolymeshV1Caa);
       expect(result[1].group).toEqual(PermissionGroupType.PolymeshV1Pia);
     });

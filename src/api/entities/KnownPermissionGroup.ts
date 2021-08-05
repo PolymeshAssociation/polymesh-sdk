@@ -14,7 +14,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a group of known permissions for a Security Token
+ * Represents a pre-defined group of permissions for a Security Token
  */
 export class KnownPermissionGroup extends PermissionGroup {
   /**
@@ -27,11 +27,7 @@ export class KnownPermissionGroup extends PermissionGroup {
     return type in PermissionGroupType && typeof ticker === 'string';
   }
 
-  /**
-   * group permission type
-   */
   public type: PermissionGroupType;
-  public ticker: string;
 
   /**
    * @hidden
@@ -39,10 +35,9 @@ export class KnownPermissionGroup extends PermissionGroup {
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { type, ticker } = identifiers;
+    const { type } = identifiers;
 
     this.type = type;
-    this.ticker = ticker;
   }
 
   /**
