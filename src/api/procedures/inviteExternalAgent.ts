@@ -33,7 +33,9 @@ export interface InviteExternalAgentParams {
         transactionGroups: TxGroup[];
       };
   /**
-   * date at which the authorization request for transfer expires (optional)
+   * date at which the authorization request for invitation expires (optional)
+   *
+   * @note if expiry date is not set, the invitation will never expires
    */
   expiry?: Date;
 }
@@ -58,15 +60,14 @@ export interface Storage {
 const authorizationDataResolver = (
   value: KnownPermissionGroup | CustomPermissionGroup,
   context: Context
-): AuthorizationData => {
-  return authorizationToAuthorizationData(
+): AuthorizationData =>
+  authorizationToAuthorizationData(
     {
       type: AuthorizationType.BecomeAgent,
       value,
     },
     context
   );
-};
 
 /**
  * @hidden
@@ -87,14 +88,12 @@ export async function prepareInviteExternalAgent(
 
   const { ticker, target, permissions, expiry } = args;
 
-  const [currentAgent, did] = await Promise.all([
+  const [currentAgents, did] = await Promise.all([
     token.permissions.getAgents(),
     getDid(target, context),
   ]);
 
-  const isAgent = currentAgent
-    .map(({ identity: agentIdentity }) => agentIdentity.did)
-    .includes(did);
+  const isAgent = !!currentAgents.find(({ agent: { did: agentDid } }) => agentDid === did);
 
   if (isAgent) {
     throw new PolymeshError({
@@ -118,9 +117,9 @@ export async function prepareInviteExternalAgent(
       ticker,
       permissions,
     })) as PostTransactionValue<CustomPermissionGroup>;
-    rawAuthorizationData = createGroupResult.transform(customPermissionGroup => {
-      return authorizationDataResolver(customPermissionGroup, context);
-    });
+    rawAuthorizationData = createGroupResult.transform(customPermissionGroup =>
+      authorizationDataResolver(customPermissionGroup, context)
+    );
   }
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);

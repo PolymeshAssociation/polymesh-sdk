@@ -8,7 +8,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/inviteExternalAgent';
-import { Account, Context, Identity, SecurityToken } from '~/internal';
+import { Account, Agent, Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, PermissionGroupType, PermissionType, SignerValue } from '~/types';
@@ -150,7 +150,7 @@ describe('inviteExternalAgent procedure', () => {
       token: entityMockUtils.getSecurityTokenInstance({
         permissionsGetAgents: [
           {
-            identity: { did: 'otherDid' } as Identity,
+            agent: { did: 'otherDid' } as Agent,
             group: PermissionGroupType.Full,
           },
         ],
