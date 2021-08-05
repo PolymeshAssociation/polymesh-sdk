@@ -165,6 +165,24 @@ describe('createGroup procedure', () => {
       rawTicker,
       rawExtrinsicPermissions
     );
+
+    await prepareCreateGroup.call(proc, {
+      ticker,
+      permissions: {
+        transactions: {
+          type: PermissionType.Include,
+          values: [],
+        },
+      },
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      externalAgentsCreateGroupTransaction,
+      sinon.match({ resolvers: sinon.match.array }),
+      rawTicker,
+      rawExtrinsicPermissions
+    );
   });
 
   describe('prepareStorage', () => {

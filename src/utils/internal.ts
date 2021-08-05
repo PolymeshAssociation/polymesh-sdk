@@ -38,7 +38,6 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
-  TransactionPermissions,
   UiKeyring,
 } from '~/types';
 import {

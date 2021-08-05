@@ -85,12 +85,14 @@ export async function prepareCreateGroup(
   const currentGroupPermissions = await P.map(groups, group => group.getPermissions());
 
   if (
-    currentGroupPermissions.some(({ transactions: transactionPermissions }) => 
-      isEqual(
-        transactionPermissions ? transactionPermissions.values.sort() : null,
-        transactions ? transactions.values.sort() : null
-      )
-    )
+    currentGroupPermissions.some(({ transactions: transactionPermissions }) => {
+      const orderedTransactionPermissions = transactionPermissions
+        ? transactionPermissions.values.sort()
+        : null;
+      const orderedTransactions = transactions ? transactions.values.sort() : null;
+
+      return isEqual(orderedTransactionPermissions, orderedTransactions);
+    })
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
