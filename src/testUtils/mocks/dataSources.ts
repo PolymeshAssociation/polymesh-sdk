@@ -301,6 +301,7 @@ interface KeyringOptions {
   addFromSeed?: Pair;
   addFromMnemonic?: Pair;
   addPair?: Pair;
+  encodeAddress?: string;
   /**
    * @hidden
    * Whether keyring functions should throw
@@ -588,6 +589,7 @@ const defaultKeyringOptions: KeyringOptions = {
     meta: {},
     publicKey: 'publicKey5',
   },
+  encodeAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
 
@@ -823,7 +825,16 @@ function initApi(): void {
  * @hidden
  */
 function configureKeyring(opts: KeyringOptions): void {
-  const { error, getPair, getPairs, addFromUri, addFromSeed, addFromMnemonic, addPair } = opts;
+  const {
+    error,
+    getPair,
+    getPairs,
+    addFromUri,
+    addFromSeed,
+    addFromMnemonic,
+    addPair,
+    encodeAddress,
+  } = opts;
 
   const err = new Error('Error');
 
@@ -834,6 +845,7 @@ function configureKeyring(opts: KeyringOptions): void {
     addFromUri: sinon.stub().returns(addFromUri),
     addFromMnemonic: sinon.stub().returns(addFromMnemonic),
     addPair: sinon.stub().returns(addPair),
+    encodeAddress: sinon.stub().returns(encodeAddress),
   };
 
   if (error) {
@@ -842,6 +854,7 @@ function configureKeyring(opts: KeyringOptions): void {
     keyringInstance.addFromSeed.throws(err);
     keyringInstance.addFromUri.throws(err);
     keyringInstance.addFromMnemonic.throws(err);
+    keyringInstance.encodeAddress.throws(err);
   }
 
   Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
@@ -2587,7 +2600,7 @@ export const createMockVenue = (venue?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockInstructionStatus = (
-  instructionStatus?: 'Pending' | 'Unknown'
+  instructionStatus?: 'Pending' | 'Unknown' | 'Failed'
 ): InstructionStatus => {
   return createMockEnum(instructionStatus) as InstructionStatus;
 };

@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import P from 'bluebird';
 import { isEqual } from 'lodash';
 
 import {
@@ -18,7 +19,7 @@ import {
   transactionPermissionsToExtrinsicPermissions,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize, orderTransactionPermissionsValues } from '~/utils/internal';
 
 export interface CreateGroupParams {
   permissions:
@@ -79,33 +80,26 @@ export async function prepareCreateGroup(
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const { data: groups } = await token.permissions.getGroups();
+  const groups = await token.permissions.getGroups();
 
-  const currentTransactionPermissions: TransactionPermissions[] = [];
-
-  await Promise.all(
-    groups.map(async group => {
-      const { transactions: groupTransactions } = await group.getPermissions();
-      if (groupTransactions) {
-        currentTransactionPermissions.push(groupTransactions);
-      }
-    })
-  );
+  const currentGroupPermissions = await P.map(groups, group => group.getPermissions());
 
   if (
-    currentTransactionPermissions.some(transactionPermission =>
-      isEqual(transactionPermission, transactions)
+    currentGroupPermissions.some(({ transactions: transactionPermissions }) =>
+      isEqual(
+        optionize(orderTransactionPermissionsValues)(transactionPermissions),
+        optionize(orderTransactionPermissionsValues)(transactions)
+      )
     )
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Already exists a group with exactly the same permissions',
+      message: 'There already exists a group with the exact same permissions',
     });
   }
 
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    transactions!,
+    transactions,
     context
   );
 

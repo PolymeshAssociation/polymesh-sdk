@@ -87,7 +87,6 @@ import {
   DividendDistributionParams,
   InstructionType,
   KnownTokenType,
-  PermissionGroup,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -112,7 +111,7 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
-import { InstructionStatus, ScopeClaimProof } from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier, ScopeClaimProof } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -1150,7 +1149,7 @@ describe('permissionGroupToAgentGroup and agentGroupToPermissionGroup', () => {
   });
 
   test('permissionGroupToAgentGroup should convert a PermissionGroup to a polkadot AgentGroup object', () => {
-    let value: PermissionGroup = PermissionGroupType.PolymeshV1Pia;
+    let value: PermissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
     const fakeResult = ('convertedAgentGroup' as unknown) as AgentGroup;
     const context = dsMockUtils.getContextInstance();
 
@@ -5316,6 +5315,8 @@ describe('transactionPermissionsToTxGroups', () => {
         type: PermissionType.Exclude,
       })
     ).toEqual([]);
+
+    expect(transactionPermissionsToTxGroups(null)).toEqual([]);
   });
 });
 
@@ -6412,7 +6413,13 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeResult);
 
-    const result = transactionPermissionsToExtrinsicPermissions(value, context);
+    let result = transactionPermissionsToExtrinsicPermissions(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    dsMockUtils.getCreateTypeStub().withArgs('ExtrinsicPermissions', 'Whole').returns(fakeResult);
+
+    result = transactionPermissionsToExtrinsicPermissions(null, context);
 
     expect(result).toEqual(fakeResult);
   });

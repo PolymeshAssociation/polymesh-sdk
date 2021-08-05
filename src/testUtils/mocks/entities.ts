@@ -21,6 +21,7 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
+  PermissionGroup,
   // NOTE uncomment in Governance v2 upgrade
   // Proposal,
   SecurityToken,
@@ -50,7 +51,6 @@ import {
   InstructionType,
   Leg,
   PercentageTransferRestriction,
-  PermissionGroup,
   PermissionGroupType,
   PortfolioBalance,
   ResultSet,
@@ -151,7 +151,7 @@ interface SecurityTokenOptions {
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
-  permissionsGetGroups?: ResultSet<CustomPermissionGroup>;
+  permissionsGetGroups?: (CustomPermissionGroup | KnownPermissionGroup)[];
 }
 
 interface AuthorizationRequestOptions {
@@ -745,10 +745,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     defaultTaxWithholding: new BigNumber(10),
     taxWithholdings: [],
   },
-  permissionsGetGroups: {
-    data: [],
-    next: null,
-  },
+  permissionsGetGroups: [],
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {

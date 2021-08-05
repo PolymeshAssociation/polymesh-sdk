@@ -54,6 +54,10 @@ jest.mock(
     '~/api/entities/DefaultPortfolio'
   )
 );
+jest.mock(
+  '~/api/entities/Instruction',
+  require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
+);
 
 describe('Identity class', () => {
   let context: MockContext;
@@ -851,7 +855,178 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: getInstructions', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return all instructions in which the identity is involved, grouped by status', async () => {
+      const id1 = new BigNumber(1);
+      const id2 = new BigNumber(2);
+      const id3 = new BigNumber(3);
+      const id4 = new BigNumber(4);
+      const id5 = new BigNumber(5);
+
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const defaultPortfolioDid = 'someDid';
+      const numberedPortfolioDid = 'someDid';
+      const numberedPortfolioId = new BigNumber(1);
+
+      const defaultPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: defaultPortfolioDid,
+        isCustodiedBy: true,
+      });
+
+      const numberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+        did: numberedPortfolioDid,
+        id: numberedPortfolioId,
+        isCustodiedBy: false,
+      });
+
+      identity.portfolios.getPortfolios = sinon
+        .stub()
+        .resolves([defaultPortfolio, numberedPortfolio]);
+
+      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves({ data: [], next: null });
+
+      const portfolioLikeToPortfolioIdStub = sinon.stub(
+        utilsConversionModule,
+        'portfolioLikeToPortfolioId'
+      );
+
+      portfolioLikeToPortfolioIdStub
+        .withArgs(defaultPortfolio)
+        .returns({ did: defaultPortfolioDid, number: undefined });
+      portfolioLikeToPortfolioIdStub
+        .withArgs(numberedPortfolio)
+        .returns({ did: numberedPortfolioDid, number: numberedPortfolioId });
+
+      const rawPortfolio = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      });
+
+      const portfolioIdToMeshPortfolioIdStub = sinon.stub(
+        utilsConversionModule,
+        'portfolioIdToMeshPortfolioId'
+      );
+
+      portfolioIdToMeshPortfolioIdStub
+        .withArgs({ did, number: undefined }, context)
+        .returns(rawPortfolio);
+
+      const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
+
+      const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
+      const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
+      const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
+      const rawId4 = dsMockUtils.createMockU64(id4.toNumber());
+      const rawId5 = dsMockUtils.createMockU64(id5.toNumber());
+
+      const entriesStub = sinon.stub();
+      entriesStub
+        .withArgs(rawPortfolio)
+        .resolves([
+          tuple(
+            { args: [rawPortfolio, rawId1] },
+            dsMockUtils.createMockAffirmationStatus('Affirmed')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId2] },
+            dsMockUtils.createMockAffirmationStatus('Pending')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId3] },
+            dsMockUtils.createMockAffirmationStatus('Rejected')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId4] },
+            dsMockUtils.createMockAffirmationStatus('Affirmed')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId5] },
+            dsMockUtils.createMockAffirmationStatus('Unknown')
+          ),
+        ]);
+
+      userAuthsStub.entries = entriesStub;
+
+      const instructionDetailsStub = dsMockUtils.createQueryStub(
+        'settlement',
+        'instructionDetails',
+        {
+          multi: [],
+        }
+      );
+
+      const multiStub = sinon.stub();
+
+      multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Failed'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+      ]);
+
+      instructionDetailsStub.multi = multiStub;
+
+      const result = await identity.getInstructions();
+
+      expect(result.affirmed).toEqual([entityMockUtils.getInstructionInstance({ id: id1 })]);
+      expect(result.pending).toEqual([entityMockUtils.getInstructionInstance({ id: id2 })]);
+      expect(result.rejected).toEqual([entityMockUtils.getInstructionInstance({ id: id3 })]);
+      expect(result.failed).toEqual([entityMockUtils.getInstructionInstance({ id: id4 })]);
+    });
+  });
+
   describe('method: getPendingInstructions', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return all pending instructions in which the identity is involved', async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
