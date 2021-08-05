@@ -3,12 +3,13 @@ import {
   createGroup,
   CreateGroupParams,
   CustomPermissionGroup,
+  KnownPermissionGroup,
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
-import { stringToTicker, tickerToString, u32ToBigNumber } from '~/utils/conversion';
-import { createProcedureMethod, requestPaginated } from '~/utils/internal';
+import { PermissionGroupType, ProcedureMethod } from '~/types';
+import { stringToTicker, u32ToBigNumber } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Security Token Permissions related functionality
@@ -34,40 +35,32 @@ export class Permissions extends Namespace<SecurityToken> {
   public createGroup: ProcedureMethod<CreateGroupParams, CustomPermissionGroup>;
 
   /**
-   * Retrieve all custom group permissions of the Security Token
-   *
-   * @note supports pagination
+   * Retrieve all group permissions of the Security Token
    */
-  public async getGroups(
-    paginationOpts?: PaginationOptions
-  ): Promise<ResultSet<CustomPermissionGroup>> {
+  public async getGroups(): Promise<(CustomPermissionGroup | KnownPermissionGroup)[]> {
     const {
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { externalAgents },
+        },
       },
       context,
       parent: { ticker },
     } = this;
 
-    const { entries, lastKey: next } = await requestPaginated(
-      query.externalAgents.groupPermissions,
-      {
-        arg: stringToTicker(ticker, context),
-        paginationOpts,
-      }
+    const knownPermissionGroups = Object.values(PermissionGroupType).map(
+      type => new KnownPermissionGroup({ type, ticker }, context)
     );
 
-    const data: CustomPermissionGroup[] = entries.map(
+    const rawCustomPermissionGroups = await externalAgents.groupPermissions.entries(
+      stringToTicker(ticker, context)
+    );
+
+    const customPermissionGroups: CustomPermissionGroup[] = rawCustomPermissionGroups.map(
       ([storageKey]) =>
-        new CustomPermissionGroup(
-          { ticker: tickerToString(storageKey.args[0]), id: u32ToBigNumber(storageKey.args[1]) },
-          context
-        )
+        new CustomPermissionGroup({ ticker, id: u32ToBigNumber(storageKey.args[1]) }, context)
     );
 
-    return {
-      data,
-      next,
-    };
+    return [...knownPermissionGroups, ...customPermissionGroups];
   }
 }

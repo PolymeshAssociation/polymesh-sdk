@@ -1,12 +1,11 @@
-import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
+import { KnownPermissionGroup, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TransactionPermissions } from '~/types';
 import { tuple } from '~/types/utils';
-import * as utilsInternalModule from '~/utils/internal';
 
 import { Permissions } from '../Permissions';
 
@@ -15,7 +14,7 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
-describe('Issuance class', () => {
+describe('Permissions class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
@@ -71,7 +70,7 @@ describe('Issuance class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all the group permissions of the Security Token', async () => {
+    test('should retrieve all the permission groups of the Security Token', async () => {
       const id = new BigNumber(1);
       const ticker = 'TICKERNAME';
       const context = dsMockUtils.getContextInstance();
@@ -80,26 +79,25 @@ describe('Issuance class', () => {
       });
       const permission = new Permissions(token, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions');
-
-      const rawEntries = [
-        tuple(
-          ({
-            args: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id.toNumber())],
-          } as unknown) as StorageKey,
-          dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
-        ),
-      ];
-
-      sinon
-        .stub(utilsInternalModule, 'requestPaginated')
-        .resolves({ entries: rawEntries, lastKey: null });
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id.toNumber())],
+            dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
+          ),
+        ],
+      });
 
       const result = await permission.getGroups();
 
-      expect(result.data.length).toEqual(1);
-      expect(result.data[0].id).toEqual(id);
-      expect(result.next).toBeNull();
+      expect(result.length).toEqual(5);
+      result.map((group, i) => {
+        if (i === 4) {
+          expect(group instanceof CustomPermissionGroup).toBe(true);
+        } else {
+          expect(group instanceof KnownPermissionGroup).toBe(true);
+        }
+      });
     });
   });
 });

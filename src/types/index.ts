@@ -761,6 +761,9 @@ export interface Permissions {
   portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null;
 }
 
+/**
+ * Security Token permissions shared by agents in a group
+ */
 export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
@@ -807,11 +810,6 @@ export enum PermissionGroupType {
    */
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
-
-/**
- * Determines the subset of permissions an Agent has over a Security Token
- */
-export type PermissionGroup = PermissionGroupType | { custom: BigNumber };
 
 /**
  * Authorization request data corresponding to type

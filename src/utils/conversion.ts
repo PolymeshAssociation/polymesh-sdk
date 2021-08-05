@@ -149,7 +149,6 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
-  PermissionGroup,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -191,6 +190,7 @@ import {
   ExtrinsicIdentifier,
   InstructionStatus,
   PalletPermissions,
+  PermissionGroupIdentifier,
   PermissionsEnum,
   PolymeshTx,
   PortfolioId,
@@ -679,7 +679,13 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
  * @note tags that don't belong to any group will be ignored.
  *   The same goes for tags that belong to a group that wasn't completed
  */
-export function transactionPermissionsToTxGroups(permissions: TransactionPermissions): TxGroup[] {
+export function transactionPermissionsToTxGroups(
+  permissions: TransactionPermissions | null
+): TxGroup[] {
+  if (!permissions) {
+    return [];
+  }
+
   const { values: transactionValues, type, exceptions = [] } = permissions;
   let includedTags: (TxTag | ModuleName)[];
   let excludedTags: (TxTag | ModuleName)[];
@@ -895,12 +901,12 @@ export function permissionsToMeshPermissions(
  * @hidden
  */
 export function transactionPermissionsToExtrinsicPermissions(
-  transactionPermissions: TransactionPermissions,
+  transactionPermissions: TransactionPermissions | null,
   context: Context
 ): ExtrinsicPermissions {
   return context.polymeshApi.createType(
     'ExtrinsicPermissions',
-    buildPalletPermissions(transactionPermissions)
+    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
   );
 }
 
@@ -1019,7 +1025,7 @@ export function meshPermissionsToPermissions(
  * @hidden
  */
 export function permissionGroupToAgentGroup(
-  permissionGroup: PermissionGroup,
+  permissionGroup: PermissionGroupIdentifier,
   context: Context
 ): AgentGroup {
   return context.polymeshApi.createType(
