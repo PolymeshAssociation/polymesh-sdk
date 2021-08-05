@@ -91,7 +91,7 @@ describe('Permissions class', () => {
       const result = await permission.getGroups();
 
       expect(result.length).toEqual(5);
-      result.map((group, i) => {
+      result.forEach((group, i) => {
         if (i === 4) {
           expect(group instanceof CustomPermissionGroup).toBe(true);
         } else {
