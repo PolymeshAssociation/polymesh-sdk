@@ -86,14 +86,12 @@ export class Permissions extends Namespace<SecurityToken> {
 
     const groupOfAgent = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
 
-    const agentsWithGroup = groupOfAgent.map(([storageKey, agentGroup]) => {
+    return groupOfAgent.map(([storageKey, agentGroup]) => {
       const rawAgentGroup = agentGroup.unwrap();
       return {
         agent: new Agent({ did: identityIdToString(storageKey.args[1]), ticker }, context),
         group: agentGroupToPermissionGroupIdentifier(rawAgentGroup),
       };
     });
-
-    return agentsWithGroup;
   }
 }
