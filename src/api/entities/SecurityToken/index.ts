@@ -1,4 +1,11 @@
-import { Counter, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
+import { Option, StorageKey } from '@polkadot/types';
+import {
+  AgentGroup,
+  Counter,
+  IdentityId,
+  SecurityToken as MeshSecurityToken,
+  Ticker,
+} from 'polymesh-types/types';
 
 import {
   Context,
@@ -49,6 +56,7 @@ import { CorporateActions } from './CorporateActions';
 import { Documents } from './Documents';
 import { Issuance } from './Issuance';
 import { Offerings } from './Offerings';
+import { Permissions } from './Permissions';
 import { Settlements } from './Settlements';
 import { TokenHolders } from './TokenHolders';
 import { TransferRestrictions } from './TransferRestrictions';
@@ -67,7 +75,7 @@ export interface UniqueIdentifiers {
 /**
  * Class used to manage all the Security Token functionality
  */
-export class SecurityToken extends Entity<UniqueIdentifiers> {
+export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -98,6 +106,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
   public offerings: Offerings;
   public checkpoints: Checkpoints;
   public corporateActions: CorporateActions;
+  public permissions: Permissions;
 
   /**
    * @hidden
@@ -119,6 +128,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     this.offerings = new Offerings(this, context);
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
+    this.permissions = new Permissions(this, context);
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferTokenOwnership, { ticker, ...args }] },
@@ -192,7 +202,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     const {
       context: {
         polymeshApi: {
-          query: { asset },
+          query: { asset, externalAgents },
         },
       },
       ticker,
@@ -200,14 +210,24 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
     } = this;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    const assembleResult = ({
-      name,
-      total_supply,
-      divisible,
-      owner_did,
-      asset_type,
-      primary_issuance_agent,
-    }: MeshSecurityToken): SecurityTokenDetails => {
+    const assembleResult = (
+      { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
+      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
+    ): SecurityTokenDetails => {
+      const primaryIssuanceAgents: Identity[] = [];
+      const fullAgents: Identity[] = [];
+
+      agentGroups.forEach(([storageKey, agentGroup]) => {
+        const rawAgentGroup = agentGroup.unwrap();
+        if (rawAgentGroup.isPolymeshV1Pia) {
+          primaryIssuanceAgents.push(
+            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
+          );
+        } else if (rawAgentGroup.isFull) {
+          fullAgents.push(new Identity({ did: identityIdToString(storageKey.args[1]) }, context));
+        }
+      });
+
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
       return {
         assetType: assetTypeToString(asset_type),
@@ -215,24 +235,27 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
         name: assetNameToString(name),
         owner,
         totalSupply: balanceToBigNumber(total_supply),
-        primaryIssuanceAgent: primary_issuance_agent.isSome
-          ? new Identity({ did: identityIdToString(primary_issuance_agent.unwrap()) }, context)
-          : owner,
+        primaryIssuanceAgents,
+        fullAgents,
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 
+    const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
+
     if (callback) {
+      const groupOfAgents = await groupOfAgentPromise;
+
       return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken));
+        callback(assembleResult(securityToken, groupOfAgents));
       });
     }
 
-    const token = await asset.tokens(rawTicker);
+    const [token, groupOfAgent] = await Promise.all([asset.tokens(rawTicker), groupOfAgentPromise]);
 
-    return assembleResult(token);
+    return assembleResult(token, groupOfAgent);
   }
 
   /**
@@ -384,6 +407,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated in favor of `inviteAgent`
    */
   public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
 
@@ -394,6 +419,8 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *
    * @note required role:
    *   - Security Token Owner
+   *
+   * @deprecated
    */
   public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
 
@@ -455,4 +482,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers> {
    *   - Security Token Primary Issuance Agent
    */
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
+
+  /**
+   * Return the Token's ticker
+   */
+  public toJson(): string {
+    return this.ticker;
+  }
 }

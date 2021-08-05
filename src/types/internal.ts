@@ -13,7 +13,7 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CalendarPeriod, Permissions, Role } from '~/types';
+import { CalendarPeriod, Role, SignerValue, SimplePermissions } from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -145,17 +145,6 @@ export interface TransactionSpec<
   batchSize: number | null;
 }
 
-export enum SignerType {
-  // eslint-disable-next-line no-shadow
-  Identity = 'Identity',
-  Account = 'Account',
-}
-
-export interface SignerValue {
-  type: SignerType;
-  value: string;
-}
-
 export interface AuthTarget {
   target: SignerValue;
   authId: BigNumber;
@@ -215,8 +204,29 @@ export interface CorporateActionIdentifier {
 }
 
 export interface ProcedureAuthorization {
-  signerPermissions?: Omit<Permissions, 'transactionGroups'> | boolean;
-  identityRoles?: Role[] | boolean;
+  permissions?: SimplePermissions | boolean;
+  roles?: Role[] | boolean;
 }
 
 export type Falsyable<T> = T | null | undefined;
+
+export type PermissionsEnum<P> =
+  | 'Whole'
+  | {
+      These: P[];
+    }
+  | {
+      Except: P[];
+    };
+export type PalletPermissions = {
+  /* eslint-disable @typescript-eslint/naming-convention */
+  pallet_name: string;
+  dispatchable_names: PermissionsEnum<string>;
+  /* eslint-enable @typescript-eslint/naming-convention */
+};
+
+export enum InstructionStatus {
+  Pending = 'Pending',
+  Unknown = 'Unknown',
+  Failed = 'Failed',
+}

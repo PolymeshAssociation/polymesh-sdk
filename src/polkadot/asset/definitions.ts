@@ -2,8 +2,7 @@
 export default {
   rpc: {
     canTransfer: {
-      description:
-        'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
+      description: 'Checks whether a transaction with given parameters can take place or not',
       params: [
         {
           name: 'sender',
@@ -50,9 +49,7 @@ export default {
     },
     canTransferGranular: {
       description:
-        'Checks whether a transaction with given parameters ' +
-        'can take place or not. The result is granular meaning ' +
-        'each check is run and returned regardless of outcome.',
+        'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
       params: [
         {
           name: 'from_custodian',

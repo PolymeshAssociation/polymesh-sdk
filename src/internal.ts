@@ -128,6 +128,8 @@ export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
 export { TransactionQueue } from '~/base/TransactionQueue';
 export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
+export { Agent } from '~/api/entities/Agent';
+export { PermissionGroup } from '~/api/entities/PermissionGroup';
 export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,
@@ -172,3 +174,5 @@ export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondar
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';
+export { quitCustody } from '~/api/procedures/quitCustody';
+export { rescheduleInstruction } from '~/api/procedures/rescheduleInstruction';

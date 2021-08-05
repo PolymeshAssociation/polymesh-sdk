@@ -708,7 +708,9 @@ import type { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import type { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import type { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import type {
+  AGId,
   AffirmationStatus,
+  AgentGroup,
   AssetCompliance,
   AssetComplianceResult,
   AssetDidResult,
@@ -716,8 +718,8 @@ import type {
   AssetMigrationError,
   AssetName,
   AssetOwnershipRelation,
+  AssetPermissions,
   AssetType,
-  AuthIdentifier,
   Authorization,
   AuthorizationData,
   AuthorizationNonce,
@@ -766,6 +768,7 @@ import type {
   DidRecordsSuccess,
   DidStatus,
   DispatchableName,
+  DispatchableNames,
   Distribution,
   Document,
   DocumentHash,
@@ -773,9 +776,12 @@ import type {
   DocumentName,
   DocumentType,
   DocumentUri,
+  ErrorAt,
+  EventCounts,
   EventDid,
   ExtVersion,
   ExtensionAttributes,
+  ExtrinsicPermissions,
   FeeOf,
   FundingRoundName,
   Fundraiser,
@@ -827,6 +833,7 @@ import type {
   PortfolioKind,
   PortfolioName,
   PortfolioNumber,
+  PortfolioPermissions,
   PortfolioValidityResult,
   PosRatio,
   PreAuthorizedKeyInfo,
@@ -901,6 +908,7 @@ import type {
 declare module '@polkadot/types/types/registry' {
   export interface InterfaceTypes {
     'Compact<AccountIndex>': Compact<AccountIndex>;
+    'Compact<AGId>': Compact<AGId>;
     'Compact<ApprovalFlag>': Compact<ApprovalFlag>;
     'Compact<AssetId>': Compact<AssetId>;
     'Compact<AuctionIndex>': Compact<AuctionIndex>;
@@ -1011,6 +1019,8 @@ declare module '@polkadot/types/types/registry' {
     'Option<ActiveRecovery>': Option<ActiveRecovery>;
     'Option<Address>': Option<Address>;
     'Option<AffirmationStatus>': Option<AffirmationStatus>;
+    'Option<AgentGroup>': Option<AgentGroup>;
+    'Option<AGId>': Option<AGId>;
     'Option<AliveContractInfo>': Option<AliveContractInfo>;
     'Option<AllowedSlots>': Option<AllowedSlots>;
     'Option<AnySignature>': Option<AnySignature>;
@@ -1030,12 +1040,12 @@ declare module '@polkadot/types/types/registry' {
     'Option<AssetName>': Option<AssetName>;
     'Option<AssetOptions>': Option<AssetOptions>;
     'Option<AssetOwnershipRelation>': Option<AssetOwnershipRelation>;
+    'Option<AssetPermissions>': Option<AssetPermissions>;
     'Option<AssetType>': Option<AssetType>;
     'Option<AssignmentId>': Option<AssignmentId>;
     'Option<AssignmentKind>': Option<AssignmentKind>;
     'Option<AttestedCandidate>': Option<AttestedCandidate>;
     'Option<AuctionIndex>': Option<AuctionIndex>;
-    'Option<AuthIdentifier>': Option<AuthIdentifier>;
     'Option<AuthIndex>': Option<AuthIndex>;
     'Option<AuthorityDiscoveryId>': Option<AuthorityDiscoveryId>;
     'Option<AuthorityId>': Option<AuthorityId>;
@@ -1196,6 +1206,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<DigestItem>': Option<DigestItem>;
     'Option<DigestOf>': Option<DigestOf>;
     'Option<DispatchableName>': Option<DispatchableName>;
+    'Option<DispatchableNames>': Option<DispatchableNames>;
     'Option<DispatchClass>': Option<DispatchClass>;
     'Option<DispatchError>': Option<DispatchError>;
     'Option<DispatchErrorModule>': Option<DispatchErrorModule>;
@@ -1226,6 +1237,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<Ed25519Signature>': Option<Ed25519Signature>;
     'Option<EncodedFinalityProofs>': Option<EncodedFinalityProofs>;
     'Option<EpochAuthorship>': Option<EpochAuthorship>;
+    'Option<ErrorAt>': Option<ErrorAt>;
     'Option<ErrorMetadataLatest>': Option<ErrorMetadataLatest>;
     'Option<ErrorMetadataV10>': Option<ErrorMetadataV10>;
     'Option<ErrorMetadataV11>': Option<ErrorMetadataV11>;
@@ -1262,6 +1274,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<EthTransactionStatus>': Option<EthTransactionStatus>;
     'Option<EthWork>': Option<EthWork>;
     'Option<Event>': Option<Event>;
+    'Option<EventCounts>': Option<EventCounts>;
     'Option<EventDid>': Option<EventDid>;
     'Option<EventId>': Option<EventId>;
     'Option<EventIndex>': Option<EventIndex>;
@@ -1290,6 +1303,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<ExtrinsicPayload>': Option<ExtrinsicPayload>;
     'Option<ExtrinsicPayloadUnknown>': Option<ExtrinsicPayloadUnknown>;
     'Option<ExtrinsicPayloadV4>': Option<ExtrinsicPayloadV4>;
+    'Option<ExtrinsicPermissions>': Option<ExtrinsicPermissions>;
     'Option<ExtrinsicSignature>': Option<ExtrinsicSignature>;
     'Option<ExtrinsicSignatureV4>': Option<ExtrinsicSignatureV4>;
     'Option<ExtrinsicStatus>': Option<ExtrinsicStatus>;
@@ -1541,6 +1555,7 @@ declare module '@polkadot/types/types/registry' {
     'Option<PortfolioKind>': Option<PortfolioKind>;
     'Option<PortfolioName>': Option<PortfolioName>;
     'Option<PortfolioNumber>': Option<PortfolioNumber>;
+    'Option<PortfolioPermissions>': Option<PortfolioPermissions>;
     'Option<PortfolioValidityResult>': Option<PortfolioValidityResult>;
     'Option<PosRatio>': Option<PosRatio>;
     'Option<PreAuthorizedKeyInfo>': Option<PreAuthorizedKeyInfo>;
@@ -1852,6 +1867,8 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ActiveRecovery>': Vec<ActiveRecovery>;
     'Vec<Address>': Vec<Address>;
     'Vec<AffirmationStatus>': Vec<AffirmationStatus>;
+    'Vec<AgentGroup>': Vec<AgentGroup>;
+    'Vec<AGId>': Vec<AGId>;
     'Vec<AliveContractInfo>': Vec<AliveContractInfo>;
     'Vec<AllowedSlots>': Vec<AllowedSlots>;
     'Vec<AnySignature>': Vec<AnySignature>;
@@ -1871,12 +1888,12 @@ declare module '@polkadot/types/types/registry' {
     'Vec<AssetName>': Vec<AssetName>;
     'Vec<AssetOptions>': Vec<AssetOptions>;
     'Vec<AssetOwnershipRelation>': Vec<AssetOwnershipRelation>;
+    'Vec<AssetPermissions>': Vec<AssetPermissions>;
     'Vec<AssetType>': Vec<AssetType>;
     'Vec<AssignmentId>': Vec<AssignmentId>;
     'Vec<AssignmentKind>': Vec<AssignmentKind>;
     'Vec<AttestedCandidate>': Vec<AttestedCandidate>;
     'Vec<AuctionIndex>': Vec<AuctionIndex>;
-    'Vec<AuthIdentifier>': Vec<AuthIdentifier>;
     'Vec<AuthIndex>': Vec<AuthIndex>;
     'Vec<AuthorityDiscoveryId>': Vec<AuthorityDiscoveryId>;
     'Vec<AuthorityId>': Vec<AuthorityId>;
@@ -2037,6 +2054,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<DigestItem>': Vec<DigestItem>;
     'Vec<DigestOf>': Vec<DigestOf>;
     'Vec<DispatchableName>': Vec<DispatchableName>;
+    'Vec<DispatchableNames>': Vec<DispatchableNames>;
     'Vec<DispatchClass>': Vec<DispatchClass>;
     'Vec<DispatchError>': Vec<DispatchError>;
     'Vec<DispatchErrorModule>': Vec<DispatchErrorModule>;
@@ -2067,6 +2085,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<Ed25519Signature>': Vec<Ed25519Signature>;
     'Vec<EncodedFinalityProofs>': Vec<EncodedFinalityProofs>;
     'Vec<EpochAuthorship>': Vec<EpochAuthorship>;
+    'Vec<ErrorAt>': Vec<ErrorAt>;
     'Vec<ErrorMetadataLatest>': Vec<ErrorMetadataLatest>;
     'Vec<ErrorMetadataV10>': Vec<ErrorMetadataV10>;
     'Vec<ErrorMetadataV11>': Vec<ErrorMetadataV11>;
@@ -2103,6 +2122,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<EthTransactionStatus>': Vec<EthTransactionStatus>;
     'Vec<EthWork>': Vec<EthWork>;
     'Vec<Event>': Vec<Event>;
+    'Vec<EventCounts>': Vec<EventCounts>;
     'Vec<EventDid>': Vec<EventDid>;
     'Vec<EventId>': Vec<EventId>;
     'Vec<EventIndex>': Vec<EventIndex>;
@@ -2131,6 +2151,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ExtrinsicPayload>': Vec<ExtrinsicPayload>;
     'Vec<ExtrinsicPayloadUnknown>': Vec<ExtrinsicPayloadUnknown>;
     'Vec<ExtrinsicPayloadV4>': Vec<ExtrinsicPayloadV4>;
+    'Vec<ExtrinsicPermissions>': Vec<ExtrinsicPermissions>;
     'Vec<ExtrinsicSignature>': Vec<ExtrinsicSignature>;
     'Vec<ExtrinsicSignatureV4>': Vec<ExtrinsicSignatureV4>;
     'Vec<ExtrinsicStatus>': Vec<ExtrinsicStatus>;
@@ -2382,6 +2403,7 @@ declare module '@polkadot/types/types/registry' {
     'Vec<PortfolioKind>': Vec<PortfolioKind>;
     'Vec<PortfolioName>': Vec<PortfolioName>;
     'Vec<PortfolioNumber>': Vec<PortfolioNumber>;
+    'Vec<PortfolioPermissions>': Vec<PortfolioPermissions>;
     'Vec<PortfolioValidityResult>': Vec<PortfolioValidityResult>;
     'Vec<PosRatio>': Vec<PosRatio>;
     'Vec<PreAuthorizedKeyInfo>': Vec<PreAuthorizedKeyInfo>;
@@ -2693,6 +2715,8 @@ declare module '@polkadot/types/types/registry' {
     ActiveRecovery: ActiveRecovery;
     Address: Address;
     AffirmationStatus: AffirmationStatus;
+    AgentGroup: AgentGroup;
+    AGId: AGId;
     AliveContractInfo: AliveContractInfo;
     AllowedSlots: AllowedSlots;
     AnySignature: AnySignature;
@@ -2712,12 +2736,12 @@ declare module '@polkadot/types/types/registry' {
     AssetName: AssetName;
     AssetOptions: AssetOptions;
     AssetOwnershipRelation: AssetOwnershipRelation;
+    AssetPermissions: AssetPermissions;
     AssetType: AssetType;
     AssignmentId: AssignmentId;
     AssignmentKind: AssignmentKind;
     AttestedCandidate: AttestedCandidate;
     AuctionIndex: AuctionIndex;
-    AuthIdentifier: AuthIdentifier;
     AuthIndex: AuthIndex;
     AuthorityDiscoveryId: AuthorityDiscoveryId;
     AuthorityId: AuthorityId;
@@ -2878,6 +2902,7 @@ declare module '@polkadot/types/types/registry' {
     DigestItem: DigestItem;
     DigestOf: DigestOf;
     DispatchableName: DispatchableName;
+    DispatchableNames: DispatchableNames;
     DispatchClass: DispatchClass;
     DispatchError: DispatchError;
     DispatchErrorModule: DispatchErrorModule;
@@ -2908,6 +2933,7 @@ declare module '@polkadot/types/types/registry' {
     Ed25519Signature: Ed25519Signature;
     EncodedFinalityProofs: EncodedFinalityProofs;
     EpochAuthorship: EpochAuthorship;
+    ErrorAt: ErrorAt;
     ErrorMetadataLatest: ErrorMetadataLatest;
     ErrorMetadataV10: ErrorMetadataV10;
     ErrorMetadataV11: ErrorMetadataV11;
@@ -2944,6 +2970,7 @@ declare module '@polkadot/types/types/registry' {
     EthTransactionStatus: EthTransactionStatus;
     EthWork: EthWork;
     Event: Event;
+    EventCounts: EventCounts;
     EventDid: EventDid;
     EventId: EventId;
     EventIndex: EventIndex;
@@ -2972,6 +2999,7 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicPayload: ExtrinsicPayload;
     ExtrinsicPayloadUnknown: ExtrinsicPayloadUnknown;
     ExtrinsicPayloadV4: ExtrinsicPayloadV4;
+    ExtrinsicPermissions: ExtrinsicPermissions;
     ExtrinsicSignature: ExtrinsicSignature;
     ExtrinsicSignatureV4: ExtrinsicSignatureV4;
     ExtrinsicStatus: ExtrinsicStatus;
@@ -3223,6 +3251,7 @@ declare module '@polkadot/types/types/registry' {
     PortfolioKind: PortfolioKind;
     PortfolioName: PortfolioName;
     PortfolioNumber: PortfolioNumber;
+    PortfolioPermissions: PortfolioPermissions;
     PortfolioValidityResult: PortfolioValidityResult;
     PosRatio: PosRatio;
     PreAuthorizedKeyInfo: PreAuthorizedKeyInfo;

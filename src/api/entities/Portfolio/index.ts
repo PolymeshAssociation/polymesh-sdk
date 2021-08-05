@@ -8,6 +8,7 @@ import {
   Identity,
   moveFunds,
   MoveFundsParams,
+  quitCustody,
   SecurityToken,
   setCustodian,
   SetCustodianParams,
@@ -24,7 +25,7 @@ import {
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, getDid, toHumanReadable } from '~/utils/internal';
 
 import { HistoricSettlement, PortfolioBalance } from './types';
 
@@ -33,10 +34,15 @@ export interface UniqueIdentifiers {
   id?: BigNumber;
 }
 
+interface HumanReadable {
+  did: string;
+  id?: string;
+}
+
 /**
  * Represents a base Portfolio for a specific Identity in the Polymesh blockchain
  */
-export class Portfolio extends Entity<UniqueIdentifiers> {
+export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -74,6 +80,10 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
     );
     this.moveFunds = createProcedureMethod(
       { getProcedureAndArgs: args => [moveFunds, { ...args, from: this }] },
+      context
+    );
+    this.quitCustody = createProcedureMethod(
+      { getProcedureAndArgs: () => [quitCustody, { portfolio: this }] },
       context
     );
   }
@@ -191,7 +201,6 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Portfolio Custodian
    */
-
   public setCustodian: ProcedureMethod<SetCustodianParams, void>;
 
   /**
@@ -200,8 +209,15 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
    * @note required role:
    *   - Portfolio Custodian
    */
-
   public moveFunds: ProcedureMethod<MoveFundsParams, void>;
+
+  /**
+   * Returns the custody of the portfolio to the portfolio owner unilaterally
+   *
+   * @note required role:
+   *   - Portfolio Custodian
+   */
+  public quitCustody: ProcedureMethod<void, void>;
 
   /**
    * Retrieve the custodian Identity of this Portfolio
@@ -312,5 +328,21 @@ export class Portfolio extends Entity<UniqueIdentifiers> {
       next,
       count,
     };
+  }
+
+  /**
+   * Return the Portfolio ID and owner DID
+   */
+  public toJson(): HumanReadable {
+    const {
+      _id: id,
+      owner: { did },
+    } = this;
+
+    const result = {
+      did,
+    };
+
+    return id ? toHumanReadable({ ...result, id }) : result;
   }
 }

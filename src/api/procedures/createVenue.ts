@@ -61,7 +61,7 @@ export async function prepareCreateVenue(
  */
 export const createVenue = (): Procedure<CreateVenueParams, Venue> =>
   new Procedure(prepareCreateVenue, {
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.settlement.CreateVenue],
       tokens: [],
       portfolios: [],

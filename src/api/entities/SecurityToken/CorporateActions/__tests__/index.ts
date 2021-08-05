@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import { Context, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TargetTreatment } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { CorporateActions } from '../';
@@ -150,35 +151,30 @@ describe('CorporateActions class', () => {
     });
   });
 
-  describe('method: getAgent', () => {
-    test("should retrieve the Security Token's Corporate Actions agent", async () => {
+  describe('method: getAgents', () => {
+    test('should retrieve a list of agent identities', async () => {
       const did = 'someDid';
-      const identityId = dsMockUtils.createMockIdentityId(did);
+      const otherDid = 'otherDid';
+      const fakeTicker = 'TEST';
+
       const identity = entityMockUtils.getIdentityInstance({ did });
 
-      dsMockUtils.createQueryStub('corporateAction', 'agent', {
-        returnValue: dsMockUtils.createMockOption(identityId),
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Caa'))
+          ),
+          tuple(
+            [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(otherDid)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+          ),
+        ],
       });
 
-      let result = await corporateActions.getAgent();
+      const result = await corporateActions.getAgents();
 
-      expect(result).toEqual(identity);
-
-      dsMockUtils.createQueryStub('corporateAction', 'agent', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          details: {
-            owner: identity,
-          },
-        },
-      });
-
-      result = await corporateActions.getAgent();
-
-      expect(result).toEqual(identity);
+      expect(result).toEqual([identity]);
     });
   });
 

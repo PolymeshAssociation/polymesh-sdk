@@ -5,7 +5,7 @@ import { getAuthorization, Params, prepareModifyToken } from '~/api/procedures/m
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TokenIdentifier, TokenIdentifierType } from '~/types';
+import { TokenIdentifier, TokenIdentifierType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -202,8 +202,7 @@ describe('modifyToken procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [],
           portfolios: [],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
@@ -211,8 +210,7 @@ describe('modifyToken procedure', () => {
       });
 
       expect(boundFunc({ ...args, makeDivisible: true, name, fundingRound, identifiers })).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           transactions: [
             TxTags.asset.MakeDivisible,
             TxTags.asset.RenameAsset,

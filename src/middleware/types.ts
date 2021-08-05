@@ -273,6 +273,7 @@ export enum CallIdEnum {
   RejectReferendum = 'reject_referendum',
   OverrideReferendumEnactmentPeriod = 'override_referendum_enactment_period',
   RegisterTicker = 'register_ticker',
+  CreateAssetAndMint = 'create_asset_and_mint',
   AcceptTickerTransfer = 'accept_ticker_transfer',
   AcceptPrimaryIssuanceAgentTransfer = 'accept_primary_issuance_agent_transfer',
   AcceptAssetOwnershipTransfer = 'accept_asset_ownership_transfer',
@@ -377,6 +378,7 @@ export enum CallIdEnum {
   AffirmInstruction = 'affirm_instruction',
   WithdrawAffirmation = 'withdraw_affirmation',
   RejectInstruction = 'reject_instruction',
+  RescheduleInstruction = 'reschedule_instruction',
   AuthorizeWithReceipts = 'authorize_with_receipts',
   AffirmWithReceipts = 'affirm_with_receipts',
   ClaimReceipt = 'claim_receipt',
@@ -406,6 +408,7 @@ export enum CallIdEnum {
   DeletePortfolio = 'delete_portfolio',
   MovePortfolioFunds = 'move_portfolio_funds',
   RenamePortfolio = 'rename_portfolio',
+  QuitPortfolioCustody = 'quit_portfolio_custody',
   AddRangeProof = 'add_range_proof',
   AddVerifyRangeProof = 'add_verify_range_proof',
   Schedule = 'schedule',
@@ -431,6 +434,11 @@ export enum CallIdEnum {
   PushBenefit = 'push_benefit',
   Reclaim = 'reclaim',
   RemoveDistribution = 'remove_distribution',
+  CreateGroup = 'create_group',
+  SetGroupPermissions = 'set_group_permissions',
+  RemoveAgent = 'remove_agent',
+  Abdicate = 'abdicate',
+  ChangeGroup = 'change_group',
   SetSchedulesMaxComplexity = 'set_schedules_max_complexity',
   CreateSchedule = 'create_schedule',
   RemoveSchedule = 'remove_schedule',
@@ -806,6 +814,7 @@ export enum EventIdEnum {
   VenuesAllowed = 'VenuesAllowed',
   VenuesBlocked = 'VenuesBlocked',
   LegFailedExecution = 'LegFailedExecution',
+  InstructionRescheduled = 'InstructionRescheduled',
   InstructionFailed = 'InstructionFailed',
   InstructionExecuted = 'InstructionExecuted',
   VenueUnauthorized = 'VenueUnauthorized',
@@ -853,6 +862,11 @@ export enum EventIdEnum {
   MaximumSchedulesComplexityChanged = 'MaximumSchedulesComplexityChanged',
   ScheduleCreated = 'ScheduleCreated',
   ScheduleRemoved = 'ScheduleRemoved',
+  GroupCreated = 'GroupCreated',
+  GroupPermissionsUpdated = 'GroupPermissionsUpdated',
+  AgentAdded = 'AgentAdded',
+  AgentRemoved = 'AgentRemoved',
+  GroupChanged = 'GroupChanged',
   CustodyTransfer = 'CustodyTransfer',
   CustodyAllowanceChanged = 'CustodyAllowanceChanged',
   TreasuryDidSet = 'TreasuryDidSet',
@@ -936,6 +950,21 @@ export type FailedTokenTransfer = {
   data?: Maybe<Scalars['String']>;
 };
 
+export type Funding = {
+  __typename?: 'Funding';
+  /** Funding */
+  block_id: Scalars['Int'];
+  fundingName: Scalars['String'];
+  value: Scalars['String'];
+  totalIssuedInFundingRound: Scalars['String'];
+};
+
+export type FundingResults = {
+  __typename?: 'FundingResults';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<Funding>>>;
+};
+
 export type HistoryOfPaymentEventsForCa = {
   __typename?: 'HistoryOfPaymentEventsForCA';
   blockId: Scalars['Int'];
@@ -1007,6 +1036,21 @@ export enum ItnRewardActionType {
   ClaimAdded = 'ClaimAdded',
   DistributeAnAsset = 'DistributeAnAsset',
   AcceptATransferFromAnotherUser = 'AcceptATransferFromAnotherUser',
+  ConfigureAdvancedTokenRules = 'ConfigureAdvancedTokenRules',
+  CreateSto = 'CreateSTO',
+  FindInvestors = 'FindInvestors',
+  PortfolioCreated = 'PortfolioCreated',
+  AddAssetToAPortfolio = 'AddAssetToAPortfolio',
+  AddAPortfolioManager = 'AddAPortfolioManager',
+  TransferAssetFromPortfolio = 'TransferAssetFromPortfolio',
+  StopStakingAPortion = 'StopStakingAPortion',
+  StopStakingAnOperator = 'StopStakingAnOperator',
+  StartStakingANewOperator = 'StartStakingANewOperator',
+  CreateACorporateAction = 'CreateACorporateAction',
+  DistributeADividend = 'DistributeADividend',
+  AcceptADividend = 'AcceptADividend',
+  CreatePip = 'CreatePip',
+  VoteOnPip = 'VoteOnPip',
 }
 
 export type ItnRewardRanking = {
@@ -1056,6 +1100,7 @@ export enum ModuleIdEnum {
   Identity = 'identity',
   Bridge = 'bridge',
   Compliancemanager = 'compliancemanager',
+  Externalagents = 'externalagents',
   Voting = 'voting',
   Stocapped = 'stocapped',
   Exemption = 'exemption',
@@ -1232,6 +1277,7 @@ export type Query = {
   getWithholdingTaxesOfCA?: Maybe<WithholdingTaxesOfCa>;
   getHistoryOfPaymentEventsForCA: HistoryOfPaymentEventsForCaResults;
   getInstructionIdsForVenue?: Maybe<InstructionIdsForVenueResults>;
+  getFundings?: Maybe<FundingResults>;
   getItnRewardRankings?: Maybe<ItnRewardRankingResult>;
   getDidItnRewardRanking?: Maybe<Array<Maybe<ItnRewardRanking>>>;
   getDidItnRewardActions?: Maybe<DidItnRewardActions>;
@@ -1486,6 +1532,13 @@ export type QueryGetInstructionIdsForVenueArgs = {
   venueId: Scalars['String'];
   fromDate?: Maybe<Scalars['DateTime']>;
   toDate?: Maybe<Scalars['DateTime']>;
+};
+
+export type QueryGetFundingsArgs = {
+  ticker: Scalars['String'];
+  fundingName?: Maybe<Scalars['String']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
 };
 
 export type QueryGetItnRewardRankingsArgs = {

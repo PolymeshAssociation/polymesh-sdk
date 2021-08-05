@@ -1,8 +1,6 @@
-import sinon from 'sinon';
-
 import { Context, CurrentIdentity, Identity, TransactionQueue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { SecondaryKey, SubCallback, VenueType } from '~/types';
+import { PermissionType, VenueType } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -38,48 +36,6 @@ describe('CurrentIdentity class', () => {
     expect(CurrentIdentity.prototype instanceof Identity).toBe(true);
   });
 
-  describe('method: getSecondaryKeys', () => {
-    test('should return a list of Secondaries', async () => {
-      const fakeResult = [
-        {
-          signer: entityMockUtils.getAccountInstance({ address: 'someAddress' }),
-          permissions: {
-            tokens: null,
-            transactions: null,
-            transactionGroups: [],
-            portfolios: null,
-          },
-        },
-      ];
-
-      dsMockUtils.configureMocks({ contextOptions: { secondaryKeys: fakeResult } });
-
-      const did = 'someDid';
-
-      const identity = new CurrentIdentity({ did }, context);
-
-      const result = await identity.getSecondaryKeys();
-      expect(result).toEqual(fakeResult);
-    });
-
-    test('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallBack';
-
-      const getSecondaryKeysStub = dsMockUtils
-        .getContextInstance()
-        .getSecondaryKeys.resolves(unsubCallback);
-
-      const did = 'someDid';
-
-      const identity = new CurrentIdentity({ did }, context);
-
-      const callback = (() => [] as unknown) as SubCallback<SecondaryKey[]>;
-      const result = await identity.getSecondaryKeys(callback);
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(getSecondaryKeysStub, callback);
-    });
-  });
-
   describe('method: removeSecondaryKeys', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const did = 'someDid';
@@ -109,7 +65,11 @@ describe('CurrentIdentity class', () => {
       const secondaryKeys = [
         {
           signer: signers[0],
-          permissions: { tokens: [], transactions: [], portfolios: [] },
+          permissions: {
+            tokens: { type: PermissionType.Include, values: [] },
+            transactions: { type: PermissionType.Include, values: [] },
+            portfolios: { type: PermissionType.Include, values: [] },
+          },
         },
       ];
 
@@ -134,7 +94,7 @@ describe('CurrentIdentity class', () => {
       const secondaryKeys = [
         {
           signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
-          permissions: { tokens: [], transactions: [], portfolios: [] },
+          permissions: { tokens: null, transactions: null, portfolios: null },
         },
       ];
 

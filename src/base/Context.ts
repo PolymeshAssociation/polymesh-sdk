@@ -8,7 +8,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, flatMap, flatten, flattenDeep } from 'lodash';
+import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import { CAId, DidRecord, Distribution, ProtocolOp, TxTag } from 'polymesh-types/types';
 
@@ -37,7 +37,6 @@ import {
   KeyringPair,
   PlainTransactionArgument,
   ResultSet,
-  SecondaryKey,
   SimpleEnumTransactionArgument,
   SubCallback,
   TransactionArgument,
@@ -61,13 +60,10 @@ import {
   identityIdToString,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
-  meshPermissionsToPermissions,
   momentToDate,
   numberToU32,
   posRatioToBigNumber,
-  signatoryToSignerValue,
   signerToString,
-  signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
   textToString,
@@ -78,6 +74,7 @@ import {
 } from '~/utils/conversion';
 import {
   assertFormatValid,
+  assertKeyringFormatValid,
   calculateNextKey,
   createClaim,
   getCommonKeyring,
@@ -87,13 +84,19 @@ interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
-  pair?: KeyringPair;
+  ss58Format: number;
 }
 
-interface AccountData {
-  address: string;
-  name?: string;
+interface AddPairBaseParams {
+  keyring: CommonKeyring;
 }
+
+type AddPairParams = {
+  accountSeed?: string;
+  accountUri?: string;
+  accountMnemonic?: string;
+  pair?: KeyringPair;
+};
 
 /**
  * Context in which the SDK is being used
@@ -115,15 +118,17 @@ export class Context {
    */
   public isArchiveNode = false;
 
-  public ss58Format = DEFAULT_SS58_FORMAT;
+  public ss58Format: number;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+
+  private _polymeshApi: ApiPromise;
 
   /**
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, keyring, pair } = params;
+    const { polymeshApi, middlewareApi, keyring, ss58Format } = params;
 
     const callback = (): void => {
       polymeshApi.off('disconnected', callback);
@@ -140,10 +145,26 @@ export class Context {
     polymeshApi.on('error', callback);
 
     this._middlewareApi = middlewareApi;
+    this._polymeshApi = polymeshApi;
+    this.polymeshApi = Context.createPolymeshApiProxy(this);
+    this.keyring = keyring;
+    this.ss58Format = ss58Format;
 
-    this.polymeshApi = new Proxy(polymeshApi, {
+    const currentPair = keyring.getPairs()[0];
+
+    if (currentPair) {
+      assertFormatValid(currentPair.address, ss58Format);
+      this.currentPair = currentPair;
+    }
+  }
+
+  /**
+   * @hidden
+   */
+  static createPolymeshApiProxy(ctx: Context): ApiPromise {
+    return new Proxy(ctx._polymeshApi, {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
-        if (prop === 'tx' && !this.currentPair) {
+        if (prop === 'tx' && !ctx.currentPair) {
           throw new PolymeshError({
             code: ErrorCode.FatalError,
             message: 'Cannot perform transactions without an active account',
@@ -153,11 +174,6 @@ export class Context {
         return target[prop];
       },
     });
-    this.keyring = keyring;
-
-    if (pair) {
-      this.currentPair = pair;
-    }
   }
 
   /**
@@ -189,41 +205,21 @@ export class Context {
     }
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519', ss58Format });
-    let currentPair: KeyringPair | undefined;
-    let context: Context;
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
-      currentPair = keyring.getPairs()[0];
-
-      assertFormatValid(currentPair.address, ss58Format);
-    } else if (accountSeed) {
-      if (accountSeed.length !== 66) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'Seed must be 66 characters in length',
-        });
-      }
-
-      currentPair = keyring.addFromSeed(hexToU8a(accountSeed), undefined, 'sr25519');
-    } else if (accountUri) {
-      currentPair = keyring.addFromUri(accountUri);
-    } else if (accountMnemonic) {
-      currentPair = keyring.addFromMnemonic(accountMnemonic);
-    }
-
-    if (currentPair) {
-      context = new Context({
-        polymeshApi,
-        middlewareApi,
-        keyring,
-        pair: currentPair,
-      });
+      assertKeyringFormatValid(keyring, ss58Format);
     } else {
-      context = new Context({ polymeshApi, middlewareApi, keyring });
+      Context._addPair({
+        accountSeed,
+        accountMnemonic,
+        accountUri,
+        keyring,
+      });
     }
 
-    context.ss58Format = ss58Format;
+    const context = new Context({ polymeshApi, middlewareApi, keyring, ss58Format });
+
     context.isArchiveNode = await context.isCurrentNodeArchive();
 
     return new Proxy(context, {
@@ -260,19 +256,74 @@ export class Context {
   }
 
   /**
-   * Retrieve a list of addresses associated with the account
+   * Retrieve a list of Accounts that can act as signers
    */
-  public getAccounts(): Array<AccountData> {
-    const { keyring } = this;
-    return keyring.getPairs().map(({ address, meta }) => {
-      return { address, name: meta.name as string };
-    });
+  public getAccounts(): [CurrentAccount, ...Account[]] {
+    const { keyring, currentPair } = this;
+
+    if (!currentPair) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'There is no account associated with the SDK',
+      });
+    }
+
+    const pairs = [...keyring.getPairs()];
+
+    const [first] = remove(pairs, ({ address }) => address === currentPair.address);
+
+    return [
+      new CurrentAccount({ address: first.address }, this),
+      ...pairs.map(({ address }) => new Account({ address }, this)),
+    ];
   }
 
   /**
-   * Set a pair as the current account keyring pair
+   * Add a signing pair to the Keyring
    */
-  public async setPair(address: string): Promise<void> {
+  public addPair(params: AddPairParams): KeyringPair {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return Context._addPair({ ...params, keyring: this.keyring })!;
+  }
+
+  /**
+   * @hidden
+   */
+  private static _addPair(params: AddPairBaseParams & AddPairParams): KeyringPair | undefined {
+    const { accountSeed, accountUri, accountMnemonic, keyring, pair } = params;
+
+    let newPair: KeyringPair;
+    if (accountSeed) {
+      if (accountSeed.length !== 66) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'Seed must be 66 characters in length',
+        });
+      }
+
+      newPair = keyring.addFromSeed(hexToU8a(accountSeed), undefined, 'sr25519');
+    } else if (accountUri) {
+      newPair = keyring.addFromUri(accountUri);
+    } else if (accountMnemonic) {
+      newPair = keyring.addFromMnemonic(accountMnemonic);
+    } else if (pair) {
+      /*
+       * NOTE @monitz87: the only way to avoid this assertion is to import the Keyring package
+       *   which doesn't make sense just for this
+       */
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      newPair = keyring.addPair(pair as any);
+    } else {
+      return;
+    }
+
+    return newPair;
+  }
+
+  /**
+   * Set a pair as the current Account keyring pair
+   */
+  public setPair(address: string): void {
     const { keyring } = this;
 
     let newCurrentPair;
@@ -394,6 +445,7 @@ export class Context {
    */
   public getCurrentPair(): KeyringPair {
     const { currentPair } = this;
+
     if (!currentPair) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
@@ -611,41 +663,6 @@ export class Context {
 
       return processType(typeDef, argName);
     });
-  }
-
-  /**
-   * Retrieve the list of secondary keys related to the Account
-   *
-   * @note can be subscribed to
-   */
-  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
-  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getSecondaryKeys(
-    callback?: SubCallback<SecondaryKey[]>
-  ): Promise<SecondaryKey[] | UnsubCallback> {
-    const {
-      polymeshApi: {
-        query: { identity },
-      },
-    } = this;
-
-    const { did } = await this.getCurrentIdentity();
-
-    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
-      return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
-        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), this),
-        permissions: meshPermissionsToPermissions(permissions, this),
-      }));
-    };
-
-    if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
-    }
-
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
   }
 
   /**
@@ -1015,5 +1032,16 @@ export class Context {
     middlewareApi && middlewareApi.stop();
 
     return polymeshApi.disconnect();
+  }
+
+  /**
+   * Returns a (shallow) clone of this instance. Useful for providing a separate
+   *   Context to Procedures with different signers
+   */
+  public clone(): Context {
+    const cloned = clone(this);
+    cloned.polymeshApi = Context.createPolymeshApiProxy(cloned);
+
+    return cloned;
   }
 }

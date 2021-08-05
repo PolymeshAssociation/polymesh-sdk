@@ -106,7 +106,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
       expect(
         boundFunc({ freeze: true, identity: entityMockUtils.getCurrentIdentityInstance() })
       ).toEqual({
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.identity.FreezeSecondaryKeys],
           tokens: [],
           portfolios: [],
@@ -116,7 +116,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
       expect(
         boundFunc({ freeze: false, identity: entityMockUtils.getCurrentIdentityInstance() })
       ).toEqual({
-        signerPermissions: {
+        permissions: {
           transactions: [TxTags.identity.UnfreezeSecondaryKeys],
           tokens: [],
           portfolios: [],

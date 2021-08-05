@@ -1,7 +1,8 @@
+import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { TxTags } from 'polymesh-types/types';
+import { ModuleName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
@@ -16,6 +17,7 @@ import {
   assertFormatValid,
   assertIsInteger,
   assertIsPositive,
+  assertKeyringFormatValid,
   batchArguments,
   calculateNextKey,
   createClaim,
@@ -25,6 +27,7 @@ import {
   getCommonKeyring,
   getDid,
   getTicker,
+  isModuleOrTagMatch,
   isPrintableAscii,
   optionize,
   padString,
@@ -39,7 +42,13 @@ import {
 } from '../internal';
 
 describe('delay', () => {
-  jest.useFakeTimers();
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
 
   test('should resolve after the supplied timeout', () => {
     const delayPromise = delay(5000);
@@ -490,11 +499,11 @@ describe('createProcedureMethod', () => {
     const procArgs = 1;
     await method(procArgs);
 
-    sinon.assert.calledWithExactly(prepare, { args: procArgs, transformer }, context);
+    sinon.assert.calledWithExactly(prepare, { args: procArgs, transformer }, context, {});
 
     await method.checkAuthorization(procArgs);
 
-    sinon.assert.calledWithExactly(checkAuthorization, procArgs, context);
+    sinon.assert.calledWithExactly(checkAuthorization, procArgs, context, {});
   });
 });
 
@@ -550,6 +559,22 @@ describe('assertFormatValid', () => {
     expect(() =>
       assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
+  });
+});
+
+describe('assertKeyringFormatValid', () => {
+  const ss58Format = 42;
+  const keyring = new Keyring({ ss58Format });
+
+  test('should not throw if the keyring is set with valid ss58', async () => {
+    expect(() => assertKeyringFormatValid(keyring, ss58Format)).not.toThrow();
+  });
+
+  test('should throw an error if the keyring is set with an invalid ss58', async () => {
+    keyring.setSS58Format(12);
+    expect(() => assertKeyringFormatValid(keyring, ss58Format)).toThrow(
+      "The supplied keyring is not using the chain's SS58 format"
+    );
   });
 });
 
@@ -616,5 +641,21 @@ describe('optionize', () => {
 
     result = optionize(toString)(null, 'stillNotNeeded', 2);
     expect(result).toBeNull();
+  });
+});
+
+describe('isModuleOrTagMatch', () => {
+  test("should return true if two tags/modules are equal, or if one is the other one's module", () => {
+    let result = isModuleOrTagMatch(TxTags.identity.AddInvestorUniquenessClaim, ModuleName.Sto);
+    expect(result).toEqual(false);
+
+    result = isModuleOrTagMatch(ModuleName.Sto, TxTags.identity.AddInvestorUniquenessClaim);
+    expect(result).toEqual(false);
+
+    result = isModuleOrTagMatch(
+      TxTags.identity.AddInvestorUniquenessClaim,
+      TxTags.identity.AddClaim
+    );
+    expect(result).toEqual(false);
   });
 });

@@ -11,8 +11,7 @@ import {
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType } from '~/types';
-import { SignerValue } from '~/types/internal';
+import { Authorization, AuthorizationType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('consumeAuthorizationRequests procedure', () => {
@@ -185,8 +184,8 @@ describe('consumeAuthorizationRequests procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       let result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: true,
-        signerPermissions: {
+        roles: true,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.AcceptAuthorization],
@@ -198,8 +197,8 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: false,
-        signerPermissions: {
+        roles: false,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],
@@ -210,8 +209,8 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        identityRoles: false,
-        signerPermissions: {
+        roles: false,
+        permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],

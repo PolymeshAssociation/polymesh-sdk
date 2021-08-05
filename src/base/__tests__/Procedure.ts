@@ -12,8 +12,13 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { dsMockUtils, polymeshTransactionMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { KeyringPair, Role, RoleType } from '~/types';
+import {
+  dsMockUtils,
+  entityMockUtils,
+  polymeshTransactionMockUtils,
+  procedureMockUtils,
+} from '~/testUtils/mocks';
+import { Role, RoleType } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -34,6 +39,7 @@ describe('Procedure class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     polymeshTransactionMockUtils.initMocks();
   });
@@ -44,12 +50,14 @@ describe('Procedure class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
     procedureMockUtils.reset();
     polymeshTransactionMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -58,8 +66,8 @@ describe('Procedure class', () => {
       const prepareFunc = sinon.stub();
       const authFunc = sinon.stub();
       const authorization: ProcedureAuthorization = {
-        identityRoles: true,
-        signerPermissions: true,
+        roles: true,
+        permissions: true,
       };
       authFunc.resolves(authorization);
       let procedure = new Procedure(prepareFunc, authFunc);
@@ -68,15 +76,16 @@ describe('Procedure class', () => {
 
       let result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        permissions: true,
+        agentPermissions: true,
+        signerPermissions: true,
         roles: true,
         accountFrozen: false,
       });
 
       context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
       authFunc.resolves({
-        identityRoles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
-        signerPermissions: {
+        roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        permissions: {
           tokens: null,
           portfolios: null,
           transactions: null,
@@ -85,16 +94,53 @@ describe('Procedure class', () => {
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        permissions: false,
+        agentPermissions: true,
+        signerPermissions: false,
         roles: false,
         accountFrozen: false,
       });
 
-      procedure = new Procedure(prepareFunc, { signerPermissions: true, identityRoles: true });
+      context = dsMockUtils.getContextInstance({ hasTokenPermissions: true });
+      authFunc.resolves({
+        roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        permissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          portfolios: null,
+          transactions: [TxTags.asset.Redeem],
+        },
+      });
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        permissions: true,
+        agentPermissions: true,
+        signerPermissions: true,
+        roles: true,
+        accountFrozen: false,
+      });
+
+      context = dsMockUtils.getContextInstance({ hasTokenPermissions: true });
+      authFunc.resolves({
+        roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        permissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          portfolios: null,
+        },
+      });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        agentPermissions: true,
+        signerPermissions: true,
+        roles: true,
+        accountFrozen: false,
+      });
+
+      procedure = new Procedure(prepareFunc, { permissions: true, roles: true });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        agentPermissions: true,
+        signerPermissions: true,
         roles: true,
         accountFrozen: false,
       });
@@ -176,7 +222,7 @@ describe('Procedure class', () => {
 
       const proc1 = new Procedure(func1);
 
-      let queue = await proc1.prepare({ args: procArgs }, context);
+      let queue = await proc1.prepare({ args: procArgs }, context, { signer: 'something' });
 
       expect(queue).toMatchObject({
         transactions: [
@@ -192,7 +238,7 @@ describe('Procedure class', () => {
             sinon.match({ tx: tx2, args: [secondaryKeys] }),
           ]),
         }),
-        context
+        { ...context, currentPair: { address: 'something' } }
       );
 
       const func2 = async function (
@@ -202,7 +248,11 @@ describe('Procedure class', () => {
         return this.addProcedure(proc1, args);
       };
 
+      dsMockUtils.reset();
+
       const proc2 = new Procedure(func2);
+
+      context = dsMockUtils.getContextInstance();
 
       queue = await proc2.prepare({ args: procArgs }, context);
       expect(queue).toMatchObject({
@@ -255,7 +305,7 @@ describe('Procedure class', () => {
       };
 
       let proc = new Procedure(func, {
-        identityRoles: [({ type: 'FakeRole' } as unknown) as Role],
+        roles: [({ type: 'FakeRole' } as unknown) as Role],
       });
       context = dsMockUtils.getContextInstance({
         hasRoles: false,
@@ -268,7 +318,7 @@ describe('Procedure class', () => {
       );
 
       proc = new Procedure(func, {
-        signerPermissions: {
+        permissions: {
           tokens: [],
           transactions: [],
           portfolios: [],
@@ -280,14 +330,28 @@ describe('Procedure class', () => {
       );
 
       proc = new Procedure(func, {
-        signerPermissions: false,
+        permissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          transactions: [TxTags.asset.Freeze],
+          portfolios: [],
+        },
+      });
+
+      context = dsMockUtils.getContextInstance({ hasTokenPermissions: false });
+
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
+        "Current Identity doesn't have the required permissions to execute this procedure"
+      );
+
+      proc = new Procedure(func, {
+        permissions: false,
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Account doesn't have the required permissions to execute this procedure"
       );
 
-      proc = new Procedure(func, async () => ({ identityRoles: false }));
+      proc = new Procedure(func, async () => ({ roles: false }));
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"
@@ -309,7 +373,8 @@ describe('Procedure class', () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
-      proc.context = context;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._context = context;
 
       const values = proc.addTransaction(
         tx,
@@ -318,7 +383,6 @@ describe('Procedure class', () => {
             async (): Promise<number> => resolvedNum,
             async (): Promise<string> => resolvedStr
           ),
-          signer: {} as KeyringPair,
         },
         ticker
       );
@@ -339,7 +403,8 @@ describe('Procedure class', () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
-      proc.context = context;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._context = context;
 
       const values = proc.addBatchTransaction(
         tx,
@@ -348,7 +413,6 @@ describe('Procedure class', () => {
             async (): Promise<number> => resolvedNum,
             async (): Promise<string> => resolvedStr
           ),
-          signer: {} as KeyringPair,
         },
         [[ticker]]
       );
@@ -365,15 +429,10 @@ describe('Procedure class', () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
-      proc.context = context;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._context = context;
 
-      proc.addBatchTransaction(
-        tx,
-        {
-          signer: {} as KeyringPair,
-        },
-        [[ticker]]
-      );
+      proc.addBatchTransaction(tx, {}, [[ticker]]);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transactions = (proc as any).transactions;
@@ -386,7 +445,8 @@ describe('Procedure class', () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
-      proc.context = context;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._context = context;
 
       let i = 0;
 
@@ -414,7 +474,8 @@ describe('Procedure class', () => {
 
       const proc1 = new Procedure(async () => returnValue);
       const proc2 = new Procedure(async () => undefined);
-      proc2.context = context;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc2 as any)._context = context;
       const result = await proc2.addProcedure(proc1);
 
       expect(result).toBe(returnValue);
@@ -427,7 +488,8 @@ describe('Procedure class', () => {
         throw new Error(errorMsg);
       });
       const proc2 = new Procedure(async () => undefined);
-      proc2.context = context;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc2 as any)._context = context;
       const result = proc2.addProcedure(proc1);
 
       return expect(result).rejects.toThrow(errorMsg);
@@ -453,6 +515,28 @@ describe('Procedure class', () => {
       (proc as any)._storage = null;
 
       expect(() => proc.storage).toThrow('Attempt to access storage before it was set');
+    });
+  });
+
+  describe('method: context', () => {
+    let proc: Procedure<void, undefined>;
+
+    beforeAll(() => {
+      proc = new Procedure(async () => undefined);
+    });
+
+    test('should return the context', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._context = 'context';
+
+      expect(proc.context).toBe('context');
+    });
+
+    test("should throw an error if the context hasnt't been set", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (proc as any)._context = null;
+
+      expect(() => proc.context).toThrow('Attempt to access context before it was set');
     });
   });
 });

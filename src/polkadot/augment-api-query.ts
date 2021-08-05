@@ -74,7 +74,9 @@ import type {
 } from '@polkadot/types/interfaces/system';
 import type { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import type {
+  AGId,
   AffirmationStatus,
+  AgentGroup,
   AssetCompliance,
   AssetIdentifier,
   AssetOwnershipRelation,
@@ -99,6 +101,7 @@ import type {
   DocumentId,
   ExtVersion,
   ExtensionAttributes,
+  ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -815,21 +818,6 @@ declare module '@polkadot/api/types/storage' {
     };
     corporateAction: {
       /**
-       * A corporate action agent (CAA) of a ticker, if specified,
-       * that may be different from the asset owner (AO).
-       * If `None`, the AO is the CAA.
-       *
-       * The CAA may be distict from the AO because the CAA may require a money services license,
-       * and the assets would need to originate from the CAA's identity, not the AO's identity.
-       *
-       * (ticker => did?)
-       **/
-      agent: AugmentedQuery<
-        ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<Option<IdentityId>>,
-        [Ticker]
-      >;
-      /**
        * Associations from CAs to `Document`s via their IDs.
        * (CAId => [DocumentId])
        *
@@ -1005,6 +993,60 @@ declare module '@polkadot/api/types/storage' {
           key2: IdentityId | string | Uint8Array
         ) => Observable<Vec<BallotVote>>,
         [CAId, IdentityId]
+      >;
+    };
+    externalAgents: {
+      /**
+       * Maps an agent (`IdentityId`) to all all `Ticker`s they belong to, if any.
+       **/
+      agentOf: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: IdentityId | string | Uint8Array,
+          key2: Ticker | string | Uint8Array
+        ) => Observable<ITuple<[]>>,
+        [IdentityId, Ticker]
+      >;
+      /**
+       * The next per-`Ticker` AG ID in the sequence.
+       *
+       * The full ID is defined as a combination of `Ticker` and a number in this sequence,
+       * which starts from 1, rather than 0.
+       **/
+      agIdSequence: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<AGId>,
+        [Ticker]
+      >;
+      /**
+       * Maps agents (`IdentityId`) for a `Ticker` to what AG they belong to, if any.
+       **/
+      groupOfAgent: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: IdentityId | string | Uint8Array
+        ) => Observable<Option<AgentGroup>>,
+        [Ticker, IdentityId]
+      >;
+      /**
+       * For custom AGs of a `Ticker`, maps to what permissions an agent in that AG would have.
+       **/
+      groupPermissions: AugmentedQueryDoubleMap<
+        ApiType,
+        (
+          key1: Ticker | string | Uint8Array,
+          key2: AGId | AnyNumber | Uint8Array
+        ) => Observable<Option<ExtrinsicPermissions>>,
+        [Ticker, AGId]
+      >;
+      /**
+       * Maps a `Ticker` to the number of `Full` agents for it.
+       **/
+      numFullAgents: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<u32>,
+        [Ticker]
       >;
     };
     grandpa: {

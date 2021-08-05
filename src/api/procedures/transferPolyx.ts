@@ -114,7 +114,7 @@ export async function prepareTransferPolyx(
  */
 export function getAuthorization({ memo }: TransferPolyxParams): ProcedureAuthorization {
   return {
-    signerPermissions: {
+    permissions: {
       transactions: [memo ? TxTags.balances.TransferWithMemo : TxTags.balances.Transfer],
       tokens: [],
       portfolios: [],

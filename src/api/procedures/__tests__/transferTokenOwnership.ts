@@ -11,8 +11,8 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, RoleType } from '~/types';
-import { PolymeshTx, SignerType, SignerValue } from '~/types/internal';
+import { Authorization, AuthorizationType, SignerType, SignerValue } from '~/types';
+import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -132,8 +132,7 @@ describe('transferTokenOwnership procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-        signerPermissions: {
+        permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],

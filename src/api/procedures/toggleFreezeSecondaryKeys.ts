@@ -54,7 +54,7 @@ export function getAuthorization(
   { freeze }: ToggleFreezeSecondaryKeysParams
 ): ProcedureAuthorization {
   return {
-    signerPermissions: {
+    permissions: {
       transactions: [
         freeze ? TxTags.identity.FreezeSecondaryKeys : TxTags.identity.UnfreezeSecondaryKeys,
       ],

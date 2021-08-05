@@ -29,7 +29,7 @@ export async function prepareRemoveSecondaryKeys(
 
   const [primaryKey, secondaryKeys] = await Promise.all([
     identity.getPrimaryKey(),
-    context.getSecondaryKeys(),
+    identity.getSecondaryKeys(),
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));
@@ -56,7 +56,7 @@ export async function prepareRemoveSecondaryKeys(
  */
 export const removeSecondaryKeys = (): Procedure<RemoveSecondaryKeysParams> =>
   new Procedure(prepareRemoveSecondaryKeys, {
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.identity.RemoveSecondaryKeys],
       tokens: [],
       portfolios: [],

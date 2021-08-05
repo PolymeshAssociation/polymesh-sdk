@@ -8,7 +8,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { CalendarPeriod, ErrorCode, RoleType, TxTags } from '~/types';
+import { CalendarPeriod, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   scheduleSpecToMeshScheduleSpec,
@@ -89,8 +89,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const { context } = this;
   return {
-    identityRoles: [{ type: RoleType.TokenOwner, ticker }],
-    signerPermissions: {
+    permissions: {
       transactions: [TxTags.checkpoint.CreateSchedule],
       tokens: [new SecurityToken({ ticker }, context)],
       portfolios: [],

@@ -480,8 +480,8 @@ describe('getAuthorization', () => {
     } as ModifyClaimsParams;
 
     expect(getAuthorization(args)).toEqual({
-      identityRoles: [{ type: RoleType.CddProvider }],
-      signerPermissions: {
+      roles: [{ type: RoleType.CddProvider }],
+      permissions: {
         tokens: [],
         portfolios: [],
         transactions: [TxTags.identity.AddClaim],
@@ -502,7 +502,7 @@ describe('getAuthorization', () => {
     } as ModifyClaimsParams;
 
     expect(getAuthorization(args)).toEqual({
-      signerPermissions: {
+      permissions: {
         tokens: [],
         portfolios: [],
         transactions: [TxTags.identity.RevokeClaim],

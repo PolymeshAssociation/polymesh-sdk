@@ -79,18 +79,16 @@ export async function getAuthorization(
   const { context } = this;
 
   const token = new SecurityToken({ ticker }, context);
-  const {
-    primaryIssuanceAgent: { did },
-  } = await token.details();
 
+  const { did } = await context.getCurrentIdentity();
   const portfolioId = { did };
 
   return {
-    identityRoles: [
+    roles: [
       { type: RoleType.TokenPia, ticker },
       { type: RoleType.PortfolioCustodian, portfolioId },
     ],
-    signerPermissions: {
+    permissions: {
       tokens: [token],
       transactions: [TxTags.asset.ControllerTransfer],
       portfolios: [new DefaultPortfolio({ did }, context)],

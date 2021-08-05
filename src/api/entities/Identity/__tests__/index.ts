@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId, ScopeId, Ticker } from 'polymesh-types/types';
+import { DidRecord, IdentityId, ScopeId, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Identity, SecurityToken } from '~/internal';
@@ -10,14 +10,18 @@ import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/querie
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
+  Account,
   DistributionWithDetails,
   Order,
   PortfolioCustodianRole,
   Role,
   RoleType,
+  SecondaryKey,
+  Signer,
+  SignerType,
+  SignerValue,
   TickerOwnerRole,
   TokenCaaRole,
-  TokenOwnerRole,
   TokenPiaRole,
   VenueOwnerRole,
 } from '~/types';
@@ -49,6 +53,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
     '~/api/entities/DefaultPortfolio'
   )
+);
+jest.mock(
+  '~/api/entities/Instruction',
+  require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
 );
 
 describe('Identity class', () => {
@@ -95,6 +103,179 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: hasTokenPermissions', () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
+    });
+
+    test('should check whether the Identity has the appropriate permissions for the token', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const ticker = 'SOME_TICKER';
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      let result = await identity.hasTokenPermissions({ token, transactions: [] });
+
+      expect(result).toBe(false);
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
+      });
+
+      result = await identity.hasTokenPermissions({ token, transactions: [] });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
+      });
+
+      result = await identity.hasTokenPermissions({ token, transactions: null });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.externalAgents.RemoveAgent],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.identity.AcceptAuthorization],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer],
+      });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup('PolymeshV1Pia')
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.Invest],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.FreezeFundraiser],
+      });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup('PolymeshV1Caa')
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toBe(false);
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.corporateAction.ChangeRecordDate],
+      });
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(1) })
+        ),
+      });
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions('Whole')
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.corporateAction.ChangeRecordDate],
+      });
+
+      expect(result).toBe(true);
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: [
+              dsMockUtils.createMockPalletPermissions({
+                pallet_name: 'asset',
+                dispatchable_names: {
+                  Except: [dsMockUtils.createMockDispatchableName('createAsset')],
+                },
+              }),
+            ],
+          })
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toBe(false);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            Except: [
+              dsMockUtils.createMockPalletPermissions({
+                pallet_name: 'asset',
+                dispatchable_names: 'Whole',
+              }),
+            ],
+          })
+        ),
+      });
+
+      result = await identity.hasTokenPermissions({
+        token,
+        transactions: [TxTags.identity.AddClaim],
+      });
+
+      expect(result).toBe(true);
+      /* eslint-enable @typescript-eslint/naming-convention */
+    });
+  });
+
   describe('method: hasRole and hasRoles', () => {
     beforeAll(() => {
       entityMockUtils.initMocks();
@@ -123,21 +304,6 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the Identity has the Token Owner role', async () => {
-      const identity = new Identity({ did: 'someDid' }, context);
-      const role: TokenOwnerRole = { type: RoleType.TokenOwner, ticker: 'someTicker' };
-
-      let hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(true);
-
-      identity.did = 'otherDid';
-
-      hasRole = await identity.hasRole(role);
-
-      expect(hasRole).toBe(false);
-    });
-
     test('hasRole should check whether the Identity has the Token PIA role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TokenPiaRole = { type: RoleType.TokenPia, ticker: 'someTicker' };
@@ -149,7 +315,7 @@ describe('Identity class', () => {
       entityMockUtils.configureMocks({
         securityTokenOptions: {
           details: {
-            primaryIssuanceAgent: identity,
+            primaryIssuanceAgents: [identity],
           },
         },
       });
@@ -162,7 +328,7 @@ describe('Identity class', () => {
       entityMockUtils.configureMocks({
         securityTokenOptions: {
           details: {
-            primaryIssuanceAgent: new Identity({ did: 'anotherDid' }, context),
+            primaryIssuanceAgents: [new Identity({ did: 'anotherDid' }, context)],
           },
         },
       });
@@ -170,6 +336,20 @@ describe('Identity class', () => {
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+
+      entityMockUtils.reset();
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          details: {
+            primaryIssuanceAgents: [new Identity({ did: 'anotherDid' }, context)],
+            fullAgents: [identity],
+          },
+        },
+      });
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
     });
 
     test('hasRole should check whether the Identity has the Token CAA role', async () => {
@@ -178,7 +358,7 @@ describe('Identity class', () => {
 
       entityMockUtils.configureMocks({
         securityTokenOptions: {
-          corporateActionsGetAgent: identity,
+          corporateActionsGetAgents: [identity],
         },
       });
 
@@ -188,13 +368,26 @@ describe('Identity class', () => {
 
       entityMockUtils.configureMocks({
         securityTokenOptions: {
-          corporateActionsGetAgent: new Identity({ did: 'otherdid' }, context),
+          corporateActionsGetAgents: [new Identity({ did: 'otherdid' }, context)],
         },
       });
 
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          corporateActionsGetAgents: [new Identity({ did: 'otherdid' }, context)],
+          details: {
+            fullAgents: [identity],
+          },
+        },
+      });
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
     });
 
     test('hasRole should check whether the Identity has the CDD Provider role', async () => {
@@ -266,7 +459,7 @@ describe('Identity class', () => {
     test('hasRole should throw an error if the role is not recognized', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const type = 'Fake' as RoleType;
-      const role = { type, ticker: 'someTicker' } as TokenOwnerRole;
+      const role = { type, ticker: 'someTicker' } as TickerOwnerRole;
 
       const hasRole = identity.hasRole(role);
 
@@ -351,7 +544,6 @@ describe('Identity class', () => {
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
-          primary_issuance_agent: dsMockUtils.createMockOption(),
           name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
@@ -663,7 +855,178 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: getInstructions', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return all instructions in which the identity is involved, grouped by status', async () => {
+      const id1 = new BigNumber(1);
+      const id2 = new BigNumber(2);
+      const id3 = new BigNumber(3);
+      const id4 = new BigNumber(4);
+      const id5 = new BigNumber(5);
+
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const defaultPortfolioDid = 'someDid';
+      const numberedPortfolioDid = 'someDid';
+      const numberedPortfolioId = new BigNumber(1);
+
+      const defaultPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: defaultPortfolioDid,
+        isCustodiedBy: true,
+      });
+
+      const numberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({
+        did: numberedPortfolioDid,
+        id: numberedPortfolioId,
+        isCustodiedBy: false,
+      });
+
+      identity.portfolios.getPortfolios = sinon
+        .stub()
+        .resolves([defaultPortfolio, numberedPortfolio]);
+
+      identity.portfolios.getCustodiedPortfolios = sinon.stub().resolves({ data: [], next: null });
+
+      const portfolioLikeToPortfolioIdStub = sinon.stub(
+        utilsConversionModule,
+        'portfolioLikeToPortfolioId'
+      );
+
+      portfolioLikeToPortfolioIdStub
+        .withArgs(defaultPortfolio)
+        .returns({ did: defaultPortfolioDid, number: undefined });
+      portfolioLikeToPortfolioIdStub
+        .withArgs(numberedPortfolio)
+        .returns({ did: numberedPortfolioDid, number: numberedPortfolioId });
+
+      const rawPortfolio = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      });
+
+      const portfolioIdToMeshPortfolioIdStub = sinon.stub(
+        utilsConversionModule,
+        'portfolioIdToMeshPortfolioId'
+      );
+
+      portfolioIdToMeshPortfolioIdStub
+        .withArgs({ did, number: undefined }, context)
+        .returns(rawPortfolio);
+
+      const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
+
+      const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
+      const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
+      const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
+      const rawId4 = dsMockUtils.createMockU64(id4.toNumber());
+      const rawId5 = dsMockUtils.createMockU64(id5.toNumber());
+
+      const entriesStub = sinon.stub();
+      entriesStub
+        .withArgs(rawPortfolio)
+        .resolves([
+          tuple(
+            { args: [rawPortfolio, rawId1] },
+            dsMockUtils.createMockAffirmationStatus('Affirmed')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId2] },
+            dsMockUtils.createMockAffirmationStatus('Pending')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId3] },
+            dsMockUtils.createMockAffirmationStatus('Rejected')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId4] },
+            dsMockUtils.createMockAffirmationStatus('Affirmed')
+          ),
+          tuple(
+            { args: [rawPortfolio, rawId5] },
+            dsMockUtils.createMockAffirmationStatus('Unknown')
+          ),
+        ]);
+
+      userAuthsStub.entries = entriesStub;
+
+      const instructionDetailsStub = dsMockUtils.createQueryStub(
+        'settlement',
+        'instructionDetails',
+        {
+          multi: [],
+        }
+      );
+
+      const multiStub = sinon.stub();
+
+      multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Failed'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockInstruction({
+          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
+          venue_id: dsMockUtils.createMockU64(),
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          created_at: dsMockUtils.createMockOption(),
+          trade_date: dsMockUtils.createMockOption(),
+          value_date: dsMockUtils.createMockOption(),
+        }),
+      ]);
+
+      instructionDetailsStub.multi = multiStub;
+
+      const result = await identity.getInstructions();
+
+      expect(result.affirmed).toEqual([entityMockUtils.getInstructionInstance({ id: id1 })]);
+      expect(result.pending).toEqual([entityMockUtils.getInstructionInstance({ id: id2 })]);
+      expect(result.rejected).toEqual([entityMockUtils.getInstructionInstance({ id: id3 })]);
+      expect(result.failed).toEqual([entityMockUtils.getInstructionInstance({ id: id4 })]);
+    });
+  });
+
   describe('method: getPendingInstructions', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return all pending instructions in which the identity is involved', async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
@@ -938,6 +1301,122 @@ describe('Identity class', () => {
       const result = await identity.getPendingDistributions();
 
       expect(result).toEqual([expectedDistribution]);
+    });
+  });
+
+  describe('method: getSecondaryKeys', () => {
+    const did = 'someDid';
+    const accountId = 'someAccountId';
+    const signerValues = [
+      { value: did, type: SignerType.Identity },
+      { value: accountId, type: SignerType.Account },
+    ];
+    const signerIdentityId = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId(did),
+    });
+    const signerAccountId = dsMockUtils.createMockSignatory({
+      Account: dsMockUtils.createMockAccountId(accountId),
+    });
+
+    let account: Account;
+    let fakeIdentity: Identity;
+    let fakeResult: SecondaryKey[];
+
+    let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
+    let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
+    let didRecordsStub: sinon.SinonStub;
+    let rawDidRecord: DidRecord;
+
+    beforeAll(() => {
+      fakeIdentity = entityMockUtils.getIdentityInstance();
+      signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
+      signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
+      signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
+
+      account = entityMockUtils.getAccountInstance({ address: accountId });
+      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
+      signerValueToSignerStub.withArgs(signerValues[0], sinon.match.object).returns(fakeIdentity);
+      signerValueToSignerStub.withArgs(signerValues[1], sinon.match.object).returns(account);
+
+      fakeResult = [
+        {
+          signer: fakeIdentity,
+          permissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
+        {
+          signer: account,
+          permissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
+      ];
+    });
+
+    beforeEach(() => {
+      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
+      /* eslint-disable @typescript-eslint/naming-convention */
+      rawDidRecord = dsMockUtils.createMockDidRecord({
+        roles: [],
+        primary_key: dsMockUtils.createMockAccountId(),
+        secondary_keys: [
+          dsMockUtils.createMockSecondaryKey({
+            signer: signerIdentityId,
+            permissions: dsMockUtils.createMockPermissions({
+              asset: dsMockUtils.createMockAssetPermissions(),
+              extrinsic: dsMockUtils.createMockExtrinsicPermissions(),
+              portfolio: dsMockUtils.createMockPortfolioPermissions(),
+            }),
+          }),
+          dsMockUtils.createMockSecondaryKey({
+            signer: signerAccountId,
+            permissions: dsMockUtils.createMockPermissions({
+              asset: dsMockUtils.createMockAssetPermissions('Whole'),
+              extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+              portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+            }),
+          }),
+        ],
+      });
+      /* eslint-enabled @typescript-eslint/naming-convention */
+    });
+
+    test('should return a list of Signers', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      didRecordsStub.resolves(rawDidRecord);
+
+      const result = await identity.getSecondaryKeys();
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const unsubCallback = 'unsubCallBack';
+
+      didRecordsStub.callsFake(async (_, cbFunc) => {
+        cbFunc(rawDidRecord);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await identity.getSecondaryKeys(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      expect(identity.toJson()).toBe('someDid');
     });
   });
 });

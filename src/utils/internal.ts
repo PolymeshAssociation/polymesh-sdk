@@ -11,8 +11,8 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, map, padEnd } from 'lodash';
-import { TxTag } from 'polymesh-types/types';
+import { chunk, groupBy, map, mapValues, padEnd } from 'lodash';
+import { ModuleName, TxTag } from 'polymesh-types/types';
 
 import {
   Context,
@@ -31,10 +31,12 @@ import {
   CommonKeyring,
   CountryCode,
   ErrorCode,
+  isEntity,
   NextKey,
   PaginationOptions,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
+  ProcedureOpts,
   Scope,
   UiKeyring,
 } from '~/types';
@@ -44,7 +46,7 @@ import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
 } from '~/types/internal';
-import { ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
+import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
@@ -463,18 +465,20 @@ export function createProcedureMethod<
   const { getProcedureAndArgs, transformer } = args;
 
   const method = (
-    methodArgs: MethodArgs
+    methodArgs: MethodArgs,
+    opts: ProcedureOpts = {}
   ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
-    return proc().prepare({ args: procArgs, transformer }, context);
+    return proc().prepare({ args: procArgs, transformer }, context, opts);
   };
 
   method.checkAuthorization = async (
-    methodArgs: MethodArgs
+    methodArgs: MethodArgs,
+    opts: ProcedureOpts = {}
   ): Promise<ProcedureAuthorizationStatus> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
 
-    return proc().checkAuthorization(procArgs, context);
+    return proc().checkAuthorization(procArgs, context, opts);
   };
 
   return method;
@@ -532,6 +536,25 @@ export function assertFormatValid(address: string, ss58Format: number): void {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
       message: "The supplied address is not encoded with the chain's SS58 format",
+      data: {
+        ss58Format,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+export function assertKeyringFormatValid(keyring: CommonKeyring, ss58Format: number): void {
+  const dummyAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const encodedAddress = keyring.encodeAddress(dummyAddress);
+  const wellEncodedAddress = encodeAddress(dummyAddress, ss58Format);
+
+  if (encodedAddress !== wellEncodedAddress) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: "The supplied keyring is not using the chain's SS58 format",
       data: {
         ss58Format,
       },
@@ -618,4 +641,57 @@ export function optionize<InputType, OutputType, RestType extends unknown[]>(
     const data = value ?? null;
     return data && converter(data, ...rest);
   };
+}
+
+/**
+ * @hidden
+ * Compare two tags/modules and return true if they are equal, or if one is the other one's module
+ */
+export function isModuleOrTagMatch(a: TxTag | ModuleName, b: TxTag | ModuleName): boolean {
+  const aIsTag = a.includes('.');
+  const bIsTag = b.includes('.');
+
+  // a tag b module
+  if (aIsTag && !bIsTag) {
+    return a.split('.')[0] === b;
+  }
+
+  // a module b tag
+  if (!aIsTag && bIsTag) {
+    return a === b.split('.')[0];
+  }
+
+  // both tags or both modules
+  return a === b;
+}
+
+/**
+ * Recursively convert a value into a human readable (JSON compliant) version:
+ *   - Entities are converted via their `.toJson` method
+ *   - Dates are converted to ISO strings
+ *   - BigNumbers are converted to numerical strings
+ */
+export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
+  if (isEntity<unknown, HumanReadableType<T>>(obj)) {
+    return obj.toJson();
+  }
+
+  if (obj instanceof BigNumber) {
+    return obj.toString() as HumanReadableType<T>;
+  }
+
+  if (obj instanceof Date) {
+    return obj.toISOString() as HumanReadableType<T>;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(toHumanReadable) as HumanReadableType<T>;
+  }
+
+  if (obj && typeof obj === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return mapValues(obj as any, val => toHumanReadable(val)) as HumanReadableType<T>;
+  }
+
+  return obj as HumanReadableType<T>;
 }

@@ -13,7 +13,7 @@ import {
   ModifyVenueParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, InstructionStatus, ProcedureMethod } from '~/types';
+import { ErrorCode, GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
 import {
   identityIdToString,
   meshVenueTypeToVenueType,
@@ -39,7 +39,7 @@ export function addInstructionTransformer([instruction]: Instruction[]): Instruc
 /**
  * Represents a Venue through which settlements are handled
  */
-export class Venue extends Entity<UniqueIdentifiers> {
+export class Venue extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -138,7 +138,61 @@ export class Venue extends Entity<UniqueIdentifiers> {
   }
 
   /**
+   * Retrieve all pending and failed Instructions in this Venue
+   */
+  public async getInstructions(): Promise<Pick<GroupedInstructions, 'pending' | 'failed'>> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Venue doesn't exist",
+      });
+    }
+
+    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+
+    const { instructions: rawInstructions } = venueInfo.unwrap();
+
+    const instructions = rawInstructions.map(
+      instructionId => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
+    );
+
+    const failed: Instruction[] = [];
+    const pending: Instruction[] = [];
+
+    const details = await P.map(instructions, instruction => instruction.details());
+
+    details.forEach(({ status }, index) => {
+      if (status === InstructionStatus.Pending) {
+        pending.push(instructions[index]);
+      }
+
+      if (status === InstructionStatus.Failed) {
+        failed.push(instructions[index]);
+      }
+    });
+
+    return {
+      failed,
+      pending,
+    };
+  }
+
+  /**
    * Retrieve all pending Instructions in this Venue
+   *
+   * @deprecated in favor of `getInstructions`
    */
   public async getPendingInstructions(): Promise<Instruction[]> {
     const {
@@ -169,12 +223,6 @@ export class Venue extends Entity<UniqueIdentifiers> {
     );
 
     return P.filter(instructions, async instruction => {
-      const instructionExists = await instruction.exists();
-
-      if (!instructionExists) {
-        return false;
-      }
-
       const { status } = await instruction.details();
 
       return status === InstructionStatus.Pending;
@@ -204,4 +252,11 @@ export class Venue extends Entity<UniqueIdentifiers> {
    *   - Venue Owner
    */
   public modify: ProcedureMethod<ModifyVenueParams, void>;
+
+  /**
+   * Return the Venue's ID
+   */
+  public toJson(): string {
+    return this.id.toString();
+  }
 }

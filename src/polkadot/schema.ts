@@ -9,6 +9,8 @@ export default {
     },
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
+    EventCounts: 'Vec<u32>',
+    ErrorAt: '(u32, DispatchError)',
     InvestorUid: '[u8; 16]',
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
@@ -78,18 +80,45 @@ export default {
       owner_did: 'IdentityId',
       divisible: 'bool',
       asset_type: 'AssetType',
-      primary_issuance_agent: 'Option<IdentityId>',
     },
     PalletName: 'Text',
     DispatchableName: 'Text',
+    AssetPermissions: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<Ticker>',
+        Except: 'Vec<Ticker>',
+      },
+    },
+    PortfolioPermissions: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<PortfolioId>',
+        Except: 'Vec<PortfolioId>',
+      },
+    },
+    DispatchableNames: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<DispatchableName>',
+        Except: 'Vec<DispatchableName>',
+      },
+    },
     PalletPermissions: {
       pallet_name: 'PalletName',
-      dispatchable_names: 'Option<Vec<DispatchableName>>',
+      dispatchable_names: 'DispatchableNames',
+    },
+    ExtrinsicPermissions: {
+      _enum: {
+        Whole: '',
+        These: 'Vec<PalletPermissions>',
+        Except: 'Vec<PalletPermissions>',
+      },
     },
     Permissions: {
-      asset: 'Option<Vec<Ticker>>',
-      extrinsic: 'Option<Vec<PalletPermissions>>',
-      portfolio: 'Option<Vec<PortfolioId>>',
+      asset: 'AssetPermissions',
+      extrinsic: 'ExtrinsicPermissions',
+      portfolio: 'PortfolioPermissions',
     },
     LegacyPalletPermissions: {
       pallet_name: 'PalletName',
@@ -656,11 +685,8 @@ export default {
         Custom: 'Ticker',
         NoData: '',
         TransferCorporateActionAgent: 'Ticker',
+        BecomeAgent: '(Ticker, AgentGroup)',
       },
-    },
-    AuthIdentifier: {
-      signatory: 'Signatory',
-      auth_id: 'u64',
     },
     SmartExtensionType: {
       _enum: {
@@ -936,6 +962,7 @@ export default {
       _enum: {
         Unknown: '',
         Pending: '',
+        Failed: '',
       },
     },
     LegStatus: {
@@ -1002,6 +1029,7 @@ export default {
     MovePortfolioItem: {
       ticker: 'Ticker',
       amount: 'Balance',
+      memo: 'Option<Memo>',
     },
     WeightToFeeCoefficient: {
       coeffInteger: 'Balance',
@@ -1011,7 +1039,7 @@ export default {
     },
     TargetIdentity: {
       _enum: {
-        PrimaryIssuanceAgent: '',
+        ExternalAgent: '',
         Specific: 'IdentityId',
       },
     },
@@ -1156,13 +1184,22 @@ export default {
       tm: 'TransferManager',
       result: 'bool',
     },
+    AGId: 'u32',
+    AgentGroup: {
+      _enum: {
+        Full: '',
+        Custom: 'AGId',
+        ExceptMeta: '',
+        PolymeshV1CAA: '',
+        PolymeshV1PIA: '',
+      },
+    },
   },
   rpc: {
     compliance: {
       canTransfer: {
         description:
-          'Checks whether a transaction with given parameters ' +
-          'is compliant to the compliance manager conditions',
+          'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
         params: [
           {
             name: 'ticker',
@@ -1190,7 +1227,7 @@ export default {
     },
     identity: {
       isIdentityHasValidCdd: {
-        description: 'use to tell whether the given ' + 'did has valid cdd claim or not',
+        description: 'use to tell whether the given did has valid cdd claim or not',
         params: [
           {
             name: 'did',
@@ -1260,9 +1297,7 @@ export default {
       },
       getFilteredAuthorizations: {
         description:
-          'Retrieve authorizations data for a given ' +
-          'signatory and filtered using the given ' +
-          'authorization type',
+          'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
         params: [
           {
             name: 'signatory',
@@ -1387,8 +1422,7 @@ export default {
     },
     asset: {
       canTransfer: {
-        description:
-          'Checks whether a transaction with ' + 'given parameters can take place or ' + 'not',
+        description: 'Checks whether a transaction with given parameters can take place or not',
         params: [
           {
             name: 'sender',
@@ -1435,10 +1469,7 @@ export default {
       },
       canTransferGranular: {
         description:
-          'Checks whether a transaction with given ' +
-          'parameters can take place or not. The ' +
-          'result is granular meaning each check is ' +
-          'run and returned regardless of outcome.',
+          'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
         params: [
           {
             name: 'from_custodian',

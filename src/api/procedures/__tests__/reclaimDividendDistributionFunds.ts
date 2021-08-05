@@ -134,8 +134,8 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       const result = await boundFunc(params);
 
       expect(result).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
+        permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [origin],

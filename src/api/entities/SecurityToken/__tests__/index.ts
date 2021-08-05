@@ -13,6 +13,7 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
+import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -74,7 +75,7 @@ describe('SecurityToken class', () => {
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
-    let primaryIssuanceAgent: string;
+    let did: string;
 
     let rawToken: MeshSecurityToken;
 
@@ -87,7 +88,7 @@ describe('SecurityToken class', () => {
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
-      primaryIssuanceAgent = '0xtr34sury';
+      did = 'someDid';
     });
 
     beforeEach(() => {
@@ -98,13 +99,27 @@ describe('SecurityToken class', () => {
         asset_type: dsMockUtils.createMockAssetType(assetType),
         divisible: dsMockUtils.createMockBool(isDivisible),
         total_supply: dsMockUtils.createMockBalance(totalSupply),
-        primary_issuance_agent: dsMockUtils.createMockOption(
-          dsMockUtils.createMockIdentityId(primaryIssuanceAgent)
-        ),
         /* eslint-enable @typescript-eslint/naming-convention */
       });
       context = dsMockUtils.getContextInstance();
       securityToken = new SecurityToken({ ticker }, context);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+          ),
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(owner)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
+          ),
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta'))
+          ),
+        ],
+      });
     });
 
     test('should return details for a security token', async () => {
@@ -121,24 +136,21 @@ describe('SecurityToken class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgent.did).toBe(primaryIssuanceAgent);
+      expect(details.primaryIssuanceAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
+      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did: owner })]);
 
-      dsMockUtils.createQueryStub('asset', 'tokens', {
-        returnValue: dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          owner_did: dsMockUtils.createMockIdentityId(owner),
-          name: dsMockUtils.createMockAssetName(ticker),
-          asset_type: dsMockUtils.createMockAssetType(assetType),
-          divisible: dsMockUtils.createMockBool(isDivisible),
-          total_supply: dsMockUtils.createMockBalance(totalSupply),
-          primary_issuance_agent: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        }),
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
+          ),
+        ],
       });
 
       details = await securityToken.details();
-
-      expect(details.primaryIssuanceAgent.did).toBe(owner);
+      expect(details.primaryIssuanceAgents).toEqual([]);
+      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
     });
 
     test('should allow subscription', async () => {
@@ -164,7 +176,8 @@ describe('SecurityToken class', () => {
           name: ticker,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgent: sinon.match({ did: owner }),
+          primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
+          fullAgents: [entityMockUtils.getIdentityInstance({ did: owner })],
         })
       );
     });
@@ -608,6 +621,15 @@ describe('SecurityToken class', () => {
       const queue = await securityToken.controllerTransfer({ originPortfolio, amount });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: toJson', () => {
+    test('should return a human readable version of the entity', () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = new SecurityToken({ ticker: 'SOME_TICKER' }, context);
+
+      expect(token.toJson()).toBe('SOME_TICKER');
     });
   });
 });

@@ -59,10 +59,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidGranularity: AugmentedError<ApiType>;
       /**
-       * An invalid total supply.
-       **/
-      InvalidTotalSupply: AugmentedError<ApiType>;
-      /**
        * Transfer validation check failed.
        **/
       InvalidTransfer: AugmentedError<ApiType>;
@@ -110,10 +106,6 @@ declare module '@polkadot/api/types/errors' {
        * Not a token ownership transfer auth.
        **/
       NotTickerOwnershipTransferAuth: AugmentedError<ApiType>;
-      /**
-       * The secondary key does not have the required Asset permission
-       **/
-      SecondaryKeyNotAuthorizedForAsset: AugmentedError<ApiType>;
       /**
        * Transfers to self are not allowed
        **/
@@ -603,10 +595,6 @@ declare module '@polkadot/api/types/errors' {
        * Too many identities in `TargetIdentities` were specified.
        **/
       TooManyTargetIds: AugmentedError<ApiType>;
-      /**
-       * The signer is not authorized to act as a CAA for this asset.
-       **/
-      UnauthorizedAsAgent: AugmentedError<ApiType>;
     };
     corporateBallot: {
       /**
@@ -666,6 +654,43 @@ declare module '@polkadot/api/types/errors' {
        **/
       WrongVoteCount: AugmentedError<ApiType>;
     };
+    externalAgents: {
+      /**
+       * The provided `agent` is already an agent for the `Ticker`.
+       **/
+      AlreadyAnAgent: AugmentedError<ApiType>;
+      /**
+       * There have been too many AGs for this ticker and the ID would overflow.
+       * This won't occur in practice.
+       **/
+      LocalAGIdOverflow: AugmentedError<ApiType>;
+      /**
+       * An AG with the given `AGId` did not exist for the `Ticker`.
+       **/
+      NoSuchAG: AugmentedError<ApiType>;
+      /**
+       * The provided `agent` is not an agent for the `Ticker`.
+       **/
+      NotAnAgent: AugmentedError<ApiType>;
+      /**
+       * The counter for full agents will overflow.
+       * This should never happen in practice, but is theoretically possible.
+       **/
+      NumFullAgentsOverflow: AugmentedError<ApiType>;
+      /**
+       * This agent is the last full one, and it's being removed,
+       * making the asset orphaned.
+       **/
+      RemovingLastFullAgent: AugmentedError<ApiType>;
+      /**
+       * The caller's secondary key does not have the required asset permission.
+       **/
+      SecondaryKeyNotAuthorizedForAsset: AugmentedError<ApiType>;
+      /**
+       * The agent is not authorized to call the current extrinsic.
+       **/
+      UnauthorizedAgent: AugmentedError<ApiType>;
+    };
     finalityTracker: {
       /**
        * Final hint must be updated only once in the block
@@ -710,7 +735,7 @@ declare module '@polkadot/api/types/errors' {
     };
     identity: {
       /**
-       * One secondary key can only belong to one DID
+       * One secondary or primary key can only belong to one DID
        **/
       AlreadyLinked: AugmentedError<ApiType>;
       /**
@@ -1089,10 +1114,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       InsufficientTokensLocked: AugmentedError<ApiType>;
       /**
-       * The authorization is for something other than portfolio custody
-       **/
-      IrrelevantAuthorization: AugmentedError<ApiType>;
-      /**
        * The portfolio doesn't exist.
        **/
       PortfolioDoesNotExist: AugmentedError<ApiType>;
@@ -1177,6 +1198,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       InstructionNotAffirmed: AugmentedError<ApiType>;
       /**
+       * Provided instruction is not failing execution.
+       **/
+      InstructionNotFailed: AugmentedError<ApiType>;
+      /**
        * Provided instruction is not pending execution.
        **/
       InstructionNotPending: AugmentedError<ApiType>;
@@ -1244,6 +1269,10 @@ declare module '@polkadot/api/types/errors' {
        * The current instruction affirmation status does not support the requested action.
        **/
       UnexpectedAffirmationStatus: AugmentedError<ApiType>;
+      /**
+       * Instruction status is unknown
+       **/
+      UnknownInstruction: AugmentedError<ApiType>;
     };
     staking: {
       /**

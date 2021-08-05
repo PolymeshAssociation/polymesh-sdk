@@ -71,8 +71,8 @@ export async function prepareRegisterIdentity(
  */
 export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> =>
   new Procedure(prepareRegisterIdentity, {
-    identityRoles: [{ type: RoleType.CddProvider }],
-    signerPermissions: {
+    roles: [{ type: RoleType.CddProvider }],
+    permissions: {
       tokens: [],
       portfolios: [],
       transactions: [TxTags.identity.CddRegisterDid],

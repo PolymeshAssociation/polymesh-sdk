@@ -378,15 +378,15 @@ describe('launchSto procedure', () => {
       portfolioIdToPortfolioStub.withArgs(raisingPortfolioId, mockContext).returns(portfolios[1]);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const identityRoles = [
+      const roles = [
         { type: RoleType.TokenPia, ticker },
         { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },
       ];
 
       expect(boundFunc(args)).toEqual({
-        identityRoles,
-        signerPermissions: {
+        roles,
+        permissions: {
           transactions: [TxTags.sto.CreateFundraiser],
           tokens: [token],
           portfolios,
@@ -400,23 +400,7 @@ describe('launchSto procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      let result = await boundFunc(args);
-
-      expect(result).toEqual({
-        offeringPortfolioId,
-        raisingPortfolioId,
-      });
-
-      const did = offeringPortfolioId.did;
-
-      entityMockUtils.configureMocks({
-        identityOptions: { did },
-        securityTokenOptions: {
-          details: { primaryIssuanceAgent: entityMockUtils.getIdentityInstance({ did }) },
-        },
-      });
-
-      result = await boundFunc({ ...args, offeringPortfolio: undefined });
+      const result = await boundFunc(args);
 
       expect(result).toEqual({
         offeringPortfolioId,

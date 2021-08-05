@@ -29,6 +29,8 @@ import type {
   DispatchResult,
 } from '@polkadot/types/interfaces/system';
 import type {
+  AGId,
+  AgentGroup,
   AssetIdentifier,
   AssetName,
   AssetType,
@@ -45,7 +47,10 @@ import type {
   Distribution,
   Document,
   DocumentId,
+  ErrorAt,
+  EventCounts,
   EventDid,
+  ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -97,12 +102,9 @@ declare module '@polkadot/api/types/events' {
     asset: {
       /**
        * Event for creation of the asset.
-       * caller DID/ owner DID, ticker, total supply, divisibility, asset type, beneficiary DID
+       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID
        **/
-      AssetCreated: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, Balance, bool, AssetType, IdentityId]
-      >;
+      AssetCreated: AugmentedEvent<ApiType, [IdentityId, Ticker, bool, AssetType, IdentityId]>;
       /**
        * An event emitted when an asset is frozen.
        * Parameter: caller DID, ticker.
@@ -195,14 +197,6 @@ declare module '@polkadot/api/types/events' {
        * Migration error event.
        **/
       MigrationFailure: AugmentedEvent<ApiType, [MigrationError]>;
-      /**
-       * An event emitted when the primary issuance agent of an asset is transferred.
-       * First DID is the old primary issuance agent and the second DID is the new primary issuance agent.
-       **/
-      PrimaryIssuanceAgentTransferred: AugmentedEvent<
-        ApiType,
-        [IdentityId, Ticker, Option<IdentityId>, Option<IdentityId>]
-      >;
       /**
        * Emit when tokens get redeemed.
        * caller DID, ticker,  from DID, value
@@ -355,10 +349,9 @@ declare module '@polkadot/api/types/events' {
       TimelockChanged: AugmentedEvent<ApiType, [IdentityId, BlockNumber]>;
       /**
        * An event emitted after a vector of transactions is handled. The parameter is a vector of
-       * nonces of all processed transactions, each with either the "success" code 0 or its
-       * failure reason (greater than 0).
+       * tuples of recipient account, its nonce, and the status of the processed transaction.
        **/
-      TxsHandled: AugmentedEvent<ApiType, [Vec<ITuple<[u32, HandledTxStatus]>>]>;
+      TxsHandled: AugmentedEvent<ApiType, [Vec<ITuple<[AccountId, u32, HandledTxStatus]>>]>;
       /**
        * Notification of unfreezing the bridge.
        **/
@@ -691,6 +684,41 @@ declare module '@polkadot/api/types/events' {
        **/
       VoteCast: AugmentedEvent<ApiType, [IdentityId, CAId, Vec<BallotVote>]>;
     };
+    externalAgents: {
+      /**
+       * An agent was added.
+       *
+       * (Caller/Agent DID, Agent's ticker, Agent's group)
+       **/
+      AgentAdded: AugmentedEvent<ApiType, [EventDid, Ticker, AgentGroup]>;
+      /**
+       * An agent was removed.
+       *
+       * (Caller DID, Agent's ticker, Agent's DID)
+       **/
+      AgentRemoved: AugmentedEvent<ApiType, [EventDid, Ticker, IdentityId]>;
+      /**
+       * An agent's group was changed.
+       *
+       * (Caller DID, Agent's ticker, Agent's DID, The new group of the agent)
+       **/
+      GroupChanged: AugmentedEvent<ApiType, [EventDid, Ticker, IdentityId, AgentGroup]>;
+      /**
+       * An Agent Group was created.
+       *
+       * (Caller DID, AG's ticker, AG's ID, AG's permissions)
+       **/
+      GroupCreated: AugmentedEvent<ApiType, [EventDid, Ticker, AGId, ExtrinsicPermissions]>;
+      /**
+       * An Agent Group's permissions was updated.
+       *
+       * (Caller DID, AG's ticker, AG's ID, AG's new permissions)
+       **/
+      GroupPermissionsUpdated: AugmentedEvent<
+        ApiType,
+        [EventDid, Ticker, AGId, ExtrinsicPermissions]
+      >;
+    };
     grandpa: {
       /**
        * New authority set has been applied. \[authority_set\]
@@ -775,11 +803,11 @@ declare module '@polkadot/api/types/events' {
        **/
       PrimaryKeyUpdated: AugmentedEvent<ApiType, [IdentityId, AccountId, AccountId]>;
       /**
-       * DID, updated secondary key, previous permissions
+       * DID, updated secondary key, previous permissions, new permissions
        **/
       SecondaryKeyPermissionsUpdated: AugmentedEvent<
         ApiType,
-        [IdentityId, SecondaryKey, Permissions]
+        [IdentityId, SecondaryKey, Permissions, Permissions]
       >;
       /**
        * DID, new keys
@@ -1088,7 +1116,7 @@ declare module '@polkadot/api/types/events' {
        **/
       MovedBetweenPortfolios: AugmentedEvent<
         ApiType,
-        [IdentityId, PortfolioId, PortfolioId, Ticker, Balance]
+        [IdentityId, PortfolioId, PortfolioId, Ticker, Balance, Option<Memo>]
       >;
       /**
        * The portfolio has been successfully created.
@@ -1201,6 +1229,11 @@ declare module '@polkadot/api/types/events' {
        * An instruction has been rejected (did, instruction_id)
        **/
       InstructionRejected: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      /**
+       * Instruction is rescheduled.
+       * (caller DID, instruction_id)
+       **/
+      InstructionRescheduled: AugmentedEvent<ApiType, [IdentityId, u64]>;
       /**
        * Execution of a leg failed (did, instruction_id, leg_id)
        **/
@@ -1650,18 +1683,21 @@ declare module '@polkadot/api/types/events' {
     utility: {
       /**
        * Batch of dispatches completed fully with no error.
+       * Includes a vector of event counts for each dispatch.
        **/
-      BatchCompleted: AugmentedEvent<ApiType, []>;
+      BatchCompleted: AugmentedEvent<ApiType, [EventCounts]>;
       /**
        * Batch of dispatches did not complete fully.
-       * Index of first failing dispatch given, as well as the error.
+       * Includes a vector of event counts for each dispatch and
+       * the index of the first failing dispatch as well as the error.
        **/
-      BatchInterrupted: AugmentedEvent<ApiType, [u32, DispatchError]>;
+      BatchInterrupted: AugmentedEvent<ApiType, [EventCounts, ErrorAt]>;
       /**
        * Batch of dispatches did not complete fully.
-       * Includes any failed dispatches with their indices and their associated error.
+       * Includes a vector of event counts for each call and
+       * a vector of any failed dispatches with their indices and associated error.
        **/
-      BatchOptimisticFailed: AugmentedEvent<ApiType, [Vec<ITuple<[u32, DispatchError]>>]>;
+      BatchOptimisticFailed: AugmentedEvent<ApiType, [EventCounts, Vec<ErrorAt>]>;
     };
   }
 

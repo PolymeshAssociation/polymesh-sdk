@@ -7,8 +7,8 @@ import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, RoleType } from '~/types';
-import { PortfolioId, SignerType, SignerValue } from '~/types/internal';
+import { Authorization, AuthorizationType, RoleType, SignerType, SignerValue } from '~/types';
+import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -101,13 +101,6 @@ describe('setCustodian procedure', () => {
       },
     });
 
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
-
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
     signerToStringStub.withArgs(target).returns(args.targetIdentity);
@@ -155,13 +148,6 @@ describe('setCustodian procedure', () => {
         },
       },
     });
-
-    mockContext.getSecondaryKeys.resolves([
-      {
-        signer,
-        permissions: [],
-      },
-    ]);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
@@ -213,8 +199,8 @@ describe('setCustodian procedure', () => {
       let portfolioId: PortfolioId = { did: args.did, number: args.id };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [entityMockUtils.getNumberedPortfolioInstance({ did, id })],
           tokens: [],
@@ -228,8 +214,8 @@ describe('setCustodian procedure', () => {
       portfolioId = { did: args.did };
 
       expect(boundFunc(args)).toEqual({
-        identityRoles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
-        signerPermissions: {
+        roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+        permissions: {
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
           tokens: [],
