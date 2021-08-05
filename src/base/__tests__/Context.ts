@@ -230,6 +230,32 @@ describe('Context class', () => {
       expect(context.currentPair).toEqual(pairs[0]);
     });
 
+    test('should throw if keyring has incorrect ss58 format set', async () => {
+      const pairs = [
+        {
+          address: '2HFAAoz9ZGHnLL84ytDhVBXggYv4avQCiS5ajtKLudRhUFrh',
+          meta: {},
+          publicKey: 'publicKey',
+        },
+      ];
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: pairs,
+          encodeAddress: '2HFAAoz9ZGHnLL84ytDhVBXggYv4avQCiS5ajtKLudRhUFrh',
+        },
+      });
+
+      const context = Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        keyring: dsMockUtils.getKeyringInstance(),
+      });
+
+      return expect(context).rejects.toThrow(
+        new Error("The supplied keyring is not using the chain's SS58 format")
+      );
+    });
+
     test('should create a Context object from a uri with Pair attached', async () => {
       const newPair = {
         address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',

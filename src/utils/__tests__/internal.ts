@@ -1,3 +1,4 @@
+import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
@@ -16,6 +17,7 @@ import {
   assertFormatValid,
   assertIsInteger,
   assertIsPositive,
+  assertKeyringFormatValid,
   batchArguments,
   calculateNextKey,
   createClaim,
@@ -557,6 +559,22 @@ describe('assertFormatValid', () => {
     expect(() =>
       assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
+  });
+});
+
+describe('assertKeyringFormatValid', () => {
+  const ss58Format = 42;
+  const keyring = new Keyring({ ss58Format });
+
+  test('should not throw if the keyring is set with valid ss58', async () => {
+    expect(() => assertKeyringFormatValid(keyring, ss58Format)).not.toThrow();
+  });
+
+  test('should throw an error if the keyring is set with an invalid ss58', async () => {
+    keyring.setSS58Format(12);
+    expect(() => assertKeyringFormatValid(keyring, ss58Format)).toThrow(
+      "The supplied keyring is not using the chain's SS58 format"
+    );
   });
 });
 
