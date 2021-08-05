@@ -160,11 +160,14 @@ describe('createGroup procedure', () => {
       }
     );
 
-    permissionsLikeToPermissionsStub.returns(permissions);
+    const fakePermissions = { transactions: permissions.transactions };
+    permissionsLikeToPermissionsStub
+      .withArgs(fakePermissions, mockContext)
+      .returns(permissions.transactions);
 
     await prepareCreateGroup.call(proc, {
       ticker,
-      permissions: { transactions: permissions.transactions },
+      permissions: fakePermissions,
     });
 
     sinon.assert.calledWith(
@@ -175,24 +178,21 @@ describe('createGroup procedure', () => {
       rawExtrinsicPermissions
     );
 
+    permissionsLikeToPermissionsStub
+      .withArgs(
+        {
+          transactions: {
+            type: PermissionType.Include,
+            values: [],
+          },
+        },
+        mockContext
+      )
+      .returns({ transactions: null });
+
     await prepareCreateGroup.call(proc, {
       ticker,
-      permissions: {
-        transactions: {
-          type: PermissionType.Include,
-          values: [],
-        },
-      },
-    });
-
-    permissionsLikeToPermissionsStub.returns({
-      permissions,
-      ...{
-        transactions: {
-          type: PermissionType.Include,
-          values: null,
-        },
-      },
+      permissions: { transactions: permissions.transactions },
     });
 
     sinon.assert.calledWith(
