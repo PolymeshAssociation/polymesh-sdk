@@ -2451,7 +2451,7 @@ export function getSecurityTokenPermissionsGetGroupsStub(
  * Retrieve the stub of the `SecurityToken.permissions.getAgents` method
  */
 export function getSecurityTokenPermissionsGetAgentsStub(
-  agents?: Partial<AgentWithGroup[]>
+  agents?: Partial<AgentWithGroup>[]
 ): SinonStub {
   if (agents) {
     return securityTokenPermissionsGetAgentsStub.resolves(agents);
