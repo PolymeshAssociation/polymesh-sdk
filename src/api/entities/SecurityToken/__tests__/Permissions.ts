@@ -103,10 +103,10 @@ describe('Permissions class', () => {
       expect(custom.length).toEqual(1);
 
       known.forEach(group => {
-        expect(group instanceof CustomPermissionGroup).toBe(true);
+        expect(group instanceof KnownPermissionGroup).toBe(true);
       });
 
-      expect(custom[0] instanceof KnownPermissionGroup).toBe(true);
+      expect(custom[0] instanceof CustomPermissionGroup).toBe(true);
     });
   });
 
