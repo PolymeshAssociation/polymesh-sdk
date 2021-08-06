@@ -43,7 +43,10 @@ export class Permissions extends Namespace<SecurityToken> {
   /**
    * Retrieve all group permissions of the Security Token
    */
-  public async getGroups(): Promise<(CustomPermissionGroup | KnownPermissionGroup)[]> {
+  public async getGroups(): Promise<{
+    known: KnownPermissionGroup[];
+    custom: CustomPermissionGroup[];
+  }> {
     const {
       context: {
         polymeshApi: {
@@ -54,7 +57,7 @@ export class Permissions extends Namespace<SecurityToken> {
       parent: { ticker },
     } = this;
 
-    const knownPermissionGroups = Object.values(PermissionGroupType).map(
+    const known = Object.values(PermissionGroupType).map(
       type => new KnownPermissionGroup({ type, ticker }, context)
     );
 
@@ -62,12 +65,15 @@ export class Permissions extends Namespace<SecurityToken> {
       stringToTicker(ticker, context)
     );
 
-    const customPermissionGroups: CustomPermissionGroup[] = rawCustomPermissionGroups.map(
+    const custom: CustomPermissionGroup[] = rawCustomPermissionGroups.map(
       ([storageKey]) =>
         new CustomPermissionGroup({ ticker, id: u32ToBigNumber(storageKey.args[1]) }, context)
     );
 
-    return [...knownPermissionGroups, ...customPermissionGroups];
+    return {
+      known,
+      custom,
+    };
   }
 
   /**

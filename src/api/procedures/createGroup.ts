@@ -19,7 +19,7 @@ import {
   transactionPermissionsToExtrinsicPermissions,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize, orderTransactionPermissionsValues } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateGroupParams {
   permissions:
@@ -80,17 +80,18 @@ export async function prepareCreateGroup(
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const groups = await token.permissions.getGroups();
+  const { custom } = await token.permissions.getGroups();
 
-  const currentGroupPermissions = await P.map(groups, group => group.getPermissions());
+  const currentGroupPermissions = await P.map(custom, group => group.getPermissions());
 
   if (
-    currentGroupPermissions.some(({ transactions: transactionPermissions }) =>
-      isEqual(
-        optionize(orderTransactionPermissionsValues)(transactionPermissions),
-        optionize(orderTransactionPermissionsValues)(transactions)
-      )
-    )
+    currentGroupPermissions.some(({ transactions: transactionPermissions }) => {
+      const sortedTransactions = transactions && {
+        ...transactions,
+        values: [...transactions.values].sort(),
+      };
+      return isEqual(transactionPermissions, sortedTransactions);
+    })
   ) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,

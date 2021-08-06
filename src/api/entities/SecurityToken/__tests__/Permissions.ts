@@ -97,16 +97,16 @@ describe('Permissions class', () => {
         ],
       });
 
-      const result = await permissions.getGroups();
+      const { known, custom } = await permissions.getGroups();
 
-      expect(result.length).toEqual(5);
-      result.forEach((group, i) => {
-        if (i === 4) {
-          expect(group instanceof CustomPermissionGroup).toBe(true);
-        } else {
-          expect(group instanceof KnownPermissionGroup).toBe(true);
-        }
+      expect(known.length).toEqual(4);
+      expect(custom.length).toEqual(1);
+
+      known.forEach(group => {
+        expect(group instanceof CustomPermissionGroup).toBe(true);
       });
+
+      expect(custom[0] instanceof KnownPermissionGroup).toBe(true);
     });
   });
 

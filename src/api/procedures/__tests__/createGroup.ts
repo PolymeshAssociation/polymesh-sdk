@@ -56,6 +56,7 @@ describe('createGroup procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let externalAgentsCreateGroupTransaction: PolymeshTx<unknown[]>;
+  let permissionsLikeToPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -63,10 +64,14 @@ describe('createGroup procedure', () => {
     procedureMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'permissionsLikeToPermissions').returns(permissions);
     sinon
       .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
       .returns(rawExtrinsicPermissions);
+
+    permissionsLikeToPermissionsStub = sinon.stub(
+      utilsConversionModule,
+      'permissionsLikeToPermissions'
+    );
   });
 
   beforeEach(() => {
@@ -111,19 +116,24 @@ describe('createGroup procedure', () => {
       {
         token: entityMockUtils.getSecurityTokenInstance({
           ticker,
-          permissionsGetGroups: [
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: new BigNumber(1),
-              getPermissions: {
-                transactions: permissions.transactions,
-                transactionGroups: [],
-              },
-            }),
-          ],
+          permissionsGetGroups: {
+            custom: [
+              entityMockUtils.getCustomPermissionGroupInstance({
+                ticker,
+                id: new BigNumber(1),
+                getPermissions: {
+                  transactions: permissions.transactions,
+                  transactionGroups: [],
+                },
+              }),
+            ],
+            known: [],
+          },
         }),
       }
     );
+
+    permissionsLikeToPermissionsStub.returns(permissions);
 
     expect(
       prepareCreateGroup.call(proc, {
@@ -139,19 +149,52 @@ describe('createGroup procedure', () => {
       {
         token: entityMockUtils.getSecurityTokenInstance({
           ticker,
-          permissionsGetGroups: [
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: new BigNumber(2),
-              getPermissions: {
-                transactions: null,
-                transactionGroups: [],
-              },
-            }),
-          ],
+          permissionsGetGroups: {
+            custom: [
+              entityMockUtils.getCustomPermissionGroupInstance({
+                ticker,
+                id: new BigNumber(2),
+                getPermissions: {
+                  transactions: null,
+                  transactionGroups: [],
+                },
+              }),
+            ],
+            known: [],
+          },
         }),
       }
     );
+
+    const fakePermissions = { transactions: permissions.transactions };
+    permissionsLikeToPermissionsStub
+      .withArgs(fakePermissions, mockContext)
+      .returns(permissions.transactions);
+
+    await prepareCreateGroup.call(proc, {
+      ticker,
+      permissions: fakePermissions,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      externalAgentsCreateGroupTransaction,
+      sinon.match({ resolvers: sinon.match.array }),
+      rawTicker,
+      rawExtrinsicPermissions
+    );
+
+    permissionsLikeToPermissionsStub
+      .withArgs(
+        {
+          transactions: {
+            type: PermissionType.Include,
+            values: [],
+          },
+        },
+        mockContext
+      )
+      .returns({ transactions: null });
 
     await prepareCreateGroup.call(proc, {
       ticker,

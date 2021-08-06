@@ -850,11 +850,7 @@ export function permissionsToMeshPermissions(
 ): MeshPermissions {
   const { tokens, transactions, portfolios } = permissions;
 
-  let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
-
-  if (transactions) {
-    extrinsic = buildPalletPermissions(transactions);
-  }
+  const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
   if (tokens) {
