@@ -848,11 +848,7 @@ export function permissionsToMeshPermissions(
 ): MeshPermissions {
   const { tokens, transactions, portfolios } = permissions;
 
-  let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
-
-  if (transactions) {
-    extrinsic = buildPalletPermissions(transactions);
-  }
+  const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
   if (tokens) {
@@ -1024,7 +1020,7 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
-export function permissionGroupToAgentGroup(
+export function permissionGroupIdentifierToAgentGroup(
   permissionGroup: PermissionGroupIdentifier,
   context: Context
 ): AgentGroup {
@@ -1054,10 +1050,10 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.BecomeAgent) {
     if (auth.value instanceof CustomPermissionGroup) {
       const { ticker, id } = auth.value;
-      value = [ticker, permissionGroupToAgentGroup({ custom: id }, context)];
+      value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
     } else {
       const { ticker, type } = auth.value;
-      value = [ticker, permissionGroupToAgentGroup(type, context)];
+      value = [ticker, permissionGroupIdentifierToAgentGroup(type, context)];
     }
   } else {
     value = auth.value;

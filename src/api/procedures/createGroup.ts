@@ -80,20 +80,17 @@ export async function prepareCreateGroup(
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const groups = await token.permissions.getGroups();
+  const { custom } = await token.permissions.getGroups();
 
-  const currentGroupPermissions = await P.map(groups, group => group.getPermissions());
+  const currentGroupPermissions = await P.map(custom, group => group.getPermissions());
 
   if (
     currentGroupPermissions.some(({ transactions: transactionPermissions }) => {
-      if (transactionPermissions) {
-        transactionPermissions.values.sort();
-      }
-      if (transactions) {
-        transactions.values.sort();
-      }
-
-      return isEqual(transactionPermissions, transactions);
+      const sortedTransactions = transactions && {
+        ...transactions,
+        values: [...transactions.values].sort(),
+      };
+      return isEqual(transactionPermissions, sortedTransactions);
     })
   ) {
     throw new PolymeshError({

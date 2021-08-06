@@ -116,16 +116,19 @@ describe('createGroup procedure', () => {
       {
         token: entityMockUtils.getSecurityTokenInstance({
           ticker,
-          permissionsGetGroups: [
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: new BigNumber(1),
-              getPermissions: {
-                transactions: permissions.transactions,
-                transactionGroups: [],
-              },
-            }),
-          ],
+          permissionsGetGroups: {
+            custom: [
+              entityMockUtils.getCustomPermissionGroupInstance({
+                ticker,
+                id: new BigNumber(1),
+                getPermissions: {
+                  transactions: permissions.transactions,
+                  transactionGroups: [],
+                },
+              }),
+            ],
+            known: [],
+          },
         }),
       }
     );
@@ -146,16 +149,19 @@ describe('createGroup procedure', () => {
       {
         token: entityMockUtils.getSecurityTokenInstance({
           ticker,
-          permissionsGetGroups: [
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: new BigNumber(2),
-              getPermissions: {
-                transactions: null,
-                transactionGroups: [],
-              },
-            }),
-          ],
+          permissionsGetGroups: {
+            custom: [
+              entityMockUtils.getCustomPermissionGroupInstance({
+                ticker,
+                id: new BigNumber(2),
+                getPermissions: {
+                  transactions: null,
+                  transactionGroups: [],
+                },
+              }),
+            ],
+            known: [],
+          },
         }),
       }
     );

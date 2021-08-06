@@ -151,7 +151,7 @@ interface SecurityTokenOptions {
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
-  permissionsGetGroups?: (CustomPermissionGroup | KnownPermissionGroup)[];
+  permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
 }
 
 interface AuthorizationRequestOptions {
@@ -745,7 +745,10 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     defaultTaxWithholding: new BigNumber(10),
     taxWithholdings: [],
   },
-  permissionsGetGroups: [],
+  permissionsGetGroups: {
+    known: [],
+    custom: [],
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
