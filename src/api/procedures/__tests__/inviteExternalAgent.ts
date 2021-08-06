@@ -11,7 +11,7 @@ import {
 import { Account, Agent, Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, PermissionGroupType, PermissionType, SignerValue } from '~/types';
+import { Authorization, PermissionType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -151,7 +151,7 @@ describe('inviteExternalAgent procedure', () => {
         permissionsGetAgents: [
           {
             agent: { did: 'otherDid' } as Agent,
-            group: PermissionGroupType.Full,
+            group: entityMockUtils.getCustomPermissionGroupInstance(),
           },
         ],
       }),
