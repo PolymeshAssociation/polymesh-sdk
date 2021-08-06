@@ -10,7 +10,7 @@ import {
 } from '~/internal';
 import { AgentWithGroup, PermissionGroupType, ProcedureMethod } from '~/types';
 import {
-  agentGroupToPermissionGroupIdentifier,
+  agentGroupToPermissionGroup,
   identityIdToString,
   stringToTicker,
   u32ToBigNumber,
@@ -84,13 +84,13 @@ export class Permissions extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const groupOfAgent = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
+    const groups = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
 
-    return groupOfAgent.map(([storageKey, agentGroup]) => {
+    return groups.map(([storageKey, agentGroup]) => {
       const rawAgentGroup = agentGroup.unwrap();
       return {
         agent: new Agent({ did: identityIdToString(storageKey.args[1]), ticker }, context),
-        group: agentGroupToPermissionGroupIdentifier(rawAgentGroup),
+        group: agentGroupToPermissionGroup(rawAgentGroup, ticker, context),
       };
     });
   }
