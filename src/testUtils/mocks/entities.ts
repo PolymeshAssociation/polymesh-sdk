@@ -752,7 +752,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   permissionsGetAgents: [
     {
       agent: { did: 'someDid', ticker: 'SOME_TICKER' } as Agent,
-      group: PermissionGroupType.Full,
+      group: {} as CustomPermissionGroup,
     },
   ],
   permissionsGetGroups: {
