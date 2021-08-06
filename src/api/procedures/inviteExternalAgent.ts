@@ -35,7 +35,7 @@ export interface InviteExternalAgentParams {
   /**
    * date at which the authorization request for invitation expires (optional)
    *
-   * @note if expiry date is not set, the invitation will never expires
+   * @note if expiry date is not set, the invitation will never expire
    */
   expiry?: Date;
 }
