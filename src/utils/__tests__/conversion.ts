@@ -1259,16 +1259,46 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     const createTypeStub = dsMockUtils.getCreateTypeStub();
 
+    let fakeExtrinsicPermissionsResult: unknown = ('convertedExtrinsicPermissions' as unknown) as ExtrinsicPermissions;
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', 'Whole')
+      .returns(fakeExtrinsicPermissionsResult);
+
     createTypeStub
       .withArgs('Permissions', {
         asset: 'Whole',
-        extrinsic: 'Whole',
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: 'Whole',
       })
       .returns(fakeResult);
 
     let result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      These: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Identity',
+          dispatchable_names: {
+            These: ['add_claim'],
+          },
+        },
+        {
+          pallet_name: 'Sto',
+          dispatchable_names: {
+            These: ['create_fundraiser', 'invest'],
+          },
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     const ticker = 'SOMETICKER';
     const did = 'someDid';
@@ -1298,24 +1328,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         asset: {
           These: [rawTicker],
         },
-        extrinsic: {
-          These: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              pallet_name: 'Identity',
-              dispatchable_names: {
-                These: ['add_claim'],
-              },
-            },
-            {
-              pallet_name: 'Sto',
-              dispatchable_names: {
-                These: ['create_fundraiser', 'invest'],
-              },
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        },
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: {
           These: [rawPortfolioId],
         },
@@ -1326,6 +1339,22 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      These: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Sto',
+          dispatchable_names: { Except: ['invest', 'stop'] },
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     value = {
       tokens: null,
@@ -1341,22 +1370,29 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     createTypeStub
       .withArgs('Permissions', {
         asset: 'Whole',
-        extrinsic: {
-          These: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              pallet_name: 'Sto',
-              dispatchable_names: { Except: ['invest', 'stop'] },
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        },
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: 'Whole',
       })
       .returns(fakeResult);
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      Except: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Sto',
+          dispatchable_names: 'Whole',
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     value = {
       tokens: {
@@ -1379,16 +1415,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         asset: {
           Except: [rawTicker],
         },
-        extrinsic: {
-          Except: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              pallet_name: 'Sto',
-              dispatchable_names: 'Whole',
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        },
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: {
           Except: [rawPortfolioId],
         },
@@ -1397,6 +1424,24 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      These: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Identity',
+          dispatchable_names: {
+            These: ['add_claim'],
+          },
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     const tickers = ['BTICKER', 'ATICKER', 'CTICKER'];
 
@@ -1416,24 +1461,11 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       },
     };
 
-    const extrinsic = {
-      These: [
-        /* eslint-disable @typescript-eslint/naming-convention */
-        {
-          pallet_name: 'Identity',
-          dispatchable_names: {
-            These: ['add_claim'],
-          },
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      ],
-    };
-
     const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
     createTypeStub
       .withArgs('Permissions', {
         asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
-        extrinsic,
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: { These: [rawPortfolioId] },
       })
       .returns(fakeResult);
@@ -4527,6 +4559,12 @@ describe('meshInstructionStatusToInstructionStatus', () => {
     let instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
 
     let result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = InstructionStatus.Failed;
+    instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
 
     fakeResult = InstructionStatus.Unknown;

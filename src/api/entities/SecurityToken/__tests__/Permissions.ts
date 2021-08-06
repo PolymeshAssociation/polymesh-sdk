@@ -10,7 +10,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { PermissionGroupType, TransactionPermissions } from '~/types';
+import { TransactionPermissions } from '~/types';
 import { tuple } from '~/types/utils';
 
 import { Permissions } from '../Permissions';
@@ -124,16 +124,16 @@ describe('Permissions class', () => {
         ],
       });
 
-      const result = await permissions.getGroups();
+      const { known, custom } = await permissions.getGroups();
 
-      expect(result.length).toEqual(5);
-      result.forEach((group, i) => {
-        if (i === 4) {
-          expect(group instanceof CustomPermissionGroup).toBe(true);
-        } else {
-          expect(group instanceof KnownPermissionGroup).toBe(true);
-        }
+      expect(known.length).toEqual(4);
+      expect(custom.length).toEqual(1);
+
+      known.forEach(group => {
+        expect(group instanceof CustomPermissionGroup).toBe(true);
       });
+
+      expect(custom[0] instanceof KnownPermissionGroup).toBe(true);
     });
   });
 
@@ -141,9 +141,18 @@ describe('Permissions class', () => {
     test('should retrieve a list of agent identities', async () => {
       const did = 'someDid';
       const otherDid = 'otherDid';
+      const customId = new BigNumber(1);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         entries: [
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta'))
+          ),
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full'))
+          ),
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Caa'))
@@ -152,15 +161,24 @@ describe('Permissions class', () => {
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
             dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
           ),
+          tuple(
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
+            dsMockUtils.createMockOption(
+              dsMockUtils.createMockAgentGroup({
+                Custom: dsMockUtils.createMockU32(customId.toNumber()),
+              })
+            )
+          ),
         ],
       });
 
       const result = await permissions.getAgents();
 
-      expect(result[0].agent.did).toEqual(did);
-      expect(result[1].agent.did).toEqual(otherDid);
-      expect(result[0].group).toEqual(PermissionGroupType.PolymeshV1Caa);
-      expect(result[1].group).toEqual(PermissionGroupType.PolymeshV1Pia);
+      expect(result.length).toEqual(5);
+      for (const i in [0, 1, 2, 3]) {
+        expect(result[i].group instanceof KnownPermissionGroup).toEqual(true);
+      }
+      expect(result[4].group instanceof CustomPermissionGroup).toEqual(true);
     });
   });
 });

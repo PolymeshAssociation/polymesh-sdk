@@ -105,6 +105,7 @@ import {
   CustomPermissionGroup,
   DefaultPortfolio,
   Identity,
+  KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
@@ -849,11 +850,7 @@ export function permissionsToMeshPermissions(
 ): MeshPermissions {
   const { tokens, transactions, portfolios } = permissions;
 
-  let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
-
-  if (transactions) {
-    extrinsic = buildPalletPermissions(transactions);
-  }
+  const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
   if (tokens) {
@@ -3300,4 +3297,27 @@ export function corporateActionIdentifierToCaId(
     // eslint-disable-next-line @typescript-eslint/naming-convention
     local_id: numberToU32(localId, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(
+  agentGroup: AgentGroup,
+  ticker: string,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
+  switch (permissionGroupIdentifier) {
+    case PermissionGroupType.ExceptMeta:
+    case PermissionGroupType.Full:
+    case PermissionGroupType.PolymeshV1Caa:
+    case PermissionGroupType.PolymeshV1Pia: {
+      return new KnownPermissionGroup({ type: permissionGroupIdentifier, ticker }, context);
+    }
+    default: {
+      const { custom: id } = permissionGroupIdentifier;
+      return new CustomPermissionGroup({ id, ticker }, context);
+    }
+  }
 }

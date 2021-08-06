@@ -12,7 +12,7 @@ import {
 } from '~/internal';
 import { AgentWithGroup, PermissionGroupType, ProcedureMethod } from '~/types';
 import {
-  agentGroupToPermissionGroupIdentifier,
+  agentGroupToPermissionGroup,
   identityIdToString,
   stringToTicker,
   u32ToBigNumber,
@@ -55,7 +55,10 @@ export class Permissions extends Namespace<SecurityToken> {
   /**
    * Retrieve all group permissions of the Security Token
    */
-  public async getGroups(): Promise<(CustomPermissionGroup | KnownPermissionGroup)[]> {
+  public async getGroups(): Promise<{
+    known: KnownPermissionGroup[];
+    custom: CustomPermissionGroup[];
+  }> {
     const {
       context: {
         polymeshApi: {
@@ -66,7 +69,7 @@ export class Permissions extends Namespace<SecurityToken> {
       parent: { ticker },
     } = this;
 
-    const knownPermissionGroups = Object.values(PermissionGroupType).map(
+    const known = Object.values(PermissionGroupType).map(
       type => new KnownPermissionGroup({ type, ticker }, context)
     );
 
@@ -74,12 +77,15 @@ export class Permissions extends Namespace<SecurityToken> {
       stringToTicker(ticker, context)
     );
 
-    const customPermissionGroups: CustomPermissionGroup[] = rawCustomPermissionGroups.map(
+    const custom: CustomPermissionGroup[] = rawCustomPermissionGroups.map(
       ([storageKey]) =>
         new CustomPermissionGroup({ ticker, id: u32ToBigNumber(storageKey.args[1]) }, context)
     );
 
-    return [...knownPermissionGroups, ...customPermissionGroups];
+    return {
+      known,
+      custom,
+    };
   }
 
   /**
@@ -96,16 +102,14 @@ export class Permissions extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const groupOfAgent = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
+    const groups = await externalAgents.groupOfAgent.entries(stringToTicker(ticker, context));
 
-    const agentsWithGroup = groupOfAgent.map(([storageKey, agentGroup]) => {
+    return groups.map(([storageKey, agentGroup]) => {
       const rawAgentGroup = agentGroup.unwrap();
       return {
         agent: new Agent({ did: identityIdToString(storageKey.args[1]), ticker }, context),
-        group: agentGroupToPermissionGroupIdentifier(rawAgentGroup),
+        group: agentGroupToPermissionGroup(rawAgentGroup, ticker, context),
       };
     });
-
-    return agentsWithGroup;
   }
 }

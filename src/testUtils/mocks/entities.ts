@@ -154,7 +154,7 @@ interface SecurityTokenOptions {
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
   permissionsGetAgents?: AgentWithGroup[];
-  permissionsGetGroups?: (CustomPermissionGroup | KnownPermissionGroup)[];
+  permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
 }
 
 interface AuthorizationRequestOptions {
@@ -755,7 +755,10 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
       group: PermissionGroupType.Full,
     },
   ],
-  permissionsGetGroups: [],
+  permissionsGetGroups: {
+    known: [],
+    custom: [],
+  },
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
