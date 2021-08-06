@@ -45,7 +45,12 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
+import {
+  DEFAULT_SS58_FORMAT,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  ROOT_TYPES,
+} from '~/utils/constants';
 import {
   balanceToBigNumber,
   boolToBoolean,
@@ -191,9 +196,17 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    const ss58Format: number | undefined = u8ToBigNumber(
-      polymeshApi.consts.system.ss58Prefix
-    ).toNumber();
+    // const ss58Format: number | undefined = u8ToBigNumber(
+    //   polymeshApi.consts.system.ss58Prefix
+    // ).toNumber();
+
+    const { ss58Format: rawSs58Format } = await polymeshApi.rpc.system.properties();
+    let ss58Format: number;
+    if (rawSs58Format.isSome) {
+      ss58Format = u8ToBigNumber(rawSs58Format.unwrap()).toNumber();
+    } else {
+      ss58Format = DEFAULT_SS58_FORMAT;
+    }
 
     let keyring: CommonKeyring = new Keyring({ type: 'sr25519', ss58Format });
 
