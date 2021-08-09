@@ -1,5 +1,4 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { isEqual } from 'lodash';
 
@@ -11,7 +10,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, PermissionGroupType, TransactionPermissions, TxGroup, TxTags } from '~/types';
+import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
@@ -86,35 +85,24 @@ export async function prepareCreateGroup(
 
   const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
 
-  let groupId: PermissionGroupType | BigNumber | undefined;
-
-  const duplicatedGroups = currentGroupPermissions.some(
-    ({ transactions: transactionPermissions }, i) => {
+  const duplicatedGroupIndex = currentGroupPermissions.findIndex(
+    ({ transactions: transactionPermissions }) => {
       const sortedTransactions = transactions && {
         ...transactions,
         values: [...transactions.values].sort(),
       };
-      const result = isEqual(transactionPermissions, sortedTransactions);
 
-      if (result) {
-        const permissionGroup = allGroups[i];
-        groupId =
-          permissionGroup instanceof CustomPermissionGroup
-            ? permissionGroup.id
-            : permissionGroup.type;
-      }
-
-      return result;
+      return isEqual(transactionPermissions, sortedTransactions);
     }
   );
 
-  if (duplicatedGroups) {
+  if (duplicatedGroupIndex > -1) {
+    const group = allGroups[duplicatedGroupIndex];
+
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'There already exists a group with the exact same permissions',
-      data: {
-        groupId,
-      },
+      data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
     });
   }
 
