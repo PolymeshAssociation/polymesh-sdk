@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { isEqual } from 'lodash';
 
@@ -10,7 +11,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
+import { ErrorCode, PermissionGroupType, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
@@ -80,22 +81,40 @@ export async function prepareCreateGroup(
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const { custom } = await token.permissions.getGroups();
+  const { custom, known } = await token.permissions.getGroups();
+  const allGroups = [...custom, ...known];
 
-  const currentGroupPermissions = await P.map(custom, group => group.getPermissions());
+  const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
 
-  if (
-    currentGroupPermissions.some(({ transactions: transactionPermissions }) => {
+  let groupId: PermissionGroupType | BigNumber | undefined;
+
+  const duplicatedGroups = currentGroupPermissions.some(
+    ({ transactions: transactionPermissions }, i) => {
       const sortedTransactions = transactions && {
         ...transactions,
         values: [...transactions.values].sort(),
       };
-      return isEqual(transactionPermissions, sortedTransactions);
-    })
-  ) {
+      const result = isEqual(transactionPermissions, sortedTransactions);
+
+      if (result) {
+        const permissionGroup = allGroups[i];
+        groupId =
+          permissionGroup instanceof CustomPermissionGroup
+            ? permissionGroup.id
+            : permissionGroup.type;
+      }
+
+      return result;
+    }
+  );
+
+  if (duplicatedGroups) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'There already exists a group with the exact same permissions',
+      data: {
+        groupId,
+      },
     });
   }
 
