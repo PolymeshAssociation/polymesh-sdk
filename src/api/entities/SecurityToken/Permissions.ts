@@ -8,6 +8,8 @@ import {
   InviteExternalAgentParams,
   KnownPermissionGroup,
   Namespace,
+  removeExternalAgent,
+  RemoveExternalAgentParams,
   SecurityToken,
 } from '~/internal';
 import { AgentWithGroup, PermissionGroupType, ProcedureMethod } from '~/types';
@@ -40,6 +42,11 @@ export class Permissions extends Namespace<SecurityToken> {
       { getProcedureAndArgs: args => [inviteExternalAgent, { ticker, ...args }] },
       context
     );
+
+    this.removeAgent = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeExternalAgent, { ticker, ...args }] },
+      context
+    );
   }
 
   /**
@@ -51,6 +58,11 @@ export class Permissions extends Namespace<SecurityToken> {
    * Invite a new external agent to this Security Token
    */
   public inviteAgent: ProcedureMethod<InviteExternalAgentParams, void>;
+
+  /**
+   * Remove an external agent from this Security Token
+   */
+  public removeAgent: ProcedureMethod<RemoveExternalAgentParams, void>;
 
   /**
    * Retrieve all group permissions of the Security Token
