@@ -3,6 +3,7 @@ import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
+  AGId,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
   CddId,
@@ -117,6 +118,7 @@ import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '
 import {
   accountIdToString,
   addressToKey,
+  agentGroupToPermissionGroupIdentifier,
   assetComplianceResultToCompliance,
   assetIdentifierToTokenIdentifier,
   assetNameToString,
@@ -1133,7 +1135,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 });
 
-describe('permissionGroupIdentifierToAgentGroup', () => {
+describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupIdentifier', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1146,7 +1148,7 @@ describe('permissionGroupIdentifierToAgentGroup', () => {
     dsMockUtils.cleanup();
   });
 
-  test('permissionGroupIdentifierToAgentGroup should convert a PermissionGroup to a polkadot AgentGroup object', () => {
+  test('permissionGroupIdentifierToAgentGroup should convert a PermissionGroupIdentifier to a polkadot AgentGroup object', () => {
     let value: PermissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
     const fakeResult = ('convertedAgentGroup' as unknown) as AgentGroup;
     const context = dsMockUtils.getContextInstance();
@@ -1171,6 +1173,35 @@ describe('permissionGroupIdentifierToAgentGroup', () => {
     result = permissionGroupIdentifierToAgentGroup(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('agentGroupToPermissionGroupIdentifier should convert a polkadot AgentGroup object to a PermissionGroupIdentifier', () => {
+    let agentGroup = dsMockUtils.createMockAgentGroup('Full');
+
+    let result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.Full);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.ExceptMeta);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.PolymeshV1Caa);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.PolymeshV1Pia);
+
+    const id = new BigNumber(1);
+    const rawAgId = dsMockUtils.createMockU32(id.toNumber()) as AGId;
+    agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual({ custom: id });
   });
 });
 

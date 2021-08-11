@@ -105,6 +105,7 @@ import {
   CustomPermissionGroup,
   DefaultPortfolio,
   Identity,
+  KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
@@ -149,6 +150,7 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
+  PermissionGroupType,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -1030,6 +1032,25 @@ export function permissionGroupIdentifierToAgentGroup(
       ? permissionGroup
       : { custom: numberToU32(permissionGroup.custom, context) }
   );
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroupIdentifier(
+  agentGroup: AgentGroup
+): PermissionGroupIdentifier {
+  if (agentGroup.isFull) {
+    return PermissionGroupType.Full;
+  } else if (agentGroup.isExceptMeta) {
+    return PermissionGroupType.ExceptMeta;
+  } else if (agentGroup.isPolymeshV1Caa) {
+    return PermissionGroupType.PolymeshV1Caa;
+  } else if (agentGroup.isPolymeshV1Pia) {
+    return PermissionGroupType.PolymeshV1Pia;
+  } else {
+    return { custom: u32ToBigNumber(agentGroup.asCustom) };
+  }
 }
 
 /**
@@ -3276,4 +3297,27 @@ export function corporateActionIdentifierToCaId(
     // eslint-disable-next-line @typescript-eslint/naming-convention
     local_id: numberToU32(localId, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(
+  agentGroup: AgentGroup,
+  ticker: string,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
+  switch (permissionGroupIdentifier) {
+    case PermissionGroupType.ExceptMeta:
+    case PermissionGroupType.Full:
+    case PermissionGroupType.PolymeshV1Caa:
+    case PermissionGroupType.PolymeshV1Pia: {
+      return new KnownPermissionGroup({ type: permissionGroupIdentifier, ticker }, context);
+    }
+    default: {
+      const { custom: id } = permissionGroupIdentifier;
+      return new CustomPermissionGroup({ id, ticker }, context);
+    }
+  }
 }
