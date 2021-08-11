@@ -1,4 +1,6 @@
-import { Context, Identity } from '~/internal';
+import { Context, Identity, setPermissionGroup, SetPermissionGroupParams } from '~/internal';
+import { ProcedureMethod } from '~/types';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -33,5 +35,15 @@ export class Agent extends Identity {
     const { ticker } = identifiers;
 
     this.ticker = ticker;
+
+    this.setPermissionGroup = createProcedureMethod(
+      { getProcedureAndArgs: args => [setPermissionGroup, { agent: this, ...args }] },
+      context
+    );
   }
+
+  /**
+   * Remove an external agent from this Security Token
+   */
+  public setPermissionGroup: ProcedureMethod<SetPermissionGroupParams, void>;
 }
