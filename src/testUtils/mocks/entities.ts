@@ -8,6 +8,7 @@ import sinon, { SinonStub } from 'sinon';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Agent,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -33,6 +34,7 @@ import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   ActiveTransferRestrictions,
+  AgentWithGroup,
   Authorization,
   AuthorizationType,
   CalendarPeriod,
@@ -151,6 +153,7 @@ interface SecurityTokenOptions {
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
+  permissionsGetAgents?: AgentWithGroup[];
   permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
 }
 
@@ -338,6 +341,7 @@ let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
 let securityTokenCorporateActionsGetAgentsStub: SinonStub;
 let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let securityTokenPermissionsGetGroupsStub: SinonStub;
+let securityTokenPermissionsGetAgentsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -745,6 +749,12 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     defaultTaxWithholding: new BigNumber(10),
     taxWithholdings: [],
   },
+  permissionsGetAgents: [
+    {
+      agent: { did: 'someDid', ticker: 'SOME_TICKER' } as Agent,
+      group: {} as CustomPermissionGroup,
+    },
+  ],
   permissionsGetGroups: {
     known: [],
     custom: [],
@@ -752,7 +762,6 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
-  authId: new BigNumber(1),
   target: { did: 'targetDid' } as Identity,
   issuer: { did: 'issuerDid' } as Identity,
   data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
@@ -1239,6 +1248,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     },
     permissions: {
       getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
+      getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
     },
   } as unknown) as MockSecurityToken;
 
@@ -1266,6 +1276,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCorporateActionsGetAgentsStub = sinon.stub();
   securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
   securityTokenPermissionsGetGroupsStub = sinon.stub();
+  securityTokenPermissionsGetAgentsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -2436,6 +2447,20 @@ export function getSecurityTokenPermissionsGetGroupsStub(
   }
 
   return securityTokenPermissionsGetGroupsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `SecurityToken.permissions.getAgents` method
+ */
+export function getSecurityTokenPermissionsGetAgentsStub(
+  agents?: Partial<AgentWithGroup>[]
+): SinonStub {
+  if (agents) {
+    return securityTokenPermissionsGetAgentsStub.resolves(agents);
+  }
+
+  return securityTokenPermissionsGetAgentsStub;
 }
 
 /**
