@@ -54,9 +54,9 @@ export class KnownPermissionGroup extends PermissionGroup {
       case PermissionGroupType.PolymeshV1Caa:
         transactions = {
           values: [
+            ModuleName.CapitalDistribution,
             ModuleName.CorporateAction,
             ModuleName.CorporateBallot,
-            ModuleName.CapitalDistribution,
           ],
           type: PermissionType.Include,
         };
@@ -64,9 +64,9 @@ export class KnownPermissionGroup extends PermissionGroup {
       case PermissionGroupType.PolymeshV1Pia:
         transactions = {
           values: [
+            TxTags.asset.ControllerTransfer,
             TxTags.asset.Issue,
             TxTags.asset.Redeem,
-            TxTags.asset.ControllerTransfer,
             ModuleName.Sto,
           ],
           exceptions: [TxTags.sto.Invest],

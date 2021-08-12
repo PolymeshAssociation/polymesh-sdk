@@ -83,7 +83,7 @@ describe('KnownPermissionGroup class', () => {
 
       expect(result).toEqual({
         transactions: {
-          values: ['corporateAction', 'corporateBallot', 'capitalDistribution'],
+          values: ['capitalDistribution', 'corporateAction', 'corporateBallot'],
           type: 'Include',
         },
         transactionGroups: [],
@@ -96,7 +96,7 @@ describe('KnownPermissionGroup class', () => {
 
       expect(result).toEqual({
         transactions: {
-          values: ['asset.issue', 'asset.redeem', 'asset.controllerTransfer', 'sto'],
+          values: ['asset.controllerTransfer', 'asset.issue', 'asset.redeem', 'sto'],
           exceptions: ['sto.invest'],
           type: 'Include',
         },
