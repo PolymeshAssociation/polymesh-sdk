@@ -135,6 +135,13 @@ describe('removeExternalAgent procedure', () => {
               type: PermissionGroupType.Full,
             }),
           },
+          {
+            agent: { did: 'someDid' } as Agent,
+            group: entityMockUtils.getKnownPermissionGroupInstance({
+              ticker,
+              type: PermissionGroupType.PolymeshV1Caa,
+            }),
+          },
         ],
       }),
     });
