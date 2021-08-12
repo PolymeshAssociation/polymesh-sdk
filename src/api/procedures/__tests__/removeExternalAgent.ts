@@ -146,7 +146,7 @@ describe('removeExternalAgent procedure', () => {
 
   test('should add a remove agent transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+    let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         permissionsGetAgents: [
           {
@@ -172,6 +172,34 @@ describe('removeExternalAgent procedure', () => {
 
     stringToTickerStub.returns(rawTicker);
     stringToIdentityIdStub.returns(rawAgent);
+
+    await prepareRemoveExternalAgent.call(proc, {
+      target,
+      ticker,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAgent);
+
+    proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      token: entityMockUtils.getSecurityTokenInstance({
+        permissionsGetAgents: [
+          {
+            agent: { did: 'someDid' } as Agent,
+            group: entityMockUtils.getKnownPermissionGroupInstance({
+              ticker,
+              type: PermissionGroupType.Full,
+            }),
+          },
+          {
+            agent: { did: 'otherDid' } as Agent,
+            group: entityMockUtils.getKnownPermissionGroupInstance({
+              ticker,
+              type: PermissionGroupType.Full,
+            }),
+          },
+        ],
+      }),
+    });
 
     await prepareRemoveExternalAgent.call(proc, {
       target,
