@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 import {
   Context,
+  CustomPermissionGroup,
   KnownPermissionGroup,
   Namespace,
   SecurityToken,

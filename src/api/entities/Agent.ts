@@ -1,6 +1,11 @@
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
-import { Context, Identity } from '~/internal';
+import {
+  Context,
+  CustomPermissionGroup,
+  Identity,
+  KnownPermissionGroup,
+  PolymeshError,
+} from '~/internal';
+import { ErrorCode } from '~/types';
 import {
   agentGroupToPermissionGroup,
   stringToIdentityId,
@@ -62,6 +67,12 @@ export class Agent extends Identity {
 
     const rawGroupPermissions = await externalAgents.groupOfAgent(rawTicker, rawIdentityId);
 
+    if (rawGroupPermissions.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'This Identity is no longer an Agent for this Security Token',
+      });
+    }
     const agentGroup = rawGroupPermissions.unwrap();
 
     return agentGroupToPermissionGroup(agentGroup, ticker, context);

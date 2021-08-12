@@ -7,11 +7,17 @@ import { PermissionGroupType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Agent class', () => {
+  const did = 'someDid';
+  const ticker = 'SOMETICKER';
+
   let context: Context;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+
+    sinon.stub(utilsConversionModule, 'stringToTicker');
+    sinon.stub(utilsConversionModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
@@ -34,8 +40,6 @@ describe('Agent class', () => {
 
   describe('constructor', () => {
     test('should assign ticker and did to instance', () => {
-      const did = 'someDid';
-      const ticker = 'SOMETICKER';
       const agent = new Agent({ did, ticker }, context);
 
       expect(agent.ticker).toBe(ticker);
@@ -53,13 +57,26 @@ describe('Agent class', () => {
   });
 
   describe('method: getPermissionGroup', () => {
-    test('should return te agent group associated with the actual Agent', async () => {
-      const did = 'someDid';
-      const ticker = 'SOMETICKER';
+    test('should throw an error if the Identity is no longer an Agent', async () => {
       const agent = new Agent({ did, ticker }, context);
 
-      sinon.stub(utilsConversionModule, 'stringToTicker');
-      sinon.stub(utilsConversionModule, 'stringToIdentityId');
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      let error;
+
+      try {
+        await agent.getPermissionGroup();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('This Identity is no longer an Agent for this Security Token');
+    });
+
+    test('should return the permission group associated with the Agent', async () => {
+      const agent = new Agent({ did, ticker }, context);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
