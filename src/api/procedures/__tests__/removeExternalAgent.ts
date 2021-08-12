@@ -140,7 +140,7 @@ describe('removeExternalAgent procedure', () => {
     });
 
     return expect(prepareRemoveExternalAgent.call(proc, args)).rejects.toThrow(
-      'The agent to remove is the last one assigned to the group of all transactions authorized'
+      'The target is the last agent with full permissions for this Security Token. There should always be at least one agent with full permissions'
     );
   });
 

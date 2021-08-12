@@ -1,15 +1,20 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
-import { Agent, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import {
+  CustomPermissionGroup,
+  Identity,
+  KnownPermissionGroup,
+  PolymeshError,
+  Procedure,
+  SecurityToken,
+} from '~/internal';
 import { ErrorCode, PermissionGroupType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 import { getDid } from '~/utils/internal';
 
 export interface RemoveExternalAgentParams {
-  target: string | Agent;
+  target: string | Identity;
 }
 
 /**
@@ -71,7 +76,7 @@ export async function prepareRemoveExternalAgent(
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message:
-          'The agent to remove is the last one assigned to the group of all transactions authorized',
+          'The target is the last agent with full permissions for this Security Token. There should always be at least one agent with full permissions',
       });
     }
   }

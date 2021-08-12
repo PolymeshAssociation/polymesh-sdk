@@ -115,7 +115,7 @@ describe('Permissions class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         ticker: token.ticker,
-        target
+        target,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;

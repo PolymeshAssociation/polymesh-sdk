@@ -50,17 +50,17 @@ export class Permissions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Create a Security Token Agent Group
+   * Create a Permission group for this Security Token. Identities can then be assigned to said group as Agents. Agents assigned to a group have said group's permissions over this Security Token
    */
   public createGroup: ProcedureMethod<CreateGroupParams, CustomPermissionGroup>;
 
   /**
-   * Invite a new external agent to this Security Token
+   * Invite an Identity to be an Agent with permissions over this Security Token
    */
   public inviteAgent: ProcedureMethod<InviteExternalAgentParams, void>;
 
   /**
-   * Remove an external agent from this Security Token
+   * Revoke an Agent's permissions for this Security Token
    */
   public removeAgent: ProcedureMethod<RemoveExternalAgentParams, void>;
 
