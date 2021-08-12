@@ -221,10 +221,7 @@ describe('payDividends procedure', () => {
         ticker,
       });
 
-      const result = await boundFunc({
-        targets: ['someDid'],
-        distribution,
-      });
+      const result = await boundFunc();
 
       expect(result).toEqual({
         permissions: {
