@@ -204,7 +204,6 @@ export function getAuthorization(
 
   return {
     roles: [
-      { type: RoleType.TokenPia, ticker },
       { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
       { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },
     ],

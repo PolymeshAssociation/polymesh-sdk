@@ -11,7 +11,7 @@ import {
 import { Context, Sto } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, StoBalanceStatus, StoSaleStatus, StoTimingStatus } from '~/types';
+import { StoBalanceStatus, StoSaleStatus, StoTimingStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -209,10 +209,8 @@ describe('toggleFreezeSto procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-      const roles = [{ type: RoleType.TokenPia, ticker }];
 
       expect(boundFunc({ ticker, id, freeze: true })).toEqual({
-        roles,
         permissions: {
           transactions: [TxTags.sto.FreezeFundraiser],
           tokens: [token],
@@ -221,7 +219,6 @@ describe('toggleFreezeSto procedure', () => {
       });
 
       expect(boundFunc({ ticker, id, freeze: false })).toEqual({
-        roles,
         permissions: {
           transactions: [TxTags.sto.UnfreezeFundraiser],
           tokens: [token],

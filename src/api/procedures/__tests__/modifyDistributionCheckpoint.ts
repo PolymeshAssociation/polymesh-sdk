@@ -9,7 +9,6 @@ import {
 import { Context, modifyCaCheckpoint } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 
 jest.mock(
   '~/api/entities/CheckpointSchedule',
@@ -188,7 +187,6 @@ describe('modifyDistributionCheckpoint procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.TokenCaa, ticker }],
         permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],

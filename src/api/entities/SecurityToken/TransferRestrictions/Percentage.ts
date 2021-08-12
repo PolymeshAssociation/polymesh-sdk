@@ -20,9 +20,6 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * Add a Percentage Transfer Restriction to this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public addRestriction!: ProcedureMethod<
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
@@ -33,9 +30,6 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * Sets all Percentage Transfer Restrictions on this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public setRestrictions!: ProcedureMethod<
     Omit<SetPercentageTransferRestrictionsParams, 'type'>,

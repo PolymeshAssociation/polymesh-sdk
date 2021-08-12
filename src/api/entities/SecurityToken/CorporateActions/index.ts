@@ -81,9 +81,6 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *   the corresponding Account. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    *
-   * @note required role:
-   *   - Security Token Owner
-   *
    * @deprecated in favor of `inviteAgent`
    */
   public setAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
@@ -93,18 +90,12 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *
    * @note this action will leave the Security Token owner as the Corporate Actions Agent
    *
-   * @note required role:
-   *   - Security Token Owner
-   *
    * @deprecated
    */
   public removeAgent: ProcedureMethod<void, void>;
 
   /**
    * Remove a Corporate Action
-   *
-   * @note required role:
-   *   - Corporate Actions Agent
    */
   public remove: ProcedureMethod<RemoveCorporateActionParams, void>;
 
