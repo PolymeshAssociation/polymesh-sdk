@@ -734,5 +734,13 @@ export class Polymesh {
   public get _polkadotApi(): ApiPromise {
     return this.context.polymeshApi;
   }
+
+  /* istanbul ignore next: only for testing purposes */
+  /**
+   * Middleware client
+   */
+  public get _middlewareApi(): ApolloClient<NormalizedCacheObject> {
+    return this.context.middlewareApi;
+  }
   /* eslint-enable @typescript-eslint/naming-convention */
 }
