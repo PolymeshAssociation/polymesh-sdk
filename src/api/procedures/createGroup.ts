@@ -80,22 +80,29 @@ export async function prepareCreateGroup(
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const { custom } = await token.permissions.getGroups();
+  const { custom, known } = await token.permissions.getGroups();
+  const allGroups = [...custom, ...known];
 
-  const currentGroupPermissions = await P.map(custom, group => group.getPermissions());
+  const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
 
-  if (
-    currentGroupPermissions.some(({ transactions: transactionPermissions }) => {
+  const duplicatedGroupIndex = currentGroupPermissions.findIndex(
+    ({ transactions: transactionPermissions }) => {
       const sortedTransactions = transactions && {
         ...transactions,
         values: [...transactions.values].sort(),
       };
+
       return isEqual(transactionPermissions, sortedTransactions);
-    })
-  ) {
+    }
+  );
+
+  if (duplicatedGroupIndex > -1) {
+    const group = allGroups[duplicatedGroupIndex];
+
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'There already exists a group with the exact same permissions',
+      data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
     });
   }
 

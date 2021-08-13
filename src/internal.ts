@@ -184,3 +184,7 @@ export {
 } from '~/api/procedures/inviteExternalAgent';
 export { rescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
 export { setPermissionGroup, SetPermissionGroupParams } from '~/api/procedures/setPermissionGroup';
+export {
+  removeExternalAgent,
+  RemoveExternalAgentParams,
+} from '~/api/procedures/removeExternalAgent';

@@ -1,5 +1,19 @@
-import { Context, Identity, setPermissionGroup, SetPermissionGroupParams } from '~/internal';
-import { ProcedureMethod } from '~/types';
+
+import {
+  Context,
+  CustomPermissionGroup,
+  Identity,
+  KnownPermissionGroup,
+  PolymeshError,
+  setPermissionGroup,
+  SetPermissionGroupParams,
+} from '~/internal';
+import { ErrorCode, ProcedureMethod } from '~/types';
+import {
+  agentGroupToPermissionGroup,
+  stringToIdentityId,
+  stringToTicker
+} from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -46,4 +60,35 @@ export class Agent extends Identity {
    * Remove an external agent from this Security Token
    */
   public setPermissionGroup: ProcedureMethod<SetPermissionGroupParams, void>;
+
+  /**
+   * Retrieve the agent group associated with this Agent
+   */
+  public async getPermissionGroup(): Promise<CustomPermissionGroup | KnownPermissionGroup> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { externalAgents },
+        },
+      },
+      context,
+      ticker,
+      did,
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+    const rawIdentityId = stringToIdentityId(did, context);
+
+    const rawGroupPermissions = await externalAgents.groupOfAgent(rawTicker, rawIdentityId);
+
+    if (rawGroupPermissions.isNone) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'This Identity is no longer an Agent for this Security Token',
+      });
+    }
+    const agentGroup = rawGroupPermissions.unwrap();
+
+    return agentGroupToPermissionGroup(agentGroup, ticker, context);
+  }
 }

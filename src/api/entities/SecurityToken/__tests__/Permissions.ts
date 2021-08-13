@@ -1,9 +1,10 @@
 import BigNumber from 'bignumber.js';
+import { range } from 'lodash';
 import sinon from 'sinon';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 import {
   Context,
+  CustomPermissionGroup,
   KnownPermissionGroup,
   Namespace,
   SecurityToken,
@@ -107,6 +108,30 @@ describe('Permissions class', () => {
     });
   });
 
+  describe('method: removeAgent', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        ticker: token.ticker,
+        target,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await permissions.removeAgent(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: getGroups', () => {
     afterAll(() => {
       sinon.restore();
@@ -175,7 +200,7 @@ describe('Permissions class', () => {
       const result = await permissions.getAgents();
 
       expect(result.length).toEqual(5);
-      for (const i in [0, 1, 2, 3]) {
+      for (const i in range(4)) {
         expect(result[i].group instanceof KnownPermissionGroup).toEqual(true);
       }
       expect(result[4].group instanceof CustomPermissionGroup).toEqual(true);
