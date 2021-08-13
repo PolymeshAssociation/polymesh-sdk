@@ -111,7 +111,6 @@ export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/c
 export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { Account } from '~/api/entities/Account';
-export { CurrentAccount } from '~/api/entities/CurrentAccount';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { SecurityToken } from '~/api/entities/SecurityToken';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';

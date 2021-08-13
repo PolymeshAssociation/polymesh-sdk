@@ -1,12 +1,12 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { CurrentAccount, PolymeshError, Procedure } from '~/internal';
+import { Account, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { signerToString } from '~/utils/conversion';
 
 export interface LeaveIdentityParams {
-  account: CurrentAccount;
+  account: Account;
 }
 
 /**
@@ -20,15 +20,20 @@ export async function prepareLeaveIdentity(
     context: {
       polymeshApi: { tx },
     },
-    context,
   } = this;
-  const {
-    account: { address },
-  } = args;
+  const { account } = args;
 
-  const currentIdentity = await context.getCurrentIdentity();
+  const currentIdentity = await account.getIdentity();
+
+  if (!currentIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'There is no Identity associated to this Account',
+    });
+  }
 
   const secondaryKeys = await currentIdentity.getSecondaryKeys();
+  const { address } = account;
   const isSecondaryKey = secondaryKeys.find(({ signer }) => address === signerToString(signer));
 
   if (!isSecondaryKey) {

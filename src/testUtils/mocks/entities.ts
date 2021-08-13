@@ -12,7 +12,6 @@ import {
   Checkpoint,
   CheckpointSchedule,
   CorporateAction,
-  CurrentAccount,
   DefaultPortfolio,
   DividendDistribution,
   Identity,
@@ -69,7 +68,6 @@ import {
 
 type MockIdentity = Mocked<Identity>;
 type MockAccount = Mocked<Account>;
-type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
@@ -93,7 +91,6 @@ const mockInstanceContainer = {
   // NOTE uncomment in Governance v2 upgrade
   // proposal: {} as MockProposal,
   account: {} as MockAccount,
-  currentAccount: {} as MockCurrentAccount,
   venue: {} as MockVenue,
   instruction: {} as MockInstruction,
   numberedPortfolio: {} as MockNumberedPortfolio,
@@ -161,10 +158,6 @@ interface AccountOptions {
   getBalance?: AccountBalance;
   getIdentity?: Identity | null;
   getTransactionHistory?: ExtrinsicData[];
-}
-
-interface CurrentAccountOptions extends AccountOptions {
-  getIdentity?: Identity | null;
 }
 
 interface VenueOptions {
@@ -260,9 +253,7 @@ interface DividendDistributionOptions {
 }
 
 let identityConstructorStub: SinonStub;
-let currentIdentityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
-let currentAccountConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
@@ -300,9 +291,6 @@ let identityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
-let currentAccountGetBalanceStub: SinonStub;
-let currentAccountGetIdentityStub: SinonStub;
-let currentAccountGetTransactionHistoryStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
@@ -341,30 +329,12 @@ const MockIdentityClass = class {
   }
 };
 
-const MockCurrentIdentityClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return currentIdentityConstructorStub(...args);
-  }
-};
-
 const MockAccountClass = class {
   /**
    * @hidden
    */
   constructor(...args: unknown[]) {
     return accountConstructorStub(...args);
-  }
-};
-
-const MockCurrentAccountClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return currentAccountConstructorStub(...args);
   }
 };
 
@@ -490,19 +460,9 @@ export const mockIdentityModule = (path: string) => (): Record<string, unknown> 
   Identity: MockIdentityClass,
 });
 
-export const mockCurrentIdentityModule = (path: string) => (): Record<string, unknown> => ({
-  ...jest.requireActual(path),
-  CurrentIdentity: MockCurrentIdentityClass,
-});
-
 export const mockAccountModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Account: MockAccountClass,
-});
-
-export const mockCurrentAccountModule = (path: string) => (): Record<string, unknown> => ({
-  ...jest.requireActual(path),
-  CurrentAccount: MockCurrentAccountClass,
 });
 
 export const mockTickerReservationModule = (path: string) => (): Record<string, unknown> => ({
@@ -596,17 +556,6 @@ const defaultAccountOptions: AccountOptions = {
   getTransactionHistory: [],
 };
 let accountOptions: AccountOptions = defaultAccountOptions;
-const defaultCurrentAccountOptions: CurrentAccountOptions = {
-  address: 'someAddress',
-  key: 'someKey',
-  getBalance: {
-    free: new BigNumber(100),
-    locked: new BigNumber(10),
-    total: new BigNumber(110),
-  },
-  getTransactionHistory: [],
-};
-let currentAccountOptions: CurrentAccountOptions = defaultCurrentAccountOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
   ticker: 'SOME_TICKER',
   details: {
@@ -1243,49 +1192,6 @@ function initAccount(opts?: AccountOptions): void {
 
 /**
  * @hidden
- * Configure the Current Account instance
- */
-function configureCurrentAccount(opts: CurrentAccountOptions): void {
-  const account = ({
-    address: opts.address,
-    key: opts.key,
-    getBalance: currentAccountGetBalanceStub.resolves(opts.getBalance),
-    getIdentity: currentAccountGetIdentityStub.resolves(
-      opts.getIdentity === undefined ? mockInstanceContainer.identity : opts.getIdentity
-    ),
-    getTransactionHistory: currentAccountGetTransactionHistoryStub.resolves(
-      opts.getTransactionHistory
-    ),
-  } as unknown) as MockAccount;
-
-  Object.assign(mockInstanceContainer.currentAccount, account);
-  currentAccountConstructorStub.callsFake(args => {
-    const value = merge({}, account, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.CurrentAccount.prototype, entities.Account.prototype);
-    Object.setPrototypeOf(value, entities.CurrentAccount.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Current Account instance
- */
-function initCurrentAccount(opts?: CurrentAccountOptions): void {
-  currentAccountConstructorStub = sinon.stub();
-  currentAccountGetBalanceStub = sinon.stub();
-  currentAccountGetIdentityStub = sinon.stub();
-  currentAccountGetTransactionHistoryStub = sinon.stub();
-
-  currentAccountOptions = { ...defaultCurrentAccountOptions, ...opts };
-
-  configureCurrentAccount(currentAccountOptions);
-}
-
-/**
- * @hidden
  * Configure the Security Token Offering instance
  */
 function configureSto(opts: StoOptions): void {
@@ -1509,9 +1415,7 @@ function initDividendDistribution(opts?: DividendDistributionOptions): void {
  */
 export function configureMocks(opts?: {
   identityOptions?: IdentityOptions;
-  currentIdentityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
-  currentAccountOptions?: CurrentAccountOptions;
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
@@ -1533,13 +1437,6 @@ export function configureMocks(opts?: {
   const tempAccountOptions = { ...defaultAccountOptions, ...opts?.accountOptions };
 
   configureAccount(tempAccountOptions);
-
-  const tempCurrentAccountOptions = {
-    ...defaultCurrentAccountOptions,
-    ...opts?.currentAccountOptions,
-  };
-
-  configureCurrentAccount(tempCurrentAccountOptions);
 
   const tempTickerReservationOptions = {
     ...defaultTickerReservationOptions,
@@ -1636,7 +1533,6 @@ export function initMocks(opts?: {
   identityOptions?: IdentityOptions;
   currentIdentityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
-  currentAccountOptions?: CurrentAccountOptions;
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
@@ -1656,9 +1552,6 @@ export function initMocks(opts?: {
 
   // Account
   initAccount(opts?.accountOptions);
-
-  // Current Account
-  initCurrentAccount(opts?.currentAccountOptions);
 
   // Ticker Reservation
   initTickerReservation(opts?.tickerReservationOptions);
@@ -1711,7 +1604,6 @@ export function initMocks(opts?: {
 export function cleanup(): void {
   mockInstanceContainer.identity = {} as MockIdentity;
   mockInstanceContainer.account = {} as MockAccount;
-  mockInstanceContainer.currentAccount = {} as MockCurrentAccount;
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
   mockInstanceContainer.securityToken = {} as MockSecurityToken;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
@@ -1735,7 +1627,6 @@ export function reset(): void {
   initMocks({
     identityOptions,
     accountOptions,
-    currentAccountOptions,
     tickerReservationOptions,
     securityTokenOptions,
     authorizationRequestOptions,
@@ -1871,42 +1762,6 @@ export function getAccountGetIdentityStub(): SinonStub {
  */
 export function getAccountGetTransactionHistoryStub(): SinonStub {
   return accountGetTransactionHistoryStub;
-}
-
-/**
- * @hidden
- * Retrieve a Current Account instance
- */
-export function getCurrentAccountInstance(opts?: CurrentAccountOptions): MockCurrentAccount {
-  if (opts) {
-    configureCurrentAccount({ ...defaultCurrentAccountOptions, ...opts });
-  }
-
-  return new MockCurrentAccountClass() as MockCurrentAccount;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentAccount.getBalance` method
- */
-export function getCurrentAccountGetBalanceStub(): SinonStub {
-  return currentAccountGetBalanceStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentAccount.getIdentity` method
- */
-export function getCurrentAccountGetIdentityStub(): SinonStub {
-  return currentAccountGetIdentityStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentAccount.getTransactionHistory` method
- */
-export function getCurrentAccountGetTransactionHistoryStub(): SinonStub {
-  return currentAccountGetTransactionHistoryStub;
 }
 
 /**

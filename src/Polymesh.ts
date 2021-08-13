@@ -15,7 +15,6 @@ import {
   claimClassicTicker,
   ClaimClassicTickerParams,
   Context,
-  CurrentAccount,
   Identity,
   PolymeshError,
   registerIdentity,
@@ -454,11 +453,11 @@ export class Polymesh {
   /**
    * Create an Account instance from an address. If no address is passed, the current Account is returned
    */
-  public getAccount(): CurrentAccount;
+  public getAccount(): Account;
   public getAccount(args: { address: string }): Account;
 
   // eslint-disable-next-line require-jsdoc
-  public getAccount(args?: { address: string }): Account | CurrentAccount {
+  public getAccount(args?: { address: string }): Account {
     const { context } = this;
 
     if (args) {
@@ -473,7 +472,7 @@ export class Polymesh {
    *
    * @throws — if there is no current Account associated to the SDK instance
    */
-  public getAccounts(): [CurrentAccount, ...Account[]] {
+  public getAccounts(): Account[] {
     return this.context.getAccounts();
   }
 
