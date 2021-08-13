@@ -3,6 +3,8 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
+import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
+import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
@@ -772,11 +774,18 @@ export interface Permissions {
    * list of Transaction Groups this key can execute. Having permissions over a TxGroup
    *   means having permissions over every TxTag in said group. Partial group permissions are not
    *   covered by this value. For a full picture of transaction permissions, see the `transactions` property
+   *
+   * NOTE: If transactions is null, ignore this value
    */
   transactionGroups: TxGroup[];
   /* list of Portfolios over which this key has permissions */
   portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null;
 }
+
+/**
+ * Security Token permissions shared by agents in a group
+ */
+export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
  * This represents positive permissions (i.e. only "includes"). It is used
@@ -796,7 +805,7 @@ export interface SimplePermissions {
   portfolios?: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
 
-export enum KnownPermissionGroup {
+export enum PermissionGroupType {
   /**
    * all transactions authorized
    */
@@ -824,18 +833,13 @@ export enum KnownPermissionGroup {
 }
 
 /**
- * Determines the subset of permissions an Agent has over a Security Token
- */
-export type PermissionGroup = KnownPermissionGroup | { custom: BigNumber };
-
-/**
  * Authorization request data corresponding to type
  */
 export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
-  | { type: AuthorizationType.BecomeAgent; value: string; permissionGroup: PermissionGroup }
+  | { type: AuthorizationType.BecomeAgent; value: KnownPermissionGroup | CustomPermissionGroup }
   | {
       type: Exclude<
         AuthorizationType,
