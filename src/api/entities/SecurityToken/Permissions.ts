@@ -8,6 +8,8 @@ import {
   InviteExternalAgentParams,
   KnownPermissionGroup,
   Namespace,
+  removeExternalAgent,
+  RemoveExternalAgentParams,
   SecurityToken,
 } from '~/internal';
 import { AgentWithGroup, PermissionGroupType, ProcedureMethod } from '~/types';
@@ -40,17 +42,27 @@ export class Permissions extends Namespace<SecurityToken> {
       { getProcedureAndArgs: args => [inviteExternalAgent, { ticker, ...args }] },
       context
     );
+
+    this.removeAgent = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeExternalAgent, { ticker, ...args }] },
+      context
+    );
   }
 
   /**
-   * Create a Security Token Agent Group
+   * Create a Permission group for this Security Token. Identities can then be assigned to said group as Agents. Agents assigned to a group have said group's permissions over this Security Token
    */
   public createGroup: ProcedureMethod<CreateGroupParams, CustomPermissionGroup>;
 
   /**
-   * Invite a new external agent to this Security Token
+   * Invite an Identity to be an Agent with permissions over this Security Token
    */
   public inviteAgent: ProcedureMethod<InviteExternalAgentParams, void>;
+
+  /**
+   * Revoke an Agent's permissions for this Security Token
+   */
+  public removeAgent: ProcedureMethod<RemoveExternalAgentParams, void>;
 
   /**
    * Retrieve all group permissions of the Security Token
