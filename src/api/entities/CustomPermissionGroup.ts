@@ -1,13 +1,19 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, PermissionGroup } from '~/internal';
-import { GroupPermissions } from '~/types';
+import {
+  Context,
+  PermissionGroup,
+  setCustomPermissions,
+  SetCustomPermissionsParams,
+} from '~/internal';
+import { GroupPermissions, ProcedureMethod } from '~/types';
 import {
   extrinsicPermissionsToTransactionPermissions,
   numberToU32,
   stringToTicker,
   transactionPermissionsToTxGroups,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface HumanReadable {
   id: BigNumber;
@@ -44,6 +50,11 @@ export class CustomPermissionGroup extends PermissionGroup {
     const { id } = identifiers;
 
     this.id = id;
+
+    this.setPermissions = createProcedureMethod(
+      { getProcedureAndArgs: args => [setCustomPermissions, { group: this, ...args }] },
+      context
+    );
   }
 
   /**
@@ -56,6 +67,11 @@ export class CustomPermissionGroup extends PermissionGroup {
       ticker,
     };
   }
+
+  /**
+   * Modify the group's permissions
+   */
+  public setPermissions: ProcedureMethod<SetCustomPermissionsParams, void>;
 
   /**
    * Retrieve the list of permissions and transaction groups associated with this Permission Group
