@@ -108,6 +108,30 @@ describe('Permissions class', () => {
     });
   });
 
+  describe('method: removeAgent', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        ticker: token.ticker,
+        target,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await permissions.removeAgent(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: getGroups', () => {
     afterAll(() => {
       sinon.restore();
