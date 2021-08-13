@@ -181,3 +181,7 @@ export {
   InviteExternalAgentParams,
 } from '~/api/procedures/inviteExternalAgent';
 export { rescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
+export {
+  removeExternalAgent,
+  RemoveExternalAgentParams,
+} from '~/api/procedures/removeExternalAgent';
