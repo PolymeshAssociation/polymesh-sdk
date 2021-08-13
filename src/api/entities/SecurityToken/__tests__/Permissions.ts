@@ -2,9 +2,9 @@ import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
 import sinon from 'sinon';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 import {
   Context,
+  CustomPermissionGroup,
   KnownPermissionGroup,
   Namespace,
   SecurityToken,

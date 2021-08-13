@@ -1,12 +1,23 @@
+import sinon from 'sinon';
+
+import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import { Agent, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { PermissionGroupType } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Agent class', () => {
+  const did = 'someDid';
+  const ticker = 'SOMETICKER';
+
   let context: Context;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+
+    sinon.stub(utilsConversionModule, 'stringToTicker');
+    sinon.stub(utilsConversionModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
@@ -29,8 +40,6 @@ describe('Agent class', () => {
 
   describe('constructor', () => {
     test('should assign ticker and did to instance', () => {
-      const did = 'someDid';
-      const ticker = 'SOMETICKER';
       const agent = new Agent({ did, ticker }, context);
 
       expect(agent.ticker).toBe(ticker);
@@ -44,6 +53,39 @@ describe('Agent class', () => {
       expect(Agent.isUniqueIdentifiers({})).toBe(false);
       expect(Agent.isUniqueIdentifiers({ did: 'someDid' })).toBe(false);
       expect(Agent.isUniqueIdentifiers({ did: 1 })).toBe(false);
+    });
+  });
+
+  describe('method: getPermissionGroup', () => {
+    test('should throw an error if the Identity is no longer an Agent', async () => {
+      const agent = new Agent({ did, ticker }, context);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      let error;
+
+      try {
+        await agent.getPermissionGroup();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('This Identity is no longer an Agent for this Security Token');
+    });
+
+    test('should return the permission group associated with the Agent', async () => {
+      const agent = new Agent({ did, ticker }, context);
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
+      });
+
+      const result = await agent.getPermissionGroup();
+
+      expect(result instanceof KnownPermissionGroup).toEqual(true);
+      expect((result as KnownPermissionGroup).type).toEqual(PermissionGroupType.Full);
     });
   });
 });
