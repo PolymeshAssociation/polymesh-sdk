@@ -187,3 +187,7 @@ export {
   SetCustomPermissionsParams,
   setCustomPermissions,
 } from '~/api/procedures/setCustomPermissions';
+export {
+  removeExternalAgent,
+  RemoveExternalAgentParams,
+} from '~/api/procedures/removeExternalAgent';

@@ -1,11 +1,11 @@
 import { AuthorizationData, TxTags } from 'polymesh-types/types';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import {
   Context,
   createGroup,
+  CustomPermissionGroup,
   Identity,
+  KnownPermissionGroup,
   PolymeshError,
   PostTransactionValue,
   Procedure,
