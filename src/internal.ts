@@ -110,7 +110,6 @@ export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
-export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
 export { CurrentAccount } from '~/api/entities/CurrentAccount';
 export { TickerReservation } from '~/api/entities/TickerReservation';

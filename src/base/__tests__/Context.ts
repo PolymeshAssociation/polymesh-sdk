@@ -23,10 +23,6 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/CurrentIdentity',
-  require('~/testUtils/mocks/entities').mockCurrentIdentityModule('~/api/entities/CurrentIdentity')
-);
-jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );

@@ -1,14 +1,16 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { Account, PolymeshError, Procedure } from '~/internal';
+import { Account, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   AuthorizationType,
   ErrorCode,
   Permissions,
   PermissionsLike,
   PermissionType,
+  RoleType,
   SignerType,
 } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -23,23 +25,25 @@ export interface InviteAccountParams {
   expiry?: Date;
 }
 
+export type Params = InviteAccountParams & {
+  identity: Identity;
+};
+
 /**
  * @hidden
  */
 export async function prepareInviteAccount(
-  this: Procedure<InviteAccountParams, void>,
-  args: InviteAccountParams
+  this: Procedure<Params, void>,
+  args: Params
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: {
-        tx: { identity },
-      },
+      polymeshApi: { tx },
     },
     context,
   } = this;
 
-  const { targetAccount, permissions: permissionsLike, expiry } = args;
+  const { targetAccount, permissions: permissionsLike, expiry, identity } = args;
 
   const address = signerToString(targetAccount);
 
@@ -51,11 +55,8 @@ export async function prepareInviteAccount(
     account = new Account({ address: targetAccount }, context);
   }
 
-  const currentIdentity = await context.getCurrentIdentity();
-
-  const [authorizationRequests, secondaryKeys, existingIdentity] = await Promise.all([
-    currentIdentity.authorizations.getSent(),
-    currentIdentity.getSecondaryKeys(),
+  const [authorizationRequests, existingIdentity] = await Promise.all([
+    identity.authorizations.getSent(),
     account.getIdentity(),
   ] as const);
 
@@ -63,15 +64,6 @@ export async function prepareInviteAccount(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The target Account is already part of an Identity',
-    });
-  }
-
-  const isPresent = !!secondaryKeys.find(({ signer }) => signerToString(signer) === address);
-
-  if (isPresent) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The target Account is already a secondary key for this Identity',
     });
   }
 
@@ -119,17 +111,34 @@ export async function prepareInviteAccount(
   );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+  this.addTransaction(
+    tx.identity.addAuthorization,
+    {},
+    rawSignatory,
+    rawAuthorizationData,
+    rawExpiry
+  );
 }
 
 /**
  * @hidden
  */
-export const inviteAccount = (): Procedure<InviteAccountParams, void> =>
-  new Procedure(prepareInviteAccount, {
+export function getAuthorization(
+  this: Procedure<Params>,
+  { identity: { did } }: Params
+): ProcedureAuthorization {
+  return {
+    roles: [{ type: RoleType.Identity, did }],
     permissions: {
+      transactions: [TxTags.identity.AddAuthorization],
       tokens: [],
       portfolios: [],
-      transactions: [TxTags.identity.AddAuthorization],
     },
-  });
+  };
+}
+
+/**
+ * @hidden
+ */
+export const inviteAccount = (): Procedure<Params, void> =>
+  new Procedure(prepareInviteAccount, getAuthorization);

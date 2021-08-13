@@ -5,14 +5,16 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, ScopeId, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, Entity, Identity, SecurityToken } from '~/internal';
+import { Context, Entity, Identity, SecurityToken, TransactionQueue, Venue } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   DistributionWithDetails,
+  IdentityRole,
   Order,
+  PermissionType,
   PortfolioCustodianRole,
   Role,
   RoleType,
@@ -24,6 +26,7 @@ import {
   TokenCaaRole,
   TokenPiaRole,
   VenueOwnerRole,
+  VenueType,
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -58,6 +61,10 @@ jest.mock(
   '~/api/entities/Instruction',
   require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
 );
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Identity class', () => {
   let context: MockContext;
@@ -66,6 +73,8 @@ describe('Identity class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
   });
@@ -76,10 +85,14 @@ describe('Identity class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -450,6 +463,22 @@ describe('Identity class', () => {
       expect(hasRole).toBe(true);
 
       role = { type: RoleType.PortfolioCustodian, portfolioId: { did } };
+
+      hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(false);
+    });
+
+    test('hasRole should check whether the Identity has the Identity role', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+      const role: IdentityRole = { type: RoleType.Identity, did };
+
+      let hasRole = await identity.hasRole(role);
+
+      expect(hasRole).toBe(true);
+
+      identity.did = 'otherDid';
 
       hasRole = await identity.hasRole(role);
 
@@ -1410,6 +1439,173 @@ describe('Identity class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
+  describe('method: removeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { signers, identity }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.removeSecondaryKeys({ signers });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: revokePermissions', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+      const secondaryKeys = [
+        {
+          signer: signers[0],
+          permissions: {
+            tokens: { type: PermissionType.Include, values: [] },
+            transactions: { type: PermissionType.Include, values: [] },
+            portfolios: { type: PermissionType.Include, values: [] },
+          },
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { secondaryKeys, identity }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.revokePermissions({ secondaryKeys: signers });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: modifyPermissions', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const secondaryKeys = [
+        {
+          signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
+          permissions: { tokens: null, transactions: null, portfolios: null },
+        },
+      ];
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { secondaryKeys, identity }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.modifyPermissions({ secondaryKeys });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: inviteAccount', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const args = {
+        targetAccount: 'someAccount',
+        identity,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.inviteAccount(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: createVenue', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const args = {
+        details: 'details',
+        type: VenueType.Distribution,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.createVenue(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: freezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const args = {
+        freeze: true,
+        identity,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.freezeSecondaryKeys();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: unfreezeSecondaryKeys', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const args = {
+        freeze: false,
+        identity,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.unfreezeSecondaryKeys();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 

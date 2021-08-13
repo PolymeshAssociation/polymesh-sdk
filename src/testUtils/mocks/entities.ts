@@ -13,7 +13,6 @@ import {
   CheckpointSchedule,
   CorporateAction,
   CurrentAccount,
-  CurrentIdentity,
   DefaultPortfolio,
   DividendDistribution,
   Identity,
@@ -69,7 +68,6 @@ import {
 } from '~/types';
 
 type MockIdentity = Mocked<Identity>;
-type MockCurrentIdentity = Mocked<CurrentIdentity>;
 type MockAccount = Mocked<Account>;
 type MockCurrentAccount = Mocked<CurrentAccount>;
 type MockTickerReservation = Mocked<TickerReservation>;
@@ -89,7 +87,6 @@ type MockDividendDistribution = Mocked<DividendDistribution>;
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
-  currentIdentity: {} as MockCurrentIdentity,
   tickerReservation: {} as MockTickerReservation,
   securityToken: {} as MockSecurityToken,
   authorizationRequest: {} as MockAuthorizationRequest,
@@ -115,7 +112,8 @@ interface IdentityOptions {
   hasValidCdd?: boolean;
   getPrimaryKey?: string;
   authorizations?: {
-    getReceived: AuthorizationRequest[];
+    getReceived?: AuthorizationRequest[];
+    getSent?: ResultSet<AuthorizationRequest>;
   };
   getVenues?: Venue[];
   getScopeId?: string;
@@ -166,7 +164,7 @@ interface AccountOptions {
 }
 
 interface CurrentAccountOptions extends AccountOptions {
-  getIdentity?: CurrentIdentity | null;
+  getIdentity?: Identity | null;
 }
 
 interface VenueOptions {
@@ -293,19 +291,12 @@ let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
+let identityAuthorizationsGetSentStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
 let identityGetTokenBalanceStub: SinonStub;
 let identityGetSecondaryKeysStub: SinonStub;
 let identityAreSecondaryKeysFrozenStub: SinonStub;
-let currentIdentityHasRolesStub: SinonStub;
-let currentIdentityHasRoleStub: SinonStub;
-let currentIdentityHasValidCddStub: SinonStub;
-let currentIdentityGetPrimaryKeyStub: SinonStub;
-let currentIdentityAuthorizationsGetReceivedStub: SinonStub;
-let currentIdentityGetVenuesStub: SinonStub;
-let currentIdentityGetScopeIdStub: SinonStub;
-let currentIdentityAreSecondaryKeysFrozenStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -585,6 +576,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getPrimaryKey: 'someAddress',
   authorizations: {
     getReceived: [],
+    getSent: { data: [], next: null },
   },
   getVenues: [],
   getScopeId: 'someScopeId',
@@ -593,7 +585,6 @@ const defaultIdentityOptions: IdentityOptions = {
   areScondaryKeysFrozen: false,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
-let currentIdentityOptions: IdentityOptions = { ...defaultIdentityOptions };
 const defaultAccountOptions: AccountOptions = {
   address: 'someAddress',
   key: 'someKey',
@@ -1123,6 +1114,7 @@ function configureIdentity(opts: IdentityOptions): void {
     portfolios: {},
     authorizations: {
       getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
+      getSent: identityAuthorizationsGetSentStub.resolves(opts.authorizations?.getSent),
     },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
@@ -1150,6 +1142,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
   identityAuthorizationsGetReceivedStub = sinon.stub();
+  identityAuthorizationsGetSentStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
   identityGetTokenBalanceStub = sinon.stub();
@@ -1208,61 +1201,6 @@ function initInstruction(opts?: InstructionOptions): void {
   instructionOptions = { ...defaultInstructionOptions, ...opts };
 
   configureInstruction(instructionOptions);
-}
-
-/**
- * @hidden
- * Configure the CurrentIdentity instance
- */
-function configureCurrentIdentity(opts: IdentityOptions): void {
-  const identity = ({
-    did: opts.did,
-    hasRoles: currentIdentityHasRolesStub.resolves(opts.hasRoles),
-    hasRole: currentIdentityHasRoleStub.resolves(opts.hasRole),
-    hasValidCdd: currentIdentityHasValidCddStub.resolves(opts.hasValidCdd),
-    getPrimaryKey: currentIdentityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
-    portfolios: {},
-    authorizations: {
-      getReceived: currentIdentityAuthorizationsGetReceivedStub.resolves(
-        opts.authorizations?.getReceived
-      ),
-    },
-    getVenues: currentIdentityGetVenuesStub.resolves(opts.getVenues),
-    getScopeId: currentIdentityGetScopeIdStub.resolves(opts.getScopeId),
-    areSecondaryKeysFrozen: currentIdentityAreSecondaryKeysFrozenStub.resolves(
-      opts.areScondaryKeysFrozen
-    ),
-  } as unknown) as MockIdentity;
-
-  Object.assign(mockInstanceContainer.currentIdentity, identity);
-  currentIdentityConstructorStub.callsFake(args => {
-    const value = merge({}, identity, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.CurrentIdentity.prototype, entities.Identity.prototype);
-    Object.setPrototypeOf(value, entities.CurrentIdentity.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the CurrentIdentity instance
- */
-function initCurrentIdentity(opts?: IdentityOptions): void {
-  currentIdentityConstructorStub = sinon.stub();
-  currentIdentityHasRolesStub = sinon.stub();
-  currentIdentityHasRoleStub = sinon.stub();
-  currentIdentityHasValidCddStub = sinon.stub();
-  currentIdentityGetPrimaryKeyStub = sinon.stub();
-  currentIdentityAuthorizationsGetReceivedStub = sinon.stub();
-  currentIdentityGetVenuesStub = sinon.stub();
-  currentIdentityGetScopeIdStub = sinon.stub();
-  currentIdentityAreSecondaryKeysFrozenStub = sinon.stub();
-
-  currentIdentityOptions = { ...defaultIdentityOptions, ...opts };
-
-  configureCurrentIdentity(currentIdentityOptions);
 }
 
 /**
@@ -1592,13 +1530,6 @@ export function configureMocks(opts?: {
 
   configureIdentity(tempIdentityOptions);
 
-  const tempCurrentIdentityOptions = {
-    ...defaultIdentityOptions,
-    ...opts?.currentIdentityOptions,
-  };
-
-  configureCurrentIdentity(tempCurrentIdentityOptions);
-
   const tempAccountOptions = { ...defaultAccountOptions, ...opts?.accountOptions };
 
   configureAccount(tempAccountOptions);
@@ -1723,9 +1654,6 @@ export function initMocks(opts?: {
   // Identity
   initIdentity(opts?.identityOptions);
 
-  // Current Identity
-  initCurrentIdentity(opts?.currentIdentityOptions);
-
   // Account
   initAccount(opts?.accountOptions);
 
@@ -1782,7 +1710,6 @@ export function initMocks(opts?: {
  */
 export function cleanup(): void {
   mockInstanceContainer.identity = {} as MockIdentity;
-  mockInstanceContainer.currentIdentity = {} as MockCurrentIdentity;
   mockInstanceContainer.account = {} as MockAccount;
   mockInstanceContainer.currentAccount = {} as MockCurrentAccount;
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
@@ -1807,7 +1734,6 @@ export function reset(): void {
   cleanup();
   initMocks({
     identityOptions,
-    currentIdentityOptions,
     accountOptions,
     currentAccountOptions,
     tickerReservationOptions,
@@ -1889,6 +1815,14 @@ export function getIdentityAuthorizationsGetReceivedStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `Identity.authorizations.getSent` method
+ */
+export function getIdentityAuthorizationsGetSentStub(): SinonStub {
+  return identityAuthorizationsGetSentStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `Identity.getVenues` method
  */
 export function getIdentityGetVenuesStub(): SinonStub {
@@ -1901,82 +1835,6 @@ export function getIdentityGetVenuesStub(): SinonStub {
  */
 export function getIdentityGetScopeIdStub(): SinonStub {
   return identityGetScopeIdStub;
-}
-
-/**
- * @hidden
- * Retrieve a Current Identity instance
- */
-export function getCurrentIdentityInstance(opts?: IdentityOptions): MockCurrentIdentity {
-  if (opts) {
-    configureCurrentIdentity({ ...defaultIdentityOptions, ...opts });
-  }
-
-  return new MockCurrentIdentityClass() as MockCurrentIdentity;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.hasRoles` method
- */
-export function getCurrentIdentityHasRolesStub(): SinonStub {
-  return currentIdentityHasRolesStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.hasRoles` method
- */
-export function getCurrentIdentityHasRoleStub(): SinonStub {
-  return currentIdentityHasRoleStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.hasValidCdd` method
- */
-export function getCurrentIdentityHasValidCddStub(): SinonStub {
-  return currentIdentityHasValidCddStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.getPrimaryKey` method
- */
-export function getCurrentIdentityGetPrimaryKeyStub(): SinonStub {
-  return currentIdentityGetPrimaryKeyStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.getVenues` method
- */
-export function getCurrentIdentityGetVenuesStub(): SinonStub {
-  return currentIdentityGetVenuesStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.getScopeId` method
- */
-export function getCurrentIdentityGetScopeIdStub(): SinonStub {
-  return currentIdentityGetScopeIdStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.authorizations.getReceived` method
- */
-export function getCurrentIdentityAuthorizationsGetReceivedStub(): SinonStub {
-  return currentIdentityAuthorizationsGetReceivedStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CurrentIdentity.areSecondaryKeysFrozen` method
- */
-export function getCurrentIdentityAreSecondaryKeysFrozenStub(): SinonStub {
-  return currentIdentityAreSecondaryKeysFrozenStub;
 }
 
 /**

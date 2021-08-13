@@ -1,5 +1,5 @@
 import { UniqueIdentifiers } from '~/api/entities/Account';
-import { Account, Context, CurrentIdentity, leaveIdentity } from '~/internal';
+import { Account, Context, Identity, leaveIdentity } from '~/internal';
 import { ProcedureMethod } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -27,9 +27,9 @@ export class CurrentAccount extends Account {
   /**
    * Retrieve the current Identity (null if there is none)
    */
-  public async getIdentity(): Promise<CurrentIdentity | null> {
+  public async getIdentity(): Promise<Identity | null> {
     const identity = await super.getIdentity();
 
-    return identity && new CurrentIdentity({ did: identity.did }, this.context);
+    return identity && new Identity({ did: identity.did }, this.context);
   }
 }

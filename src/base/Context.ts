@@ -15,7 +15,6 @@ import { CAId, DidRecord, Distribution, ProtocolOp, TxTag } from 'polymesh-types
 import {
   Account,
   CurrentAccount,
-  CurrentIdentity,
   DividendDistribution,
   Identity,
   PolymeshError,
@@ -423,7 +422,7 @@ export class Context {
    *
    * @throws if there is no Identity associated to the current Account (or there is no current Account associated to the SDK instance)
    */
-  public async getCurrentIdentity(): Promise<CurrentIdentity> {
+  public async getCurrentIdentity(): Promise<Identity> {
     const account = this.getCurrentAccount();
 
     const identity = await account.getIdentity();

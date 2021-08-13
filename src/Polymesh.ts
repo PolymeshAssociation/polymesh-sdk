@@ -32,7 +32,6 @@ import { Settlements } from '~/Settlements';
 import {
   AccountBalance,
   CommonKeyring,
-  CurrentIdentity,
   ErrorCode,
   MiddlewareConfig,
   NetworkProperties,
@@ -448,7 +447,7 @@ export class Polymesh {
   /**
    * Retrieve the Identity associated to the current Account (null if there is none)
    */
-  public getCurrentIdentity(): Promise<CurrentIdentity | null> {
+  public getCurrentIdentity(): Promise<Identity | null> {
     return this.context.getCurrentAccount().getIdentity();
   }
 

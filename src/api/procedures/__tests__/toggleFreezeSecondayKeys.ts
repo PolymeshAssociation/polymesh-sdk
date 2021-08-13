@@ -9,6 +9,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { RoleType } from '~/types';
 
 describe('toggleFreezeSecondaryKeys procedure', () => {
   let mockContext: Mocked<Context>;
@@ -46,7 +47,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
     return expect(
       prepareToggleFreezeSecondaryKeys.call(proc, {
         freeze: true,
-        identity: entityMockUtils.getCurrentIdentityInstance({
+        identity: entityMockUtils.getIdentityInstance({
           areScondaryKeysFrozen: true,
         }),
       })
@@ -59,7 +60,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
     return expect(
       prepareToggleFreezeSecondaryKeys.call(proc, {
         freeze: false,
-        identity: entityMockUtils.getCurrentIdentityInstance({
+        identity: entityMockUtils.getIdentityInstance({
           areScondaryKeysFrozen: false,
         }),
       })
@@ -73,7 +74,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
 
     await prepareToggleFreezeSecondaryKeys.call(proc, {
       freeze: true,
-      identity: entityMockUtils.getCurrentIdentityInstance({
+      identity: entityMockUtils.getIdentityInstance({
         areScondaryKeysFrozen: false,
       }),
     });
@@ -88,7 +89,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
 
     await prepareToggleFreezeSecondaryKeys.call(proc, {
       freeze: false,
-      identity: entityMockUtils.getCurrentIdentityInstance({
+      identity: entityMockUtils.getIdentityInstance({
         areScondaryKeysFrozen: true,
       }),
     });
@@ -103,9 +104,8 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
       );
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(
-        boundFunc({ freeze: true, identity: entityMockUtils.getCurrentIdentityInstance() })
-      ).toEqual({
+      expect(boundFunc({ freeze: true, identity: entityMockUtils.getIdentityInstance() })).toEqual({
+        roles: [{ type: RoleType.Identity, did: 'someDid' }],
         permissions: {
           transactions: [TxTags.identity.FreezeSecondaryKeys],
           tokens: [],
@@ -113,15 +113,16 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
         },
       });
 
-      expect(
-        boundFunc({ freeze: false, identity: entityMockUtils.getCurrentIdentityInstance() })
-      ).toEqual({
-        permissions: {
-          transactions: [TxTags.identity.UnfreezeSecondaryKeys],
-          tokens: [],
-          portfolios: [],
-        },
-      });
+      expect(boundFunc({ freeze: false, identity: entityMockUtils.getIdentityInstance() })).toEqual(
+        {
+          roles: [{ type: RoleType.Identity, did: 'someDid' }],
+          permissions: {
+            transactions: [TxTags.identity.UnfreezeSecondaryKeys],
+            tokens: [],
+            portfolios: [],
+          },
+        }
+      );
     });
   });
 });

@@ -1,13 +1,6 @@
 import sinon from 'sinon';
 
-import {
-  Account,
-  Context,
-  CurrentAccount,
-  CurrentIdentity,
-  Identity,
-  TransactionQueue,
-} from '~/internal';
+import { Account, Context, CurrentAccount, Identity, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -79,7 +72,7 @@ describe('CurrentAccount class', () => {
 
       const result = await account.getIdentity();
 
-      expect(result instanceof CurrentIdentity).toBe(true);
+      expect(result instanceof Identity).toBe(true);
       expect(result?.did).toBe(did);
     });
   });
