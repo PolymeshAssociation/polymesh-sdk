@@ -4,7 +4,6 @@ import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToVenueDetails, venueTypeToMeshVenueType } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
 
 export type ModifyVenueParams =
   | {
@@ -59,13 +58,23 @@ export async function prepareModifyVenue(
     });
   }
 
-  this.addTransaction(
-    tx.settlement.updateVenue,
-    {},
-    numberToU64(venueId, context),
-    optionize(stringToVenueDetails)(description, context),
-    optionize(venueTypeToMeshVenueType)(type, context)
-  );
+  if (description) {
+    this.addTransaction(
+      tx.settlement.updateVenueDetails,
+      {},
+      numberToU64(venueId, context),
+      stringToVenueDetails(description, context)
+    );
+  }
+
+  if (type) {
+    this.addTransaction(
+      tx.settlement.updateVenueType,
+      {},
+      numberToU64(venueId, context),
+      venueTypeToMeshVenueType(type, context)
+    );
+  }
 }
 
 /**

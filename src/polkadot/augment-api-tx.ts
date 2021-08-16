@@ -66,6 +66,7 @@ import type {
   IdentityId,
   InvestorUid,
   InvestorZKProofData,
+  ItnRewardStatus,
   Leg,
   LegacyPermissions,
   MaybeBlock,
@@ -135,7 +136,7 @@ declare module '@polkadot/api/types/submittable' {
        * * `auth_id` Authorization ID of ticker transfer authorization.
        *
        * ## Errors
-       * - `NoTickerTransferAuth` if `auth_id` is not a valid ticket transfer authorization.
+       * - `AuthorizationError::BadType` if `auth_id` is not a valid ticket transfer authorization.
        *
        **/
       acceptTickerTransfer: AugmentedSubmittable<
@@ -220,6 +221,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `asset_type` - the asset type.
        * * `identifiers` - a vector of asset identifiers.
        * * `funding_round` - name of the funding round.
+       * * `disable_iu` - whether or not investor uniqueness enforcement should be disabled.
+       * This cannot be changed after creating the asset.
        *
        * ## Errors
        * - `InvalidAssetIdentifier` if any of `identifiers` are invalid.
@@ -265,9 +268,10 @@ declare module '@polkadot/api/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          fundingRound: Option<FundingRoundName> | null | object | string | Uint8Array
+          fundingRound: Option<FundingRoundName> | null | object | string | Uint8Array,
+          disableIu: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [AssetName, Ticker, bool, AssetType, Vec<AssetIdentifier>, Option<FundingRoundName>]
+        [AssetName, Ticker, bool, AssetType, Vec<AssetIdentifier>, Option<FundingRoundName>, bool]
       >;
       /**
        * Freezes transfers and minting of a given token.
@@ -287,13 +291,13 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker]
       >;
       /**
-       * Function is used to issue(or mint) new tokens to the primary issuance agent.
-       * It can be executed by the token owner or the PIA.
+       * Issue, or mint, new tokens to the caller,
+       * which must be an authorized agent, e.g., a primary issuance agent.
        *
        * # Arguments
-       * * `origin` Secondary key of token owner.
-       * * `ticker` Ticker of the token.
-       * * `value` Amount of tokens that get issued.
+       * * `origin` must be the secondary key of token owner.
+       * * `ticker` of the token.
+       * * `amount` of tokens that get issued.
        *
        * # Permissions
        * * Asset
@@ -302,7 +306,7 @@ declare module '@polkadot/api/types/submittable' {
       issue: AugmentedSubmittable<
         (
           ticker: Ticker | string | Uint8Array,
-          value: Balance | AnyNumber | Uint8Array
+          amount: Balance | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Ticker, Balance]
       >;
@@ -346,6 +350,21 @@ declare module '@polkadot/api/types/submittable' {
           value: Balance | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Ticker, Balance]
+      >;
+      /**
+       * Registers a custom asset type.
+       *
+       * The provided `ty` will be bound to an ID in storage.
+       * The ID can then be used in `AssetType::Custom`.
+       * Should the `ty` already exist in storage, no second ID is assigned to it.
+       *
+       * # Arguments
+       * * `origin` who called the extrinsic.
+       * * `ty` contains the string representation of the asset type.
+       **/
+      registerCustomAssetType: AugmentedSubmittable<
+        (ty: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [Bytes]
       >;
       /**
        * Registers a new ticker or extends validity of an existing ticker.
@@ -717,12 +736,22 @@ declare module '@polkadot/api/types/submittable' {
     };
     bridge: {
       /**
+       * Add a freeze admin.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
+       **/
+      addFreezeAdmin: AugmentedSubmittable<
+        (freezeAdmin: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId]
+      >;
+      /**
        * Proposes a vector of bridge transactions. The vector is processed until the first
        * proposal which causes an error, in which case the error is returned and the rest of
        * proposals are not processed.
        *
        * ## Errors
-       * - `ControllerNotSet` if `Controlles` was not set.
+       * - `ControllerNotSet` if `Controllers` was not set.
        *
        * # Weight
        * `500_000_000 + 7_000_000 * bridge_txs.len()`
@@ -769,6 +798,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * ## Errors
        * - `BadAdmin` if `origin` is not `Self::admin()` account.
+       * - `DivisionByZero` if `duration` is zero.
        **/
       changeBridgeLimit: AugmentedSubmittable<
         (
@@ -887,7 +917,7 @@ declare module '@polkadot/api/types/submittable' {
        * transaction has already been proposed.
        *
        * ## Errors
-       * - `ControllerNotSet` if `Controlles` was not set.
+       * - `ControllerNotSet` if `Controllers` was not set.
        **/
       proposeBridgeTx: AugmentedSubmittable<
         (
@@ -898,6 +928,16 @@ declare module '@polkadot/api/types/submittable' {
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [BridgeTx]
+      >;
+      /**
+       * Remove a freeze admin.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
+       **/
+      removeFreezeAdmin: AugmentedSubmittable<
+        (freezeAdmin: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId]
       >;
       /**
        * Unfreezes transaction handling in the bridge module if it is frozen.
@@ -1047,7 +1087,6 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Errors
        * - `NoSuchDistribution` if there's no capital distribution for `ca_id`.
-       * - `NotDistributionCreator` if `origin` is not the original creator of the distribution.
        * - `AlreadyReclaimed` if this function has already been called successfully.
        * - `NotExpired` if `now < expiry`.
        **/
@@ -1946,6 +1985,28 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker]
       >;
       /**
+       * Accept an authorization by an agent "Alice" who issued `auth_id`
+       * to also become an agent of the ticker Alice specified.
+       *
+       * # Arguments
+       * - `auth_id` identifying the authorization to accept.
+       *
+       * # Errors
+       * - `AuthorizationError::Invalid` if `auth_id` does not exist for the given caller.
+       * - `AuthorizationError::Expired` if `auth_id` is for an auth that has expired.
+       * - `AuthorizationError::BadType` if `auth_id` was not for a `BecomeAgent` auth type.
+       * - `UnauthorizedAgent` if "Alice" is not permissioned to provide the auth.
+       * - `NoSuchAG` if the group referred to a custom that does not exist.
+       * - `AlreadyAnAgent` if the caller is already an agent of the ticker.
+       *
+       * # Permissions
+       * * Agent
+       **/
+      acceptBecomeAgent: AugmentedSubmittable<
+        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
+      >;
+      /**
        * Change the agent group that `agent` belongs to in `ticker`.
        *
        * # Arguments
@@ -2133,17 +2194,6 @@ declare module '@polkadot/api/types/submittable' {
       >;
     };
     identity: {
-      /**
-       * Accepts an authorization.
-       *
-       * Does not check extrinsic permission checks for the caller in order to allow it to be an
-       * account without an identity.
-       * NB: The current weight is a defensive approximation.
-       **/
-      acceptAuthorization: AugmentedSubmittable<
-        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
-      >;
       /**
        * Call this with the new primary key. By invoking this method, caller accepts authorization
        * with the new primary key. If a CDD service provider approved this change, primary key of
@@ -2933,7 +2983,7 @@ declare module '@polkadot/api/types/submittable' {
        * multisig.
        *
        * # Arguments
-       * * `multi_sig` - multi sig address
+       * * `multisig` - multi sig address
        **/
       makeMultisigSigner: AugmentedSubmittable<
         (multisig: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3084,11 +3134,11 @@ declare module '@polkadot/api/types/submittable' {
       propose: AugmentedSubmittable<
         (
           proposal: Proposal | { callIndex?: any; args?: any } | string | Uint8Array,
-          deposit: BalanceOf | AnyNumber | Uint8Array,
+          deposit: Balance | AnyNumber | Uint8Array,
           url: Option<Url> | null | object | string | Uint8Array,
           description: Option<PipDescription> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Proposal, BalanceOf, Option<Url>, Option<PipDescription>]
+        [Proposal, Balance, Option<Url>, Option<PipDescription>]
       >;
       /**
        * Prune the PIP given by the `id`, refunding any funds not already refunded.
@@ -3178,8 +3228,8 @@ declare module '@polkadot/api/types/submittable' {
        * * `deposit` the new min deposit required to start a proposal
        **/
       setMinProposalDeposit: AugmentedSubmittable<
-        (deposit: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [BalanceOf]
+        (deposit: Balance | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [Balance]
       >;
       /**
        * Change the amount of blocks after which a pending PIP is expired.
@@ -3238,9 +3288,9 @@ declare module '@polkadot/api/types/submittable' {
         (
           id: PipId | AnyNumber | Uint8Array,
           ayeOrNay: bool | boolean | Uint8Array,
-          deposit: BalanceOf | AnyNumber | Uint8Array
+          deposit: Balance | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PipId, bool, BalanceOf]
+        [PipId, bool, Balance]
       >;
     };
     polymeshCommittee: {
@@ -3332,6 +3382,10 @@ declare module '@polkadot/api/types/submittable' {
       >;
     };
     portfolio: {
+      acceptPortfolioCustody: AugmentedSubmittable<
+        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
+      >;
       /**
        * Creates a portfolio with the given `name`.
        **/
@@ -3397,7 +3451,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       quitPortfolioCustody: AugmentedSubmittable<
         (
-          portfolioId: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
+          pid: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [PortfolioId]
       >;
@@ -3448,9 +3502,9 @@ declare module '@polkadot/api/types/submittable' {
             | 'DistributionDistribute'
             | number
             | Uint8Array,
-          baseFee: BalanceOf | AnyNumber | Uint8Array
+          baseFee: Balance | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [ProtocolOp, BalanceOf]
+        [ProtocolOp, Balance]
       >;
       /**
        * Changes the fee coefficient for the root origin.
@@ -3461,6 +3515,162 @@ declare module '@polkadot/api/types/submittable' {
       changeCoefficient: AugmentedSubmittable<
         (coefficient: PosRatio) => SubmittableExtrinsic<ApiType>,
         [PosRatio]
+      >;
+    };
+    relayer: {
+      /**
+       * Accepts a `paying_key` authorization.
+       *
+       * # Arguments
+       * - `auth_id` the authorization id to accept a `paying_key`.
+       *
+       * # Errors
+       * - `AuthorizationError::Invalid` if `auth_id` does not exist for the given caller.
+       * - `AuthorizationError::Expired` if `auth_id` the authorization has expired.
+       * - `AuthorizationError::BadType` if `auth_id` was not a `AddRelayerPayingKey` authorization.
+       * - `NotAuthorizedForUserKey` if `origin` is not authorized to accept the authorization for the `user_key`.
+       * - `NotAuthorizedForPayingKey` if the authorization was created by a signer that isn't authorized by the `paying_key`.
+       * - `UserKeyCddMissing` if the `user_key` is not attached to a CDD'd identity.
+       * - `PayingKeyCddMissing` if the `paying_key` is not attached to a CDD'd identity.
+       * - `UnauthorizedCaller` if `origin` is not authorized to call this extrinsic.
+       **/
+      acceptPayingKey: AugmentedSubmittable<
+        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
+      >;
+      /**
+       * Decrease the available POLYX for a `user_key`.
+       *
+       * # Arguments
+       * - `user_key` the user key of the subsidy to update the available POLYX.
+       * - `amount` the amount of POLYX to remove from the subsidy of `user_key`.
+       *
+       * # Errors
+       * - `NoPayingKey` if the `user_key` doesn't have a `paying_key`.
+       * - `NotPayingKey` if `origin` doesn't match the current `paying_key`.
+       * - `UnauthorizedCaller` if `origin` is not authorized to call this extrinsic.
+       * - `Overlow` if the subsidy has less then `amount` POLYX remaining.
+       **/
+      decreasePolyxLimit: AugmentedSubmittable<
+        (
+          userKey: AccountId | string | Uint8Array,
+          amount: Balance | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, Balance]
+      >;
+      /**
+       * Increase the available POLYX for a `user_key`.
+       *
+       * # Arguments
+       * - `user_key` the user key of the subsidy to update the available POLYX.
+       * - `amount` the amount of POLYX to add to the subsidy of `user_key`.
+       *
+       * # Errors
+       * - `NoPayingKey` if the `user_key` doesn't have a `paying_key`.
+       * - `NotPayingKey` if `origin` doesn't match the current `paying_key`.
+       * - `UnauthorizedCaller` if `origin` is not authorized to call this extrinsic.
+       * - `Overlow` if the subsidy's remaining POLYX would have overflowed `u128::MAX`.
+       **/
+      increasePolyxLimit: AugmentedSubmittable<
+        (
+          userKey: AccountId | string | Uint8Array,
+          amount: Balance | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, Balance]
+      >;
+      /**
+       * Removes the `paying_key` from a `user_key`.
+       *
+       * # Arguments
+       * - `user_key` the user key to remove the subsidy from.
+       * - `paying_key` the paying key that was subsidising the `user_key`.
+       *
+       * # Errors
+       * - `NotAuthorizedForUserKey` if `origin` is not authorized to remove the subsidy for the `user_key`.
+       * - `NoPayingKey` if the `user_key` doesn't have a `paying_key`.
+       * - `NotPayingKey` if the `paying_key` doesn't match the current `paying_key`.
+       * - `UnauthorizedCaller` if `origin` is not authorized to call this extrinsic.
+       **/
+      removePayingKey: AugmentedSubmittable<
+        (
+          userKey: AccountId | string | Uint8Array,
+          payingKey: AccountId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, AccountId]
+      >;
+      /**
+       * Creates an authorization to allow `user_key` to accept the caller (`origin == paying_key`) as their subsidiser.
+       *
+       * # Arguments
+       * - `user_key` the user key to subsidise.
+       * - `polyx_limit` the initial POLYX limit for this subsidy.
+       *
+       * # Errors
+       * - `UnauthorizedCaller` if `origin` is not authorized to call this extrinsic.
+       **/
+      setPayingKey: AugmentedSubmittable<
+        (
+          userKey: AccountId | string | Uint8Array,
+          polyxLimit: Balance | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, Balance]
+      >;
+      /**
+       * Updates the available POLYX for a `user_key`.
+       *
+       * # Arguments
+       * - `user_key` the user key of the subsidy to update the available POLYX.
+       * - `polyx_limit` the amount of POLYX available for subsidising the `user_key`.
+       *
+       * # Errors
+       * - `NoPayingKey` if the `user_key` doesn't have a `paying_key`.
+       * - `NotPayingKey` if `origin` doesn't match the current `paying_key`.
+       * - `UnauthorizedCaller` if `origin` is not authorized to call this extrinsic.
+       **/
+      updatePolyxLimit: AugmentedSubmittable<
+        (
+          userKey: AccountId | string | Uint8Array,
+          polyxLimit: Balance | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, Balance]
+      >;
+    };
+    rewards: {
+      /**
+       * Claim an ITN reward.
+       *
+       * ## Arguments
+       * * `itn_address` specifying the awarded address on ITN.
+       * * `signature` authenticating the claim to the reward.
+       * The signature should contain `reward_address` followed by the suffix `"claim_itn_reward"`,
+       * and must have been signed by `itn_address`.
+       *
+       * # Errors
+       * * `InsufficientBalance` - Itn rewards has insufficient funds to issue the reward.
+       * * `InvalidSignature` - `signature` had an invalid signer or invalid message.
+       * * `ItnRewardAlreadyClaimed` - Reward issued to the `itn_address` has already been claimed.
+       * * `UnknownItnAddress` - `itn_address` is not in the rewards table and has no reward to be claimed.
+       **/
+      claimItnReward: AugmentedSubmittable<
+        (
+          rewardAddress: AccountId | string | Uint8Array,
+          itnAddress: AccountId | string | Uint8Array,
+          signature:
+            | OffChainSignature
+            | { Ed25519: any }
+            | { Sr25519: any }
+            | { Ecdsa: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, AccountId, OffChainSignature]
+      >;
+      setItnRewardStatus: AugmentedSubmittable<
+        (
+          itnAddress: AccountId | string | Uint8Array,
+          status: ItnRewardStatus | { Unclaimed: any } | { Claimed: any } | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId, ItnRewardStatus]
       >;
     };
     scheduler: {
@@ -3795,13 +4005,13 @@ declare module '@polkadot/api/types/submittable' {
        *
        * * `details` - Extra details about a venue
        * * `signers` - Array of signers that are allowed to sign receipts for this venue
-       * * `venue_type` - Type of venue being created
+       * * `typ` - Type of venue being created
        **/
       createVenue: AugmentedSubmittable<
         (
           details: VenueDetails | string,
           signers: Vec<AccountId> | (AccountId | string | Uint8Array)[],
-          venueType: VenueType | 'Other' | 'Distribution' | 'Sto' | 'Exchange' | number | Uint8Array
+          typ: VenueType | 'Other' | 'Distribution' | 'Sto' | 'Exchange' | number | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [VenueDetails, Vec<AccountId>, VenueType]
       >;
@@ -3892,20 +4102,30 @@ declare module '@polkadot/api/types/submittable' {
         [u64, u64]
       >;
       /**
-       * Edit venue details and types.
-       * Both parameters are optional, they will be updated only if Some(value) is provided
+       * Edit a venue's details.
        *
-       * * `venue_id` - ID of the venue to edit
-       * * `details` - Extra details about a venue
-       * * `type` - Type of venue being created
+       * * `id` specifies the ID of the venue to edit.
+       * * `details` specifies the updated venue details.
        **/
-      updateVenue: AugmentedSubmittable<
+      updateVenueDetails: AugmentedSubmittable<
         (
-          venueId: u64 | AnyNumber | Uint8Array,
-          details: Option<VenueDetails> | null | object | string | Uint8Array,
-          typ: Option<VenueType> | null | object | string | Uint8Array
+          id: u64 | AnyNumber | Uint8Array,
+          details: VenueDetails | string
         ) => SubmittableExtrinsic<ApiType>,
-        [u64, Option<VenueDetails>, Option<VenueType>]
+        [u64, VenueDetails]
+      >;
+      /**
+       * Edit a venue's type.
+       *
+       * * `id` specifies the ID of the venue to edit.
+       * * `type` specifies the new type of the venue.
+       **/
+      updateVenueType: AugmentedSubmittable<
+        (
+          id: u64 | AnyNumber | Uint8Array,
+          typ: VenueType | 'Other' | 'Distribution' | 'Sto' | 'Exchange' | number | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, VenueType]
       >;
       /**
        * Withdraw an affirmation for a given instruction.

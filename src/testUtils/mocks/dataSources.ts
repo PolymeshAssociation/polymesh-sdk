@@ -3109,7 +3109,6 @@ export const createMockCorporateAction = (corporateAction?: {
   kind: CAKind | Parameters<typeof createMockCAKind>[0];
   decl_date: Moment | Parameters<typeof createMockMoment>[0];
   record_date: Option<RecordDate> | Parameters<typeof createMockOption>[0];
-  details: Text | Parameters<typeof createMockText>[0];
   targets: TargetIdentities | Parameters<typeof createMockTargetIdentities>[0];
   default_withholding_tax: Tax | Parameters<typeof createMockPermill>[0];
   withholding_tax: [
@@ -3121,7 +3120,6 @@ export const createMockCorporateAction = (corporateAction?: {
     kind,
     decl_date,
     record_date,
-    details,
     targets,
     default_withholding_tax,
     withholding_tax,
@@ -3129,7 +3127,6 @@ export const createMockCorporateAction = (corporateAction?: {
     kind: createMockCAKind(),
     decl_date: createMockMoment(),
     record_date: createMockOption(),
-    details: createMockText(),
     targets: createMockTargetIdentities(),
     default_withholding_tax: createMockPermill(),
     withholding_tax: [],
@@ -3140,7 +3137,6 @@ export const createMockCorporateAction = (corporateAction?: {
       kind: createMockCAKind(kind),
       decl_date: createMockMoment(decl_date),
       record_date: createMockOption(record_date),
-      details: createMockText(details),
       targets: createMockTargetIdentities(targets),
       default_withholding_tax: createMockPermill(default_withholding_tax),
       withholding_tax: withholding_tax.map(([identityId, tax]) =>

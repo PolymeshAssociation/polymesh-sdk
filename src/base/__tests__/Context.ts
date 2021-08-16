@@ -1572,7 +1572,6 @@ describe('Context class', () => {
               date: new Date('10/14/2019').getTime(),
               checkpoint: { Existing: dsMockUtils.createMockU64(2) },
             }),
-            details: 'someDescription',
             targets: {
               identities: ['someDid'],
               treatment: TargetTreatment.Exclude,
@@ -1586,7 +1585,6 @@ describe('Context class', () => {
             kind: CorporateActionKind.Reorganization,
             decl_date: new Date('10/14/1987').getTime(),
             record_date: null,
-            details: 'dummy',
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
@@ -1603,7 +1601,6 @@ describe('Context class', () => {
               date: new Date('11/26/2019').getTime(),
               checkpoint: { Existing: dsMockUtils.createMockU64(5) },
             }),
-            details: 'otherDescription',
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,

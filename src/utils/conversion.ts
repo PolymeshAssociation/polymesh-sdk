@@ -1333,7 +1333,8 @@ export function assetTypeToString(assetType: AssetType): string {
     return KnownTokenType.StableCoin;
   }
 
-  return u8aToString(assetType.asCustom);
+  // TODO @monitz87: figure out how to return this properly (probably make it async and have it fetch the value)
+  return u32ToBigNumber(assetType.asCustom).toFormat();
 }
 
 /**
@@ -3059,12 +3060,12 @@ export function stringToSignature(signature: string, context: Context): Signatur
  */
 export function meshCorporateActionToCorporateActionParams(
   corporateAction: MeshCorporateAction,
+  details: Text,
   context: Context
 ): CorporateActionParams {
   const {
     kind: rawKind,
     decl_date: declDate,
-    details,
     targets: { identities, treatment },
     default_withholding_tax: defaultWithholdingTax,
     withholding_tax: withholdingTax,

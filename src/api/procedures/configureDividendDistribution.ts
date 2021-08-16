@@ -38,18 +38,21 @@ export const createDividendDistributionResolver = (context: Context) => async (
   receipt: ISubmittableResult
 ): Promise<DividendDistribution> => {
   const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
-  const [, { ticker, local_id: localId }, distribution] = data;
+  const [, caId, distribution] = data;
+  const { ticker, local_id: localId } = caId;
 
-  const corporateAction = await context.polymeshApi.query.corporateAction.corporateActions(
-    ticker,
-    localId
-  );
+  const { corporateAction } = context.polymeshApi.query;
+
+  const [corpAction, details] = await Promise.all([
+    corporateAction.corporateActions(ticker, localId),
+    corporateAction.details(caId),
+  ]);
 
   return new DividendDistribution(
     {
       ticker: tickerToString(ticker),
       id: u32ToBigNumber(localId),
-      ...meshCorporateActionToCorporateActionParams(corporateAction.unwrap(), context),
+      ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
       ...distributionToDividendDistributionParams(distribution, context),
     },
     context

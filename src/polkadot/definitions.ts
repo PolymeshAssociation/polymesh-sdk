@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 export { default as polymesh } from './polymesh/definitions';
 export { default as compliance } from './compliance/definitions';
 export { default as identity } from './identity/definitions';

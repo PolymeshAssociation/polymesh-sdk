@@ -71,6 +71,7 @@ describe('createSecurityToken procedure', () => {
   let rawType: AssetType;
   let rawIdentifiers: AssetIdentifier[];
   let rawFundingRound: FundingRoundName;
+  let rawDisableIu: bool;
   let rawDocuments: Document[];
   let args: Params;
 
@@ -142,6 +143,7 @@ describe('createSecurityToken procedure', () => {
       })
     );
     rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
+    rawDisableIu = dsMockUtils.createMockBool(false);
     args = {
       ticker,
       name,
@@ -241,7 +243,8 @@ describe('createSecurityToken procedure', () => {
       rawIsDivisible,
       rawType,
       rawIdentifiers,
-      rawFundingRound
+      rawFundingRound,
+      rawDisableIu
     );
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
 
@@ -261,7 +264,8 @@ describe('createSecurityToken procedure', () => {
       rawIsDivisible,
       rawType,
       [],
-      null
+      null,
+      rawDisableIu
     );
 
     const issueTransaction = dsMockUtils.createTxStub('asset', 'issue');
@@ -295,7 +299,8 @@ describe('createSecurityToken procedure', () => {
       rawIsDivisible,
       rawType,
       rawIdentifiers,
-      rawFundingRound
+      rawFundingRound,
+      rawDisableIu
     );
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });

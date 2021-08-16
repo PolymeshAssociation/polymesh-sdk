@@ -110,8 +110,8 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
     const {
       kind,
       declarationDate,
-      description,
       targets,
+      description,
       defaultTaxWithholding,
       taxWithholdings,
       ...identifiers

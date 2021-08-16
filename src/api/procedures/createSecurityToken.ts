@@ -130,7 +130,8 @@ export async function prepareCreateSecurityToken(
     rawIsDivisible,
     rawType,
     rawIdentifiers,
-    rawFundingRound
+    rawFundingRound,
+    booleanToBool(false, context)
   );
 
   if (totalSupply && totalSupply.gt(0)) {

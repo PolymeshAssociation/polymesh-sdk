@@ -129,7 +129,7 @@ export interface AssetType extends Enum {
   readonly isStructuredProduct: boolean;
   readonly isDerivative: boolean;
   readonly isCustom: boolean;
-  readonly asCustom: Bytes;
+  readonly asCustom: CustomAssetTypeId;
   readonly isStableCoin: boolean;
 }
 
@@ -450,7 +450,6 @@ export interface CorporateAction extends Struct {
   readonly kind: CAKind;
   readonly decl_date: Moment;
   readonly record_date: Option<RecordDate>;
-  readonly details: Text;
   readonly targets: TargetIdentities;
   readonly default_withholding_tax: Tax;
   readonly withholding_tax: Vec<ITuple<[IdentityId, Tax]>>;
@@ -712,6 +711,9 @@ export interface CountryCode extends Enum {
   readonly isCw: boolean;
   readonly isSx: boolean;
 }
+
+/** @name CustomAssetTypeId */
+export interface CustomAssetTypeId extends u32 {}
 
 /** @name DepositInfo */
 export interface DepositInfo extends Struct {
@@ -977,6 +979,13 @@ export interface IssueRecipient extends Enum {
   readonly asAccount: AccountId;
   readonly isIdentity: boolean;
   readonly asIdentity: IdentityId;
+}
+
+/** @name ItnRewardStatus */
+export interface ItnRewardStatus extends Enum {
+  readonly isUnclaimed: boolean;
+  readonly asUnclaimed: Balance;
+  readonly isClaimed: boolean;
 }
 
 /** @name KeyIdentityData */
@@ -1375,7 +1384,6 @@ export interface SecondaryKeyWithAuth extends Struct {
 
 /** @name SecurityToken */
 export interface SecurityToken extends Struct {
-  readonly name: AssetName;
   readonly total_supply: Balance;
   readonly owner_did: IdentityId;
   readonly divisible: bool;
@@ -1589,8 +1597,6 @@ export interface ValidatorPrefsWithBlocked extends Struct {
 /** @name Venue */
 export interface Venue extends Struct {
   readonly creator: IdentityId;
-  readonly instructions: Vec<u64>;
-  readonly details: VenueDetails;
   readonly venue_type: VenueType;
 }
 

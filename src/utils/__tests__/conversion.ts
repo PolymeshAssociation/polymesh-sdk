@@ -5807,8 +5807,8 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     const fakeResult: CorporateActionParams = {
       kind,
       declarationDate,
-      description,
       targets,
+      description,
       defaultTaxWithholding,
       taxWithholdings,
     };
@@ -5817,7 +5817,6 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind,
       decl_date: declarationDate.getTime(),
       record_date: null,
-      details: description,
       targets: {
         identities: dids,
         treatment: TargetTreatment.Include,
@@ -5827,8 +5826,9 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     };
 
     let corporateAction = dsMockUtils.createMockCorporateAction(params);
+    const details = dsMockUtils.createMockText(description);
 
-    let result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    let result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -5841,7 +5841,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('IssuerNotice'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({
       ...fakeResult,
@@ -5854,7 +5854,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('PredictableBenefit'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({ ...fakeResult, kind: CorporateActionKind.PredictableBenefit });
 
@@ -5863,7 +5863,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('Other'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({ ...fakeResult, kind: CorporateActionKind.Other });
 
@@ -5872,7 +5872,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('Reorganization'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({ ...fakeResult, kind: CorporateActionKind.Reorganization });
   });
