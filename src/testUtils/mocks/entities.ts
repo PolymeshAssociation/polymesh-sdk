@@ -130,6 +130,7 @@ interface IdentityOptions {
   getTokenBalance?: BigNumber;
   getSecondaryKeys?: SecondaryKey[];
   areScondaryKeysFrozen?: boolean;
+  isEqual?: boolean;
 }
 
 interface TickerReservationOptions {
@@ -173,6 +174,7 @@ interface AccountOptions {
   getBalance?: AccountBalance;
   getIdentity?: Identity | null;
   getTransactionHistory?: ExtrinsicData[];
+  isEqual?: boolean;
 }
 
 interface VenueOptions {
@@ -188,8 +190,8 @@ interface NumberedPortfolioOptions {
   custodian?: Identity;
   did?: string;
   exists?: boolean;
-  uuid?: string;
   isCustodiedBy?: boolean;
+  isEqual?: boolean;
 }
 
 interface DefaultPortfolioOptions {
@@ -197,8 +199,8 @@ interface DefaultPortfolioOptions {
   tokenBalances?: PortfolioBalance[];
   did?: string;
   custodian?: Identity;
-  uuid?: string;
   isCustodiedBy?: boolean;
+  isEqual?: boolean;
 }
 
 interface CustomPermissionGroupOptions {
@@ -340,9 +342,11 @@ let identityGetScopeIdStub: SinonStub;
 let identityGetTokenBalanceStub: SinonStub;
 let identityGetSecondaryKeysStub: SinonStub;
 let identityAreSecondaryKeysFrozenStub: SinonStub;
+let identityIsEqualStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
+let accountIsEqualStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
@@ -355,10 +359,12 @@ let numberedPortfolioGetTokenBalancesStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
 let numberedPortfolioGetCustodianStub: SinonStub;
 let numberedPortfolioIsCustodiedByStub: SinonStub;
+let numberedPortfolioIsEqualStub: SinonStub;
 let defaultPortfolioIsOwnedByStub: SinonStub;
 let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
+let defaultPortfolioIsEqualStub: SinonStub;
 let stoDetailsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
@@ -639,6 +645,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getTokenBalance: new BigNumber(100),
   getSecondaryKeys: [],
   areScondaryKeysFrozen: false,
+  isEqual: true,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -650,6 +657,7 @@ const defaultAccountOptions: AccountOptions = {
     total: new BigNumber(110),
   },
   getTransactionHistory: [],
+  isEqual: true,
 };
 let accountOptions: AccountOptions = defaultAccountOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
@@ -728,9 +736,9 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
-  uuid: 'someUuid',
   custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
+  isEqual: true,
 };
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
@@ -744,9 +752,9 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
     },
   ],
   did: 'someDid',
-  uuid: 'someUuid',
   custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
+  isEqual: true,
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultCustomPermissionGroupOptions: CustomPermissionGroupOptions = {
@@ -923,6 +931,7 @@ let dividendDistributionOptions = defaultDividendDistributionOptions;
 function configureVenue(opts: VenueOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const venue = ({
+    uuid: 'venue',
     id: opts.id,
     details: venueDetailsStub.resolves(details),
     exists: venueExistsStub.resolves(opts.exists),
@@ -956,7 +965,7 @@ function initVenue(opts?: VenueOptions): void {
  */
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = ({
-    uuid: opts.uuid,
+    uuid: 'numberedPorfolio',
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
@@ -964,6 +973,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     owner: { did: opts.did },
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
     isCustodiedBy: numberedPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
+    isEqual: numberedPortfolioIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
@@ -990,6 +1000,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioExistsStub = sinon.stub();
   numberedPortfolioGetCustodianStub = sinon.stub();
   numberedPortfolioIsCustodiedByStub = sinon.stub();
+  numberedPortfolioIsEqualStub = sinon.stub();
 
   numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
 
@@ -1002,12 +1013,13 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
  */
 function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   const defaultPortfolio = ({
-    uuid: opts.uuid,
+    uuid: 'defaultPortfolio',
     isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
     owner: { did: opts.did },
     getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
     isCustodiedBy: defaultPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
+    isEqual: defaultPortfolioIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
@@ -1032,6 +1044,7 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
   defaultPortfolioGetTokenBalancesStub = sinon.stub();
   defaultPortfolioGetCustodianStub = sinon.stub();
   defaultPortfolioIsCustodiedByStub = sinon.stub();
+  defaultPortfolioIsEqualStub = sinon.stub();
 
   defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
 
@@ -1044,6 +1057,7 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
  */
 function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): void {
   const customPermissionGroup = ({
+    uuid: 'customPermissionGroup',
     id: opts.id,
     ticker: opts.ticker,
     getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
@@ -1083,6 +1097,7 @@ function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
  */
 function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void {
   const knownPermissionGroup = ({
+    uuid: 'knownPermissionGroup',
     ticker: opts.ticker,
     type: opts.type,
     getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
@@ -1122,6 +1137,7 @@ function initKnownPermissionGroup(opts?: KnownPermissionGroupOptions): void {
  */
 function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void {
   const authorizationRequest = ({
+    uuid: 'authorizationRequest',
     authId: opts.authId,
     issuer: opts.issuer,
     target: opts.target,
@@ -1156,6 +1172,7 @@ function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
 function configureSecurityToken(opts: SecurityTokenOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const securityToken = ({
+    uuid: 'securityToken',
     ticker: opts.ticker,
     details: securityTokenDetailsStub.resolves(details),
     currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
@@ -1228,6 +1245,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
 function configureTickerReservation(opts: TickerReservationOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
   const tickerReservation = ({
+    uuid: 'tickerReservation',
     ticker: opts.ticker,
     details: tickerReservationDetailsStub.resolves(details),
   } as unknown) as MockTickerReservation;
@@ -1262,6 +1280,7 @@ function initTickerReservation(opts?: TickerReservationOptions): void {
  */
 function configureIdentity(opts: IdentityOptions): void {
   const identity = ({
+    uuid: 'identity',
     did: opts.did,
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
@@ -1277,6 +1296,7 @@ function configureIdentity(opts: IdentityOptions): void {
     getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
     getSecondaryKeys: identityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
     areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
+    isEqual: identityIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1304,6 +1324,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetTokenBalanceStub = sinon.stub();
   identityGetSecondaryKeysStub = sinon.stub();
   identityAreSecondaryKeysFrozenStub = sinon.stub();
+  identityIsEqualStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -1328,6 +1349,7 @@ function configureInstruction(opts: InstructionOptions): void {
     next: null,
   };
   const instruction = ({
+    uuid: 'instruction',
     id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
@@ -1365,6 +1387,7 @@ function initInstruction(opts?: InstructionOptions): void {
  */
 function configureAccount(opts: AccountOptions): void {
   const account = ({
+    uuid: 'account',
     address: opts.address,
     key: opts.key,
     getBalance: accountGetBalanceStub.resolves(opts.getBalance),
@@ -1372,6 +1395,7 @@ function configureAccount(opts: AccountOptions): void {
       opts.getIdentity === undefined ? mockInstanceContainer.identity : opts.getIdentity
     ),
     getTransactionHistory: accountGetTransactionHistoryStub.resolves(opts.getTransactionHistory),
+    isEqual: accountIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockAccount;
 
   Object.assign(mockInstanceContainer.account, account);
@@ -1391,6 +1415,7 @@ function initAccount(opts?: AccountOptions): void {
   accountGetBalanceStub = sinon.stub();
   accountGetIdentityStub = sinon.stub();
   accountGetTransactionHistoryStub = sinon.stub();
+  accountIsEqualStub = sinon.stub();
 
   accountOptions = { ...defaultAccountOptions, ...opts };
 
@@ -1410,6 +1435,7 @@ function configureSto(opts: StoOptions): void {
     ...opts.details,
   };
   const sto = ({
+    uuid: 'sto',
     details: stoDetailsStub.resolves(details),
     ticker: opts.ticker,
     id: opts.id,
@@ -1451,6 +1477,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     next: null,
   };
   const checkpoint = ({
+    uuid: 'checkpoint',
     createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
     totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
     ticker: opts.ticker,
@@ -1491,6 +1518,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
  */
 function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
   const checkpointSchedule = ({
+    uuid: 'checkpointSchedule',
     id: opts.id,
     ticker: opts.ticker,
     start: opts.start,
@@ -1529,6 +1557,7 @@ function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
  */
 function configureCorporateAction(opts: CorporateActionOptions): void {
   const corporateAction = ({
+    uuid: 'corporateAction',
     id: opts.id,
     ticker: opts.ticker,
     kind: opts.kind,
@@ -1573,6 +1602,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     : null;
 
   const dividendDistribution = ({
+    uuid: 'dividendDistribution',
     id: opts.id,
     ticker: opts.ticker,
     kind: CorporateActionKind.UnpredictableBenefit,
@@ -1925,6 +1955,14 @@ export function getIdentityGetScopeIdStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `Identity.isEqual` method
+ */
+export function getIdentityIsEqualStub(): SinonStub {
+  return identityIsEqualStub;
+}
+
+/**
+ * @hidden
  * Retrieve an Account instance
  */
 export function getAccountInstance(opts?: AccountOptions): MockAccount {
@@ -1961,6 +1999,14 @@ export function getAccountGetTransactionHistoryStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `Account.isEqual` method
+ */
+export function getAccountIsEqualStub(): SinonStub {
+  return accountIsEqualStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `NumberedPortfolio.isCustodiedBy` method
  */
 export function getNumberedPortfolioIsCustodiedByStub(): SinonStub {
@@ -1977,6 +2023,14 @@ export function getNumberedPortfolioGetCustodianStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `NumberedPortfolio.isEqual` method
+ */
+export function getNumberedPortfolioIsEqualStub(): SinonStub {
+  return numberedPortfolioIsEqualStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
  */
 export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
@@ -1989,6 +2043,14 @@ export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
  */
 export function getDefaultPortfolioGetCustodianStub(): SinonStub {
   return defaultPortfolioGetCustodianStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `DefaultPortfolio.isEqual` method
+ */
+export function getDefaultPortfolioIsEqualStub(): SinonStub {
+  return defaultPortfolioIsEqualStub;
 }
 
 /**

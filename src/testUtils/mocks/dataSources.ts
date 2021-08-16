@@ -292,6 +292,7 @@ interface ContextOptions {
   isFrozen?: boolean;
   addPair?: Pair;
   getAccounts?: Account[];
+  currentIdentityIsEqual?: boolean;
 }
 
 interface KeyringOptions {
@@ -559,6 +560,7 @@ const defaultContextOptions: ContextOptions = {
     publicKey: 'someKey',
   },
   getAccounts: [],
+  currentIdentityIsEqual: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -610,6 +612,7 @@ function configureContext(opts: ContextOptions): void {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
     areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
+    isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
   };
   opts.withSeed
     ? getCurrentIdentity.resolves(identity)

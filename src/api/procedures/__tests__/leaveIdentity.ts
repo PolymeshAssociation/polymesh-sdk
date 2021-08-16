@@ -103,7 +103,21 @@ describe('modifyCaCheckpoint procedure', () => {
       const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc()).toEqual({
+      let account = entityMockUtils.getAccountInstance({ isEqual: false });
+
+      expect(boundFunc({ account })).toEqual({
+        roles: false,
+        permissions: {
+          tokens: [],
+          transactions: [TxTags.identity.LeaveIdentityAsKey],
+          portfolios: [],
+        },
+      });
+
+      account = entityMockUtils.getAccountInstance({ isEqual: true });
+
+      expect(boundFunc({ account })).toEqual({
+        roles: true,
         permissions: {
           tokens: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],
