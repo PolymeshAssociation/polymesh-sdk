@@ -481,7 +481,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', memo).returns(rawMemo);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(memo, 32)).returns(rawMemo);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -1872,11 +1872,18 @@ describe('stringToMemo', () => {
     const fakeResult = ('memoDescription' as unknown) as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', value).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(value, 32)).returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('stringToMemo should throw an error if the value exceeds the maximum length', () => {
+    const value = 'someVeryLongDescriptionThatIsDefinitelyLongerThanTheMaxLength';
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => stringToMemo(value, context)).toThrow('Max memo length exceeded');
   });
 });
 
