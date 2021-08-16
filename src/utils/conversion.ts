@@ -1122,6 +1122,13 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  if (auth.isAddRelayerPayingKey) {
+    return {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: auth.asAddRelayerPayingKey,
+    };
+  }
+
   return {
     type: AuthorizationType.NoData,
   };
