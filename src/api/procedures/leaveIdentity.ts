@@ -49,13 +49,23 @@ export async function prepareLeaveIdentity(
 /**
  * @hidden
  */
-export function getAuthorization(): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<LeaveIdentityParams, void>,
+  { account }: LeaveIdentityParams
+): ProcedureAuthorization {
+  const currentAccount = this.context.getCurrentAccount();
+
+  const roles = account.isEqual(currentAccount);
+
+  const permissions = {
+    tokens: [],
+    portfolios: [],
+    transactions: [TxTags.identity.LeaveIdentityAsKey],
+  };
+
   return {
-    permissions: {
-      tokens: [],
-      portfolios: [],
-      transactions: [TxTags.identity.LeaveIdentityAsKey],
-    },
+    roles,
+    permissions,
   };
 }
 
