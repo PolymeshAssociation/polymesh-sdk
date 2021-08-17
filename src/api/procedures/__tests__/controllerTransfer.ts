@@ -131,7 +131,7 @@ describe('controllerTransfer procedure', () => {
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
       const portfolioId = {
-        did: 'piaDid',
+        did: 'oneDid',
       };
 
       dsMockUtils.getContextInstance({ did: portfolioId.did });
@@ -141,7 +141,6 @@ describe('controllerTransfer procedure', () => {
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
       const roles = [
-        { type: RoleType.TokenPia, ticker },
         {
           type: RoleType.PortfolioCustodian,
           portfolioId,

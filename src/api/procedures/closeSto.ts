@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
-import { ErrorCode, RoleType, StoSaleStatus, TxTags } from '~/types';
+import { ErrorCode, StoSaleStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 
@@ -55,7 +55,6 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const { context } = this;
   return {
-    roles: [{ type: RoleType.TokenPia, ticker }],
     permissions: {
       transactions: [TxTags.sto.Stop],
       tokens: [new SecurityToken({ ticker }, context)],

@@ -736,10 +736,7 @@ describe('Polymesh Class', () => {
 
   describe('method: getAccounts', () => {
     test('should return the list of signer accounts associated to the SDK', async () => {
-      const accounts = [
-        entityMockUtils.getCurrentAccountInstance(),
-        entityMockUtils.getAccountInstance(),
-      ];
+      const accounts = [entityMockUtils.getAccountInstance()];
       dsMockUtils.configureMocks({
         contextOptions: {
           getAccounts: accounts,

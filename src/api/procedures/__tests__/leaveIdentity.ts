@@ -41,9 +41,26 @@ describe('modifyCaCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the account is not a secondary key', async () => {
+  test('should throw an error if the Account is not associated to any Identity', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
-    const account = entityMockUtils.getCurrentAccountInstance();
+    const account = entityMockUtils.getAccountInstance({
+      getIdentity: null,
+    });
+
+    let error;
+
+    try {
+      await prepareLeaveIdentity.call(proc, { account });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('There is no Identity associated to this Account');
+  });
+
+  test('should throw an error if the Account is not a secondary key', async () => {
+    const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
+    const account = entityMockUtils.getAccountInstance();
 
     let error;
 
@@ -63,20 +80,18 @@ describe('modifyCaCheckpoint procedure', () => {
       'identity',
       'leaveIdentityAsKey'
     );
-
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        secondaryKeys: [
+    const account = entityMockUtils.getAccountInstance({
+      address,
+      getIdentity: entityMockUtils.getIdentityInstance({
+        getSecondaryKeys: [
           ({
             signer: entityMockUtils.getAccountInstance({ address }),
           } as unknown) as SecondaryKey,
         ],
-      },
+      }),
     });
+
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
-    const account = entityMockUtils.getCurrentAccountInstance({
-      address,
-    });
 
     await prepareLeaveIdentity.call(proc, { account });
 
@@ -88,7 +103,21 @@ describe('modifyCaCheckpoint procedure', () => {
       const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc()).toEqual({
+      let account = entityMockUtils.getAccountInstance({ isEqual: false });
+
+      expect(boundFunc({ account })).toEqual({
+        roles: false,
+        permissions: {
+          tokens: [],
+          transactions: [TxTags.identity.LeaveIdentityAsKey],
+          portfolios: [],
+        },
+      });
+
+      account = entityMockUtils.getAccountInstance({ isEqual: true });
+
+      expect(boundFunc({ account })).toEqual({
+        roles: true,
         permissions: {
           tokens: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],

@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
 
-import { Authorizations, Context, Entity, Identity } from '~/internal';
+import { Authorizations, Context, Entity, Identity, leaveIdentity } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
@@ -13,6 +13,7 @@ import {
   NumberedPortfolio,
   Permissions,
   PermissionType,
+  ProcedureMethod,
   ResultSet,
   SimplePermissions,
   SubCallback,
@@ -29,7 +30,12 @@ import {
   stringToAccountId,
   txTagToExtrinsicIdentifier,
 } from '~/utils/conversion';
-import { assertFormatValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
+import {
+  assertFormatValid,
+  calculateNextKey,
+  createProcedureMethod,
+  isModuleOrTagMatch,
+} from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   address: string;
@@ -75,7 +81,17 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     this.address = address;
     this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
+
+    this.leaveIdentity = createProcedureMethod(
+      { getProcedureAndArgs: () => [leaveIdentity, { account: this }] },
+      context
+    );
   }
+
+  /**
+   * Leave the Account's Identity. This operation can only be done if the Account is a secondary key for the Identity
+   */
+  public leaveIdentity: ProcedureMethod<void, void>;
 
   /**
    * Get the free/locked POLYX balance of the account

@@ -10,7 +10,6 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -187,7 +186,6 @@ describe('modifyCaCheckpoint procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.TokenCaa, ticker }],
         permissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],

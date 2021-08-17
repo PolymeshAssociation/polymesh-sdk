@@ -3,7 +3,7 @@ import { isEqual, remove } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TokenDocument } from '~/types';
+import { ErrorCode, TokenDocument } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
 
@@ -80,7 +80,6 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    roles: [{ type: RoleType.TokenCaa, ticker }],
     permissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
       transactions: [TxTags.corporateAction.LinkCaDoc],
