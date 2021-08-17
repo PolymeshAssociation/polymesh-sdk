@@ -38,9 +38,6 @@ export class Checkpoints extends Namespace<SecurityToken> {
 
   /**
    * Create a snapshot of Security Token holders and their respective balances at this moment
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public create: ProcedureMethod<void, Checkpoint>;
 

@@ -84,10 +84,7 @@ export async function getAuthorization(
   const portfolioId = { did };
 
   return {
-    roles: [
-      { type: RoleType.TokenPia, ticker },
-      { type: RoleType.PortfolioCustodian, portfolioId },
-    ],
+    roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     permissions: {
       tokens: [token],
       transactions: [TxTags.asset.ControllerTransfer],
