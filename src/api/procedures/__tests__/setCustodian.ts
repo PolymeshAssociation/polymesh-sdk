@@ -130,7 +130,7 @@ describe('setCustodian procedure', () => {
       PortfolioCustody: dsMockUtils.createMockPortfolioId({ did: rawDid, kind: rawPortfolioKind }),
     });
     const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
-    const fakePortfolio = entityMockUtils.getNumberedPortfolioInstance({ uuid: 'otherUuid' });
+    const fakePortfolio = entityMockUtils.getNumberedPortfolioInstance({ isEqual: false });
     const receivedAuthorizations: AuthorizationRequest[] = [
       entityMockUtils.getAuthorizationRequestInstance({
         target,
@@ -146,6 +146,12 @@ describe('setCustodian procedure', () => {
         authorizations: {
           getReceived: receivedAuthorizations,
         },
+      },
+      defaultPortfolioOptions: {
+        isEqual: false,
+      },
+      numberedPortfolioOptions: {
+        isEqual: false,
       },
     });
 
