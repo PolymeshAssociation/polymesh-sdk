@@ -89,6 +89,8 @@ export enum RoleType {
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
   CorporateActionsAgent = 'CorporateActionsAgent',
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  Identity = 'Identity',
 }
 
 export interface TickerOwnerRole {
@@ -110,7 +112,17 @@ export interface PortfolioCustodianRole {
   portfolioId: PortfolioId;
 }
 
-export type Role = TickerOwnerRole | CddProviderRole | VenueOwnerRole | PortfolioCustodianRole;
+export interface IdentityRole {
+  type: RoleType.Identity;
+  did: string;
+}
+
+export type Role =
+  | TickerOwnerRole
+  | CddProviderRole
+  | VenueOwnerRole
+  | PortfolioCustodianRole
+  | IdentityRole;
 
 /**
  * @hidden
@@ -138,6 +150,13 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
  */
 export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
   return role.type === RoleType.TickerOwner;
+}
+
+/**
+ * @hidden
+ */
+export function isIdentityRole(role: Role): role is IdentityRole {
+  return role.type === RoleType.Identity;
 }
 
 export enum KnownTokenType {
