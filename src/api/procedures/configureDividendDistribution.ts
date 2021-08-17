@@ -206,10 +206,7 @@ export function getAuthorization(
   } = this;
 
   return {
-    roles: [
-      { type: RoleType.TokenCaa, ticker },
-      { type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(portfolio) },
-    ],
+    roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(portfolio) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Distribute],
       tokens: [new SecurityToken({ ticker }, context)],

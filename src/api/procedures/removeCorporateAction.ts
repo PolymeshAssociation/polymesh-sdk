@@ -10,7 +10,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   corporateActionIdentifierToCaId,
@@ -121,7 +121,6 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    roles: [{ type: RoleType.TokenCaa, ticker }],
     permissions: {
       transactions: [TxTags.corporateAction.RemoveCa],
       tokens: [new SecurityToken({ ticker }, this.context)],

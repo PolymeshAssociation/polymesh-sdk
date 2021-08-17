@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';
@@ -62,7 +62,6 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const { context } = this;
   return {
-    roles: [{ type: RoleType.TokenPia, ticker }],
     permissions: {
       transactions: [TxTags.asset.Issue],
       tokens: [new SecurityToken({ ticker }, context)],

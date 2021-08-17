@@ -51,7 +51,7 @@ import { Polymesh } from '@polymathnetwork/polymesh-sdk';
 
 async function run() {
   const polyClient = await Polymesh.connect({
-    nodeUrl: 'https://some-node-url.com',
+    nodeUrl: 'wss://some-node-url.com',
     accountSeed: 'YOUWISH',
   });
 
@@ -75,7 +75,7 @@ async function run() {
   const signer = getSignerFromExtension(); // this is not an existing function, how you get this depends on the extension
 
   const polyClient = await Polymesh.connect({
-    nodeUrl: 'https://some-node-url.com',
+    nodeUrl: 'wss://some-node-url.com',
     keyring,
     signer,
   });

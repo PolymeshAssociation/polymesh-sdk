@@ -1,14 +1,19 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Account, Context, Entity } from '~/internal';
+import { Account, Context, Entity, TransactionQueue } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, Permissions, PermissionType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Account class', () => {
   let context: Mocked<Context>;
@@ -22,6 +27,7 @@ describe('Account class', () => {
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
+    procedureMockUtils.initMocks();
     assertFormatValidStub = sinon.stub(utilsInternalModule, 'assertFormatValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
 
@@ -37,12 +43,13 @@ describe('Account class', () => {
   afterEach(() => {
     entityMockUtils.reset();
     dsMockUtils.reset();
-    sinon.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     entityMockUtils.cleanup();
     dsMockUtils.cleanup();
+    procedureMockUtils.cleanup();
     sinon.restore();
   });
 
@@ -57,6 +64,8 @@ describe('Account class', () => {
       // eslint-disable-next-line no-new
       new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context);
     }).toThrow();
+
+    sinon.reset();
   });
 
   describe('method: isUniqueIdentifiers', () => {
@@ -434,6 +443,25 @@ describe('Account class', () => {
       });
 
       expect(result).toEqual(true);
+    });
+  });
+
+  describe('method: leaveIdentity', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      const args = {
+        account,
+      };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await account.leaveIdentity();
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
