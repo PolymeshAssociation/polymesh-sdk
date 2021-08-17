@@ -1,14 +1,8 @@
 import { TxTags } from 'polymesh-types/types';
 
-import {
-  CustomPermissionGroup,
-  Identity,
-  KnownPermissionGroup,
-  PolymeshError,
-  Procedure,
-  SecurityToken,
-} from '~/internal';
-import { ErrorCode, PermissionGroupType } from '~/types';
+import { isFullGroupType } from '~/api/procedures/utils';
+import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 import { getDid } from '~/utils/internal';
@@ -30,12 +24,6 @@ export type Params = RemoveExternalAgentParams & {
 export interface Storage {
   token: SecurityToken;
 }
-
-/**
- * @hidden
- */
-const isFullGroupType = (group: KnownPermissionGroup | CustomPermissionGroup): boolean =>
-  group instanceof KnownPermissionGroup && group.type === PermissionGroupType.Full;
 
 /**
  * @hidden

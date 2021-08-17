@@ -1,4 +1,3 @@
-
 import {
   Context,
   CustomPermissionGroup,
@@ -12,7 +11,7 @@ import { ErrorCode, ProcedureMethod } from '~/types';
 import {
   agentGroupToPermissionGroup,
   stringToIdentityId,
-  stringToTicker
+  stringToTicker,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 

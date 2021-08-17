@@ -96,6 +96,7 @@ type MockCorporateAction = Mocked<CorporateAction>;
 type MockDividendDistribution = Mocked<DividendDistribution>;
 type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
 type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
+type MockAgent = Mocked<Agent>;
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -119,6 +120,7 @@ const mockInstanceContainer = {
   checkpointSchedule: {} as MockCheckpointSchedule,
   corporateAction: {} as MockCorporateAction,
   dividendDistribution: {} as MockDividendDistribution,
+  agent: {} as MockAgent,
 };
 
 interface IdentityOptions {
@@ -288,6 +290,12 @@ interface DividendDistributionOptions {
   getParticipant?: Partial<DistributionParticipant> | null;
 }
 
+interface AgentOptions {
+  did?: string;
+  ticker?: string;
+  getPermissionGroup?: CustomPermissionGroup | KnownPermissionGroup;
+}
+
 type MockOptions = {
   identityOptions?: IdentityOptions;
   currentIdentityOptions?: IdentityOptions;
@@ -308,6 +316,7 @@ type MockOptions = {
   dividendDistributionOptions?: DividendDistributionOptions;
   customPermissionGroupOptions?: CustomPermissionGroupOptions;
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
+  agentOptions?: AgentOptions;
 };
 
 let identityConstructorStub: SinonStub;
@@ -330,6 +339,7 @@ let corporateActionConstructorStub: SinonStub;
 let dividendDistributionConstructorStub: SinonStub;
 let customPermissionGroupConstructorStub: SinonStub;
 let knownPermissionGroupConstructorStub: SinonStub;
+let agentConstructorStub: SinonStub;
 
 let securityTokenDetailsStub: SinonStub;
 let securityTokenCurrentFundingRoundStub: SinonStub;
@@ -396,6 +406,7 @@ let dividendDistributionGetParticipantStub: SinonStub;
 let dividendDistributionCheckpointStub: SinonStub;
 let customPermissionGroupGetPermissionsStub: SinonStub;
 let knownPermissionGroupGetPermissionsStub: SinonStub;
+let agentGetPermissionGroupStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -577,6 +588,15 @@ const MockKnownPermissionGroupClass = class {
   }
 };
 
+const MockAgentClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return agentConstructorStub(...args);
+  }
+};
+
 export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Identity: MockIdentityClass,
@@ -675,6 +695,11 @@ export const mockCustomPermissionGroupModule = (path: string) => (): Record<stri
 export const mockKnownPermissionGroupModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   KnownPermissionGroup: MockKnownPermissionGroupClass,
+});
+
+export const mockAgentModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  Agent: MockAgentClass,
 });
 
 const defaultIdentityOptions: IdentityOptions = {
@@ -932,6 +957,12 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
   },
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
+const defaultAgentOptions: AgentOptions = {
+  did: 'someDid',
+  ticker: 'SOME_TICKER',
+  getPermissionGroup: ('CustomPermissionGroup' as unknown) as CustomPermissionGroup,
+};
+let agentOptions = defaultAgentOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -1775,6 +1806,38 @@ function initDividendDistribution(opts?: DividendDistributionOptions): void {
 
 /**
  * @hidden
+ * Configure the Agent instance
+ */
+function configureAgent(opts: AgentOptions): void {
+  const agent = ({
+    did: opts.did,
+    ticker: opts.ticker,
+    getPermissionGroup: agentGetPermissionGroupStub.resolves(opts.getPermissionGroup),
+  } as unknown) as MockAgent;
+
+  Object.assign(mockInstanceContainer.agent, agent);
+  agentConstructorStub.callsFake(args => {
+    const value = merge({}, agent, args);
+    Object.setPrototypeOf(value, require('~/internal').Agent.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Agent instance
+ */
+function initAgent(opts?: AgentOptions): void {
+  agentConstructorStub = sinon.stub();
+  agentGetPermissionGroupStub = sinon.stub();
+
+  agentOptions = merge({}, defaultDividendDistributionOptions, opts);
+
+  configureAgent(agentOptions);
+}
+
+/**
+ * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -1897,6 +1960,12 @@ export function configureMocks(opts?: MockOptions): void {
     ...opts?.dividendDistributionOptions,
   };
   configureDividendDistribution(tempDividendDistributionOptions);
+
+  const tempAgentOptions = {
+    ...agentOptions,
+    ...opts?.agentOptions,
+  };
+  configureAgent(tempAgentOptions);
 }
 
 /**
@@ -1965,6 +2034,9 @@ export function initMocks(opts?: MockOptions): void {
 
   // DividendDistribution
   initDividendDistribution(opts?.dividendDistributionOptions);
+
+  // Agent
+  initAgent(opts?.agentOptions);
 }
 
 /**
@@ -1989,6 +2061,7 @@ export function cleanup(): void {
   mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
   mockInstanceContainer.corporateAction = {} as MockCorporateAction;
   mockInstanceContainer.dividendDistribution = {} as MockDividendDistribution;
+  mockInstanceContainer.agent = {} as MockAgent;
 }
 
 /**
@@ -2018,6 +2091,7 @@ export function reset(): void {
     dividendDistributionOptions,
     customPermissionGroupOptions,
     knownPermissionGroupOptions,
+    agentOptions,
   });
 }
 
@@ -2863,4 +2937,37 @@ export function getKnownPermissionGroupGetPermissionsStub(
     return knownPermissionGroupGetPermissionsStub.resolves(getPermissions);
   }
   return knownPermissionGroupGetPermissionsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the Agent constructor stub
+ */
+export function getAgentConstructorStub(): SinonStub {
+  return agentConstructorStub;
+}
+
+/**
+ * @hidden
+ * Retrieve a Agent instance
+ */
+export function getAgentInstance(opts?: AgentOptions): MockAgent {
+  if (opts) {
+    configureAgent({ ...defaultAgentOptions, ...opts });
+  }
+
+  return new MockAgentClass() as MockAgent;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Agent.getPermissionGroup` method
+ */
+export function getAgentGetPermissionGroupStub(
+  getPermissionGroup?: CustomPermissionGroup | KnownPermissionGroup
+): SinonStub {
+  if (getPermissionGroup) {
+    return agentGetPermissionGroupStub.resolves(getPermissionGroup);
+  }
+  return agentGetPermissionGroupStub;
 }
