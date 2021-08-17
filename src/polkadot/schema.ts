@@ -1,12 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export default {
   types: {
-    AccountInfo: 'AccountInfoWithRefCount',
-    Address: 'IndicesLookupSource',
-    LookupSource: 'IndicesLookupSource',
-    ValidatorPrefsWithBlocked: {
-      commission: 'Compact<Perbill>',
-    },
+    Address: 'MultiAddress',
+    LookupSource: 'MultiAddress',
+    AccountInfo: 'AccountInfoWithDualRefCount',
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
     EventCounts: 'Vec<u32>',
@@ -143,6 +140,10 @@ export default {
     SecondaryKeyWithAuth: {
       secondary_key: 'SecondaryKey',
       auth_signature: 'Signature',
+    },
+    Subsidy: {
+      paying_key: 'AccountId',
+      remaining: 'Balance',
     },
     IdentityRole: {
       _enum: [
@@ -686,6 +687,7 @@ export default {
         NoData: '',
         TransferCorporateActionAgent: 'Ticker',
         BecomeAgent: '(Ticker, AgentGroup)',
+        AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
       },
     },
     SmartExtensionType: {
@@ -879,14 +881,12 @@ export default {
         AttestPrimaryKeyRotation: '',
         RotatePrimaryKey: '',
         TransferTicker: '',
-        TransferPrimaryIssuanceAgent: '',
         AddMultiSigSigner: '',
         TransferAssetOwnership: '',
         JoinIdentity: '',
         PortfolioCustody: '',
         Custom: '',
         NoData: '',
-        TransferCorporateActionAgent: '',
       },
     },
     ProposalDetails: {

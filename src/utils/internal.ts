@@ -2,6 +2,7 @@ import {
   AugmentedEvent,
   AugmentedQuery,
   AugmentedQueryDoubleMap,
+  DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
 import { StorageKey } from '@polkadot/types';
@@ -277,10 +278,12 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
   let entries: [StorageKey<T>, ObsInnerType<ReturnType<F>>][];
   let lastKey: NextKey = null;
 
+  const args = arg ? [arg] : [];
+
   if (paginationOpts) {
     const { size: pageSize, start: startKey } = paginationOpts;
     entries = await query.entriesPaged({
-      arg,
+      args,
       pageSize,
       startKey,
     });
@@ -289,7 +292,11 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
       lastKey = entries[entries.length - 1][0].toHex();
     }
   } else {
-    entries = await query.entries(arg);
+    /*
+     * NOTE @monitz87: this assertion is required because types
+     *   are inconsistent in the polkadot repo
+     */
+    entries = await query.entries(...(args as DropLast<Parameters<F>>));
   }
 
   return {
