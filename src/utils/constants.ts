@@ -9,7 +9,6 @@ import { TransactionArgumentType } from '~/types';
 export const MAX_DECIMALS = 6;
 export const MAX_TICKER_LENGTH = 12;
 export const MAX_MODULE_LENGTH = 32;
-export const MAX_MEMO_LENGTH = 32;
 /**
  * Biggest possible number for on-chain balances
  */

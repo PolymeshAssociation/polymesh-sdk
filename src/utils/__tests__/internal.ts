@@ -43,7 +43,7 @@ import {
 
 describe('delay', () => {
   beforeAll(() => {
-    jest.useFakeTimers('legacy');
+    jest.useFakeTimers();
   });
 
   afterAll(() => {
@@ -311,7 +311,6 @@ describe('requestPaginated', () => {
 
     res = await requestPaginated(queryStub, {
       paginationOpts: { size: 4 },
-      arg: 'something',
     });
 
     expect(res.lastKey).toBeNull();

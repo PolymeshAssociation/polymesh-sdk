@@ -204,7 +204,6 @@ import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
   MAX_DECIMALS,
-  MAX_MEMO_LENGTH,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
@@ -298,7 +297,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
     });
   }
 
-  return context.polymeshApi.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
+  return context.polymeshApi.createType('Ticker', ticker);
 }
 
 /**
@@ -1230,17 +1229,7 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
  * @hidden
  */
 export function stringToMemo(value: string, context: Context): Memo {
-  if (value.length > MAX_MEMO_LENGTH) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Max memo length exceeded',
-      data: {
-        maxLength: MAX_MEMO_LENGTH,
-      },
-    });
-  }
-
-  return context.polymeshApi.createType('Memo', padString(value, MAX_MEMO_LENGTH));
+  return context.polymeshApi.createType('Memo', value);
 }
 
 /**

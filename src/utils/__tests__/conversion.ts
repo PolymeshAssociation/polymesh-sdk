@@ -114,7 +114,6 @@ import {
 import { InstructionStatus, PermissionGroupIdentifier, ScopeClaimProof } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
-import { padString } from '~/utils/internal';
 
 import {
   accountIdToString,
@@ -455,7 +454,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', ticker).returns(rawTicker);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -484,7 +483,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(memo, 32)).returns(rawMemo);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', memo).returns(rawMemo);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -525,7 +524,7 @@ describe('stringToTicker and tickerToString', () => {
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(value, 12)).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', value).returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
@@ -816,7 +815,6 @@ describe('signerToSignerValue and signerValueToSigner', () => {
     expect((result as Account).address).toBe(value);
 
     value = 'someDid';
-
     signerValue = { type: SignerType.Identity, value };
 
     result = signerValueToSigner(signerValue, context);
@@ -1336,7 +1334,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       })
       .returns(fakeResult);
-    createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+    createTypeStub.withArgs('Ticker', ticker).returns(rawTicker);
     createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
 
     result = permissionsToMeshPermissions(value, context);
@@ -1472,9 +1470,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       })
       .returns(fakeResult);
 
-    tickers.forEach((t, i) =>
-      createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
-    );
+    tickers.forEach((t, i) => createTypeStub.withArgs('Ticker', t).returns(rawTickers[i]));
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
@@ -1964,18 +1960,11 @@ describe('stringToMemo', () => {
     const fakeResult = ('memoDescription' as unknown) as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(value, 32)).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', value).returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
     expect(result).toEqual(fakeResult);
-  });
-
-  test('stringToMemo should throw an error if the value exceeds the maximum length', () => {
-    const value = 'someVeryLongDescriptionThatIsDefinitelyLongerThanTheMaxLength';
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => stringToMemo(value, context)).toThrow('Max memo length exceeded');
   });
 });
 
@@ -4320,57 +4309,57 @@ describe('transactionToTxTag', () => {
 //   });
 // });
 
-// NOTE uncomment in Governance v2 upgrade
-// describe('meshProposalStateToProposalState', () => {
-//   beforeAll(() => {
-//     dsMockUtils.initMocks();
-//   });
+describe('meshProposalStateToProposalState', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
 
-//   afterEach(() => {
-//     dsMockUtils.reset();
-//   });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
 
-//   afterAll(() => {
-//     dsMockUtils.cleanup();
-//   });
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
 
-//   test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
-//     let fakeResult: ProposalState = ProposalState.Cancelled;
+  // NOTE uncomment in Governance v2 upgrade
+  // test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+  //   let fakeResult: ProposalState = ProposalState.Cancelled;
 
-//     let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   let proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     let result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   let result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Killed;
+  //   fakeResult = ProposalState.Killed;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Pending;
+  //   fakeResult = ProposalState.Pending;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Referendum;
+  //   fakeResult = ProposalState.Referendum;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Rejected;
+  //   fakeResult = ProposalState.Rejected;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
-//   });
-// });
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
+  // });
+});
 
 describe('meshAffirmationStatusToAffirmationStatus', () => {
   beforeAll(() => {
@@ -6236,7 +6225,7 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId.toNumber());
     const fakeResult = ('CAId' as unknown) as CAId;
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', args.ticker).returns(ticker);
     dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
 
     dsMockUtils

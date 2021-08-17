@@ -7,6 +7,7 @@ import type { BalanceStatus } from '@polkadot/types/interfaces/balances';
 import type { EthereumAddress } from '@polkadot/types/interfaces/claims';
 import type { MemberCount, ProposalIndex } from '@polkadot/types/interfaces/collective';
 import type { AuthorityId } from '@polkadot/types/interfaces/consensus';
+import type { CodeHash } from '@polkadot/types/interfaces/contracts';
 import type { AuthorityList } from '@polkadot/types/interfaces/grandpa';
 import type { Kind, OpaqueTimeSlot } from '@polkadot/types/interfaces/offences';
 import type {
@@ -60,6 +61,7 @@ import type {
   Leg,
   MaybeBlock,
   Memo,
+  MetaUrl,
   MigrationError,
   PalletName,
   Permissions,
@@ -265,6 +267,48 @@ declare module '@polkadot/api/types/events' {
        * An unexpected error happened that should be investigated.
        **/
       UnexpectedError: AugmentedEvent<ApiType, [Option<DispatchError>]>;
+    };
+    baseContracts: {
+      /**
+       * Code with the specified hash has been stored.
+       * \[code_hash\]
+       **/
+      CodeStored: AugmentedEvent<ApiType, [Hash]>;
+      /**
+       * An event deposited upon execution of a contract from the account.
+       * \[account, data\]
+       **/
+      ContractExecution: AugmentedEvent<ApiType, [AccountId, Bytes]>;
+      /**
+       * Contract has been evicted and is now in tombstone state.
+       * \[contract, tombstone\]
+       *
+       * # Params
+       *
+       * - `contract`: `AccountId`: The account ID of the evicted contract.
+       * - `tombstone`: `bool`: True if the evicted contract left behind a tombstone.
+       **/
+      Evicted: AugmentedEvent<ApiType, [AccountId, bool]>;
+      /**
+       * Contract deployed by address at the specified address. \[owner, contract\]
+       **/
+      Instantiated: AugmentedEvent<ApiType, [AccountId, AccountId]>;
+      /**
+       * Restoration for a contract has been successful.
+       * \[donor, dest, code_hash, rent_allowance\]
+       *
+       * # Params
+       *
+       * - `donor`: `AccountId`: Account ID of the restoring contract
+       * - `dest`: `AccountId`: Account ID of the restored contract
+       * - `code_hash`: `Hash`: Code hash of the restored contract
+       * - `rent_allowance: `Balance`: Rent allowance of the restored contract
+       **/
+      Restored: AugmentedEvent<ApiType, [AccountId, AccountId, Hash, Balance]>;
+      /**
+       * Triggered when the current \[schedule\] is updated.
+       **/
+      ScheduleUpdated: AugmentedEvent<ApiType, [u32]>;
     };
     bridge: {
       /**
@@ -501,6 +545,54 @@ declare module '@polkadot/api/types/events' {
        * (caller DID, Ticker, Removed TrustedIssuer).
        **/
       TrustedDefaultClaimIssuerRemoved: AugmentedEvent<ApiType, [IdentityId, Ticker, IdentityId]>;
+    };
+    contracts: {
+      /**
+       * Emitted when instantiation fee of a template get changed.
+       * IdentityId of the owner, Code hash of the template, old instantiation fee, new instantiation fee.
+       **/
+      InstantiationFeeChanged: AugmentedEvent<ApiType, [IdentityId, CodeHash, Balance, Balance]>;
+      /**
+       * Emitted when the instantiation of the template get frozen.
+       * IdentityId of the owner, Code hash of the template.
+       **/
+      InstantiationFreezed: AugmentedEvent<ApiType, [IdentityId, CodeHash]>;
+      /**
+       * Emitted when the instantiation of the template gets un-frozen.
+       * IdentityId of the owner, Code hash of the template.
+       **/
+      InstantiationUnFreezed: AugmentedEvent<ApiType, [IdentityId, CodeHash]>;
+      /**
+       * Executing `put_code` has been enabled or disabled.
+       * (new flag state)
+       **/
+      PutCodeFlagChanged: AugmentedEvent<ApiType, [bool]>;
+      /**
+       * Emitted when the template instantiation fees gets changed.
+       * IdentityId of the owner, Code hash of the template, Old instantiation fee, New instantiation fee.
+       **/
+      TemplateInstantiationFeeChanged: AugmentedEvent<
+        ApiType,
+        [IdentityId, CodeHash, Balance, Balance]
+      >;
+      /**
+       * Emitted when the template meta url get changed.
+       * IdentityId of the owner, Code hash of the template, old meta url, new meta url.
+       **/
+      TemplateMetaUrlChanged: AugmentedEvent<
+        ApiType,
+        [IdentityId, CodeHash, Option<MetaUrl>, Option<MetaUrl>]
+      >;
+      /**
+       * Emitted when the template ownership get transferred.
+       * IdentityId of the owner, Code hash of the template, IdentityId of the new owner of the template.
+       **/
+      TemplateOwnershipTransferred: AugmentedEvent<ApiType, [IdentityId, CodeHash, IdentityId]>;
+      /**
+       * Emitted when the template usage fees gets changed.
+       * IdentityId of the owner, Code hash of the template,Old usage fee, New usage fee.
+       **/
+      TemplateUsageFeeChanged: AugmentedEvent<ApiType, [IdentityId, CodeHash, Balance, Balance]>;
     };
     corporateAction: {
       /**
@@ -754,7 +846,7 @@ declare module '@polkadot/api/types/events' {
     };
     indices: {
       /**
-       * A account index was assigned. \[index, who\]
+       * A account index was assigned. \[who, index\]
        **/
       IndexAssigned: AugmentedEvent<ApiType, [AccountId, AccountIndex]>;
       /**
@@ -762,7 +854,7 @@ declare module '@polkadot/api/types/events' {
        **/
       IndexFreed: AugmentedEvent<ApiType, [AccountIndex]>;
       /**
-       * A account index has been frozen to its current account ID. \[index, who\]
+       * A account index has been frozen to its current account ID. \[who, index\]
        **/
       IndexFrozen: AugmentedEvent<ApiType, [AccountIndex, AccountId]>;
     };
@@ -1192,7 +1284,7 @@ declare module '@polkadot/api/types/events' {
     };
     staking: {
       /**
-       * An account has bonded this amount. \[did, stash, amount\]
+       * An account has bonded this amount. [did, stash, amount]
        *
        * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
        * it will not be emitted for staking rewards when they are added to stake.
@@ -1206,7 +1298,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * The era payout has been set; the first balance is the validator-payout; the second is
        * the remainder from the maximum amount of reward.
-       * \[era_index, validator_payout, remainder\]
+       * [era_index, validator_payout, remainder]
        **/
       EraPayout: AugmentedEvent<ApiType, [EraIndex, Balance, Balance]>;
       /**
@@ -1224,7 +1316,7 @@ declare module '@polkadot/api/types/events' {
       Nominated: AugmentedEvent<ApiType, [IdentityId, AccountId, Vec<AccountId>]>;
       /**
        * An old slashing report from a prior era was discarded because it could
-       * not be processed. \[session_index\]
+       * not be processed. [session_index]
        **/
       OldSlashingReportDiscarded: AugmentedEvent<ApiType, [SessionIndex]>;
       /**
@@ -1238,7 +1330,7 @@ declare module '@polkadot/api/types/events' {
        **/
       PermissionedIdentityRemoved: AugmentedEvent<ApiType, [IdentityId, IdentityId]>;
       /**
-       * The staker has been rewarded by this amount. \[stash_identity, stash, amount\]
+       * The staker has been rewarded by this amount. [stash_identity, stash, amount]
        **/
       Reward: AugmentedEvent<ApiType, [IdentityId, AccountId, Balance]>;
       /**
@@ -1250,7 +1342,7 @@ declare module '@polkadot/api/types/events' {
       >;
       /**
        * One validator (and its nominators) has been slashed by the given amount.
-       * \[validator, amount\]
+       * [validator, amount]
        **/
       Slash: AugmentedEvent<ApiType, [AccountId, Balance]>;
       /**
@@ -1258,20 +1350,20 @@ declare module '@polkadot/api/types/events' {
        **/
       SlashingAllowedForChanged: AugmentedEvent<ApiType, [SlashingSwitch]>;
       /**
-       * A new solution for the upcoming election has been stored. \[compute\]
+       * A new solution for the upcoming election has been stored. [compute]
        **/
       SolutionStored: AugmentedEvent<ApiType, [ElectionCompute]>;
       /**
-       * A new set of stakers was elected with the given \[compute\].
+       * A new set of stakers was elected with the given [compute].
        **/
       StakingElection: AugmentedEvent<ApiType, [ElectionCompute]>;
       /**
-       * An account has unbonded this amount. \[did, stash, amount\]
+       * An account has unbonded this amount. [did, stash, amount]
        **/
       Unbonded: AugmentedEvent<ApiType, [IdentityId, AccountId, Balance]>;
       /**
        * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
-       * from the unlocking queue. \[stash, amount\]
+       * from the unlocking queue. [stash, amount]
        **/
       Withdrawn: AugmentedEvent<ApiType, [AccountId, Balance]>;
     };

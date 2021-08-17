@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { Vec, u32, u64, u8 } from '@polkadot/types';
+import type { Vec, u32, u64 } from '@polkadot/types';
 import type {
   Balance,
   BalanceOf,
@@ -10,12 +10,11 @@ import type {
   Perbill,
   Permill,
   RuntimeDbWeight,
+  Weight,
 } from '@polkadot/types/interfaces/runtime';
 import type { SessionIndex } from '@polkadot/types/interfaces/session';
 import type { EraIndex } from '@polkadot/types/interfaces/staking';
-import type { RuntimeVersion } from '@polkadot/types/interfaces/state';
 import type { WeightToFeeCoefficient } from '@polkadot/types/interfaces/support';
-import type { BlockLength, BlockWeights } from '@polkadot/types/interfaces/system';
 import type { ApiTypes } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/consts' {
@@ -29,9 +28,6 @@ declare module '@polkadot/api/types/consts' {
       /**
        * The number of **slots** that an epoch takes. We couple sessions to
        * epochs, i.e. we start a new session once the new epoch begins.
-       * NOTE: Currently it is not possible to change the epoch duration
-       * after the chain has started. Attempting to do so will brick block
-       * production.
        **/
       epochDuration: u64 & AugmentedConst<ApiType>;
       /**
@@ -52,12 +48,78 @@ declare module '@polkadot/api/types/consts' {
     base: {
       maxLen: u32 & AugmentedConst<ApiType>;
     };
+    baseContracts: {
+      /**
+       * The maximum nesting level of a call/instantiate stack. A reasonable default
+       * value is 100.
+       **/
+      maxDepth: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum size of a storage value in bytes. A reasonable default is 16 KiB.
+       **/
+      maxValueSize: u32 & AugmentedConst<ApiType>;
+      /**
+       * Price of a byte of storage per one block interval. Should be greater than 0.
+       **/
+      rentByteFee: BalanceOf & AugmentedConst<ApiType>;
+      /**
+       * The amount of funds a contract should deposit in order to offset
+       * the cost of one byte.
+       *
+       * Let's suppose the deposit is 1,000 BU (balance units)/byte and the rent is 1 BU/byte/day,
+       * then a contract with 1,000,000 BU that uses 1,000 bytes of storage would pay no rent.
+       * But if the balance reduced to 500,000 BU and the storage stayed the same at 1,000,
+       * then it would pay 500 BU/day.
+       **/
+      rentDepositOffset: BalanceOf & AugmentedConst<ApiType>;
+      /**
+       * Number of block delay an extrinsic claim surcharge has.
+       *
+       * When claim surcharge is called by an extrinsic the rent is checked
+       * for current_block - delay
+       **/
+      signedClaimHandicap: BlockNumber & AugmentedConst<ApiType>;
+      /**
+       * A size offset for an contract. A just created account with untouched storage will have that
+       * much of storage from the perspective of the state rent.
+       *
+       * This is a simple way to ensure that contracts with empty storage eventually get deleted
+       * by making them pay rent. This creates an incentive to remove them early in order to save
+       * rent.
+       **/
+      storageSizeOffset: u32 & AugmentedConst<ApiType>;
+      /**
+       * Reward that is received by the party whose touch has led
+       * to removal of a contract.
+       **/
+      surchargeReward: BalanceOf & AugmentedConst<ApiType>;
+      /**
+       * The minimum amount required to generate a tombstone.
+       **/
+      tombstoneDeposit: BalanceOf & AugmentedConst<ApiType>;
+    };
     complianceManager: {
       maxConditionComplexity: u32 & AugmentedConst<ApiType>;
+    };
+    contracts: {
+      /**
+       * The minimum amount required to generate a tombstone.
+       **/
+      networkShareInInstantiationFee: Perbill & AugmentedConst<ApiType>;
     };
     corporateAction: {
       maxDidWhts: u32 & AugmentedConst<ApiType>;
       maxTargetIds: u32 & AugmentedConst<ApiType>;
+    };
+    finalityTracker: {
+      /**
+       * The delay after which point things become suspicious. Default is 1000.
+       **/
+      reportLatency: BlockNumber & AugmentedConst<ApiType>;
+      /**
+       * The number of recent samples to keep from this chain. Default is 101.
+       **/
+      windowSize: BlockNumber & AugmentedConst<ApiType>;
     };
     identity: {
       initialPolyx: Balance & AugmentedConst<ApiType>;
@@ -136,33 +198,29 @@ declare module '@polkadot/api/types/consts' {
     };
     system: {
       /**
-       * Maximum number of block number to block hash mappings to keep (oldest pruned first).
+       * The base weight of executing a block, independent of the transactions in the block.
+       **/
+      blockExecutionWeight: Weight & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of blocks to allow in mortal eras.
        **/
       blockHashCount: BlockNumber & AugmentedConst<ApiType>;
-      /**
-       * The maximum length of a block (in bytes).
-       **/
-      blockLength: BlockLength & AugmentedConst<ApiType>;
-      /**
-       * Block & extrinsics weights: base values and limits.
-       **/
-      blockWeights: BlockWeights & AugmentedConst<ApiType>;
       /**
        * The weight of runtime database operations the runtime can invoke.
        **/
       dbWeight: RuntimeDbWeight & AugmentedConst<ApiType>;
       /**
-       * The designated SS85 prefix of this chain.
-       *
-       * This replaces the "ss58Format" property declared in the chain spec. Reason is
-       * that the runtime should know about the prefix in order to make use of it as
-       * an identifier of the chain.
+       * The base weight of an Extrinsic in the block, independent of the of extrinsic being executed.
        **/
-      ss58Prefix: u8 & AugmentedConst<ApiType>;
+      extrinsicBaseWeight: Weight & AugmentedConst<ApiType>;
       /**
-       * Get the chain's current version.
+       * The maximum length of a block (in bytes).
        **/
-      version: RuntimeVersion & AugmentedConst<ApiType>;
+      maximumBlockLength: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum weight of a block.
+       **/
+      maximumBlockWeight: Weight & AugmentedConst<ApiType>;
     };
     timestamp: {
       /**

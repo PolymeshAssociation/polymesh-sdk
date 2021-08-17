@@ -26,17 +26,17 @@ import type {
   H256,
   H512,
   Hash,
-  MultiAddress,
+  IndicesLookupSource,
   Perbill,
   Permill,
 } from '@polkadot/types/interfaces/runtime';
-import type { AccountInfoWithDualRefCount, DispatchError } from '@polkadot/types/interfaces/system';
+import type { AccountInfoWithRefCount, DispatchError } from '@polkadot/types/interfaces/system';
 
 /** @name AccountInfo */
-export interface AccountInfo extends AccountInfoWithDualRefCount {}
+export interface AccountInfo extends AccountInfoWithRefCount {}
 
 /** @name Address */
-export interface Address extends MultiAddress {}
+export interface Address extends IndicesLookupSource {}
 
 /** @name AffirmationStatus */
 export interface AffirmationStatus extends Enum {
@@ -166,8 +166,6 @@ export interface AuthorizationData extends Enum {
   readonly asTransferCorporateActionAgent: Ticker;
   readonly isBecomeAgent: boolean;
   readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
-  readonly isAddRelayerPayingKey: boolean;
-  readonly asAddRelayerPayingKey: ITuple<[AccountId, AccountId, Balance]>;
 }
 
 /** @name AuthorizationNonce */
@@ -178,12 +176,14 @@ export interface AuthorizationType extends Enum {
   readonly isAttestPrimaryKeyRotation: boolean;
   readonly isRotatePrimaryKey: boolean;
   readonly isTransferTicker: boolean;
+  readonly isTransferPrimaryIssuanceAgent: boolean;
   readonly isAddMultiSigSigner: boolean;
   readonly isTransferAssetOwnership: boolean;
   readonly isJoinIdentity: boolean;
   readonly isPortfolioCustody: boolean;
   readonly isCustom: boolean;
   readonly isNoData: boolean;
+  readonly isTransferCorporateActionAgent: boolean;
 }
 
 /** @name BallotMeta */
@@ -1019,7 +1019,7 @@ export interface LegStatus extends Enum {
 export interface LocalCAId extends u32 {}
 
 /** @name LookupSource */
-export interface LookupSource extends MultiAddress {}
+export interface LookupSource extends IndicesLookupSource {}
 
 /** @name MaybeBlock */
 export interface MaybeBlock extends Enum {
@@ -1463,12 +1463,6 @@ export interface StoredSchedule extends Struct {
   readonly id: ScheduleId;
   readonly at: Moment;
   readonly remaining: u32;
-}
-
-/** @name Subsidy */
-export interface Subsidy extends Struct {
-  readonly paying_key: AccountId;
-  readonly remaining: Balance;
 }
 
 /** @name TargetIdAuthorization */
