@@ -1404,7 +1404,7 @@ export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
 export function isIsinValid(isin: string): boolean {
   isin = isin.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z]{12}$').test(isin)) {
+  if (!/^[0-9A-Z]{12}$/.test(isin)) {
     return false;
   }
 
@@ -1444,7 +1444,7 @@ export function isIsinValid(isin: string): boolean {
 export function isCusipValid(cusip: string): boolean {
   cusip = cusip.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z@#*]{9}$').test(cusip)) {
+  if (!/^[0-9A-Z@#*]{9}$/.test(cusip)) {
     return false;
   }
 
@@ -1482,7 +1482,7 @@ export function isCusipValid(cusip: string): boolean {
 export function isLeiValid(lei: string): boolean {
   lei = lei.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z]{18}[0-9]{2}$').test(lei)) {
+  if (!/^[0-9A-Z]{18}[0-9]{2}$/.test(lei)) {
     return false;
   }
 
