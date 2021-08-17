@@ -3,11 +3,13 @@ import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
+  AGId,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
   CddId,
   ComplianceRequirement,
   EcdsaSignature,
+  ExtrinsicPermissions,
   InvestorZKProofData,
   Memo,
   MovePortfolioItem,
@@ -84,9 +86,8 @@ import {
   CountryCode,
   DividendDistributionParams,
   InstructionType,
-  KnownPermissionGroup,
   KnownTokenType,
-  PermissionGroup,
+  PermissionGroupType,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -110,14 +111,14 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
-import { InstructionStatus, ScopeClaimProof } from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier, ScopeClaimProof } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
-import { padString } from '~/utils/internal';
 
 import {
   accountIdToString,
   addressToKey,
+  agentGroupToPermissionGroupIdentifier,
   assetComplianceResultToCompliance,
   assetIdentifierToTokenIdentifier,
   assetNameToString,
@@ -179,7 +180,7 @@ import {
   numberToU64,
   percentageToPermill,
   permillToBigNumber,
-  permissionGroupToAgentGroup,
+  permissionGroupIdentifierToAgentGroup,
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   portfolioIdToMeshPortfolioId,
@@ -231,6 +232,7 @@ import {
   tokenIdentifierToAssetIdentifier,
   tokenTypeToAssetType,
   transactionHexToTxTag,
+  transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
   transactionToTxTag,
   transferManagerToTransferRestriction,
@@ -452,7 +454,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', ticker).returns(rawTicker);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -481,7 +483,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(memo, 32)).returns(rawMemo);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', memo).returns(rawMemo);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -522,7 +524,7 @@ describe('stringToTicker and tickerToString', () => {
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(value, 12)).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', value).returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
@@ -813,7 +815,6 @@ describe('signerToSignerValue and signerValueToSigner', () => {
     expect((result as Account).address).toBe(value);
 
     value = 'someDid';
-
     signerValue = { type: SignerType.Identity, value };
 
     result = signerValueToSigner(signerValue, context);
@@ -953,18 +954,46 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
 
+    const ticker = 'TICKERNAME';
+    const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
+      ticker,
+      type: PermissionGroupType.Full,
+    });
+
     value = {
       type: AuthorizationType.BecomeAgent,
-      value: 'TOKEN',
-      permissionGroup: KnownPermissionGroup.PolymeshV1Pia,
+      value: knownPermissionGroup,
     };
 
-    const rawAgentGroup = ('PolymeshV1Pia' as unknown) as AgentGroup;
-    createTypeStub.withArgs('AgentGroup', value.permissionGroup).returns(rawAgentGroup);
+    let rawAgentGroup = ('Full' as unknown) as AgentGroup;
+    createTypeStub.withArgs('AgentGroup', knownPermissionGroup.type).returns(rawAgentGroup);
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [value.value, rawAgentGroup] })
+      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
+
+    const id = new BigNumber(1);
+    const customPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
+      ticker,
+      id,
+    });
+
+    value = {
+      type: AuthorizationType.BecomeAgent,
+      value: customPermissionGroup,
+    };
+
+    rawAgentGroup = ('Full' as unknown) as AgentGroup;
+    createTypeStub.withArgs('u32', id.toString()).returns(id);
+    createTypeStub.withArgs('AgentGroup', { custom: id }).returns(rawAgentGroup);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
@@ -1106,7 +1135,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 });
 
-describe('permissionGroupToAgentGroup', () => {
+describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupIdentifier', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -1119,14 +1148,14 @@ describe('permissionGroupToAgentGroup', () => {
     dsMockUtils.cleanup();
   });
 
-  test('permissionGroupToAgentGroup should convert a PermissionGroup to a polkadot AgentGroup object', () => {
-    let value: PermissionGroup = KnownPermissionGroup.PolymeshV1Pia;
+  test('permissionGroupIdentifierToAgentGroup should convert a PermissionGroupIdentifier to a polkadot AgentGroup object', () => {
+    let value: PermissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
     const fakeResult = ('convertedAgentGroup' as unknown) as AgentGroup;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', value).returns(fakeResult);
 
-    let result = permissionGroupToAgentGroup(value, context);
+    let result = permissionGroupIdentifierToAgentGroup(value, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -1141,9 +1170,38 @@ describe('permissionGroupToAgentGroup', () => {
       .withArgs('AgentGroup', { custom: u32FakeResult })
       .returns(fakeResult);
 
-    result = permissionGroupToAgentGroup(value, context);
+    result = permissionGroupIdentifierToAgentGroup(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('agentGroupToPermissionGroupIdentifier should convert a polkadot AgentGroup object to a PermissionGroupIdentifier', () => {
+    let agentGroup = dsMockUtils.createMockAgentGroup('Full');
+
+    let result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.Full);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.ExceptMeta);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.PolymeshV1Caa);
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual(PermissionGroupType.PolymeshV1Pia);
+
+    const id = new BigNumber(1);
+    const rawAgId = dsMockUtils.createMockU32(id.toNumber()) as AGId;
+    agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
+
+    result = agentGroupToPermissionGroupIdentifier(agentGroup);
+    expect(result).toEqual({ custom: id });
   });
 });
 
@@ -1201,16 +1259,46 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     const createTypeStub = dsMockUtils.getCreateTypeStub();
 
+    let fakeExtrinsicPermissionsResult: unknown = ('convertedExtrinsicPermissions' as unknown) as ExtrinsicPermissions;
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', 'Whole')
+      .returns(fakeExtrinsicPermissionsResult);
+
     createTypeStub
       .withArgs('Permissions', {
         asset: 'Whole',
-        extrinsic: 'Whole',
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: 'Whole',
       })
       .returns(fakeResult);
 
     let result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      These: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Identity',
+          dispatchable_names: {
+            These: ['add_claim'],
+          },
+        },
+        {
+          pallet_name: 'Sto',
+          dispatchable_names: {
+            These: ['create_fundraiser', 'invest'],
+          },
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     const ticker = 'SOMETICKER';
     const did = 'someDid';
@@ -1240,34 +1328,33 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         asset: {
           These: [rawTicker],
         },
-        extrinsic: {
-          These: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              pallet_name: 'Identity',
-              dispatchable_names: {
-                These: ['add_claim'],
-              },
-            },
-            {
-              pallet_name: 'Sto',
-              dispatchable_names: {
-                These: ['create_fundraiser', 'invest'],
-              },
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        },
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: {
           These: [rawPortfolioId],
         },
       })
       .returns(fakeResult);
-    createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+    createTypeStub.withArgs('Ticker', ticker).returns(rawTicker);
     createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      These: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Sto',
+          dispatchable_names: { Except: ['invest', 'stop'] },
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     value = {
       tokens: null,
@@ -1283,22 +1370,29 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     createTypeStub
       .withArgs('Permissions', {
         asset: 'Whole',
-        extrinsic: {
-          These: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              pallet_name: 'Sto',
-              dispatchable_names: { Except: ['invest', 'stop'] },
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        },
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: 'Whole',
       })
       .returns(fakeResult);
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      Except: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Sto',
+          dispatchable_names: 'Whole',
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     value = {
       tokens: {
@@ -1321,16 +1415,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         asset: {
           Except: [rawTicker],
         },
-        extrinsic: {
-          Except: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              pallet_name: 'Sto',
-              dispatchable_names: 'Whole',
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        },
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: {
           Except: [rawPortfolioId],
         },
@@ -1339,6 +1424,24 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
+
+    fakeExtrinsicPermissionsResult = {
+      These: [
+        /* eslint-disable @typescript-eslint/naming-convention */
+        {
+          pallet_name: 'Identity',
+          dispatchable_names: {
+            These: ['add_claim'],
+          },
+        },
+        /* eslint-enable @typescript-eslint/naming-convention */
+      ],
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeExtrinsicPermissionsResult);
 
     const tickers = ['BTICKER', 'ATICKER', 'CTICKER'];
 
@@ -1358,31 +1461,16 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       },
     };
 
-    const extrinsic = {
-      These: [
-        /* eslint-disable @typescript-eslint/naming-convention */
-        {
-          pallet_name: 'Identity',
-          dispatchable_names: {
-            These: ['add_claim'],
-          },
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      ],
-    };
-
     const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
     createTypeStub
       .withArgs('Permissions', {
         asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
-        extrinsic,
+        extrinsic: fakeExtrinsicPermissionsResult,
         portfolio: { These: [rawPortfolioId] },
       })
       .returns(fakeResult);
 
-    tickers.forEach((t, i) =>
-      createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
-    );
+    tickers.forEach((t, i) => createTypeStub.withArgs('Ticker', t).returns(rawTickers[i]));
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
@@ -1872,18 +1960,11 @@ describe('stringToMemo', () => {
     const fakeResult = ('memoDescription' as unknown) as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(value, 32)).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', value).returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
     expect(result).toEqual(fakeResult);
-  });
-
-  test('stringToMemo should throw an error if the value exceeds the maximum length', () => {
-    const value = 'someVeryLongDescriptionThatIsDefinitelyLongerThanTheMaxLength';
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => stringToMemo(value, context)).toThrow('Max memo length exceeded');
   });
 });
 
@@ -4228,57 +4309,57 @@ describe('transactionToTxTag', () => {
 //   });
 // });
 
-// NOTE uncomment in Governance v2 upgrade
-// describe('meshProposalStateToProposalState', () => {
-//   beforeAll(() => {
-//     dsMockUtils.initMocks();
-//   });
+describe('meshProposalStateToProposalState', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
 
-//   afterEach(() => {
-//     dsMockUtils.reset();
-//   });
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
 
-//   afterAll(() => {
-//     dsMockUtils.cleanup();
-//   });
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
 
-//   test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
-//     let fakeResult: ProposalState = ProposalState.Cancelled;
+  // NOTE uncomment in Governance v2 upgrade
+  // test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+  //   let fakeResult: ProposalState = ProposalState.Cancelled;
 
-//     let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   let proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     let result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   let result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Killed;
+  //   fakeResult = ProposalState.Killed;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Pending;
+  //   fakeResult = ProposalState.Pending;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Referendum;
+  //   fakeResult = ProposalState.Referendum;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
 
-//     fakeResult = ProposalState.Rejected;
+  //   fakeResult = ProposalState.Rejected;
 
-//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
+  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-//     result = meshProposalStateToProposalState(proposalState);
-//     expect(result).toEqual(fakeResult);
-//   });
-// });
+  //   result = meshProposalStateToProposalState(proposalState);
+  //   expect(result).toEqual(fakeResult);
+  // });
+});
 
 describe('meshAffirmationStatusToAffirmationStatus', () => {
   beforeAll(() => {
@@ -4478,6 +4559,12 @@ describe('meshInstructionStatusToInstructionStatus', () => {
     let instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
 
     let result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = InstructionStatus.Failed;
+    instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);
 
     fakeResult = InstructionStatus.Unknown;
@@ -5266,6 +5353,8 @@ describe('transactionPermissionsToTxGroups', () => {
         type: PermissionType.Exclude,
       })
     ).toEqual([]);
+
+    expect(transactionPermissionsToTxGroups(null)).toEqual([]);
   });
 });
 
@@ -6136,7 +6225,7 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId.toNumber());
     const fakeResult = ('CAId' as unknown) as CAId;
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', args.ticker).returns(ticker);
     dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
 
     dsMockUtils
@@ -6330,6 +6419,45 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       .returns(fakeResult);
 
     const result = scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('transactionPermissionsToExtrinsicPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('transactionPermissionsToExtrinsicPermissions should convert a TransactionPermissions to a polkadot ExtrinsicPermissions object', () => {
+    const value = {
+      values: [TxTags.sto.Invest],
+      type: PermissionType.Include,
+    };
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeResult = ('convertedExtrinsicPermissions' as unknown) as ExtrinsicPermissions;
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .returns(fakeResult);
+
+    let result = transactionPermissionsToExtrinsicPermissions(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    dsMockUtils.getCreateTypeStub().withArgs('ExtrinsicPermissions', 'Whole').returns(fakeResult);
+
+    result = transactionPermissionsToExtrinsicPermissions(null, context);
 
     expect(result).toEqual(fakeResult);
   });

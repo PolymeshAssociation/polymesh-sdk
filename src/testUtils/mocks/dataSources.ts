@@ -385,10 +385,10 @@ const moduleFailReceipt = createFailReceipt({
     error: { toNumber: (): number => 1 },
     index: { toNumber: (): number => 1 },
     registry: {
-      findMetaError: (): { section: string; name: string; docs: string[] } => ({
+      findMetaError: (): { section: string; name: string; documentation: string[] } => ({
         section: 'someModule',
         name: 'SomeError',
-        docs: ['This is very bad'],
+        documentation: ['This is very bad'],
       }),
     },
   } as unknown) as DispatchErrorModule,

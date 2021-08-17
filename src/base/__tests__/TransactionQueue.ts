@@ -21,7 +21,7 @@ describe('Transaction Queue class', () => {
   let context: Context;
 
   beforeAll(() => {
-    jest.useFakeTimers('legacy');
+    jest.useFakeTimers();
     polymeshTransactionMockUtils.initMocks();
     dsMockUtils.initMocks({ contextOptions: { middlewareEnabled: false } });
   });

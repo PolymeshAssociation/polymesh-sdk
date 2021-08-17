@@ -628,7 +628,6 @@ describe('configureDividendDistribution procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         roles: [
-          { type: RoleType.TokenCaa, ticker },
           {
             type: RoleType.PortfolioCustodian,
             portfolioId: { did: originPortfolio.owner.did, number: originPortfolio.id },

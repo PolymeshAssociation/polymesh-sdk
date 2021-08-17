@@ -363,18 +363,18 @@ export class Procedure<
    *
    * @returns whichever value is returned by the passed Procedure
    */
-  public async addProcedure<ProcArgs extends unknown, R extends unknown>(
-    procedure: Procedure<ProcArgs, R>,
+  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+    procedure: Procedure<ProcArgs, R, S>,
     args: ProcArgs
   ): Promise<MaybePostTransactionValue<R>>;
 
-  public async addProcedure<R extends unknown>(
-    procedure: Procedure<void, R>
+  public async addProcedure<R extends unknown, S extends unknown>(
+    procedure: Procedure<void, R, S>
   ): Promise<MaybePostTransactionValue<R>>;
 
   // eslint-disable-next-line require-jsdoc
-  public async addProcedure<ProcArgs extends unknown, R extends unknown>(
-    procedure: Procedure<void | ProcArgs, R>,
+  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+    procedure: Procedure<void | ProcArgs, R, S>,
     args: ProcArgs = {} as ProcArgs
   ): Promise<MaybePostTransactionValue<R>> {
     try {

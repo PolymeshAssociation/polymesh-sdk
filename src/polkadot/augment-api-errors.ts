@@ -198,6 +198,88 @@ declare module '@polkadot/api/types/errors' {
        **/
       TooLong: AugmentedError<ApiType>;
     };
+    baseContracts: {
+      /**
+       * Performing the requested transfer would have brought the contract below
+       * the subsistence threshold. No transfer is allowed to do this in order to allow
+       * for a tombstone to be created. Use `seal_terminate` to remove a contract without
+       * leaving a tombstone behind.
+       **/
+      BelowSubsistenceThreshold: AugmentedError<ApiType>;
+      /**
+       * No code could be found at the supplied code hash.
+       **/
+      CodeNotFound: AugmentedError<ApiType>;
+      /**
+       * The code supplied to `put_code` exceeds the limit specified in the current schedule.
+       **/
+      CodeTooLarge: AugmentedError<ApiType>;
+      /**
+       * Contract trapped during execution.
+       **/
+      ContractTrapped: AugmentedError<ApiType>;
+      /**
+       * Input passed to a contract API function failed to decode as expected type.
+       **/
+      DecodingFailed: AugmentedError<ApiType>;
+      /**
+       * An origin TrieId written in the current block.
+       **/
+      InvalidContractOrigin: AugmentedError<ApiType>;
+      /**
+       * Cannot restore to nonexisting or alive contract.
+       **/
+      InvalidDestinationContract: AugmentedError<ApiType>;
+      /**
+       * A new schedule must have a greater version than the current one.
+       **/
+      InvalidScheduleVersion: AugmentedError<ApiType>;
+      /**
+       * Cannot restore from nonexisting or tombstone contract.
+       **/
+      InvalidSourceContract: AugmentedError<ApiType>;
+      /**
+       * An origin must be signed or inherent and auxiliary sender only provided on inherent.
+       **/
+      InvalidSurchargeClaim: AugmentedError<ApiType>;
+      /**
+       * Tombstones don't match.
+       **/
+      InvalidTombstone: AugmentedError<ApiType>;
+      /**
+       * Performing a call was denied because the calling depth reached the limit
+       * of what is specified in the schedule.
+       **/
+      MaxCallDepthReached: AugmentedError<ApiType>;
+      /**
+       * The newly created contract is below the subsistence threshold after executing
+       * its contructor. No contracts are allowed to exist below that threshold.
+       **/
+      NewContractNotFunded: AugmentedError<ApiType>;
+      /**
+       * The contract that was called is either no contract at all (a plain account)
+       * or is a tombstone.
+       **/
+      NotCallable: AugmentedError<ApiType>;
+      /**
+       * A buffer outside of sandbox memory was passed to a contract API function.
+       **/
+      OutOfBounds: AugmentedError<ApiType>;
+      /**
+       * The executed contract exhausted its gas limit.
+       **/
+      OutOfGas: AugmentedError<ApiType>;
+      /**
+       * The output buffer supplied to a contract API call was too small.
+       **/
+      OutputBufferTooSmall: AugmentedError<ApiType>;
+      /**
+       * Performing the requested transfer failed for a reason originating in the
+       * chosen currency implementation of the runtime. Most probably the balance is
+       * too low or locks are placed on it.
+       **/
+      TransferFailed: AugmentedError<ApiType>;
+    };
     bridge: {
       /**
        * The origin is not the admin address.
@@ -422,6 +504,40 @@ declare module '@polkadot/api/types/errors' {
        **/
       Unauthorized: AugmentedError<ApiType>;
     };
+    contracts: {
+      /**
+       * When instantiation of the template is already frozen.
+       **/
+      InstantiationAlreadyFrozen: AugmentedError<ApiType>;
+      /**
+       * When instantiation of the template is already un-frozen.
+       **/
+      InstantiationAlreadyUnFrozen: AugmentedError<ApiType>;
+      /**
+       * Instantiation is not allowed.
+       **/
+      InstantiationIsNotAllowed: AugmentedError<ApiType>;
+      /**
+       * Insufficient max_fee provided by the user to instantiate the SE.
+       **/
+      InsufficientMaxFee: AugmentedError<ApiType>;
+      /**
+       * Given identityId is not CDD.
+       **/
+      NewOwnerIsNotCDD: AugmentedError<ApiType>;
+      /**
+       * `put_code` extrinsic is disabled. See `set_put_code_flag` extrinsic.
+       **/
+      PutCodeIsNotAllowed: AugmentedError<ApiType>;
+      /**
+       * Smart extension template not exist in the storage.
+       **/
+      TemplateNotExists: AugmentedError<ApiType>;
+      /**
+       * When un-authorized personnel try to access the un-authorized extrinsic.
+       **/
+      UnAuthorizedOrigin: AugmentedError<ApiType>;
+    };
     corporateAction: {
       /**
        * The authorization type is not to transfer the CAA to another DID.
@@ -574,6 +690,16 @@ declare module '@polkadot/api/types/errors' {
        * The agent is not authorized to call the current extrinsic.
        **/
       UnauthorizedAgent: AugmentedError<ApiType>;
+    };
+    finalityTracker: {
+      /**
+       * Final hint must be updated only once in the block
+       **/
+      AlreadyUpdated: AugmentedError<ApiType>;
+      /**
+       * Finalized height above block number
+       **/
+      BadHint: AugmentedError<ApiType>;
     };
     grandpa: {
       /**
@@ -1020,17 +1146,13 @@ declare module '@polkadot/api/types/errors' {
     };
     scheduler: {
       /**
+       * Failed to cancel a scheduled call
+       **/
+      FailedToCancel: AugmentedError<ApiType>;
+      /**
        * Failed to schedule a call
        **/
       FailedToSchedule: AugmentedError<ApiType>;
-      /**
-       * Cannot find the scheduled call.
-       **/
-      NotFound: AugmentedError<ApiType>;
-      /**
-       * Reschedule failed because it does not change scheduled time.
-       **/
-      RescheduleNoChange: AugmentedError<ApiType>;
       /**
        * Given target block number is in the past.
        **/
@@ -1045,10 +1167,6 @@ declare module '@polkadot/api/types/errors' {
        * Invalid ownership proof.
        **/
       InvalidProof: AugmentedError<ApiType>;
-      /**
-       * Key setting account is not live, so it's impossible to associate keys.
-       **/
-      NoAccount: AugmentedError<ApiType>;
       /**
        * No associated validator ID for account.
        **/
@@ -1173,10 +1291,6 @@ declare module '@polkadot/api/types/errors' {
        * Controller is already paired.
        **/
       AlreadyPaired: AugmentedError<ApiType>;
-      /**
-       * Internal state has become somehow corrupted and the operation cannot continue.
-       **/
-      BadState: AugmentedError<ApiType>;
       /**
        * When the amount to be bonded is less than `MinimumBond`
        **/
