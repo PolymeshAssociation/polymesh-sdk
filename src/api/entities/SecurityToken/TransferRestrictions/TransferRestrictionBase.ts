@@ -114,9 +114,6 @@ export abstract class TransferRestrictionBase<
    * Add a Transfer Restriction of the corresponding type to this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public addRestriction: ProcedureMethod<AddRestrictionParams<T>, number>;
 
@@ -124,9 +121,6 @@ export abstract class TransferRestrictionBase<
    * Sets all Transfer Restrictions of the corresponding type on this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public setRestrictions: ProcedureMethod<SetRestrictionsParams<T>, number>;
 
@@ -134,9 +128,6 @@ export abstract class TransferRestrictionBase<
    * Removes all Transfer Restrictions of the corresponding type from this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public removeRestrictions: ProcedureMethod<void, number>;
 

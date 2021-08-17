@@ -7,7 +7,7 @@ import { getAuthorization, Params, prepareRedeemToken } from '~/api/procedures/r
 import { Context, DefaultPortfolio, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, RoleType, TxTags } from '~/types';
+import { PortfolioBalance, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -159,7 +159,6 @@ describe('redeemToken procedure', () => {
       const result = await boundFunc(params);
 
       expect(result).toEqual({
-        roles: [{ type: RoleType.TokenPia, ticker }],
         permissions: {
           transactions: [TxTags.asset.Redeem],
           tokens: [new SecurityToken({ ticker }, mockContext)],

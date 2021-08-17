@@ -166,8 +166,6 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   /**
    * Create a Security Token using the reserved ticker
    *
-   * @note the issuer DID will be set as the primary issuance agent
-   *
    * @note required role:
    *   - Ticker Owner
    */

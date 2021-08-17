@@ -46,17 +46,11 @@ export class Schedules extends Namespace<SecurityToken> {
    * @note due to chain limitations, schedules are advanced and (if appropriate) executed whenever the Security Token is
    *   redeemed, issued or transferred between portfolios. This means that on a Security Token without much movement, there may be disparities between intended Checkpoint creation dates
    *   and the actual date when they are created. This, however, has no effect on the Checkpoint's accuracy regarding to balances
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public create: ProcedureMethod<CreateCheckpointScheduleParams, CheckpointSchedule>;
 
   /**
    * Remove the supplied Checkpoint Schedule for a given Security Token
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public remove: ProcedureMethod<RemoveCheckpointScheduleParams, void>;
 

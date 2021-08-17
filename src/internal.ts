@@ -130,6 +130,8 @@ export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 export { Agent } from '~/api/entities/Agent';
 export { PermissionGroup } from '~/api/entities/PermissionGroup';
+export { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
+export { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,
@@ -174,5 +176,14 @@ export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondar
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';
+export { createGroup, CreateGroupParams } from '~/api/procedures/createGroup';
 export { quitCustody } from '~/api/procedures/quitCustody';
+export {
+  inviteExternalAgent,
+  InviteExternalAgentParams,
+} from '~/api/procedures/inviteExternalAgent';
 export { rescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
+export {
+  removeExternalAgent,
+  RemoveExternalAgentParams,
+} from '~/api/procedures/removeExternalAgent';

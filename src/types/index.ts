@@ -3,6 +3,8 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
+import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
+import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
@@ -83,8 +85,6 @@ export enum TransactionQueueStatus {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
-  TokenPia = 'TokenPia',
-  TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -93,22 +93,6 @@ export enum RoleType {
 
 export interface TickerOwnerRole {
   type: RoleType.TickerOwner;
-  ticker: string;
-}
-
-/**
- * @deprecated in favor of external agent permissions
- */
-export interface TokenPiaRole {
-  type: RoleType.TokenPia;
-  ticker: string;
-}
-
-/**
- * @deprecated in favor of external agent permissions
- */
-export interface TokenCaaRole {
-  type: RoleType.TokenCaa;
   ticker: string;
 }
 
@@ -126,13 +110,7 @@ export interface PortfolioCustodianRole {
   portfolioId: PortfolioId;
 }
 
-export type Role =
-  | TickerOwnerRole
-  | TokenPiaRole
-  | TokenCaaRole
-  | CddProviderRole
-  | VenueOwnerRole
-  | PortfolioCustodianRole;
+export type Role = TickerOwnerRole | CddProviderRole | VenueOwnerRole | PortfolioCustodianRole;
 
 /**
  * @hidden
@@ -153,22 +131,6 @@ export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
  */
 export function isCddProviderRole(role: Role): role is CddProviderRole {
   return role.type === RoleType.CddProvider;
-}
-
-/**
- * @hidden
- * @deprecated
- */
-export function isTokenCaaRole(role: Role): role is TokenCaaRole {
-  return role.type === RoleType.TokenCaa;
-}
-
-/**
- * @hidden
- * @deprecated
- */
-export function isTokenPiaRole(role: Role): role is TokenPiaRole {
-  return role.type === RoleType.TokenPia;
 }
 
 /**
@@ -757,11 +719,18 @@ export interface Permissions {
    * list of Transaction Groups this key can execute. Having permissions over a TxGroup
    *   means having permissions over every TxTag in said group. Partial group permissions are not
    *   covered by this value. For a full picture of transaction permissions, see the `transactions` property
+   *
+   * NOTE: If transactions is null, ignore this value
    */
   transactionGroups: TxGroup[];
   /* list of Portfolios over which this key has permissions */
   portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null;
 }
+
+/**
+ * Security Token permissions shared by agents in a group
+ */
+export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
  * This represents positive permissions (i.e. only "includes"). It is used
@@ -781,7 +750,7 @@ export interface SimplePermissions {
   portfolios?: (DefaultPortfolio | NumberedPortfolio)[] | null;
 }
 
-export enum KnownPermissionGroup {
+export enum PermissionGroupType {
   /**
    * all transactions authorized
    */
@@ -809,18 +778,13 @@ export enum KnownPermissionGroup {
 }
 
 /**
- * Determines the subset of permissions an Agent has over a Security Token
- */
-export type PermissionGroup = KnownPermissionGroup | { custom: BigNumber };
-
-/**
  * Authorization request data corresponding to type
  */
 export type Authorization =
   | { type: AuthorizationType.NoData }
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
-  | { type: AuthorizationType.BecomeAgent; value: string; permissionGroup: PermissionGroup }
+  | { type: AuthorizationType.BecomeAgent; value: KnownPermissionGroup | CustomPermissionGroup }
   | {
       type: Exclude<
         AuthorizationType,

@@ -8,7 +8,6 @@ import {
   ErrorCode,
   InputTargets,
   InputTaxWithholding,
-  RoleType,
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -189,7 +188,6 @@ export function getAuthorization(
   }
 
   return {
-    roles: [{ type: RoleType.TokenCaa, ticker }],
     permissions: {
       transactions,
       portfolios: [],

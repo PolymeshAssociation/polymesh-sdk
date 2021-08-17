@@ -27,7 +27,6 @@ export class Offerings extends Namespace<SecurityToken> {
    * Launch a Security Token Offering
    *
    * @note required roles:
-   *   - Security Token Primary Issuance Agent
    *   - Offering Portfolio Custodian
    *   - Raising Portfolio Custodian
    */

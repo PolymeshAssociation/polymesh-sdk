@@ -6,7 +6,7 @@ import { getAuthorization, Params, prepareModifyStoTimes } from '~/api/procedure
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, StoBalanceStatus, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
+import { StoBalanceStatus, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -328,7 +328,6 @@ describe('modifyStoTimes procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.TokenPia, ticker }],
         permissions: {
           transactions: [TxTags.sto.ModifyFundraiserWindow],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],

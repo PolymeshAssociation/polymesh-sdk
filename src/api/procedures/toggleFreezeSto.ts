@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
-import { ErrorCode, RoleType, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
+import { ErrorCode, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 
@@ -82,7 +82,6 @@ export function getAuthorization(
   { ticker, freeze }: ToggleFreezeStoParams
 ): ProcedureAuthorization {
   return {
-    roles: [{ type: RoleType.TokenPia, ticker }],
     permissions: {
       transactions: [freeze ? TxTags.sto.FreezeFundraiser : TxTags.sto.UnfreezeFundraiser],
       tokens: [new SecurityToken({ ticker }, this.context)],
