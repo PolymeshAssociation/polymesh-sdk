@@ -36,7 +36,7 @@ export enum StoBalanceStatus {
 
 export enum StoSaleStatus {
   /**
-   * Sale temporarily paused, can be resumed (unfrozen) by the PIA
+   * Sale temporarily paused, can be resumed (unfrozen)
    */
   Frozen = 'Frozen',
   /**

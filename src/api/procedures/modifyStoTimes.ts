@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { Moment } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
-import { ErrorCode, RoleType, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
+import { ErrorCode, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { dateToMoment, numberToU64, stringToTicker } from '~/utils/conversion';
 
@@ -123,7 +123,6 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const { context } = this;
   return {
-    roles: [{ type: RoleType.TokenPia, ticker }],
     permissions: {
       transactions: [TxTags.sto.ModifyFundraiserWindow],
       tokens: [new SecurityToken({ ticker }, context)],

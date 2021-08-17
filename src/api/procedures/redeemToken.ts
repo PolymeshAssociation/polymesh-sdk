@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';
 
@@ -75,7 +75,6 @@ export async function getAuthorization(
   const { did } = await context.getCurrentIdentity();
 
   return {
-    roles: [{ type: RoleType.TokenPia, ticker }],
     permissions: {
       transactions: [TxTags.asset.Redeem],
       tokens: [new SecurityToken({ ticker }, context)],

@@ -41,8 +41,6 @@ import {
   isIdentityRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
-  isTokenCaaRole,
-  isTokenPiaRole,
   isVenueOwnerRole,
   Order,
   PermissionType,
@@ -352,30 +350,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const { owner } = await reservation.details();
 
       return owner?.did === did;
-    } else if (isTokenPiaRole(role)) {
-      const { ticker } = role;
-
-      const token = new SecurityToken({ ticker }, context);
-      const { primaryIssuanceAgents, fullAgents } = await token.details();
-
-      return (
-        !!fullAgents.find(({ did: agentDid }) => agentDid === did) ||
-        !!primaryIssuanceAgents.find(({ did: agentDid }) => agentDid === did)
-      );
-    } else if (isTokenCaaRole(role)) {
-      const { ticker } = role;
-
-      const token = new SecurityToken({ ticker }, context);
-
-      const [{ fullAgents }, agents] = await Promise.all([
-        token.details(),
-        token.corporateActions.getAgents(),
-      ]);
-
-      return (
-        !!fullAgents.find(({ did: agentDid }) => agentDid === did) ||
-        !!agents.find(({ did: agentDid }) => agentDid === did)
-      );
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {

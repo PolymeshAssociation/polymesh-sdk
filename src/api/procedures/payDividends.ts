@@ -2,7 +2,7 @@ import { bool } from '@polkadot/types';
 
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, TargetTreatment, TxTags } from '~/types';
+import { ErrorCode, TargetTreatment, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -102,11 +102,9 @@ export async function preparePayDividends(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, void>,
-  { distribution: { ticker } }: Params
+  this: Procedure<Params, void>
 ): Promise<ProcedureAuthorization> {
   return {
-    roles: [{ type: RoleType.TokenCaa, ticker }],
     permissions: {
       transactions: [TxTags.capitalDistribution.PushBenefit],
       tokens: [],

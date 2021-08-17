@@ -85,8 +85,6 @@ export enum TransactionQueueStatus {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
-  TokenPia = 'TokenPia',
-  TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
@@ -97,22 +95,6 @@ export enum RoleType {
 
 export interface TickerOwnerRole {
   type: RoleType.TickerOwner;
-  ticker: string;
-}
-
-/**
- * @deprecated in favor of external agent permissions
- */
-export interface TokenPiaRole {
-  type: RoleType.TokenPia;
-  ticker: string;
-}
-
-/**
- * @deprecated in favor of external agent permissions
- */
-export interface TokenCaaRole {
-  type: RoleType.TokenCaa;
   ticker: string;
 }
 
@@ -137,8 +119,6 @@ export interface IdentityRole {
 
 export type Role =
   | TickerOwnerRole
-  | TokenPiaRole
-  | TokenCaaRole
   | CddProviderRole
   | VenueOwnerRole
   | PortfolioCustodianRole
@@ -163,22 +143,6 @@ export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
  */
 export function isCddProviderRole(role: Role): role is CddProviderRole {
   return role.type === RoleType.CddProvider;
-}
-
-/**
- * @hidden
- * @deprecated
- */
-export function isTokenCaaRole(role: Role): role is TokenCaaRole {
-  return role.type === RoleType.TokenCaa;
-}
-
-/**
- * @hidden
- * @deprecated
- */
-export function isTokenPiaRole(role: Role): role is TokenPiaRole {
-  return role.type === RoleType.TokenPia;
 }
 
 /**
