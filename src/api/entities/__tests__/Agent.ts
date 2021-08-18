@@ -1,10 +1,15 @@
 import sinon from 'sinon';
 
 import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
-import { Agent, Context, Identity } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { PermissionGroupType } from '~/types';
+import { Agent, Context, Identity, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { PermissionGroupType, PermissionType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('Agent class', () => {
   const did = 'someDid';
@@ -15,6 +20,7 @@ describe('Agent class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'stringToTicker');
     sinon.stub(utilsConversionModule, 'stringToIdentityId');
@@ -27,11 +33,13 @@ describe('Agent class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend Identity', () => {
@@ -86,6 +94,28 @@ describe('Agent class', () => {
 
       expect(result instanceof KnownPermissionGroup).toEqual(true);
       expect((result as KnownPermissionGroup).type).toEqual(PermissionGroupType.Full);
+    });
+  });
+
+  describe('method: setPermissionGroup', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const agent = new Agent({ did, ticker }, context);
+      const permissions = {
+        transactions: {
+          type: PermissionType.Include,
+          values: [],
+        },
+      };
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { agent, permissions }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await agent.setPermissionGroup({ permissions });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
