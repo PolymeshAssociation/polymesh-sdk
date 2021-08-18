@@ -206,7 +206,7 @@ describe('setPermissionGroup procedure', () => {
     expect(error.message).toBe('The Agent is already part of this permission group');
   });
 
-  test.only('should add a change group transaction to the queue', async () => {
+  test('should add a change group transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         ticker,
