@@ -222,7 +222,10 @@ export interface TokenIdentifier {
 export interface TokenDocument {
   name: string;
   uri: string;
-  contentHash: string;
+  /**
+   * hex representation of the document (must be prefixed by "0x")
+   */
+  contentHash?: string;
   type?: string;
   filedAt?: Date;
 }

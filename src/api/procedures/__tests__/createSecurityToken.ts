@@ -131,7 +131,9 @@ describe('createSecurityToken procedure', () => {
         name: dsMockUtils.createMockDocumentName(docName),
         uri: dsMockUtils.createMockDocumentUri(uri),
         /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+        content_hash: dsMockUtils.createMockDocumentHash({
+          H128: dsMockUtils.createMockU8aFixed(contentHash),
+        }),
         doc_type: dsMockUtils.createMockOption(
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
