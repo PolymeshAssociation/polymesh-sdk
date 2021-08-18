@@ -206,7 +206,7 @@ describe('setPermissionGroup procedure', () => {
     expect(error.message).toBe('The Agent is already part of this permission group');
   });
 
-  test('should add a change group transaction to the queue', async () => {
+  test.only('should add a change group transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         ticker,
@@ -261,6 +261,28 @@ describe('setPermissionGroup procedure', () => {
       permissions: entityMockUtils.getKnownPermissionGroupInstance({
         ticker,
         type: PermissionGroupType.PolymeshV1Pia,
+      }),
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      externalAgentsChangeGroupTransaction,
+      {},
+      rawTicker,
+      rawIdentityId,
+      rawAgentGroup
+    );
+
+    await prepareSetPermissionGroup.call(proc, {
+      agent: entityMockUtils.getAgentInstance({
+        getPermissionGroup: entityMockUtils.getCustomPermissionGroupInstance({
+          ticker,
+          id: new BigNumber(1),
+        }),
+      }),
+      permissions: entityMockUtils.getCustomPermissionGroupInstance({
+        ticker,
+        id: new BigNumber(2),
       }),
     });
 
