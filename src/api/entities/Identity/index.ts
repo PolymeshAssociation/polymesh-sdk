@@ -33,6 +33,7 @@ import {
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
+  AssetPermission,
   DistributionWithDetails,
   Ensured,
   ErrorCode,
@@ -71,6 +72,7 @@ import {
   signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
+  tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -889,6 +891,37 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
+  }
+
+  /**
+   * Retrieve all assets with given permissions where this Identity is an Agent
+   */
+  public async agentOf(): Promise<AssetPermission[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { externalAgents },
+        },
+      },
+      did,
+      context,
+    } = this;
+
+    const rawDid = stringToIdentityId(did, context);
+    const rawAgentOf = await externalAgents.agentOf.entries(rawDid);
+
+    return P.map(rawAgentOf, async ([key]) => {
+      const token = new SecurityToken({ ticker: tickerToString(key.args[1]) }, context);
+      const agents = await token.permissions.getAgents();
+      const permissionGroup = agents.find(({ agent }) => agent.did === did);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const permissions = await permissionGroup!.group.getPermissions();
+
+      return {
+        token,
+        permissions,
+      };
+    });
   }
 
   /**

@@ -1105,6 +1105,11 @@ export interface GroupedInstructions {
   failed: Instruction[];
 }
 
+export interface AssetPermission {
+  token: SecurityToken;
+  permissions: GroupPermissions;
+}
+
 export { TxTags, TxTag, ModuleName };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
