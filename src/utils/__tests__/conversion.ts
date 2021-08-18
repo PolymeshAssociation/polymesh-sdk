@@ -2768,17 +2768,62 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     dsMockUtils.cleanup();
   });
 
-  test('scopeToMeshScope should convert a Scope into a polkadot Scope object', () => {
+  test('scopeToMeshScope should convert a Custom type Scope into a polkadot Scope object', () => {
     const context = dsMockUtils.getContextInstance();
     const value: Scope = {
-      type: ScopeType.Identity,
-      value: 'someDid',
+      type: ScopeType.Custom,
+      value: 'someValue',
     };
     const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
 
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('Scope', { [value.type]: value.value })
+      .returns(fakeResult);
+
+    const result = scopeToMeshScope(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('scopeToMeshScope should convert a Identity type Scope into a polkadot Scope object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value: Scope = {
+      type: ScopeType.Identity,
+      value: '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c',
+    };
+    const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
+    const fakeIdentityId = ('0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown) as IdentityId;
+
+    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', value.value).returns(fakeIdentityId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scope', { [value.type]: fakeIdentityId })
+      .returns(fakeResult);
+
+    const result = scopeToMeshScope(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('scopeToMeshScope should convert a Ticker type Scope into a polkadot Scope object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value: Scope = {
+      type: ScopeType.Ticker,
+      value: 'SOMETICKER',
+    };
+    const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
+    const fakeTicker = ('SOMETICKER' as unknown) as Ticker;
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Ticker', padString(value.value, MAX_TICKER_LENGTH))
+      .returns(fakeTicker);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scope', { [value.type]: fakeTicker })
       .returns(fakeResult);
 
     const result = scopeToMeshScope(value, context);
@@ -2894,7 +2939,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     value = {
       type: ClaimType.InvestorUniqueness,
-      scope: { type: ScopeType.Ticker, value: 'someTicker' },
+      scope: { type: ScopeType.Ticker, value: 'SOMETICKER' },
       cddId: 'someCddId',
       scopeId: 'someScopeId',
     };
