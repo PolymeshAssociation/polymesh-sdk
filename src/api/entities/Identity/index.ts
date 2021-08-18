@@ -913,9 +913,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     return P.map(rawAgentOf, async ([key]) => {
       const token = new SecurityToken({ ticker: tickerToString(key.args[1]) }, context);
       const agents = await token.permissions.getAgents();
-      const permissionGroup = agents.find(({ agent }) => agent.did === did);
+      const agentWithGroup = agents.find(({ agent }) => agent.did === did);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const permissions = await permissionGroup!.group.getPermissions();
+      const permissions = await agentWithGroup!.group.getPermissions();
 
       return {
         token,
