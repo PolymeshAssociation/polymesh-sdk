@@ -110,7 +110,6 @@ export async function prepareSetPermissionGroup(
       ticker,
       permissions,
     })) as PostTransactionValue<CustomPermissionGroup>;
-
     rawAgentGroup = group.transform(customPermissionGroup =>
       agentGroupResolver(customPermissionGroup, context)
     );

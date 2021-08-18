@@ -207,18 +207,15 @@ describe('setPermissionGroup procedure', () => {
   });
 
   test('should add a change group transaction to the queue', async () => {
+    const id = new BigNumber(1);
+
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         ticker,
       }),
     });
 
-    const group = entityMockUtils.getKnownPermissionGroupInstance({
-      ticker,
-      type: PermissionGroupType.Full,
-    });
-
-    const rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
+    let rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
 
     procedureMockUtils.getAddProcedureStub().resolves({
       transform: sinon.stub().returns(rawAgentGroup),
@@ -228,7 +225,44 @@ describe('setPermissionGroup procedure', () => {
 
     await prepareSetPermissionGroup.call(proc, {
       agent: entityMockUtils.getAgentInstance({
-        getPermissionGroup: group,
+        getPermissionGroup: entityMockUtils.getKnownPermissionGroupInstance({
+          ticker,
+          type: PermissionGroupType.Full,
+        }),
+      }),
+      permissions: {
+        transactions: {
+          type: PermissionType.Include,
+          values: [],
+        },
+      },
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      externalAgentsChangeGroupTransaction,
+      {},
+      rawTicker,
+      rawIdentityId,
+      rawAgentGroup
+    );
+
+    rawAgentGroup = dsMockUtils.createMockAgentGroup({
+      Custom: dsMockUtils.createMockU32(id.toNumber()),
+    });
+
+    procedureMockUtils.getAddProcedureStub().resolves({
+      transform: sinon.stub().returns(rawAgentGroup),
+    });
+
+    permissionGroupIdentifierToAgentGroupStub.returns(dsMockUtils.createMockAgentGroup());
+
+    await prepareSetPermissionGroup.call(proc, {
+      agent: entityMockUtils.getAgentInstance({
+        getPermissionGroup: entityMockUtils.getCustomPermissionGroupInstance({
+          ticker,
+          id,
+        }),
       }),
       permissions: {
         transactions: {
@@ -277,7 +311,7 @@ describe('setPermissionGroup procedure', () => {
       agent: entityMockUtils.getAgentInstance({
         getPermissionGroup: entityMockUtils.getCustomPermissionGroupInstance({
           ticker,
-          id: new BigNumber(1),
+          id,
         }),
       }),
       permissions: entityMockUtils.getCustomPermissionGroupInstance({
