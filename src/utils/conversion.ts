@@ -1713,8 +1713,21 @@ export function canTransferResultToTransferStatus(
 export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
   const { type, value } = scope;
 
+  let scopeValue: Ticker | IdentityId | string;
+  switch (type) {
+    case ScopeType.Ticker:
+      scopeValue = stringToTicker(value, context);
+      break;
+    case ScopeType.Identity:
+      scopeValue = stringToIdentityId(value, context);
+      break;
+    default:
+      scopeValue = value;
+      break;
+  }
+
   return context.polymeshApi.createType('Scope', {
-    [type]: value,
+    [type]: scopeValue,
   });
 }
 
