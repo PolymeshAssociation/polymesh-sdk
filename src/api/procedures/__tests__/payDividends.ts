@@ -5,7 +5,7 @@ import { getAuthorization, Params, preparePayDividends } from '~/api/procedures/
 import { Context, DividendDistribution } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TargetTreatment, TxTags } from '~/types';
+import { TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -221,13 +221,9 @@ describe('payDividends procedure', () => {
         ticker,
       });
 
-      const result = await boundFunc({
-        targets: ['someDid'],
-        distribution,
-      });
+      const result = await boundFunc();
 
       expect(result).toEqual({
-        roles: [{ type: RoleType.TokenCaa, ticker }],
         permissions: {
           tokens: [],
           portfolios: [],

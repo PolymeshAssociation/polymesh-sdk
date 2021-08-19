@@ -1,5 +1,6 @@
 import { bool, Bytes, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
@@ -2412,30 +2413,165 @@ describe('stringToDocumentHash and documentHashToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToDocumentHash should throw if document hash is empty', () => {
+  test('stringToDocumentHash should throw if document hash is not prefixed with 0x', () => {
     expect(() => stringToDocumentHash('', dsMockUtils.getContextInstance())).toThrow(
-      'Document hash cannot be empty'
+      'Document hash must be a hexadecimal string prefixed by 0x'
     );
   });
 
+  test('stringToDocumentHash should throw if document hash is longer than 128 characters', () => {
+    expect(() =>
+      stringToDocumentHash('0x'.padEnd(131, '1'), dsMockUtils.getContextInstance())
+    ).toThrow('Document hash exceeds max length');
+  });
+
   test('stringToDocumentHash should convert a string to a polkadot DocumentHash object', () => {
-    const value = 'someHash';
     const fakeResult = ('convertedHash' as unknown) as DocumentHash;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentHash', value).returns(fakeResult);
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
 
-    const result = stringToDocumentHash(value, context);
+    createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
+
+    let result = stringToDocumentHash(undefined, context);
+
+    expect(result).toEqual(fakeResult);
+
+    let value = '0x1';
+    createTypeStub
+      .withArgs('DocumentHash', { H128: hexToU8a(value.padEnd(34, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(35, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H160: hexToU8a(value.padEnd(42, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(43, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H192: hexToU8a(value.padEnd(50, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(51, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H224: hexToU8a(value.padEnd(58, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(59, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H256: hexToU8a(value.padEnd(66, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(67, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H320: hexToU8a(value.padEnd(82, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(83, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H384: hexToU8a(value.padEnd(98, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(99, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H512: hexToU8a(value.padEnd(130, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
   test('documentHashToString should convert a polkadot DocumentHash object to a string', () => {
-    const fakeResult = 'someDocumentHash';
-    const docHash = dsMockUtils.createMockDocumentHash(fakeResult);
+    const fakeResult = '0x01';
+    let docHash = dsMockUtils.createMockDocumentHash({
+      H128: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
 
-    const result = documentHashToString(docHash);
+    let result = documentHashToString(docHash);
     expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H160: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H192: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H224: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H256: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H320: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H384: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H512: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash('None');
+
+    result = documentHashToString(docHash);
+    expect(result).toBeUndefined();
   });
 });
 
@@ -2488,7 +2624,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
 
   test('tokenDocumentToDocument should convert a TokenDocument object to a polkadot Document object', () => {
     const uri = 'someUri';
-    const contentHash = 'someHash';
+    const contentHash = '0x01';
     const name = 'someName';
     const type = 'someType';
     const filedAt = new Date();
@@ -2536,20 +2672,19 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
   test('documentToTokenDocument should convert a polkadot Document object to a TokenDocument object', () => {
     const name = 'someName';
     const uri = 'someUri';
-    const contentHash = 'someHash';
+    const contentHash = '0x111111';
     const filedAt = new Date();
     const type = 'someType';
     let fakeResult: TokenDocument = {
       name,
       uri,
-      contentHash,
     };
 
     let doc = dsMockUtils.createMockDocument({
       uri: dsMockUtils.createMockDocumentUri(uri),
       name: dsMockUtils.createMockDocumentName(name),
       /* eslint-disable @typescript-eslint/naming-convention */
-      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+      content_hash: dsMockUtils.createMockDocumentHash('None'),
       doc_type: dsMockUtils.createMockOption(),
       filing_date: dsMockUtils.createMockOption(),
       /* eslint-enable @typescript-eslint/naming-convention */
@@ -2560,6 +2695,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
 
     fakeResult = {
       ...fakeResult,
+      contentHash,
       filedAt,
       type,
     };
@@ -2568,7 +2704,9 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       uri: dsMockUtils.createMockDocumentUri(uri),
       name: dsMockUtils.createMockDocumentName(name),
       /* eslint-disable @typescript-eslint/naming-convention */
-      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+      content_hash: dsMockUtils.createMockDocumentHash({
+        H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+      }),
       doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
       filing_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(filedAt.getTime())),
       /* eslint-enable @typescript-eslint/naming-convention */

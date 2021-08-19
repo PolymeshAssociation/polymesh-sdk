@@ -85,32 +85,16 @@ export enum TransactionQueueStatus {
 
 export enum RoleType {
   TickerOwner = 'TickerOwner',
-  TokenPia = 'TokenPia',
-  TokenCaa = 'TokenCaa',
   CddProvider = 'CddProvider',
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
   CorporateActionsAgent = 'CorporateActionsAgent',
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  Identity = 'Identity',
 }
 
 export interface TickerOwnerRole {
   type: RoleType.TickerOwner;
-  ticker: string;
-}
-
-/**
- * @deprecated in favor of external agent permissions
- */
-export interface TokenPiaRole {
-  type: RoleType.TokenPia;
-  ticker: string;
-}
-
-/**
- * @deprecated in favor of external agent permissions
- */
-export interface TokenCaaRole {
-  type: RoleType.TokenCaa;
   ticker: string;
 }
 
@@ -128,13 +112,17 @@ export interface PortfolioCustodianRole {
   portfolioId: PortfolioId;
 }
 
+export interface IdentityRole {
+  type: RoleType.Identity;
+  did: string;
+}
+
 export type Role =
   | TickerOwnerRole
-  | TokenPiaRole
-  | TokenCaaRole
   | CddProviderRole
   | VenueOwnerRole
-  | PortfolioCustodianRole;
+  | PortfolioCustodianRole
+  | IdentityRole;
 
 /**
  * @hidden
@@ -159,25 +147,16 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
 
 /**
  * @hidden
- * @deprecated
- */
-export function isTokenCaaRole(role: Role): role is TokenCaaRole {
-  return role.type === RoleType.TokenCaa;
-}
-
-/**
- * @hidden
- * @deprecated
- */
-export function isTokenPiaRole(role: Role): role is TokenPiaRole {
-  return role.type === RoleType.TokenPia;
-}
-
-/**
- * @hidden
  */
 export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
   return role.type === RoleType.TickerOwner;
+}
+
+/**
+ * @hidden
+ */
+export function isIdentityRole(role: Role): role is IdentityRole {
+  return role.type === RoleType.Identity;
 }
 
 export enum KnownTokenType {
@@ -222,7 +201,10 @@ export interface TokenIdentifier {
 export interface TokenDocument {
   name: string;
   uri: string;
-  contentHash: string;
+  /**
+   * hex representation of the document (must be prefixed by "0x")
+   */
+  contentHash?: string;
   type?: string;
   filedAt?: Date;
 }

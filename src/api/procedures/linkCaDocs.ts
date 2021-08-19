@@ -3,7 +3,7 @@ import { isEqual, remove } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, RoleType, TokenDocument } from '~/types';
+import { ErrorCode, TokenDocument } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
 
@@ -45,10 +45,11 @@ export async function prepareLinkCaDocs(
   const rawAssetDocuments = await assetDocuments.entries(stringToTicker(ticker, context));
 
   const docIdsToLink: DocumentId[] = [];
+  const documentsCopy = [...documents]; // avoid mutation
 
   rawAssetDocuments.forEach(([key, doc]) => {
     const [, id] = key.args;
-    const removedList = remove(documents, document =>
+    const removedList = remove(documentsCopy, document =>
       isEqual(document, documentToTokenDocument(doc))
     );
     if (removedList.length) {
@@ -56,12 +57,12 @@ export async function prepareLinkCaDocs(
     }
   });
 
-  if (documents.length) {
+  if (documentsCopy.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Some of the provided documents are not associated with the Security Token',
       data: {
-        documents,
+        documents: documentsCopy,
       },
     });
   }
@@ -80,7 +81,6 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    roles: [{ type: RoleType.TokenCaa, ticker }],
     permissions: {
       tokens: [new SecurityToken({ ticker }, this.context)],
       transactions: [TxTags.corporateAction.LinkCaDoc],

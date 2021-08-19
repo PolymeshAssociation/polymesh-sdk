@@ -107,7 +107,7 @@ describe('launchSto procedure', () => {
     portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    offeringPortfolio = 'piaDid';
+    offeringPortfolio = 'oneDid';
     raisingPortfolio = 'treasuryDid';
     offeringPortfolioId = { did: offeringPortfolio };
     raisingPortfolioId = { did: raisingPortfolio };
@@ -379,7 +379,6 @@ describe('launchSto procedure', () => {
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker });
       const roles = [
-        { type: RoleType.TokenPia, ticker },
         { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },
       ];

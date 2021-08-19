@@ -2,9 +2,9 @@ import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
 import sinon from 'sinon';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 import {
   Context,
+  CustomPermissionGroup,
   KnownPermissionGroup,
   Namespace,
   SecurityToken,
@@ -103,6 +103,30 @@ describe('Permissions class', () => {
         .resolves(expectedQueue);
 
       const queue = await permissions.inviteAgent(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: removeAgent', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        ticker: token.ticker,
+        target,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await permissions.removeAgent(args);
 
       expect(queue).toBe(expectedQueue);
     });

@@ -5,7 +5,7 @@ import { Identity } from '~/internal';
 export interface DividendDistributionDetails {
   remainingFunds: BigNumber;
   /**
-   * whether the unclaimed funds have been reclaimed by the Corporate Actions Agent
+   * whether the unclaimed funds have been reclaimed
    */
   fundsReclaimed: boolean;
 }

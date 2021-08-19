@@ -29,7 +29,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CorporateActionKind, RoleType, TargetTreatment, TxTags } from '~/types';
+import { CorporateActionKind, TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -334,7 +334,6 @@ describe('initiateCorporateAction procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.TokenCaa, ticker }],
         permissions: {
           transactions: [TxTags.corporateAction.InitiateCorporateAction],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
