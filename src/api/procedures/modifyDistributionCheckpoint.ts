@@ -8,7 +8,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 
 /**
@@ -74,7 +74,6 @@ export function getAuthorization(
   const { context } = this;
 
   return {
-    roles: [{ type: RoleType.TokenCaa, ticker }],
     permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
       tokens: [new SecurityToken({ ticker }, context)],

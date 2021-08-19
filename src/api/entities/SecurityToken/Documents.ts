@@ -31,9 +31,6 @@ export class Documents extends Namespace<SecurityToken> {
    * Assign a new list of documents to the Security Token by replacing the existing list of documents with the one passed in the parameters
    *
    * This requires two transactions
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public set: ProcedureMethod<SetTokenDocumentsParams, SecurityToken>;
 

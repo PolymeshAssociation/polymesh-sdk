@@ -31,8 +31,7 @@ export class Distributions extends Namespace<SecurityToken> {
    * @param args.paymentDate - date from which Tokenholders can claim their Dividends
    * @param args.expiryDate - a null value means the Distribution never expires
    *
-   * @note required roles:
-   *   - Security Token Corporate Actions Agent
+   * @note required role:
    *   - Origin Portfolio Custodian
    */
   public configureDividendDistribution: ProcedureMethod<

@@ -72,25 +72,16 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    * Assign a new default list of trusted claim issuers to the Security Token by replacing the existing ones with the list passed as a parameter
    *
    * This requires two transactions
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public set: ProcedureMethod<ModifyTokenTrustedClaimIssuersAddSetParams, SecurityToken>;
 
   /**
    * Add the supplied Identities to the Security Token's list of trusted claim issuers
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public add: ProcedureMethod<ModifyTokenTrustedClaimIssuersAddSetParams, SecurityToken>;
 
   /**
    * Remove the supplied Identities from the Security Token's list of trusted claim issuers   *
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public remove: ProcedureMethod<ModifyTokenTrustedClaimIssuersRemoveParams, SecurityToken>;
 

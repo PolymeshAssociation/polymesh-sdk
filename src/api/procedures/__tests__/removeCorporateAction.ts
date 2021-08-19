@@ -10,7 +10,6 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -195,7 +194,6 @@ describe('removeCorporateAction procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.TokenCaa, ticker }],
         permissions: {
           transactions: [TxTags.corporateAction.RemoveCa],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],

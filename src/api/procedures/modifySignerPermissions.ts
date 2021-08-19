@@ -1,6 +1,7 @@
 import { assertSecondaryKeys } from '~/api/procedures/utils';
-import { Procedure } from '~/internal';
-import { PermissionsLike, Signer, TxTags } from '~/types';
+import { Identity, Procedure } from '~/internal';
+import { PermissionsLike, RoleType, Signer, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
@@ -22,12 +23,16 @@ export interface ModifySignerPermissionsParams {
   }[];
 }
 
+export type Params = ModifySignerPermissionsParams & {
+  identity: Identity;
+};
+
 /**
  * @hidden
  */
 export async function prepareModifySignerPermissions(
-  this: Procedure<ModifySignerPermissionsParams>,
-  args: ModifySignerPermissionsParams
+  this: Procedure<Params>,
+  args: Params
 ): Promise<void> {
   const {
     context: {
@@ -36,10 +41,9 @@ export async function prepareModifySignerPermissions(
     context,
   } = this;
 
-  const { secondaryKeys: signers } = args;
+  const { secondaryKeys: signers, identity } = args;
 
-  const currentIdentity = await context.getCurrentIdentity();
-  const secondaryKeys = await currentIdentity.getSecondaryKeys();
+  const secondaryKeys = await identity.getSecondaryKeys();
   const signerValues = signers.map(({ signer, permissions }) => {
     return {
       signer: signerToSignerValue(signer),
@@ -66,11 +70,22 @@ export async function prepareModifySignerPermissions(
 /**
  * @hidden
  */
-export const modifySignerPermissions = (): Procedure<ModifySignerPermissionsParams> =>
-  new Procedure(prepareModifySignerPermissions, {
+export function getAuthorization(
+  this: Procedure<Params>,
+  { identity: { did } }: Params
+): ProcedureAuthorization {
+  return {
+    roles: [{ type: RoleType.Identity, did }],
     permissions: {
       transactions: [TxTags.identity.SetPermissionToSigner],
       tokens: [],
       portfolios: [],
     },
-  });
+  };
+}
+
+/**
+ * @hidden
+ */
+export const modifySignerPermissions = (): Procedure<Params> =>
+  new Procedure(prepareModifySignerPermissions, getAuthorization);
