@@ -3,8 +3,8 @@ import BigNumber from 'bignumber.js';
 import {
   Context,
   PermissionGroup,
-  setCustomPermissions,
-  SetCustomPermissionsParams,
+  setGroupPermissions,
+  SetGroupPermissionsParams,
 } from '~/internal';
 import { GroupPermissions, ProcedureMethod } from '~/types';
 import {
@@ -52,7 +52,7 @@ export class CustomPermissionGroup extends PermissionGroup {
     this.id = id;
 
     this.setPermissions = createProcedureMethod(
-      { getProcedureAndArgs: args => [setCustomPermissions, { group: this, ...args }] },
+      { getProcedureAndArgs: args => [setGroupPermissions, { group: this, ...args }] },
       context
     );
   }
@@ -71,7 +71,7 @@ export class CustomPermissionGroup extends PermissionGroup {
   /**
    * Modify the group's permissions
    */
-  public setPermissions: ProcedureMethod<SetCustomPermissionsParams, void>;
+  public setPermissions: ProcedureMethod<SetGroupPermissionsParams, void>;
 
   /**
    * Retrieve the list of permissions and transaction groups associated with this Permission Group

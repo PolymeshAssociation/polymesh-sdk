@@ -87,12 +87,7 @@ export async function prepareCreateGroup(
 
   const duplicatedGroupIndex = currentGroupPermissions.findIndex(
     ({ transactions: transactionPermissions }) => {
-      const sortedTransactions = transactions && {
-        ...transactions,
-        values: [...transactions.values].sort(),
-      };
-
-      return isEqual(transactionPermissions, sortedTransactions);
+      return isEqual(transactionPermissions, transactions);
     }
   );
 

@@ -1,8 +1,6 @@
 import { isEqual } from 'lodash';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { PolymeshError, Procedure } from '~/internal';
+import { CustomPermissionGroup, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -12,7 +10,7 @@ import {
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
 
-export interface SetCustomPermissionsParams {
+export interface SetGroupPermissionsParams {
   permissions:
     | {
         transactions: TransactionPermissions;
@@ -25,12 +23,12 @@ export interface SetCustomPermissionsParams {
 /**
  * @hidden
  */
-export type Params = { group: CustomPermissionGroup } & SetCustomPermissionsParams;
+export type Params = { group: CustomPermissionGroup } & SetGroupPermissionsParams;
 
 /**
  * @hidden
  */
-export async function prepareSetCustomPermissions(
+export async function prepareSetGroupPermissions(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
@@ -46,16 +44,12 @@ export async function prepareSetCustomPermissions(
   const { group, permissions } = args;
 
   const { transactions } = permissionsLikeToPermissions(permissions, context);
-  const sortedTransactions = transactions && {
-    ...transactions,
-    values: [...transactions.values].sort(),
-  };
   const { transactions: transactionPermissions } = await group.getPermissions();
 
-  if (isEqual(transactionPermissions, sortedTransactions)) {
+  if (isEqual(transactionPermissions, transactions)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'New permissions are the same as the currents',
+      message: 'New permissions are the same as the current ones',
     });
   }
 
@@ -96,5 +90,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setCustomPermissions = (): Procedure<Params, void> =>
-  new Procedure(prepareSetCustomPermissions, getAuthorization);
+export const setGroupPermissions = (): Procedure<Params, void> =>
+  new Procedure(prepareSetGroupPermissions, getAuthorization);

@@ -4,8 +4,8 @@ import sinon from 'sinon';
 import {
   getAuthorization,
   Params,
-  prepareSetCustomPermissions,
-} from '~/api/procedures/setCustomPermissions';
+  prepareSetGroupPermissions,
+} from '~/api/procedures/setGroupPermissions';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -18,12 +18,9 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
-describe('setCustomPermissions procedure', () => {
+describe('setGroupPermissions procedure', () => {
   const ticker = 'SOME_TICKER';
   const permissions = {
-    tokens: null,
-    portfolios: null,
-    transactionGroups: [],
     transactions: {
       type: PermissionType.Include,
       values: [TxTags.sto.Invest],
@@ -88,7 +85,7 @@ describe('setCustomPermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if new permissions are the same as the currents', async () => {
+  test('should throw an error if new permissions are the same as the current ones', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     permissionsLikeToPermissionsStub.returns(permissions);
@@ -96,7 +93,7 @@ describe('setCustomPermissions procedure', () => {
     let error;
 
     try {
-      await prepareSetCustomPermissions.call(proc, {
+      await prepareSetGroupPermissions.call(proc, {
         group: entityMockUtils.getCustomPermissionGroupInstance({
           ticker,
           id: customId,
@@ -111,7 +108,7 @@ describe('setCustomPermissions procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('New permissions are the same as the currents');
+    expect(error.message).toBe('New permissions are the same as the current ones');
   });
 
   test('should add a set group permissions transaction to the queue', async () => {
@@ -122,7 +119,7 @@ describe('setCustomPermissions procedure', () => {
       .withArgs(fakePermissions, mockContext)
       .returns(permissions.transactions);
 
-    await prepareSetCustomPermissions.call(proc, {
+    await prepareSetGroupPermissions.call(proc, {
       group: entityMockUtils.getCustomPermissionGroupInstance({
         ticker,
         id: customId,
