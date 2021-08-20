@@ -287,10 +287,6 @@ describe('setPermissionGroup procedure', () => {
       rawAgentGroup
     );
 
-    procedureMockUtils.getAddProcedureStub().resolves({
-      transform: (cb: () => AgentGroup) => cb(),
-    });
-
     const fakeCustomPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
       ticker,
       id: new BigNumber(2),
