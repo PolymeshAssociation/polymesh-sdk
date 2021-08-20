@@ -13,6 +13,7 @@ import {
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
+  Agent,
   Context,
   createVenue,
   CreateVenueParams,
@@ -911,11 +912,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const tokenEntries = await externalAgents.agentOf.entries(rawDid);
 
     return P.map(tokenEntries, async ([key]) => {
-      const token = new SecurityToken({ ticker: tickerToString(key.args[1]) }, context);
-      const agents = await token.permissions.getAgents();
-      const agentWithGroup = agents.find(({ agent }) => agent.did === did);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const group = await agentWithGroup!.group;
+      const ticker = tickerToString(key.args[1]);
+      const agent = new Agent({ did, ticker }, context);
+      const token = new SecurityToken({ ticker }, context);
+      const group = await agent.getPermissionGroup();
 
       return {
         token,

@@ -6,7 +6,6 @@ import { DidRecord, IdentityId, ScopeId, Signatory, Ticker, TxTags } from 'polym
 import sinon from 'sinon';
 
 import {
-  Agent,
   Context,
   Entity,
   Identity,
@@ -72,6 +71,10 @@ jest.mock(
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+jest.mock(
+  '~/api/entities/Agent',
+  require('~/testUtils/mocks/entities').mockAgentModule('~/api/entities/Agent')
 );
 
 describe('Identity class', () => {
@@ -1566,12 +1569,9 @@ describe('Identity class', () => {
       entityMockUtils.configureMocks({
         securityTokenOptions: {
           ticker,
-          permissionsGetAgents: [
-            {
-              agent: identity as Agent,
-              group,
-            },
-          ],
+        },
+        agentOptions: {
+          getPermissionGroup: group,
         },
       });
 
