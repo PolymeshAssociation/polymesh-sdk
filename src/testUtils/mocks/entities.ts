@@ -1098,7 +1098,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
     id: opts.id,
     ticker: opts.ticker,
     getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
-    isEqual: customPermissionGroupGetPermissionsStub.returns(opts.isEqual),
+    isEqual: customPermissionGroupIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockCustomPermissionGroup;
 
   Object.assign(mockInstanceContainer.customPermissionGroup, customPermissionGroup);
@@ -1123,7 +1123,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
 function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
   customPermissionGroupConstructorStub = sinon.stub();
   customPermissionGroupGetPermissionsStub = sinon.stub();
-  customPermissionGroupGetPermissionsStub = sinon.stub();
+  customPermissionGroupIsEqualStub = sinon.stub();
 
   customPermissionGroupOptions = { ...defaultCustomPermissionGroupOptions, ...opts };
 
@@ -1140,7 +1140,7 @@ function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void 
     ticker: opts.ticker,
     type: opts.type,
     getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
-    isEqual: knownPermissionGroupGetPermissionsStub.returns(opts.isEqual),
+    isEqual: knownPermissionGroupIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockKnownPermissionGroup;
 
   Object.assign(mockInstanceContainer.knownPermissionGroup, knownPermissionGroup);
@@ -1165,7 +1165,7 @@ function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void 
 function initKnownPermissionGroup(opts?: KnownPermissionGroupOptions): void {
   knownPermissionGroupConstructorStub = sinon.stub();
   knownPermissionGroupGetPermissionsStub = sinon.stub();
-  knownPermissionGroupGetPermissionsStub = sinon.stub();
+  knownPermissionGroupIsEqualStub = sinon.stub();
 
   knownPermissionGroupOptions = { ...defaultKnownPermissionGroupOptions, ...opts };
 

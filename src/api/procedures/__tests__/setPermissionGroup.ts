@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { AgentGroup } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
