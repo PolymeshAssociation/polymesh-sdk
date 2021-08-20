@@ -29,6 +29,8 @@ import {
   TickerReservation,
   toggleFreezeSecondaryKeys,
   Venue,
+  waivePermissions,
+  WaivePermissionsParams
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -173,6 +175,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }] },
       context
     );
+    this.waivePermissions = createProcedureMethod(
+      { getProcedureAndArgs: args => [waivePermissions, { ...args, identity: this }] },
+      context
+    );
   }
 
   /**
@@ -213,6 +219,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
+
+  /**
+   * Abdicate to be an Agent for a given asset
+   */
+  public waivePermissions: ProcedureMethod<WaivePermissionsParams, void>
 
   /**
    * Check whether this Identity has specific transaction Permissions over a Security Token

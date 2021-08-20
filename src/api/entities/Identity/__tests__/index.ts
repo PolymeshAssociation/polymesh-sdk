@@ -1521,6 +1521,29 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: waivePermissions', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const identity = new Identity({ did }, context);
+
+      const args = {
+        token: 'SOME_TICKER',
+        identity
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identity.waivePermissions(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       const identity = new Identity({ did: 'someDid' }, context);
