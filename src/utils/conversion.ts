@@ -2009,7 +2009,7 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
   return context.polymeshApi.createType(
     'TargetIdentity',
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    did ? { Specific: stringToIdentityId(did, context) } : 'PrimaryIssuanceAgent'
+    did ? { Specific: stringToIdentityId(did, context) } : 'ExternalAgent'
   );
 }
 
@@ -2133,7 +2133,7 @@ export function requirementToComplianceRequirement(
       } = condition;
       conditionContent = stringToTargetIdentity(did, context);
     } else {
-      // IsPrimaryIssuanceAgent does not exist as a condition type in Polymesh, it's SDK sugar
+      // IsExternalAgent does not exist as a condition type in Polymesh, it's SDK sugar
       type = ConditionType.IsIdentity;
       conditionContent = stringToTargetIdentity(null, context);
     }
