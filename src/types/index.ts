@@ -1105,9 +1105,9 @@ export interface GroupedInstructions {
   failed: Instruction[];
 }
 
-export interface AssetPermission {
+export interface TokenWithGroup {
   token: SecurityToken;
-  permissions: GroupPermissions;
+  group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
 export { TxTags, TxTag, ModuleName };

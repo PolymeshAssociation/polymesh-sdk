@@ -33,7 +33,6 @@ import {
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
-  AssetPermission,
   DistributionWithDetails,
   Ensured,
   ErrorCode,
@@ -51,6 +50,7 @@ import {
   SecondaryKey,
   Signer,
   SubCallback,
+  TokenWithGroup,
   UnsubCallback,
 } from '~/types';
 import { tuple } from '~/types/utils';
@@ -894,9 +894,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve all assets with given permissions where this Identity is an Agent
+   * Retrieve all the Security Tokens for which this Identity is an Agent, with the corresponding permission group
    */
-  public async agentOf(): Promise<AssetPermission[]> {
+  public async agentOf(): Promise<TokenWithGroup[]> {
     const {
       context: {
         polymeshApi: {
@@ -908,18 +908,18 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const rawDid = stringToIdentityId(did, context);
-    const rawAgentOf = await externalAgents.agentOf.entries(rawDid);
+    const tokenEntries = await externalAgents.agentOf.entries(rawDid);
 
-    return P.map(rawAgentOf, async ([key]) => {
+    return P.map(tokenEntries, async ([key]) => {
       const token = new SecurityToken({ ticker: tickerToString(key.args[1]) }, context);
       const agents = await token.permissions.getAgents();
       const agentWithGroup = agents.find(({ agent }) => agent.did === did);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const permissions = await agentWithGroup!.group.getPermissions();
+      const group = await agentWithGroup!.group;
 
       return {
         token,
-        permissions,
+        group,
       };
     });
   }

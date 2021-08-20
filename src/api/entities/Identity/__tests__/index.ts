@@ -10,6 +10,7 @@ import {
   Context,
   Entity,
   Identity,
+  KnownPermissionGroup,
   SecurityToken,
   TransactionQueue,
   Venue,
@@ -1567,7 +1568,6 @@ describe('Identity class', () => {
           ticker,
           permissionsGetAgents: [
             {
-              // TODO replace by entityMockUtils.getAgentInstance once it is merge
               agent: identity as Agent,
               group,
             },
@@ -1582,7 +1582,7 @@ describe('Identity class', () => {
       const result = await identity.agentOf();
       expect(result.length).toEqual(1);
       expect(result[0].token.ticker).toEqual(ticker);
-      expect(result[0].permissions.transactions).toEqual(null);
+      expect(result[0].group instanceof KnownPermissionGroup).toEqual(true);
     });
   });
 
