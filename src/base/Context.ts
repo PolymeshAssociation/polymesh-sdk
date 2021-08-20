@@ -12,15 +12,7 @@ import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import { CAId, DidRecord, Distribution, ProtocolOp, TxTag } from 'polymesh-types/types';
 
-import {
-  Account,
-  CurrentAccount,
-  CurrentIdentity,
-  DividendDistribution,
-  Identity,
-  PolymeshError,
-  SecurityToken,
-} from '~/internal';
+import { Account, DividendDistribution, Identity, PolymeshError, SecurityToken } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -247,9 +239,9 @@ export class Context {
   }
 
   /**
-   * Retrieve a list of Accounts that can act as signers
+   * Retrieve a list of Accounts that can act as signers. The first Account in the array is the current Account (default signer)
    */
-  public getAccounts(): [CurrentAccount, ...Account[]] {
+  public getAccounts(): Account[] {
     const { keyring, currentPair } = this;
 
     if (!currentPair) {
@@ -261,10 +253,10 @@ export class Context {
 
     const pairs = [...keyring.getPairs()];
 
-    const [first] = remove(pairs, ({ address }) => address === currentPair.address);
+    const [first] = remove(pairs, ({ address }) => currentPair.address === address);
 
     return [
-      new CurrentAccount({ address: first.address }, this),
+      new Account({ address: first.address }, this),
       ...pairs.map(({ address }) => new Account({ address }, this)),
     ];
   }
@@ -394,7 +386,7 @@ export class Context {
    *
    * @throws if there is no current account associated to the SDK instance
    */
-  public getCurrentAccount(): CurrentAccount {
+  public getCurrentAccount(): Account {
     const { currentPair } = this;
 
     if (!currentPair) {
@@ -406,7 +398,7 @@ export class Context {
 
     const { address } = currentPair;
 
-    return new CurrentAccount({ address }, this);
+    return new Account({ address }, this);
   }
 
   /**
@@ -414,7 +406,7 @@ export class Context {
    *
    * @throws if there is no Identity associated to the current Account (or there is no current Account associated to the SDK instance)
    */
-  public async getCurrentIdentity(): Promise<CurrentIdentity> {
+  public async getCurrentIdentity(): Promise<Identity> {
     const account = this.getCurrentAccount();
 
     const identity = await account.getIdentity();

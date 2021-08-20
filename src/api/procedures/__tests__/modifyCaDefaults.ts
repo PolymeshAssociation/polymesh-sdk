@@ -11,7 +11,7 @@ import * as utilsProcedureModule from '~/api/procedures/utils';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InputTargets, RoleType, TargetTreatment } from '~/types';
+import { InputTargets, TargetTreatment } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -279,7 +279,6 @@ describe('modifyCaDefaults procedure', () => {
       } as Params;
 
       expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.TokenCaa, ticker }],
         permissions: {
           transactions: [],
           portfolios: [],
@@ -295,7 +294,6 @@ describe('modifyCaDefaults procedure', () => {
           taxWithholdings: [],
         })
       ).toEqual({
-        roles: [{ type: RoleType.TokenCaa, ticker }],
         permissions: {
           transactions: [
             TxTags.corporateAction.SetDefaultTargets,

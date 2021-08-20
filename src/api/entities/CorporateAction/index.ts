@@ -150,8 +150,6 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
    * Link a list of documents to this corporate action
    *
    * @note any previous links are removed in favor of the new list
-   * @note required role:
-   *   - Corporate Actions Agent
    */
   public linkDocuments: ProcedureMethod<LinkCaDocsParams, void>;
 

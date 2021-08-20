@@ -102,8 +102,10 @@ import {
   Checkpoint,
   CheckpointSchedule,
   Context,
+  CustomPermissionGroup,
   DefaultPortfolio,
   Identity,
+  KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
@@ -148,7 +150,7 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
-  PermissionGroup,
+  PermissionGroupType,
   Permissions,
   PermissionsLike,
   PermissionType,
@@ -190,6 +192,7 @@ import {
   ExtrinsicIdentifier,
   InstructionStatus,
   PalletPermissions,
+  PermissionGroupIdentifier,
   PermissionsEnum,
   PolymeshTx,
   PortfolioId,
@@ -201,6 +204,7 @@ import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
   MAX_DECIMALS,
+  MAX_MEMO_LENGTH,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
@@ -678,7 +682,13 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
  * @note tags that don't belong to any group will be ignored.
  *   The same goes for tags that belong to a group that wasn't completed
  */
-export function transactionPermissionsToTxGroups(permissions: TransactionPermissions): TxGroup[] {
+export function transactionPermissionsToTxGroups(
+  permissions: TransactionPermissions | null
+): TxGroup[] {
+  if (!permissions) {
+    return [];
+  }
+
   const { values: transactionValues, type, exceptions = [] } = permissions;
   let includedTags: (TxTag | ModuleName)[];
   let excludedTags: (TxTag | ModuleName)[];
@@ -841,11 +851,7 @@ export function permissionsToMeshPermissions(
 ): MeshPermissions {
   const { tokens, transactions, portfolios } = permissions;
 
-  let extrinsic: PermissionsEnum<PalletPermissions> = 'Whole';
-
-  if (transactions) {
-    extrinsic = buildPalletPermissions(transactions);
-  }
+  const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
   if (tokens) {
@@ -888,6 +894,19 @@ export function permissionsToMeshPermissions(
   };
 
   return context.polymeshApi.createType('Permissions', value);
+}
+
+/**
+ * @hidden
+ */
+export function transactionPermissionsToExtrinsicPermissions(
+  transactionPermissions: TransactionPermissions | null,
+  context: Context
+): ExtrinsicPermissions {
+  return context.polymeshApi.createType(
+    'ExtrinsicPermissions',
+    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
+  );
 }
 
 /**
@@ -1004,8 +1023,8 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
-export function permissionGroupToAgentGroup(
-  permissionGroup: PermissionGroup,
+export function permissionGroupIdentifierToAgentGroup(
+  permissionGroup: PermissionGroupIdentifier,
   context: Context
 ): AgentGroup {
   return context.polymeshApi.createType(
@@ -1014,6 +1033,25 @@ export function permissionGroupToAgentGroup(
       ? permissionGroup
       : { custom: numberToU32(permissionGroup.custom, context) }
   );
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroupIdentifier(
+  agentGroup: AgentGroup
+): PermissionGroupIdentifier {
+  if (agentGroup.isFull) {
+    return PermissionGroupType.Full;
+  } else if (agentGroup.isExceptMeta) {
+    return PermissionGroupType.ExceptMeta;
+  } else if (agentGroup.isPolymeshV1Caa) {
+    return PermissionGroupType.PolymeshV1Caa;
+  } else if (agentGroup.isPolymeshV1Pia) {
+    return PermissionGroupType.PolymeshV1Pia;
+  } else {
+    return { custom: u32ToBigNumber(agentGroup.asCustom) };
+  }
 }
 
 /**
@@ -1032,7 +1070,13 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
-    value = [auth.value, permissionGroupToAgentGroup(auth.permissionGroup, context)];
+    if (auth.value instanceof CustomPermissionGroup) {
+      const { ticker, id } = auth.value;
+      value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
+    } else {
+      const { ticker, type } = auth.value;
+      value = [ticker, permissionGroupIdentifierToAgentGroup(type, context)];
+    }
   } else {
     value = auth.value;
   }
@@ -1193,7 +1237,17 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
  * @hidden
  */
 export function stringToMemo(value: string, context: Context): Memo {
-  return context.polymeshApi.createType('Memo', value);
+  if (value.length > MAX_MEMO_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Max memo length exceeded',
+      data: {
+        maxLength: MAX_MEMO_LENGTH,
+      },
+    });
+  }
+
+  return context.polymeshApi.createType('Memo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -1358,7 +1412,7 @@ export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
 export function isIsinValid(isin: string): boolean {
   isin = isin.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z]{12}$').test(isin)) {
+  if (!/^[0-9A-Z]{12}$/.test(isin)) {
     return false;
   }
 
@@ -1398,7 +1452,7 @@ export function isIsinValid(isin: string): boolean {
 export function isCusipValid(cusip: string): boolean {
   cusip = cusip.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z@#*]{9}$').test(cusip)) {
+  if (!/^[0-9A-Z@#*]{9}$/.test(cusip)) {
     return false;
   }
 
@@ -1436,7 +1490,7 @@ export function isCusipValid(cusip: string): boolean {
 export function isLeiValid(lei: string): boolean {
   lei = lei.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z]{18}[0-9]{2}$').test(lei)) {
+  if (!/^[0-9A-Z]{18}[0-9]{2}$/.test(lei)) {
     return false;
   }
 
@@ -1667,8 +1721,21 @@ export function canTransferResultToTransferStatus(
 export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
   const { type, value } = scope;
 
+  let scopeValue: Ticker | IdentityId | string;
+  switch (type) {
+    case ScopeType.Ticker:
+      scopeValue = stringToTicker(value, context);
+      break;
+    case ScopeType.Identity:
+      scopeValue = stringToIdentityId(value, context);
+      break;
+    default:
+      scopeValue = value;
+      break;
+  }
+
   return context.polymeshApi.createType('Scope', {
-    [type]: value,
+    [type]: scopeValue,
   });
 }
 
@@ -3262,4 +3329,27 @@ export function corporateActionIdentifierToCaId(
     // eslint-disable-next-line @typescript-eslint/naming-convention
     local_id: numberToU32(localId, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(
+  agentGroup: AgentGroup,
+  ticker: string,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
+  switch (permissionGroupIdentifier) {
+    case PermissionGroupType.ExceptMeta:
+    case PermissionGroupType.Full:
+    case PermissionGroupType.PolymeshV1Caa:
+    case PermissionGroupType.PolymeshV1Pia: {
+      return new KnownPermissionGroup({ type: permissionGroupIdentifier, ticker }, context);
+    }
+    default: {
+      const { custom: id } = permissionGroupIdentifier;
+      return new CustomPermissionGroup({ id, ticker }, context);
+    }
+  }
 }

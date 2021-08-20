@@ -110,9 +110,7 @@ export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
-export { CurrentIdentity } from '~/api/entities/CurrentIdentity';
 export { Account } from '~/api/entities/Account';
-export { CurrentAccount } from '~/api/entities/CurrentAccount';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { SecurityToken } from '~/api/entities/SecurityToken';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
@@ -130,6 +128,8 @@ export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 export { Agent } from '~/api/entities/Agent';
 export { PermissionGroup } from '~/api/entities/PermissionGroup';
+export { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
+export { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
 export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,
@@ -174,5 +174,14 @@ export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondar
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';
+export { createGroup, CreateGroupParams } from '~/api/procedures/createGroup';
 export { quitCustody } from '~/api/procedures/quitCustody';
+export {
+  inviteExternalAgent,
+  InviteExternalAgentParams,
+} from '~/api/procedures/inviteExternalAgent';
 export { rescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
+export {
+  removeExternalAgent,
+  RemoveExternalAgentParams,
+} from '~/api/procedures/removeExternalAgent';

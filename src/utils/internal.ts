@@ -255,7 +255,8 @@ export function removePadding(value: string): string {
  * Return whether the string is fully printable ASCII
  */
 export function isPrintableAscii(value: string): boolean {
-  return new RegExp('^[\\\x00-\\\x7F]*$').test(value);
+  // eslint-disable-next-line no-control-regex
+  return /^[\x00-\x7F]*$/.test(value);
 }
 
 /**

@@ -17,9 +17,6 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * Add a Count Transfer Restriction to this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public addRestriction!: ProcedureMethod<Omit<AddCountTransferRestrictionParams, 'type'>, number>;
 
@@ -27,9 +24,6 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * Sets all Count Transfer Restrictions on this Security Token
    *
    * @note the result is the total amount of restrictions after the procedure has run
-   *
-   * @note required role:
-   *   - Security Token Owner
    */
   public setRestrictions!: ProcedureMethod<
     Omit<SetCountTransferRestrictionsParams, 'type'>,

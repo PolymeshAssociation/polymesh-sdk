@@ -1,42 +1,33 @@
 import BigNumber from 'bignumber.js';
 
 import { Context, Entity } from '~/internal';
+import { GroupPermissions, PermissionGroupType } from '~/types';
 
 export interface UniqueIdentifiers {
-  id: BigNumber;
+  ticker: string;
+  id?: BigNumber;
+  type?: PermissionGroupType;
 }
 
 /**
  * Represents a group of permissions for a Security Token
  */
-export class PermissionGroup extends Entity<UniqueIdentifiers, string> {
-  /**
-   * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
-   */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { id } = identifier as UniqueIdentifiers;
-
-    return id instanceof BigNumber;
-  }
-
-  public id: BigNumber;
-
+export abstract class PermissionGroup extends Entity<UniqueIdentifiers, unknown> {
   /**
    * @hidden
    */
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { id } = identifiers;
+    const { ticker } = identifiers;
 
-    this.id = id;
+    this.ticker = ticker;
   }
+
+  public ticker: string;
 
   /**
-   * Return the Group's ID
+   * Retrieve the Permissions associated with this Permission Group
    */
-  public toJson(): string {
-    return this.id.toString();
-  }
+  public abstract getPermissions(): Promise<GroupPermissions>;
 }

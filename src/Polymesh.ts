@@ -15,7 +15,6 @@ import {
   claimClassicTicker,
   ClaimClassicTickerParams,
   Context,
-  CurrentAccount,
   Identity,
   PolymeshError,
   registerIdentity,
@@ -32,7 +31,6 @@ import { Settlements } from '~/Settlements';
 import {
   AccountBalance,
   CommonKeyring,
-  CurrentIdentity,
   ErrorCode,
   MiddlewareConfig,
   NetworkProperties,
@@ -448,18 +446,18 @@ export class Polymesh {
   /**
    * Retrieve the Identity associated to the current Account (null if there is none)
    */
-  public getCurrentIdentity(): Promise<CurrentIdentity | null> {
+  public getCurrentIdentity(): Promise<Identity | null> {
     return this.context.getCurrentAccount().getIdentity();
   }
 
   /**
    * Create an Account instance from an address. If no address is passed, the current Account is returned
    */
-  public getAccount(): CurrentAccount;
+  public getAccount(): Account;
   public getAccount(args: { address: string }): Account;
 
   // eslint-disable-next-line require-jsdoc
-  public getAccount(args?: { address: string }): Account | CurrentAccount {
+  public getAccount(args?: { address: string }): Account {
     const { context } = this;
 
     if (args) {
@@ -474,7 +472,7 @@ export class Polymesh {
    *
    * @throws — if there is no current Account associated to the SDK instance
    */
-  public getAccounts(): [CurrentAccount, ...Account[]] {
+  public getAccounts(): Account[] {
     return this.context.getAccounts();
   }
 
@@ -733,6 +731,14 @@ export class Polymesh {
    */
   public get _polkadotApi(): ApiPromise {
     return this.context.polymeshApi;
+  }
+
+  /* istanbul ignore next: only for testing purposes */
+  /**
+   * Middleware client
+   */
+  public get _middlewareApi(): ApolloClient<NormalizedCacheObject> {
+    return this.context.middlewareApi;
   }
   /* eslint-enable @typescript-eslint/naming-convention */
 }
