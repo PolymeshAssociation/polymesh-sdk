@@ -209,12 +209,14 @@ interface CustomPermissionGroupOptions {
   ticker: string;
   id: BigNumber;
   getPermissions?: GroupPermissions;
+  isEqual?: boolean;
 }
 
 interface KnownPermissionGroupOptions {
   ticker: string;
   type: PermissionGroupType;
   getPermissions?: GroupPermissions;
+  isEqual?: boolean;
 }
 
 interface InstructionOptions {
@@ -390,6 +392,8 @@ let dividendDistributionCheckpointStub: SinonStub;
 let customPermissionGroupGetPermissionsStub: SinonStub;
 let knownPermissionGroupGetPermissionsStub: SinonStub;
 let agentGetPermissionGroupStub: SinonStub;
+let knownPermissionGroupIsEqualStub: SinonStub;
+let customPermissionGroupIsEqualStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -789,6 +793,7 @@ const defaultCustomPermissionGroupOptions: CustomPermissionGroupOptions = {
     transactions: null,
     transactionGroups: [],
   },
+  isEqual: true,
 };
 let customPermissionGroupOptions = defaultCustomPermissionGroupOptions;
 const defaultKnownPermissionGroupOptions: KnownPermissionGroupOptions = {
@@ -798,6 +803,7 @@ const defaultKnownPermissionGroupOptions: KnownPermissionGroupOptions = {
     transactions: null,
     transactionGroups: [],
   },
+  isEqual: true,
 };
 let knownPermissionGroupOptions = defaultKnownPermissionGroupOptions;
 const defaultInstructionOptions: InstructionOptions = {
@@ -1092,6 +1098,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
     id: opts.id,
     ticker: opts.ticker,
     getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
+    isEqual: customPermissionGroupGetPermissionsStub.returns(opts.isEqual),
   } as unknown) as MockCustomPermissionGroup;
 
   Object.assign(mockInstanceContainer.customPermissionGroup, customPermissionGroup);
@@ -1116,6 +1123,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
 function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
   customPermissionGroupConstructorStub = sinon.stub();
   customPermissionGroupGetPermissionsStub = sinon.stub();
+  customPermissionGroupGetPermissionsStub = sinon.stub();
 
   customPermissionGroupOptions = { ...defaultCustomPermissionGroupOptions, ...opts };
 
@@ -1132,6 +1140,7 @@ function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void 
     ticker: opts.ticker,
     type: opts.type,
     getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
+    isEqual: knownPermissionGroupGetPermissionsStub.returns(opts.isEqual),
   } as unknown) as MockKnownPermissionGroup;
 
   Object.assign(mockInstanceContainer.knownPermissionGroup, knownPermissionGroup);
@@ -1155,6 +1164,7 @@ function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void 
  */
 function initKnownPermissionGroup(opts?: KnownPermissionGroupOptions): void {
   knownPermissionGroupConstructorStub = sinon.stub();
+  knownPermissionGroupGetPermissionsStub = sinon.stub();
   knownPermissionGroupGetPermissionsStub = sinon.stub();
 
   knownPermissionGroupOptions = { ...defaultKnownPermissionGroupOptions, ...opts };
@@ -1692,6 +1702,12 @@ function configureAgent(opts: AgentOptions): void {
     const value = merge({}, agent, args);
     Object.setPrototypeOf(value, require('~/internal').Agent.prototype);
     return value;
+    /*
+         // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Agent.prototype, entities.Identity.prototype);
+    Object.setPrototypeOf(value, entities.Agent.prototype);
+     */
   });
 }
 
@@ -2409,6 +2425,14 @@ export function getCustomPermissionGroupInstance(
 
 /**
  * @hidden
+ * Retrieve the stub of the `CustomPermissionGroup.isEqual` method
+ */
+export function getCustomPermissionIsEqualStub(): SinonStub {
+  return customPermissionGroupIsEqualStub;
+}
+
+/**
+ * @hidden
  * Retrieve a KnownPermissionGroup instance
  */
 export function getKnownPermissionGroupInstance(
@@ -2419,6 +2443,14 @@ export function getKnownPermissionGroupInstance(
   }
 
   return new MockKnownPermissionGroupClass() as MockKnownPermissionGroup;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `KnwonPermissionGroup.isEqual` method
+ */
+export function getKnwonPermissionIsEqualStub(): SinonStub {
+  return knownPermissionGroupIsEqualStub;
 }
 
 /**
@@ -2725,7 +2757,7 @@ export function getAgentConstructorStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve a Agent instance
+ * Retrieve an Agent instance
  */
 export function getAgentInstance(opts?: AgentOptions): MockAgent {
   if (opts) {

@@ -56,9 +56,12 @@ export class Agent extends Identity {
   }
 
   /**
-   * Remove an external agent from this Security Token
+   * Assign this agent to a different Permission Group
    */
-  public setPermissionGroup: ProcedureMethod<SetPermissionGroupParams, void>;
+  public setPermissionGroup: ProcedureMethod<
+    SetPermissionGroupParams,
+    CustomPermissionGroup | KnownPermissionGroup
+  >;
 
   /**
    * Retrieve the agent group associated with this Agent

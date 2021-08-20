@@ -1,7 +1,6 @@
 import sinon from 'sinon';
 
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
-import { Agent, Context, Identity, TransactionQueue } from '~/internal';
+import { Agent, Context, Identity, KnownPermissionGroup, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType, PermissionType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -100,7 +99,7 @@ describe('Agent class', () => {
   describe('method: setPermissionGroup', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const agent = new Agent({ did, ticker }, context);
-      const permissions = {
+      const group = {
         transactions: {
           type: PermissionType.Include,
           values: [],
@@ -110,10 +109,10 @@ describe('Agent class', () => {
 
       procedureMockUtils
         .getPrepareStub()
-        .withArgs({ args: { agent, permissions }, transformer: undefined }, context)
+        .withArgs({ args: { agent, group }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await agent.setPermissionGroup({ permissions });
+      const queue = await agent.setPermissionGroup({ group });
 
       expect(queue).toBe(expectedQueue);
     });

@@ -1,19 +1,19 @@
 import { AgentGroup, TxTags } from 'polymesh-types/types';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import { isFullGroupType } from '~/api/procedures/utils';
 import {
   Agent,
   Context,
   createGroup,
+  CustomPermissionGroup,
+  KnownPermissionGroup,
   PolymeshError,
   PostTransactionValue,
   Procedure,
   SecurityToken,
 } from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
   permissionGroupIdentifierToAgentGroup,
   stringToIdentityId,
@@ -21,7 +21,11 @@ import {
 } from '~/utils/conversion';
 
 export interface SetPermissionGroupParams {
-  permissions:
+  /**
+   * Permission Group to assign to the Agent. Optionally, transaction permissions can be passed directly.
+   *   In that case, a new Permission Group will be created and consequently assigned to the Agent
+   */
+  group:
     | KnownPermissionGroup
     | CustomPermissionGroup
     | {
@@ -62,9 +66,9 @@ const agentGroupResolver = (
  * @hidden
  */
 export async function prepareSetPermissionGroup(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
   args: Params
-): Promise<void> {
+): Promise<MaybePostTransactionValue<CustomPermissionGroup | KnownPermissionGroup>> {
   const {
     context: {
       polymeshApi: {
@@ -75,72 +79,65 @@ export async function prepareSetPermissionGroup(
     storage: { token },
   } = this;
 
-  const { agent, permissions } = args;
+  const { agent, group } = args;
   const { ticker, did } = agent;
 
-  let currentGroup;
-  let currentAgents;
-  let rawAgentGroup;
-
-  try {
-    [currentGroup, currentAgents] = await Promise.all([
-      agent.getPermissionGroup(),
-      token.permissions.getAgents(),
-    ]);
-  } catch (_) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'This Identity is no longer an Agent for this Security Token',
-    });
-  }
+  const [currentGroup, currentAgents] = await Promise.all([
+    agent.getPermissionGroup(),
+    token.permissions.getAgents(),
+  ]);
 
   if (isFullGroupType(currentGroup)) {
-    const fullGroupAgents = currentAgents.filter(({ group }) => isFullGroupType(group));
+    const fullGroupAgents = currentAgents.filter(({ group: currentAgentsGroup }) =>
+      isFullGroupType(currentAgentsGroup)
+    );
     if (fullGroupAgents.length === 1) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message:
-          'The target is the last agent with full permissions for this Security Token. There should always be at least one agent with full permissions',
+          'The target is the last Agent with full permissions for this Security Token. There should always be at least one agent with full permissions',
       });
     }
   }
 
-  if ('transactions' in permissions || 'transactionGroups' in permissions) {
-    const group = (await this.addProcedure(createGroup(), {
+  let rawAgentGroup;
+  let returnValue: MaybePostTransactionValue<CustomPermissionGroup | KnownPermissionGroup>;
+
+  if ('transactions' in group || 'transactionGroups' in group) {
+    const postTransactionGroup = (await this.addProcedure(createGroup(), {
       ticker,
-      permissions,
+      permissions: group,
     })) as PostTransactionValue<CustomPermissionGroup>;
-    rawAgentGroup = group.transform(customPermissionGroup =>
+    rawAgentGroup = postTransactionGroup.transform(customPermissionGroup =>
       agentGroupResolver(customPermissionGroup, context)
     );
+    returnValue = postTransactionGroup;
   } else {
-    if (
-      (permissions instanceof CustomPermissionGroup &&
-        currentGroup instanceof CustomPermissionGroup &&
-        permissions.id === currentGroup.id) ||
-      (permissions instanceof KnownPermissionGroup &&
-        currentGroup instanceof KnownPermissionGroup &&
-        permissions.type === currentGroup.type)
-    ) {
+    if (group.isEqual(currentGroup)) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The Agent is already part of this permission group',
       });
     }
 
-    rawAgentGroup = agentGroupResolver(permissions, context);
+    rawAgentGroup = agentGroupResolver(group, context);
+    returnValue = group;
   }
 
   const rawTicker = stringToTicker(ticker, context);
   const rawIdentityId = stringToIdentityId(did, context);
 
   this.addTransaction(externalAgents.changeGroup, {}, rawTicker, rawIdentityId, rawAgentGroup);
+
+  return returnValue;
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>
+): ProcedureAuthorization {
   const {
     storage: { token },
   } = this;
@@ -157,7 +154,7 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
   { agent: { ticker } }: Params
 ): Storage {
   const { context } = this;
@@ -170,5 +167,8 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const setPermissionGroup = (): Procedure<Params, void, Storage> =>
-  new Procedure(prepareSetPermissionGroup, getAuthorization, prepareStorage);
+export const setPermissionGroup = (): Procedure<
+  Params,
+  CustomPermissionGroup | KnownPermissionGroup,
+  Storage
+> => new Procedure(prepareSetPermissionGroup, getAuthorization, prepareStorage);

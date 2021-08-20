@@ -9,7 +9,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/setPermissionGroup';
-import { Context } from '~/internal';
+import { Context, CustomPermissionGroup, KnownPermissionGroup } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PermissionGroupType, PermissionType, TxTags } from '~/types';
@@ -86,42 +86,17 @@ describe('setPermissionGroup procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the identity is no longer an Agent', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        ticker,
-      }),
-    });
-
-    const agent = entityMockUtils.getAgentInstance();
-    agent.getPermissionGroup.throws();
-
-    let error;
-
-    try {
-      await prepareSetPermissionGroup.call(proc, {
-        agent,
-        permissions: {
-          transactions: {
-            type: PermissionType.Include,
-            values: [],
-          },
-        },
-      });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('This Identity is no longer an Agent for this Security Token');
-  });
-
   test('should throw an error if the target is the last agent with full permissions', async () => {
     const group = entityMockUtils.getKnownPermissionGroupInstance({
       ticker,
       type: PermissionGroupType.Full,
     });
 
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<
+      Params,
+      CustomPermissionGroup | KnownPermissionGroup,
+      Storage
+    >(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         ticker,
         permissionsGetAgents: [
@@ -140,7 +115,7 @@ describe('setPermissionGroup procedure', () => {
         agent: entityMockUtils.getAgentInstance({
           getPermissionGroup: group,
         }),
-        permissions: {
+        group: {
           transactions: {
             type: PermissionType.Include,
             values: [],
@@ -152,12 +127,16 @@ describe('setPermissionGroup procedure', () => {
     }
 
     expect(error.message).toBe(
-      'The target is the last agent with full permissions for this Security Token. There should always be at least one agent with full permissions'
+      'The target is the last Agent with full permissions for this Security Token. There should always be at least one agent with full permissions'
     );
   });
 
   test('should throw an error if the Agent is already part of the permission group', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<
+      Params,
+      CustomPermissionGroup | KnownPermissionGroup,
+      Storage
+    >(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         ticker,
       }),
@@ -173,7 +152,7 @@ describe('setPermissionGroup procedure', () => {
             type: PermissionGroupType.PolymeshV1Caa,
           }),
         }),
-        permissions: entityMockUtils.getKnownPermissionGroupInstance({
+        group: entityMockUtils.getKnownPermissionGroupInstance({
           ticker,
           type: PermissionGroupType.PolymeshV1Caa,
         }),
@@ -194,7 +173,7 @@ describe('setPermissionGroup procedure', () => {
             id,
           }),
         }),
-        permissions: entityMockUtils.getCustomPermissionGroupInstance({
+        group: entityMockUtils.getCustomPermissionGroupInstance({
           ticker,
           id,
         }),
@@ -209,7 +188,11 @@ describe('setPermissionGroup procedure', () => {
   test('should add a change group transaction to the queue', async () => {
     const id = new BigNumber(1);
 
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<
+      Params,
+      CustomPermissionGroup | KnownPermissionGroup,
+      Storage
+    >(mockContext, {
       token: entityMockUtils.getSecurityTokenInstance({
         ticker,
       }),
@@ -230,7 +213,7 @@ describe('setPermissionGroup procedure', () => {
           type: PermissionGroupType.Full,
         }),
       }),
-      permissions: {
+      group: {
         transactions: {
           type: PermissionType.Include,
           values: [],
@@ -264,7 +247,7 @@ describe('setPermissionGroup procedure', () => {
           id,
         }),
       }),
-      permissions: {
+      group: {
         transactions: {
           type: PermissionType.Include,
           values: [],
@@ -281,10 +264,6 @@ describe('setPermissionGroup procedure', () => {
       rawAgentGroup
     );
 
-    procedureMockUtils.getAddProcedureStub().resolves({
-      transform: (cb: () => AgentGroup) => cb(),
-    });
-
     await prepareSetPermissionGroup.call(proc, {
       agent: entityMockUtils.getAgentInstance({
         getPermissionGroup: entityMockUtils.getKnownPermissionGroupInstance({
@@ -292,9 +271,10 @@ describe('setPermissionGroup procedure', () => {
           type: PermissionGroupType.PolymeshV1Caa,
         }),
       }),
-      permissions: entityMockUtils.getKnownPermissionGroupInstance({
+      group: entityMockUtils.getKnownPermissionGroupInstance({
         ticker,
         type: PermissionGroupType.PolymeshV1Pia,
+        isEqual: false,
       }),
     });
 
@@ -307,17 +287,24 @@ describe('setPermissionGroup procedure', () => {
       rawAgentGroup
     );
 
-    await prepareSetPermissionGroup.call(proc, {
+    procedureMockUtils.getAddProcedureStub().resolves({
+      transform: (cb: () => AgentGroup) => cb(),
+    });
+
+    const fakeCustomPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
+      ticker,
+      id: new BigNumber(2),
+    });
+
+    const result = await prepareSetPermissionGroup.call(proc, {
       agent: entityMockUtils.getAgentInstance({
         getPermissionGroup: entityMockUtils.getCustomPermissionGroupInstance({
           ticker,
           id,
+          isEqual: false,
         }),
       }),
-      permissions: entityMockUtils.getCustomPermissionGroupInstance({
-        ticker,
-        id: new BigNumber(2),
-      }),
+      group: fakeCustomPermissionGroup,
     });
 
     sinon.assert.calledWith(
@@ -328,16 +315,22 @@ describe('setPermissionGroup procedure', () => {
       rawIdentityId,
       rawAgentGroup
     );
+
+    expect(result).toEqual(fakeCustomPermissionGroup);
   });
 
   describe('prepareStorage', () => {
     test('should return the security token', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<
+        Params,
+        CustomPermissionGroup | KnownPermissionGroup,
+        Storage
+      >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
         agent: entityMockUtils.getAgentInstance(),
-        permissions: { transactionGroups: [] },
+        group: { transactionGroups: [] },
       } as Params);
 
       expect(result).toEqual({
@@ -348,7 +341,11 @@ describe('setPermissionGroup procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<
+        Params,
+        CustomPermissionGroup | KnownPermissionGroup,
+        Storage
+      >(mockContext, {
         token: entityMockUtils.getSecurityTokenInstance({
           ticker,
         }),

@@ -64,7 +64,7 @@ export async function prepareRemoveExternalAgent(
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message:
-          'The target is the last agent with full permissions for this Security Token. There should always be at least one agent with full permissions',
+          'The target is the last Agent with full permissions for this Security Token. There should always be at least one agent with full permissions',
       });
     }
   }

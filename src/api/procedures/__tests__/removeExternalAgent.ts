@@ -140,7 +140,7 @@ describe('removeExternalAgent procedure', () => {
     });
 
     return expect(prepareRemoveExternalAgent.call(proc, args)).rejects.toThrow(
-      'The target is the last agent with full permissions for this Security Token. There should always be at least one agent with full permissions'
+      'The target is the last Agent with full permissions for this Security Token. There should always be at least one agent with full permissions'
     );
   });
 
