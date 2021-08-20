@@ -1032,7 +1032,7 @@ export function permissionGroupIdentifierToAgentGroup(
     'AgentGroup',
     typeof permissionGroup !== 'object'
       ? permissionGroup
-      : { custom: numberToU32(permissionGroup.custom, context) }
+      : { Custom: numberToU32(permissionGroup.custom, context) }
   );
 }
 

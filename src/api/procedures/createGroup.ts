@@ -91,7 +91,6 @@ export async function prepareCreateGroup(
         ...transactions,
         values: [...transactions.values].sort(),
       };
-
       return isEqual(transactionPermissions, sortedTransactions);
     }
   );

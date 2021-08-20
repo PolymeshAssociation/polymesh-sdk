@@ -990,7 +990,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     rawAgentGroup = ('Full' as unknown) as AgentGroup;
     createTypeStub.withArgs('u32', id.toString()).returns(id);
-    createTypeStub.withArgs('AgentGroup', { custom: id }).returns(rawAgentGroup);
+    createTypeStub.withArgs('AgentGroup', { Custom: id }).returns(rawAgentGroup);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -1168,7 +1168,7 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
     dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AgentGroup', { custom: u32FakeResult })
+      .withArgs('AgentGroup', { Custom: u32FakeResult })
       .returns(fakeResult);
 
     result = permissionGroupIdentifierToAgentGroup(value, context);
