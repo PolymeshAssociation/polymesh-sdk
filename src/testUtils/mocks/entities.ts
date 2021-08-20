@@ -1700,14 +1700,11 @@ function configureAgent(opts: AgentOptions): void {
   Object.assign(mockInstanceContainer.agent, agent);
   agentConstructorStub.callsFake(args => {
     const value = merge({}, agent, args);
-    Object.setPrototypeOf(value, require('~/internal').Agent.prototype);
-    return value;
-    /*
-         // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
     Object.setPrototypeOf(entities.Agent.prototype, entities.Identity.prototype);
     Object.setPrototypeOf(value, entities.Agent.prototype);
-     */
+    return value;
   });
 }
 
