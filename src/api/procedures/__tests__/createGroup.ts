@@ -212,7 +212,7 @@ describe('createGroup procedure', () => {
     const fakePermissions = { transactions };
     permissionsLikeToPermissionsStub
       .withArgs(fakePermissions, mockContext)
-      .returns({transactions});
+      .returns({ transactions });
 
     await prepareCreateGroup.call(proc, {
       ticker,
