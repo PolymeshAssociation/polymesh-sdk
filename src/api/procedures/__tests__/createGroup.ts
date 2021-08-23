@@ -126,7 +126,7 @@ describe('createGroup procedure', () => {
       }),
     });
 
-    permissionsLikeToPermissionsStub.returns({transactions});
+    permissionsLikeToPermissionsStub.returns({ transactions });
 
     let error;
 
