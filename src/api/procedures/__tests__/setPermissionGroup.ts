@@ -126,7 +126,7 @@ describe('setPermissionGroup procedure', () => {
     }
 
     expect(error.message).toBe(
-      'The target is the last Agent with full permissions for this Security Token. There should always be at least one agent with full permissions'
+      'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions'
     );
   });
 
