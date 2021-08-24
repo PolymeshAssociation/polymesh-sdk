@@ -88,8 +88,8 @@ export async function prepareSetPermissionGroup(
   ]);
 
   if (isFullGroupType(currentGroup)) {
-    const fullGroupAgents = currentAgents.filter(({ group: currentAgentsGroup }) =>
-      isFullGroupType(currentAgentsGroup)
+    const fullGroupAgents = currentAgents.filter(({ group: groupOfAgent }) =>
+      isFullGroupType(groupOfAgent)
     );
     if (fullGroupAgents.length === 1) {
       throw new PolymeshError({
