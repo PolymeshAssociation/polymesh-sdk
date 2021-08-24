@@ -1167,9 +1167,15 @@ export function authorizationDataToAuthorization(
   }
 
   if (auth.isAddRelayerPayingKey) {
+    const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
+
     return {
       type: AuthorizationType.AddRelayerPayingKey,
-      value: auth.asAddRelayerPayingKey,
+      value: {
+        beneficiary: new Account({ address: accountIdToString(userKey) }, context),
+        relayer: new Account({ address: accountIdToString(payingKey) }, context),
+        allowance: balanceToBigNumber(polyxLimit),
+      },
     };
   }
 

@@ -819,9 +819,9 @@ export interface RelayerRelationship {
    */
   relayer: Account;
   /**
-   * total initial amount of POLYX to be subsidized. This can be "refilled" later on
+   * amount of POLYX to be subsidized. This can be increased/decreased later on
    */
-  allowanceLimit: BigNumber;
+  allowance: BigNumber;
 }
 
 /**
@@ -836,9 +836,11 @@ export type Authorization =
   | {
       type: Exclude<
         AuthorizationType,
+        | AuthorizationType.NoData
         | AuthorizationType.JoinIdentity
         | AuthorizationType.PortfolioCustody
         | AuthorizationType.BecomeAgent
+        | AuthorizationType.AddRelayerPayingKey
       >;
       value: string;
     };
@@ -971,10 +973,27 @@ export interface PortfolioMovement {
 }
 
 export interface ProcedureAuthorizationStatus {
+  /**
+   * whether the Identity complies with all required Agent permissions
+   */
   agentPermissions: boolean;
+  /**
+   * whether the Account complies with all required Signer permissions
+   */
   signerPermissions: boolean;
+  /**
+   * whether the Identity complies with all required Roles
+   */
   roles: boolean;
+  /**
+   * whether the Account is frozen (i.e. can't perform any transactions)
+   */
   accountFrozen: boolean;
+  /**
+   * true only if the Procedure requires an Identity but the current Account
+   *   doesn't have one associated
+   */
+  noIdentity: boolean;
 }
 
 interface TransferRestrictionBase {

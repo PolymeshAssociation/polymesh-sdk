@@ -103,8 +103,6 @@ export class Claims {
 
   /**
    * Add an Investor Uniqueness Claim to the current Identity
-   *
-   * @param args
    */
   public addInvestorUniquenessClaim: ProcedureMethod<AddInvestorUniquenessClaimParams, void>;
 

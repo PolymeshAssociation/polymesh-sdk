@@ -275,6 +275,10 @@ jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
 
 describe('tickerToDid', () => {
   test('should generate the ticker did', () => {
@@ -1121,7 +1125,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       value: 'someBytes',
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      custom: dsMockUtils.createMockBytes(fakeResult.value),
+      Custom: dsMockUtils.createMockBytes(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData, context);
@@ -1131,6 +1135,28 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.NoData,
     };
     authorizationData = dsMockUtils.createMockAuthorizationData('NoData');
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    const beneficiaryAddress = 'beneficiaryAddress';
+    const relayerAddress = 'relayerAddress';
+    const allowance = new BigNumber(1000);
+    fakeResult = {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: entityMockUtils.getAccountInstance({ address: beneficiaryAddress }),
+        relayer: entityMockUtils.getAccountInstance({ address: relayerAddress }),
+        allowance,
+      },
+    };
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      AddRelayerPayingKey: [
+        dsMockUtils.createMockAccountId(beneficiaryAddress),
+        dsMockUtils.createMockAccountId(relayerAddress),
+        dsMockUtils.createMockBalance(allowance.shiftedBy(6).toNumber()),
+      ],
+    });
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
@@ -2164,13 +2190,12 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     result = assetTypeToString(assetType);
     expect(result).toEqual(fakeResult);
 
-    const fakeType = 'otherType';
     assetType = dsMockUtils.createMockAssetType({
-      Custom: dsMockUtils.createMockBytes(fakeType),
+      Custom: dsMockUtils.createMockU32(1),
     });
 
     result = assetTypeToString(assetType);
-    expect(result).toEqual(fakeType);
+    expect(result).toEqual('1');
   });
 });
 

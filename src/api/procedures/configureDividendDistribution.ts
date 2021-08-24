@@ -63,12 +63,34 @@ export type ConfigureDividendDistributionParams = Omit<
   InitiateCorporateActionParams,
   'kind' | 'checkpoint'
 > & {
+  /**
+   * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
+   *   If a Date is passed, a Checkpoint will be created at that date and used
+   */
   checkpoint: Checkpoint | Date | CheckpointSchedule;
+  /**
+   * portfolio from which the Dividends will be distributed. Optional, defaults to the Corporate Actions Agent's Default Portfolio
+   */
   originPortfolio?: NumberedPortfolio | BigNumber;
+  /**
+   * ticker of the currency in which Dividends will be distributed
+   */
   currency: string;
+  /**
+   * amount of `currency` to distribute per each share of the Security Token that a target holds
+   */
   perShare: BigNumber;
+  /**
+   * maximum amount of `currency` to distribute in total
+   */
   maxAmount: BigNumber;
+  /**
+   * date from which Tokenholders can claim their Dividends
+   */
   paymentDate: Date;
+  /**
+   * Optional, defaults to never expiring
+   */
   expiryDate?: Date;
 };
 

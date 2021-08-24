@@ -178,6 +178,7 @@ describe('createSecurityToken procedure', () => {
     numberToBalanceStub.withArgs(totalSupply, mockContext, isDivisible).returns(rawTotalSupply);
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
+    booleanToBoolStub.withArgs(false, mockContext).returns(rawDisableIu);
     tokenTypeToAssetTypeStub.withArgs(tokenType, mockContext).returns(rawType);
     tokenIdentifierToAssetIdentifierStub
       .withArgs(tokenIdentifiers[0], mockContext)

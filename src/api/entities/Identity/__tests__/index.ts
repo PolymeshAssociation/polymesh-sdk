@@ -485,7 +485,6 @@ describe('Identity class', () => {
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
-          name: dsMockUtils.createMockAssetName('someToken'),
         })
       );
       /* eslint-enable @typescript-eslint/naming-convention */

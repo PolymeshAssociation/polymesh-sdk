@@ -71,6 +71,7 @@ describe('SecurityToken class', () => {
 
   describe('method: details', () => {
     let ticker: string;
+    let name: string;
     let totalSupply: number;
     let isDivisible: boolean;
     let owner: string;
@@ -84,6 +85,7 @@ describe('SecurityToken class', () => {
 
     beforeAll(() => {
       ticker = 'FAKETICKER';
+      name = 'placeholder';
       totalSupply = 1000;
       isDivisible = true;
       owner = '0x0wn3r';
@@ -95,7 +97,6 @@ describe('SecurityToken class', () => {
       rawToken = dsMockUtils.createMockSecurityToken({
         /* eslint-disable @typescript-eslint/naming-convention */
         owner_did: dsMockUtils.createMockIdentityId(owner),
-        name: dsMockUtils.createMockAssetName(ticker),
         asset_type: dsMockUtils.createMockAssetType(assetType),
         divisible: dsMockUtils.createMockBool(isDivisible),
         total_supply: dsMockUtils.createMockBalance(totalSupply),
@@ -129,7 +130,7 @@ describe('SecurityToken class', () => {
 
       let details = await securityToken.details();
 
-      expect(details.name).toBe(ticker);
+      expect(details.name).toBe(name);
       expect(details.totalSupply).toEqual(
         utilsConversionModule.balanceToBigNumber((totalSupply as unknown) as Balance)
       );
@@ -173,7 +174,7 @@ describe('SecurityToken class', () => {
         sinon.match({
           assetType,
           isDivisible,
-          name: ticker,
+          name: 'placeholder',
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],

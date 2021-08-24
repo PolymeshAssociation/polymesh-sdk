@@ -65,6 +65,7 @@ import {
   ConditionType,
   CorporateAction,
   CountryCode,
+  CustomAssetTypeId,
   DidRecord,
   DispatchableName,
   DispatchableNames,
@@ -1766,7 +1767,7 @@ export const createMockAssetType = (
     | 'StructuredProduct'
     | 'Derivative'
     | 'StableCoin'
-    | { Custom: Bytes }
+    | { Custom: CustomAssetTypeId }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
 };
@@ -1791,14 +1792,12 @@ export const createMockTickerRegistrationConfig = (regConfig?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSecurityToken = (token?: {
-  name: AssetName;
   total_supply: Balance;
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
 }): SecurityToken => {
   const st = token || {
-    name: createMockAssetName(),
     total_supply: createMockBalance(),
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
@@ -2078,8 +2077,9 @@ export const createMockAuthorizationData = (
     | { JoinIdentity: Permissions }
     | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
-    | { custom: Bytes }
+    | { Custom: Bytes }
     | { TransferCorporateActionAgent: Ticker }
+    | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
     | 'NoData'
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
@@ -2576,16 +2576,9 @@ export const createMockVenueType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockVenue = (venue?: {
-  creator: IdentityId;
-  instructions: u64[];
-  details: VenueDetails;
-  venue_type: VenueType;
-}): Venue => {
+export const createMockVenue = (venue?: { creator: IdentityId; venue_type: VenueType }): Venue => {
   const vn = venue || {
     creator: createMockIdentityId(),
-    instructions: [],
-    details: createMockVenueDetails(),
     // eslint-disable-next-line @typescript-eslint/naming-convention
     venue_type: createMockVenueType(),
   };
