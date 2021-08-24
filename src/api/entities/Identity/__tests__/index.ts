@@ -1579,7 +1579,7 @@ describe('Identity class', () => {
         entries: [tuple([rawDid, rawTicker], {})],
       });
 
-      const result = await identity.agentOf();
+      const result = await identity.getTokenPermissions();
       expect(result.length).toEqual(1);
       expect(result[0].token.ticker).toEqual(ticker);
       expect(result[0].group instanceof KnownPermissionGroup).toEqual(true);
