@@ -1,8 +1,7 @@
-import { assertPortfolioExists } from '~/api/procedures/utils';
-import { DefaultPortfolio, Identity, NumberedPortfolio, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
-import { portfolioIdToMeshPortfolioId, portfolioLikeToPortfolioId, stringToTicker } from '~/utils/conversion';
+import { ProcedureAuthorization } from '~/types/internal';
+import { stringToTicker } from '~/utils/conversion';
 import { getTicker } from '~/utils/internal';
 
 /**
@@ -19,8 +18,15 @@ export type Params = WaivePermissionsParams & {
 /**
  * @hidden
  */
+export interface Storage {
+  token: SecurityToken;
+}
+
+/**
+ * @hidden
+ */
 export async function prepareWaivePermissions(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   args: Params
 ): Promise<void> {
   const {
@@ -28,43 +34,41 @@ export async function prepareWaivePermissions(
       polymeshApi: { tx },
     },
     context,
+    storage: { token },
   } = this;
 
-  const { identity, token } = args;
+  const { identity } = args;
 
-  const ticker = getTicker(token);
-  
-  // 
+  const agentOf = await identity.agentOf();
 
-  const rawTicker = stringToTicker(ticker, context);
+  const isValidGroup = agentOf.some(({ token: tokenGroup }) => tokenGroup.isEqual(token));
 
-  // const isOwnedBy = await portfolio.isOwnedBy();
+  if (!isValidGroup) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: "The Identity is not part of the token's Agent Group",
+    });
+  }
 
-  // if (isOwnedBy) {
-  //   throw new PolymeshError({
-  //     code: ErrorCode.ValidationError,
-  //     message: 'The Portfolio owner cannot quit custody',
-  //   });
-  // }
+  const rawTicker = stringToTicker(token.ticker, context);
 
-  // await assertPortfolioExists(portfolioId, context);
-
-  // const rawPortfolioId = portfolioIdToMeshPortfolioId(portfolioId, context);
-
-  // this.addTransaction(tx.portfolio.quitPortfolioCustody, {}, rawPortfolioId);
+  this.addTransaction(tx.externalAgents.abdicate, {}, rawTicker);
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params>,
+  this: Procedure<Params, void, Storage>,
   { identity: { did } }: Params
 ): ProcedureAuthorization {
+  const {
+    storage: { token },
+  } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.Abdicate],
-      tokens: [],
+      tokens: [token],
       portfolios: [],
     },
     roles: [{ type: RoleType.Identity, did }],
@@ -74,5 +78,18 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const waivePermissions = (): Procedure<Params, void> =>
+export function prepareStorage(this: Procedure<Params, void, Storage>, { token }: Params): Storage {
+  const { context } = this;
+
+  const ticker = getTicker(token);
+
+  return {
+    token: new SecurityToken({ ticker }, context),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const waivePermissions = (): Procedure<Params, void, Storage> =>
   new Procedure(prepareWaivePermissions, getAuthorization);

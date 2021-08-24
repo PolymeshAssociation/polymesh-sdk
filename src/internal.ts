@@ -186,7 +186,4 @@ export {
   removeExternalAgent,
   RemoveExternalAgentParams,
 } from '~/api/procedures/removeExternalAgent';
-export {
-  waivePermissions,
-  WaivePermissionsParams,
-} from '~/api/procedures/waivePermissions';
+export { waivePermissions, WaivePermissionsParams } from '~/api/procedures/waivePermissions';

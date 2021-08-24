@@ -1541,7 +1541,7 @@ describe('Identity class', () => {
 
       const args = {
         token: 'SOME_TICKER',
-        identity
+        identity,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
@@ -1554,9 +1554,9 @@ describe('Identity class', () => {
       const queue = await identity.waivePermissions(args);
 
       expect(queue).toBe(expectedQueue);
-    })
+    });
   });
-  
+
   describe('method: agentOf', () => {
     let did: string;
     let ticker: string;
