@@ -75,7 +75,7 @@ describe('waivePermissions procedure', () => {
         token,
         identity: entityMockUtils.getIdentityInstance({
           did,
-          agentOf: [
+          getTokenPermissions: [
             {
               token,
               group: entityMockUtils.getKnownPermissionGroupInstance(),
@@ -104,7 +104,7 @@ describe('waivePermissions procedure', () => {
       token,
       identity: entityMockUtils.getIdentityInstance({
         did,
-        agentOf: [
+        getTokenPermissions: [
           {
             token,
             group: entityMockUtils.getKnownPermissionGroupInstance(),

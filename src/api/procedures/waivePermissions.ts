@@ -39,7 +39,7 @@ export async function prepareWaivePermissions(
 
   const { identity } = args;
 
-  const agentOf = await identity.agentOf();
+  const agentOf = await identity.getTokenPermissions();
 
   const isValidGroup = agentOf.some(({ token: tokenGroup }) => tokenGroup.isEqual(token));
 
