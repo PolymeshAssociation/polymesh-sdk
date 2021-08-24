@@ -908,7 +908,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve all the Security Tokens for which this Identity is an Agent, with the corresponding permission group
    */
-  public async agentOf(): Promise<TokenWithGroup[]> {
+  public async getTokenPermissions(): Promise<TokenWithGroup[]> {
     const {
       context: {
         polymeshApi: {

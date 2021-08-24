@@ -88,30 +88,27 @@ export async function prepareSetPermissionGroup(
   ]);
 
   if (isFullGroupType(currentGroup)) {
-    const fullGroupAgents = currentAgents.filter(({ group: currentAgentsGroup }) =>
-      isFullGroupType(currentAgentsGroup)
+    const fullGroupAgents = currentAgents.filter(({ group: groupOfAgent }) =>
+      isFullGroupType(groupOfAgent)
     );
     if (fullGroupAgents.length === 1) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message:
-          'The target is the last Agent with full permissions for this Security Token. There should always be at least one agent with full permissions',
+          'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions',
       });
     }
   }
 
-  let rawAgentGroup;
   let returnValue: MaybePostTransactionValue<CustomPermissionGroup | KnownPermissionGroup>;
+  let rawAgentGroup;
 
   if ('transactions' in group || 'transactionGroups' in group) {
-    const postTransactionGroup = (await this.addProcedure(createGroup(), {
+    returnValue = await this.addProcedure(createGroup(), {
       ticker,
       permissions: group,
-    })) as PostTransactionValue<CustomPermissionGroup>;
-    rawAgentGroup = postTransactionGroup.transform(customPermissionGroup =>
-      agentGroupResolver(customPermissionGroup, context)
-    );
-    returnValue = postTransactionGroup;
+    });
+    rawAgentGroup = (returnValue as PostTransactionValue<CustomPermissionGroup>).transform(customPermissionGroup => agentGroupResolver(customPermissionGroup, context));
   } else {
     if (group.isEqual(currentGroup)) {
       throw new PolymeshError({
@@ -120,8 +117,8 @@ export async function prepareSetPermissionGroup(
       });
     }
 
-    rawAgentGroup = agentGroupResolver(group, context);
     returnValue = group;
+    rawAgentGroup = agentGroupResolver(group, context);
   }
 
   const rawTicker = stringToTicker(ticker, context);
