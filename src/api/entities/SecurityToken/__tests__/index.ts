@@ -1,8 +1,9 @@
+import { bool, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import { bool, u64 } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
+  AssetName,
   FundingRoundName,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
@@ -76,20 +77,24 @@ describe('SecurityToken class', () => {
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
+    let iuDisabled: boolean;
     let did: string;
 
     let rawToken: MeshSecurityToken;
+    let rawName: AssetName;
+    let rawIuDisabled: bool;
 
     let context: Context;
     let securityToken: SecurityToken;
 
     beforeAll(() => {
       ticker = 'FAKETICKER';
-      name = 'placeholder';
+      name = 'tokenName';
       totalSupply = 1000;
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
+      iuDisabled = false;
       did = 'someDid';
     });
 
@@ -102,6 +107,8 @@ describe('SecurityToken class', () => {
         total_supply: dsMockUtils.createMockBalance(totalSupply),
         /* eslint-enable @typescript-eslint/naming-convention */
       });
+      rawIuDisabled = dsMockUtils.createMockBool(iuDisabled);
+      rawName = dsMockUtils.createMockAssetName(name);
       context = dsMockUtils.getContextInstance();
       securityToken = new SecurityToken({ ticker }, context);
 
@@ -121,6 +128,12 @@ describe('SecurityToken class', () => {
           ),
         ],
       });
+      dsMockUtils.createQueryStub('asset', 'assetNames', {
+        returnValue: rawName,
+      });
+      dsMockUtils.createQueryStub('asset', 'disableInvestorUniqueness', {
+        returnValue: rawIuDisabled,
+      });
     });
 
     test('should return details for a security token', async () => {
@@ -139,6 +152,7 @@ describe('SecurityToken class', () => {
       expect(details.assetType).toBe(assetType);
       expect(details.primaryIssuanceAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
       expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did: owner })]);
+      expect(details.requiresInvestorUniqueness).toBe(true);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         entries: [
@@ -194,11 +208,12 @@ describe('SecurityToken class', () => {
         sinon.match({
           assetType,
           isDivisible,
-          name: 'placeholder',
+          name,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
           fullAgents: [entityMockUtils.getIdentityInstance({ did: owner })],
+          requiresInvestorUniqueness: true,
         })
       );
     });

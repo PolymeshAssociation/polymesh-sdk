@@ -67,6 +67,7 @@ describe('createSecurityToken procedure', () => {
   let tokenType: string;
   let tokenIdentifiers: TokenIdentifier[];
   let fundingRound: string;
+  let requireInvestorUniqueness: boolean;
   let documents: TokenDocument[];
   let rawTicker: Ticker;
   let rawName: AssetName;
@@ -117,6 +118,7 @@ describe('createSecurityToken procedure', () => {
       },
     ];
     fundingRound = 'Series A';
+    requireInvestorUniqueness = true;
     documents = [
       {
         name: 'someDocument',
@@ -152,7 +154,7 @@ describe('createSecurityToken procedure', () => {
       })
     );
     rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
-    rawDisableIu = dsMockUtils.createMockBool(false);
+    rawDisableIu = dsMockUtils.createMockBool(!requireInvestorUniqueness);
     args = {
       ticker,
       name,
@@ -187,7 +189,7 @@ describe('createSecurityToken procedure', () => {
     numberToBalanceStub.withArgs(totalSupply, mockContext, isDivisible).returns(rawTotalSupply);
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
-    booleanToBoolStub.withArgs(false, mockContext).returns(rawDisableIu);
+    booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
     internalTokenTypeToAssetTypeStub
       .withArgs(tokenType as KnownTokenType, mockContext)
       .returns(rawType);
@@ -271,6 +273,7 @@ describe('createSecurityToken procedure', () => {
       totalSupply: new BigNumber(0),
       tokenIdentifiers: undefined,
       fundingRound: undefined,
+      requireInvestorUniqueness: false,
     });
 
     sinon.assert.calledWith(
@@ -283,7 +286,7 @@ describe('createSecurityToken procedure', () => {
       rawType,
       [],
       null,
-      rawDisableIu
+      rawIsDivisible // disable IU = true
     );
 
     const issueTransaction = dsMockUtils.createTxStub('asset', 'issue');

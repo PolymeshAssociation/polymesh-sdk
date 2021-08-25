@@ -1,6 +1,7 @@
-import { Option, StorageKey } from '@polkadot/types';
+import { bool, Option, StorageKey } from '@polkadot/types';
 import {
   AgentGroup,
+  AssetName,
   Counter,
   IdentityId,
   SecurityToken as MeshSecurityToken,
@@ -46,6 +47,7 @@ import {
   middlewareEventToEventIdentifier,
   numberToU32,
   stringToTicker,
+  textToString,
   tickerToDid,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -183,7 +185,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   public modify: ProcedureMethod<ModifyTokenParams, SecurityToken>;
 
   /**
-   * Retrieve the Security Token's name, total supply, whether it is divisible or not and the Identity of the owner
+   * Retrieve the Security Token's data
    *
    * @note can be subscribed to
    */
@@ -207,7 +209,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = async (
       { total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
-      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
+      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][],
+      assetName: AssetName,
+      iuDisabled: bool
     ): Promise<SecurityTokenDetails> => {
       const primaryIssuanceAgents: Identity[] = [];
       const fullAgents: Identity[] = [];
@@ -237,11 +241,12 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: 'placeholder',
+        name: textToString(assetName),
         owner,
         totalSupply: balanceToBigNumber(total_supply),
         primaryIssuanceAgents,
         fullAgents,
+        requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -249,19 +254,28 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
+    const namePromise = asset.assetNames(rawTicker);
+    const disabledIuPromise = asset.disableInvestorUniqueness(rawTicker);
 
     if (callback) {
-      const groupOfAgents = await groupOfAgentPromise;
+      const groups = await groupOfAgentPromise;
+      const name = await namePromise;
+      const disabledIu = await disabledIuPromise;
 
       return asset.tokens(rawTicker, async securityToken => {
-        const result = await assembleResult(securityToken, groupOfAgents);
+        const result = await assembleResult(securityToken, groups, name, disabledIu);
         callback(result);
       });
     }
 
-    const [token, groupOfAgent] = await Promise.all([asset.tokens(rawTicker), groupOfAgentPromise]);
+    const [token, groups, name, disabledIu] = await Promise.all([
+      asset.tokens(rawTicker),
+      groupOfAgentPromise,
+      namePromise,
+      disabledIuPromise,
+    ]);
 
-    return assembleResult(token, groupOfAgent);
+    return assembleResult(token, groups, name, disabledIu);
   }
 
   /**
