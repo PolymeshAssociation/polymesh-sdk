@@ -201,7 +201,10 @@ export interface TokenIdentifier {
 export interface TokenDocument {
   name: string;
   uri: string;
-  contentHash: string;
+  /**
+   * hex representation of the document (must be prefixed by "0x")
+   */
+  contentHash?: string;
   type?: string;
   filedAt?: Date;
 }
@@ -1103,6 +1106,11 @@ export interface GroupedInstructions {
    *   might also belong in the `affirmed` group, but it will only be included in this one
    */
   failed: Instruction[];
+}
+
+export interface TokenWithGroup {
+  token: SecurityToken;
+  group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
 export { TxTags, TxTag, ModuleName };

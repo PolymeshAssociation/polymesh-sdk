@@ -84,12 +84,12 @@ describe('Documents class', () => {
         {
           name: 'someDocument',
           uri: 'someUri',
-          contentHash: 'someHash',
+          contentHash: '0x01',
         },
         {
           name: 'otherDocument',
           uri: 'otherUri',
-          contentHash: 'otherHash',
+          contentHash: '0x02',
         },
       ];
       const entries = expectedDocuments.map(({ name, uri, contentHash, type, filedAt }, index) =>
@@ -101,7 +101,9 @@ describe('Documents class', () => {
             uri: dsMockUtils.createMockDocumentUri(uri),
             name: dsMockUtils.createMockDocumentName(name),
             /* eslint-disable @typescript-eslint/naming-convention */
-            content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+            content_hash: dsMockUtils.createMockDocumentHash({
+              H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+            }),
             doc_type: dsMockUtils.createMockOption(
               type ? dsMockUtils.createMockDocumentType(type) : null
             ),

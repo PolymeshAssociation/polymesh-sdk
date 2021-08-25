@@ -1,6 +1,8 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
+  hexToU8a,
+  isHex,
   stringLowerFirst,
   stringToU8a,
   stringUpperFirst,
@@ -1031,7 +1033,7 @@ export function permissionGroupIdentifierToAgentGroup(
     'AgentGroup',
     typeof permissionGroup !== 'object'
       ? permissionGroup
-      : { custom: numberToU32(permissionGroup.custom, context) }
+      : { Custom: numberToU32(permissionGroup.custom, context) }
   );
 }
 
@@ -1619,22 +1621,81 @@ export function documentUriToString(docUri: DocumentUri): string {
 /**
  * @hidden
  */
-export function stringToDocumentHash(docHash: string, context: Context): DocumentHash {
-  if (!docHash.length) {
+export function stringToDocumentHash(docHash: string | undefined, context: Context): DocumentHash {
+  const { polymeshApi } = context;
+
+  if (docHash === undefined) {
+    return polymeshApi.createType('DocumentHash', 'None');
+  }
+
+  if (!isHex(docHash, -1, true)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Document hash cannot be empty',
+      message: 'Document hash must be a hexadecimal string prefixed by 0x',
     });
   }
 
-  return context.polymeshApi.createType('DocumentHash', docHash);
+  const { length } = docHash;
+
+  // array of Hash types (H128, H160, etc) and their corresponding hex lengths
+  const hashTypes = [32, 40, 48, 56, 64, 80, 96, 128].map(maxLength => ({
+    maxLength: maxLength + 2,
+    key: `H${maxLength * 4}`,
+  }));
+
+  const type = hashTypes.find(({ maxLength }) => length <= maxLength);
+
+  if (!type) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Document hash exceeds max length',
+    });
+  }
+
+  const { maxLength, key } = type;
+
+  return context.polymeshApi.createType('DocumentHash', {
+    [key]: hexToU8a(docHash.padEnd(maxLength, '0')),
+  });
 }
 
 /**
  * @hidden
  */
-export function documentHashToString(docHash: DocumentHash): string {
-  return docHash.toString();
+export function documentHashToString(docHash: DocumentHash): string | undefined {
+  if (docHash.isNone) {
+    return;
+  }
+
+  if (docHash.isH128) {
+    return u8aToHex(docHash.asH128);
+  }
+
+  if (docHash.isH160) {
+    return u8aToHex(docHash.asH160);
+  }
+
+  if (docHash.isH192) {
+    return u8aToHex(docHash.asH192);
+  }
+
+  if (docHash.isH224) {
+    return u8aToHex(docHash.asH224);
+  }
+
+  if (docHash.isH256) {
+    return u8aToHex(docHash.asH256);
+  }
+
+  if (docHash.isH320) {
+    return u8aToHex(docHash.asH320);
+  }
+
+  if (docHash.isH384) {
+    return u8aToHex(docHash.asH384);
+  }
+
+  return u8aToHex(docHash.asH512);
 }
 
 /**
@@ -1649,8 +1710,8 @@ export function tokenDocumentToDocument(
     name: stringToDocumentName(name, context),
     /* eslint-disable @typescript-eslint/naming-convention */
     content_hash: stringToDocumentHash(contentHash, context),
-    doc_type: type ? stringToDocumentType(type, context) : null,
-    filing_date: filedAt ? dateToMoment(filedAt, context) : null,
+    doc_type: optionize(stringToDocumentType)(type, context),
+    filing_date: optionize(dateToMoment)(filedAt, context),
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 }
@@ -1660,15 +1721,20 @@ export function tokenDocumentToDocument(
  */
 export function documentToTokenDocument(
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  { uri, content_hash: contentHash, name, doc_type: docType, filing_date: filingDate }: Document
+  { uri, content_hash: hash, name, doc_type: docType, filing_date: filingDate }: Document
 ): TokenDocument {
   const filedAt = filingDate.unwrapOr(undefined);
   const type = docType.unwrapOr(undefined);
+  const contentHash = documentHashToString(hash);
+
   let doc: TokenDocument = {
     uri: documentUriToString(uri),
-    contentHash: documentHashToString(contentHash),
     name: documentNameToString(name),
   };
+
+  if (contentHash) {
+    doc = { ...doc, contentHash };
+  }
 
   if (filedAt) {
     doc = { ...doc, filedAt: momentToDate(filedAt) };
@@ -1967,7 +2033,7 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
   return context.polymeshApi.createType(
     'TargetIdentity',
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    did ? { Specific: stringToIdentityId(did, context) } : 'PrimaryIssuanceAgent'
+    did ? { Specific: stringToIdentityId(did, context) } : 'ExternalAgent'
   );
 }
 
@@ -2091,7 +2157,7 @@ export function requirementToComplianceRequirement(
       } = condition;
       conditionContent = stringToTargetIdentity(did, context);
     } else {
-      // IsPrimaryIssuanceAgent does not exist as a condition type in Polymesh, it's SDK sugar
+      // IsExternalAgent does not exist as a condition type in Polymesh, it's SDK sugar
       type = ConditionType.IsIdentity;
       conditionContent = stringToTargetIdentity(null, context);
     }
@@ -2898,7 +2964,10 @@ export function permissionsLikeToPermissions(
 
   return {
     tokens: tokenPermissions,
-    transactions: transactionPermissions,
+    transactions: transactionPermissions && {
+      ...transactionPermissions,
+      values: [...transactionPermissions.values].sort(),
+    },
     transactionGroups: transactionGroupPermissions,
     portfolios: portfolioPermissions,
   };

@@ -50,12 +50,12 @@ describe('setTokenDocuments procedure', () => {
       {
         name: 'someDocument',
         uri: 'someUri',
-        contentHash: 'someHash',
+        contentHash: '0x01',
       },
       {
         name: 'otherDocument',
         uri: 'otherUri',
-        contentHash: 'otherHash',
+        contentHash: '0x02',
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -64,7 +64,9 @@ describe('setTokenDocuments procedure', () => {
         name: dsMockUtils.createMockDocumentName(name),
         uri: dsMockUtils.createMockDocumentUri(uri),
         /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+        content_hash: dsMockUtils.createMockDocumentHash({
+          H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+        }),
         doc_type: dsMockUtils.createMockOption(
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),

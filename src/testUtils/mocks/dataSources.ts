@@ -25,7 +25,7 @@ import {
 } from '@polkadot/types/interfaces';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/types';
-import { stringToU8a } from '@polkadot/util';
+import { hexToU8a, stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import { BigNumber } from 'bignumber.js';
@@ -1395,8 +1395,8 @@ const createMockStringCodec = (value?: string): Codec =>
 /**
  * @hidden
  */
-const createMockU8aCodec = (value?: string): Codec =>
-  createMockCodec(stringToU8a(value), value === undefined);
+const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
+  createMockCodec(hex ? hexToU8a(value) : stringToU8a(value), value === undefined);
 
 /**
  * @hidden
@@ -1506,8 +1506,24 @@ export const createMockDocumentUri = (uri?: string): DocumentUri =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDocumentHash = (hash?: string): DocumentHash =>
-  createMockStringCodec(hash) as DocumentHash;
+export const createMockDocumentHash = (
+  hash?:
+    | 'None'
+    | { H128: U8aFixed }
+    | { H160: U8aFixed }
+    | { H192: U8aFixed }
+    | { H224: U8aFixed }
+    | { H256: U8aFixed }
+    | { H320: U8aFixed }
+    | { H384: U8aFixed }
+    | { H512: U8aFixed }
+    | DocumentHash
+): DocumentHash => {
+  if (isCodec<DocumentHash>(hash)) {
+    return hash;
+  }
+  return createMockEnum(hash) as DocumentHash;
+};
 
 /**
  * @hidden
@@ -1926,8 +1942,8 @@ export const createMockAuthorizationType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU8aFixed = (value?: string): U8aFixed =>
-  createMockU8aCodec(value) as U8aFixed;
+export const createMockU8aFixed = (value?: string, hex?: boolean): U8aFixed =>
+  createMockU8aCodec(value, hex) as U8aFixed;
 
 /**
  * @hidden
