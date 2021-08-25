@@ -4,17 +4,20 @@ import {
   Identity,
   KnownPermissionGroup,
   PolymeshError,
+  setPermissionGroup,
+  SetPermissionGroupParams,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, ErrorCode, EventIdentifier } from '~/types';
+import { Ensured, ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
   middlewareEventToEventIdentifier,
   stringToIdentityId,
-  stringToTicker} from '~/utils/conversion';
-import { optionize, padString } from '~/utils/internal';
+  stringToTicker,
+} from '~/utils/conversion';
+import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -49,7 +52,20 @@ export class Agent extends Identity {
     const { ticker } = identifiers;
 
     this.ticker = ticker;
+
+    this.setPermissionGroup = createProcedureMethod(
+      { getProcedureAndArgs: args => [setPermissionGroup, { agent: this, ...args }] },
+      context
+    );
   }
+
+  /**
+   * Assign this agent to a different Permission Group
+   */
+  public setPermissionGroup: ProcedureMethod<
+    SetPermissionGroupParams,
+    CustomPermissionGroup | KnownPermissionGroup
+  >;
 
   /**
    * Retrieve the agent group associated with this Agent
@@ -88,11 +104,8 @@ export class Agent extends Identity {
    * @note uses the middleware
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-   public async addedAt(): Promise<EventIdentifier | null> {
-    const {
-      ticker,
-      context,
-    } = this;
+  public async addedAt(): Promise<EventIdentifier | null> {
+    const { ticker, context } = this;
 
     const {
       data: { eventByIndexedArgs: event },
