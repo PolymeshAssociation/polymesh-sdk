@@ -9,8 +9,12 @@ export interface SecurityTokenDetails {
   name: string;
   owner: Identity;
   totalSupply: BigNumber;
+  /**
+   * @deprecated
+   */
   primaryIssuanceAgents: Identity[];
   fullAgents: Identity[];
+  requiresInvestorUniqueness: boolean;
 }
 
 /**
