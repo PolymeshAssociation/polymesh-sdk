@@ -1,18 +1,25 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, CustomPermissionGroup, PermissionGroup } from '~/internal';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Context, CustomPermissionGroup, PermissionGroup, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('CustomPermissionGroup class', () => {
   const ticker = 'TOKENNAME';
+  const id = new BigNumber(1);
 
   let context: Context;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -22,11 +29,13 @@ describe('CustomPermissionGroup class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   test('should extend PermissionGroup', () => {
@@ -35,7 +44,6 @@ describe('CustomPermissionGroup class', () => {
 
   describe('constructor', () => {
     test('should assign id to instance', () => {
-      const id = new BigNumber(1);
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       expect(customPermissionGroup.id).toBe(id);
@@ -55,7 +63,6 @@ describe('CustomPermissionGroup class', () => {
 
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
-      const id = new BigNumber(1);
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
       expect(customPermissionGroup.toJson()).toEqual({
         id,
@@ -64,9 +71,34 @@ describe('CustomPermissionGroup class', () => {
     });
   });
 
+  describe('method: setPermissions', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
+
+      const args = {
+        permissions: {
+          transactionGroups: [],
+        },
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          { args: { ...args, group: customPermissionGroup }, transformer: undefined },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await customPermissionGroup.setPermissions(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: getPermissions', () => {
     test('should return a list of permissions and transaction groups', async () => {
-      const id = new BigNumber(1);
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       sinon.stub(utilsConversionModule, 'stringToTicker');
