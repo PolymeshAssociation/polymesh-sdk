@@ -2940,7 +2940,10 @@ export function permissionsLikeToPermissions(
 
   return {
     tokens: tokenPermissions,
-    transactions: transactionPermissions,
+    transactions: transactionPermissions && {
+      ...transactionPermissions,
+      values: [...transactionPermissions.values].sort(),
+    },
     transactionGroups: transactionGroupPermissions,
     portfolios: portfolioPermissions,
   };

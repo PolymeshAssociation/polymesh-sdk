@@ -5173,6 +5173,27 @@ describe('permissionsLikeToPermissions', () => {
         type: PermissionType.Include,
       },
     });
+
+    args = {
+      tokens: null,
+      transactions: {
+        values: [TxTags.balances.SetBalance, TxTags.asset.Transfer],
+        type: PermissionType.Include,
+      },
+      transactionGroups: [],
+      portfolios: null,
+    };
+
+    result = permissionsLikeToPermissions(args, context);
+    expect(result).toEqual({
+      tokens: null,
+      transactions: {
+        values: [TxTags.asset.Transfer, TxTags.balances.SetBalance],
+        type: PermissionType.Include,
+      },
+      transactionGroups: [],
+      portfolios: null,
+    });
   });
 });
 
