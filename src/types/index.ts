@@ -1108,6 +1108,11 @@ export interface GroupedInstructions {
   failed: Instruction[];
 }
 
+export interface TokenWithGroup {
+  token: SecurityToken;
+  group: KnownPermissionGroup | CustomPermissionGroup;
+}
+
 export { TxTags, TxTag, ModuleName };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
