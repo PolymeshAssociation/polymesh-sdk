@@ -1283,6 +1283,23 @@ export type Query = {
   getDidItnRewardActions?: Maybe<DidItnRewardActions>;
   updateItnRewardRankings: Scalars['Boolean'];
   getFailedBlocks?: Maybe<FailedBlocksResult>;
+  tickerExternalAgentHistory?: Array<AgentHistory>;
+};
+
+export type QueryTickerExternalAgentHistoryArgs = {
+  ticker: Scalars['String'];
+};
+
+export type AgentHistoryEvent = {
+  datetime: Scalars['DateTime'];
+  block_id: Scalars['Int'];
+  event_index: Scalars['Int'];
+}
+
+export type AgentHistory = {
+  __typename?: 'AgentHistory';
+  did: Scalars['String'];
+  history: Array<AgentHistoryEvent>;
 };
 
 export type QueryBlocksArgs = {
