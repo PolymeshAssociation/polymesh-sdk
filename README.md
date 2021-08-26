@@ -4,6 +4,10 @@
 
 ## @polymathnetwork/polymesh-sdk
 
+## Polymesh version
+
+This release is compatible with Polymesh v3.2.0
+
 ## Getting Started
 
 ### Purpose

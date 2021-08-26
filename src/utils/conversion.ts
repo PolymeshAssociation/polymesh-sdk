@@ -206,6 +206,7 @@ import {
   IGNORE_CHECKSUM,
   MAX_BALANCE,
   MAX_DECIMALS,
+  MAX_MEMO_LENGTH,
   MAX_MODULE_LENGTH,
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
@@ -299,7 +300,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
     });
   }
 
-  return context.polymeshApi.createType('Ticker', ticker);
+  return context.polymeshApi.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
 }
 
 /**
@@ -1231,7 +1232,17 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
  * @hidden
  */
 export function stringToMemo(value: string, context: Context): Memo {
-  return context.polymeshApi.createType('Memo', value);
+  if (value.length > MAX_MEMO_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Max memo length exceeded',
+      data: {
+        maxLength: MAX_MEMO_LENGTH,
+      },
+    });
+  }
+
+  return context.polymeshApi.createType('Memo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -1395,7 +1406,7 @@ export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
 export function isIsinValid(isin: string): boolean {
   isin = isin.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z]{12}$').test(isin)) {
+  if (!/^[0-9A-Z]{12}$/.test(isin)) {
     return false;
   }
 
@@ -1435,7 +1446,7 @@ export function isIsinValid(isin: string): boolean {
 export function isCusipValid(cusip: string): boolean {
   cusip = cusip.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z@#*]{9}$').test(cusip)) {
+  if (!/^[0-9A-Z@#*]{9}$/.test(cusip)) {
     return false;
   }
 
@@ -1473,7 +1484,7 @@ export function isCusipValid(cusip: string): boolean {
 export function isLeiValid(lei: string): boolean {
   lei = lei.toUpperCase();
 
-  if (!new RegExp('^[0-9A-Z]{18}[0-9]{2}$').test(lei)) {
+  if (!/^[0-9A-Z]{18}[0-9]{2}$/.test(lei)) {
     return false;
   }
 
@@ -1768,8 +1779,21 @@ export function canTransferResultToTransferStatus(
 export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
   const { type, value } = scope;
 
+  let scopeValue: Ticker | IdentityId | string;
+  switch (type) {
+    case ScopeType.Ticker:
+      scopeValue = stringToTicker(value, context);
+      break;
+    case ScopeType.Identity:
+      scopeValue = stringToIdentityId(value, context);
+      break;
+    default:
+      scopeValue = value;
+      break;
+  }
+
   return context.polymeshApi.createType('Scope', {
-    [type]: value,
+    [type]: scopeValue,
   });
 }
 
