@@ -36,7 +36,7 @@ describe('removeSecondaryKeys procedure', () => {
     args = {
       signers,
       identity: entityMockUtils.getIdentityInstance({
-        getPrimaryKey: 'primaryKey',
+        getPrimaryKey: entityMockUtils.getAccountInstance({ address: 'primaryKey' }),
         getSecondaryKeys: signers.map(signer => ({
           signer,
           permissions: {
@@ -133,7 +133,7 @@ describe('removeSecondaryKeys procedure', () => {
       prepareRemoveSecondaryKeys.call(proc, {
         ...args,
         identity: entityMockUtils.getIdentityInstance({
-          getPrimaryKey: 'primaryKey',
+          getPrimaryKey: entityMockUtils.getAccountInstance({ address: 'primaryKey' }),
           getSecondaryKeys: [],
         }),
       })

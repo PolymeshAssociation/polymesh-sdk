@@ -103,13 +103,14 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
 
     await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -127,7 +128,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
   });
 
   test('should add a acceptMultisigSignerAsKey transaction to the queue if the target is an Account', async () => {
@@ -137,13 +138,14 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
 
     await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -156,7 +158,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
   });
 
   test('should add a joinIdentityAsIdentity transaction to the queue if the target is an Identity', async () => {
@@ -166,13 +168,14 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsIdentity');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     const target = new Identity({ did: 'someOtherDid' }, mockContext);
 
     await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -190,7 +193,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
   });
 
   test('should add a acceptMultisigSignerAsIdentity transaction to the queue if the target is an Identity', async () => {
@@ -200,13 +203,14 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsIdentity');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     const target = new Identity({ did: 'someOtherDid' }, mockContext);
 
     await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -219,7 +223,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
   });
 
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
@@ -229,6 +233,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     let target: Signer = new Identity({ did: 'someOtherDid' }, mockContext);
 
     const rawSignatory = dsMockUtils.createMockSignatory({
@@ -241,7 +246,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -259,14 +264,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      { paidByThirdParty: false },
-      rawSignatory,
-      rawAuthId,
-      rawFalse
-    );
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawSignatory, rawAuthId, rawFalse);
 
     target = entityMockUtils.getAccountInstance({ address: targetAddress });
 
@@ -274,7 +272,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -295,7 +293,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      { paidByThirdParty: true },
+      { paidForBy: issuer },
       rawSignatory,
       rawAuthId,
       rawTrue

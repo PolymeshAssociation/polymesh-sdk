@@ -613,8 +613,60 @@ export interface NetworkProperties {
 }
 
 export interface Fees {
+  /**
+   * bonus fee charged by certain transactions
+   */
   protocol: BigNumber;
+  /**
+   * regular network fee
+   */
   gas: BigNumber;
+}
+
+/**
+ * Breakdown of the fees that will be paid by a specific third party in a Transaction Queue
+ */
+export interface ThirdPartyFees {
+  /**
+   * third party Account that will pay for the fees
+   */
+  account: Account;
+  /**
+   * fees that will be paid by the third party Account
+   */
+  fees: Fees;
+  /**
+   * maximum amount that the third party Account can pay on behalf of the current Account. A null
+   *   value signifies no limit
+   */
+  allowance: BigNumber | null;
+  /**
+   * free balance of the third party Account
+   */
+  balance: BigNumber;
+}
+
+/**
+ * Breakdown of transaction fees for a Transaction Queue. In most cases, the entirety of the Queue's fees
+ *   will be paid by either the current Account or a third party. In some rare cases,
+ *   fees can be split between them (for example, if the current Account is being subsidized, but one of the
+ *   transactions in the queue terminates the subsidy, leaving the current Account with the responsibility of
+ *   paying for the rest of the transactions)
+ */
+export interface FeesBreakdown {
+  /**
+   * fees that will be paid by third parties. Each element in the array represents
+   *   a different third party Account, their corresponding fees, allowances and balance
+   */
+  thirdPartyFees: ThirdPartyFees[];
+  /**
+   * fees that must be paid by the current Account
+   */
+  accountFees: Fees;
+  /**
+   * free balance of the current Account
+   */
+  accountBalance: BigNumber;
 }
 
 /**
@@ -809,7 +861,7 @@ export enum PermissionGroupType {
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
-export interface RelayerRelationship {
+export interface Subsidy {
   /**
    * Account whose transactions are being paid for
    */
@@ -817,7 +869,7 @@ export interface RelayerRelationship {
   /**
    * Account that is paying for the transactions
    */
-  relayer: Account;
+  subsidizer: Account;
   /**
    * amount of POLYX to be subsidized. This can be increased/decreased later on
    */
@@ -832,7 +884,7 @@ export type Authorization =
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
   | { type: AuthorizationType.BecomeAgent; value: KnownPermissionGroup | CustomPermissionGroup }
-  | { type: AuthorizationType.AddRelayerPayingKey; value: RelayerRelationship }
+  | { type: AuthorizationType.AddRelayerPayingKey; value: Subsidy }
   | {
       type: Exclude<
         AuthorizationType,

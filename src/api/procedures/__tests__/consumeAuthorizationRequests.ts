@@ -74,7 +74,7 @@ describe('consumeAuthorizationRequests procedure', () => {
           type: AuthorizationType.AddRelayerPayingKey,
           value: {
             beneficiary: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
-            relayer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+            subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
             allowance: new BigNumber(1000),
           },
         },

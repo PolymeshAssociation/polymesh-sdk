@@ -36,7 +36,7 @@ export async function prepareRemoveSecondaryKeys(
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));
-  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKey);
+  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKey.address);
 
   if (isPrimaryKeyPresent) {
     throw new PolymeshError({

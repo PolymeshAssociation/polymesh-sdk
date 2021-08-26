@@ -121,7 +121,7 @@ interface IdentityOptions {
   hasRole?: boolean;
   hasPermissions?: boolean;
   hasValidCdd?: boolean;
-  getPrimaryKey?: string;
+  getPrimaryKey?: Account;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -641,7 +641,6 @@ export const mockKnownPermissionGroupModule = (path: string) => (): Record<strin
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getPrimaryKey: 'someAddress',
   authorizations: {
     getReceived: [],
     getSent: { data: [], next: null },

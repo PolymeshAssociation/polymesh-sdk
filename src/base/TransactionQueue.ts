@@ -1,12 +1,19 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { EventEmitter } from 'events';
-import { range } from 'lodash';
+import { range, values } from 'lodash';
 
 import { Context, PolymeshError, PolymeshTransactionBase, PostTransactionValue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, Fees, TransactionQueueStatus } from '~/types';
+import {
+  Ensured,
+  ErrorCode,
+  Fees,
+  FeesBreakdown,
+  ThirdPartyFees,
+  TransactionQueueStatus,
+} from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { delay } from '~/utils/internal';
 
@@ -134,25 +141,7 @@ export class TransactionQueue<
       });
     }
 
-    const { context } = this;
-
-    const [{ free: freeBalance }, fees] = await P.all([
-      context.accountBalance(),
-      this.getMinFees(),
-    ]);
-
-    const { protocol, gas } = fees;
-
-    if (freeBalance.lt(protocol.plus(gas))) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "Not enough POLYX balance to pay for this procedure's fees",
-        data: {
-          freeBalance,
-          fees,
-        },
-      });
-    }
+    await this.assertFeesCovered();
 
     this.queue = ([...this.transactions] as unknown) as PolymeshTransactionArray<TransactionArgs>;
     this.updateStatus(TransactionQueueStatus.Running);
@@ -186,30 +175,103 @@ export class TransactionQueue<
 
   /**
    * Retrieves a lower bound of the fees required to execute this transaction queue.
-   *   Transaction fees can be higher at execution time for two reasons:
+   *   Transaction fees can be higher at execution time for three reasons:
    *
-   * - One or more transactions (or arguments) depend on the result of another transaction in the queue.
+   * - One or more transaction arguments depend on the result of another transaction in the queue.
    *   This means fees can't be calculated for said transaction until previous transactions in the queue have run
    * - Protocol fees may vary between when this value is fetched and when the transaction is actually executed because of a
    *   governance vote
+   * - Gas fees may vary between when this value is fetched and when the transaction is actually executed because of network
+   *   congestion
    *
-   * @note transaction fees that are paid by a third party aren't included in this total
+   * Transaction fees are broken down between those that have to be paid by the current Account and
+   *   those that will be paid by third parties. In most cases, the entirety of the fees will be paid by
+   *   either the current Account or a **single** third party Account
    */
-  public async getMinFees(): Promise<Fees> {
-    const allFees = await P.map(this.transactions, transaction =>
-      transaction.paidByThirdParty ? null : transaction.getFees()
-    );
+  public async getMinFees(): Promise<FeesBreakdown> {
+    const { context, transactions } = this;
 
-    return allFees.reduce<Fees>(
-      (acc, next) => ({
-        protocol: acc.protocol.plus(next?.protocol ?? 0),
-        gas: acc.gas.plus(next?.gas ?? 0),
-      }),
-      {
-        protocol: new BigNumber(0),
-        gas: new BigNumber(0),
+    // get the fees and paying account for each transaction in the queue
+    const allFees = await P.map(transactions, async transaction => {
+      const [payingAccount, fees] = await Promise.all([
+        transaction.getPayingAccount(),
+        transaction.getFees(),
+      ]);
+
+      if (!fees) {
+        return null;
       }
-    );
+
+      if (payingAccount) {
+        return {
+          fees,
+          payingAccount,
+        };
+      }
+
+      return {
+        fees,
+      };
+    });
+
+    const addFees = (a: Fees, b: Fees): Fees => {
+      return {
+        protocol: a.protocol.plus(b.protocol),
+        gas: a.gas.plus(b.gas),
+      };
+    };
+
+    // account address -> fee data (for efficiency)
+    const breakdownByAccount: Record<string, ThirdPartyFees> = {};
+
+    // fees for the current Account
+    let accountFees: Fees = {
+      protocol: new BigNumber(0),
+      gas: new BigNumber(0),
+    };
+
+    // compile the fees and other data for each paying account (and the current account as well)
+    const eachPromise = P.each(allFees, async transactionFees => {
+      if (!transactionFees) {
+        return;
+      }
+
+      const { fees, payingAccount } = transactionFees;
+
+      if (!payingAccount) {
+        // payingAccount === null means the current Account has to pay
+        accountFees = addFees(accountFees, fees);
+      } else {
+        const { account, allowance } = payingAccount;
+        const { address } = account;
+        const thirdPartyData = breakdownByAccount[address];
+
+        if (!thirdPartyData) {
+          // first time encountering this third party account, we must populate the initial values
+          const { free: balance } = await account.getBalance();
+          breakdownByAccount[address] = {
+            account,
+            balance,
+            allowance,
+            fees,
+          };
+        } else {
+          // already encountered the account before, just add the fees
+          thirdPartyData.fees = addFees(thirdPartyData.fees, fees);
+        }
+      }
+    });
+
+    const { free: accountBalance } = await context.accountBalance();
+    await eachPromise;
+
+    const thirdPartyFees = values(breakdownByAccount);
+
+    return {
+      thirdPartyFees,
+      accountBalance,
+      accountFees,
+    };
   }
 
   /**
@@ -362,5 +424,62 @@ export class TransactionQueue<
 
       return delay(2000);
     });
+  }
+
+  /**
+   * Check if balances and allowances (both third party and current Account)
+   *   are sufficient to cover this queue's fees
+   */
+  private async assertFeesCovered(): Promise<void> {
+    const breakdown = await this.getMinFees();
+
+    const { accountBalance, accountFees, thirdPartyFees } = breakdown;
+
+    const calculateTotal = ({ protocol, gas }: Fees): BigNumber => protocol.plus(gas);
+
+    const noThirdPartyAllowance: ThirdPartyFees[] = [];
+    const noThirdPartyBalance: ThirdPartyFees[] = [];
+    thirdPartyFees.forEach(data => {
+      const { allowance, balance, fees } = data;
+      const total = calculateTotal(fees);
+      if (balance.lt(total)) {
+        noThirdPartyBalance.push(data);
+      }
+      if (allowance?.lt(total)) {
+        noThirdPartyAllowance.push(data);
+      }
+    });
+
+    if (noThirdPartyAllowance.length) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "Not enough POLYX third party allowance to pay for this procedure's fees",
+        data: {
+          accounts: noThirdPartyAllowance,
+        },
+      });
+    }
+    if (noThirdPartyBalance.length) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "Not enough POLYX third party balance to pay for this procedure's fees",
+        data: {
+          accounts: noThirdPartyBalance,
+        },
+      });
+    }
+
+    const totalFees = calculateTotal(accountFees);
+
+    if (accountBalance.lt(totalFees)) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "Not enough POLYX balance to pay for this procedure's fees",
+        data: {
+          balance: accountBalance,
+          fees: accountFees,
+        },
+      });
+    }
   }
 }

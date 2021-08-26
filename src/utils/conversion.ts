@@ -1173,7 +1173,7 @@ export function authorizationDataToAuthorization(
       type: AuthorizationType.AddRelayerPayingKey,
       value: {
         beneficiary: new Account({ address: accountIdToString(userKey) }, context),
-        relayer: new Account({ address: accountIdToString(payingKey) }, context),
+        subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
         allowance: balanceToBigNumber(polyxLimit),
       },
     };

@@ -431,7 +431,7 @@ describe('Context class', () => {
       });
 
       return expect(context.accountBalance()).rejects.toThrow(
-        'There is no account associated with the SDK'
+        'There is no account associated with the current SDK instance'
       );
     });
 
@@ -527,6 +527,121 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: accountSubsidy', () => {
+    test('should throw if accountId or currentPair is not set', async () => {
+      dsMockUtils.configureMocks({
+        keyringOptions: {
+          getPairs: [],
+        },
+      });
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      return expect(context.accountSubsidy()).rejects.toThrow(
+        'There is no account associated with the current SDK instance'
+      );
+    });
+
+    test('should return the account subsidizer and allowance if currentPair is set', async () => {
+      const allowance = dsMockUtils.createMockBalance(100);
+      const returnValue = dsMockUtils.createMockOption(
+        dsMockUtils.createMockSubsidy({
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          paying_key: dsMockUtils.createMockAccountId('payingKey'),
+          remaining: allowance,
+        })
+      );
+
+      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const result = await context.accountSubsidy();
+      expect(result).toEqual({
+        allowance: utilsConversionModule.balanceToBigNumber(allowance),
+        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+      });
+    });
+
+    test('should return the account subsidizer and allowance if accountId is set', async () => {
+      const allowance = dsMockUtils.createMockBalance(100);
+      const returnValue = dsMockUtils.createMockOption(
+        dsMockUtils.createMockSubsidy({
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          paying_key: dsMockUtils.createMockAccountId('payingKey'),
+          remaining: allowance,
+        })
+      );
+
+      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const result = await context.accountSubsidy('accountId');
+      expect(result).toEqual({
+        allowance: utilsConversionModule.balanceToBigNumber(allowance),
+        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+      });
+    });
+
+    test('should return null if the account has no subsidizer', async () => {
+      const returnValue = dsMockUtils.createMockOption();
+
+      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const result = await context.accountSubsidy();
+      expect(result).toBeNull();
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const allowance = dsMockUtils.createMockBalance(100);
+      const returnValue = dsMockUtils.createMockOption(
+        dsMockUtils.createMockSubsidy({
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          paying_key: dsMockUtils.createMockAccountId('payingKey'),
+          remaining: allowance,
+        })
+      );
+
+      dsMockUtils.createQueryStub('relayer', 'subsidies').callsFake(async (_, cbFunc) => {
+        cbFunc(returnValue);
+        return unsubCallback;
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const callback = sinon.stub();
+      const result = await context.accountSubsidy('accountId', callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, {
+        allowance: utilsConversionModule.balanceToBigNumber(allowance),
+        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+      });
+    });
+  });
+
   describe('method: getCurrentIdentity', () => {
     test('should return the current Identity', async () => {
       const did = 'someDid';
@@ -603,7 +718,7 @@ describe('Context class', () => {
         err = e;
       }
 
-      expect(err.message).toBe('There is no account associated with the SDK');
+      expect(err.message).toBe('There is no account associated with the current SDK instance');
     });
   });
 

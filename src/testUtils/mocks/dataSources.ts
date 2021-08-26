@@ -119,6 +119,7 @@ import {
   SettlementType,
   Signatory,
   StoredSchedule,
+  Subsidy as MeshSubsidy,
   TargetIdentities,
   TargetIdentity,
   TargetTreatment,
@@ -149,6 +150,7 @@ import {
   KeyringPair,
   ResultSet,
   SecondaryKey,
+  Subsidy,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
@@ -267,6 +269,7 @@ interface ContextOptions {
   did?: string;
   withSeed?: boolean;
   balance?: AccountBalance;
+  subsidy?: Omit<Subsidy, 'beneficiary'>;
   hasRoles?: boolean;
   hasPermissions?: boolean;
   hasTokenPermissions?: boolean;
@@ -607,7 +610,7 @@ function configureContext(opts: ContextOptions): void {
     hasTokenPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
+    getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
     getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
@@ -625,6 +628,7 @@ function configureContext(opts: ContextOptions): void {
     ? getCurrentAccount.returns({
         address: opts.currentPairAddress,
         getBalance: sinon.stub().resolves(opts.balance),
+        getSubsidy: sinon.stub().resolves(opts.subsidy),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
@@ -650,6 +654,7 @@ function configureContext(opts: ContextOptions): void {
     getCurrentAccount,
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
+    accountSubsidy: sinon.stub().resolves(opts.subsidy),
     getAccounts: sinon.stub().returns(opts.getAccounts),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as KeyringPair;
@@ -1891,6 +1896,27 @@ export const createMockAccountInfo = (accountInfo?: {
     },
     !accountInfo
   ) as AccountInfo;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSubsidy = (subsidy?: {
+  paying_key: AccountId;
+  remaining: Balance;
+}): MeshSubsidy => {
+  const sub = subsidy || {
+    paying_key: createMockAccountId(),
+    remaining: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...sub,
+    },
+    !subsidy
+  ) as MeshSubsidy;
 };
 
 /**
