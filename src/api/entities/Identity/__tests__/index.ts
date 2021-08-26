@@ -5,7 +5,15 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, ScopeId, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, Entity, Identity, SecurityToken, TransactionQueue, Venue } from '~/internal';
+import {
+  Context,
+  Entity,
+  Identity,
+  KnownPermissionGroup,
+  SecurityToken,
+  TransactionQueue,
+  Venue,
+} from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
@@ -14,6 +22,7 @@ import {
   DistributionWithDetails,
   IdentityRole,
   Order,
+  PermissionGroupType,
   PermissionType,
   PortfolioCustodianRole,
   Role,
@@ -62,6 +71,10 @@ jest.mock(
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+jest.mock(
+  '~/api/entities/Agent',
+  require('~/testUtils/mocks/entities').mockAgentModule('~/api/entities/Agent')
 );
 
 describe('Identity class', () => {
@@ -1517,6 +1530,58 @@ describe('Identity class', () => {
       const queue = await identity.unfreezeSecondaryKeys();
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: agentOf', () => {
+    let did: string;
+    let ticker: string;
+    let rawDid: IdentityId;
+    let rawTicker: Ticker;
+
+    beforeAll(() => {
+      did = 'someDid';
+      ticker = 'SOMETICKER';
+      rawDid = dsMockUtils.createMockIdentityId(did);
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+    });
+
+    beforeEach(() => {
+      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return a list of AssetPermission', async () => {
+      const identity = new Identity({ did }, context);
+      const group = entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.Full,
+        getPermissions: {
+          transactions: null,
+          transactionGroups: [],
+        },
+      });
+
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          ticker,
+        },
+        agentOptions: {
+          getPermissionGroup: group,
+        },
+      });
+
+      dsMockUtils.createQueryStub('externalAgents', 'agentOf', {
+        entries: [tuple([rawDid, rawTicker], {})],
+      });
+
+      const result = await identity.getTokenPermissions();
+      expect(result.length).toEqual(1);
+      expect(result[0].token.ticker).toEqual(ticker);
+      expect(result[0].group instanceof KnownPermissionGroup).toEqual(true);
     });
   });
 

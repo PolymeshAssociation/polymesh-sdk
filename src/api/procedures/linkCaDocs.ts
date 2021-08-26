@@ -45,10 +45,11 @@ export async function prepareLinkCaDocs(
   const rawAssetDocuments = await assetDocuments.entries(stringToTicker(ticker, context));
 
   const docIdsToLink: DocumentId[] = [];
+  const documentsCopy = [...documents]; // avoid mutation
 
   rawAssetDocuments.forEach(([key, doc]) => {
     const [, id] = key.args;
-    const removedList = remove(documents, document =>
+    const removedList = remove(documentsCopy, document =>
       isEqual(document, documentToTokenDocument(doc))
     );
     if (removedList.length) {
@@ -56,12 +57,12 @@ export async function prepareLinkCaDocs(
     }
   });
 
-  if (documents.length) {
+  if (documentsCopy.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Some of the provided documents are not associated with the Security Token',
       data: {
-        documents,
+        documents: documentsCopy,
       },
     });
   }
