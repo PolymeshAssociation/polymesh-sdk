@@ -29,14 +29,9 @@ jest.mock(
 
 describe('createGroup procedure', () => {
   const ticker = 'SOMETICKER';
-  const permissions = {
-    tokens: null,
-    portfolios: null,
-    transactionGroups: [],
-    transactions: {
-      type: PermissionType.Include,
-      values: [TxTags.sto.Invest],
-    },
+  const transactions = {
+    type: PermissionType.Include,
+    values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
   };
   const rawTicker = dsMockUtils.createMockTicker(ticker);
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
@@ -121,7 +116,7 @@ describe('createGroup procedure', () => {
               ticker,
               id: customId,
               getPermissions: {
-                transactions: permissions.transactions,
+                transactions,
                 transactionGroups: [],
               },
             }),
@@ -131,14 +126,14 @@ describe('createGroup procedure', () => {
       }),
     });
 
-    permissionsLikeToPermissionsStub.returns(permissions);
+    permissionsLikeToPermissionsStub.returns({ transactions });
 
     let error;
 
     try {
       await prepareCreateGroup.call(proc, {
         ticker,
-        permissions: { transactions: permissions.transactions },
+        permissions: { transactions },
       });
     } catch (err) {
       error = err;
@@ -214,10 +209,10 @@ describe('createGroup procedure', () => {
       }
     );
 
-    const fakePermissions = { transactions: permissions.transactions };
+    const fakePermissions = { transactions };
     permissionsLikeToPermissionsStub
       .withArgs(fakePermissions, mockContext)
-      .returns(permissions.transactions);
+      .returns({ transactions });
 
     await prepareCreateGroup.call(proc, {
       ticker,
@@ -246,7 +241,7 @@ describe('createGroup procedure', () => {
 
     await prepareCreateGroup.call(proc, {
       ticker,
-      permissions: { transactions: permissions.transactions },
+      permissions: { transactions },
     });
 
     sinon.assert.calledWith(

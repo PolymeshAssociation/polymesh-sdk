@@ -14,6 +14,7 @@ import {
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
+  Agent,
   Context,
   createVenue,
   CreateVenueParams,
@@ -51,6 +52,7 @@ import {
   SecondaryKey,
   Signer,
   SubCallback,
+  TokenWithGroup,
   UnsubCallback,
 } from '~/types';
 import { tuple } from '~/types/utils';
@@ -72,6 +74,7 @@ import {
   signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
+  tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -890,6 +893,36 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
+  }
+
+  /**
+   * Retrieve all the Security Tokens for which this Identity is an Agent, with the corresponding permission group
+   */
+  public async getTokenPermissions(): Promise<TokenWithGroup[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { externalAgents },
+        },
+      },
+      did,
+      context,
+    } = this;
+
+    const rawDid = stringToIdentityId(did, context);
+    const tokenEntries = await externalAgents.agentOf.entries(rawDid);
+
+    return P.map(tokenEntries, async ([key]) => {
+      const ticker = tickerToString(key.args[1]);
+      const agent = new Agent({ did, ticker }, context);
+      const token = new SecurityToken({ ticker }, context);
+      const group = await agent.getPermissionGroup();
+
+      return {
+        token,
+        group,
+      };
+    });
   }
 
   /**

@@ -86,14 +86,7 @@ export async function prepareCreateGroup(
   const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
 
   const duplicatedGroupIndex = currentGroupPermissions.findIndex(
-    ({ transactions: transactionPermissions }) => {
-      const sortedTransactions = transactions && {
-        ...transactions,
-        values: [...transactions.values].sort(),
-      };
-
-      return isEqual(transactionPermissions, sortedTransactions);
-    }
+    ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, transactions)
   );
 
   if (duplicatedGroupIndex > -1) {
