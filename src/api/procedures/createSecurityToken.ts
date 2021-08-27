@@ -47,6 +47,11 @@ export interface CreateSecurityTokenParams {
    */
   fundingRound?: string;
   documents?: TokenDocument[];
+  /**
+   * whether this asset requires investors to have a Investor Uniqueness Claim in order
+   *   to hold it. Optional, defaults to true. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
+   */
+  requireInvestorUniqueness?: boolean;
 }
 
 /**
@@ -78,6 +83,7 @@ export async function prepareCreateSecurityToken(
     tokenIdentifiers = [],
     fundingRound,
     documents,
+    requireInvestorUniqueness = true,
   } = args;
 
   const reservation = new TickerReservation({ ticker }, context);
@@ -110,6 +116,7 @@ export async function prepareCreateSecurityToken(
     tokenIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
+  const rawDisableIu = booleanToBool(!requireInvestorUniqueness, context);
 
   let fee: undefined | BigNumber;
 
@@ -131,7 +138,7 @@ export async function prepareCreateSecurityToken(
     rawType,
     rawIdentifiers,
     rawFundingRound,
-    booleanToBool(false, context)
+    rawDisableIu
   );
 
   if (totalSupply && totalSupply.gt(0)) {
