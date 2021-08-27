@@ -4,13 +4,16 @@ import {
   Identity,
   KnownPermissionGroup,
   PolymeshError,
+  setPermissionGroup,
+  SetPermissionGroupParams,
 } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, ProcedureMethod } from '~/types';
 import {
   agentGroupToPermissionGroup,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -45,7 +48,20 @@ export class Agent extends Identity {
     const { ticker } = identifiers;
 
     this.ticker = ticker;
+
+    this.setPermissionGroup = createProcedureMethod(
+      { getProcedureAndArgs: args => [setPermissionGroup, { agent: this, ...args }] },
+      context
+    );
   }
+
+  /**
+   * Assign this agent to a different Permission Group
+   */
+  public setPermissionGroup: ProcedureMethod<
+    SetPermissionGroupParams,
+    CustomPermissionGroup | KnownPermissionGroup
+  >;
 
   /**
    * Retrieve the agent group associated with this Agent

@@ -215,15 +215,13 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     const instructionEntries = await settlement.venueInstructions.entries(numberToU64(id, context));
 
-    const instructions = instructionEntries.map(
+    return instructionEntries.map(
       ([
         {
           args: [, instructionId],
         },
       ]) => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
     );
-
-    return instructions;
   }
 
   /**
