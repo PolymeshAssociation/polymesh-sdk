@@ -258,12 +258,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     const disabledIuPromise = asset.disableInvestorUniqueness(rawTicker);
 
     if (callback) {
-      const groups = await groupOfAgentPromise;
-      const name = await namePromise;
-      const disabledIu = await disabledIuPromise;
+      const groupEntries = await groupOfAgentPromise;
+      const assetName = await namePromise;
+      const disabledInvestorUniqueness = await disabledIuPromise;
 
       return asset.tokens(rawTicker, async securityToken => {
-        const result = await assembleResult(securityToken, groups, name, disabledIu);
+        const result = await assembleResult(
+          securityToken,
+          groupEntries,
+          assetName,
+          disabledInvestorUniqueness
+        );
         callback(result);
       });
     }
