@@ -1652,12 +1652,12 @@ export function stringToDocumentHash(docHash: string | undefined, context: Conte
   const { length } = docHash;
 
   // array of Hash types (H128, H160, etc) and their corresponding hex lengths
-  const hashTypes = [32, 40, 48, 56, 64, 80, 96, 128].map(maxLength => ({
-    maxLength: maxLength + 2,
-    key: `H${maxLength * 4}`,
+  const hashTypes = [32, 40, 48, 56, 64, 80, 96, 128].map(max => ({
+    maxLength: max + 2,
+    key: `H${max * 4}`,
   }));
 
-  const type = hashTypes.find(({ maxLength }) => length <= maxLength);
+  const type = hashTypes.find(({ maxLength: max }) => length <= max);
 
   if (!type) {
     throw new PolymeshError({
