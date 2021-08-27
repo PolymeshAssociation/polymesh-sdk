@@ -210,21 +210,34 @@ export interface TokenDocument {
 }
 
 /**
- * Type of authorization request
+ * Type of Authorization Request
  */
 export enum AuthorizationType {
+  /**
+   * @deprecated
+   */
+  NoData = 'NoData',
+  /**
+   * @deprecated
+   */
+  Custom = 'Custom',
+  /**
+   * @deprecated
+   */
+  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
+  /**
+   * @deprecated
+   */
+  TransferCorporateActionAgent = 'TransferCorporateActionAgent',
   AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
   RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
-  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
-  TransferCorporateActionAgent = 'TransferCorporateActionAgent',
   BecomeAgent = 'BecomeAgent',
-  Custom = 'Custom',
-  NoData = 'NoData',
+  AddRelayerPayingKey = 'AddRelayerPayingKey',
 }
 
 export enum ConditionTarget {
@@ -799,6 +812,21 @@ export enum PermissionGroupType {
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
+export interface RelayerRelationship {
+  /**
+   * Account whose transactions are being paid for
+   */
+  beneficiary: Account;
+  /**
+   * Account that is paying for the transactions
+   */
+  relayer: Account;
+  /**
+   * amount of POLYX to be subsidized. This can be increased/decreased later on
+   */
+  allowance: BigNumber;
+}
+
 /**
  * Authorization request data corresponding to type
  */
@@ -807,6 +835,7 @@ export type Authorization =
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
   | { type: AuthorizationType.BecomeAgent; value: KnownPermissionGroup | CustomPermissionGroup }
+  | { type: AuthorizationType.AddRelayerPayingKey; value: RelayerRelationship }
   | {
       type: Exclude<
         AuthorizationType,
@@ -814,6 +843,7 @@ export type Authorization =
         | AuthorizationType.JoinIdentity
         | AuthorizationType.PortfolioCustody
         | AuthorizationType.BecomeAgent
+        | AuthorizationType.AddRelayerPayingKey
       >;
       value: string;
     };
@@ -946,10 +976,27 @@ export interface PortfolioMovement {
 }
 
 export interface ProcedureAuthorizationStatus {
+  /**
+   * whether the Identity complies with all required Agent permissions
+   */
   agentPermissions: boolean;
+  /**
+   * whether the Account complies with all required Signer permissions
+   */
   signerPermissions: boolean;
+  /**
+   * whether the Identity complies with all required Roles
+   */
   roles: boolean;
+  /**
+   * whether the Account is frozen (i.e. can't perform any transactions)
+   */
   accountFrozen: boolean;
+  /**
+   * true only if the Procedure requires an Identity but the current Account
+   *   doesn't have one associated
+   */
+  noIdentity: boolean;
 }
 
 interface TransferRestrictionBase {

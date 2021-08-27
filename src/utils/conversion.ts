@@ -1168,6 +1168,19 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  if (auth.isAddRelayerPayingKey) {
+    const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
+
+    return {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: new Account({ address: accountIdToString(userKey) }, context),
+        relayer: new Account({ address: accountIdToString(payingKey) }, context),
+        allowance: balanceToBigNumber(polyxLimit),
+      },
+    };
+  }
+
   return {
     type: AuthorizationType.NoData,
   };
@@ -1389,7 +1402,8 @@ export function assetTypeToString(assetType: AssetType): string {
     return KnownTokenType.StableCoin;
   }
 
-  return u8aToString(assetType.asCustom);
+  // TODO @monitz87: figure out how to return this properly (probably make it async and have it fetch the value)
+  return u32ToBigNumber(assetType.asCustom).toFormat();
 }
 
 /**
@@ -1638,12 +1652,12 @@ export function stringToDocumentHash(docHash: string | undefined, context: Conte
   const { length } = docHash;
 
   // array of Hash types (H128, H160, etc) and their corresponding hex lengths
-  const hashTypes = [32, 40, 48, 56, 64, 80, 96, 128].map(maxLength => ({
-    maxLength: maxLength + 2,
-    key: `H${maxLength * 4}`,
+  const hashTypes = [32, 40, 48, 56, 64, 80, 96, 128].map(max => ({
+    maxLength: max + 2,
+    key: `H${max * 4}`,
   }));
 
-  const type = hashTypes.find(({ maxLength }) => length <= maxLength);
+  const type = hashTypes.find(({ maxLength: max }) => length <= max);
 
   if (!type) {
     throw new PolymeshError({
@@ -3195,12 +3209,12 @@ export function stringToSignature(signature: string, context: Context): Signatur
  */
 export function meshCorporateActionToCorporateActionParams(
   corporateAction: MeshCorporateAction,
+  details: Text,
   context: Context
 ): CorporateActionParams {
   const {
     kind: rawKind,
     decl_date: declDate,
-    details,
     targets: { identities, treatment },
     default_withholding_tax: defaultWithholdingTax,
     withholding_tax: withholdingTax,

@@ -675,8 +675,9 @@ export class Context {
         ([, action]) => action.unwrap().kind.isUnpredictableBenefit
       );
 
-      unpredictableCas.forEach(
-        ([
+      const corporateActionData = await P.map(
+        unpredictableCas,
+        async ([
           {
             args: [rawTicker, rawId],
           },
@@ -684,13 +685,25 @@ export class Context {
         ]) => {
           const localId = u32ToBigNumber(rawId);
           const ticker = tickerToString(rawTicker);
-          tickers.push(ticker);
-          corporateActionIds.push(localId);
-          distributionsMultiParams.push(corporateActionIdentifierToCaId({ ticker, localId }, this));
+          const caId = corporateActionIdentifierToCaId({ ticker, localId }, this);
+          const details = await query.corporateAction.details(caId);
           const action = corporateAction.unwrap();
-          corporateActionParams.push(meshCorporateActionToCorporateActionParams(action, this));
+
+          return {
+            ticker,
+            localId,
+            caId,
+            corporateAction: meshCorporateActionToCorporateActionParams(action, details, this),
+          };
         }
       );
+
+      corporateActionData.forEach(({ ticker, localId, caId, corporateAction }) => {
+        tickers.push(ticker);
+        corporateActionIds.push(localId);
+        distributionsMultiParams.push(caId);
+        corporateActionParams.push(corporateAction);
+      });
     });
 
     /*

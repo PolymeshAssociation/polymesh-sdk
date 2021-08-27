@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import { TxTag } from 'polymesh-types/types';
 
 import {
@@ -153,14 +154,21 @@ export class Procedure<
 
     const { permissions = true, roles = true } = checkAuthorizationResult;
 
-    let identity: Identity;
-    let hasRoles: boolean;
+    let identity: Identity | null = null;
+    let hasRoles = false;
+    let noIdentity = false;
 
-    const fetchIdentity = async (): Promise<Identity> => identity || context.getCurrentIdentity();
+    const account = ctx.getCurrentAccount();
+
+    const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
     if (typeof roles !== 'boolean') {
       identity = await fetchIdentity();
-      hasRoles = await identity.hasRoles(roles);
+      noIdentity = !identity;
+
+      if (identity) {
+        hasRoles = await identity.hasRoles(roles);
+      }
     } else {
       hasRoles = roles;
     }
@@ -169,32 +177,42 @@ export class Procedure<
     let hasAgentPermissions = true;
 
     if (typeof permissions !== 'boolean') {
-      const account = context.getCurrentAccount();
-      const permissionsPromises = [account.hasPermissions(permissions)];
+      const signerPermissionsPromise = account.hasPermissions(permissions);
 
       const { tokens, transactions } = permissions;
       // we assume the same permissions are required for each token
       if (tokens?.length && transactions?.length) {
         identity = await fetchIdentity();
-        permissionsPromises.push(
-          ...tokens.map(token => identity.hasTokenPermissions({ token, transactions }))
-        );
-      }
-      const result = await Promise.all(permissionsPromises);
-      [hasSignerPermissions] = result;
 
-      hasAgentPermissions = result.slice(1).every(perm => perm);
+        noIdentity = !identity;
+
+        hasAgentPermissions = false;
+
+        if (identity) {
+          const agentPermissionResults = await P.map(tokens, token =>
+            // the compiler doesn't recognize that identity is defined even though
+            //   we checked at the top of the block
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            identity!.hasTokenPermissions({ token, transactions })
+          );
+
+          hasAgentPermissions = agentPermissionResults.every(perm => perm);
+        }
+      }
+
+      hasSignerPermissions = await signerPermissionsPromise;
     } else {
       hasSignerPermissions = permissions;
     }
 
-    const accountFrozen = await ctx.getCurrentAccount().isFrozen();
+    const accountFrozen = await account.isFrozen();
 
     return {
       roles: hasRoles,
       signerPermissions: hasSignerPermissions,
       agentPermissions: hasAgentPermissions,
       accountFrozen,
+      noIdentity,
     };
   }
 
@@ -241,7 +259,15 @@ export class Procedure<
         signerPermissions,
         agentPermissions,
         accountFrozen,
+        noIdentity,
       } = await this._checkAuthorization(procArgs, ctx);
+
+      if (noIdentity) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message: 'This procedure requires the Current Account to have an associated Identity',
+        });
+      }
 
       if (accountFrozen) {
         throw new PolymeshError({

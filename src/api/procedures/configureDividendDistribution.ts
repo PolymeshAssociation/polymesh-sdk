@@ -38,18 +38,21 @@ export const createDividendDistributionResolver = (context: Context) => async (
   receipt: ISubmittableResult
 ): Promise<DividendDistribution> => {
   const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
-  const [, { ticker, local_id: localId }, distribution] = data;
+  const [, caId, distribution] = data;
+  const { ticker, local_id: localId } = caId;
 
-  const corporateAction = await context.polymeshApi.query.corporateAction.corporateActions(
-    ticker,
-    localId
-  );
+  const { corporateAction } = context.polymeshApi.query;
+
+  const [corpAction, details] = await Promise.all([
+    corporateAction.corporateActions(ticker, localId),
+    corporateAction.details(caId),
+  ]);
 
   return new DividendDistribution(
     {
       ticker: tickerToString(ticker),
       id: u32ToBigNumber(localId),
-      ...meshCorporateActionToCorporateActionParams(corporateAction.unwrap(), context),
+      ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
       ...distributionToDividendDistributionParams(distribution, context),
     },
     context
@@ -60,12 +63,34 @@ export type ConfigureDividendDistributionParams = Omit<
   InitiateCorporateActionParams,
   'kind' | 'checkpoint'
 > & {
+  /**
+   * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
+   *   If a Date is passed, a Checkpoint will be created at that date and used
+   */
   checkpoint: Checkpoint | Date | CheckpointSchedule;
+  /**
+   * portfolio from which the Dividends will be distributed. Optional, defaults to the Corporate Actions Agent's Default Portfolio
+   */
   originPortfolio?: NumberedPortfolio | BigNumber;
+  /**
+   * ticker of the currency in which Dividends will be distributed
+   */
   currency: string;
+  /**
+   * amount of `currency` to distribute per each share of the Security Token that a target holds
+   */
   perShare: BigNumber;
+  /**
+   * maximum amount of `currency` to distribute in total
+   */
   maxAmount: BigNumber;
+  /**
+   * date from which Tokenholders can claim their Dividends
+   */
   paymentDate: Date;
+  /**
+   * Optional, defaults to never expiring
+   */
   expiryDate?: Date;
 };
 

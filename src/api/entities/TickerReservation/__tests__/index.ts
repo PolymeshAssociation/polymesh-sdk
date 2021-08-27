@@ -159,7 +159,6 @@ describe('TickerReservation class', () => {
         dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(ownerDid),
-          name: dsMockUtils.createMockAssetName('someToken'),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
           divisible: dsMockUtils.createMockBool(true),
           total_supply: dsMockUtils.createMockBalance(1000),

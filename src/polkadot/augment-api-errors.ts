@@ -31,6 +31,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       BalanceOverflow: AugmentedError<ApiType>;
       /**
+       * An overflow while generating the next `CustomAssetTypeId`.
+       **/
+      CustomAssetTypeIdOverflow: AugmentedError<ApiType>;
+      /**
        * When extension is already added.
        **/
       ExtensionAlreadyPresent: AugmentedError<ApiType>;
@@ -71,10 +75,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
       /**
-       * Not a primary issuance agent transfer auth.
-       **/
-      NoPrimaryIssuanceAgentTransferAuth: AugmentedError<ApiType>;
-      /**
        * No such token.
        **/
       NoSuchAsset: AugmentedError<ApiType>;
@@ -87,10 +87,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       NoSuchDoc: AugmentedError<ApiType>;
       /**
-       * No such smart extension.
-       **/
-      NoSuchSmartExtension: AugmentedError<ApiType>;
-      /**
        * Not an owner of the token.
        **/
       NotAnOwner: AugmentedError<ApiType>;
@@ -98,14 +94,6 @@ declare module '@polkadot/api/types/errors' {
        * The asset must be frozen.
        **/
       NotFrozen: AugmentedError<ApiType>;
-      /**
-       * Not a ticker transfer auth.
-       **/
-      NoTickerTransferAuth: AugmentedError<ApiType>;
-      /**
-       * Not a token ownership transfer auth.
-       **/
-      NotTickerOwnershipTransferAuth: AugmentedError<ApiType>;
       /**
        * Transfers to self are not allowed
        **/
@@ -609,6 +597,10 @@ declare module '@polkadot/api/types/errors' {
     };
     identity: {
       /**
+       * The account key is being used, it can't be unlinked.
+       **/
+      AccountKeyIsBeingUsed: AugmentedError<ApiType>;
+      /**
        * One secondary or primary key can only belong to one DID
        **/
       AlreadyLinked: AugmentedError<ApiType>;
@@ -736,10 +728,6 @@ declare module '@polkadot/api/types/errors' {
        * Only CDD service providers are allowed.
        **/
       UnAuthorizedCddProvider: AugmentedError<ApiType>;
-      /**
-       * Given authorization is not pre-known
-       **/
-      UnknownAuthorization: AugmentedError<ApiType>;
     };
     imOnline: {
       /**
@@ -804,10 +792,6 @@ declare module '@polkadot/api/types/errors' {
        * No such multisig.
        **/
       NoSuchMultisig: AugmentedError<ApiType>;
-      /**
-       * Not a multisig authorization.
-       **/
-      NotAMultisigAuth: AugmentedError<ApiType>;
       /**
        * Not a signer.
        **/
@@ -1014,9 +998,61 @@ declare module '@polkadot/api/types/errors' {
        **/
       InsufficientAccountBalance: AugmentedError<ApiType>;
       /**
+       * Insufficient subsidy balance to pay the fee.
+       **/
+      InsufficientSubsidyBalance: AugmentedError<ApiType>;
+      /**
        * Not able to handled the imbalances
        **/
       UnHandledImbalances: AugmentedError<ApiType>;
+    };
+    relayer: {
+      /**
+       * The `user_key` doesn't have a `paying_key`.
+       **/
+      NoPayingKey: AugmentedError<ApiType>;
+      /**
+       * The signer is not authorized for `paying_key`.
+       **/
+      NotAuthorizedForPayingKey: AugmentedError<ApiType>;
+      /**
+       * The signer is not authorized for `user_key`.
+       **/
+      NotAuthorizedForUserKey: AugmentedError<ApiType>;
+      /**
+       * The `user_key` has a different `paying_key`.
+       **/
+      NotPayingKey: AugmentedError<ApiType>;
+      /**
+       * The remaining POLYX for `user_key` overflowed.
+       **/
+      Overflow: AugmentedError<ApiType>;
+      /**
+       * The `user_key` is not attached to a CDD'd identity.
+       **/
+      PayingKeyCddMissing: AugmentedError<ApiType>;
+      /**
+       * The `user_key` is not attached to a CDD'd identity.
+       **/
+      UserKeyCddMissing: AugmentedError<ApiType>;
+    };
+    rewards: {
+      /**
+       * Provided signature was invalid.
+       **/
+      InvalidSignature: AugmentedError<ApiType>;
+      /**
+       * Itn reward was already claimed.
+       **/
+      ItnRewardAlreadyClaimed: AugmentedError<ApiType>;
+      /**
+       * Balance can not be converted to a primitive.
+       **/
+      UnableToCovertBalance: AugmentedError<ApiType>;
+      /**
+       * Address was not found in the list of Itn addresses.
+       **/
+      UnknownItnAddress: AugmentedError<ApiType>;
     };
     scheduler: {
       /**

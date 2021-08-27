@@ -37,7 +37,6 @@ import {
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
-  assetNameToString,
   assetTypeToString,
   balanceToBigNumber,
   boolToBoolean,
@@ -205,7 +204,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = (
-      { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
+      { total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
       agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
     ): SecurityTokenDetails => {
       const primaryIssuanceAgents: Identity[] = [];
@@ -226,7 +225,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       return {
         assetType: assetTypeToString(asset_type),
         isDivisible: boolToBoolean(divisible),
-        name: assetNameToString(name),
+        name: 'placeholder',
         owner,
         totalSupply: balanceToBigNumber(total_supply),
         primaryIssuanceAgents,

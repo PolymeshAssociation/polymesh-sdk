@@ -65,6 +65,7 @@ import {
   ConditionType,
   CorporateAction,
   CountryCode,
+  CustomAssetTypeId,
   DidRecord,
   DispatchableName,
   DispatchableNames,
@@ -1782,7 +1783,7 @@ export const createMockAssetType = (
     | 'StructuredProduct'
     | 'Derivative'
     | 'StableCoin'
-    | { Custom: Bytes }
+    | { Custom: CustomAssetTypeId }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
 };
@@ -1807,14 +1808,12 @@ export const createMockTickerRegistrationConfig = (regConfig?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSecurityToken = (token?: {
-  name: AssetName;
   total_supply: Balance;
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
 }): SecurityToken => {
   const st = token || {
-    name: createMockAssetName(),
     total_supply: createMockBalance(),
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
@@ -2094,8 +2093,9 @@ export const createMockAuthorizationData = (
     | { JoinIdentity: Permissions }
     | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
-    | { custom: Bytes }
+    | { Custom: Bytes }
     | { TransferCorporateActionAgent: Ticker }
+    | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
     | 'NoData'
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
@@ -2592,16 +2592,9 @@ export const createMockVenueType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockVenue = (venue?: {
-  creator: IdentityId;
-  instructions: u64[];
-  details: VenueDetails;
-  venue_type: VenueType;
-}): Venue => {
+export const createMockVenue = (venue?: { creator: IdentityId; venue_type: VenueType }): Venue => {
   const vn = venue || {
     creator: createMockIdentityId(),
-    instructions: [],
-    details: createMockVenueDetails(),
     // eslint-disable-next-line @typescript-eslint/naming-convention
     venue_type: createMockVenueType(),
   };
@@ -3128,7 +3121,6 @@ export const createMockCorporateAction = (corporateAction?: {
   kind: CAKind | Parameters<typeof createMockCAKind>[0];
   decl_date: Moment | Parameters<typeof createMockMoment>[0];
   record_date: Option<RecordDate> | Parameters<typeof createMockOption>[0];
-  details: Text | Parameters<typeof createMockText>[0];
   targets: TargetIdentities | Parameters<typeof createMockTargetIdentities>[0];
   default_withholding_tax: Tax | Parameters<typeof createMockPermill>[0];
   withholding_tax: [
@@ -3140,7 +3132,6 @@ export const createMockCorporateAction = (corporateAction?: {
     kind,
     decl_date,
     record_date,
-    details,
     targets,
     default_withholding_tax,
     withholding_tax,
@@ -3148,7 +3139,6 @@ export const createMockCorporateAction = (corporateAction?: {
     kind: createMockCAKind(),
     decl_date: createMockMoment(),
     record_date: createMockOption(),
-    details: createMockText(),
     targets: createMockTargetIdentities(),
     default_withholding_tax: createMockPermill(),
     withholding_tax: [],
@@ -3159,7 +3149,6 @@ export const createMockCorporateAction = (corporateAction?: {
       kind: createMockCAKind(kind),
       decl_date: createMockMoment(decl_date),
       record_date: createMockOption(record_date),
-      details: createMockText(details),
       targets: createMockTargetIdentities(targets),
       default_withholding_tax: createMockPermill(default_withholding_tax),
       withholding_tax: withholding_tax.map(([identityId, tax]) =>

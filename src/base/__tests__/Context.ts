@@ -1564,7 +1564,6 @@ describe('Context class', () => {
               date: new Date('10/14/2019').getTime(),
               checkpoint: { Existing: dsMockUtils.createMockU64(2) },
             }),
-            details: 'someDescription',
             targets: {
               identities: ['someDid'],
               treatment: TargetTreatment.Exclude,
@@ -1578,7 +1577,6 @@ describe('Context class', () => {
             kind: CorporateActionKind.Reorganization,
             decl_date: new Date('10/14/1987').getTime(),
             record_date: null,
-            details: 'dummy',
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
@@ -1595,7 +1593,6 @@ describe('Context class', () => {
               date: new Date('11/26/2019').getTime(),
               checkpoint: { Existing: dsMockUtils.createMockU64(5) },
             }),
-            details: 'otherDescription',
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
@@ -1634,13 +1631,43 @@ describe('Context class', () => {
         dsMockUtils.createMockOption(),
       ];
 
+      const localIds = [1, 2, 3];
+      const caIds = [
+        dsMockUtils.createMockCAId({ ticker: rawTickers[0], local_id: localIds[0] }),
+        dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[1] }),
+        dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[2] }),
+      ];
+
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         entries: [
-          [[rawTickers[0], dsMockUtils.createMockU32(1)], corporateActions[0]],
-          [[rawTickers[1], dsMockUtils.createMockU32(2)], corporateActions[1]],
-          [[rawTickers[1], dsMockUtils.createMockU32(3)], corporateActions[2]],
+          [[rawTickers[0], localIds[0]], corporateActions[0]],
+          [[rawTickers[1], localIds[1]], corporateActions[1]],
+          [[rawTickers[1], localIds[2]], corporateActions[2]],
         ],
       });
+      const details = [
+        dsMockUtils.createMockText('details1'),
+        dsMockUtils.createMockText('details2'),
+        dsMockUtils.createMockText('details3'),
+      ];
+      const corporateActionIdentifierToCaIdStub = sinon.stub(
+        utilsConversionModule,
+        'corporateActionIdentifierToCaId'
+      );
+      corporateActionIdentifierToCaIdStub
+        .withArgs({ ticker: tickers[0], localId: new BigNumber(localIds[0]) }, context)
+        .returns(caIds[0]);
+      corporateActionIdentifierToCaIdStub
+        .withArgs({ ticker: tickers[1], localId: new BigNumber(localIds[1]) }, context)
+        .returns(caIds[1]);
+      corporateActionIdentifierToCaIdStub
+        .withArgs({ ticker: tickers[1], localId: new BigNumber(localIds[2]) }, context)
+        .returns(caIds[2]);
+
+      const detailsStub = dsMockUtils.createQueryStub('corporateAction', 'details');
+      detailsStub.withArgs(caIds[0]).resolves(details[0]);
+      detailsStub.withArgs(caIds[1]).resolves(details[1]);
+      detailsStub.withArgs(caIds[2]).resolves(details[2]);
 
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         multi: distributions,
