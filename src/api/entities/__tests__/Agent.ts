@@ -1,6 +1,8 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Agent, Context, Identity, KnownPermissionGroup, TransactionQueue } from '~/internal';
+import { tickerExternalAgentActions } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType, PermissionType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -115,6 +117,53 @@ describe('Agent class', () => {
       const queue = await agent.setPermissionGroup({ group });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getOperationHistory', () => {
+    test('should return the amount of the withheld tax', async () => {
+      const agent = new Agent({ did, ticker }, context);
+
+      const blockId = new BigNumber(1);
+      const eventIndex = 'eventId';
+      const time = '2020-10-10';
+
+      dsMockUtils.createApolloQueryStub(
+        tickerExternalAgentActions({
+          ticker,
+          callerDID: did,
+          palletName: undefined,
+          eventId: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          tickerExternalAgentActions: {
+            totalCount: 1,
+            items: [
+              /* eslint-disable @typescript-eslint/naming-convention */
+              {
+                block_id: blockId.toNumber(),
+                time,
+                event_index: eventIndex,
+              },
+              /* eslint-enable @typescript-eslint/naming-convention */
+            ],
+          },
+        }
+      );
+
+      const result = await agent.getOperationHistory();
+
+      expect(result.data).toEqual([
+        {
+          blockNumber: blockId,
+          blockDate: new Date(`${time}Z`),
+          eventIndex,
+        },
+      ]);
+      expect(result.next).toEqual(null);
+      expect(result.count).toEqual(1);
     });
   });
 });

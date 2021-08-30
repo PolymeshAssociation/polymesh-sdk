@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import {
   Context,
   CustomPermissionGroup,
@@ -7,13 +9,15 @@ import {
   setPermissionGroup,
   SetPermissionGroupParams,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod } from '~/types';
+import { tickerExternalAgentActions } from '~/middleware/queries';
+import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
+import { Ensured, ErrorCode, EventIdentifier, ProcedureMethod, ResultSet } from '~/types';
 import {
   agentGroupToPermissionGroup,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -92,5 +96,70 @@ export class Agent extends Identity {
     const agentGroup = rawGroupPermissions.unwrap();
 
     return agentGroupToPermissionGroup(agentGroup, ticker, context);
+  }
+
+  /**
+   * Retrieve all transactions for a given agent and asset
+   *
+   * @param opts.moduleId - type of the module to fetch
+   * @param opts.eventId - type of the event to fetch
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware
+   * @note supports pagination
+   */
+  public async getOperationHistory(
+    opts: {
+      moduleId?: ModuleId;
+      eventId?: EventId;
+      size?: number;
+      start?: number;
+    } = {}
+  ): Promise<ResultSet<EventIdentifier>> {
+    const { context, did, ticker } = this;
+
+    const { moduleId: palletName, eventId, size, start } = opts;
+
+    const result = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
+      tickerExternalAgentActions({
+        ticker,
+        callerDID: did,
+        palletName,
+        eventId,
+        count: size,
+        skip: start,
+      })
+    );
+
+    const {
+      data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
+    } = result;
+
+    const { items, totalCount: count } = tickerExternalAgentActionsResult;
+
+    const data: EventIdentifier[] = [];
+    let next = null;
+
+    if (items) {
+      items.forEach(item => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { block_id: blockId, time, event_index: eventIndex } = item!;
+
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          blockDate: new Date(time),
+          eventIndex,
+        });
+      });
+
+      next = calculateNextKey(count, size, start);
+    }
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

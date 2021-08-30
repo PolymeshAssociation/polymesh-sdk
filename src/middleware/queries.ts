@@ -13,6 +13,7 @@ import {
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
   QuerySettlementsArgs,
+  QueryTickerExternalAgentActionsArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
@@ -671,6 +672,54 @@ export function getHistoryOfPaymentEventsForCa(
           localId
           balance
           tax
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get list of actions (from the set of actions that can only be performed by external agents) that have been performed in ticker
+ */
+export function tickerExternalAgentActions(
+  variables: QueryTickerExternalAgentActionsArgs
+): GraphqlQuery<QueryTickerExternalAgentActionsArgs> {
+  const query = gql`
+    query TickerExternalAgentActionsQuery(
+      $ticker: String!
+      $callerDID: String
+      $palletName: ModuleIdEnum
+      $evenId: EventIdEnum
+      $maxBlock: Int
+      $count: Int
+      $skip: Int
+      $order: Order
+    ) {
+      tickerExternalAgentActions(
+        ticker: $ticker
+        callerDID: $callerDID
+        palletName: $palletName
+        evenId: $evenId
+        maxBlock: $maxBlock
+        count: $count
+        skip: $skip
+        order: $order
+      ) {
+        totalCount
+        items {
+          block_id
+          event_index
+          pallet_name
+          event_id
+          callerDID
+          time
         }
       }
     }

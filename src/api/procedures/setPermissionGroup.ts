@@ -108,7 +108,9 @@ export async function prepareSetPermissionGroup(
       ticker,
       permissions: group,
     });
-    rawAgentGroup = (returnValue as PostTransactionValue<CustomPermissionGroup>).transform(customPermissionGroup => agentGroupResolver(customPermissionGroup, context));
+    rawAgentGroup = (returnValue as PostTransactionValue<CustomPermissionGroup>).transform(
+      customPermissionGroup => agentGroupResolver(customPermissionGroup, context)
+    );
   } else {
     if (group.isEqual(currentGroup)) {
       throw new PolymeshError({

@@ -917,6 +917,20 @@ export type Extrinsic = {
   addressAccount?: Maybe<Account>;
 };
 
+export type TickerExternalAgentActionItems = {
+  block_id: Scalars['Int'];
+  event_index: Scalars['Int'];
+  pallet_name: ModuleIdEnum;
+  even_id: EventIdEnum;
+  caller_did: Scalars['String'];
+  time: Scalars['DateTime'];
+};
+
+export type TickerExternalAgentAction = {
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<TickerExternalAgentActionItems>>>;
+};
+
 export type ExtrinsicResult = {
   __typename?: 'ExtrinsicResult';
   totalCount: Scalars['Int'];
@@ -1283,6 +1297,7 @@ export type Query = {
   getDidItnRewardActions?: Maybe<DidItnRewardActions>;
   updateItnRewardRankings: Scalars['Boolean'];
   getFailedBlocks?: Maybe<FailedBlocksResult>;
+  tickerExternalAgentActions?: TickerExternalAgentAction;
 };
 
 export type QueryBlocksArgs = {
@@ -1479,6 +1494,17 @@ export type QueryProposalVotesArgs = {
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
   orderBy?: Maybe<ProposalVotesOrderByInput>;
+};
+
+export type QueryTickerExternalAgentActionsArgs = {
+  ticker: Scalars['String'];
+  callerDID?: Maybe<Scalars['String']>;
+  palletName?: Maybe<ModuleIdEnum>;
+  eventId?: Maybe<EventIdEnum>;
+  maxBlock?: Maybe<Scalars['Int']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  order?: Maybe<Order>;
 };
 
 export type QueryInvestmentsArgs = {
