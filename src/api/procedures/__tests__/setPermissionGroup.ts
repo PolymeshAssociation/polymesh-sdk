@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { AgentGroup } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -313,39 +312,6 @@ describe('setPermissionGroup procedure', () => {
     );
 
     expect(result).toEqual(fakeCustomPermissionGroup);
-
-    procedureMockUtils.getAddProcedureStub().resolves({
-      transform: (cb: (group: CustomPermissionGroup | KnownPermissionGroup, context: Context) => AgentGroup) => cb(entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
-        type: PermissionGroupType.Full,
-      }), mockContext),
-    });
-
-    permissionGroupIdentifierToAgentGroupStub.returns(dsMockUtils.createMockAgentGroup());
-
-    await prepareSetPermissionGroup.call(proc, {
-      agent: entityMockUtils.getAgentInstance({
-        getPermissionGroup: entityMockUtils.getKnownPermissionGroupInstance({
-          ticker,
-          type: PermissionGroupType.Full,
-        }),
-      }),
-      group: {
-        transactions: {
-          type: PermissionType.Include,
-          values: [],
-        },
-      },
-    });
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsChangeGroupTransaction,
-      {},
-      rawTicker,
-      rawIdentityId,
-      dsMockUtils.createMockAgentGroup()
-    );
   });
 
   describe('prepareStorage', () => {
