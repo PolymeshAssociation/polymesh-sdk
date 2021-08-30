@@ -5,7 +5,7 @@ import { forEach, mapValues } from 'lodash';
 
 import { PolymeshError } from '~/base/PolymeshError';
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
-import { AuthorizationType, ErrorCode, TxTags } from '~/types';
+import { AuthorizationType, ErrorCode, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -151,9 +151,22 @@ export async function getAuthorization(
     return condition;
   });
 
-  const transactions = [
-    accept ? TxTags.identity.AcceptAuthorization : TxTags.identity.RemoveAuthorization,
-  ];
+  let transactions: TxTag[] = [TxTags.identity.RemoveAuthorization];
+
+  if (accept) {
+    const typesToTags = {
+      [AuthorizationType.AddRelayerPayingKey]: TxTags.relayer.AcceptPayingKey,
+      [AuthorizationType.BecomeAgent]: TxTags.externalAgents.AcceptBecomeAgent,
+      [AuthorizationType.PortfolioCustody]: TxTags.portfolio.AcceptPortfolioCustody,
+      [AuthorizationType.RotatePrimaryKey]: TxTags.identity.AcceptPrimaryKey,
+      [AuthorizationType.TransferAssetOwnership]: TxTags.asset.AcceptAssetOwnershipTransfer,
+      [AuthorizationType.TransferTicker]: TxTags.asset.AcceptTickerTransfer,
+    } as const;
+
+    transactions = authRequests.map(
+      ({ data: { type } }) => typesToTags[type as keyof typeof typesToTags]
+    );
+  }
 
   return {
     roles: authorized.every(res => res),

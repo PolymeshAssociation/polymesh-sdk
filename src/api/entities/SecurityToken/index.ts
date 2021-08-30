@@ -37,12 +37,14 @@ import {
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
-  assetTypeToString,
+  assetTypeToKnownOrId,
   balanceToBigNumber,
   boolToBoolean,
+  bytesToString,
   fundingRoundNameToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  numberToU32,
   stringToTicker,
   tickerToDid,
   u64ToBigNumber,
@@ -203,10 +205,10 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    const assembleResult = (
+    const assembleResult = async (
       { total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
       agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
-    ): SecurityTokenDetails => {
+    ): Promise<SecurityTokenDetails> => {
       const primaryIssuanceAgents: Identity[] = [];
       const fullAgents: Identity[] = [];
 
@@ -222,8 +224,18 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       });
 
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
+      const type = assetTypeToKnownOrId(asset_type);
+
+      let assetType: string;
+      if (typeof type === 'string') {
+        assetType = type;
+      } else {
+        const customType = await asset.customTypes(numberToU32(type, context));
+        assetType = bytesToString(customType);
+      }
+
       return {
-        assetType: assetTypeToString(asset_type),
+        assetType,
         isDivisible: boolToBoolean(divisible),
         name: 'placeholder',
         owner,
@@ -241,8 +253,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     if (callback) {
       const groupOfAgents = await groupOfAgentPromise;
 
-      return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken, groupOfAgents));
+      return asset.tokens(rawTicker, async securityToken => {
+        const result = await assembleResult(securityToken, groupOfAgents);
+        callback(result);
       });
     }
 

@@ -1,5 +1,6 @@
 import { bool, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
@@ -13,9 +14,12 @@ import {
 import sinon from 'sinon';
 
 import {
+  createRegisterCustomAssetTypeResolver,
   getAuthorization,
   Params,
   prepareCreateSecurityToken,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/createSecurityToken';
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -27,10 +31,10 @@ import {
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
-  TokenType,
 } from '~/types';
-import { PolymeshTx } from '~/types/internal';
+import { InternalTokenType, PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -49,7 +53,7 @@ describe('createSecurityToken procedure', () => {
   let numberToBalanceStub: sinon.SinonStub;
   let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
-  let tokenTypeToAssetTypeStub: sinon.SinonStub<[TokenType, Context], AssetType>;
+  let internalTokenTypeToAssetTypeStub: sinon.SinonStub<[InternalTokenType, Context], AssetType>;
   let tokenIdentifierToAssetIdentifierStub: sinon.SinonStub<
     [TokenIdentifier, Context],
     AssetIdentifier
@@ -60,7 +64,7 @@ describe('createSecurityToken procedure', () => {
   let name: string;
   let totalSupply: BigNumber;
   let isDivisible: boolean;
-  let tokenType: TokenType;
+  let tokenType: string;
   let tokenIdentifiers: TokenIdentifier[];
   let fundingRound: string;
   let documents: TokenDocument[];
@@ -91,7 +95,10 @@ describe('createSecurityToken procedure', () => {
     numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
     stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
-    tokenTypeToAssetTypeStub = sinon.stub(utilsConversionModule, 'tokenTypeToAssetType');
+    internalTokenTypeToAssetTypeStub = sinon.stub(
+      utilsConversionModule,
+      'internalTokenTypeToAssetType'
+    );
     tokenIdentifierToAssetIdentifierStub = sinon.stub(
       utilsConversionModule,
       'tokenIdentifierToAssetIdentifier'
@@ -121,7 +128,7 @@ describe('createSecurityToken procedure', () => {
     rawName = dsMockUtils.createMockAssetName(name);
     rawTotalSupply = dsMockUtils.createMockBalance(totalSupply.toNumber());
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
-    rawType = dsMockUtils.createMockAssetType(tokenType);
+    rawType = dsMockUtils.createMockAssetType(tokenType as KnownTokenType);
     rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
       dsMockUtils.createMockAssetIdentifier({
         [type as 'Lei']: dsMockUtils.createMockU8aFixed(value),
@@ -181,7 +188,9 @@ describe('createSecurityToken procedure', () => {
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(false, mockContext).returns(rawDisableIu);
-    tokenTypeToAssetTypeStub.withArgs(tokenType, mockContext).returns(rawType);
+    internalTokenTypeToAssetTypeStub
+      .withArgs(tokenType as KnownTokenType, mockContext)
+      .returns(rawType);
     tokenIdentifierToAssetIdentifierStub
       .withArgs(tokenIdentifiers[0], mockContext)
       .returns(rawIdentifiers[0]);
@@ -212,7 +221,9 @@ describe('createSecurityToken procedure', () => {
       expiryDate: null,
       status: TickerReservationStatus.TokenCreated,
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: null,
+    });
 
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
       `A Security Token with ticker "${ticker}" already exists`
@@ -225,7 +236,9 @@ describe('createSecurityToken procedure', () => {
       expiryDate: null,
       status: TickerReservationStatus.Free,
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: null,
+    });
 
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
       `You must first reserve ticker "${ticker}" in order to create a Security Token with it`
@@ -233,7 +246,9 @@ describe('createSecurityToken procedure', () => {
   });
 
   test('should add a token creation transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: null,
+    });
 
     const result = await prepareCreateSecurityToken.call(proc, args);
 
@@ -289,7 +304,9 @@ describe('createSecurityToken procedure', () => {
         })
       ),
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: null,
+    });
 
     const result = await prepareCreateSecurityToken.call(proc, args);
 
@@ -309,7 +326,13 @@ describe('createSecurityToken procedure', () => {
   });
 
   test('should add a document add transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const rawValue = dsMockUtils.createMockBytes('something');
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: {
+        rawValue,
+        id: dsMockUtils.createMockU32(10),
+      },
+    });
     const tx = dsMockUtils.createTxStub('asset', 'addDocuments');
 
     const result = await prepareCreateSecurityToken.call(proc, { ...args, documents });
@@ -324,31 +347,175 @@ describe('createSecurityToken procedure', () => {
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
-});
 
-describe('getAuthorization', () => {
-  test('should return the appropriate roles and permissions', () => {
-    const ticker = 'someTicker';
-    const args = {
-      ticker,
-    } as Params;
-
-    expect(getAuthorization(args)).toEqual({
-      roles: [{ type: RoleType.TickerOwner, ticker }],
-      permissions: {
-        tokens: [],
-        portfolios: [],
-        transactions: [TxTags.asset.CreateAsset],
+  test('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
+    const rawValue = dsMockUtils.createMockBytes('something');
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: {
+        id: dsMockUtils.createMockU32(),
+        rawValue,
       },
     });
+    const registerAssetTypeTx = dsMockUtils.createTxStub('asset', 'registerCustomAssetType');
+    const createTokenTx = dsMockUtils.createTxStub('asset', 'createAsset');
 
-    expect(getAuthorization({ ...args, documents: [] })).toEqual({
-      roles: [{ type: RoleType.TickerOwner, ticker }],
-      permissions: {
-        tokens: [],
-        portfolios: [],
-        transactions: [TxTags.asset.CreateAsset, TxTags.asset.AddDocuments],
-      },
+    const newCustomType = dsMockUtils.createMockAssetType({
+      Custom: dsMockUtils.createMockU32(10),
+    });
+    addTransactionStub
+      .withArgs(registerAssetTypeTx, sinon.match.object, rawValue)
+      .returns([newCustomType]);
+
+    const result = await prepareCreateSecurityToken.call(proc, args);
+
+    sinon.assert.calledWith(addTransactionStub, registerAssetTypeTx, sinon.match.object, rawValue);
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      createTokenTx,
+      sinon.match.any,
+      sinon.match.any,
+      sinon.match.any,
+      sinon.match.any,
+      newCustomType,
+      sinon.match.any,
+      sinon.match.any,
+      sinon.match.any
+    );
+
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+  });
+
+  describe('createRegisterCustomAssetTypeResolver', () => {
+    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+    const id = new BigNumber(1);
+    const rawId = dsMockUtils.createMockU32(id.toNumber());
+    const rawValue = dsMockUtils.createMockBytes('something');
+
+    beforeEach(() => {
+      filterEventRecordsStub.returns([
+        dsMockUtils.createMockIEvent([
+          dsMockUtils.createMockIdentityId('someDid'),
+          rawId,
+          rawValue,
+        ]),
+      ]);
+    });
+
+    afterEach(() => {
+      filterEventRecordsStub.reset();
+    });
+
+    test('should return the new custom AssetType', () => {
+      const fakeResult = ('assetType' as unknown) as AssetType;
+      internalTokenTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
+      const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
+
+      expect(result).toBe(fakeResult);
+    });
+  });
+
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', () => {
+      let proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+        customTypeData: null,
+      });
+
+      let boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc(args)).toEqual({
+        roles: [{ type: RoleType.TickerOwner, ticker }],
+        permissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.asset.CreateAsset],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+        customTypeData: {
+          id: dsMockUtils.createMockU32(),
+          rawValue: dsMockUtils.createMockBytes('something'),
+        },
+      });
+
+      boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ ...args, documents: [{ uri: 'www.doc.com', name: 'myDoc' }] })).toEqual({
+        roles: [{ type: RoleType.TickerOwner, ticker }],
+        permissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [
+            TxTags.asset.CreateAsset,
+            TxTags.asset.AddDocuments,
+            TxTags.asset.RegisterCustomAssetType,
+          ],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+        customTypeData: {
+          id: dsMockUtils.createMockU32(10),
+          rawValue: dsMockUtils.createMockBytes('something'),
+        },
+      });
+
+      boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ ...args, documents: [] })).toEqual({
+        roles: [{ type: RoleType.TickerOwner, ticker }],
+        permissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.asset.CreateAsset],
+        },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    test('should return the custom asset type ID and bytes representation', async () => {
+      const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      let result = await boundFunc({ tokenType: KnownTokenType.EquityCommon } as Params);
+
+      expect(result).toEqual({
+        customTypeData: null,
+      });
+
+      const rawValue = dsMockUtils.createMockBytes('something');
+      sinon
+        .stub(utilsConversionModule, 'stringToBytes')
+        .withArgs('something', mockContext)
+        .returns(rawValue);
+      let id = dsMockUtils.createMockU32();
+
+      const customTypesStub = dsMockUtils.createQueryStub('asset', 'customTypesInverse', {
+        returnValue: id,
+      });
+
+      result = await boundFunc({ tokenType: 'something' } as Params);
+
+      expect(result).toEqual({
+        customTypeData: {
+          rawValue,
+          id,
+        },
+      });
+
+      id = dsMockUtils.createMockU32(10);
+      customTypesStub.resolves(id);
+
+      result = await boundFunc({ tokenType: 'something' } as Params);
+
+      expect(result).toEqual({
+        customTypeData: {
+          rawValue,
+          id,
+        },
+      });
     });
   });
 });

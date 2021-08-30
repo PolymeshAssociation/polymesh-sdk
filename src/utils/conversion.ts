@@ -178,7 +178,6 @@ import {
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
-  TokenType,
   TransactionPermissions,
   TransferBreakdown,
   TransferError,
@@ -193,6 +192,7 @@ import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
   InstructionStatus,
+  InternalTokenType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -1363,14 +1363,14 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
 /**
  * @hidden
  */
-export function tokenTypeToAssetType(type: TokenType, context: Context): AssetType {
+export function internalTokenTypeToAssetType(type: InternalTokenType, context: Context): AssetType {
   return context.polymeshApi.createType('AssetType', type);
 }
 
 /**
  * @hidden
  */
-export function assetTypeToString(assetType: AssetType): string {
+export function assetTypeToKnownOrId(assetType: AssetType): KnownTokenType | BigNumber {
   if (assetType.isEquityCommon) {
     return KnownTokenType.EquityCommon;
   }
@@ -1402,8 +1402,7 @@ export function assetTypeToString(assetType: AssetType): string {
     return KnownTokenType.StableCoin;
   }
 
-  // TODO @monitz87: figure out how to return this properly (probably make it async and have it fetch the value)
-  return u32ToBigNumber(assetType.asCustom).toFormat();
+  return u32ToBigNumber(assetType.asCustom);
 }
 
 /**

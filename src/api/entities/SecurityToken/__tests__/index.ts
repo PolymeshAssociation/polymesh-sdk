@@ -124,7 +124,7 @@ describe('SecurityToken class', () => {
     });
 
     test('should return details for a security token', async () => {
-      dsMockUtils.createQueryStub('asset', 'tokens', {
+      const tokensStub = dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: rawToken,
       });
 
@@ -152,6 +152,26 @@ describe('SecurityToken class', () => {
       details = await securityToken.details();
       expect(details.primaryIssuanceAgents).toEqual([]);
       expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
+
+      tokensStub.resolves(
+        dsMockUtils.createMockSecurityToken({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          owner_did: dsMockUtils.createMockIdentityId(owner),
+          asset_type: dsMockUtils.createMockAssetType({ Custom: dsMockUtils.createMockU32(10) }),
+          divisible: dsMockUtils.createMockBool(isDivisible),
+          total_supply: dsMockUtils.createMockBalance(totalSupply),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      );
+
+      const customType = 'something';
+
+      dsMockUtils.createQueryStub('asset', 'customTypes', {
+        returnValue: dsMockUtils.createMockBytes(customType),
+      });
+
+      details = await securityToken.details();
+      expect(details.assetType).toEqual(customType);
     });
 
     test('should allow subscription', async () => {
