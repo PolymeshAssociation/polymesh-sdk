@@ -257,7 +257,7 @@ describe('consumeAuthorizationRequests procedure', () => {
           target: entityMockUtils.getIdentityInstance({ did }),
           issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid1' }),
           data: {
-            type: AuthorizationType.NoData,
+            type: AuthorizationType.BecomeAgent,
           } as Authorization,
         },
         {
@@ -266,7 +266,7 @@ describe('consumeAuthorizationRequests procedure', () => {
           target: entityMockUtils.getIdentityInstance({ did: 'notTheCurrentIdentity' }),
           issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid2' }),
           data: {
-            type: AuthorizationType.NoData,
+            type: AuthorizationType.PortfolioCustody,
           } as Authorization,
         },
       ];
@@ -284,7 +284,10 @@ describe('consumeAuthorizationRequests procedure', () => {
         permissions: {
           tokens: [],
           portfolios: [],
-          transactions: [TxTags.identity.AcceptAuthorization],
+          transactions: [
+            TxTags.externalAgents.AcceptBecomeAgent,
+            TxTags.portfolio.AcceptPortfolioCustody,
+          ],
         },
       });
 

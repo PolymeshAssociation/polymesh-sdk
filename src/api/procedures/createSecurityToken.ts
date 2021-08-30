@@ -1,28 +1,43 @@
+import { Bytes } from '@polkadot/types';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
+import { values } from 'lodash';
+import { AssetType, CustomAssetTypeId, TxTags } from 'polymesh-types/types';
 
-import { PolymeshError, Procedure, SecurityToken, TickerReservation } from '~/internal';
+import { Context, PolymeshError, Procedure, SecurityToken, TickerReservation } from '~/internal';
 import {
   ErrorCode,
+  KnownTokenType,
   RoleType,
   TickerReservationStatus,
   TokenDocument,
   TokenIdentifier,
-  TokenType,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
   boolToBoolean,
+  internalTokenTypeToAssetType,
   numberToBalance,
   stringToAssetName,
+  stringToBytes,
   stringToFundingRoundName,
   stringToTicker,
   tokenDocumentToDocument,
   tokenIdentifierToAssetIdentifier,
-  tokenTypeToAssetType,
 } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
+import { batchArguments, filterEventRecords } from '~/utils/internal';
+
+/**
+ * @hidden
+ */
+export const createRegisterCustomAssetTypeResolver = (context: Context) => (
+  receipt: ISubmittableResult
+): AssetType => {
+  const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
+
+  return internalTokenTypeToAssetType({ Custom: data[1] }, context);
+};
 
 export interface CreateSecurityTokenParams {
   name: string;
@@ -35,9 +50,11 @@ export interface CreateSecurityTokenParams {
    */
   isDivisible: boolean;
   /**
-   * type of security that the token represents (i.e. Equity, Debt, Commodity, etc)
+   * type of security that the token represents (i.e. Equity, Debt, Commodity, etc). Common values are included in the
+   *   [[KnownTokenType]] enum, but custom values can be used as well. Custom values must be registered on-chain the first time
+   *   they're used, requiring an additional transaction. They aren't tied to a specific Security Token
    */
-  tokenType: TokenType;
+  tokenType: string;
   /**
    * array of domestic or international alphanumeric security identifiers for the token (ISIN, CUSIP, etc)
    */
@@ -64,15 +81,33 @@ export type Params = CreateSecurityTokenParams & {
 /**
  * @hidden
  */
+export interface Storage {
+  /**
+   * fetched custom asset type ID and raw value in bytes. If `id.isEmpty`, then the type should be registered. A
+   *   null value means the type is not custom
+   */
+  customTypeData: {
+    id: CustomAssetTypeId;
+    rawValue: Bytes;
+  } | null;
+}
+
+/**
+ * @hidden
+ */
 export async function prepareCreateSecurityToken(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, SecurityToken, Storage>,
   args: Params
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: {
+        tx,
+        query: { asset },
+      },
     },
     context,
+    storage: { customTypeData },
   } = this;
   const {
     ticker,
@@ -92,7 +127,7 @@ export async function prepareCreateSecurityToken(
 
   const [{ status }, classicTicker] = await Promise.all([
     reservation.details(),
-    query.asset.classicTickers(rawTicker),
+    asset.classicTickers(rawTicker),
   ]);
 
   if (status === TickerReservationStatus.TokenCreated) {
@@ -109,9 +144,27 @@ export async function prepareCreateSecurityToken(
     });
   }
 
+  let rawType: MaybePostTransactionValue<AssetType>;
+
+  if (customTypeData) {
+    const { rawValue, id } = customTypeData;
+
+    if (id.isEmpty) {
+      // if the custom asset type doesn't exist, we create it
+      [rawType] = this.addTransaction(
+        tx.asset.registerCustomAssetType,
+        { resolvers: [createRegisterCustomAssetTypeResolver(context)] },
+        rawValue
+      );
+    } else {
+      rawType = internalTokenTypeToAssetType({ Custom: id }, context);
+    }
+  } else {
+    rawType = internalTokenTypeToAssetType(tokenType as KnownTokenType, context);
+  }
+
   const rawName = stringToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
-  const rawType = tokenTypeToAssetType(tokenType, context);
   const rawIdentifiers = tokenIdentifiers.map(identifier =>
     tokenIdentifierToAssetIdentifier(identifier, context)
   );
@@ -147,7 +200,7 @@ export async function prepareCreateSecurityToken(
     this.addTransaction(tx.asset.issue, {}, rawTicker, rawTotalSupply);
   }
 
-  if (documents) {
+  if (documents?.length) {
     const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
     batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
@@ -165,11 +218,22 @@ export async function prepareCreateSecurityToken(
 /**
  * @hidden
  */
-export function getAuthorization({ ticker, documents }: Params): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<Params, SecurityToken, Storage>,
+  { ticker, documents }: Params
+): ProcedureAuthorization {
+  const {
+    storage: { customTypeData },
+  } = this;
+
   const transactions = [TxTags.asset.CreateAsset];
 
-  if (documents) {
+  if (documents?.length) {
     transactions.push(TxTags.asset.AddDocuments);
+  }
+
+  if (customTypeData?.id.isEmpty) {
+    transactions.push(TxTags.asset.RegisterCustomAssetType);
   }
 
   return {
@@ -185,5 +249,33 @@ export function getAuthorization({ ticker, documents }: Params): ProcedureAuthor
 /**
  * @hidden
  */
-export const createSecurityToken = (): Procedure<Params, SecurityToken> =>
-  new Procedure(prepareCreateSecurityToken, getAuthorization);
+export async function prepareStorage(
+  this: Procedure<Params, SecurityToken, Storage>,
+  { tokenType }: Params
+): Promise<Storage> {
+  const { context } = this;
+
+  const isCustomType = !values<string>(KnownTokenType).includes(tokenType);
+
+  if (isCustomType) {
+    const rawValue = stringToBytes(tokenType, context);
+    const id = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
+
+    return {
+      customTypeData: {
+        id,
+        rawValue,
+      },
+    };
+  }
+
+  return {
+    customTypeData: null,
+  };
+}
+
+/**
+ * @hidden
+ */
+export const createSecurityToken = (): Procedure<Params, SecurityToken, Storage> =>
+  new Procedure(prepareCreateSecurityToken, getAuthorization, prepareStorage);

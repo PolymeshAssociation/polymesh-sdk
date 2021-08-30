@@ -172,11 +172,6 @@ export enum KnownTokenType {
   StableCoin = 'StableCoin',
 }
 
-/**
- * Type of security that the token represents
- */
-export type TokenType = KnownTokenType | { custom: string };
-
 export enum TokenIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',

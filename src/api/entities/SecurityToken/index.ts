@@ -38,12 +38,14 @@ import {
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
-  assetTypeToString,
+  assetTypeToKnownOrId,
   balanceToBigNumber,
   boolToBoolean,
+  bytesToString,
   fundingRoundNameToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  numberToU32,
   stringToTicker,
   textToString,
   tickerToDid,
@@ -205,12 +207,12 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    const assembleResult = (
+    const assembleResult = async (
       { total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
       agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][],
       assetName: AssetName,
       iuDisabled: bool
-    ): SecurityTokenDetails => {
+    ): Promise<SecurityTokenDetails> => {
       const primaryIssuanceAgents: Identity[] = [];
       const fullAgents: Identity[] = [];
 
@@ -226,9 +228,18 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       });
 
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
+      const type = assetTypeToKnownOrId(asset_type);
+
+      let assetType: string;
+      if (typeof type === 'string') {
+        assetType = type;
+      } else {
+        const customType = await asset.customTypes(numberToU32(type, context));
+        assetType = bytesToString(customType);
+      }
 
       return {
-        assetType: assetTypeToString(asset_type),
+        assetType,
         isDivisible: boolToBoolean(divisible),
         name: textToString(assetName),
         owner,
@@ -251,10 +262,14 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       const assetName = await namePromise;
       const disabledInvestorUniqueness = await disabledIuPromise;
 
-      return asset.tokens(rawTicker, securityToken => {
-        callback(
-          assembleResult(securityToken, groupEntries, assetName, disabledInvestorUniqueness)
+      return asset.tokens(rawTicker, async securityToken => {
+        const result = await assembleResult(
+          securityToken,
+          groupEntries,
+          assetName,
+          disabledInvestorUniqueness
         );
+        callback(result);
       });
     }
 

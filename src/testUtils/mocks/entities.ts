@@ -209,15 +209,15 @@ interface DefaultPortfolioOptions {
 }
 
 interface CustomPermissionGroupOptions {
-  ticker: string;
-  id: BigNumber;
+  ticker?: string;
+  id?: BigNumber;
   getPermissions?: GroupPermissions;
   isEqual?: boolean;
 }
 
 interface KnownPermissionGroupOptions {
-  ticker: string;
-  type: PermissionGroupType;
+  ticker?: string;
+  type?: PermissionGroupType;
   getPermissions?: GroupPermissions;
   isEqual?: boolean;
 }
