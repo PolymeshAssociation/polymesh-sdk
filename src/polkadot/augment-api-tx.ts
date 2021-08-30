@@ -5,7 +5,6 @@ import type { Bytes, Compact, Option, Vec, bool, u32, u64 } from '@polkadot/type
 import type { AnyNumber, ITuple } from '@polkadot/types/types';
 import type { BabeEquivocationProof } from '@polkadot/types/interfaces/babe';
 import type { MemberCount, ProposalIndex } from '@polkadot/types/interfaces/collective';
-import type { CodeHash, Gas, Schedule } from '@polkadot/types/interfaces/contracts';
 import type { Proposal } from '@polkadot/types/interfaces/democracy';
 import type { EcdsaSignature, Extrinsic, Signature } from '@polkadot/types/interfaces/extrinsics';
 import type { GrandpaEquivocationProof, KeyOwnerProof } from '@polkadot/types/interfaces/grandpa';
@@ -13,7 +12,6 @@ import type { Heartbeat } from '@polkadot/types/interfaces/imOnline';
 import type {
   AccountId,
   AccountIndex,
-  Address,
   Balance,
   BalanceOf,
   BlockNumber,
@@ -72,7 +70,6 @@ import type {
   LegacyPermissions,
   MaybeBlock,
   Memo,
-  MetaUrl,
   MovePortfolioItem,
   OffChainSignature,
   Permissions,
@@ -97,12 +94,10 @@ import type {
   Signatory,
   SkippedCount,
   SlashingSwitch,
-  SmartExtension,
   SnapshotResult,
   TargetIdAuthorization,
   TargetIdentities,
   Tax,
-  TemplateMetadata,
   Ticker,
   TickerRegistrationConfig,
   TransferManager,
@@ -171,53 +166,6 @@ declare module '@polkadot/api/types/submittable' {
           ticker: Ticker | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<Document>, Ticker]
-      >;
-      /**
-       * Permissioning the Smart-Extension address for a given ticker.
-       *
-       * # Arguments
-       * * `origin` - Signatory who owns to ticker/asset.
-       * * `ticker` - ticker for whom extension get added.
-       * * `extension_details` - Details of the smart extension.
-       *
-       * ## Errors
-       * - `ExtensionAlreadyPresent` if `extension_details` is already linked to `ticker`.
-       * - `IncompatibleExtensionVersion` if `extension_details` is not compatible.
-       *
-       * # Permissions
-       * * Asset
-       **/
-      addExtension: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          extensionDetails:
-            | SmartExtension
-            | { extension_type?: any; extension_name?: any; extension_id?: any; is_archive?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, SmartExtension]
-      >;
-      /**
-       * Archived the extension, which was used to verify compliance according to any smart logic it possesses.
-       *
-       * # Arguments
-       * * `origin` - Signatory who owns the ticker/asset.
-       * * `ticker` - Ticker symbol of the asset.
-       * * `extension_id` - AccountId of the extension that need to be archived.
-       *
-       * ## Errors
-       * -  `AlreadyArchived` if `extension_id` of `ticker` is already archived.
-       *
-       * # Permissions
-       * * Asset
-       **/
-      archiveExtension: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          extensionId: AccountId | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, AccountId]
       >;
       /**
        * Claim a systematically reserved Polymath Classic (PMC) `ticker`
@@ -433,26 +381,6 @@ declare module '@polkadot/api/types/submittable' {
         [Vec<DocumentId>, Ticker]
       >;
       /**
-       * Remove the given smart extension id from the list of extension under a given ticker.
-       *
-       * # Arguments
-       * * `origin` - The asset issuer.
-       * * `ticker` - Ticker symbol of the asset.
-       *
-       * ## Errors
-       * - `MissingExtensionDetails` if `ticker` is not linked to `extension_id`.
-       *
-       * # Permissions
-       * * Asset
-       **/
-      removeSmartExtension: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          extensionId: AccountId | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, AccountId]
-      >;
-      /**
        * Renames a given token.
        *
        * # Arguments
@@ -526,27 +454,6 @@ declare module '@polkadot/api/types/submittable' {
           name: FundingRoundName | string
         ) => SubmittableExtrinsic<ApiType>,
         [Ticker, FundingRoundName]
-      >;
-      /**
-       * Unarchived the extension. Extension is used to verify the compliance or any smart logic it possesses.
-       *
-       * # Arguments
-       * * `origin` - Signatory who owns the ticker/asset.
-       * * `ticker` - Ticker symbol of the asset.
-       * * `extension_id` - AccountId of the extension that need to be unarchived.
-       *
-       * ## Errors
-       * -  `AlreadyArchived` if `extension_id` of `ticker` is already archived.
-       *
-       * # Permissions
-       * * Asset
-       **/
-      unarchiveExtension: AugmentedSubmittable<
-        (
-          ticker: Ticker | string | Uint8Array,
-          extensionId: AccountId | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Ticker, AccountId]
       >;
       /**
        * Unfreezes transfers and minting of a given token.
@@ -696,8 +603,24 @@ declare module '@polkadot/api/types/submittable' {
        **/
       forceTransfer: AugmentedSubmittable<
         (
-          source: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
-          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
+          source:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          dest:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           value: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [LookupSource, LookupSource, Compact<Balance>]
@@ -712,7 +635,15 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setBalance: AugmentedSubmittable<
         (
-          who: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
+          who:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           newFree: Compact<Balance> | AnyNumber | Uint8Array,
           newReserved: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -744,7 +675,15 @@ declare module '@polkadot/api/types/submittable' {
        **/
       transfer: AugmentedSubmittable<
         (
-          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
+          dest:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           value: Compact<Balance> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [LookupSource, Compact<Balance>]
@@ -761,7 +700,15 @@ declare module '@polkadot/api/types/submittable' {
        **/
       transferWithMemo: AugmentedSubmittable<
         (
-          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
+          dest:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           value: Compact<Balance> | AnyNumber | Uint8Array,
           memo: Option<Memo> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -1609,171 +1556,6 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker]
       >;
     };
-    contracts: {
-      call: AugmentedSubmittable<
-        (
-          dest: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
-          value: Compact<BalanceOf> | AnyNumber | Uint8Array,
-          gasLimit: Compact<Gas> | AnyNumber | Uint8Array,
-          data: Bytes | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [LookupSource, Compact<BalanceOf>, Compact<Gas>, Bytes]
-      >;
-      /**
-       * Change the usage fee & the instantiation fee of the smart extension template
-       *
-       * # Arguments
-       * * origin - Only owner of template is allowed to execute the dispatchable.
-       * * code_hash - Unique hash of the smart extension template.
-       * * new_instantiation_fee - New value of instantiation fee for the smart extension template.
-       * * new_usage_fee - New value of usage fee for the smart extension template.
-       **/
-      changeTemplateFees: AugmentedSubmittable<
-        (
-          codeHash: CodeHash | string | Uint8Array,
-          newInstantiationFee: Option<BalanceOf> | null | object | string | Uint8Array,
-          newUsageFee: Option<BalanceOf> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [CodeHash, Option<BalanceOf>, Option<BalanceOf>]
-      >;
-      /**
-       * Change the template meta url.
-       *
-       * # Arguments
-       * * origin - Only owner of template is allowed to execute the dispatchable.
-       * * code_hash - Unique hash of the smart extension template.
-       * * new_url - New meta url that need to replace with old url.
-       **/
-      changeTemplateMetaUrl: AugmentedSubmittable<
-        (
-          codeHash: CodeHash | string | Uint8Array,
-          newUrl: Option<MetaUrl> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [CodeHash, Option<MetaUrl>]
-      >;
-      /**
-       * Allows a smart extension template owner to freeze the instantiation.
-       *
-       * # Arguments
-       * * origin - Only owner of the template is allowed to execute the dispatchable.
-       * * code_hash - Unique hash of the smart extension template.
-       **/
-      freezeInstantiation: AugmentedSubmittable<
-        (codeHash: CodeHash | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [CodeHash]
-      >;
-      /**
-       * Simply forwards to the `instantiate` function in the Contract module.
-       *
-       * # Additional functionality
-       * 1. Check whether instantiation of given code_hash is allowed or not.
-       * 2. Charge instantiation fee.
-       *
-       * # Errors
-       * InstantiationIsNotAllowed - It occurred when instantiation of the template is frozen.
-       * InsufficientMaxFee - Provided max_fee is less than required.
-       **/
-      instantiate: AugmentedSubmittable<
-        (
-          endowment: Compact<BalanceOf> | AnyNumber | Uint8Array,
-          gasLimit: Compact<Gas> | AnyNumber | Uint8Array,
-          codeHash: CodeHash | string | Uint8Array,
-          data: Bytes | string | Uint8Array,
-          maxFee: BalanceOf | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Compact<BalanceOf>, Compact<Gas>, CodeHash, Bytes, BalanceOf]
-      >;
-      /**
-       * Simply forwards to the `put_code` function in the Contract module.
-       *
-       * # Additional functionality
-       * 1. Allow origin to pass some meta-details related to template code.
-       * 2. Charge protocol fee for deploying the template.
-       *
-       * # Errors
-       * - `PutCodeIsNotAllowed` if the `put_code` flag is false. See `set_put_code_flag()`.
-       * - `frame_system::BadOrigin` if `origin` is not signed.
-       * - `pallet_permission::Error::<T>::UnAutorizedCaller` if `origin` does not have a valid
-       * IdentityId.
-       * - `TooLong` if the strings embedded in `meta_info` are too long.
-       * - `pallet_contrats::Error::<T>::CodeTooLarge` if `code` length is grater than the chain
-       * setting for `pallet_contrats::max_code_size`.
-       * - Before `code` is inserted, some checks are performed on it, and them could raise up
-       * some errors. Please see `pallet_contracts::wasm::prepare_contract` for details.
-       **/
-      putCode: AugmentedSubmittable<
-        (
-          metaInfo:
-            | TemplateMetadata
-            | { url?: any; se_type?: any; usage_fee?: any; description?: any; version?: any }
-            | string
-            | Uint8Array,
-          instantiationFee: BalanceOf | AnyNumber | Uint8Array,
-          code: Bytes | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [TemplateMetadata, BalanceOf, Bytes]
-      >;
-      /**
-       * Enable or disable the extrinsic `put_code` in this module.
-       *
-       * ## Arguments
-       * - `origin` which must be root.
-       * - `is_enabled` is the new value for this flag.
-       *
-       * ## Errors
-       * - `BadOrigin` if caller is not root.
-       *
-       * ## Permissions
-       * None
-       **/
-      setPutCodeFlag: AugmentedSubmittable<
-        (isEnabled: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [bool]
-      >;
-      /**
-       * Transfer ownership of the template, Can only be called by the owner of template.
-       * `new_owner` should posses the valid CDD claim.
-       *
-       * # Arguments
-       * * origin Owner of the provided code_hash.
-       * * code_hash Unique identifer of the template.
-       * * new_owner Identity that will be the new owner of the provided code_hash.
-       **/
-      transferTemplateOwnership: AugmentedSubmittable<
-        (
-          codeHash: CodeHash | string | Uint8Array,
-          newOwner: IdentityId | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [CodeHash, IdentityId]
-      >;
-      /**
-       * Allows a smart extension template owner to un freeze the instantiation.
-       *
-       * # Arguments
-       * * origin - Only owner of the template is allowed to execute the dispatchable.
-       * * code_hash - Unique hash of the smart extension template.
-       **/
-      unfreezeInstantiation: AugmentedSubmittable<
-        (codeHash: CodeHash | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [CodeHash]
-      >;
-      updateSchedule: AugmentedSubmittable<
-        (
-          schedule:
-            | Schedule
-            | {
-                version?: any;
-                enablePrintln?: any;
-                limits?: any;
-                instructionWeights?: any;
-                hostFnWeights?: any;
-              }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Schedule]
-      >;
-    };
     corporateAction: {
       /**
        * Changes the record date of the CA identified by `ca_id`.
@@ -2285,16 +2067,6 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, AGId, ExtrinsicPermissions]
       >;
     };
-    finalityTracker: {
-      /**
-       * Hint that the author of this block thinks the best finalized
-       * block is the given number.
-       **/
-      finalHint: AugmentedSubmittable<
-        (hint: Compact<BlockNumber> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [Compact<BlockNumber>]
-      >;
-    };
     grandpa: {
       /**
        * Note that the current authority set of the GRANDPA finality gadget has
@@ -2408,6 +2180,7 @@ declare module '@polkadot/api/types/submittable' {
             | { NoData: any }
             | { TransferCorporateActionAgent: any }
             | { BecomeAgent: any }
+            | { AddRelayerPayingKey: any }
             | string
             | Uint8Array,
           expiry: Option<Moment> | null | object | string | Uint8Array
@@ -3836,7 +3609,10 @@ declare module '@polkadot/api/types/submittable' {
        * # </weight>
        **/
       setKeys: AugmentedSubmittable<
-        (keys: Keys, proof: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        (
+          keys: Keys | string | Uint8Array,
+          proof: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
         [Keys, Bytes]
       >;
     };
@@ -4188,7 +3964,7 @@ declare module '@polkadot/api/types/submittable' {
        * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
        * unless the `origin` falls below _existential deposit_ and gets removed as dust.
        * ------------------
-       * Base Weight: 67.87 µs
+       * Weight: O(1)
        * DB Weight:
        * - Read: Bonded, Ledger, [Origin Account], Current Era, History Depth, Locks
        * - Write: Bonded, Payee, [Origin Account], Locks, Ledger
@@ -4200,7 +3976,15 @@ declare module '@polkadot/api/types/submittable' {
        **/
       bond: AugmentedSubmittable<
         (
-          controller: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
+          controller:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           value: Compact<BalanceOf> | AnyNumber | Uint8Array,
           payee:
             | RewardDestination
@@ -4208,6 +3992,7 @@ declare module '@polkadot/api/types/submittable' {
             | { Stash: any }
             | { Controller: any }
             | { Account: any }
+            | { None: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -4231,7 +4016,6 @@ declare module '@polkadot/api/types/submittable' {
        * - O(1).
        * - One DB entry.
        * ------------
-       * Base Weight: 54.88 µs
        * DB Weight:
        * - Read: Era Election Status, Bonded, Ledger, [Origin Account], Locks
        * - Write: [Origin Account], Locks, Ledger
@@ -4258,7 +4042,6 @@ declare module '@polkadot/api/types/submittable' {
        * Complexity: O(U + S)
        * with U unapplied slashes weighted with U=1000
        * and S is the number of slash indices to be canceled.
-       * - Base: 5870 + 34.61 * S µs
        * - Read: Unapplied Slashes
        * - Write: Unapplied Slashes
        * # </weight>
@@ -4302,7 +4085,7 @@ declare module '@polkadot/api/types/submittable' {
        * - Contains one read.
        * - Writes are limited to the `origin` account key.
        * --------
-       * Base Weight: 16.53 µs
+       * Weight: O(1)
        * DB Weight:
        * - Read: EraElectionStatus, Ledger
        * - Write: Validators, Nominators
@@ -4317,7 +4100,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # <weight>
        * - No arguments.
-       * - Base Weight: 1.959 µs
+       * - Weight: O(1)
        * - Write ForceEra
        * # </weight>
        **/
@@ -4328,7 +4111,7 @@ declare module '@polkadot/api/types/submittable' {
        * The dispatch origin must be Root.
        *
        * # <weight>
-       * - Base Weight: 2.05 µs
+       * - Weight: O(1)
        * - Write: ForceEra
        * # </weight>
        **/
@@ -4340,7 +4123,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # <weight>
        * - No arguments.
-       * - Base Weight: 1.857 µs
+       * - Weight: O(1)
        * - Write: ForceEra
        * # </weight>
        **/
@@ -4352,7 +4135,6 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # <weight>
        * O(S) where S is the number of slashing spans to be removed
-       * Base Weight: 53.07 + 2.365 * S µs
        * Reads: Bonded, Slashing Spans, Account, Locks
        * Writes: Bonded, Slashing Spans (if S > 0), Ledger, Payee, Validators, Nominators, Account, Locks
        * Writes Each: SpanSlash * S
@@ -4371,8 +4153,7 @@ declare module '@polkadot/api/types/submittable' {
        * The dispatch origin must be Root.
        *
        * # <weight>
-       * Base Weight: 1.717 µs
-       * Read/Write: Validator Count
+       * Same as [`set_validator_count`].
        * # </weight>
        **/
       increaseValidatorCount: AugmentedSubmittable<
@@ -4393,7 +4174,7 @@ declare module '@polkadot/api/types/submittable' {
        * which is capped at CompactAssignments::LIMIT (MAX_NOMINATIONS).
        * - Both the reads and writes follow a similar pattern.
        * ---------
-       * Base Weight: 22.34 + .36 * N µs
+       * Weight: O(N)
        * where N is the number of targets
        * DB Weight:
        * - Reads: Era Election Status, Ledger, Current Era
@@ -4404,7 +4185,16 @@ declare module '@polkadot/api/types/submittable' {
         (
           targets:
             | Vec<LookupSource>
-            | (LookupSource | Address | AccountId | AccountIndex | string | Uint8Array)[]
+            | (
+                | LookupSource
+                | { Id: any }
+                | { Index: any }
+                | { Raw: any }
+                | { Address32: any }
+                | { Address20: any }
+                | string
+                | Uint8Array
+              )[]
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<LookupSource>]
       >;
@@ -4428,9 +4218,9 @@ declare module '@polkadot/api/types/submittable' {
        * - Contains a limited number of reads and writes.
        * -----------
        * N is the Number of payouts for the validator (including the validator)
-       * Base Weight:
-       * - Reward Destination Staked: 110 + 54.2 * N µs (Median Slopes)
-       * - Reward Destination Controller (Creating): 120 + 41.95 * N µs (Median Slopes)
+       * Weight:
+       * - Reward Destination Staked: O(N)
+       * - Reward Destination Controller (Creating): O(N)
        * DB Weight:
        * - Read: EraElectionStatus, CurrentEra, HistoryDepth, ErasValidatorReward,
        * ErasStakersClipped, ErasRewardPoints, ErasValidatorPrefs (8 items)
@@ -4466,7 +4256,6 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # <weight>
        * Complexity: O(S) where S is the number of slashing spans on the account.
-       * Base Weight: 75.94 + 2.396 * S µs
        * DB Weight:
        * - Reads: Stash Account, Bonded, Slashing Spans, Locks
        * - Writes: Bonded, Slashing Spans (if S > 0), Ledger, Payee, Validators, Nominators, Stash Account, Locks
@@ -4491,7 +4280,6 @@ declare module '@polkadot/api/types/submittable' {
        * - Bounded by `MAX_UNLOCKING_CHUNKS`.
        * - Storage changes: Can't increase storage, only decrease it.
        * ---------------
-       * - Base Weight: 34.51 µs * .048 L µs
        * - DB Weight:
        * - Reads: EraElectionStatus, Ledger, Locks, [Origin Account]
        * - Writes: [Origin Account], Locks, Ledger
@@ -4520,8 +4308,7 @@ declare module '@polkadot/api/types/submittable' {
        * The dispatch origin must be Root.
        *
        * # <weight>
-       * Base Weight: 1.717 µs
-       * Read/Write: Validator Count
+       * Same as [`set_validator_count`].
        * # </weight>
        **/
       scaleValidatorCount: AugmentedSubmittable<
@@ -4551,7 +4338,7 @@ declare module '@polkadot/api/types/submittable' {
        * - Contains a limited number of reads.
        * - Writes are limited to the `origin` account key.
        * ----------
-       * Base Weight: 25.22 µs
+       * Weight: O(1)
        * DB Weight:
        * - Read: Bonded, Ledger New Controller, Ledger Old Controller
        * - Write: Bonded, Ledger New Controller, Ledger Old Controller
@@ -4559,7 +4346,15 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setController: AugmentedSubmittable<
         (
-          controller: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array
+          controller:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [LookupSource]
       >;
@@ -4578,7 +4373,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # <weight>
        * - E: Number of history depths removed, i.e. 10 -> 7 = 3
-       * - Base Weight: 29.13 * E µs
+       * - Weight: O(E)
        * - DB Weight:
        * - Reads: Current Era, History Depth
        * - Writes: History Depth
@@ -4600,13 +4395,12 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # <weight>
        * - O(V)
-       * - Base Weight: 2.208 + .006 * V µs
        * - Write: Invulnerables
        * # </weight>
        **/
       setInvulnerables: AugmentedSubmittable<
         (
-          validators: Vec<AccountId> | (AccountId | string | Uint8Array)[]
+          invulnerables: Vec<AccountId> | (AccountId | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<AccountId>]
       >;
@@ -4633,7 +4427,7 @@ declare module '@polkadot/api/types/submittable' {
        * - Contains a limited number of reads.
        * - Writes are limited to the `origin` account key.
        * ---------
-       * - Base Weight: 11.33 µs
+       * - Weight: O(1)
        * - DB Weight:
        * - Read: Ledger
        * - Write: Payee
@@ -4647,6 +4441,7 @@ declare module '@polkadot/api/types/submittable' {
             | { Stash: any }
             | { Controller: any }
             | { Account: any }
+            | { None: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -4658,7 +4453,7 @@ declare module '@polkadot/api/types/submittable' {
        * The dispatch origin must be Root.
        *
        * # <weight>
-       * Base Weight: 1.717 µs
+       * Weight: O(1)
        * Write: Validator Count
        * # </weight>
        **/
@@ -4712,7 +4507,9 @@ declare module '@polkadot/api/types/submittable' {
        * minimized (to ensure less variance)
        *
        * # <weight>
-       * See `crate::weight` module.
+       * The transaction is assumed to be the longest path, a better solution.
+       * - Initial solution is almost the same.
+       * - Worse solution is retraced in pre-dispatch-checks which sets its own weight.
        * # </weight>
        **/
       submitElectionSolution: AugmentedSubmittable<
@@ -4754,7 +4551,7 @@ declare module '@polkadot/api/types/submittable' {
        * transaction in the block.
        *
        * # <weight>
-       * See `crate::weight` module.
+       * See [`submit_election_solution`].
        * # </weight>
        **/
       submitElectionSolutionUnsigned: AugmentedSubmittable<
@@ -4816,10 +4613,10 @@ declare module '@polkadot/api/types/submittable' {
        * `withdraw_unbonded`.
        * - One DB entry.
        * ----------
-       * Base Weight: 50.34 µs
+       * Weight: O(1)
        * DB Weight:
-       * - Read: Era Election Status, Ledger, Current Era, Locks, [Origin Account]
-       * - Write: [Origin Account], Locks, Ledger
+       * - Read: EraElectionStatus, Ledger, CurrentEra, Locks, \[Origin Account\]
+       * - Write: Locks, Ledger, \[Origin Account\]
        * </weight>
        *
        * # Arguments
@@ -4858,7 +4655,7 @@ declare module '@polkadot/api/types/submittable' {
        * - Contains a limited number of reads.
        * - Writes are limited to the `origin` account key.
        * -----------
-       * Base Weight: 17.13 µs
+       * Weight: O(1)
        * DB Weight:
        * - Read: Era Election Status, Ledger
        * - Write: Nominators, Validators
@@ -4909,12 +4706,11 @@ declare module '@polkadot/api/types/submittable' {
        * - Writes are limited to the `origin` account key.
        * ---------------
        * Complexity O(S) where S is the number of slashing spans to remove
-       * Base Weight:
-       * Update: 50.52 + .028 * S µs
+       * Update:
        * - Reads: EraElectionStatus, Ledger, Current Era, Locks, [Origin Account]
        * - Writes: [Origin Account], Locks, Ledger
-       * Kill: 79.41 + 2.366 * S µs
-       * - Reads: EraElectionStatus, Ledger, Current Era, Bonded, Slashing Spans, [Origin Account], Locks
+       * Kill:
+       * - Reads: EraElectionStatus, Ledger, Current Era, Bonded, Slashing Spans, \[Origin Account\], Locks
        * - Writes: Bonded, Slashing Spans (if S > 0), Ledger, Payee, Validators, Nominators, [Origin Account], Locks
        * - Writes Each: SpanSlash * S
        * NOTE: Weight annotation is the kill scenario, we refund otherwise.
@@ -5194,7 +4990,15 @@ declare module '@polkadot/api/types/submittable' {
        **/
       setKey: AugmentedSubmittable<
         (
-          updated: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array
+          updated:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [LookupSource]
       >;
@@ -5231,7 +5035,15 @@ declare module '@polkadot/api/types/submittable' {
        **/
       sudoAs: AugmentedSubmittable<
         (
-          who: LookupSource | Address | AccountId | AccountIndex | string | Uint8Array,
+          who:
+            | LookupSource
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           call: Call | { callIndex?: any; args?: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [LookupSource, Call]
@@ -5387,19 +5199,6 @@ declare module '@polkadot/api/types/submittable' {
         (items: Vec<KeyValue> | KeyValue[]) => SubmittableExtrinsic<ApiType>,
         [Vec<KeyValue>]
       >;
-      /**
-       * Kill the sending account, assuming there are no references outstanding and the composite
-       * data is equal to its default value.
-       *
-       * # <weight>
-       * - `O(1)`
-       * - 1 storage read and deletion.
-       * --------------------
-       * Base Weight: 8.626 µs
-       * No DB Read or Write operations because caller is already in overlay
-       * # </weight>
-       **/
-      suicide: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
     };
     technicalCommittee: {
       /**
@@ -5663,9 +5462,9 @@ declare module '@polkadot/api/types/submittable' {
        * The dispatch origin for this call must be `Inherent`.
        *
        * # <weight>
-       * - `O(T)` where `T` complexity of `on_timestamp_set`
+       * - `O(1)` (Note that implementations of `OnTimestampSet` must also be `O(1)`)
        * - 1 storage read and 1 storage mutation (codec `O(1)`). (because of `DidUpdate::take` in `on_finalize`)
-       * - 1 event handler `on_timestamp_set` `O(T)`.
+       * - 1 event handler `on_timestamp_set`. Must be `O(1)`.
        * # </weight>
        **/
       set: AugmentedSubmittable<

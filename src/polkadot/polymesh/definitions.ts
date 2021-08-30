@@ -2,9 +2,9 @@
 export default {
   rpc: {},
   types: {
-    AccountInfo: 'AccountInfoWithRefCount',
-    Address: 'IndicesLookupSource',
-    LookupSource: 'IndicesLookupSource',
+    Address: 'MultiAddress',
+    LookupSource: 'MultiAddress',
+    AccountInfo: 'AccountInfoWithDualRefCount',
     ValidatorPrefsWithBlocked: {
       commission: 'Compact<Perbill>',
     },
@@ -144,6 +144,10 @@ export default {
     SecondaryKeyWithAuth: {
       secondary_key: 'SecondaryKey',
       auth_signature: 'Signature',
+    },
+    Subsidy: {
+      paying_key: 'AccountId',
+      remaining: 'Balance',
     },
     IdentityRole: {
       _enum: [
@@ -687,6 +691,7 @@ export default {
         NoData: '',
         TransferCorporateActionAgent: 'Ticker',
         BecomeAgent: '(Ticker, AgentGroup)',
+        AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
       },
     },
     SmartExtensionType: {
@@ -880,14 +885,12 @@ export default {
         AttestPrimaryKeyRotation: '',
         RotatePrimaryKey: '',
         TransferTicker: '',
-        TransferPrimaryIssuanceAgent: '',
         AddMultiSigSigner: '',
         TransferAssetOwnership: '',
         JoinIdentity: '',
         PortfolioCustody: '',
         Custom: '',
         NoData: '',
-        TransferCorporateActionAgent: '',
       },
     },
     ProposalDetails: {
