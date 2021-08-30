@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { AgentGroup } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -197,13 +198,19 @@ describe('setPermissionGroup procedure', () => {
       }),
     });
 
-    let rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
-
-    procedureMockUtils.getAddProcedureStub().resolves({
-      transform: sinon.stub().returns(rawAgentGroup),
+    const rawAgentGroup = dsMockUtils.createMockAgentGroup({
+      Custom: dsMockUtils.createMockU32(id.toNumber()),
     });
 
-    permissionGroupIdentifierToAgentGroupStub.returns(dsMockUtils.createMockAgentGroup());
+    permissionGroupIdentifierToAgentGroupStub
+      .withArgs({ custom: id }, mockContext)
+      .returns(rawAgentGroup);
+
+    procedureMockUtils.getAddProcedureStub().resolves({
+      transform: sinon
+        .stub()
+        .callsFake(cb => cb(entityMockUtils.getCustomPermissionGroupInstance({ id }))),
+    });
 
     await prepareSetPermissionGroup.call(proc, {
       agent: entityMockUtils.getAgentInstance({
@@ -228,16 +235,6 @@ describe('setPermissionGroup procedure', () => {
       rawIdentityId,
       rawAgentGroup
     );
-
-    rawAgentGroup = dsMockUtils.createMockAgentGroup({
-      Custom: dsMockUtils.createMockU32(id.toNumber()),
-    });
-
-    procedureMockUtils.getAddProcedureStub().resolves({
-      transform: sinon.stub().returns(rawAgentGroup),
-    });
-
-    permissionGroupIdentifierToAgentGroupStub.returns(dsMockUtils.createMockAgentGroup());
 
     await prepareSetPermissionGroup.call(proc, {
       agent: entityMockUtils.getAgentInstance({
