@@ -13,7 +13,15 @@ import { DocumentNode } from 'graphql';
 
 import { PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CalendarPeriod, PermissionGroupType, Role, SignerValue, SimplePermissions } from '~/types';
+import { CustomAssetTypeId } from '~/polkadot';
+import {
+  CalendarPeriod,
+  KnownTokenType,
+  PermissionGroupType,
+  Role,
+  SignerValue,
+  SimplePermissions,
+} from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -235,3 +243,5 @@ export enum InstructionStatus {
  * Determines the subset of permissions an Agent has over a Security Token
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
+
+export type InternalTokenType = KnownTokenType | { Custom: CustomAssetTypeId };
