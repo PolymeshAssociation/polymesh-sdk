@@ -179,10 +179,8 @@ export class TransactionQueue<
    *
    * - One or more transaction arguments depend on the result of another transaction in the queue.
    *   This means fees can't be calculated for said transaction until previous transactions in the queue have run
-   * - Protocol fees may vary between when this value is fetched and when the transaction is actually executed because of a
+   * - Protocol or gas fees may vary between when this value is fetched and when the transaction is actually executed because of a
    *   governance vote
-   * - Gas fees may vary between when this value is fetched and when the transaction is actually executed because of network
-   *   congestion
    *
    * Transaction fees are broken down between those that have to be paid by the current Account and
    *   those that will be paid by third parties. In most cases, the entirety of the fees will be paid by
@@ -455,7 +453,7 @@ export class TransactionQueue<
         code: ErrorCode.ValidationError,
         message: "Not enough POLYX third party allowance to pay for this procedure's fees",
         data: {
-          accounts: noThirdPartyAllowance,
+          thirdPartyFees: noThirdPartyAllowance,
         },
       });
     }
@@ -464,7 +462,7 @@ export class TransactionQueue<
         code: ErrorCode.ValidationError,
         message: "Not enough POLYX third party balance to pay for this procedure's fees",
         data: {
-          accounts: noThirdPartyBalance,
+          thirdPartyFees: noThirdPartyBalance,
         },
       });
     }

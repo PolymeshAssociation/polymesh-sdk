@@ -273,10 +273,10 @@ export abstract class PolymeshTransactionBase<
     const { paidForBy, context, tag } = this;
 
     if (paidForBy) {
-      const account = await paidForBy.getPrimaryKey();
+      const primaryKey = await paidForBy.getPrimaryKey();
 
       return {
-        account,
+        account: primaryKey,
         allowance: null,
       };
     }
@@ -301,8 +301,7 @@ export abstract class PolymeshTransactionBase<
    * if the transaction is not ready yet (this can happen if it depends on the execution of a
    * previous transaction in the queue)
    *
-   * @note this value might change if the transaction is run at a later time. This can be due to network
-   *   congestion or a governance vote
+   * @note this value might change if the transaction is run at a later time. This can be due to a governance vote
    */
   public async getFees(): Promise<Fees | null> {
     const { signer, context } = this;

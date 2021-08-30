@@ -124,7 +124,6 @@ describe('Transaction Queue class', () => {
       queue.run();
 
       await fakePromise();
-      // await fakePromise();
 
       expect(queue.status).toBe(TransactionQueueStatus.Running);
 
