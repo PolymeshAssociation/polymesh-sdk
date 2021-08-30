@@ -224,7 +224,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
 
   /**
-   * Abdicate to be an Agent for a given asset
+   * Abdicate from being an Agent for a given Security Token. This means that this Identity will no longer have any permissions over it
    */
   public waivePermissions: ProcedureMethod<WaivePermissionsParams, void>;
 

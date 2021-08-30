@@ -18,10 +18,6 @@ jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
-jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
-);
 
 describe('waivePermissions procedure', () => {
   const ticker = 'SOMETICKER';
@@ -58,7 +54,7 @@ describe('waivePermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Identity is not part of the Agent Group', async () => {
+  test('should throw an error if the Identity is not is not an Agent for the Security Token', async () => {
     const token = entityMockUtils.getSecurityTokenInstance({
       ticker,
       isEqual: false,
@@ -87,10 +83,10 @@ describe('waivePermissions procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe("The Identity is not part of the token's Agent Group");
+    expect(error.message).toBe('The Identity is not an Agent for the Security Token');
   });
 
-  test('should add a abdicate transaction to the queue', async () => {
+  test('should add an abdicate transaction to the queue', async () => {
     const token = entityMockUtils.getSecurityTokenInstance({
       ticker,
       isEqual: true,

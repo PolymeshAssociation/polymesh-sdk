@@ -4,13 +4,13 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
 import { getTicker } from '~/utils/internal';
 
-/**
- * @hidden
- */
 export interface WaivePermissionsParams {
   token: string | SecurityToken;
 }
 
+/**
+ * @hidden
+ */
 export type Params = WaivePermissionsParams & {
   identity: Identity;
 };
@@ -39,14 +39,16 @@ export async function prepareWaivePermissions(
 
   const { identity } = args;
 
-  const agentOf = await identity.getTokenPermissions();
+  const tokensWithGroups = await identity.getTokenPermissions();
 
-  const isValidGroup = agentOf.some(({ token: tokenGroup }) => tokenGroup.isEqual(token));
+  const isAgent = tokensWithGroups.some(({ token: permissionedToken }) =>
+    permissionedToken.isEqual(token)
+  );
 
-  if (!isValidGroup) {
+  if (!isAgent) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: "The Identity is not part of the token's Agent Group",
+      message: 'The Identity is not an Agent for the Security Token',
     });
   }
 
@@ -92,4 +94,4 @@ export function prepareStorage(this: Procedure<Params, void, Storage>, { token }
  * @hidden
  */
 export const waivePermissions = (): Procedure<Params, void, Storage> =>
-  new Procedure(prepareWaivePermissions, getAuthorization);
+  new Procedure(prepareWaivePermissions, getAuthorization, prepareStorage);
