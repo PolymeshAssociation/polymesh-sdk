@@ -1147,7 +1147,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.AddRelayerPayingKey,
       value: {
         beneficiary: entityMockUtils.getAccountInstance({ address: beneficiaryAddress }),
-        relayer: entityMockUtils.getAccountInstance({ address: relayerAddress }),
+        subsidizer: entityMockUtils.getAccountInstance({ address: relayerAddress }),
         allowance,
       },
     };

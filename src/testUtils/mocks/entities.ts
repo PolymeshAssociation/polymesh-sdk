@@ -123,7 +123,7 @@ interface IdentityOptions {
   hasRole?: boolean;
   hasPermissions?: boolean;
   hasValidCdd?: boolean;
-  getPrimaryKey?: string;
+  getPrimaryKey?: Account;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -670,7 +670,6 @@ export const mockAgentModule = (path: string) => (): Record<string, unknown> => 
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getPrimaryKey: 'someAddress',
   authorizations: {
     getReceived: [],
     getSent: { data: [], next: null },

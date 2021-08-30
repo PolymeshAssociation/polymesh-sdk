@@ -1,18 +1,13 @@
 import { AddressOrPair, SubmittableExtrinsic } from '@polkadot/api/types';
-import { Balance, DispatchError } from '@polkadot/types/interfaces';
+import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
-import { TxTag } from 'polymesh-types/types';
+import { TxTag, TxTags } from 'polymesh-types/types';
 
-import { Context, PolymeshError, PostTransactionValue } from '~/internal';
+import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { ErrorCode, Fees, TransactionStatus } from '~/types';
-import {
-  BaseTransactionSpec,
-  MaybePostTransactionValue,
-  PolymeshTx,
-  PostTransactionValueArray,
-} from '~/types/internal';
+import { BaseTransactionSpec, PolymeshTx, PostTransactionValueArray } from '~/types/internal';
 import { balanceToBigNumber, transactionToTxTag } from '~/utils/conversion';
 
 /**
@@ -55,22 +50,29 @@ export abstract class PolymeshTransactionBase<
   public blockHash?: string;
 
   /**
-   * whether this tx failing makes the entire tx queue fail or not
+   * whether this transaction failing makes the entire transaction queue fail or not
    */
   public isCritical: boolean;
 
   /**
-   * whether the fees for this tx are paid by a third party.
-   *   For example, when accepting/rejecting a request to join an Identity, fees are paid by the Identity that sent the request
+   * type of transaction represented by this instance (mostly for display purposes)
    */
-  public paidByThirdParty: boolean;
+  public tag: TxTag;
+
+  /**
+   * @hidden
+   *
+   * Identity that will pay for this transaction's fees. This value overrides any subsidy,
+   *   and is seen as having infinite allowance (but still constrained by its current balance)
+   */
+  protected paidForBy?: Identity;
 
   /**
    * @hidden
    *
    * underlying transaction to be executed
    */
-  protected tx: MaybePostTransactionValue<PolymeshTx<Args>>;
+  protected tx: PolymeshTx<Args>;
 
   /**
    * @hidden
@@ -78,14 +80,6 @@ export abstract class PolymeshTransactionBase<
    * number of elements in the batch (only applicable to batch transactions)
    */
   protected batchSize: number | null;
-
-  /**
-   * @hidden
-   *
-   * type of transaction represented by this instance for display purposes.
-   * If the transaction isn't defined at design time, the tag won't be set (will be empty string) until the transaction is about to be run
-   */
-  protected _tag = '' as TxTag;
 
   /**
    * @hidden
@@ -112,7 +106,7 @@ export abstract class PolymeshTransactionBase<
    * @hidden
    *
    * used by procedures to set the fee manually in case the protocol op can't be
-   * dynamically generated from the transaction name
+   *   dynamically generated from the transaction name
    */
   protected protocolFee: BigNumber | null;
 
@@ -122,14 +116,7 @@ export abstract class PolymeshTransactionBase<
    * @hidden
    */
   constructor(transactionSpec: BaseTransactionSpec<Args, Values>, context: Context) {
-    const {
-      postTransactionValues,
-      tx,
-      signer,
-      isCritical,
-      fee,
-      paidByThirdParty,
-    } = transactionSpec;
+    const { postTransactionValues, tx, signer, isCritical, fee, paidForBy } = transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
@@ -137,18 +124,17 @@ export abstract class PolymeshTransactionBase<
 
     this.emitter = new EventEmitter();
     this.tx = tx;
+    this.tag = transactionToTxTag(tx);
     this.signer = signer;
     this.isCritical = isCritical;
     this.protocolFee = fee;
     this.context = context;
-    this.paidByThirdParty = paidByThirdParty;
+    this.paidForBy = paidForBy;
     this.batchSize = null;
-
-    this.setTag();
   }
 
   /**
-   * Run the poly transaction and update the transaction status
+   * Run the transaction and update its status
    */
   public async run(): Promise<void> {
     try {
@@ -188,12 +174,10 @@ export abstract class PolymeshTransactionBase<
    * @hidden
    *
    * Execute the underlying transaction, updating the status where applicable and
-   * throwing any pertinent errors
+   *   throwing any pertinent errors
    */
   private internalRun(): Promise<ISubmittableResult> {
     this.updateStatus(TransactionStatus.Unapproved);
-
-    this.setTag();
 
     return new Promise((resolve, reject) => {
       const txWithArgs = this.composeTx();
@@ -274,9 +258,50 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
+   * Retrieve the Account that would pay for the transaction fees if it was run at this moment, as well as the maximum amount that can be
+   *   charged to it. A null allowance means that there is no limit to that amount
+   *
+   * A null return value signifies that the current Account will pay for the fees
+   *
+   * @note this value might change if, before running the transaction, the current Account enters (or leaves)
+   *   a subsidizer relationship
+   */
+  public async getPayingAccount(): Promise<{
+    account: Account;
+    allowance: BigNumber | null;
+  } | null> {
+    const { paidForBy, context, tag } = this;
+
+    if (paidForBy) {
+      const primaryKey = await paidForBy.getPrimaryKey();
+
+      return {
+        account: primaryKey,
+        allowance: null,
+      };
+    }
+
+    const subsidy = await context.accountSubsidy();
+
+    // `relayer.removePayingKey` is always paid by the caller
+    if (!subsidy || tag === TxTags.relayer.RemovePayingKey) {
+      return null;
+    }
+
+    const { subsidizer: account, allowance } = subsidy;
+
+    return {
+      account,
+      allowance,
+    };
+  }
+
+  /**
    * Get all (protocol and gas) fees associated with this transaction. Returns null
    * if the transaction is not ready yet (this can happen if it depends on the execution of a
    * previous transaction in the queue)
+   *
+   * @note this value might change if the transaction is run at a later time. This can be due to a governance vote
    */
   public async getFees(): Promise<Fees | null> {
     const { signer, context } = this;
@@ -290,56 +315,18 @@ export abstract class PolymeshTransactionBase<
       return null;
     }
 
-    let partialFee: Balance;
+    const paymentInfoPromise = composedTx.paymentInfo(signer);
 
     if (!protocolFee) {
-      [{ partialFee }, protocolFee] = await Promise.all([
-        composedTx.paymentInfo(signer),
-        context.getTransactionFees(this.tag),
-      ]);
-    } else {
-      ({ partialFee } = await composedTx.paymentInfo(signer));
+      protocolFee = await context.getTransactionFees(this.tag);
     }
+
+    const { partialFee } = await paymentInfoPromise;
 
     return {
       protocol: protocolFee.multipliedBy(this.batchSize || 1),
       gas: balanceToBigNumber(partialFee),
     };
-  }
-
-  /**
-   * type of transaction represented by this instance for display purposes.
-   * If the transaction isn't defined at design time, the tag won't be set (will be empty string) until the transaction is about to be run
-   */
-  public get tag(): TxTag {
-    this.setTag();
-
-    return this._tag;
-  }
-
-  /**
-   * @hidden
-   *
-   * Set transaction tag if available and it hasn't been set yet
-   */
-  protected setTag(): void {
-    if (this._tag) {
-      return;
-    }
-
-    const { tx } = this;
-    let transaction;
-    if (tx instanceof PostTransactionValue) {
-      try {
-        transaction = tx.value;
-      } catch (err) {
-        return;
-      }
-    } else {
-      transaction = tx;
-    }
-
-    this._tag = transactionToTxTag(transaction);
   }
 
   /**

@@ -6,7 +6,7 @@ import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, Permissions, PermissionType, TxTags } from '~/types';
+import { AccountBalance, Permissions, PermissionType, Subsidy, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -108,6 +108,42 @@ describe('Account class', () => {
       });
 
       const result = await account.getBalance(callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
+  describe('method: getSubsidy', () => {
+    let fakeResult: Omit<Subsidy, 'beneficiary'>;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      account = new Account({ address }, context);
+      const subsidizer = new Account({ address: 'subsidizer ' }, context);
+      fakeResult = {
+        allowance: new BigNumber(1000),
+        subsidizer,
+      };
+      context.accountSubsidy.resolves(fakeResult);
+    });
+
+    test("should return the account's balance", async () => {
+      const result = await account.getSubsidy();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = sinon.stub();
+
+      context.accountSubsidy.callsFake(async (_, cbFunc) => {
+        cbFunc(fakeResult);
+        return unsubCallback;
+      });
+
+      const result = await account.getSubsidy(callback);
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);

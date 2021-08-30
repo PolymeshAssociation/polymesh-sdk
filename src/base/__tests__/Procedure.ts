@@ -5,13 +5,7 @@ import { range } from 'lodash';
 import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Context,
-  PolymeshTransaction,
-  PolymeshTransactionBatch,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Context, PolymeshTransaction, PolymeshTransactionBatch, Procedure } from '~/internal';
 import {
   dsMockUtils,
   entityMockUtils,
@@ -487,7 +481,7 @@ describe('Procedure class', () => {
       let i = 0;
 
       proc.addBatchTransaction(
-        new PostTransactionValue(() => tx),
+        tx,
         {
           fee: new BigNumber(100),
           groupByFn: () => `${i++}`,

@@ -49,6 +49,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
@@ -610,7 +614,7 @@ describe('Identity class', () => {
 
   describe('method: getPrimaryKey', () => {
     const did = 'someDid';
-    const accountId = 'somePrimaryKey';
+    const accountId = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
 
     let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
     let didRecordsStub: sinon.SinonStub;
@@ -639,7 +643,7 @@ describe('Identity class', () => {
       didRecordsStub.returns(rawDidRecord);
 
       const result = await identity.getPrimaryKey();
-      expect(result).toEqual(accountId);
+      expect(result).toEqual(entityMockUtils.getAccountInstance({ address: accountId }));
     });
 
     test('should allow subscription', async () => {
@@ -657,7 +661,10 @@ describe('Identity class', () => {
       const result = await identity.getPrimaryKey(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, accountId);
+      sinon.assert.calledWithExactly(
+        callback,
+        entityMockUtils.getAccountInstance({ address: accountId })
+      );
     });
   });
 

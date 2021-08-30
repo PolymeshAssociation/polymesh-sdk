@@ -13,6 +13,7 @@ import {
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
+  Account,
   Agent,
   Context,
   createVenue,
@@ -491,11 +492,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getPrimaryKey(): Promise<string>;
-  public async getPrimaryKey(callback: SubCallback<string>): Promise<UnsubCallback>;
+  public async getPrimaryKey(): Promise<Account>;
+  public async getPrimaryKey(callback: SubCallback<Account>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getPrimaryKey(callback?: SubCallback<string>): Promise<string | UnsubCallback> {
+  public async getPrimaryKey(callback?: SubCallback<Account>): Promise<Account | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -506,8 +507,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): string => {
-      return accountIdToString(primaryKey);
+    const assembleResult = ({ primary_key: primaryKey }: DidRecord): Account => {
+      return new Account({ address: accountIdToString(primaryKey) }, context);
     };
 
     const rawDid = stringToIdentityId(did, context);

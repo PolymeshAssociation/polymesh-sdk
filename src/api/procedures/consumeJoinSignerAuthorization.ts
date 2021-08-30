@@ -41,6 +41,7 @@ export async function prepareConsumeJoinSignerAuthorization(
     authId,
     data: { type },
     expiry,
+    issuer,
   } = authRequest;
 
   if (authRequest.isExpired()) {
@@ -60,10 +61,15 @@ export async function prepareConsumeJoinSignerAuthorization(
   if (!accept) {
     const { address } = context.getCurrentAccount();
     const paidByThirdParty = address === signerToString(target);
+    const opts: { paidForBy?: Identity } = {};
+
+    if (paidByThirdParty) {
+      opts.paidForBy = issuer;
+    }
 
     this.addTransaction(
       identity.removeAuthorization,
-      { paidByThirdParty },
+      opts,
       signerValueToSignatory(signerToSignerValue(target), context),
       rawAuthId,
       booleanToBool(paidByThirdParty, context)
@@ -82,7 +88,7 @@ export async function prepareConsumeJoinSignerAuthorization(
       : identity.joinIdentityAsIdentity;
   }
 
-  this.addTransaction(transaction, { paidByThirdParty: true }, rawAuthId);
+  this.addTransaction(transaction, { paidForBy: issuer }, rawAuthId);
 }
 
 /**
