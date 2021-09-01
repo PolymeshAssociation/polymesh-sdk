@@ -1286,6 +1286,12 @@ export type Query = {
   tickerExternalAgentHistory?: Array<AgentHistory>;
 };
 
+export type TickerExternalAgentHistoryResult = {
+  __typename?: 'TickerExternalAgentHistoryResult';
+  totalCount: Scalars['Int'];
+  items: Array<AgentHistory>;
+};
+
 export type QueryTickerExternalAgentHistoryArgs = {
   ticker: Scalars['String'];
 };
@@ -1293,8 +1299,8 @@ export type QueryTickerExternalAgentHistoryArgs = {
 export type AgentHistoryEvent = {
   datetime: Scalars['DateTime'];
   block_id: Scalars['Int'];
-  event_index: Scalars['Int'];
-}
+  event_idx: Scalars['Int'];
+};
 
 export type AgentHistory = {
   __typename?: 'AgentHistory';

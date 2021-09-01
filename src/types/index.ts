@@ -1113,6 +1113,11 @@ export interface TokenWithGroup {
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
+export interface HistoricAgentOperation {
+  identity: Identity;
+  history: {};
+}
+
 export { TxTags, TxTag, ModuleName };
 export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';

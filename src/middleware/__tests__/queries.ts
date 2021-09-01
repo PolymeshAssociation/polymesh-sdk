@@ -283,7 +283,7 @@ describe('getHistoryOfPaymentEventsForCa', () => {
 describe('getTickerExternalAgentHistory', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOMETICKER'
+      ticker: 'SOMETICKER',
     };
 
     const result = getTickerExternalAgentHistory(variables);

@@ -688,21 +688,17 @@ export function getHistoryOfPaymentEventsForCa(
  *
  * Get the history of each external agent in ticker
  */
- export function getTickerExternalAgentHistory(
+export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
 ): GraphqlQuery<QueryTickerExternalAgentHistoryArgs> {
   const query = gql`
-    query TickerExternalAgentHistoryQuery(
-      $ticker: String!
-    ) {
-      getTickerExternalAgentHistory(
-        ticker: $ticker
-      ) {
+    query TickerExternalAgentHistoryQuery($ticker: String!) {
+      tickerExternalAgentHistory(ticker: $ticker) {
         did
         history {
           datetime
           block_id
-          event_index
+          event_idx
         }
       }
     }
