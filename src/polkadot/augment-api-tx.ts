@@ -4883,7 +4883,7 @@ declare module '@polkadot/api/types/submittable' {
        **/
       validate: AugmentedSubmittable<
         (
-          prefs: ValidatorPrefs | { commission?: any } | string | Uint8Array
+          prefs: ValidatorPrefs | { commission?: any; blocked?: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [ValidatorPrefs]
       >;

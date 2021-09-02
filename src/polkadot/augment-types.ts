@@ -1095,7 +1095,6 @@ import type {
   TrustedIssuer,
   UniqueCall,
   Url,
-  ValidatorPrefsWithBlocked,
   Venue,
   VenueDetails,
   VenueType,
@@ -2180,7 +2179,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<ValidatorCount>': Option<ValidatorCount>;
     'Option<ValidatorId>': Option<ValidatorId>;
     'Option<ValidatorIdOf>': Option<ValidatorIdOf>;
-    'Option<ValidatorPrefsWithBlocked>': Option<ValidatorPrefsWithBlocked>;
     'Option<ValidatorSetId>': Option<ValidatorSetId>;
     'Option<ValidatorSignature>': Option<ValidatorSignature>;
     'Option<ValidDisputeStatementKind>': Option<ValidDisputeStatementKind>;
@@ -3216,7 +3214,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ValidatorCount>': Vec<ValidatorCount>;
     'Vec<ValidatorId>': Vec<ValidatorId>;
     'Vec<ValidatorIdOf>': Vec<ValidatorIdOf>;
-    'Vec<ValidatorPrefsWithBlocked>': Vec<ValidatorPrefsWithBlocked>;
     'Vec<ValidatorSetId>': Vec<ValidatorSetId>;
     'Vec<ValidatorSignature>': Vec<ValidatorSignature>;
     'Vec<ValidDisputeStatementKind>': Vec<ValidDisputeStatementKind>;
@@ -4252,7 +4249,6 @@ declare module '@polkadot/types/types/registry' {
     ValidatorCount: ValidatorCount;
     ValidatorId: ValidatorId;
     ValidatorIdOf: ValidatorIdOf;
-    ValidatorPrefsWithBlocked: ValidatorPrefsWithBlocked;
     ValidatorSetId: ValidatorSetId;
     ValidatorSignature: ValidatorSignature;
     ValidDisputeStatementKind: ValidDisputeStatementKind;

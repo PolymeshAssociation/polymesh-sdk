@@ -5,9 +5,6 @@ export default {
     Address: 'MultiAddress',
     LookupSource: 'MultiAddress',
     AccountInfo: 'AccountInfoWithDualRefCount',
-    ValidatorPrefsWithBlocked: {
-      commission: 'Compact<Perbill>',
-    },
     IdentityId: '[u8; 32]',
     EventDid: 'IdentityId',
     EventCounts: 'Vec<u32>',
