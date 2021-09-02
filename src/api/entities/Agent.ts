@@ -7,13 +7,17 @@ import {
   setPermissionGroup,
   SetPermissionGroupParams,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod } from '~/types';
+import { eventByIndexedArgs } from '~/middleware/queries';
+import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Ensured, ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
+  middlewareEventToEventIdentifier,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -92,5 +96,27 @@ export class Agent extends Identity {
     const agentGroup = rawGroupPermissions.unwrap();
 
     return agentGroupToPermissionGroup(agentGroup, ticker, context);
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this agent was added
+   *
+   * @note uses the middleware
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async addedAt(): Promise<EventIdentifier | null> {
+    const { ticker, context } = this;
+
+    const {
+      data: { eventByIndexedArgs: event },
+    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
+      eventByIndexedArgs({
+        moduleId: ModuleIdEnum.Externalagents,
+        eventId: EventIdEnum.AgentAdded,
+        eventArg1: padString(ticker, MAX_TICKER_LENGTH),
+      })
+    );
+
+    return optionize(middlewareEventToEventIdentifier)(event);
   }
 }
