@@ -120,6 +120,7 @@ import { padString } from '~/utils/internal';
 import {
   accountIdToString,
   addressToKey,
+  agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
   assetComplianceResultToCompliance,
   assetIdentifierToTokenIdentifier,
@@ -279,6 +280,18 @@ jest.mock(
 jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+jest.mock(
+  '~/api/entities/KnownPermissionGroup',
+  require('~/testUtils/mocks/entities').mockKnownPermissionGroupModule(
+    '~/api/entities/KnownPermissionGroup'
+  )
+);
+jest.mock(
+  '~/api/entities/CustomPermissionGroup',
+  require('~/testUtils/mocks/entities').mockCustomPermissionGroupModule(
+    '~/api/entities/CustomPermissionGroup'
+  )
 );
 
 describe('tickerToDid', () => {
@@ -3797,27 +3810,70 @@ describe('txTagToProtocolOp', () => {
   });
 
   test('txTagToProtocolOp should convert a TxTag to a polkadot ProtocolOp object', () => {
-    const value = TxTags.identity.AddClaim;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
+    const createTypeStub = dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ProtocolOp', 'AssetRegisterTicker')
+      .returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.RegisterTicker, context)).toEqual(fakeResult);
 
-    const result = txTagToProtocolOp(value, context);
+    createTypeStub.withArgs('ProtocolOp', 'AssetIssue').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.Issue, context)).toEqual(fakeResult);
 
-    expect(result).toEqual(fakeResult);
-  });
+    createTypeStub.withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.AddDocuments, context)).toEqual(fakeResult);
 
-  test('txTagToProtocolOp should ignore "batch" prefixes and postfixes', () => {
-    const value = TxTags.asset.AddDocuments;
-    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
-    const context = dsMockUtils.getContextInstance();
+    createTypeStub.withArgs('ProtocolOp', 'AssetCreateAsset').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.CreateAsset, context)).toEqual(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'AssetCreateCheckpointSchedule').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.checkpoint.CreateSchedule, context)).toEqual(fakeResult);
 
-    const result = txTagToProtocolOp(value, context);
+    createTypeStub.withArgs('ProtocolOp', 'DividendNew').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.dividend.New, context)).toEqual(fakeResult);
 
-    expect(result).toEqual(fakeResult);
+    createTypeStub
+      .withArgs('ProtocolOp', 'ComplianceManagerAddComplianceRequirement')
+      .returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.complianceManager.AddComplianceRequirement, context)).toEqual(
+      fakeResult
+    );
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentityRegisterDid').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.RegisterDid, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentityCddRegisterDid').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.CddRegisterDid, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.AddClaim, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentitySetPrimaryKey').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.SetPrimaryKey, context)).toEqual(fakeResult);
+
+    createTypeStub
+      .withArgs('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
+      .returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.AddSecondaryKeysWithAuthorization, context)).toEqual(
+      fakeResult
+    );
+
+    createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'VotingAddBallot').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.voting.AddBallot, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'ContractsPutCode').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.contracts.PutCode, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'BallotAttachBallot').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.corporateBallot.AttachBallot, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'DistributionDistribute').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
   });
 
   test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
@@ -6700,5 +6756,71 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     result = transactionPermissionsToExtrinsicPermissions(null, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('agentGroupToPermissionGroup', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('agentGroupToPermissionGroup should convert a polkadot AgentGroup object to a PermissionGroup entity', () => {
+    const ticker = 'SOME_TICKER';
+    const context = dsMockUtils.getContextInstance();
+
+    let agentGroup = dsMockUtils.createMockAgentGroup('Full');
+
+    let result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({ ticker, type: PermissionGroupType.Full })
+    );
+
+    agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.ExceptMeta,
+      })
+    );
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.PolymeshV1Caa,
+      })
+    );
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.PolymeshV1Pia,
+      })
+    );
+
+    const id = new BigNumber(1);
+    const rawAgId = dsMockUtils.createMockU32(id.toNumber()) as AGId;
+    agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(entityMockUtils.getCustomPermissionGroupInstance({ ticker, id }));
   });
 });

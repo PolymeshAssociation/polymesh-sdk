@@ -2415,18 +2415,20 @@ export function complianceRequirementToRequirement(
  * @hidden
  */
 export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
-  const [moduleName, extrinsicName] = tag.split('.');
-  const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(
-    extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
-  )}`;
+  const exceptions: Record<string, string> = {
+    [TxTags.asset.AddDocuments]: 'AssetAddDocument',
+    [TxTags.capitalDistribution.Distribute]: 'DistributionDistribute',
+    [TxTags.checkpoint.CreateSchedule]: 'AssetCreateCheckpointSchedule',
+    [TxTags.corporateBallot.AttachBallot]: 'BallotAttachBallot',
+  };
 
   const protocolOpTags = [
     TxTags.asset.RegisterTicker,
     TxTags.asset.Issue,
     TxTags.asset.AddDocuments,
     TxTags.asset.CreateAsset,
-    TxTags.asset.CreateCheckpoint,
     TxTags.dividend.New,
+    TxTags.checkpoint.CreateSchedule,
     TxTags.complianceManager.AddComplianceRequirement,
     TxTags.identity.RegisterDid,
     TxTags.identity.CddRegisterDid,
@@ -2439,6 +2441,13 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     TxTags.corporateBallot.AttachBallot,
     TxTags.capitalDistribution.Distribute,
   ];
+
+  let value = exceptions[tag];
+
+  if (!value) {
+    const [moduleName, extrinsicName] = tag.split('.');
+    value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
+  }
 
   if (!includes(protocolOpTags, tag)) {
     throw new PolymeshError({
