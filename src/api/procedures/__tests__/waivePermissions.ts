@@ -54,7 +54,7 @@ describe('waivePermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Identity is not is not an Agent for the Security Token', async () => {
+  test('should throw an error if the Identity is not an Agent for the Security Token', async () => {
     const token = entityMockUtils.getSecurityTokenInstance({
       ticker,
       isEqual: false,
