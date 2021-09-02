@@ -3,7 +3,6 @@
 
 import type {
   Bytes,
-  Compact,
   Enum,
   Option,
   Struct,
@@ -1588,11 +1587,6 @@ export interface UniqueCall extends Struct {
 
 /** @name Url */
 export interface Url extends Text {}
-
-/** @name ValidatorPrefsWithBlocked */
-export interface ValidatorPrefsWithBlocked extends Struct {
-  readonly commission: Compact<Perbill>;
-}
 
 /** @name Venue */
 export interface Venue extends Struct {
