@@ -30,9 +30,9 @@ jest.mock(
 describe('createGroup procedure', () => {
   const ticker = 'SOMETICKER';
   const transactions = {
-      type: PermissionType.Include,
-      values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
-    };
+    type: PermissionType.Include,
+    values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
+  };
   const rawTicker = dsMockUtils.createMockTicker(ticker);
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
     These: [
