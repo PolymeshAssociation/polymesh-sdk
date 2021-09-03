@@ -193,10 +193,7 @@ export class Procedure<
         identity = await fetchIdentity();
 
         const agentPermissionResults = await P.map(tokens, token =>
-          // the compiler doesn't recognize that identity is defined even though
-          //   we checked at the top of the block
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          identity!.hasTokenPermissions({ token, transactions })
+          identity.hasTokenPermissions({ token, transactions })
         );
 
         hasAgentPermissions = agentPermissionResults.every(perm => perm);
