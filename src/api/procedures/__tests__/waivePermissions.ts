@@ -153,7 +153,7 @@ describe('waivePermissions procedure', () => {
           token,
         })
       ).toEqual({
-        permissions: {
+        signerPermissions: {
           transactions: [TxTags.externalAgents.Abdicate],
           tokens: [token],
           portfolios: [],

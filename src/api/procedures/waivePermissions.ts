@@ -68,7 +68,7 @@ export function getAuthorization(
     storage: { token },
   } = this;
   return {
-    permissions: {
+    signerPermissions: {
       transactions: [TxTags.externalAgents.Abdicate],
       tokens: [token],
       portfolios: [],
