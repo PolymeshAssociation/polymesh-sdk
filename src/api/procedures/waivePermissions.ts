@@ -39,11 +39,8 @@ export async function prepareWaivePermissions(
 
   const { identity } = args;
 
-  const tokensWithGroups = await identity.getTokenPermissions();
-
-  const isAgent = tokensWithGroups.some(({ token: permissionedToken }) =>
-    permissionedToken.isEqual(token)
-  );
+  const agents = await token.permissions.getAgents();
+  const isAgent = agents.some(agentWithGroup => agentWithGroup.agent.did === identity.did);
 
   if (!isAgent) {
     throw new PolymeshError({

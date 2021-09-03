@@ -57,7 +57,20 @@ describe('waivePermissions procedure', () => {
   test('should throw an error if the Identity is not an Agent for the Security Token', async () => {
     const token = entityMockUtils.getSecurityTokenInstance({
       ticker,
-      isEqual: false,
+      permissionsGetAgents: [
+        {
+          group: entityMockUtils.getKnownPermissionGroupInstance(),
+          agent: entityMockUtils.getAgentInstance({
+            did: 'aDifferentDid',
+          }),
+        },
+        {
+          group: entityMockUtils.getKnownPermissionGroupInstance(),
+          agent: entityMockUtils.getAgentInstance({
+            did: 'anotherDifferentDid',
+          }),
+        },
+      ],
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
@@ -71,12 +84,6 @@ describe('waivePermissions procedure', () => {
         token,
         identity: entityMockUtils.getIdentityInstance({
           did,
-          getTokenPermissions: [
-            {
-              token,
-              group: entityMockUtils.getKnownPermissionGroupInstance(),
-            },
-          ],
         }),
       });
     } catch (err) {
@@ -89,7 +96,14 @@ describe('waivePermissions procedure', () => {
   test('should add an abdicate transaction to the queue', async () => {
     const token = entityMockUtils.getSecurityTokenInstance({
       ticker,
-      isEqual: true,
+      permissionsGetAgents: [
+        {
+          group: entityMockUtils.getKnownPermissionGroupInstance(),
+          agent: entityMockUtils.getAgentInstance({
+            did,
+          }),
+        },
+      ],
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
@@ -100,12 +114,6 @@ describe('waivePermissions procedure', () => {
       token,
       identity: entityMockUtils.getIdentityInstance({
         did,
-        getTokenPermissions: [
-          {
-            token,
-            group: entityMockUtils.getKnownPermissionGroupInstance(),
-          },
-        ],
       }),
     });
 
