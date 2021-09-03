@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import { TxTag } from 'polymesh-types/types';
 
 import {
@@ -153,6 +154,11 @@ export class Procedure<
 
     const { permissions = true, roles = true } = checkAuthorizationResult;
 
+    const {
+      signerPermissions = permissions,
+      agentPermissions = permissions,
+    } = checkAuthorizationResult;
+
     let identity: Identity;
     let hasRoles: boolean;
 
@@ -165,30 +171,43 @@ export class Procedure<
       hasRoles = roles;
     }
 
-    let hasSignerPermissions: boolean;
-    let hasAgentPermissions = true;
+    let hasAgentPermissions: boolean;
+    let signerPermissionsAwaitable: boolean | Promise<boolean>;
 
-    if (typeof permissions !== 'boolean') {
+    const accountFrozenPromise = ctx.getCurrentAccount().isFrozen();
+
+    if (typeof signerPermissions !== 'boolean') {
       const account = context.getCurrentAccount();
-      const permissionsPromises = [account.hasPermissions(permissions)];
+      signerPermissionsAwaitable = account.hasPermissions(signerPermissions);
+    } else {
+      signerPermissionsAwaitable = signerPermissions;
+    }
 
-      const { tokens, transactions } = permissions;
+    if (typeof agentPermissions !== 'boolean') {
+      const { tokens, transactions } = agentPermissions;
+
+      hasAgentPermissions = true;
+
       // we assume the same permissions are required for each token
       if (tokens?.length && transactions?.length) {
         identity = await fetchIdentity();
-        permissionsPromises.push(
-          ...tokens.map(token => identity.hasTokenPermissions({ token, transactions }))
-        );
-      }
-      const result = await Promise.all(permissionsPromises);
-      [hasSignerPermissions] = result;
 
-      hasAgentPermissions = result.slice(1).every(perm => perm);
+        const agentPermissionResults = await P.map(tokens, token =>
+          // the compiler doesn't recognize that identity is defined even though
+          //   we checked at the top of the block
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          identity!.hasTokenPermissions({ token, transactions })
+        );
+
+        hasAgentPermissions = agentPermissionResults.every(perm => perm);
+      }
     } else {
-      hasSignerPermissions = permissions;
+      hasAgentPermissions = agentPermissions;
     }
 
-    const accountFrozen = await ctx.getCurrentAccount().isFrozen();
+    const hasSignerPermissions = await signerPermissionsAwaitable;
+
+    const accountFrozen = await accountFrozenPromise;
 
     return {
       roles: hasRoles,
