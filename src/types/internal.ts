@@ -204,7 +204,21 @@ export interface CorporateActionIdentifier {
 }
 
 export interface ProcedureAuthorization {
+  /**
+   * general permissions that apply to both Secondary Key Accounts and External
+   *   Agent Identities. Overridden by `signerPermissions` and `agentPermissions` respectively
+   */
   permissions?: SimplePermissions | boolean;
+  /**
+   * permissions specific to Secondary Key Accounts. This value takes precedence over `permissions` for
+   *   Secondary Keys
+   */
+  signerPermissions?: SimplePermissions | boolean;
+  /**
+   * permissions specific to External Agent Identities. This value takes precedence over `permissions` for
+   *   External Agents
+   */
+  agentPermissions?: Omit<SimplePermissions, 'portfolios'> | boolean;
   roles?: Role[] | boolean;
 }
 

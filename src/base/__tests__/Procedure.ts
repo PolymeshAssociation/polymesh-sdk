@@ -118,7 +118,48 @@ describe('Procedure class', () => {
         accountFrozen: false,
       });
 
-      context = dsMockUtils.getContextInstance({ hasTokenPermissions: true });
+      authFunc.resolves({
+        roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        permissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          portfolios: null,
+          transactions: [TxTags.asset.Redeem],
+        },
+        agentPermissions: false,
+        signerPermissions: false,
+      });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        agentPermissions: false,
+        signerPermissions: false,
+        roles: true,
+        accountFrozen: false,
+      });
+
+      authFunc.resolves({
+        roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        permissions: false,
+        signerPermissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          portfolios: null,
+          transactions: [TxTags.asset.Redeem],
+        },
+        agentPermissions: {
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          portfolios: null,
+          transactions: [TxTags.asset.Redeem],
+        },
+      });
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        agentPermissions: true,
+        signerPermissions: true,
+        roles: true,
+        accountFrozen: false,
+      });
+
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
