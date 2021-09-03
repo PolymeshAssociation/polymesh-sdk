@@ -66,6 +66,7 @@ import {
   TickerReservationDetails,
   TickerReservationStatus,
   TokenIdentifier,
+  TokenWithGroup,
   TransferStatus,
   VenueDetails,
   VenueType,
@@ -133,6 +134,7 @@ interface IdentityOptions {
   getSecondaryKeys?: SecondaryKey[];
   areScondaryKeysFrozen?: boolean;
   isEqual?: boolean;
+  getTokenPermissions?: TokenWithGroup[];
 }
 
 interface TickerReservationOptions {
@@ -153,6 +155,7 @@ interface SecurityTokenOptions {
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
   permissionsGetAgents?: AgentWithGroup[];
   permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
+  isEqual?: boolean;
 }
 
 interface AuthorizationRequestOptions {
@@ -343,6 +346,7 @@ let securityTokenCorporateActionsGetAgentsStub: SinonStub;
 let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let securityTokenPermissionsGetGroupsStub: SinonStub;
 let securityTokenPermissionsGetAgentsStub: SinonStub;
+let securityTokenIsEqualStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -355,6 +359,7 @@ let identityGetTokenBalanceStub: SinonStub;
 let identityGetSecondaryKeysStub: SinonStub;
 let identityAreSecondaryKeysFrozenStub: SinonStub;
 let identityIsEqualStub: SinonStub;
+let identityGetTokenPermissionsStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -675,6 +680,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getSecondaryKeys: [],
   areScondaryKeysFrozen: false,
   isEqual: true,
+  getTokenPermissions: [],
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -734,6 +740,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     known: [],
     custom: [],
   },
+  isEqual: false,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -1246,6 +1253,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
       getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
       getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
     },
+    isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -1273,6 +1281,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
   securityTokenPermissionsGetGroupsStub = sinon.stub();
   securityTokenPermissionsGetAgentsStub = sinon.stub();
+  securityTokenIsEqualStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1338,6 +1347,7 @@ function configureIdentity(opts: IdentityOptions): void {
     getSecondaryKeys: identityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
     areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
     isEqual: identityIsEqualStub.returns(opts.isEqual),
+    getTokenPermissions: identityGetTokenPermissionsStub.resolves(opts.getTokenPermissions),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1366,6 +1376,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetSecondaryKeysStub = sinon.stub();
   identityAreSecondaryKeysFrozenStub = sinon.stub();
   identityIsEqualStub = sinon.stub();
+  identityGetTokenPermissionsStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
