@@ -87,7 +87,7 @@ describe('TokenPermissions class', () => {
     });
   });
 
-  describe('method: grantedAt', () => {
+  describe('method: enabledAt', () => {
     test('should return the event identifier object of the agent added', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
@@ -109,7 +109,7 @@ describe('TokenPermissions class', () => {
         /* eslint-enable @typescript-eslint/naming-convention */
       });
 
-      const result = await tokenPermissions.grantedAt({ token });
+      const result = await tokenPermissions.enabledAt({ token });
 
       expect(result).toEqual(fakeResult);
     });
@@ -122,7 +122,7 @@ describe('TokenPermissions class', () => {
       };
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
-      const result = await tokenPermissions.grantedAt({ token });
+      const result = await tokenPermissions.enabledAt({ token });
       expect(result).toBeNull();
     });
   });

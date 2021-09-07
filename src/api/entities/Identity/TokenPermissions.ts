@@ -253,13 +253,13 @@ export class TokenPermissions extends Namespace<Identity> {
   }
 
   /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Identity was granted
-   *   permissions over a specific Security Token
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Identity was enabled/added as
+   *   an Agent with permissions over a specific Security Token
    *
    * @note uses the middleware
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async grantedAt({
+  public async enabledAt({
     token,
   }: {
     token: string | SecurityToken;
