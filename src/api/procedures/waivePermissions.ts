@@ -2,7 +2,7 @@ import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
-import { getTicker } from '~/utils/internal';
+import { getToken } from '~/utils/internal';
 
 export interface WaivePermissionsParams {
   token: string | SecurityToken;
@@ -80,10 +80,8 @@ export function getAuthorization(
 export function prepareStorage(this: Procedure<Params, void, Storage>, { token }: Params): Storage {
   const { context } = this;
 
-  const ticker = getTicker(token);
-
   return {
-    token: new SecurityToken({ ticker }, context),
+    token: getToken(token, context),
   };
 }
 

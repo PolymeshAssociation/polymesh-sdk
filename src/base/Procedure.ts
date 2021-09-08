@@ -193,7 +193,7 @@ export class Procedure<
         identity = await fetchIdentity();
 
         const agentPermissionResults = await P.map(tokens, token =>
-          identity.hasTokenPermissions({ token, transactions })
+          identity.tokenPermissions.hasPermissions({ token, transactions })
         );
 
         hasAgentPermissions = agentPermissionResults.every(perm => perm);

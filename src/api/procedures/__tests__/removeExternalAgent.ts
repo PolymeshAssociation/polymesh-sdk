@@ -8,7 +8,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/removeExternalAgent';
-import { Agent, Context, SecurityToken } from '~/internal';
+import { Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PermissionGroupType } from '~/types';
@@ -129,7 +129,7 @@ describe('removeExternalAgent procedure', () => {
       token: entityMockUtils.getSecurityTokenInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Agent,
+            agent: { did: 'someDid' } as Identity,
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
@@ -150,14 +150,14 @@ describe('removeExternalAgent procedure', () => {
       token: entityMockUtils.getSecurityTokenInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Agent,
+            agent: { did: 'someDid' } as Identity,
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.ExceptMeta,
             }),
           },
           {
-            agent: { did: 'otherDid' } as Agent,
+            agent: { did: 'otherDid' } as Identity,
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
@@ -184,14 +184,14 @@ describe('removeExternalAgent procedure', () => {
       token: entityMockUtils.getSecurityTokenInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Agent,
+            agent: { did: 'someDid' } as Identity,
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
             }),
           },
           {
-            agent: { did: 'otherDid' } as Agent,
+            agent: { did: 'otherDid' } as Identity,
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
