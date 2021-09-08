@@ -9,6 +9,8 @@ import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 import { TxTag } from 'polymesh-types/types';
+import { satisfies } from 'semver';
+import WebSocketAsPromised from 'websocket-as-promised';
 
 import {
   Account,
@@ -54,12 +56,25 @@ import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/interna
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
 import { Middleware } from './Middleware';
-import { TREASURY_MODULE_ADDRESS } from './utils/constants';
+import {
+  SDK_RANGE_VERSION,
+  SYSTEM_VERSION_RPC_CALL,
+  TREASURY_MODULE_ADDRESS,
+} from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
   signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
+}
+
+/**
+ * @hidden
+ */
+function wspListener(wsp: WebSocketAsPromised) {
+  return new Promise<string>(resolve => {
+    wsp.onMessage.addListener(data => resolve(JSON.parse(data).result));
+  });
 }
 
 /**
@@ -185,6 +200,22 @@ export class Polymesh {
       middleware,
     } = params;
     let context: Context;
+
+    const wsp = new WebSocketAsPromised(nodeUrl);
+
+    await wsp.open();
+
+    wsp.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
+    const version = await wspListener(wsp);
+
+    if (!satisfies(version, SDK_RANGE_VERSION)) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `This SDK version required a Polymesh version equals or grater than "${SDK_RANGE_VERSION}"`,
+      });
+    }
+
+    await wsp.close();
 
     try {
       const { types, rpc } = schema;
@@ -721,6 +752,13 @@ export class Polymesh {
    */
   public setSigner(signer: string | Account): void {
     this.context.setPair(signerToString(signer));
+  }
+
+  /**
+   * Fetch the current network version
+   */
+  public async getNetworkVersion(): Promise<string> {
+    return this.context.getNetworkVersion();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it

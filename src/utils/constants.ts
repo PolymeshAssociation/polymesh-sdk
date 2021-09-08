@@ -124,3 +124,15 @@ dateTypes.forEach(type => {
  * Maps chain types to more human-readable `TransactionArgumentType`s
  */
 export const ROOT_TYPES = rootTypes;
+
+/**
+ * The SDK version range compatible with Polymesh blockchain
+ */
+export const SDK_RANGE_VERSION = '3.x';
+
+export const SYSTEM_VERSION_RPC_CALL = {
+  id: '1',
+  jsonrpc: '2.0',
+  method: 'system_version',
+  params: [],
+};
