@@ -25,7 +25,13 @@ import {
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, getDid, toHumanReadable } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getDid,
+  getToken,
+  toHumanReadable,
+} from '~/utils/internal';
 
 import { HistoricSettlement, PortfolioBalance } from './types';
 
@@ -167,16 +173,12 @@ export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
       assetBalances[ticker].free = assetBalances[ticker].total.minus(locked);
     });
 
-    const mask: PortfolioBalance[] | undefined = args?.tokens.map(ticker => {
-      const token = typeof ticker === 'string' ? new SecurityToken({ ticker }, context) : ticker;
-
-      return {
-        total: new BigNumber(0),
-        locked: new BigNumber(0),
-        free: new BigNumber(0),
-        token,
-      };
-    });
+    const mask: PortfolioBalance[] | undefined = args?.tokens.map(token => ({
+      total: new BigNumber(0),
+      locked: new BigNumber(0),
+      free: new BigNumber(0),
+      token: getToken(token, context),
+    }));
 
     if (mask) {
       return mask.map(portfolioBalance => {

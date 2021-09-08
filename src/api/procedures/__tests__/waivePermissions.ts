@@ -60,13 +60,13 @@ describe('waivePermissions procedure', () => {
       permissionsGetAgents: [
         {
           group: entityMockUtils.getKnownPermissionGroupInstance(),
-          agent: entityMockUtils.getAgentInstance({
+          agent: entityMockUtils.getIdentityInstance({
             did: 'aDifferentDid',
           }),
         },
         {
           group: entityMockUtils.getKnownPermissionGroupInstance(),
-          agent: entityMockUtils.getAgentInstance({
+          agent: entityMockUtils.getIdentityInstance({
             did: 'anotherDifferentDid',
           }),
         },
@@ -99,7 +99,7 @@ describe('waivePermissions procedure', () => {
       permissionsGetAgents: [
         {
           group: entityMockUtils.getKnownPermissionGroupInstance(),
-          agent: entityMockUtils.getAgentInstance({
+          agent: entityMockUtils.getIdentityInstance({
             did,
           }),
         },
