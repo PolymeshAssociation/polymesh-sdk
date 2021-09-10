@@ -453,10 +453,6 @@ export class Polymesh {
   /**
    * Create an Account instance from an address. If no address is passed, the current Account is returned
    */
-  public getAccount(): Account;
-  public getAccount(args: { address: string }): Account;
-
-  // eslint-disable-next-line require-jsdoc
   public getAccount(args?: { address: string }): Account {
     const { context } = this;
 

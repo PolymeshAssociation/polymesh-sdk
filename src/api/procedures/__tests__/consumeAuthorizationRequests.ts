@@ -31,6 +31,13 @@ describe('consumeAuthorizationRequests procedure', () => {
   let rawAuthIds: [u64][];
   let rawFalseBool: bool;
 
+  let acceptAssetOwnershipTransferTransaction: sinon.SinonStub;
+  let acceptPayingKeyTransaction: sinon.SinonStub;
+  let acceptPrimaryKeyTransaction: sinon.SinonStub;
+  let acceptBecomeAgentTransaction: sinon.SinonStub;
+  let acceptPortfolioCustodyTransaction: sinon.SinonStub;
+  let acceptTickerTransferTransaction: sinon.SinonStub;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -51,31 +58,75 @@ describe('consumeAuthorizationRequests procedure', () => {
       {
         authId: new BigNumber(1),
         expiry: new Date('10/14/3040'),
-        target: new Identity({ did: 'targetDid1' }, mockContext),
-        issuer: new Identity({ did: 'issuerDid1' }, mockContext),
+        target: entityMockUtils.getIdentityInstance({ did: 'targetDid1' }),
+        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid1' }),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
-          value: 'someTicker1',
+          value: 'SOME_TICKER1',
         },
       },
       {
         authId: new BigNumber(2),
         expiry: null,
         target: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
-        issuer: new Identity({ did: 'issuerDid2' }, mockContext),
+        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid2' }),
         data: {
-          type: AuthorizationType.TransferAssetOwnership,
-          value: 'someTicker2',
+          type: AuthorizationType.AddRelayerPayingKey,
+          value: {
+            beneficiary: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
+            subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+            allowance: new BigNumber(1000),
+          },
         },
       },
       {
         authId: new BigNumber(3),
+        expiry: null,
+        target: entityMockUtils.getAccountInstance({ address: 'targetAddress3' }),
+        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid3' }),
+        data: {
+          type: AuthorizationType.RotatePrimaryKey,
+          value: 'multisigAddress',
+        },
+      },
+      {
+        authId: new BigNumber(4),
+        expiry: null,
+        target: entityMockUtils.getIdentityInstance({ did: 'targetDid4' }),
+        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid4' }),
+        data: {
+          type: AuthorizationType.BecomeAgent,
+          value: entityMockUtils.getKnownPermissionGroupInstance(),
+        },
+      },
+      {
+        authId: new BigNumber(5),
+        expiry: null,
+        target: entityMockUtils.getIdentityInstance({ did: 'targetDid5' }),
+        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid5' }),
+        data: {
+          type: AuthorizationType.PortfolioCustody,
+          value: entityMockUtils.getDefaultPortfolioInstance({ did: 'issuerDid5' }),
+        },
+      },
+      {
+        authId: new BigNumber(6),
+        expiry: null,
+        target: entityMockUtils.getIdentityInstance({ did: 'targetDid6' }),
+        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid6' }),
+        data: {
+          type: AuthorizationType.TransferTicker,
+          value: 'SOME_TICKER6',
+        },
+      },
+      {
+        authId: new BigNumber(7),
         expiry: new Date('10/14/1987'), // expired
-        target: new Identity({ did: 'targetDid3' }, mockContext),
-        issuer: new Identity({ did: 'issuerDid3' }, mockContext),
+        target: entityMockUtils.getIdentityInstance({ did: 'targetDid7' }),
+        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid7' }),
         data: {
           type: AuthorizationType.TransferAssetOwnership,
-          value: 'someTicker3',
+          value: 'SOME_TICKER7',
         },
       },
     ];
@@ -100,6 +151,19 @@ describe('consumeAuthorizationRequests procedure', () => {
       signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
     });
     booleanToBoolStub.withArgs(false, mockContext).returns(rawFalseBool);
+
+    acceptAssetOwnershipTransferTransaction = dsMockUtils.createTxStub(
+      'asset',
+      'acceptAssetOwnershipTransfer'
+    );
+    acceptPayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'acceptPayingKey');
+    acceptPrimaryKeyTransaction = dsMockUtils.createTxStub('identity', 'acceptPrimaryKey');
+    acceptBecomeAgentTransaction = dsMockUtils.createTxStub('externalAgents', 'acceptBecomeAgent');
+    acceptPortfolioCustodyTransaction = dsMockUtils.createTxStub(
+      'portfolio',
+      'acceptPortfolioCustody'
+    );
+    acceptTickerTransferTransaction = dsMockUtils.createTxStub('asset', 'acceptTickerTransfer');
   });
 
   afterEach(() => {
@@ -114,21 +178,53 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a batch of accept authorization transactions to the queue and ignore expired requests', async () => {
+  test('should throw an error if attempting to consume a deprecated authorization type', () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'acceptAuthorization');
+    expect(
+      prepareConsumeAuthorizationRequests.call(proc, {
+        accept: true,
+        authRequests: [
+          entityMockUtils.getAuthorizationRequestInstance({
+            data: {
+              type: AuthorizationType.NoData,
+            },
+          }),
+        ],
+      })
+    ).rejects.toThrow('Cannot accept Authorization Requests with a deprecated type');
+  });
+
+  test('should add a batch of accept authorization transactions (dependent on the type of auth) to the queue and ignore expired requests', async () => {
+    const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
+      mockContext
+    );
 
     await prepareConsumeAuthorizationRequests.call(proc, {
       accept: true,
       authRequests: auths,
     });
 
-    const authIds = rawAuthIds.slice(0, -1);
-
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, authIds);
+    sinon.assert.calledWith(addBatchTransactionStub, acceptAssetOwnershipTransferTransaction, {}, [
+      rawAuthIds[0],
+    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, acceptPayingKeyTransaction, {}, [
+      rawAuthIds[1],
+    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, acceptPrimaryKeyTransaction, {}, [
+      [rawAuthIds[2][0], null],
+    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, acceptBecomeAgentTransaction, {}, [
+      rawAuthIds[3],
+    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, acceptPortfolioCustodyTransaction, {}, [
+      rawAuthIds[4],
+    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, acceptTickerTransferTransaction, {}, [
+      rawAuthIds[5],
+    ]);
   });
 
   test('should add a batch of remove authorization transactions to the queue and ignore expired requests', async () => {
@@ -158,19 +254,19 @@ describe('consumeAuthorizationRequests procedure', () => {
         {
           authId: new BigNumber(1),
           expiry: null,
-          target: new Identity({ did }, mockContext),
-          issuer: new Identity({ did: 'issuerDid1' }, mockContext),
+          target: entityMockUtils.getIdentityInstance({ did }),
+          issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid1' }),
           data: {
-            type: AuthorizationType.NoData,
+            type: AuthorizationType.BecomeAgent,
           } as Authorization,
         },
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/1987'), // expired
-          target: new Identity({ did: 'notTheCurrentIdentity' }, mockContext),
-          issuer: new Identity({ did: 'issuerDid2' }, mockContext),
+          target: entityMockUtils.getIdentityInstance({ did: 'notTheCurrentIdentity' }),
+          issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid2' }),
           data: {
-            type: AuthorizationType.NoData,
+            type: AuthorizationType.PortfolioCustody,
           } as Authorization,
         },
       ];
@@ -188,11 +284,16 @@ describe('consumeAuthorizationRequests procedure', () => {
         permissions: {
           tokens: [],
           portfolios: [],
-          transactions: [TxTags.identity.AcceptAuthorization],
+          transactions: [
+            TxTags.externalAgents.AcceptBecomeAgent,
+            TxTags.portfolio.AcceptPortfolioCustody,
+          ],
         },
       });
 
-      args.authRequests[0].target = new Identity({ did: 'notTheCurrentIdentity' }, mockContext);
+      args.authRequests[0].target = entityMockUtils.getIdentityInstance({
+        did: 'notTheCurrentIdentity',
+      });
       args.accept = false;
 
       result = await boundFunc(args);

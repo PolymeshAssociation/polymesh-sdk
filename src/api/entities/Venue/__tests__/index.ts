@@ -13,6 +13,7 @@ import {
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { InstructionStatus, VenueType } from '~/types';
+import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -105,6 +106,7 @@ describe('Venue class', () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .resolves(dsMockUtils.createMockOption());
+      dsMockUtils.createQueryStub('settlement', 'details');
 
       entityMockUtils.configureMocks({
         numberedPortfolioOptions: {
@@ -130,13 +132,15 @@ describe('Venue class', () => {
           dsMockUtils.createMockOption(
             dsMockUtils.createMockVenue({
               creator: dsMockUtils.createMockIdentityId(owner),
-              instructions: [],
-              details: dsMockUtils.createMockVenueDetails(description),
               // eslint-disable-next-line @typescript-eslint/naming-convention
               venue_type: dsMockUtils.createMockVenueType(type),
             })
           )
         );
+      dsMockUtils
+        .createQueryStub('settlement', 'details')
+        .withArgs(rawId)
+        .resolves(dsMockUtils.createMockVenueDetails(description));
 
       const result = await venue.details();
 
@@ -168,9 +172,6 @@ describe('Venue class', () => {
     });
 
     test("should return the Venue's pending and failed instructions", async () => {
-      const description = 'someDescription';
-      const type = VenueType.Other;
-      const owner = 'someDid';
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
 
@@ -179,22 +180,15 @@ describe('Venue class', () => {
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
-        .withArgs(rawId)
-        .resolves(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockVenue({
-              creator: dsMockUtils.createMockIdentityId(owner),
-              instructions: [
-                dsMockUtils.createMockU64(id1.toNumber()),
-                dsMockUtils.createMockU64(id2.toNumber()),
-                dsMockUtils.createMockU64(3),
-              ],
-              details: dsMockUtils.createMockVenueDetails(description),
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              venue_type: dsMockUtils.createMockVenueType(type),
-            })
-          )
-        );
+        .resolves(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
+
+      dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
+        entries: [
+          [tuple(rawId, dsMockUtils.createMockU64(id1.toNumber())), []],
+          [tuple(rawId, dsMockUtils.createMockU64(id2.toNumber())), []],
+          [tuple(rawId, dsMockUtils.createMockU64(3)), []],
+        ],
+      });
 
       detailsStub.onFirstCall().resolves({
         status: InstructionStatus.Pending,
@@ -235,9 +229,6 @@ describe('Venue class', () => {
     });
 
     test("should return the Venue's pending instructions", async () => {
-      const description = 'someDescription';
-      const type = VenueType.Other;
-      const owner = 'someDid';
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -247,18 +238,11 @@ describe('Venue class', () => {
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
-        .withArgs(rawId)
-        .resolves(
-          dsMockUtils.createMockOption(
-            dsMockUtils.createMockVenue({
-              creator: dsMockUtils.createMockIdentityId(owner),
-              instructions: [dsMockUtils.createMockU64(instructionId.toNumber())],
-              details: dsMockUtils.createMockVenueDetails(description),
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              venue_type: dsMockUtils.createMockVenueType(type),
-            })
-          )
-        );
+        .resolves(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
+
+      dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
+        entries: [[tuple(rawId, dsMockUtils.createMockU64(instructionId.toNumber())), []]],
+      });
 
       let result = await venue.getPendingInstructions();
 

@@ -11,9 +11,17 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
-import { PostTransactionValue } from '~/internal';
+import { Identity, PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CalendarPeriod, PermissionGroupType, Role, SignerValue, SimplePermissions } from '~/types';
+import { CustomAssetTypeId } from '~/polkadot';
+import {
+  CalendarPeriod,
+  KnownTokenType,
+  PermissionGroupType,
+  Role,
+  SignerValue,
+  SimplePermissions,
+} from '~/types';
 
 /**
  * Polkadot's `tx` submodule
@@ -86,7 +94,7 @@ export interface BaseTransactionSpec<
   /**
    * underlying polkadot transaction object
    */
-  tx: MaybePostTransactionValue<PolymeshTx<Args>>;
+  tx: PolymeshTx<Args>;
   /**
    * wrapped values that will be returned after this transaction is run
    */
@@ -104,9 +112,11 @@ export interface BaseTransactionSpec<
    */
   fee: BigNumber | null;
   /**
-   * whether the transaction fees are paid by a third party (for example when joining an identity as a secondary key)
+   * third party Identity that will pay for the transaction (for example when joining an identity/multisig as a secondary key).
+   *   This is separate from a subsidy, and takes precedence over it. If the current Account is being subsidized and
+   *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` Identity
    */
-  paidByThirdParty: boolean;
+  paidForBy?: Identity;
 }
 
 /**
@@ -249,3 +259,5 @@ export enum InstructionStatus {
  * Determines the subset of permissions an Agent has over a Security Token
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
+
+export type InternalTokenType = KnownTokenType | { Custom: CustomAssetTypeId };
