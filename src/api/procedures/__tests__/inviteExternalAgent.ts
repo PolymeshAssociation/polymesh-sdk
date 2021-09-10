@@ -8,7 +8,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/inviteExternalAgent';
-import { Account, Agent, Context, Identity, SecurityToken } from '~/internal';
+import { Account, Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, PermissionType, SignerValue } from '~/types';
@@ -136,7 +136,14 @@ describe('inviteExternalAgent procedure', () => {
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token,
+      token: entityMockUtils.getSecurityTokenInstance({
+        permissionsGetAgents: [
+          {
+            agent: entityMockUtils.getIdentityInstance({ did: target }),
+            group: entityMockUtils.getKnownPermissionGroupInstance(),
+          },
+        ],
+      }),
     });
 
     return expect(prepareInviteExternalAgent.call(proc, args)).rejects.toThrow(
@@ -150,7 +157,7 @@ describe('inviteExternalAgent procedure', () => {
       token: entityMockUtils.getSecurityTokenInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'otherDid' } as Agent,
+            agent: { did: 'otherDid' } as Identity,
             group: entityMockUtils.getCustomPermissionGroupInstance(),
           },
         ],

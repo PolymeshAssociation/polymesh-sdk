@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Context, CurrentAccount, Identity } from '~/internal';
+import { Account, Context, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -23,16 +23,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/CurrentIdentity',
-  require('~/testUtils/mocks/entities').mockCurrentIdentityModule('~/api/entities/CurrentIdentity')
-);
-jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
-);
-jest.mock(
-  '~/api/entities/CurrentAccount',
-  require('~/testUtils/mocks/entities').mockCurrentAccountModule('~/api/entities/CurrentAccount')
 );
 jest.mock(
   '~/api/entities/DividendDistribution',
@@ -61,11 +53,9 @@ describe('Context class', () => {
   });
 
   beforeEach(() => {
+    dsMockUtils.setConstMock('system', 'ss58Prefix', { returnValue: dsMockUtils.createMockU8(42) });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
       returnValue: dsMockUtils.createMockIdentityId('someDid'),
-    });
-    dsMockUtils.createRpcStub('system', 'properties', {
-      returnValue: { ss58Format: dsMockUtils.createMockOption(dsMockUtils.createMockU8(42)) },
     });
   });
 
@@ -300,9 +290,6 @@ describe('Context class', () => {
     });
 
     test('should create a Context object without Pair attached', async () => {
-      dsMockUtils.createRpcStub('system', 'properties', {
-        returnValue: { ss58Format: dsMockUtils.createMockOption() },
-      });
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: [],
@@ -350,7 +337,7 @@ describe('Context class', () => {
       let result = context.getAccounts();
       expect(result[0].address).toBe(pairs[0].address);
       expect(result[1].address).toBe(pairs[1].address);
-      expect(result[0] instanceof CurrentAccount).toBe(true);
+      expect(result[0] instanceof Account).toBe(true);
       expect(result[1] instanceof Account).toBe(true);
 
       context.setPair(result[1].address);
@@ -358,7 +345,7 @@ describe('Context class', () => {
       result = context.getAccounts();
       expect(result[1].address).toBe(pairs[0].address);
       expect(result[0].address).toBe(pairs[1].address);
-      expect(result[0] instanceof CurrentAccount).toBe(true);
+      expect(result[0] instanceof Account).toBe(true);
       expect(result[1] instanceof Account).toBe(true);
     });
 
@@ -558,7 +545,7 @@ describe('Context class', () => {
     });
 
     test('should throw an error if there is no Identity associated to the Current Account', async () => {
-      entityMockUtils.getCurrentAccountGetIdentityStub().resolves(null);
+      entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1023,7 +1010,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'archiveExtension', {
+      dsMockUtils.createTxStub('asset', 'claimClassicTicker', {
         meta: {
           args: [
             {
@@ -1034,15 +1021,15 @@ describe('Context class', () => {
         },
       });
 
-      expect(context.getTransactionArguments({ tag: TxTags.asset.ArchiveExtension })).toMatchObject(
-        [
-          {
-            type: TransactionArgumentType.Unknown,
-            name: 'someArg',
-            optional: false,
-          },
-        ]
-      );
+      expect(
+        context.getTransactionArguments({ tag: TxTags.asset.ClaimClassicTicker })
+      ).toMatchObject([
+        {
+          type: TransactionArgumentType.Unknown,
+          name: 'someArg',
+          optional: false,
+        },
+      ]);
     });
   });
 

@@ -2,7 +2,9 @@ import {
   Checkpoint,
   CheckpointSchedule,
   Context,
+  CustomPermissionGroup,
   Instruction,
+  KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
@@ -12,6 +14,7 @@ import {
   InputTaxWithholding,
   InstructionStatus,
   InstructionType,
+  PermissionGroupType,
   SecondaryKey,
   SignerValue,
 } from '~/types';
@@ -259,4 +262,11 @@ export async function assertDistributionDatesValid(
       message: 'Expiry date must be after the Checkpoint date',
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGroup): boolean {
+  return group instanceof KnownPermissionGroup && group.type === PermissionGroupType.Full;
 }

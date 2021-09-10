@@ -1,5 +1,6 @@
 import { bool, Bytes, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
@@ -114,6 +115,7 @@ import {
 import { InstructionStatus, PermissionGroupIdentifier, ScopeClaimProof } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import { padString } from '~/utils/internal';
 
 import {
   accountIdToString,
@@ -454,7 +456,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', ticker).returns(rawTicker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -483,7 +485,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', memo).returns(rawMemo);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(memo, 32)).returns(rawMemo);
 
     dsMockUtils
       .getCreateTypeStub()
@@ -524,7 +526,7 @@ describe('stringToTicker and tickerToString', () => {
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', value).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(value, 12)).returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
@@ -815,6 +817,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
     expect((result as Account).address).toBe(value);
 
     value = 'someDid';
+
     signerValue = { type: SignerType.Identity, value };
 
     result = signerValueToSigner(signerValue, context);
@@ -882,7 +885,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 
   test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
+    const ticker = 'TICKERNAME';
     const context = dsMockUtils.getContextInstance();
+
     let value: Authorization = {
       type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
@@ -891,6 +896,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     const createTypeStub = dsMockUtils.getCreateTypeStub();
     createTypeStub.withArgs('AuthorizationData', { [value.type]: value.value }).returns(fakeResult);
+
+    const fakeTicker = ('convertedTicker' as unknown) as Ticker;
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
 
     let result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
@@ -954,7 +962,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
 
-    const ticker = 'TICKERNAME';
     const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
       ticker,
       type: PermissionGroupType.Full,
@@ -970,7 +977,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
+      .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
@@ -989,11 +996,11 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     rawAgentGroup = ('Full' as unknown) as AgentGroup;
     createTypeStub.withArgs('u32', id.toString()).returns(id);
-    createTypeStub.withArgs('AgentGroup', { custom: id }).returns(rawAgentGroup);
+    createTypeStub.withArgs('AgentGroup', { Custom: id }).returns(rawAgentGroup);
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
+      .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
@@ -1167,7 +1174,7 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
     dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AgentGroup', { custom: u32FakeResult })
+      .withArgs('AgentGroup', { Custom: u32FakeResult })
       .returns(fakeResult);
 
     result = permissionGroupIdentifierToAgentGroup(value, context);
@@ -1334,7 +1341,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       })
       .returns(fakeResult);
-    createTypeStub.withArgs('Ticker', ticker).returns(rawTicker);
+    createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
     createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
 
     result = permissionsToMeshPermissions(value, context);
@@ -1470,7 +1477,9 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       })
       .returns(fakeResult);
 
-    tickers.forEach((t, i) => createTypeStub.withArgs('Ticker', t).returns(rawTickers[i]));
+    tickers.forEach((t, i) =>
+      createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
+    );
 
     result = permissionsToMeshPermissions(value, context);
     expect(result).toEqual(fakeResult);
@@ -1960,11 +1969,18 @@ describe('stringToMemo', () => {
     const fakeResult = ('memoDescription' as unknown) as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', value).returns(fakeResult);
+    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(value, 32)).returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  test('stringToMemo should throw an error if the value exceeds the maximum length', () => {
+    const value = 'someVeryLongDescriptionThatIsDefinitelyLongerThanTheMaxLength';
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => stringToMemo(value, context)).toThrow('Max memo length exceeded');
   });
 });
 
@@ -2412,30 +2428,165 @@ describe('stringToDocumentHash and documentHashToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToDocumentHash should throw if document hash is empty', () => {
+  test('stringToDocumentHash should throw if document hash is not prefixed with 0x', () => {
     expect(() => stringToDocumentHash('', dsMockUtils.getContextInstance())).toThrow(
-      'Document hash cannot be empty'
+      'Document hash must be a hexadecimal string prefixed by 0x'
     );
   });
 
+  test('stringToDocumentHash should throw if document hash is longer than 128 characters', () => {
+    expect(() =>
+      stringToDocumentHash('0x'.padEnd(131, '1'), dsMockUtils.getContextInstance())
+    ).toThrow('Document hash exceeds max length');
+  });
+
   test('stringToDocumentHash should convert a string to a polkadot DocumentHash object', () => {
-    const value = 'someHash';
     const fakeResult = ('convertedHash' as unknown) as DocumentHash;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentHash', value).returns(fakeResult);
+    const createTypeStub = dsMockUtils.getCreateTypeStub();
 
-    const result = stringToDocumentHash(value, context);
+    createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
+
+    let result = stringToDocumentHash(undefined, context);
+
+    expect(result).toEqual(fakeResult);
+
+    let value = '0x1';
+    createTypeStub
+      .withArgs('DocumentHash', { H128: hexToU8a(value.padEnd(34, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(35, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H160: hexToU8a(value.padEnd(42, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(43, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H192: hexToU8a(value.padEnd(50, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(51, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H224: hexToU8a(value.padEnd(58, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(59, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H256: hexToU8a(value.padEnd(66, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(67, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H320: hexToU8a(value.padEnd(82, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(83, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H384: hexToU8a(value.padEnd(98, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+
+    value = value.padEnd(99, '1');
+    createTypeStub
+      .withArgs('DocumentHash', { H512: hexToU8a(value.padEnd(130, '0')) })
+      .returns(fakeResult);
+
+    result = stringToDocumentHash(value, context);
 
     expect(result).toEqual(fakeResult);
   });
 
   test('documentHashToString should convert a polkadot DocumentHash object to a string', () => {
-    const fakeResult = 'someDocumentHash';
-    const docHash = dsMockUtils.createMockDocumentHash(fakeResult);
+    const fakeResult = '0x01';
+    let docHash = dsMockUtils.createMockDocumentHash({
+      H128: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
 
-    const result = documentHashToString(docHash);
+    let result = documentHashToString(docHash);
     expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H160: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H192: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H224: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H256: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H320: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H384: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash({
+      H512: dsMockUtils.createMockU8aFixed(fakeResult, true),
+    });
+
+    result = documentHashToString(docHash);
+    expect(result).toEqual(fakeResult);
+
+    docHash = dsMockUtils.createMockDocumentHash('None');
+
+    result = documentHashToString(docHash);
+    expect(result).toBeUndefined();
   });
 });
 
@@ -2488,7 +2639,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
 
   test('tokenDocumentToDocument should convert a TokenDocument object to a polkadot Document object', () => {
     const uri = 'someUri';
-    const contentHash = 'someHash';
+    const contentHash = '0x01';
     const name = 'someName';
     const type = 'someType';
     const filedAt = new Date();
@@ -2536,20 +2687,19 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
   test('documentToTokenDocument should convert a polkadot Document object to a TokenDocument object', () => {
     const name = 'someName';
     const uri = 'someUri';
-    const contentHash = 'someHash';
+    const contentHash = '0x111111';
     const filedAt = new Date();
     const type = 'someType';
     let fakeResult: TokenDocument = {
       name,
       uri,
-      contentHash,
     };
 
     let doc = dsMockUtils.createMockDocument({
       uri: dsMockUtils.createMockDocumentUri(uri),
       name: dsMockUtils.createMockDocumentName(name),
       /* eslint-disable @typescript-eslint/naming-convention */
-      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+      content_hash: dsMockUtils.createMockDocumentHash('None'),
       doc_type: dsMockUtils.createMockOption(),
       filing_date: dsMockUtils.createMockOption(),
       /* eslint-enable @typescript-eslint/naming-convention */
@@ -2560,6 +2710,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
 
     fakeResult = {
       ...fakeResult,
+      contentHash,
       filedAt,
       type,
     };
@@ -2568,7 +2719,9 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       uri: dsMockUtils.createMockDocumentUri(uri),
       name: dsMockUtils.createMockDocumentName(name),
       /* eslint-disable @typescript-eslint/naming-convention */
-      content_hash: dsMockUtils.createMockDocumentHash(contentHash),
+      content_hash: dsMockUtils.createMockDocumentHash({
+        H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+      }),
       doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
       filing_date: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(filedAt.getTime())),
       /* eslint-enable @typescript-eslint/naming-convention */
@@ -2757,17 +2910,62 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     dsMockUtils.cleanup();
   });
 
-  test('scopeToMeshScope should convert a Scope into a polkadot Scope object', () => {
+  test('scopeToMeshScope should convert a Custom type Scope into a polkadot Scope object', () => {
     const context = dsMockUtils.getContextInstance();
     const value: Scope = {
-      type: ScopeType.Identity,
-      value: 'someDid',
+      type: ScopeType.Custom,
+      value: 'someValue',
     };
     const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
 
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('Scope', { [value.type]: value.value })
+      .returns(fakeResult);
+
+    const result = scopeToMeshScope(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('scopeToMeshScope should convert a Identity type Scope into a polkadot Scope object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value: Scope = {
+      type: ScopeType.Identity,
+      value: '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c',
+    };
+    const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
+    const fakeIdentityId = ('0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown) as IdentityId;
+
+    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', value.value).returns(fakeIdentityId);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scope', { [value.type]: fakeIdentityId })
+      .returns(fakeResult);
+
+    const result = scopeToMeshScope(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  test('scopeToMeshScope should convert a Ticker type Scope into a polkadot Scope object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value: Scope = {
+      type: ScopeType.Ticker,
+      value: 'SOMETICKER',
+    };
+    const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
+    const fakeTicker = ('SOMETICKER' as unknown) as Ticker;
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Ticker', padString(value.value, MAX_TICKER_LENGTH))
+      .returns(fakeTicker);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Scope', { [value.type]: fakeTicker })
       .returns(fakeResult);
 
     const result = scopeToMeshScope(value, context);
@@ -2883,7 +3081,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     value = {
       type: ClaimType.InvestorUniqueness,
-      scope: { type: ScopeType.Ticker, value: 'someTicker' },
+      scope: { type: ScopeType.Ticker, value: 'SOMETICKER' },
       cddId: 'someCddId',
       scopeId: 'someScopeId',
     };
@@ -4309,57 +4507,57 @@ describe('transactionToTxTag', () => {
 //   });
 // });
 
-describe('meshProposalStateToProposalState', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
+// NOTE uncomment in Governance v2 upgrade
+// describe('meshProposalStateToProposalState', () => {
+//   beforeAll(() => {
+//     dsMockUtils.initMocks();
+//   });
 
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
+//   afterEach(() => {
+//     dsMockUtils.reset();
+//   });
 
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
+//   afterAll(() => {
+//     dsMockUtils.cleanup();
+//   });
 
-  // NOTE uncomment in Governance v2 upgrade
-  // test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
-  //   let fakeResult: ProposalState = ProposalState.Cancelled;
+//   test('meshProposalStateToProposalState should convert a polkadot ProposalState object to a ProposalState', () => {
+//     let fakeResult: ProposalState = ProposalState.Cancelled;
 
-  //   let proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     let proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-  //   let result = meshProposalStateToProposalState(proposalState);
-  //   expect(result).toEqual(fakeResult);
+//     let result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-  //   fakeResult = ProposalState.Killed;
+//     fakeResult = ProposalState.Killed;
 
-  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-  //   result = meshProposalStateToProposalState(proposalState);
-  //   expect(result).toEqual(fakeResult);
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-  //   fakeResult = ProposalState.Pending;
+//     fakeResult = ProposalState.Pending;
 
-  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-  //   result = meshProposalStateToProposalState(proposalState);
-  //   expect(result).toEqual(fakeResult);
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-  //   fakeResult = ProposalState.Referendum;
+//     fakeResult = ProposalState.Referendum;
 
-  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-  //   result = meshProposalStateToProposalState(proposalState);
-  //   expect(result).toEqual(fakeResult);
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
 
-  //   fakeResult = ProposalState.Rejected;
+//     fakeResult = ProposalState.Rejected;
 
-  //   proposalState = dsMockUtils.createMockProposalState(fakeResult);
+//     proposalState = dsMockUtils.createMockProposalState(fakeResult);
 
-  //   result = meshProposalStateToProposalState(proposalState);
-  //   expect(result).toEqual(fakeResult);
-  // });
-});
+//     result = meshProposalStateToProposalState(proposalState);
+//     expect(result).toEqual(fakeResult);
+//   });
+// });
 
 describe('meshAffirmationStatusToAffirmationStatus', () => {
   beforeAll(() => {
@@ -5034,6 +5232,27 @@ describe('permissionsLikeToPermissions', () => {
         values: [],
         type: PermissionType.Include,
       },
+    });
+
+    args = {
+      tokens: null,
+      transactions: {
+        values: [TxTags.balances.SetBalance, TxTags.asset.Transfer],
+        type: PermissionType.Include,
+      },
+      transactionGroups: [],
+      portfolios: null,
+    };
+
+    result = permissionsLikeToPermissions(args, context);
+    expect(result).toEqual({
+      tokens: null,
+      transactions: {
+        values: [TxTags.asset.Transfer, TxTags.balances.SetBalance],
+        type: PermissionType.Include,
+      },
+      transactionGroups: [],
+      portfolios: null,
     });
   });
 });
@@ -6225,7 +6444,7 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId.toNumber());
     const fakeResult = ('CAId' as unknown) as CAId;
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', args.ticker).returns(ticker);
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
     dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
 
     dsMockUtils

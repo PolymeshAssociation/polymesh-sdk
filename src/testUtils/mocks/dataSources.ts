@@ -25,7 +25,7 @@ import {
 } from '@polkadot/types/interfaces';
 import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/types';
-import { stringToU8a } from '@polkadot/util';
+import { hexToU8a, stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import { BigNumber } from 'bignumber.js';
@@ -292,6 +292,7 @@ interface ContextOptions {
   isFrozen?: boolean;
   addPair?: Pair;
   getAccounts?: Account[];
+  currentIdentityIsEqual?: boolean;
 }
 
 interface KeyringOptions {
@@ -385,10 +386,10 @@ const moduleFailReceipt = createFailReceipt({
     error: { toNumber: (): number => 1 },
     index: { toNumber: (): number => 1 },
     registry: {
-      findMetaError: (): { section: string; name: string; documentation: string[] } => ({
+      findMetaError: (): { section: string; name: string; docs: string[] } => ({
         section: 'someModule',
         name: 'SomeError',
-        documentation: ['This is very bad'],
+        docs: ['This is very bad'],
       }),
     },
   } as unknown) as DispatchErrorModule,
@@ -559,6 +560,7 @@ const defaultContextOptions: ContextOptions = {
     publicKey: 'someKey',
   },
   getAccounts: [],
+  currentIdentityIsEqual: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -601,7 +603,6 @@ function configureContext(opts: ContextOptions): void {
   const identity = {
     did: opts.did,
     hasRoles: sinon.stub().resolves(opts.hasRoles),
-    hasTokenPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
     getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
@@ -609,7 +610,11 @@ function configureContext(opts: ContextOptions): void {
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
+    tokenPermissions: {
+      hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
+    },
     areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
+    isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
   };
   opts.withSeed
     ? getCurrentIdentity.resolves(identity)
@@ -1392,8 +1397,8 @@ const createMockStringCodec = (value?: string): Codec =>
 /**
  * @hidden
  */
-const createMockU8aCodec = (value?: string): Codec =>
-  createMockCodec(stringToU8a(value), value === undefined);
+const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
+  createMockCodec(hex ? hexToU8a(value) : stringToU8a(value), value === undefined);
 
 /**
  * @hidden
@@ -1503,8 +1508,24 @@ export const createMockDocumentUri = (uri?: string): DocumentUri =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDocumentHash = (hash?: string): DocumentHash =>
-  createMockStringCodec(hash) as DocumentHash;
+export const createMockDocumentHash = (
+  hash?:
+    | 'None'
+    | { H128: U8aFixed }
+    | { H160: U8aFixed }
+    | { H192: U8aFixed }
+    | { H224: U8aFixed }
+    | { H256: U8aFixed }
+    | { H320: U8aFixed }
+    | { H384: U8aFixed }
+    | { H512: U8aFixed }
+    | DocumentHash
+): DocumentHash => {
+  if (isCodec<DocumentHash>(hash)) {
+    return hash;
+  }
+  return createMockEnum(hash) as DocumentHash;
+};
 
 /**
  * @hidden
@@ -1923,8 +1944,8 @@ export const createMockAuthorizationType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU8aFixed = (value?: string): U8aFixed =>
-  createMockU8aCodec(value) as U8aFixed;
+export const createMockU8aFixed = (value?: string, hex?: boolean): U8aFixed =>
+  createMockU8aCodec(value, hex) as U8aFixed;
 
 /**
  * @hidden

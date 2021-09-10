@@ -142,8 +142,8 @@ export class NumberedPortfolio extends Portfolio {
 
     const identityId = stringToIdentityId(did, context);
     const rawPortfolioNumber = numberToU64(id, context);
-    const rawPortfolioName = await portfolio.portfolios(identityId, rawPortfolioNumber);
+    const size = await portfolio.portfolios.size(identityId, rawPortfolioNumber);
 
-    return !rawPortfolioName.isEmpty;
+    return !size.isZero();
   }
 }

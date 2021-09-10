@@ -2,23 +2,25 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import {
-  CddStatus,
-  DidRecord,
-  Instruction as MeshInstruction,
-  ModuleName,
-  TxTag,
-  TxTags,
-} from 'polymesh-types/types';
+import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Context,
+  createVenue,
+  CreateVenueParams,
   Entity,
   Instruction,
+  inviteAccount,
+  InviteAccountParams,
+  modifySignerPermissions,
+  ModifySignerPermissionsParams,
   PolymeshError,
+  removeSecondaryKeys,
+  RemoveSecondaryKeysParams,
   SecurityToken,
   TickerReservation,
+  toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
@@ -29,14 +31,17 @@ import {
   ErrorCode,
   GroupedInstructions,
   isCddProviderRole,
+  isIdentityRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isVenueOwnerRole,
   Order,
   PermissionType,
+  ProcedureMethod,
   ResultSet,
   Role,
   SecondaryKey,
+  Signer,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -48,7 +53,6 @@ import {
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
-  extrinsicPermissionsToTransactionPermissions,
   identityIdToString,
   meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
@@ -61,10 +65,16 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, getTicker, isModuleOrTagMatch, removePadding } from '~/utils/internal';
+import {
+  calculateNextKey,
+  createProcedureMethod,
+  getTicker,
+  removePadding,
+} from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
+import { TokenPermissions } from './TokenPermissions';
 
 /**
  * Properties that uniquely identify an Identity
@@ -95,6 +105,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   // Namespaces
   public authorizations: IdentityAuthorizations;
   public portfolios: Portfolios;
+  public tokenPermissions: TokenPermissions;
 
   /**
    * Create an Identity entity
@@ -107,130 +118,95 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.did = did;
     this.authorizations = new IdentityAuthorizations(this, context);
     this.portfolios = new Portfolios(this, context);
+    this.tokenPermissions = new TokenPermissions(this, context);
+
+    this.removeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeSecondaryKeys, { ...args, identity: this }] },
+      context
+    );
+    this.revokePermissions = createProcedureMethod<
+      { secondaryKeys: Signer[] },
+      ModifySignerPermissionsParams & { identity: Identity },
+      void
+    >(
+      {
+        getProcedureAndArgs: args => {
+          const { secondaryKeys } = args;
+          const signers = secondaryKeys.map(signer => {
+            return {
+              signer,
+              permissions: {
+                tokens: { type: PermissionType.Include, values: [] },
+                transactions: { type: PermissionType.Include, values: [] },
+                portfolios: { type: PermissionType.Include, values: [] },
+              },
+            };
+          });
+          return [modifySignerPermissions, { secondaryKeys: signers, identity: this }];
+        },
+      },
+      context
+    );
+    this.modifyPermissions = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifySignerPermissions, { ...args, identity: this }] },
+      context
+    );
+    this.inviteAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [inviteAccount, { ...args, identity: this }] },
+      context
+    );
+    this.createVenue = createProcedureMethod(
+      { getProcedureAndArgs: args => [createVenue, args] },
+      context
+    );
+    this.freezeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true, identity: this }] },
+      context
+    );
+    this.unfreezeSecondaryKeys = createProcedureMethod(
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }] },
+      context
+    );
   }
 
   /**
-   * Check whether this Identity has specific transaction Permissions over a Security Token
+   * Remove a list of secondary keys associated with the Identity
    */
-  public async hasTokenPermissions(args: {
-    token: SecurityToken | string;
-    transactions: TxTag[] | null;
-  }): Promise<boolean> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { externalAgents },
-        },
-      },
-      context,
-      did,
-    } = this;
-    const { token, transactions } = args;
+  public removeSecondaryKeys: ProcedureMethod<RemoveSecondaryKeysParams, void>;
 
-    const ticker = getTicker(token);
-    const rawTicker = stringToTicker(ticker, context);
+  /**
+   * Revoke all permissions of a list of secondary keys associated with the Identity
+   */
+  public revokePermissions: ProcedureMethod<{ secondaryKeys: Signer[] }, void>;
 
-    const groupOption = await externalAgents.groupOfAgent(
-      rawTicker,
-      stringToIdentityId(did, context)
-    );
+  /**
+   * Modify all permissions of a list of secondary keys associated with the Identity
+   */
+  public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
-    if (groupOption.isNone) {
-      return false;
-    }
+  /**
+   * Send an invitation to an Account to join this Identity
+   *
+   * @note this may create AuthorizationRequest which have to be accepted by
+   *   the corresponding Account. An Account or Identity can
+   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   */
+  public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
 
-    const group = groupOption.unwrap();
+  /**
+   * Create a Venue
+   */
+  public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
 
-    if (group.isFull) {
-      return true;
-    }
+  /**
+   * Freeze all the secondary keys in this Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
+   */
+  public freezeSecondaryKeys: ProcedureMethod<void, void>;
 
-    if (transactions === null) {
-      return false;
-    }
-
-    /*
-     * Not authorized:
-     *   - externalAgents
-     *   - identity.acceptAuthorization
-     */
-    if (group.isExceptMeta) {
-      return !transactions.some(
-        tag =>
-          tag.split('.')[0] === ModuleName.ExternalAgents ||
-          tag === TxTags.identity.AcceptAuthorization
-      );
-    }
-
-    /*
-     * Authorized:
-     *   - asset.issue
-     *   - asset.redeem
-     *   - asset.controllerTransfer
-     *   - sto (except for sto.invest)
-     */
-    if (group.isPolymeshV1Pia) {
-      return transactions.every(tag => {
-        const isSto = tag.split('.')[0] === ModuleName.Sto && tag !== TxTags.sto.Invest;
-        const isAsset = (<TxTag[]>[
-          TxTags.asset.Issue,
-          TxTags.asset.Redeem,
-          TxTags.asset.ControllerTransfer,
-        ]).includes(tag);
-
-        return isSto || isAsset;
-      });
-    }
-
-    /*
-     * Authorized:
-     *   - corporateAction
-     *   - corporateBallot
-     *   - capitalDistribution
-     */
-    if (group.isPolymeshV1Caa) {
-      return transactions.every(tag =>
-        [
-          ModuleName.CorporateAction,
-          ModuleName.CorporateBallot,
-          ModuleName.CapitalDistribution,
-        ].includes(tag.split('.')[0] as ModuleName)
-      );
-    }
-
-    const groupId = group.asCustom;
-
-    const groupPermissionsOption = await externalAgents.groupPermissions(rawTicker, groupId);
-
-    const permissions = extrinsicPermissionsToTransactionPermissions(
-      groupPermissionsOption.unwrap()
-    );
-
-    if (permissions === null) {
-      return true;
-    }
-
-    const { type, exceptions, values } = permissions;
-
-    /*
-     * if type is include:
-     *  all passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
-     * if type is exclude:
-     *  all passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
-     */
-    const isPresent = (tag: TxTag, flipResult: boolean) => {
-      const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
-      const isInExceptions = !!exceptions?.includes(tag);
-
-      const result = isInValues && !isInExceptions;
-
-      return flipResult ? result : !result;
-    };
-
-    const isInclude = type === PermissionType.Include;
-
-    return transactions.every(tag => isPresent(tag, isInclude));
-  }
+  /**
+   * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
+   */
+  public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
 
   /**
    * Check whether this Identity possesses the specified Role
@@ -268,6 +244,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const portfolio = portfolioIdToPortfolio(portfolioId, context);
 
       return portfolio.isCustodiedBy();
+    } else if (isIdentityRole(role)) {
+      return did === role.did;
     }
 
     throw new PolymeshError({

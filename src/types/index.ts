@@ -89,6 +89,8 @@ export enum RoleType {
   VenueOwner = 'VenueOwner',
   PortfolioCustodian = 'PortfolioCustodian',
   CorporateActionsAgent = 'CorporateActionsAgent',
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  Identity = 'Identity',
 }
 
 export interface TickerOwnerRole {
@@ -110,7 +112,17 @@ export interface PortfolioCustodianRole {
   portfolioId: PortfolioId;
 }
 
-export type Role = TickerOwnerRole | CddProviderRole | VenueOwnerRole | PortfolioCustodianRole;
+export interface IdentityRole {
+  type: RoleType.Identity;
+  did: string;
+}
+
+export type Role =
+  | TickerOwnerRole
+  | CddProviderRole
+  | VenueOwnerRole
+  | PortfolioCustodianRole
+  | IdentityRole;
 
 /**
  * @hidden
@@ -138,6 +150,13 @@ export function isCddProviderRole(role: Role): role is CddProviderRole {
  */
 export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
   return role.type === RoleType.TickerOwner;
+}
+
+/**
+ * @hidden
+ */
+export function isIdentityRole(role: Role): role is IdentityRole {
+  return role.type === RoleType.Identity;
 }
 
 export enum KnownTokenType {
@@ -182,7 +201,10 @@ export interface TokenIdentifier {
 export interface TokenDocument {
   name: string;
   uri: string;
-  contentHash: string;
+  /**
+   * hex representation of the document (must be prefixed by "0x")
+   */
+  contentHash?: string;
   type?: string;
   filedAt?: Date;
 }
@@ -1084,6 +1106,11 @@ export interface GroupedInstructions {
    *   might also belong in the `affirmed` group, but it will only be included in this one
    */
   failed: Instruction[];
+}
+
+export interface TokenWithGroup {
+  token: SecurityToken;
+  group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
 export { TxTags, TxTag, ModuleName };
