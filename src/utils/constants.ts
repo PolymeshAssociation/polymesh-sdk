@@ -131,7 +131,6 @@ export const ROOT_TYPES = rootTypes;
 export const SDK_RANGE_VERSION = '3.x';
 
 export const SYSTEM_VERSION_RPC_CALL = {
-  id: '1',
   jsonrpc: '2.0',
   method: 'system_version',
   params: [],

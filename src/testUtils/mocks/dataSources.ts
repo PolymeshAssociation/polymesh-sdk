@@ -187,13 +187,10 @@ let apolloConstructorStub: SinonStub;
  * Create a mock instance of the WebSocketAsPromised lib
  */
 function createWebSocketAsPromised(): WebSocketAsPromised {
-  const fakeRpcResult = '{ "result": "3.0.0" }';
   return ({
     open: sinon.stub(),
     send: sinon.stub(),
-    onMessage: {
-      addListener: sinon.stub().callsFake(cb => cb(fakeRpcResult)),
-    },
+    sendRequest: sinon.stub().resolves({ result: '3.0.1' }),
     close: sinon.stub(),
   } as unknown) as WebSocketAsPromised;
 }

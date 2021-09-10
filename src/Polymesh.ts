@@ -10,6 +10,7 @@ import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 import { TxTag } from 'polymesh-types/types';
 import { satisfies } from 'semver';
+import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import WebSocketAsPromised from 'websocket-as-promised';
 
 import {
@@ -66,15 +67,6 @@ interface ConnectParamsBase {
   nodeUrl: string;
   signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
-}
-
-/**
- * @hidden
- */
-function wspListener(wsp: WebSocketAsPromised) {
-  return new Promise<string>(resolve => {
-    wsp.onMessage.addListener(data => resolve(JSON.parse(data).result));
-  });
 }
 
 /**
@@ -201,12 +193,18 @@ export class Polymesh {
     } = params;
     let context: Context;
 
-    const wsp = new WebSocketAsPromised(nodeUrl);
+    /* istanbul ignore next: part of configuration, doesn't need to be tested */
+    const wsp = new WebSocketAsPromised(nodeUrl, {
+      createWebSocket: url => (new W3CWebSocket(url) as unknown) as WebSocket,
+      packMessage: data => JSON.stringify(data),
+      unpackMessage: data => JSON.parse(data.toString()),
+      attachRequestId: (data, requestId) => Object.assign({ id: requestId }, data),
+      extractRequestId: data => data && data.id,
+    });
 
     await wsp.open();
 
-    wsp.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
-    const version = await wspListener(wsp);
+    const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
 
     if (!satisfies(version, SDK_RANGE_VERSION)) {
       throw new PolymeshError({
