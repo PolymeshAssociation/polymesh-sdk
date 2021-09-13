@@ -388,8 +388,8 @@ export abstract class PolymeshTransactionBase<
       // known error
       const mod = error.asModule;
 
-      const { section, name, documentation }: RegistryError = mod.registry.findMetaError(mod);
-      message = `${section}.${name}: ${documentation.join(' ')}`;
+      const { section, name, docs }: RegistryError = mod.registry.findMetaError(mod);
+      message = `${section}.${name}: ${docs.join(' ')}`;
     } else if (error.isBadOrigin) {
       message = 'Bad origin';
     } else if (error.isCannotLookup) {
