@@ -172,7 +172,7 @@ describe('NumberedPortfolio class', () => {
       const portfolioId = new BigNumber(0);
 
       const portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-        returnValue: dsMockUtils.createMockBytes(),
+        size: 0,
       });
 
       sinon
@@ -187,7 +187,7 @@ describe('NumberedPortfolio class', () => {
       let result = await numberedPortfolio.exists();
       expect(result).toBe(false);
 
-      portfoliosStub.resolves(dsMockUtils.createMockBytes('portfolioName'));
+      portfoliosStub.size.resolves(dsMockUtils.createMockU64(10));
 
       result = await numberedPortfolio.exists();
       expect(result).toBe(true);

@@ -1072,11 +1072,12 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
+    const ticker = stringToTicker(auth.value.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {
-      const { ticker, id } = auth.value;
+      const { id } = auth.value;
       value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
     } else {
-      const { ticker, type } = auth.value;
+      const { type } = auth.value;
       value = [ticker, permissionGroupIdentifierToAgentGroup(type, context)];
     }
   } else {

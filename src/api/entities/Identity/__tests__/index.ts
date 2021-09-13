@@ -2,18 +2,10 @@ import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId, ScopeId, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import { DidRecord, IdentityId, ScopeId, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Context,
-  Entity,
-  Identity,
-  KnownPermissionGroup,
-  SecurityToken,
-  TransactionQueue,
-  Venue,
-} from '~/internal';
+import { Context, Entity, Identity, SecurityToken, TransactionQueue, Venue } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
@@ -22,7 +14,6 @@ import {
   DistributionWithDetails,
   IdentityRole,
   Order,
-  PermissionGroupType,
   PermissionType,
   PortfolioCustodianRole,
   Role,
@@ -76,10 +67,6 @@ jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
-jest.mock(
-  '~/api/entities/Agent',
-  require('~/testUtils/mocks/entities').mockAgentModule('~/api/entities/Agent')
-);
 
 describe('Identity class', () => {
   let context: MockContext;
@@ -128,179 +115,6 @@ describe('Identity class', () => {
       expect(Identity.isUniqueIdentifiers({ did: 'someDid' })).toBe(true);
       expect(Identity.isUniqueIdentifiers({})).toBe(false);
       expect(Identity.isUniqueIdentifiers({ did: 3 })).toBe(false);
-    });
-  });
-
-  describe('method: hasTokenPermissions', () => {
-    beforeAll(() => {
-      entityMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
-    test('should check whether the Identity has the appropriate permissions for the token', async () => {
-      const identity = new Identity({ did: 'someDid' }, context);
-      const ticker = 'SOME_TICKER';
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      let result = await identity.hasTokenPermissions({ token, transactions: [] });
-
-      expect(result).toBe(false);
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
-      });
-
-      result = await identity.hasTokenPermissions({ token, transactions: [] });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
-      });
-
-      result = await identity.hasTokenPermissions({ token, transactions: null });
-
-      expect(result).toBe(false);
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.externalAgents.RemoveAgent],
-      });
-
-      expect(result).toBe(false);
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.identity.AcceptAuthorization],
-      });
-
-      expect(result).toBe(false);
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.asset.ControllerTransfer],
-      });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Pia')
-        ),
-      });
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.asset.CreateAsset],
-      });
-
-      expect(result).toBe(false);
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.Invest],
-      });
-
-      expect(result).toBe(false);
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.FreezeFundraiser],
-      });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Caa')
-        ),
-      });
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.asset.CreateAsset],
-      });
-
-      expect(result).toBe(false);
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.corporateAction.ChangeRecordDate],
-      });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(1) })
-        ),
-      });
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockExtrinsicPermissions('Whole')
-        ),
-      });
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.corporateAction.ChangeRecordDate],
-      });
-
-      expect(result).toBe(true);
-
-      /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockExtrinsicPermissions({
-            These: [
-              dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: {
-                  Except: [dsMockUtils.createMockDispatchableName('createAsset')],
-                },
-              }),
-            ],
-          })
-        ),
-      });
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.asset.CreateAsset],
-      });
-
-      expect(result).toBe(false);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockExtrinsicPermissions({
-            Except: [
-              dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: 'Whole',
-              }),
-            ],
-          })
-        ),
-      });
-
-      result = await identity.hasTokenPermissions({
-        token,
-        transactions: [TxTags.identity.AddClaim],
-      });
-
-      expect(result).toBe(true);
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
   });
 
@@ -1537,58 +1351,6 @@ describe('Identity class', () => {
       const queue = await identity.unfreezeSecondaryKeys();
 
       expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: agentOf', () => {
-    let did: string;
-    let ticker: string;
-    let rawDid: IdentityId;
-    let rawTicker: Ticker;
-
-    beforeAll(() => {
-      did = 'someDid';
-      ticker = 'SOMETICKER';
-      rawDid = dsMockUtils.createMockIdentityId(did);
-      rawTicker = dsMockUtils.createMockTicker(ticker);
-    });
-
-    beforeEach(() => {
-      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
-    });
-
-    afterAll(() => {
-      sinon.restore();
-    });
-
-    test('should return a list of AssetPermission', async () => {
-      const identity = new Identity({ did }, context);
-      const group = entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
-        type: PermissionGroupType.Full,
-        getPermissions: {
-          transactions: null,
-          transactionGroups: [],
-        },
-      });
-
-      entityMockUtils.configureMocks({
-        securityTokenOptions: {
-          ticker,
-        },
-        agentOptions: {
-          getPermissionGroup: group,
-        },
-      });
-
-      dsMockUtils.createQueryStub('externalAgents', 'agentOf', {
-        entries: [tuple([rawDid, rawTicker], {})],
-      });
-
-      const result = await identity.getTokenPermissions();
-      expect(result.length).toEqual(1);
-      expect(result[0].token.ticker).toEqual(ticker);
-      expect(result[0].group instanceof KnownPermissionGroup).toEqual(true);
     });
   });
 

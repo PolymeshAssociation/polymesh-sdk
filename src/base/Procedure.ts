@@ -153,8 +153,13 @@ export class Procedure<
 
     const { permissions = true, roles = true } = checkAuthorizationResult;
 
+    const {
+      signerPermissions = permissions,
+      agentPermissions = permissions,
+    } = checkAuthorizationResult;
+
     let identity: Identity | null = null;
-    let hasRoles = false;
+    let hasRoles: boolean;
     let noIdentity = false;
 
     const account = ctx.getCurrentAccount();
@@ -164,6 +169,7 @@ export class Procedure<
     if (typeof roles !== 'boolean') {
       identity = await fetchIdentity();
       noIdentity = !identity;
+      hasRoles = false;
 
       if (identity) {
         hasRoles = await identity.hasRoles(roles);
@@ -172,13 +178,22 @@ export class Procedure<
       hasRoles = roles;
     }
 
-    let hasSignerPermissions: boolean;
-    let hasAgentPermissions = true;
+    let hasAgentPermissions: boolean;
+    let signerPermissionsAwaitable: boolean | Promise<boolean>;
 
-    if (typeof permissions !== 'boolean') {
-      const signerPermissionsPromise = account.hasPermissions(permissions);
+    const accountFrozenPromise = account.isFrozen();
 
-      const { tokens, transactions } = permissions;
+    if (typeof signerPermissions !== 'boolean') {
+      signerPermissionsAwaitable = account.hasPermissions(signerPermissions);
+    } else {
+      signerPermissionsAwaitable = signerPermissions;
+    }
+
+    if (typeof agentPermissions !== 'boolean') {
+      const { tokens, transactions } = agentPermissions;
+
+      hasAgentPermissions = true;
+
       // we assume the same permissions are required for each token
       if (tokens?.length && transactions?.length) {
         identity = await fetchIdentity();
@@ -192,19 +207,19 @@ export class Procedure<
             // the compiler doesn't recognize that identity is defined even though
             //   we checked at the top of the block
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            identity!.hasTokenPermissions({ token, transactions })
+            identity!.tokenPermissions.hasPermissions({ token, transactions })
           );
 
           hasAgentPermissions = agentPermissionResults.every(perm => perm);
         }
       }
-
-      hasSignerPermissions = await signerPermissionsPromise;
     } else {
-      hasSignerPermissions = permissions;
+      hasAgentPermissions = agentPermissions;
     }
 
-    const accountFrozen = await account.isFrozen();
+    const hasSignerPermissions = await signerPermissionsAwaitable;
+
+    const accountFrozen = await accountFrozenPromise;
 
     return {
       roles: hasRoles,

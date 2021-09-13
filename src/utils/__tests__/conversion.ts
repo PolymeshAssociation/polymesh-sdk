@@ -902,7 +902,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 
   test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
+    const ticker = 'TICKERNAME';
     const context = dsMockUtils.getContextInstance();
+
     let value: Authorization = {
       type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
@@ -911,6 +913,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     const createTypeStub = dsMockUtils.getCreateTypeStub();
     createTypeStub.withArgs('AuthorizationData', { [value.type]: value.value }).returns(fakeResult);
+
+    const fakeTicker = ('convertedTicker' as unknown) as Ticker;
+    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
 
     let result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
@@ -974,7 +979,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
 
-    const ticker = 'TICKERNAME';
     const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
       ticker,
       type: PermissionGroupType.Full,
@@ -990,7 +994,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
+      .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
@@ -1013,7 +1017,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [ticker, rawAgentGroup] })
+      .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
