@@ -191,18 +191,19 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const data: ExtrinsicData[] = [];
 
+    // TODO @shuffledex: remove commented lines once middleware team fix missing attributes
     transactionList.forEach(
       ({
         block_id,
         extrinsic_idx,
         address: rawAddress,
-        nonce,
+        // nonce,
         module_id,
         call_id,
         params,
         success: txSuccess,
         spec_version_id,
-        extrinsic_hash,
+        // extrinsic_hash,
       }) => {
         // TODO remove null check once types fixed
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
@@ -210,12 +211,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           blockNumber: new BigNumber(block_id),
           extrinsicIdx: extrinsic_idx,
           address: rawAddress ?? null,
-          nonce: nonce!,
+          nonce: 1, // nonce!,
           txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
           params,
           success: !!txSuccess,
           specVersionId: spec_version_id,
-          extrinsicHash: extrinsic_hash!,
+          extrinsicHash: '', // extrinsic_hash!,
         });
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
       }
