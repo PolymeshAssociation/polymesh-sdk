@@ -8,7 +8,6 @@ import sinon, { SinonStub } from 'sinon';
 import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import {
   Account,
-  Agent,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -66,6 +65,7 @@ import {
   TickerReservationDetails,
   TickerReservationStatus,
   TokenIdentifier,
+  TokenWithGroup,
   TransferStatus,
   VenueDetails,
   VenueType,
@@ -92,7 +92,6 @@ type MockCorporateAction = Mocked<CorporateAction>;
 type MockDividendDistribution = Mocked<DividendDistribution>;
 type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
 type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
-type MockAgent = Mocked<Agent>;
 
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
@@ -114,7 +113,6 @@ const mockInstanceContainer = {
   checkpointSchedule: {} as MockCheckpointSchedule,
   corporateAction: {} as MockCorporateAction,
   dividendDistribution: {} as MockDividendDistribution,
-  agent: {} as MockAgent,
 };
 
 interface IdentityOptions {
@@ -133,6 +131,8 @@ interface IdentityOptions {
   getSecondaryKeys?: SecondaryKey[];
   areScondaryKeysFrozen?: boolean;
   isEqual?: boolean;
+  tokenPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;
+  tokenPermissionsGet?: TokenWithGroup[];
 }
 
 interface TickerReservationOptions {
@@ -153,6 +153,7 @@ interface SecurityTokenOptions {
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
   permissionsGetAgents?: AgentWithGroup[];
   permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
+  isEqual?: boolean;
 }
 
 interface AuthorizationRequestOptions {
@@ -206,15 +207,15 @@ interface DefaultPortfolioOptions {
 }
 
 interface CustomPermissionGroupOptions {
-  ticker: string;
-  id: BigNumber;
+  ticker?: string;
+  id?: BigNumber;
   getPermissions?: GroupPermissions;
   isEqual?: boolean;
 }
 
 interface KnownPermissionGroupOptions {
-  ticker: string;
-  type: PermissionGroupType;
+  ticker?: string;
+  type?: PermissionGroupType;
   getPermissions?: GroupPermissions;
   isEqual?: boolean;
 }
@@ -285,12 +286,6 @@ interface DividendDistributionOptions {
   getParticipant?: Partial<DistributionParticipant> | null;
 }
 
-interface AgentOptions {
-  did?: string;
-  ticker?: string;
-  getPermissionGroup?: CustomPermissionGroup | KnownPermissionGroup;
-}
-
 type MockOptions = {
   identityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
@@ -309,7 +304,6 @@ type MockOptions = {
   dividendDistributionOptions?: DividendDistributionOptions;
   customPermissionGroupOptions?: CustomPermissionGroupOptions;
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
-  agentOptions?: AgentOptions;
 };
 
 let identityConstructorStub: SinonStub;
@@ -343,6 +337,7 @@ let securityTokenCorporateActionsGetAgentsStub: SinonStub;
 let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let securityTokenPermissionsGetGroupsStub: SinonStub;
 let securityTokenPermissionsGetAgentsStub: SinonStub;
+let securityTokenIsEqualStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -355,6 +350,8 @@ let identityGetTokenBalanceStub: SinonStub;
 let identityGetSecondaryKeysStub: SinonStub;
 let identityAreSecondaryKeysFrozenStub: SinonStub;
 let identityIsEqualStub: SinonStub;
+let identityTokenPermissionsGetStub: SinonStub;
+let identityTokenPermissionsGetGroupStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -391,7 +388,6 @@ let dividendDistributionGetParticipantStub: SinonStub;
 let dividendDistributionCheckpointStub: SinonStub;
 let customPermissionGroupGetPermissionsStub: SinonStub;
 let knownPermissionGroupGetPermissionsStub: SinonStub;
-let agentGetPermissionGroupStub: SinonStub;
 let knownPermissionGroupIsEqualStub: SinonStub;
 let customPermissionGroupIsEqualStub: SinonStub;
 
@@ -675,6 +671,7 @@ const defaultIdentityOptions: IdentityOptions = {
   getSecondaryKeys: [],
   areScondaryKeysFrozen: false,
   isEqual: true,
+  tokenPermissionsGet: [],
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -724,16 +721,12 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     defaultTaxWithholding: new BigNumber(10),
     taxWithholdings: [],
   },
-  permissionsGetAgents: [
-    {
-      agent: { did: 'someDid', ticker: 'SOME_TICKER' } as Agent,
-      group: {} as CustomPermissionGroup,
-    },
-  ],
+  permissionsGetAgents: [],
   permissionsGetGroups: {
     known: [],
     custom: [],
   },
+  isEqual: false,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -909,12 +902,6 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
   },
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
-const defaultAgentOptions: AgentOptions = {
-  did: 'someDid',
-  ticker: 'SOME_TICKER',
-  getPermissionGroup: ('CustomPermissionGroup' as unknown) as CustomPermissionGroup,
-};
-let agentOptions = defaultAgentOptions;
 // NOTE uncomment in Governance v2 upgrade
 // const defaultProposalOptions: ProposalOptions = {
 //   pipId: new BigNumber(1),
@@ -1246,6 +1233,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
       getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
       getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
     },
+    isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -1273,6 +1261,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
   securityTokenPermissionsGetGroupsStub = sinon.stub();
   securityTokenPermissionsGetAgentsStub = sinon.stub();
+  securityTokenIsEqualStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1332,6 +1321,10 @@ function configureIdentity(opts: IdentityOptions): void {
       getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
       getSent: identityAuthorizationsGetSentStub.resolves(opts.authorizations?.getSent),
     },
+    tokenPermissions: {
+      get: identityTokenPermissionsGetStub.resolves(opts.tokenPermissionsGet),
+      getGroup: identityTokenPermissionsGetGroupStub.resolves(opts.tokenPermissionsGetGroup),
+    },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
     getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
@@ -1366,6 +1359,8 @@ function initIdentity(opts?: IdentityOptions): void {
   identityGetSecondaryKeysStub = sinon.stub();
   identityAreSecondaryKeysFrozenStub = sinon.stub();
   identityIsEqualStub = sinon.stub();
+  identityTokenPermissionsGetStub = sinon.stub();
+  identityTokenPermissionsGetGroupStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -1688,41 +1683,6 @@ function initDividendDistribution(opts?: DividendDistributionOptions): void {
 
 /**
  * @hidden
- * Configure the Agent instance
- */
-function configureAgent(opts: AgentOptions): void {
-  const agent = ({
-    did: opts.did,
-    ticker: opts.ticker,
-    getPermissionGroup: agentGetPermissionGroupStub.resolves(opts.getPermissionGroup),
-  } as unknown) as MockAgent;
-
-  Object.assign(mockInstanceContainer.agent, agent);
-  agentConstructorStub.callsFake(args => {
-    const value = merge({}, agent, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Agent.prototype, entities.Identity.prototype);
-    Object.setPrototypeOf(value, entities.Agent.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Agent instance
- */
-function initAgent(opts?: AgentOptions): void {
-  agentConstructorStub = sinon.stub();
-  agentGetPermissionGroupStub = sinon.stub();
-
-  agentOptions = merge({}, defaultDividendDistributionOptions, opts);
-
-  configureAgent(agentOptions);
-}
-
-/**
- * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
@@ -1831,12 +1791,6 @@ export function configureMocks(opts?: MockOptions): void {
     ...opts?.dividendDistributionOptions,
   };
   configureDividendDistribution(tempDividendDistributionOptions);
-
-  const tempAgentOptions = {
-    ...agentOptions,
-    ...opts?.agentOptions,
-  };
-  configureAgent(tempAgentOptions);
 }
 
 /**
@@ -1899,9 +1853,6 @@ export function initMocks(opts?: MockOptions): void {
 
   // DividendDistribution
   initDividendDistribution(opts?.dividendDistributionOptions);
-
-  // Agent
-  initAgent(opts?.agentOptions);
 }
 
 /**
@@ -1924,7 +1875,6 @@ export function cleanup(): void {
   mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
   mockInstanceContainer.corporateAction = {} as MockCorporateAction;
   mockInstanceContainer.dividendDistribution = {} as MockDividendDistribution;
-  mockInstanceContainer.agent = {} as MockAgent;
 }
 
 /**
@@ -1952,7 +1902,6 @@ export function reset(): void {
     dividendDistributionOptions,
     customPermissionGroupOptions,
     knownPermissionGroupOptions,
-    agentOptions,
   });
 }
 
@@ -2038,6 +1987,19 @@ export function getIdentityGetVenuesStub(): SinonStub {
  */
 export function getIdentityGetScopeIdStub(): SinonStub {
   return identityGetScopeIdStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Identity.tokenPermissions.getGroup` method
+ */
+export function getIdentityTokenPermissionsGetGroupStub(
+  group?: CustomPermissionGroup | KnownPermissionGroup
+): SinonStub {
+  if (group) {
+    return identityTokenPermissionsGetGroupStub.resolves(group);
+  }
+  return identityTokenPermissionsGetGroupStub;
 }
 
 /**
@@ -2422,6 +2384,19 @@ export function getCustomPermissionGroupInstance(
 
 /**
  * @hidden
+ * Retrieve the stub of the `CustomPermissionGroup.getPermissions` method
+ */
+export function getCustomPermissionGroupGetPermissionsStub(
+  getPermissions?: GroupPermissions
+): SinonStub {
+  if (getPermissions) {
+    return customPermissionGroupGetPermissionsStub.resolves(getPermissions);
+  }
+  return customPermissionGroupGetPermissionsStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `CustomPermissionGroup.isEqual` method
  */
 export function getCustomPermissionIsEqualStub(): SinonStub {
@@ -2444,9 +2419,22 @@ export function getKnownPermissionGroupInstance(
 
 /**
  * @hidden
- * Retrieve the stub of the `KnwonPermissionGroup.isEqual` method
+ * Retrieve the stub of the `KnownPermissionGroup.getPermissions` method
  */
-export function getKnwonPermissionIsEqualStub(): SinonStub {
+export function getKnownPermissionGroupGetPermissionsStub(
+  getPermissions?: GroupPermissions
+): SinonStub {
+  if (getPermissions) {
+    return knownPermissionGroupGetPermissionsStub.resolves(getPermissions);
+  }
+  return knownPermissionGroupGetPermissionsStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `KnownPermissionGroup.isEqual` method
+ */
+export function getKnownPermissionGroupIsEqualStub(): SinonStub {
   return knownPermissionGroupIsEqualStub;
 }
 
@@ -2716,63 +2704,4 @@ export function getDividendDistributionGetParticipantStub(
   }
 
   return dividendDistributionGetParticipantStub.resolves(getParticipant);
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CustomPermissionGroup.getPermissions` method
- */
-export function getCustomPermissionGroupGetPermissionsStub(
-  getPermissions?: GroupPermissions
-): SinonStub {
-  if (getPermissions) {
-    return customPermissionGroupGetPermissionsStub.resolves(getPermissions);
-  }
-  return customPermissionGroupGetPermissionsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `KnownPermissionGroup.getPermissions` method
- */
-export function getKnownPermissionGroupGetPermissionsStub(
-  getPermissions?: GroupPermissions
-): SinonStub {
-  if (getPermissions) {
-    return knownPermissionGroupGetPermissionsStub.resolves(getPermissions);
-  }
-  return knownPermissionGroupGetPermissionsStub;
-}
-
-/**
- * @hidden
- * Retrieve the Agent constructor stub
- */
-export function getAgentConstructorStub(): SinonStub {
-  return agentConstructorStub;
-}
-
-/**
- * @hidden
- * Retrieve an Agent instance
- */
-export function getAgentInstance(opts?: AgentOptions): MockAgent {
-  if (opts) {
-    configureAgent({ ...defaultAgentOptions, ...opts });
-  }
-
-  return new MockAgentClass() as MockAgent;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Agent.getPermissionGroup` method
- */
-export function getAgentGetPermissionGroupStub(
-  getPermissionGroup?: CustomPermissionGroup | KnownPermissionGroup
-): SinonStub {
-  if (getPermissionGroup) {
-    return agentGetPermissionGroupStub.resolves(getPermissionGroup);
-  }
-  return agentGetPermissionGroupStub;
 }

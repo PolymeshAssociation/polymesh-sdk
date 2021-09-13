@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Agent, CustomPermissionGroup, Identity, KnownPermissionGroup } from '~/internal';
+import { CustomPermissionGroup, Identity, KnownPermissionGroup } from '~/internal';
 import { Compliance, TransferError, TransferRestriction } from '~/types';
 
 export interface SecurityTokenDetails {
@@ -49,7 +49,7 @@ export interface TransferBreakdown {
 }
 
 export interface AgentWithGroup {
-  agent: Agent;
+  agent: Identity;
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
