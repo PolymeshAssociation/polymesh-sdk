@@ -279,6 +279,7 @@ describe('Sto class', () => {
       const raiseToken = 'USD';
       const offeringTokenAmount = new BigNumber(10000);
       const raiseTokenAmount = new BigNumber(1000);
+      const datetime = '2020-10-10';
 
       const items = [
         {
@@ -287,6 +288,7 @@ describe('Sto class', () => {
           raiseToken,
           offeringTokenAmount: offeringTokenAmount.toNumber(),
           raiseTokenAmount: raiseTokenAmount.toNumber(),
+          datetime,
         },
       ];
 

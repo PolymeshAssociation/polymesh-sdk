@@ -129,18 +129,19 @@ export class Middleware {
       data: { transactionByHash: transaction },
     } = result;
 
+    // TODO @shuffledex: remove commented lines once middleware team fix missing attributes
     if (transaction) {
       const {
         block_id: blockNumber,
         extrinsic_idx: extrinsicIdx,
         address: rawAddress,
-        nonce,
+        // nonce,
         module_id: moduleId,
         call_id: callId,
         params,
         success: txSuccess,
         spec_version_id: specVersionId,
-        extrinsic_hash: extrinsicHash,
+        // extrinsic_hash: extrinsicHash,
       } = transaction;
 
       return {
@@ -148,12 +149,12 @@ export class Middleware {
         extrinsicIdx,
         address: rawAddress ?? null,
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        nonce: nonce!,
+        nonce: 1, // nonce!,
         txTag: extrinsicIdentifierToTxTag({ moduleId, callId }),
         params,
         success: !!txSuccess,
         specVersionId,
-        extrinsicHash: extrinsicHash!,
+        extrinsicHash: '', // extrinsicHash!,
         /* eslint-enable @typescript-eslint/no-non-null-assertion */
       };
     }
