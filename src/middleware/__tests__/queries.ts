@@ -15,7 +15,6 @@ import {
   eventByIndexedArgs,
   eventsByIndexedArgs,
   getHistoryOfPaymentEventsForCa,
-  getTickerExternalAgentHistory,
   getWithholdingTaxesOfCa,
   investments,
   issuerDidsWithClaimsByTarget,
@@ -24,6 +23,7 @@ import {
   proposalVotes,
   scopesByIdentity,
   settlements,
+  tickerExternalAgentHistory,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
   transactionByHash,
@@ -280,13 +280,13 @@ describe('getHistoryOfPaymentEventsForCa', () => {
   });
 });
 
-describe('getTickerExternalAgentHistory', () => {
+describe('tickerExternalAgentHistory', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       ticker: 'SOMETICKER',
     };
 
-    const result = getTickerExternalAgentHistory(variables);
+    const result = tickerExternalAgentHistory(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

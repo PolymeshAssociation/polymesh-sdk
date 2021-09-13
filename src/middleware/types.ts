@@ -9,9 +9,9 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  Object: any;
   /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
   DateTime: string;
+  Object: any;
   /** The `BigInt` scalar type represents non-fractional signed whole numeric values. BigInt can represent values between -(2^53) + 1 and 2^53 - 1.  */
   BigInt: any;
   /** Converts strings into boolean */
@@ -36,6 +36,56 @@ export type Account = {
 export type AccountTransactionsArgs = {
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+};
+
+export type AgentAdded = AgentHistoryEvent & {
+  __typename?: 'AgentAdded';
+  datetime: Scalars['DateTime'];
+  block_id: Scalars['Int'];
+  event_idx: Scalars['Int'];
+  permissions: ExtrinsicPermissions;
+};
+
+export type AgentHistory = {
+  __typename?: 'AgentHistory';
+  did: Scalars['String'];
+  history: Array<AgentHistoryEvent>;
+};
+
+export type AgentHistoryEvent = {
+  datetime: Scalars['DateTime'];
+  block_id: Scalars['Int'];
+  event_idx: Scalars['Int'];
+};
+
+export type AgentPermissionsChanged = AgentHistoryEvent & {
+  __typename?: 'AgentPermissionsChanged';
+  datetime: Scalars['DateTime'];
+  block_id: Scalars['Int'];
+  event_idx: Scalars['Int'];
+  permissions: ExtrinsicPermissions;
+};
+
+export type AgentRemoved = AgentHistoryEvent & {
+  __typename?: 'AgentRemoved';
+  datetime: Scalars['DateTime'];
+  block_id: Scalars['Int'];
+  event_idx: Scalars['Int'];
+};
+
+export type AggregatedInvestment = {
+  __typename?: 'AggregatedInvestment';
+  investor: Scalars['String'];
+  offeringToken: Scalars['String'];
+  raiseToken: Scalars['String'];
+  offeringTokenAmount: Scalars['BigInt'];
+  raiseTokenAmount: Scalars['BigInt'];
+};
+
+export type AggregatedInvestmentResult = {
+  __typename?: 'AggregatedInvestmentResult';
+  totalCount: Scalars['Int'];
+  items?: Maybe<Array<Maybe<AggregatedInvestment>>>;
 };
 
 export type Authorization = {
@@ -68,7 +118,9 @@ export enum AuthTypeEnum {
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   Custom = 'Custom',
+  BecomeAgent = 'BecomeAgent',
   NoData = 'NoData',
+  AddRelayerPayingKey = 'AddRelayerPayingKey',
 }
 
 export type Block = {
@@ -83,37 +135,11 @@ export type Block = {
   count_extrinsics?: Maybe<Scalars['Int']>;
   count_events?: Maybe<Scalars['Int']>;
   spec_version_id?: Maybe<Scalars['String']>;
-  debug_info?: Maybe<Scalars['Object']>;
-  count_accounts_new?: Maybe<Scalars['Int']>;
-  count_events_extrinsic?: Maybe<Scalars['Int']>;
-  count_events_finalization?: Maybe<Scalars['Int']>;
-  count_events_module?: Maybe<Scalars['Int']>;
-  count_events_system?: Maybe<Scalars['Int']>;
   count_extrinsics_error?: Maybe<Scalars['Int']>;
   count_extrinsics_signed?: Maybe<Scalars['Int']>;
-  count_extrinsics_signedby_address?: Maybe<Scalars['Int']>;
-  count_extrinsics_signedby_index?: Maybe<Scalars['Int']>;
   count_extrinsics_success?: Maybe<Scalars['Int']>;
   count_extrinsics_unsigned?: Maybe<Scalars['Int']>;
   datetime: Scalars['DateTime'];
-  day?: Maybe<Scalars['Int']>;
-  hour?: Maybe<Scalars['Int']>;
-  month?: Maybe<Scalars['Int']>;
-  range10000?: Maybe<Scalars['Int']>;
-  range100000?: Maybe<Scalars['Int']>;
-  range1000000?: Maybe<Scalars['Int']>;
-  week?: Maybe<Scalars['Int']>;
-  year?: Maybe<Scalars['Int']>;
-  logs?: Maybe<Scalars['Object']>;
-  full_day?: Maybe<Scalars['Int']>;
-  full_hour?: Maybe<Scalars['Int']>;
-  full_month?: Maybe<Scalars['Int']>;
-  full_week?: Maybe<Scalars['Int']>;
-  count_accounts?: Maybe<Scalars['Int']>;
-  count_accounts_reaped?: Maybe<Scalars['Int']>;
-  count_contracts_new?: Maybe<Scalars['Int']>;
-  count_log?: Maybe<Scalars['Int']>;
-  count_sessions_new?: Maybe<Scalars['Int']>;
   parentBlock?: Maybe<Block>;
   events?: Maybe<Array<Maybe<Event>>>;
   extrinsics?: Maybe<Array<Maybe<Extrinsic>>>;
@@ -297,6 +323,7 @@ export enum CallIdEnum {
   RemoveSmartExtension = 'remove_smart_extension',
   ClaimClassicTicker = 'claim_classic_ticker',
   ReserveClassicTicker = 'reserve_classic_ticker',
+  RegisterCustomAssetType = 'register_custom_asset_type',
   New = 'new',
   Cancel = 'cancel',
   ClaimUnclaimed = 'claim_unclaimed',
@@ -349,6 +376,8 @@ export enum CallIdEnum {
   FreezeTxs = 'freeze_txs',
   UnfreezeTxs = 'unfreeze_txs',
   HandleScheduledBridgeTx = 'handle_scheduled_bridge_tx',
+  AddFreezeAdmin = 'add_freeze_admin',
+  RemoveFreezeAdmin = 'remove_freeze_admin',
   AddComplianceRequirement = 'add_compliance_requirement',
   RemoveComplianceRequirement = 'remove_compliance_requirement',
   ReplaceAssetCompliance = 'replace_asset_compliance',
@@ -388,6 +417,8 @@ export enum CallIdEnum {
   DisallowVenues = 'disallow_venues',
   ExecuteScheduledInstruction = 'execute_scheduled_instruction',
   ChangeReceiptValidity = 'change_receipt_validity',
+  UpdateVenueType = 'update_venue_type',
+  UpdateVenueDetails = 'update_venue_details',
   CreateFundraiser = 'create_fundraiser',
   Invest = 'invest',
   FreezeFundraiser = 'freeze_fundraiser',
@@ -409,6 +440,7 @@ export enum CallIdEnum {
   MovePortfolioFunds = 'move_portfolio_funds',
   RenamePortfolio = 'rename_portfolio',
   QuitPortfolioCustody = 'quit_portfolio_custody',
+  AcceptPortfolioCustody = 'accept_portfolio_custody',
   AddRangeProof = 'add_range_proof',
   AddVerifyRangeProof = 'add_verify_range_proof',
   Schedule = 'schedule',
@@ -439,6 +471,7 @@ export enum CallIdEnum {
   RemoveAgent = 'remove_agent',
   Abdicate = 'abdicate',
   ChangeGroup = 'change_group',
+  AcceptBecomeAgent = 'accept_become_agent',
   SetSchedulesMaxComplexity = 'set_schedules_max_complexity',
   CreateSchedule = 'create_schedule',
   RemoveSchedule = 'remove_schedule',
@@ -446,6 +479,14 @@ export enum CallIdEnum {
   MockCddRegisterDid = 'mock_cdd_register_did',
   GetMyDid = 'get_my_did',
   GetCddOf = 'get_cdd_of',
+  SetPayingKey = 'set_paying_key',
+  AcceptPayingKey = 'accept_paying_key',
+  RemovePayingKey = 'remove_paying_key',
+  UpdatePolyxLimit = 'update_polyx_limit',
+  IncreasePolyxLimit = 'increase_polyx_limit',
+  DecreasePolyxLimit = 'decrease_polyx_limit',
+  ClaimItnReward = 'claim_itn_reward',
+  SetItnRewardStatus = 'set_itn_reward_status',
   ControllerTransfer = 'controller_transfer',
   Approve = 'approve',
   TransferFrom = 'transfer_from',
@@ -575,19 +616,20 @@ export type DidItnRewardActions = {
   items?: Maybe<Array<Maybe<ItnRewardAction>>>;
 };
 
+export type DispatchableNames =
+  | WholeDispatchableNames
+  | TheseDispatchableNames
+  | ExceptDispatchableNames;
+
 export type Event = {
   __typename?: 'Event';
   /** Blockchain event */
   block_id: Scalars['Int'];
   event_idx: Scalars['Int'];
   extrinsic_idx?: Maybe<Scalars['Int']>;
-  type?: Maybe<Scalars['String']>;
   spec_version_id?: Maybe<Scalars['Int']>;
   module_id?: Maybe<ModuleIdEnum>;
   event_id?: Maybe<EventIdEnum>;
-  system?: Maybe<Scalars['Int']>;
-  module?: Maybe<Scalars['Int']>;
-  phase?: Maybe<Scalars['Int']>;
   attributes?: Maybe<Scalars['Object']>;
   event_arg_0?: Maybe<Scalars['String']>;
   event_arg_1?: Maybe<Scalars['String']>;
@@ -748,6 +790,8 @@ export enum EventIdEnum {
   DocumentRemoved = 'DocumentRemoved',
   ExtensionRemoved = 'ExtensionRemoved',
   ClassicTickerClaimed = 'ClassicTickerClaimed',
+  CustomAssetTypeExists = 'CustomAssetTypeExists',
+  CustomAssetTypeRegistered = 'CustomAssetTypeRegistered',
   DividendCreated = 'DividendCreated',
   DividendCanceled = 'DividendCanceled',
   DividendPaidOutToUser = 'DividendPaidOutToUser',
@@ -786,6 +830,9 @@ export enum EventIdEnum {
   BridgeLimitUpdated = 'BridgeLimitUpdated',
   TxsHandled = 'TxsHandled',
   BridgeTxScheduled = 'BridgeTxScheduled',
+  FreezeAdminAdded = 'FreezeAdminAdded',
+  FreezeAdminRemoved = 'FreezeAdminRemoved',
+  BridgeTxScheduleFailed = 'BridgeTxScheduleFailed',
   ComplianceRequirementCreated = 'ComplianceRequirementCreated',
   ComplianceRequirementRemoved = 'ComplianceRequirementRemoved',
   AssetComplianceReplaced = 'AssetComplianceReplaced',
@@ -809,6 +856,7 @@ export enum EventIdEnum {
   AffirmationWithdrawn = 'AffirmationWithdrawn',
   InstructionRejected = 'InstructionRejected',
   ReceiptClaimed = 'ReceiptClaimed',
+  ReceiptValidityChanged = 'ReceiptValidityChanged',
   ReceiptUnclaimed = 'ReceiptUnclaimed',
   VenueFiltering = 'VenueFiltering',
   VenuesAllowed = 'VenuesAllowed',
@@ -818,10 +866,14 @@ export enum EventIdEnum {
   InstructionFailed = 'InstructionFailed',
   InstructionExecuted = 'InstructionExecuted',
   VenueUnauthorized = 'VenueUnauthorized',
+  VenueDetailsUpdated = 'VenueDetailsUpdated',
+  VenueTypeUpdated = 'VenueTypeUpdated',
   FundraiserCreated = 'FundraiserCreated',
   FundsRaised = 'FundsRaised',
   FundraiserWindowModifed = 'FundraiserWindowModifed',
   FundraiserClosed = 'FundraiserClosed',
+  FundraiserFrozen = 'FundraiserFrozen',
+  FundraiserUnfrozen = 'FundraiserUnfrozen',
   TransferManagerAdded = 'TransferManagerAdded',
   TransferManagerRemoved = 'TransferManagerRemoved',
   ExemptionsAdded = 'ExemptionsAdded',
@@ -867,6 +919,11 @@ export enum EventIdEnum {
   AgentAdded = 'AgentAdded',
   AgentRemoved = 'AgentRemoved',
   GroupChanged = 'GroupChanged',
+  AuthorizedPayingKey = 'AuthorizedPayingKey',
+  AcceptedPayingKey = 'AcceptedPayingKey',
+  RemovedPayingKey = 'RemovedPayingKey',
+  UpdatedPolyxLimit = 'UpdatedPolyxLimit',
+  ItnRewardClaimed = 'ItnRewardClaimed',
   CustodyTransfer = 'CustodyTransfer',
   CustodyAllowanceChanged = 'CustodyAllowanceChanged',
   TreasuryDidSet = 'TreasuryDidSet',
@@ -886,36 +943,36 @@ export enum EventIdEnum {
   AssetRuleChanged = 'AssetRuleChanged',
 }
 
+export type ExceptDispatchableNames = {
+  __typename?: 'ExceptDispatchableNames';
+  Except: Array<Scalars['String']>;
+};
+
+export type ExceptExtrinsicPermissions = {
+  __typename?: 'ExceptExtrinsicPermissions';
+  Except: Array<PalletPermissions>;
+};
+
 export type Extrinsic = {
   __typename?: 'Extrinsic';
   /** Extrinsic details */
   block_id: Scalars['Int'];
   extrinsic_idx: Scalars['Int'];
-  extrinsic_length?: Maybe<Scalars['String']>;
-  extrinsic_version?: Maybe<Scalars['String']>;
   signed?: Maybe<Scalars['Int']>;
-  unsigned?: Maybe<Scalars['Int']>;
-  address_length?: Maybe<Scalars['String']>;
   address?: Maybe<Scalars['String']>;
-  account_index?: Maybe<Scalars['String']>;
-  signature?: Maybe<Scalars['String']>;
-  nonce?: Maybe<Scalars['Int']>;
-  era?: Maybe<Scalars['String']>;
-  call?: Maybe<Scalars['String']>;
   module_id: ModuleIdEnum;
   call_id: CallIdEnum;
   params: Array<Maybe<Scalars['Object']>>;
   success: Scalars['Int'];
-  error?: Maybe<Scalars['Int']>;
   spec_version_id: Scalars['Int'];
-  codec_error?: Maybe<Scalars['Int']>;
-  extrinsic_hash?: Maybe<Scalars['String']>;
-  account_idx?: Maybe<Scalars['Int']>;
-  signedby_address?: Maybe<Scalars['Int']>;
-  signedby_index?: Maybe<Scalars['Int']>;
+  signedby_address: Scalars['Int'];
   block?: Maybe<Block>;
-  addressAccount?: Maybe<Account>;
 };
+
+export type ExtrinsicPermissions =
+  | WholeExtrinsicPermissions
+  | TheseExtrinsicPermissions
+  | ExceptExtrinsicPermissions;
 
 export type ExtrinsicResult = {
   __typename?: 'ExtrinsicResult';
@@ -974,7 +1031,7 @@ export type HistoryOfPaymentEventsForCa = {
   datetime: Scalars['DateTime'];
   ticker: Scalars['String'];
   localId: Scalars['Int'];
-  balance: Scalars['Int'];
+  balance: Scalars['Float'];
   tax: Scalars['Int'];
 };
 
@@ -1008,6 +1065,7 @@ export type Investment = {
   raiseToken: Scalars['String'];
   offeringTokenAmount: Scalars['BigInt'];
   raiseTokenAmount: Scalars['BigInt'];
+  datetime: Scalars['DateTime'];
 };
 
 export type InvestmentResult = {
@@ -1119,12 +1177,20 @@ export enum ModuleIdEnum {
   Capitaldistribution = 'capitaldistribution',
   Checkpoint = 'checkpoint',
   Testnet = 'testnet',
+  Rewards = 'rewards',
+  Relayer = 'relayer',
 }
 
 export enum Order {
   Asc = 'ASC',
   Desc = 'DESC',
 }
+
+export type PalletPermissions = {
+  __typename?: 'PalletPermissions';
+  pallet_name: Scalars['String'];
+  dispatchable_names: DispatchableNames;
+};
 
 export type PolyxTransfer = {
   __typename?: 'PolyxTransfer';
@@ -1206,15 +1272,7 @@ export type Query = {
   __typename?: 'Query';
   /** Returns true as a heartbeat */
   heartbeat: Scalars['Boolean'];
-  /** Get the chain  information */
-  chainInfo?: Maybe<ChainInfo>;
   latestBlock: Block;
-  /** Get all blocks */
-  blocks?: Maybe<Array<Maybe<Block>>>;
-  /** Get a block by block number */
-  blockById?: Maybe<Block>;
-  /** Get a block by hash */
-  blockByHash?: Maybe<Block>;
   /** Get events by moduleId and eventId */
   events?: Maybe<Array<Maybe<Event>>>;
   /** Get staking events by stashAccount, stakingEventIds, fromDate, toDate */
@@ -1231,12 +1289,6 @@ export type Query = {
   transactions: ExtrinsicResult;
   /** Get transaction by hash */
   transactionByHash?: Maybe<Extrinsic>;
-  /** Get transaction by number */
-  transactionById?: Maybe<Extrinsic>;
-  /** Get account by address */
-  accountByAddress?: Maybe<Account>;
-  /** Get Bridged event by Ethereum transaction hash */
-  bridgedEventByTxHash?: Maybe<Event>;
   /** Get all POLYX transfers sent by the given did and/or account */
   polyxTransfersSent: Array<PolyxTransfer>;
   /** Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers */
@@ -1257,12 +1309,8 @@ export type Query = {
   tokenTransfersReceived: Array<TokenTransfer>;
   /** Get all token transfers sent by the given did */
   tokenTransfersSent: Array<TokenTransfer>;
-  /** Get all Token transfers (send) failed by the given account */
-  tokenTransfersFailed: Array<FailedTokenTransfer>;
   /** Get all authorizations with their status optionally filtered by did, account key or type */
   authorizations: Array<Authorization>;
-  /** Get the current vote results for given pipId */
-  referendumVotes: VoteResult;
   /** Get a proposal by its pipId */
   proposal: Proposal;
   /** Fetch governance proposals */
@@ -1271,54 +1319,17 @@ export type Query = {
   proposalVotes: Array<ProposalVote>;
   /** Get investments related to sto id */
   investments?: Maybe<InvestmentResult>;
-  investmentsAggregated?: Maybe<InvestmentResult>;
-  corporateActionsWithTicker?: Maybe<CorporateActionsWithTickerResult>;
-  corporateActionsWithCAId?: Maybe<CorporateActionsWithCaIdResult>;
   getWithholdingTaxesOfCA?: Maybe<WithholdingTaxesOfCa>;
   getHistoryOfPaymentEventsForCA: HistoryOfPaymentEventsForCaResults;
-  getInstructionIdsForVenue?: Maybe<InstructionIdsForVenueResults>;
   getFundings?: Maybe<FundingResults>;
   getItnRewardRankings?: Maybe<ItnRewardRankingResult>;
   getDidItnRewardRanking?: Maybe<Array<Maybe<ItnRewardRanking>>>;
   getDidItnRewardActions?: Maybe<DidItnRewardActions>;
   updateItnRewardRankings: Scalars['Boolean'];
   getFailedBlocks?: Maybe<FailedBlocksResult>;
-  tickerExternalAgentHistory?: Array<AgentHistory>;
-};
-
-export type TickerExternalAgentHistoryResult = {
-  __typename?: 'TickerExternalAgentHistoryResult';
-  totalCount: Scalars['Int'];
-  items: Array<AgentHistory>;
-};
-
-export type QueryTickerExternalAgentHistoryArgs = {
-  ticker: Scalars['String'];
-};
-
-export type AgentHistoryEvent = {
-  datetime: Scalars['DateTime'];
-  block_id: Scalars['Int'];
-  event_idx: Scalars['Int'];
-};
-
-export type AgentHistory = {
-  __typename?: 'AgentHistory';
-  did: Scalars['String'];
-  history: Array<AgentHistoryEvent>;
-};
-
-export type QueryBlocksArgs = {
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryBlockByIdArgs = {
-  blockId?: Maybe<Scalars['Int']>;
-};
-
-export type QueryBlockByHashArgs = {
-  blockHash?: Maybe<Scalars['String']>;
+  tickerExternalAgentAdded?: Maybe<TickerExternalAgentAddedResult>;
+  tickerExternalAgentHistory: Array<AgentHistory>;
+  tickerExternalAgentActions: TickerExternalAgentActionsResult;
 };
 
 export type QueryEventsArgs = {
@@ -1382,19 +1393,6 @@ export type QueryTransactionsArgs = {
 
 export type QueryTransactionByHashArgs = {
   transactionHash?: Maybe<Scalars['String']>;
-};
-
-export type QueryTransactionByIdArgs = {
-  blockId?: Maybe<Scalars['Int']>;
-  transactionIdx?: Maybe<Scalars['Int']>;
-};
-
-export type QueryAccountByAddressArgs = {
-  address?: Maybe<Scalars['String']>;
-};
-
-export type QueryBridgedEventByTxHashArgs = {
-  ethTransactionHash: Scalars['String'];
 };
 
 export type QueryPolyxTransfersSentArgs = {
@@ -1465,23 +1463,12 @@ export type QueryTokenTransfersSentArgs = {
   skip?: Maybe<Scalars['Int']>;
 };
 
-export type QueryTokenTransfersFailedArgs = {
-  account: Scalars['String'];
-  ticker?: Maybe<Scalars['String']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
 export type QueryAuthorizationsArgs = {
   did?: Maybe<Scalars['String']>;
   accountKey?: Maybe<Scalars['String']>;
   authorizationTypes?: Maybe<Array<AuthTypeEnum>>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryReferendumVotesArgs = {
-  proposalId: Scalars['Int'];
 };
 
 export type QueryProposalArgs = {
@@ -1511,32 +1498,6 @@ export type QueryInvestmentsArgs = {
   skip?: Maybe<Scalars['Int']>;
 };
 
-export type QueryInvestmentsAggregatedArgs = {
-  stoId: Scalars['Int'];
-  ticker: Scalars['String'];
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryCorporateActionsWithTickerArgs = {
-  identityId?: Maybe<Scalars['String']>;
-  ticker?: Maybe<Scalars['String']>;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryCorporateActionsWithCaIdArgs = {
-  identityId?: Maybe<Scalars['String']>;
-  eventDid?: Maybe<Scalars['String']>;
-  CAId?: Maybe<CaId>;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
-  count?: Maybe<Scalars['Int']>;
-  skip?: Maybe<Scalars['Int']>;
-};
-
 export type QueryGetWithholdingTaxesOfCaArgs = {
   CAId: CaId;
   fromDate?: Maybe<Scalars['DateTime']>;
@@ -1549,12 +1510,6 @@ export type QueryGetHistoryOfPaymentEventsForCaArgs = {
   toDate?: Maybe<Scalars['DateTime']>;
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
-};
-
-export type QueryGetInstructionIdsForVenueArgs = {
-  venueId: Scalars['String'];
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
 };
 
 export type QueryGetFundingsArgs = {
@@ -1584,6 +1539,26 @@ export type QueryGetDidItnRewardActionsArgs = {
 export type QueryGetFailedBlocksArgs = {
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+};
+
+export type QueryTickerExternalAgentAddedArgs = {
+  ticker: Scalars['String'];
+  agentDID: Scalars['String'];
+};
+
+export type QueryTickerExternalAgentHistoryArgs = {
+  ticker: Scalars['String'];
+};
+
+export type QueryTickerExternalAgentActionsArgs = {
+  ticker: Scalars['String'];
+  caller_did?: Maybe<Scalars['String']>;
+  pallet_name?: Maybe<ModuleIdEnum>;
+  event_id?: Maybe<EventIdEnum>;
+  max_block?: Maybe<Scalars['Int']>;
+  count?: Maybe<Scalars['Int']>;
+  skip?: Maybe<Scalars['Int']>;
+  order?: Maybe<Order>;
 };
 
 export type Scope = {
@@ -1645,7 +1620,6 @@ export type StakingEvent = {
   __typename?: 'StakingEvent';
   date?: Maybe<Scalars['DateTime']>;
   blockId?: Maybe<Scalars['BigInt']>;
-  transactionId?: Maybe<Scalars['String']>;
   eventId?: Maybe<StakingEventIdEnum>;
   identityId?: Maybe<Scalars['String']>;
   stashAccount?: Maybe<Scalars['String']>;
@@ -1671,6 +1645,39 @@ export type StringResult = {
   __typename?: 'StringResult';
   totalCount: Scalars['Int'];
   items: Array<Scalars['String']>;
+};
+
+export type TheseDispatchableNames = {
+  __typename?: 'TheseDispatchableNames';
+  These: Array<Scalars['String']>;
+};
+
+export type TheseExtrinsicPermissions = {
+  __typename?: 'TheseExtrinsicPermissions';
+  These: Array<PalletPermissions>;
+};
+
+export type TickerExternalAgentAction = {
+  __typename?: 'TickerExternalAgentAction';
+  datetime: Scalars['DateTime'];
+  block_id: Scalars['Int'];
+  event_idx: Scalars['Int'];
+  pallet_name: ModuleIdEnum;
+  event_id: EventIdEnum;
+  caller_did: Scalars['String'];
+};
+
+export type TickerExternalAgentActionsResult = {
+  __typename?: 'TickerExternalAgentActionsResult';
+  totalCount: Scalars['Int'];
+  items: Array<TickerExternalAgentAction>;
+};
+
+export type TickerExternalAgentAddedResult = {
+  __typename?: 'TickerExternalAgentAddedResult';
+  time: Scalars['DateTime'];
+  blockId: Scalars['Int'];
+  eventIndex: Scalars['Int'];
 };
 
 export type TokenTransfer = {
@@ -1700,6 +1707,16 @@ export type VoteResult = {
   __typename?: 'VoteResult';
   ayes: Array<Scalars['String']>;
   nays: Array<Scalars['String']>;
+};
+
+export type WholeDispatchableNames = {
+  __typename?: 'WholeDispatchableNames';
+  Whole?: Maybe<Scalars['Boolean']>;
+};
+
+export type WholeExtrinsicPermissions = {
+  __typename?: 'WholeExtrinsicPermissions';
+  Whole?: Maybe<Scalars['Boolean']>;
 };
 
 export type WithholdingTaxesOfCa = {

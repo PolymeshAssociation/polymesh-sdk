@@ -1115,7 +1115,7 @@ export interface TokenWithGroup {
 
 export interface HistoricAgentOperation {
   identity: Identity;
-  history: {};
+  history: EventIdentifier[];
 }
 
 export { TxTags, TxTag, ModuleName };

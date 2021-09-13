@@ -1,4 +1,3 @@
-import { Identity } from '~/api/entities/Identity';
 import {
   Agent,
   Context,
@@ -13,16 +12,7 @@ import {
   RemoveExternalAgentParams,
   SecurityToken,
 } from '~/internal';
-import { tickerExternalAgentHistory } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
-import {
-  AgentWithGroup,
-  Ensured,
-  HistoricAgentOperation,
-  PermissionGroupType,
-  ProcedureMethod,
-  ResultSet,
-} from '~/types';
+import { AgentWithGroup, PermissionGroupType, ProcedureMethod } from '~/types';
 import {
   agentGroupToPermissionGroup,
   identityIdToString,
@@ -133,30 +123,5 @@ export class Permissions extends Namespace<SecurityToken> {
         group: agentGroupToPermissionGroup(rawAgentGroup, ticker, context),
       };
     });
-  }
-
-  /**
-   * Retrieve all Agent Operation History
-   *
-   * @note uses the middleware
-   */
-  public async getAgentOperationHistory(): Promise<HistoricAgentOperation> {
-    const {
-      context,
-      parent: { ticker },
-    } = this;
-
-    const {
-      data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },
-    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistory'>>(
-      tickerExternalAgentHistory({
-        ticker,
-      })
-    );
-
-    tickerExternalAgentHistoryResult.map(({ did, history }) => ({
-      identity: new Identity({ did }, context),
-      history: {},
-    }));
   }
 }

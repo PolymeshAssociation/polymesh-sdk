@@ -1,4 +1,5 @@
 import { Option, StorageKey } from '@polkadot/types';
+import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
   Counter,
@@ -24,11 +25,12 @@ import {
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
+import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   Ensured,
   EventIdentifier,
+  HistoricAgentOperation,
   ProcedureMethod,
   SubCallback,
   TokenIdentifier,
@@ -456,6 +458,34 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
    * Force a transfer from a given Portfolio to the caller’s default Portfolio
    */
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
+
+  /**
+   * Retrieve all Agent Operation History
+   *
+   * @note uses the middleware
+   */
+  public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
+    const { context, ticker } = this;
+
+    const {
+      data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistory'>>(
+      tickerExternalAgentHistory({
+        ticker,
+      })
+    );
+
+    return tickerExternalAgentHistoryResult.map(({ did, history }) => ({
+      identity: new Identity({ did }, context),
+      history: history.map(({ block_id: blockNumber, datetime, event_idx: eventIndex }) => {
+        return {
+          blockNumber: new BigNumber(blockNumber),
+          blockDate: new Date(datetime),
+          eventIndex,
+        };
+      }),
+    }));
+  }
 
   /**
    * Return the Token's ticker
