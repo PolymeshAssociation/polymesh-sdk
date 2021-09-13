@@ -957,6 +957,8 @@ export type Extrinsic = {
   __typename?: 'Extrinsic';
   /** Extrinsic details */
   block_id: Scalars['Int'];
+  nonce?: Maybe<Scalars['Int']>;
+  extrinsic_hash?: Maybe<Scalars['String']>;
   extrinsic_idx: Scalars['Int'];
   signed?: Maybe<Scalars['Int']>;
   address?: Maybe<Scalars['String']>;

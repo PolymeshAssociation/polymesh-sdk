@@ -145,7 +145,6 @@ describe('Middleware Class', () => {
     const variable = { txHash: 'someHash' };
 
     test('should return a transaction', async () => {
-      // TODO @shuffledex: remove commented lines once middleware team fix missing attributes
       const blockNumber = new BigNumber(1);
       const extrinsicIdx = 2;
       const address = 'someAddress';
@@ -173,12 +172,12 @@ describe('Middleware Class', () => {
         blockNumber,
         extrinsicIdx: extrinsicIdx,
         address,
-        nonce: 1, // undefined,
+        nonce: undefined,
         txTag: 'asset.registerTicker',
         params: [],
         success: false,
         specVersionId,
-        extrinsicHash: '', // undefined,
+        extrinsicHash: undefined,
       });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
@@ -201,12 +200,12 @@ describe('Middleware Class', () => {
         blockNumber,
         extrinsicIdx: extrinsicIdx,
         address: null,
-        nonce: 1, // undefined,
+        nonce: undefined,
         txTag: 'asset.registerTicker',
         params: [],
         success: false,
         specVersionId,
-        extrinsicHash: '', // undefined,
+        extrinsicHash: undefined,
       });
     });
 
