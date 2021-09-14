@@ -119,18 +119,20 @@ export class Agent extends Identity {
   ): Promise<ResultSet<EventIdentifier>> {
     const { context, did, ticker } = this;
 
-    const { moduleId: palletName, eventId, size, start } = opts;
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const { moduleId: pallet_name, eventId: event_id, size, start } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActions({
         ticker,
-        callerDID: did,
-        palletName,
-        eventId,
+        caller_did: did,
+        pallet_name,
+        event_id,
         count: size,
         skip: start,
       })
     );
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const {
       data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
@@ -143,12 +145,11 @@ export class Agent extends Identity {
 
     if (items) {
       items.forEach(item => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { block_id: blockId, time, event_index: eventIndex } = item!;
+        const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
         data.push({
           blockNumber: new BigNumber(blockId),
-          blockDate: new Date(time),
+          blockDate: new Date(`${datetime}Z`),
           eventIndex,
         });
       });

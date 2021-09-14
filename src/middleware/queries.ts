@@ -694,32 +694,32 @@ export function tickerExternalAgentActions(
   const query = gql`
     query TickerExternalAgentActionsQuery(
       $ticker: String!
-      $callerDID: String
-      $palletName: ModuleIdEnum
-      $evenId: EventIdEnum
-      $maxBlock: Int
+      $caller_did: String
+      $pallet_name: ModuleIdEnum
+      $event_id: EventIdEnum
+      $max_block: Int
       $count: Int
       $skip: Int
       $order: Order
     ) {
       tickerExternalAgentActions(
         ticker: $ticker
-        callerDID: $callerDID
-        palletName: $palletName
-        evenId: $evenId
-        maxBlock: $maxBlock
+        caller_did: $caller_did
+        pallet_name: $pallet_name
+        event_id: $event_id
+        max_block: $max_block
         count: $count
         skip: $skip
         order: $order
       ) {
         totalCount
         items {
+          datetime
           block_id
-          event_index
+          event_idx
           pallet_name
           event_id
-          callerDID
-          time
+          caller_did
         }
       }
     }

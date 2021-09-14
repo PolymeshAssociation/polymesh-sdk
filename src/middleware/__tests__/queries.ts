@@ -284,6 +284,7 @@ describe('tickerExternalAgentActions', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       ticker: 'SOMETICKER',
+      caller_did: 'someDid',
     };
 
     const result = tickerExternalAgentActions(variables);

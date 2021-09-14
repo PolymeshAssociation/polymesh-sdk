@@ -121,19 +121,20 @@ describe('Agent class', () => {
   });
 
   describe('method: getOperationHistory', () => {
-    test('should return the amount of the withheld tax', async () => {
+    test('should return the transaction history for a given agent and asset', async () => {
       const agent = new Agent({ did, ticker }, context);
 
       const blockId = new BigNumber(1);
-      const eventIndex = 'eventId';
-      const time = '2020-10-10';
+      const eventIndex = 1;
+      const datetime = '2020-10-10';
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryStub(
         tickerExternalAgentActions({
           ticker,
-          callerDID: did,
-          palletName: undefined,
-          eventId: undefined,
+          caller_did: did,
+          pallet_name: undefined,
+          event_id: undefined,
           count: undefined,
           skip: undefined,
         }),
@@ -141,29 +142,28 @@ describe('Agent class', () => {
           tickerExternalAgentActions: {
             totalCount: 1,
             items: [
-              /* eslint-disable @typescript-eslint/naming-convention */
               {
                 block_id: blockId.toNumber(),
-                time,
-                event_index: eventIndex,
+                datetime,
+                event_idx: eventIndex,
               },
-              /* eslint-enable @typescript-eslint/naming-convention */
             ],
           },
         }
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await agent.getOperationHistory();
 
+      expect(result.next).toEqual(null);
+      expect(result.count).toEqual(1);
       expect(result.data).toEqual([
         {
           blockNumber: blockId,
-          blockDate: new Date(`${time}Z`),
+          blockDate: new Date(`${datetime}Z`),
           eventIndex,
         },
       ]);
-      expect(result.next).toEqual(null);
-      expect(result.count).toEqual(1);
     });
   });
 });
