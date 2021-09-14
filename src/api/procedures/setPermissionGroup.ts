@@ -2,7 +2,6 @@ import { AgentGroup, TxTags } from 'polymesh-types/types';
 
 import { isFullGroupType } from '~/api/procedures/utils';
 import {
-  Agent,
   Context,
   createGroup,
   CustomPermissionGroup,
@@ -12,35 +11,48 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, TransactionPermissions, TxGroup } from '~/types';
+import { ErrorCode, Identity, isEntity, TransactionPermissions, TxGroup } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
   permissionGroupIdentifierToAgentGroup,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
+import { getToken } from '~/utils/internal';
 
-export interface SetPermissionGroupParams {
+interface TokenBase {
   /**
-   * Permission Group to assign to the Agent. Optionally, transaction permissions can be passed directly.
-   *   In that case, a new Permission Group will be created and consequently assigned to the Agent
+   * Security Token over which the Identity will be granted permissions
    */
-  group:
-    | KnownPermissionGroup
-    | CustomPermissionGroup
-    | {
-        transactions: TransactionPermissions;
-      }
-    | {
-        transactionGroups: TxGroup[];
-      };
+  token: string | SecurityToken;
+}
+
+interface TransactionsParams extends TokenBase {
+  transactions: TransactionPermissions;
+}
+
+interface TxGroupParams extends TokenBase {
+  transactionGroups: TxGroup[];
+}
+
+/**
+ * This procedure can be called with:
+ *   - A Security Token's existing Custom Permission Group. The Identity will be assigned as an Agent of that Group for that Token
+ *   - A Known Permission Group and a Security Token. The Identity will be assigned as an Agent of that Group for that Token
+ *   - A set of Transaction Permissions and a Security Token. A Custom Permission Group will be created for that Token with those permissions, and
+ *     the Identity will be assigned as an Agent of that Group for that Token
+ *   - An array of [[TxGroup]]s that represent a set of permissions. A Custom Permission Group will be created with those permissions, and
+ *     the Identity will be assigned as an Agent of that Group for that Token
+ */
+export interface SetPermissionGroupParams {
+  group: KnownPermissionGroup | CustomPermissionGroup | TransactionsParams | TxGroupParams;
 }
 
 /**
  * @hidden
  */
 export type Params = SetPermissionGroupParams & {
-  agent: Agent;
+  identity: Identity;
 };
 
 /**
@@ -79,11 +91,12 @@ export async function prepareSetPermissionGroup(
     storage: { token },
   } = this;
 
-  const { agent, group } = args;
-  const { ticker, did } = agent;
+  const { identity, group } = args;
+  const { ticker } = token;
+  const { did } = identity;
 
   const [currentGroup, currentAgents] = await Promise.all([
-    agent.getPermissionGroup(),
+    identity.tokenPermissions.getGroup({ token }),
     token.permissions.getAgents(),
   ]);
 
@@ -100,10 +113,17 @@ export async function prepareSetPermissionGroup(
     }
   }
 
+  if (!currentAgents.find(({ agent }) => agent.did === did)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The target must already be an Agent for the Security Token',
+    });
+  }
+
   let returnValue: MaybePostTransactionValue<CustomPermissionGroup | KnownPermissionGroup>;
   let rawAgentGroup;
 
-  if ('transactions' in group || 'transactionGroups' in group) {
+  if (!isEntity(group)) {
     returnValue = await this.addProcedure(createGroup(), {
       ticker,
       permissions: group,
@@ -154,12 +174,20 @@ export function getAuthorization(
  */
 export function prepareStorage(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
-  { agent: { ticker } }: Params
+  { group }: Params
 ): Storage {
   const { context } = this;
 
+  let token: string | SecurityToken;
+
+  if (isEntity(group)) {
+    ({ ticker: token } = group);
+  } else {
+    ({ token } = group);
+  }
+
   return {
-    token: new SecurityToken({ ticker }, context),
+    token: getToken(token, context),
   };
 }
 

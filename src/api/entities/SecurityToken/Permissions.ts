@@ -1,9 +1,9 @@
 import {
-  Agent,
   Context,
   createGroup,
   CreateGroupParams,
   CustomPermissionGroup,
+  Identity,
   inviteExternalAgent,
   InviteExternalAgentParams,
   KnownPermissionGroup,
@@ -101,7 +101,8 @@ export class Permissions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Retrieve a list of external agents of the Security Token
+   * Retrieve a list of Agents (Identities which have permissions over the Security Token) and
+   *   their respective Permission Groups
    */
   public async getAgents(): Promise<AgentWithGroup[]> {
     const {
@@ -119,7 +120,7 @@ export class Permissions extends Namespace<SecurityToken> {
     return groups.map(([storageKey, agentGroup]) => {
       const rawAgentGroup = agentGroup.unwrap();
       return {
-        agent: new Agent({ did: identityIdToString(storageKey.args[1]), ticker }, context),
+        agent: new Identity({ did: identityIdToString(storageKey.args[1]) }, context),
         group: agentGroupToPermissionGroup(rawAgentGroup, ticker, context),
       };
     });

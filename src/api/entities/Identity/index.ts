@@ -2,18 +2,10 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import {
-  CddStatus,
-  DidRecord,
-  Instruction as MeshInstruction,
-  ModuleName,
-  TxTag,
-  TxTags,
-} from 'polymesh-types/types';
+import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
-  Agent,
   Context,
   createVenue,
   CreateVenueParams,
@@ -51,7 +43,6 @@ import {
   SecondaryKey,
   Signer,
   SubCallback,
-  TokenWithGroup,
   UnsubCallback,
 } from '~/types';
 import { tuple } from '~/types/utils';
@@ -62,7 +53,6 @@ import {
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
-  extrinsicPermissionsToTransactionPermissions,
   identityIdToString,
   meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
@@ -73,19 +63,18 @@ import {
   signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
-  tickerToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
   calculateNextKey,
   createProcedureMethod,
   getTicker,
-  isModuleOrTagMatch,
   removePadding,
 } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
+import { TokenPermissions } from './TokenPermissions';
 
 /**
  * Properties that uniquely identify an Identity
@@ -116,6 +105,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   // Namespaces
   public authorizations: IdentityAuthorizations;
   public portfolios: Portfolios;
+  public tokenPermissions: TokenPermissions;
 
   /**
    * Create an Identity entity
@@ -128,6 +118,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.did = did;
     this.authorizations = new IdentityAuthorizations(this, context);
     this.portfolios = new Portfolios(this, context);
+    this.tokenPermissions = new TokenPermissions(this, context);
 
     this.removeSecondaryKeys = createProcedureMethod(
       { getProcedureAndArgs: args => [removeSecondaryKeys, { ...args, identity: this }] },
@@ -216,129 +207,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
-
-  /**
-   * Check whether this Identity has specific transaction Permissions over a Security Token
-   */
-  public async hasTokenPermissions(args: {
-    token: SecurityToken | string;
-    transactions: TxTag[] | null;
-  }): Promise<boolean> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { externalAgents },
-        },
-      },
-      context,
-      did,
-    } = this;
-    const { token, transactions } = args;
-
-    const ticker = getTicker(token);
-    const rawTicker = stringToTicker(ticker, context);
-
-    const groupOption = await externalAgents.groupOfAgent(
-      rawTicker,
-      stringToIdentityId(did, context)
-    );
-
-    if (groupOption.isNone) {
-      return false;
-    }
-
-    const group = groupOption.unwrap();
-
-    if (group.isFull) {
-      return true;
-    }
-
-    if (transactions === null) {
-      return false;
-    }
-
-    /*
-     * Not authorized:
-     *   - externalAgents
-     *   - identity.acceptAuthorization
-     */
-    if (group.isExceptMeta) {
-      return !transactions.some(
-        tag =>
-          tag.split('.')[0] === ModuleName.ExternalAgents ||
-          tag === TxTags.identity.AcceptAuthorization
-      );
-    }
-
-    /*
-     * Authorized:
-     *   - asset.issue
-     *   - asset.redeem
-     *   - asset.controllerTransfer
-     *   - sto (except for sto.invest)
-     */
-    if (group.isPolymeshV1Pia) {
-      return transactions.every(tag => {
-        const isSto = tag.split('.')[0] === ModuleName.Sto && tag !== TxTags.sto.Invest;
-        const isAsset = (<TxTag[]>[
-          TxTags.asset.Issue,
-          TxTags.asset.Redeem,
-          TxTags.asset.ControllerTransfer,
-        ]).includes(tag);
-
-        return isSto || isAsset;
-      });
-    }
-
-    /*
-     * Authorized:
-     *   - corporateAction
-     *   - corporateBallot
-     *   - capitalDistribution
-     */
-    if (group.isPolymeshV1Caa) {
-      return transactions.every(tag =>
-        [
-          ModuleName.CorporateAction,
-          ModuleName.CorporateBallot,
-          ModuleName.CapitalDistribution,
-        ].includes(tag.split('.')[0] as ModuleName)
-      );
-    }
-
-    const groupId = group.asCustom;
-
-    const groupPermissionsOption = await externalAgents.groupPermissions(rawTicker, groupId);
-
-    const permissions = extrinsicPermissionsToTransactionPermissions(
-      groupPermissionsOption.unwrap()
-    );
-
-    if (permissions === null) {
-      return true;
-    }
-
-    const { type, exceptions, values } = permissions;
-
-    /*
-     * if type is include:
-     *  all passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
-     * if type is exclude:
-     *  all passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
-     */
-    const isPresent = (tag: TxTag, flipResult: boolean) => {
-      const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
-      const isInExceptions = !!exceptions?.includes(tag);
-
-      const result = isInValues && !isInExceptions;
-
-      return flipResult ? result : !result;
-    };
-
-    const isInclude = type === PermissionType.Include;
-
-    return transactions.every(tag => isPresent(tag, isInclude));
-  }
 
   /**
    * Check whether this Identity possesses the specified Role
@@ -892,36 +760,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const didRecords = await identity.didRecords(did);
     return assembleResult(didRecords);
-  }
-
-  /**
-   * Retrieve all the Security Tokens for which this Identity is an Agent, with the corresponding permission group
-   */
-  public async getTokenPermissions(): Promise<TokenWithGroup[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { externalAgents },
-        },
-      },
-      did,
-      context,
-    } = this;
-
-    const rawDid = stringToIdentityId(did, context);
-    const tokenEntries = await externalAgents.agentOf.entries(rawDid);
-
-    return P.map(tokenEntries, async ([key]) => {
-      const ticker = tickerToString(key.args[1]);
-      const agent = new Agent({ did, ticker }, context);
-      const token = new SecurityToken({ ticker }, context);
-      const group = await agent.getPermissionGroup();
-
-      return {
-        token,
-        group,
-      };
-    });
   }
 
   /**

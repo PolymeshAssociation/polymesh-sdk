@@ -603,13 +603,15 @@ function configureContext(opts: ContextOptions): void {
   const identity = {
     did: opts.did,
     hasRoles: sinon.stub().resolves(opts.hasRoles),
-    hasTokenPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
     getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
     getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
+    },
+    tokenPermissions: {
+      hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
     },
     areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
     isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),

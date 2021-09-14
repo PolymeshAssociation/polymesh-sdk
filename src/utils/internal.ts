@@ -580,6 +580,13 @@ export function getTicker(token: string | SecurityToken): string {
 /**
  * @hidden
  */
+export function getToken(token: string | SecurityToken, context: Context): SecurityToken {
+  return typeof token === 'string' ? new SecurityToken({ ticker: token }, context) : token;
+}
+
+/**
+ * @hidden
+ */
 export function xor(a: boolean, b: boolean): boolean {
   return a !== b;
 }
