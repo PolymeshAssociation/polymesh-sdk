@@ -126,7 +126,7 @@ dateTypes.forEach(type => {
 export const ROOT_TYPES = rootTypes;
 
 /**
- * The SDK version range compatible with Polymesh blockchain
+ * The Polymesh version range that is compatible with this version of the SDK
  */
 export const SDK_RANGE_VERSION = '3.x';
 
