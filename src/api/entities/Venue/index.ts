@@ -85,7 +85,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve whether the Venue exists
+   * Determine whether this Venue exists on chain
    */
   public async exists(): Promise<boolean> {
     const {

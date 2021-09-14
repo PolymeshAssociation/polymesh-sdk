@@ -133,11 +133,13 @@ interface IdentityOptions {
   isEqual?: boolean;
   tokenPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;
   tokenPermissionsGet?: TokenWithGroup[];
+  exists?: boolean;
 }
 
 interface TickerReservationOptions {
   ticker?: string;
   details?: Partial<TickerReservationDetails>;
+  exists?: boolean;
 }
 
 interface SecurityTokenOptions {
@@ -154,6 +156,7 @@ interface SecurityTokenOptions {
   permissionsGetAgents?: AgentWithGroup[];
   permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
   isEqual?: boolean;
+  exists?: boolean;
 }
 
 interface AuthorizationRequestOptions {
@@ -162,6 +165,7 @@ interface AuthorizationRequestOptions {
   issuer?: Identity;
   expiry?: Date | null;
   data?: Authorization;
+  exists?: boolean;
 }
 
 interface ProposalOptions {
@@ -169,6 +173,7 @@ interface ProposalOptions {
   getDetails?: ProposalDetails;
   getStage?: ProposalStage;
   identityHasVoted?: boolean;
+  exists?: boolean;
 }
 
 interface AccountOptions {
@@ -178,6 +183,7 @@ interface AccountOptions {
   getIdentity?: Identity | null;
   getTransactionHistory?: ExtrinsicData[];
   isEqual?: boolean;
+  exists?: boolean;
 }
 
 interface VenueOptions {
@@ -204,6 +210,7 @@ interface DefaultPortfolioOptions {
   custodian?: Identity;
   isCustodiedBy?: boolean;
   isEqual?: boolean;
+  exists?: boolean;
 }
 
 interface CustomPermissionGroupOptions {
@@ -211,6 +218,7 @@ interface CustomPermissionGroupOptions {
   id?: BigNumber;
   getPermissions?: GroupPermissions;
   isEqual?: boolean;
+  exists?: boolean;
 }
 
 interface KnownPermissionGroupOptions {
@@ -218,6 +226,7 @@ interface KnownPermissionGroupOptions {
   type?: PermissionGroupType;
   getPermissions?: GroupPermissions;
   isEqual?: boolean;
+  exists?: boolean;
 }
 
 interface InstructionOptions {
@@ -232,6 +241,7 @@ interface StoOptions {
   id?: BigNumber;
   ticker?: string;
   details?: Partial<StoDetails>;
+  exists?: boolean;
 }
 
 interface CheckpointOptions {
@@ -284,6 +294,7 @@ interface DividendDistributionOptions {
   paymentDate?: Date;
   details?: Partial<DividendDistributionDetails>;
   getParticipant?: Partial<DistributionParticipant> | null;
+  exists?: boolean;
 }
 
 type MockOptions = {
@@ -338,6 +349,8 @@ let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let securityTokenPermissionsGetGroupsStub: SinonStub;
 let securityTokenPermissionsGetAgentsStub: SinonStub;
 let securityTokenIsEqualStub: SinonStub;
+let securityTokenExistsStub: SinonStub;
+let authorizationRequestExistsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
@@ -352,11 +365,14 @@ let identityAreSecondaryKeysFrozenStub: SinonStub;
 let identityIsEqualStub: SinonStub;
 let identityTokenPermissionsGetStub: SinonStub;
 let identityTokenPermissionsGetGroupStub: SinonStub;
+let identityExistsStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
 let accountIsEqualStub: SinonStub;
+let accountExistsStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
+let tickerReservationExistsStub: SinonStub;
 let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
@@ -374,22 +390,27 @@ let defaultPortfolioGetTokenBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
 let defaultPortfolioIsEqualStub: SinonStub;
+let defaultPortfolioExistsStub: SinonStub;
 let stoDetailsStub: SinonStub;
+let stoExistsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
 let checkpointAllBalancesStub: SinonStub;
-let checkpointScheduleDetailsStub: SinonStub;
 let checkpointBalanceStub: SinonStub;
 let corporateActionExistsStub: SinonStub;
+let checkpointScheduleDetailsStub: SinonStub;
 let checkpointScheduleExistsStub: SinonStub;
 let dividendDistributionDetailsStub: SinonStub;
 let dividendDistributionGetParticipantStub: SinonStub;
 let dividendDistributionCheckpointStub: SinonStub;
+let dividendDistributionExistsStub: SinonStub;
 let customPermissionGroupGetPermissionsStub: SinonStub;
+let customPermissionGroupIsEqualStub: SinonStub;
+let customPermissionGroupExistsStub: SinonStub;
 let knownPermissionGroupGetPermissionsStub: SinonStub;
 let knownPermissionGroupIsEqualStub: SinonStub;
-let customPermissionGroupIsEqualStub: SinonStub;
+let knownPermissionGroupExistsStub: SinonStub;
 
 const MockIdentityClass = class {
   /**
@@ -672,6 +693,7 @@ const defaultIdentityOptions: IdentityOptions = {
   areScondaryKeysFrozen: false,
   isEqual: true,
   tokenPermissionsGet: [],
+  exists: true,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
 const defaultAccountOptions: AccountOptions = {
@@ -684,6 +706,7 @@ const defaultAccountOptions: AccountOptions = {
   },
   getTransactionHistory: [],
   isEqual: true,
+  exists: true,
 };
 let accountOptions: AccountOptions = defaultAccountOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
@@ -692,6 +715,7 @@ const defaultTickerReservationOptions: TickerReservationOptions = {
     expiryDate: new Date(),
     status: TickerReservationStatus.Reserved,
   },
+  exists: true,
 };
 let tickerReservationOptions = defaultTickerReservationOptions;
 const defaultSecurityTokenOptions: SecurityTokenOptions = {
@@ -727,6 +751,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     custom: [],
   },
   isEqual: false,
+  exists: true,
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -734,6 +759,7 @@ const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   issuer: { did: 'issuerDid' } as Identity,
   data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
   expiry: null,
+  exists: true,
 };
 let authorizationRequestOptions = defaultAuthorizationRequestOptions;
 const defaultVenueOptions: VenueOptions = {
@@ -777,6 +803,7 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
   custodian: ('identity' as unknown) as Identity,
   isCustodiedBy: true,
   isEqual: true,
+  exists: true,
 };
 let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
 const defaultCustomPermissionGroupOptions: CustomPermissionGroupOptions = {
@@ -787,6 +814,7 @@ const defaultCustomPermissionGroupOptions: CustomPermissionGroupOptions = {
     transactionGroups: [],
   },
   isEqual: true,
+  exists: true,
 };
 let customPermissionGroupOptions = defaultCustomPermissionGroupOptions;
 const defaultKnownPermissionGroupOptions: KnownPermissionGroupOptions = {
@@ -797,6 +825,7 @@ const defaultKnownPermissionGroupOptions: KnownPermissionGroupOptions = {
     transactionGroups: [],
   },
   isEqual: true,
+  exists: true,
 };
 let knownPermissionGroupOptions = defaultKnownPermissionGroupOptions;
 const defaultInstructionOptions: InstructionOptions = {
@@ -809,6 +838,7 @@ const defaultInstructionOptions: InstructionOptions = {
     type: InstructionType.SettleOnAffirmation,
   },
   isPending: false,
+  exists: true,
 };
 let instructionOptions = defaultInstructionOptions;
 const defaultStoOptions: StoOptions = {
@@ -834,6 +864,7 @@ const defaultStoOptions: StoOptions = {
   },
   ticker: 'SOME_TICKER',
   id: new BigNumber(1),
+  exists: true,
 };
 let stoOptions = defaultStoOptions;
 const defaultCheckpointOptions: CheckpointOptions = {
@@ -900,6 +931,7 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
     amount: new BigNumber(100),
     paid: false,
   },
+  exists: true,
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
 // NOTE uncomment in Governance v2 upgrade
@@ -1044,6 +1076,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
     isCustodiedBy: defaultPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
     isEqual: defaultPortfolioIsEqualStub.returns(opts.isEqual),
+    exists: defaultPortfolioExistsStub.resolves(opts.exists),
   } as unknown) as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
@@ -1069,6 +1102,7 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
   defaultPortfolioGetCustodianStub = sinon.stub();
   defaultPortfolioIsCustodiedByStub = sinon.stub();
   defaultPortfolioIsEqualStub = sinon.stub();
+  defaultPortfolioExistsStub = sinon.stub();
 
   defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
 
@@ -1086,6 +1120,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
     ticker: opts.ticker,
     getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: customPermissionGroupIsEqualStub.returns(opts.isEqual),
+    exists: customPermissionGroupExistsStub.resolves(opts.exists),
   } as unknown) as MockCustomPermissionGroup;
 
   Object.assign(mockInstanceContainer.customPermissionGroup, customPermissionGroup);
@@ -1111,6 +1146,7 @@ function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
   customPermissionGroupConstructorStub = sinon.stub();
   customPermissionGroupGetPermissionsStub = sinon.stub();
   customPermissionGroupIsEqualStub = sinon.stub();
+  customPermissionGroupExistsStub = sinon.stub();
 
   customPermissionGroupOptions = { ...defaultCustomPermissionGroupOptions, ...opts };
 
@@ -1128,6 +1164,7 @@ function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void 
     type: opts.type,
     getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: knownPermissionGroupIsEqualStub.returns(opts.isEqual),
+    exists: knownPermissionGroupExistsStub.resolves(opts.exists),
   } as unknown) as MockKnownPermissionGroup;
 
   Object.assign(mockInstanceContainer.knownPermissionGroup, knownPermissionGroup);
@@ -1153,6 +1190,7 @@ function initKnownPermissionGroup(opts?: KnownPermissionGroupOptions): void {
   knownPermissionGroupConstructorStub = sinon.stub();
   knownPermissionGroupGetPermissionsStub = sinon.stub();
   knownPermissionGroupIsEqualStub = sinon.stub();
+  knownPermissionGroupExistsStub = sinon.stub();
 
   knownPermissionGroupOptions = { ...defaultKnownPermissionGroupOptions, ...opts };
 
@@ -1171,6 +1209,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
     target: opts.target,
     expiry: opts.expiry,
     data: opts.data,
+    exists: authorizationRequestExistsStub.resolves(opts.data),
   } as unknown) as MockAuthorizationRequest;
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
@@ -1187,6 +1226,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
  */
 function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
   authorizationRequestConstructorStub = sinon.stub();
+  authorizationRequestExistsStub = sinon.stub();
 
   authorizationRequestOptions = { ...defaultAuthorizationRequestOptions, ...opts };
 
@@ -1234,6 +1274,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
       getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
     },
     isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
+    exists: securityTokenExistsStub.resolves(opts.exists),
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
@@ -1262,6 +1303,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenPermissionsGetGroupsStub = sinon.stub();
   securityTokenPermissionsGetAgentsStub = sinon.stub();
   securityTokenIsEqualStub = sinon.stub();
+  securityTokenExistsStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1278,6 +1320,7 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
     uuid: 'tickerReservation',
     ticker: opts.ticker,
     details: tickerReservationDetailsStub.resolves(details),
+    exists: tickerReservationExistsStub.resolves(opts.exists),
   } as unknown) as MockTickerReservation;
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
@@ -1295,6 +1338,7 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
 function initTickerReservation(opts?: TickerReservationOptions): void {
   tickerReservationConstructorStub = sinon.stub();
   tickerReservationDetailsStub = sinon.stub();
+  tickerReservationExistsStub = sinon.stub();
 
   tickerReservationOptions = {
     ...defaultTickerReservationOptions,
@@ -1331,6 +1375,7 @@ function configureIdentity(opts: IdentityOptions): void {
     getSecondaryKeys: identityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
     areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
     isEqual: identityIsEqualStub.returns(opts.isEqual),
+    exists: identityExistsStub.resolves(opts.exists),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1361,6 +1406,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityIsEqualStub = sinon.stub();
   identityTokenPermissionsGetStub = sinon.stub();
   identityTokenPermissionsGetGroupStub = sinon.stub();
+  identityExistsStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 
@@ -1432,6 +1478,7 @@ function configureAccount(opts: AccountOptions): void {
     ),
     getTransactionHistory: accountGetTransactionHistoryStub.resolves(opts.getTransactionHistory),
     isEqual: accountIsEqualStub.returns(opts.isEqual),
+    exists: accountExistsStub.resolves(opts.exists),
   } as unknown) as MockAccount;
 
   Object.assign(mockInstanceContainer.account, account);
@@ -1452,6 +1499,7 @@ function initAccount(opts?: AccountOptions): void {
   accountGetIdentityStub = sinon.stub();
   accountGetTransactionHistoryStub = sinon.stub();
   accountIsEqualStub = sinon.stub();
+  accountExistsStub = sinon.stub();
 
   accountOptions = { ...defaultAccountOptions, ...opts };
 
@@ -1475,6 +1523,7 @@ function configureSto(opts: StoOptions): void {
     details: stoDetailsStub.resolves(details),
     ticker: opts.ticker,
     id: opts.id,
+    exists: stoExistsStub.resolves(opts.exists),
   } as unknown) as MockSto;
 
   Object.assign(mockInstanceContainer.sto, sto);
@@ -1492,6 +1541,7 @@ function configureSto(opts: StoOptions): void {
 function initSto(opts?: StoOptions): void {
   stoConstructorStub = sinon.stub();
   stoDetailsStub = sinon.stub();
+  stoExistsStub = sinon.stub();
 
   stoOptions = merge({}, defaultStoOptions, opts);
 
@@ -1656,6 +1706,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     details: dividendDistributionDetailsStub.resolves(details),
     getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
     checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
+    exists: dividendDistributionExistsStub.resolves(opts.exists),
   } as unknown) as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
@@ -1675,6 +1726,7 @@ function initDividendDistribution(opts?: DividendDistributionOptions): void {
   dividendDistributionDetailsStub = sinon.stub();
   dividendDistributionGetParticipantStub = sinon.stub();
   dividendDistributionCheckpointStub = sinon.stub();
+  dividendDistributionExistsStub = sinon.stub();
 
   dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
 

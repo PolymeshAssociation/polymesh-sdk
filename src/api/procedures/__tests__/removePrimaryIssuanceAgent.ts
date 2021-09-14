@@ -78,7 +78,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
   });
 
-  test('should throw an error if Primary Issuance Agent list has more than one identity', async () => {
+  test('should throw an error if Primary Issuance Agent list has more than one identity', () => {
     const args = {
       ticker,
     };
@@ -96,7 +96,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(prepareRemovePrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
+    return expect(prepareRemovePrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
       'There must be one (and only one) Primary Issuance Agent assigned to this Security Token'
     );
   });

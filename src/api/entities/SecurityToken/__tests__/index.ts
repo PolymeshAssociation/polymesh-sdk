@@ -624,6 +624,30 @@ describe('SecurityToken class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    test('should return whether the Security Token exists', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      dsMockUtils.createQueryStub('asset', 'tokens', {
+        size: 10,
+      });
+
+      let result = await securityToken.exists();
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('asset', 'tokens', {
+        size: 0,
+      });
+
+      result = await securityToken.exists();
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();

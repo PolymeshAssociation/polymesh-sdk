@@ -120,9 +120,9 @@ export class Portfolios extends Namespace<Identity> {
   }
 
   /**
-   * Retrieve a numbered Portfolio or the default Portfolio if Portfolio ID is not passed
+   * Retrieve a Numbered Portfolio or the Default Portfolio if Portfolio ID is not passed
    *
-   * @param args.porfolioId - optional, defaults to the default portfolio
+   * @param args.porfolioId - optional, defaults to the Default Portfolio
    */
   public async getPortfolio(): Promise<DefaultPortfolio>;
   public async getPortfolio(args: { portfolioId: BigNumber }): Promise<NumberedPortfolio>;

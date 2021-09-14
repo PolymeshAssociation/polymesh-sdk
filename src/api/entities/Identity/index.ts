@@ -763,6 +763,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Determine whether this Identity exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { did, context } = this;
+
+    const recordSize = await context.polymeshApi.query.identity.didRecords.size(
+      stringToIdentityId(did, context)
+    );
+
+    return !recordSize.isZero();
+  }
+
+  /**
    * Return the Identity's DID
    */
   public toJson(): string {

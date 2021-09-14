@@ -164,7 +164,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should throw if seed parameter is not a 66 length string', async () => {
+    test('should throw if seed parameter is not a 66 length string', () => {
       const context = Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -220,7 +220,7 @@ describe('Context class', () => {
       expect(context.currentPair).toEqual(pairs[0]);
     });
 
-    test('should throw if keyring has incorrect ss58 format set', async () => {
+    test('should throw if keyring has incorrect ss58 format set', () => {
       const pairs = [
         {
           address: '2HFAAoz9ZGHnLL84ytDhVBXggYv4avQCiS5ajtKLudRhUFrh',
@@ -1284,7 +1284,7 @@ describe('Context class', () => {
         },
       });
 
-      await expect(context.issuedClaims()).rejects.toThrow(
+      return expect(context.issuedClaims()).rejects.toThrow(
         'Cannot perform this action without an active middleware connection'
       );
     });
@@ -1312,7 +1312,7 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
-      await expect(
+      return expect(
         context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Some Message');
     });

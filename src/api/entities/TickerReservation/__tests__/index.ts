@@ -276,12 +276,33 @@ describe('TickerReservation class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    test('should return whether the Reservation exists', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
+
+      dsMockUtils.createQueryStub('asset', 'tickers', {
+        size: 10,
+      });
+
+      let result = await tickerRes.exists();
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('asset', 'tickers', {
+        size: 0,
+      });
+
+      result = await tickerRes.exists();
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
-      const token = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
+      const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
-      expect(token.toJson()).toBe('SOME_TICKER');
+      expect(tickerRes.toJson()).toBe('SOME_TICKER');
     });
   });
 });

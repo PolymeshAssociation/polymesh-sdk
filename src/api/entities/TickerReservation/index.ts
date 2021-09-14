@@ -185,6 +185,19 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, TickerReservation>;
 
   /**
+   * Determine whether this Ticker Reservation exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { ticker, context } = this;
+
+    const tickerSize = await context.polymeshApi.query.asset.tickers.size(
+      stringToTicker(ticker, context)
+    );
+
+    return !tickerSize.isZero();
+  }
+
+  /**
    * Return the Reservation's ticker
    */
   public toJson(): string {

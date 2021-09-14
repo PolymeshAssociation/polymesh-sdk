@@ -101,7 +101,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should throw an error if the venue doesn't exist", async () => {
+    test("should throw an error if the venue doesn't exist", () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .resolves(dsMockUtils.createMockOption());
@@ -153,7 +153,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should throw an error if the venue doesn't exist", async () => {
+    test("should throw an error if the Venue doesn't exist", () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .resolves(dsMockUtils.createMockOption());
@@ -220,7 +220,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should throw an error if the venue doesn't exist", async () => {
+    test("should throw an error if the venue doesn't exist", () => {
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .resolves(dsMockUtils.createMockOption());

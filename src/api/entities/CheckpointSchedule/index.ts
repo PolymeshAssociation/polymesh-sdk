@@ -180,7 +180,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Retrieve whether the Checkpoint Schedule still exists on chain
+   * Determine whether this Checkpoint Schedule exists on chain
    */
   public async exists(): Promise<boolean> {
     const {

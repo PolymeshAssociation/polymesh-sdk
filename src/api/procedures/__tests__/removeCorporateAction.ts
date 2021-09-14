@@ -57,14 +57,14 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the Corporate Action is a Distribution and it doesn't exist", async () => {
+  test("should throw an error if the Corporate Action is a Distribution and it doesn't exist", () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(
+    return expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: entityMockUtils.getDividendDistributionInstance(),
         ticker,
@@ -72,7 +72,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow("The Distribution doesn't exist");
   });
 
-  test("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", async () => {
+  test("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
@@ -81,7 +81,7 @@ describe('removeCorporateAction procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(
+    return expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: new BigNumber(1),
         ticker,
@@ -89,7 +89,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow("The Corporate Action doesn't exist");
   });
 
-  test('should throw an error if the distribution has already started', async () => {
+  test('should throw an error if the distribution has already started', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
@@ -112,7 +112,7 @@ describe('removeCorporateAction procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(
+    return expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: entityMockUtils.getDividendDistributionInstance(),
         ticker,
@@ -120,10 +120,10 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow('The Distribution has already started');
   });
 
-  test('should throw an error if the corporate action does not exist', async () => {
+  test('should throw an error if the corporate action does not exist', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(
+    return expect(
       prepareRemoveCorporateAction.call(proc, {
         corporateAction: entityMockUtils.getCorporateActionInstance({
           exists: false,

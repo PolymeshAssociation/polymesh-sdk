@@ -70,7 +70,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
   });
 
-  test('should throw an error if Corporate Actions Agent list has more than one identity', async () => {
+  test('should throw an error if Corporate Actions Agent list has more than one identity', () => {
     const args = {
       id,
       ticker,
@@ -87,7 +87,7 @@ describe('removeCorporateActionsAgent procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(prepareRemoveCorporateActionsAgent.call(proc, args)).rejects.toThrow(
+    return expect(prepareRemoveCorporateActionsAgent.call(proc, args)).rejects.toThrow(
       'There must be one (and only one) Corporate Actions Agent assigned to this Security Token'
     );
   });

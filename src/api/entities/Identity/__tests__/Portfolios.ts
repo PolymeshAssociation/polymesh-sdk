@@ -155,7 +155,7 @@ describe('Portfolios class', () => {
       expect(result.id).toEqual(portfolioId);
     });
 
-    test("should throw an error if a numbered portfolio doesn't exist", async () => {
+    test("should throw an error if a numbered portfolio doesn't exist", () => {
       const portfolioId = new BigNumber(1);
 
       entityMockUtils.configureMocks({

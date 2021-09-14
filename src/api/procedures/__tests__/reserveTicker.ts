@@ -149,7 +149,7 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', async () => {
+  test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', () => {
     const expiryDate = new Date(2019, 1, 1);
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),

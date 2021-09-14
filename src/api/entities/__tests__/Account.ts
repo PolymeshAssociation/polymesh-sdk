@@ -283,6 +283,12 @@ describe('Account class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    test('should return true', () => {
+      return expect(account.exists()).resolves.toBe(true);
+    });
+  });
+
   describe('method: getPermissions', () => {
     test('should return full permissions if the account is the primary key', async () => {
       context = dsMockUtils.getContextInstance({ primaryKey: address });

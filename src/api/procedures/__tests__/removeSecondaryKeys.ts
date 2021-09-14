@@ -105,7 +105,7 @@ describe('removeSecondaryKeys procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, [rawSignatory]);
   });
 
-  test('should throw an error if attempting to remove the primary key', async () => {
+  test('should throw an error if attempting to remove the primary key', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const signer = entityMockUtils.getAccountInstance({ address: 'primaryKey' });
 
@@ -113,7 +113,7 @@ describe('removeSecondaryKeys procedure', () => {
       .withArgs(signer)
       .returns({ type: SignerType.Account, value: signer.address });
 
-    await expect(
+    return expect(
       prepareRemoveSecondaryKeys.call(proc, {
         ...args,
         signers: [signer],
@@ -121,7 +121,7 @@ describe('removeSecondaryKeys procedure', () => {
     ).rejects.toThrow('You cannot remove the primary key');
   });
 
-  test('should throw an error if at least one of the secondary keys to remove is not present in the secondary keys list', async () => {
+  test('should throw an error if at least one of the secondary keys to remove is not present in the secondary keys list', () => {
     const { signers } = args;
     const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
 
@@ -129,7 +129,7 @@ describe('removeSecondaryKeys procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(
+    return expect(
       prepareRemoveSecondaryKeys.call(proc, {
         ...args,
         identity: entityMockUtils.getIdentityInstance({

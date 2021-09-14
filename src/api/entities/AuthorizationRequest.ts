@@ -11,7 +11,12 @@ import {
 } from '~/internal';
 import { Authorization, AuthorizationType, ProcedureMethod, Signer, SignerValue } from '~/types';
 import { HumanReadableType } from '~/types/utils';
-import { signerToSignerValue } from '~/utils/conversion';
+import {
+  authorizationDataToAuthorization,
+  numberToU64,
+  signerToSignerValue,
+  signerValueToSignatory,
+} from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -158,6 +163,23 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     const { expiry } = this;
 
     return expiry !== null && expiry < new Date();
+  }
+
+  /**
+   * Determine whether this Authorization Request exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { authId, target, context } = this;
+
+    const auth = await context.polymeshApi.query.identity.authorizations(
+      signerValueToSignatory(signerToSignerValue(target), context),
+      numberToU64(authId, context)
+    );
+
+    return (
+      authorizationDataToAuthorization(auth.authorization_data, context).type !==
+      AuthorizationType.NoData
+    );
   }
 
   /**

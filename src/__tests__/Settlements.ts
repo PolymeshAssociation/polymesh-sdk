@@ -52,14 +52,16 @@ describe('Settlements Class', () => {
       expect(result).toMatchObject(matchingVenue);
     });
 
-    test('should throw if Venue does not exist', async () => {
+    test('should throw if the Venue does not exist', async () => {
       const venueId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
         venueOptions: { exists: false },
       });
 
-      expect(settlements.getVenue({ id: venueId })).rejects.toThrow("The Venue doesn't exist");
+      return expect(settlements.getVenue({ id: venueId })).rejects.toThrow(
+        "The Venue doesn't exist"
+      );
     });
   });
 
@@ -76,14 +78,14 @@ describe('Settlements Class', () => {
       expect(result).toMatchObject(matchingInstruction);
     });
 
-    test('should throw if Instruction does not exist', async () => {
+    test('should throw if the Instruction does not exist', async () => {
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
         instructionOptions: { exists: false },
       });
 
-      expect(settlements.getInstruction({ id: instructionId })).rejects.toThrow(
+      return expect(settlements.getInstruction({ id: instructionId })).rejects.toThrow(
         "The Instruction doesn't exist"
       );
     });

@@ -115,7 +115,7 @@ describe('toggleFreezeSto procedure', () => {
     ).rejects.toThrow('The STO is already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the STO status is live or close', () => {
+  test('should throw an error if freeze is set to false and the STO status is live or close', async () => {
     const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
 
     entityMockUtils.configureMocks({
@@ -130,7 +130,7 @@ describe('toggleFreezeSto procedure', () => {
       },
     });
 
-    expect(
+    await expect(
       prepareToggleFreezeSto.call(proc, {
         ticker,
         id,
@@ -150,7 +150,7 @@ describe('toggleFreezeSto procedure', () => {
       },
     });
 
-    expect(
+    return expect(
       prepareToggleFreezeSto.call(proc, {
         ticker,
         id,

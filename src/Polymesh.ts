@@ -438,9 +438,22 @@ export class Polymesh {
 
   /**
    * Create an Identity instance from a DID
+   *
+   * @throws if there is no Identity with the passed DID
    */
-  public getIdentity(args: { did: string }): Identity {
-    return new Identity(args, this.context);
+  public async getIdentity(args: { did: string }): Promise<Identity> {
+    const identity = new Identity(args, this.context);
+
+    const exists = await identity.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Identity does not exist',
+      });
+    }
+
+    return identity;
   }
 
   /**
@@ -480,9 +493,10 @@ export class Polymesh {
    * Return whether the supplied Identity/DID exists
    */
   public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
-    const invalid = await this.context.getInvalidDids([signerToString(args.identity)]);
+    const { identity: did } = args;
+    const identity = did instanceof Identity ? did : new Identity({ did }, this.context);
 
-    return !invalid.length;
+    return identity.exists();
   }
 
   /**
@@ -580,25 +594,18 @@ export class Polymesh {
    */
   public async getSecurityToken(args: { ticker: string }): Promise<SecurityToken> {
     const { ticker } = args;
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      context,
-    } = this;
 
-    const securityToken = await asset.tokens(stringToTicker(ticker, context));
+    const token = new SecurityToken({ ticker }, this.context);
+    const exists = await token.exists();
 
-    if (!securityToken.owner_did.isEmpty) {
-      return new SecurityToken({ ticker }, context);
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `There is no Security Token with ticker "${ticker}"`,
+      });
     }
 
-    throw new PolymeshError({
-      code: ErrorCode.FatalError,
-      message: `There is no Security Token with ticker "${ticker}"`,
-    });
+    return token;
   }
 
   /**
