@@ -753,8 +753,8 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
             | 'TransferAssetOwnership'
             | 'JoinIdentity'
             | 'PortfolioCustody'
-            | 'Custom'
-            | 'NoData'
+            | 'BecomeAgent'
+            | 'AddRelayerPayingKey'
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array

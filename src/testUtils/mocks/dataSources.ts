@@ -2114,17 +2114,14 @@ export const createMockDispatchableNames = (
 export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: IdentityId }
-    | { RotatePrimaryKey: IdentityId }
+    | 'RotatePrimaryKey'
     | { TransferTicker: Ticker }
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }
     | { JoinIdentity: Permissions }
-    | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
-    | { Custom: Bytes }
-    | { TransferCorporateActionAgent: Ticker }
     | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
-    | 'NoData'
+    | { BecomeAgent: [Ticker, AgentGroup] }
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
 };

@@ -1,11 +1,9 @@
 import { u64 } from '@polkadot/types';
-import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { forEach, mapValues } from 'lodash';
 
-import { PolymeshError } from '~/base/PolymeshError';
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
-import { AuthorizationType, ErrorCode, TxTag, TxTags } from '~/types';
+import { AuthorizationType, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -59,36 +57,11 @@ export async function prepareConsumeAuthorizationRequests(
 
     const idsPerType: Record<AllowedAuthType, [u64][]> = mapValues(typesToExtrinsics, () => []);
 
-    const deprecatedTypes = [
-      AuthorizationType.Custom,
-      AuthorizationType.NoData,
-      AuthorizationType.TransferCorporateActionAgent,
-      AuthorizationType.TransferPrimaryIssuanceAgent,
-    ];
-
-    const deprecatedRequests: { authId: BigNumber; type: AuthorizationType }[] = [];
     liveRequests.forEach(({ authId, data: { type } }) => {
-      if (deprecatedTypes.includes(type)) {
-        deprecatedRequests.push({ authId, type });
-
-        return;
-      }
-
       const id = tuple(numberToU64(authId, context));
 
       idsPerType[type as AllowedAuthType].push(id);
     });
-
-    if (deprecatedRequests.length) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Cannot accept Authorization Requests with a deprecated type',
-        data: {
-          deprecatedRequests,
-          deprecatedTypes,
-        },
-      });
-    }
 
     forEach(idsPerType, (ids, key) => {
       const type = key as AllowedAuthType;

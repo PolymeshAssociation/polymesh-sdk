@@ -145,11 +145,8 @@ export interface AuthorizationData extends Enum {
   readonly isAttestPrimaryKeyRotation: boolean;
   readonly asAttestPrimaryKeyRotation: IdentityId;
   readonly isRotatePrimaryKey: boolean;
-  readonly asRotatePrimaryKey: IdentityId;
   readonly isTransferTicker: boolean;
   readonly asTransferTicker: Ticker;
-  readonly isTransferPrimaryIssuanceAgent: boolean;
-  readonly asTransferPrimaryIssuanceAgent: Ticker;
   readonly isAddMultiSigSigner: boolean;
   readonly asAddMultiSigSigner: AccountId;
   readonly isTransferAssetOwnership: boolean;
@@ -158,11 +155,6 @@ export interface AuthorizationData extends Enum {
   readonly asJoinIdentity: Permissions;
   readonly isPortfolioCustody: boolean;
   readonly asPortfolioCustody: PortfolioId;
-  readonly isCustom: boolean;
-  readonly asCustom: Ticker;
-  readonly isNoData: boolean;
-  readonly isTransferCorporateActionAgent: boolean;
-  readonly asTransferCorporateActionAgent: Ticker;
   readonly isBecomeAgent: boolean;
   readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
   readonly isAddRelayerPayingKey: boolean;
@@ -181,8 +173,8 @@ export interface AuthorizationType extends Enum {
   readonly isTransferAssetOwnership: boolean;
   readonly isJoinIdentity: boolean;
   readonly isPortfolioCustody: boolean;
-  readonly isCustom: boolean;
-  readonly isNoData: boolean;
+  readonly isBecomeAgent: boolean;
+  readonly isAddRelayerPayingKey: boolean;
 }
 
 /** @name BallotMeta */

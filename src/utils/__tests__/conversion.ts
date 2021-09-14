@@ -968,7 +968,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     expect(result).toBe(fakeResult);
 
     value = {
-      type: AuthorizationType.NoData,
+      type: AuthorizationType.RotatePrimaryKey,
     };
 
     dsMockUtils
@@ -1039,11 +1039,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.RotatePrimaryKey,
-      value: 'someIdentity',
     };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      RotatePrimaryKey: dsMockUtils.createMockIdentityId(fakeResult.value),
-    });
+    authorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKey');
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
@@ -1127,36 +1124,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = {
-      type: AuthorizationType.TransferCorporateActionAgent,
-      value: 'someTicker',
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferCorporateActionAgent: dsMockUtils.createMockTicker(fakeResult.value),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.Custom,
-      value: 'someBytes',
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      Custom: dsMockUtils.createMockBytes(fakeResult.value),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.NoData,
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData('NoData');
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
     const beneficiaryAddress = 'beneficiaryAddress';
     const relayerAddress = 'relayerAddress';
     const allowance = new BigNumber(1000);
@@ -1178,6 +1145,17 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
+  });
+
+  test('shoould throw an error if the authorization has an unsupported type', () => {
+    const context = dsMockUtils.getContextInstance();
+    const authorizationData = dsMockUtils.createMockAuthorizationData(
+      'Whatever' as 'RotatePrimaryKey'
+    );
+
+    expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
+      'Unsupported Authorization Type. Please contact the Polymath team'
+    );
   });
 });
 

@@ -93,7 +93,6 @@ import type {
   CustomAssetTypeId,
   DepositInfo,
   DidRecord,
-  DispatchableName,
   Distribution,
   Document,
   DocumentId,
@@ -110,7 +109,6 @@ import type {
   LegStatus,
   LocalCAId,
   MaybeBlock,
-  PalletName,
   PermissionedIdentityPrefs,
   Pip,
   PipId,
@@ -238,13 +236,13 @@ declare module '@polkadot/api/types/storage' {
         [Ticker]
       >;
       /**
-       * The next `AgentType::Custom` ID in the sequence.
+       * The next `AssetType::Custom` ID in the sequence.
        *
        * Numbers in the sequence start from 1 rather than 0.
        **/
       customTypeIdSequence: AugmentedQuery<ApiType, () => Observable<CustomAssetTypeId>, []>;
       /**
-       * Maps custom agent type ids to the registered string contents.
+       * Maps custom asset type ids to the registered string contents.
        **/
       customTypes: AugmentedQuery<
         ApiType,
@@ -252,7 +250,7 @@ declare module '@polkadot/api/types/storage' {
         [CustomAssetTypeId]
       >;
       /**
-       * Inverse map of `CustomTypes`, from registered string contents to custom agent type ids.
+       * Inverse map of `CustomTypes`, from registered string contents to custom asset type ids.
        **/
       customTypesInverse: AugmentedQuery<
         ApiType,
@@ -1055,7 +1053,7 @@ declare module '@polkadot/api/types/storage' {
         (
           arg1: Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
-        ) => Observable<Authorization>,
+        ) => Observable<Option<Authorization>>,
         [Signatory, u64]
       >;
       /**
@@ -1357,16 +1355,6 @@ declare module '@polkadot/api/types/storage' {
         (arg: Kind | string | Uint8Array) => Observable<Bytes>,
         [Kind]
       >;
-    };
-    permissions: {
-      /**
-       * The name of the current function (aka extrinsic).
-       **/
-      currentDispatchableName: AugmentedQuery<ApiType, () => Observable<DispatchableName>, []>;
-      /**
-       * The name of the current pallet (aka module name).
-       **/
-      currentPalletName: AugmentedQuery<ApiType, () => Observable<PalletName>, []>;
     };
     pips: {
       /**
@@ -2477,7 +2465,6 @@ declare module '@polkadot/api/types/storage' {
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>, []>;
     };
-    testUtils: {};
     timestamp: {
       /**
        * Did the timestamp get updated in this block?

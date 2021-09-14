@@ -676,16 +676,12 @@ export default {
     AuthorizationData: {
       _enum: {
         AttestPrimaryKeyRotation: 'IdentityId',
-        RotatePrimaryKey: 'IdentityId',
+        RotatePrimaryKey: '',
         TransferTicker: 'Ticker',
-        TransferPrimaryIssuanceAgent: 'Ticker',
         AddMultiSigSigner: 'AccountId',
         TransferAssetOwnership: 'Ticker',
         JoinIdentity: 'Permissions',
         PortfolioCustody: 'PortfolioId',
-        Custom: 'Ticker',
-        NoData: '',
-        TransferCorporateActionAgent: 'Ticker',
         BecomeAgent: '(Ticker, AgentGroup)',
         AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
       },
@@ -885,8 +881,8 @@ export default {
         TransferAssetOwnership: '',
         JoinIdentity: '',
         PortfolioCustody: '',
-        Custom: '',
-        NoData: '',
+        BecomeAgent: '',
+        AddRelayerPayingKey: '',
       },
     },
     ProposalDetails: {

@@ -1065,7 +1065,7 @@ export function authorizationToAuthorizationData(
 ): AuthorizationData {
   let value;
 
-  if (auth.type === AuthorizationType.NoData) {
+  if (auth.type === AuthorizationType.RotatePrimaryKey) {
     value = null;
   } else if (auth.type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
@@ -1116,7 +1116,6 @@ export function authorizationDataToAuthorization(
   if (auth.isRotatePrimaryKey) {
     return {
       type: AuthorizationType.RotatePrimaryKey,
-      value: identityIdToString(auth.asRotatePrimaryKey),
     };
   }
 
@@ -1155,20 +1154,6 @@ export function authorizationDataToAuthorization(
     };
   }
 
-  if (auth.isTransferCorporateActionAgent) {
-    return {
-      type: AuthorizationType.TransferCorporateActionAgent,
-      value: tickerToString(auth.asTransferCorporateActionAgent),
-    };
-  }
-
-  if (auth.isCustom) {
-    return {
-      type: AuthorizationType.Custom,
-      value: bytesToString(auth.asCustom),
-    };
-  }
-
   if (auth.isAddRelayerPayingKey) {
     const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
 
@@ -1182,9 +1167,13 @@ export function authorizationDataToAuthorization(
     };
   }
 
-  return {
-    type: AuthorizationType.NoData,
-  };
+  throw new PolymeshError({
+    code: ErrorCode.FatalError,
+    message: 'Unsupported Authorization Type. Please contact the Polymath team',
+    data: {
+      auth: JSON.stringify(auth, null, 2),
+    },
+  });
 }
 
 /**

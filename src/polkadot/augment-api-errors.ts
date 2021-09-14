@@ -306,6 +306,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
       /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
+      /**
        * Group member was added already.
        **/
       DuplicateMember: AugmentedError<ApiType>;
@@ -363,6 +367,10 @@ declare module '@polkadot/api/types/errors' {
        * The limit for the number of concurrent active members for this group has been exceeded.
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
+      /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
       /**
        * Group member was added already.
        **/
@@ -953,6 +961,10 @@ declare module '@polkadot/api/types/errors' {
        * Proposal exists, but it has expired.
        **/
       ProposalExpired: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals has been reached.
+       **/
+      ProposalsLimitReached: AugmentedError<ApiType>;
     };
     portfolio: {
       /**
@@ -1485,12 +1497,20 @@ declare module '@polkadot/api/types/errors' {
        * Proposal exists, but it has expired.
        **/
       ProposalExpired: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals has been reached.
+       **/
+      ProposalsLimitReached: AugmentedError<ApiType>;
     };
     technicalCommitteeMembership: {
       /**
        * The limit for the number of concurrent active members for this group has been exceeded.
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
+      /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
       /**
        * Group member was added already.
        **/
@@ -1554,12 +1574,20 @@ declare module '@polkadot/api/types/errors' {
        * Proposal exists, but it has expired.
        **/
       ProposalExpired: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals has been reached.
+       **/
+      ProposalsLimitReached: AugmentedError<ApiType>;
     };
     upgradeCommitteeMembership: {
       /**
        * The limit for the number of concurrent active members for this group has been exceeded.
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
+      /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
       /**
        * Group member was added already.
        **/

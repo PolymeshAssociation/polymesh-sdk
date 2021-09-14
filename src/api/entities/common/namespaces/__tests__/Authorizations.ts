@@ -64,7 +64,7 @@ describe('Authorizations class', () => {
 
     test('should retrieve all pending authorizations received by the identity and filter out expired ones', async () => {
       const did = 'someDid';
-      const filter = AuthorizationType.NoData;
+      const filter = AuthorizationType.RotatePrimaryKey;
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
@@ -129,7 +129,7 @@ describe('Authorizations class', () => {
       expect(JSON.stringify(result)).toBe(JSON.stringify(expectedAuthorizations));
 
       result = await authsNamespace.getReceived({
-        type: AuthorizationType.NoData,
+        type: AuthorizationType.RotatePrimaryKey,
         includeExpired: false,
       });
 

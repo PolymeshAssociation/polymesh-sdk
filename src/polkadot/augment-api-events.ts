@@ -100,9 +100,12 @@ declare module '@polkadot/api/types/events' {
     asset: {
       /**
        * Event for creation of the asset.
-       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID
+       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, disable investor uniqueness
        **/
-      AssetCreated: AugmentedEvent<ApiType, [IdentityId, Ticker, bool, AssetType, IdentityId]>;
+      AssetCreated: AugmentedEvent<
+        ApiType,
+        [IdentityId, Ticker, bool, AssetType, IdentityId, bool]
+      >;
       /**
        * An event emitted when an asset is frozen.
        * Parameter: caller DID, ticker.
@@ -1505,24 +1508,6 @@ declare module '@polkadot/api/types/events' {
        * caller DID, Removed DID, New add DID.
        **/
       MembersSwapped: AugmentedEvent<ApiType, [IdentityId, IdentityId, IdentityId]>;
-    };
-    testUtils: {
-      /**
-       * Shows the `DID` associated to the `AccountId`, and a flag indicates if that DID has a
-       * valid CDD claim.
-       * (Target DID, Target Account, a valid CDD claim exists)
-       **/
-      CddStatus: AugmentedEvent<ApiType, [Option<IdentityId>, AccountId, bool]>;
-      /**
-       * Emits the `IdentityId` and the `AccountId` of the caller.
-       * (Caller DID, Caller account)
-       **/
-      DidStatus: AugmentedEvent<ApiType, [IdentityId, AccountId]>;
-      /**
-       * A new mocked `InvestorUid` has been created for the given Identity.
-       * (Target DID, New InvestorUid)
-       **/
-      MockInvestorUIDCreated: AugmentedEvent<ApiType, [IdentityId, InvestorUid]>;
     };
     treasury: {
       /**
