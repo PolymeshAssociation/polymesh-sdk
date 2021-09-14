@@ -287,6 +287,7 @@ describe('Sto class', () => {
           raiseToken,
           offeringTokenAmount: offeringTokenAmount.toNumber(),
           raiseTokenAmount: raiseTokenAmount.toNumber(),
+          datetime: '2020-10-10',
         },
       ];
 
