@@ -65,6 +65,7 @@ import {
   ConditionType,
   CorporateAction,
   CountryCode,
+  CustomAssetTypeId,
   DidRecord,
   DispatchableName,
   DispatchableNames,
@@ -118,6 +119,7 @@ import {
   SettlementType,
   Signatory,
   StoredSchedule,
+  Subsidy as MeshSubsidy,
   TargetIdentities,
   TargetIdentity,
   TargetTreatment,
@@ -149,6 +151,7 @@ import {
   KeyringPair,
   ResultSet,
   SecondaryKey,
+  Subsidy,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
@@ -291,6 +294,7 @@ interface ContextOptions {
   did?: string;
   withSeed?: boolean;
   balance?: AccountBalance;
+  subsidy?: Omit<Subsidy, 'beneficiary'>;
   hasRoles?: boolean;
   hasPermissions?: boolean;
   hasTokenPermissions?: boolean;
@@ -634,7 +638,7 @@ function configureContext(opts: ContextOptions): void {
     hasRoles: sinon.stub().resolves(opts.hasRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
+    getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
     getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
@@ -655,6 +659,7 @@ function configureContext(opts: ContextOptions): void {
     ? getCurrentAccount.returns({
         address: opts.currentPairAddress,
         getBalance: sinon.stub().resolves(opts.balance),
+        getSubsidy: sinon.stub().resolves(opts.subsidy),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
@@ -680,6 +685,7 @@ function configureContext(opts: ContextOptions): void {
     getCurrentAccount,
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
+    accountSubsidy: sinon.stub().resolves(opts.subsidy),
     getAccounts: sinon.stub().returns(opts.getAccounts),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as KeyringPair;
@@ -1820,7 +1826,7 @@ export const createMockAssetType = (
     | 'StructuredProduct'
     | 'Derivative'
     | 'StableCoin'
-    | { Custom: Bytes }
+    | { Custom: CustomAssetTypeId }
 ): AssetType => {
   return createMockEnum(assetType) as AssetType;
 };
@@ -1845,14 +1851,12 @@ export const createMockTickerRegistrationConfig = (regConfig?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSecurityToken = (token?: {
-  name: AssetName;
   total_supply: Balance;
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
 }): SecurityToken => {
   const st = token || {
-    name: createMockAssetName(),
     total_supply: createMockBalance(),
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
@@ -1946,6 +1950,27 @@ export const createMockAccountInfo = (accountInfo?: {
     },
     !accountInfo
   ) as AccountInfo;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSubsidy = (subsidy?: {
+  paying_key: AccountId;
+  remaining: Balance;
+}): MeshSubsidy => {
+  const sub = subsidy || {
+    paying_key: createMockAccountId(),
+    remaining: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      ...sub,
+    },
+    !subsidy
+  ) as MeshSubsidy;
 };
 
 /**
@@ -2132,8 +2157,9 @@ export const createMockAuthorizationData = (
     | { JoinIdentity: Permissions }
     | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
-    | { custom: Bytes }
+    | { Custom: Bytes }
     | { TransferCorporateActionAgent: Ticker }
+    | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
     | 'NoData'
 ): AuthorizationData => {
   return createMockEnum(authorizationData) as AuthorizationData;
@@ -2630,16 +2656,9 @@ export const createMockVenueType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockVenue = (venue?: {
-  creator: IdentityId;
-  instructions: u64[];
-  details: VenueDetails;
-  venue_type: VenueType;
-}): Venue => {
+export const createMockVenue = (venue?: { creator: IdentityId; venue_type: VenueType }): Venue => {
   const vn = venue || {
     creator: createMockIdentityId(),
-    instructions: [],
-    details: createMockVenueDetails(),
     // eslint-disable-next-line @typescript-eslint/naming-convention
     venue_type: createMockVenueType(),
   };
@@ -3166,7 +3185,6 @@ export const createMockCorporateAction = (corporateAction?: {
   kind: CAKind | Parameters<typeof createMockCAKind>[0];
   decl_date: Moment | Parameters<typeof createMockMoment>[0];
   record_date: Option<RecordDate> | Parameters<typeof createMockOption>[0];
-  details: Text | Parameters<typeof createMockText>[0];
   targets: TargetIdentities | Parameters<typeof createMockTargetIdentities>[0];
   default_withholding_tax: Tax | Parameters<typeof createMockPermill>[0];
   withholding_tax: [
@@ -3178,7 +3196,6 @@ export const createMockCorporateAction = (corporateAction?: {
     kind,
     decl_date,
     record_date,
-    details,
     targets,
     default_withholding_tax,
     withholding_tax,
@@ -3186,7 +3203,6 @@ export const createMockCorporateAction = (corporateAction?: {
     kind: createMockCAKind(),
     decl_date: createMockMoment(),
     record_date: createMockOption(),
-    details: createMockText(),
     targets: createMockTargetIdentities(),
     default_withholding_tax: createMockPermill(),
     withholding_tax: [],
@@ -3197,7 +3213,6 @@ export const createMockCorporateAction = (corporateAction?: {
       kind: createMockCAKind(kind),
       decl_date: createMockMoment(decl_date),
       record_date: createMockOption(record_date),
-      details: createMockText(details),
       targets: createMockTargetIdentities(targets),
       default_withholding_tax: createMockPermill(default_withholding_tax),
       withholding_tax: withholding_tax.map(([identityId, tax]) =>

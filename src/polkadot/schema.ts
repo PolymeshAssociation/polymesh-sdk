@@ -38,6 +38,7 @@ export default {
       filing_date: 'Option<Moment>',
     },
     Version: 'u8',
+    CustomAssetTypeId: 'u32',
     AssetType: {
       _enum: {
         EquityCommon: '',
@@ -49,7 +50,7 @@ export default {
         RevenueShareAgreement: '',
         StructuredProduct: '',
         Derivative: '',
-        Custom: 'Vec<u8>',
+        Custom: 'CustomAssetTypeId',
         StableCoin: '',
       },
     },
@@ -72,7 +73,6 @@ export default {
     FundingRoundName: 'Text',
     VenueDetails: 'Text',
     SecurityToken: {
-      name: 'AssetName',
       total_supply: 'Balance',
       owner_did: 'IdentityId',
       divisible: 'bool',
@@ -1003,8 +1003,6 @@ export default {
     },
     Venue: {
       creator: 'IdentityId',
-      instructions: 'Vec<u64>',
-      details: 'VenueDetails',
       venue_type: 'VenueType',
     },
     Receipt: {
@@ -1116,7 +1114,6 @@ export default {
       kind: 'CAKind',
       decl_date: 'Moment',
       record_date: 'Option<RecordDate>',
-      details: 'Text',
       targets: 'TargetIdentities',
       default_withholding_tax: 'Tax',
       withholding_tax: 'Vec<(IdentityId, Tax)>',
@@ -1192,6 +1189,12 @@ export default {
         ExceptMeta: '',
         PolymeshV1CAA: '',
         PolymeshV1PIA: '',
+      },
+    },
+    ItnRewardStatus: {
+      _enum: {
+        Unclaimed: 'Balance',
+        Claimed: '',
       },
     },
   },

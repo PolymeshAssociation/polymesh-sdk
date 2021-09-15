@@ -537,7 +537,6 @@ describe('configureDividendDistribution procedure', () => {
             Scheduled: [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)],
           },
         }),
-        details: description,
         targets,
         default_withholding_tax: defaultTaxWithholding.shiftedBy(4).toNumber(),
         withholding_tax: taxWithholdings.map(({ identity, percentage }) =>
@@ -560,6 +559,9 @@ describe('configureDividendDistribution procedure', () => {
 
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
+      });
+      dsMockUtils.createQueryStub('corporateAction', 'details', {
+        returnValue: dsMockUtils.createMockText(description),
       });
     });
 
