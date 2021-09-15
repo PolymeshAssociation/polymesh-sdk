@@ -1,7 +1,8 @@
-import { Option, StorageKey } from '@polkadot/types';
+import { bool, Option, StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
+  AssetName,
   Counter,
   IdentityId,
   SecurityToken as MeshSecurityToken,
@@ -39,14 +40,16 @@ import {
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
-  assetNameToString,
-  assetTypeToString,
+  assetTypeToKnownOrId,
   balanceToBigNumber,
   boolToBoolean,
+  bytesToString,
   fundingRoundNameToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  numberToU32,
   stringToTicker,
+  textToString,
   tickerToDid,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -184,7 +187,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   public modify: ProcedureMethod<ModifyTokenParams, SecurityToken>;
 
   /**
-   * Retrieve the Security Token's name, total supply, whether it is divisible or not and the Identity of the owner
+   * Retrieve the Security Token's data
    *
    * @note can be subscribed to
    */
@@ -206,10 +209,12 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    const assembleResult = (
-      { name, total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
-      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][]
-    ): SecurityTokenDetails => {
+    const assembleResult = async (
+      { total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
+      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][],
+      assetName: AssetName,
+      iuDisabled: bool
+    ): Promise<SecurityTokenDetails> => {
       const primaryIssuanceAgents: Identity[] = [];
       const fullAgents: Identity[] = [];
 
@@ -225,14 +230,25 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       });
 
       const owner = new Identity({ did: identityIdToString(owner_did) }, context);
+      const type = assetTypeToKnownOrId(asset_type);
+
+      let assetType: string;
+      if (typeof type === 'string') {
+        assetType = type;
+      } else {
+        const customType = await asset.customTypes(numberToU32(type, context));
+        assetType = bytesToString(customType);
+      }
+
       return {
-        assetType: assetTypeToString(asset_type),
+        assetType,
         isDivisible: boolToBoolean(divisible),
-        name: assetNameToString(name),
+        name: textToString(assetName),
         owner,
         totalSupply: balanceToBigNumber(total_supply),
         primaryIssuanceAgents,
         fullAgents,
+        requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
     };
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -240,18 +256,33 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
+    const namePromise = asset.assetNames(rawTicker);
+    const disabledIuPromise = asset.disableInvestorUniqueness(rawTicker);
 
     if (callback) {
-      const groupOfAgents = await groupOfAgentPromise;
+      const groupEntries = await groupOfAgentPromise;
+      const assetName = await namePromise;
+      const disabledInvestorUniqueness = await disabledIuPromise;
 
-      return asset.tokens(rawTicker, securityToken => {
-        callback(assembleResult(securityToken, groupOfAgents));
+      return asset.tokens(rawTicker, async securityToken => {
+        const result = await assembleResult(
+          securityToken,
+          groupEntries,
+          assetName,
+          disabledInvestorUniqueness
+        );
+        callback(result);
       });
     }
 
-    const [token, groupOfAgent] = await Promise.all([asset.tokens(rawTicker), groupOfAgentPromise]);
+    const [token, groups, name, disabledIu] = await Promise.all([
+      asset.tokens(rawTicker),
+      groupOfAgentPromise,
+      namePromise,
+      disabledIuPromise,
+    ]);
 
-    return assembleResult(token, groupOfAgent);
+    return assembleResult(token, groups, name, disabledIu);
   }
 
   /**

@@ -53,13 +53,31 @@ export const createCaIdResolver = () => (receipt: ISubmittableResult): CAId => {
  */
 export interface InitiateCorporateActionParams {
   kind: CorporateActionKind;
+  /**
+   * date at which the issuer publicly declared the Distribution. Optional, defaults to the current date
+   */
   declarationDate?: Date;
+  /**
+   * checkpoint to be used for share-related calculations. If a Schedule is passed, the next Checkpoint it creates will be used.
+   *   checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
+   */
   checkpoint?: Checkpoint | CheckpointSchedule | Date;
   description: string;
+  /**
+   * tokenholder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all tokenholders not present in the array are excluded, and vice-versa
+   */
   targets?: Omit<CorporateActionTargets, 'identities'> & {
     identities: (string | Identity)[];
   };
+  /**
+   * default percentage of the Benefits to be held for tax purposes
+   */
   defaultTaxWithholding?: BigNumber;
+  /**
+   * percentage of the Benefits to be held for tax purposes from individual tokenholder Identities.
+   *   This overrides the value of `defaultTaxWithholding`
+   */
   taxWithholdings?: (Omit<TaxWithholding, 'identity'> & {
     identity: string | Identity;
   })[];

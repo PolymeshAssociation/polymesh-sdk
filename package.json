@@ -12,7 +12,7 @@
     "generate:middleware-types": "graphql-codegen -r dotenv/config",
     "fetch-definitions": "cross-env node scripts/fetchDefinitions.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://dev.polymesh.live --output ./src/polkadot --strict",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://pme.polymath.network --output ./src/polkadot --strict",
     "generate:tags": "cross-env node scripts/generateTxTags.js",
     "test": "jest --detectOpenHandles --coverage",
     "build:ts": "ttsc -b",
@@ -37,6 +37,7 @@
     "@types/json-stable-stringify": "^1.0.32",
     "@types/lodash": "^4.14.149",
     "@types/node": "^13.1.8",
+    "@types/semver": "^7.3.8",
     "@types/sinon": "^7.5.1",
     "@types/websocket": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "4.23.0",
@@ -107,6 +108,8 @@
     "graphql-tag": "2.12.4",
     "iso-7064": "^1.0.2",
     "json-stable-stringify": "^1.0.1",
-    "lodash": "^4.17.15"
+    "lodash": "^4.17.15",
+    "semver": "^7.3.5",
+    "websocket-as-promised": "^2.0.1"
   }
 }

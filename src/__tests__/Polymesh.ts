@@ -4,6 +4,7 @@ import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import BigNumber from 'bignumber.js';
 import { TxTags } from 'polymesh-types/types';
+import semver from 'semver';
 import sinon from 'sinon';
 
 import { Account, Identity, TickerReservation, TransactionQueue } from '~/internal';
@@ -12,6 +13,7 @@ import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { AccountBalance, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
+import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -43,6 +45,10 @@ jest.mock(
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+jest.mock(
+  'websocket-as-promised',
+  require('~/testUtils/mocks/dataSources').mockWebSocketAsPromisedModule()
 );
 
 describe('Polymesh Class', () => {
@@ -205,6 +211,22 @@ describe('Polymesh Class', () => {
         accountMnemonic: undefined,
         keyring: undefined,
       });
+    });
+
+    test('should throw an error if the Polymesh version does not satisfy the supported version range', async () => {
+      jest.spyOn(semver, 'satisfies').mockImplementationOnce(() => false);
+
+      let err;
+      try {
+        await Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      expect(err.message).toBe('Unsupported Polymesh version. Please upgrade the SDK');
+      expect(err.data.supportedVersionRange).toBe(SUPPORTED_VERSION_RANGE);
     });
 
     test('should throw an error if the middleware credentials are incorrect', async () => {
@@ -942,7 +964,6 @@ describe('Polymesh Class', () => {
         returnValue: dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId('someDid'),
-          name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
           total_supply: dsMockUtils.createMockBalance(),
@@ -966,7 +987,6 @@ describe('Polymesh Class', () => {
         returnValue: dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(),
-          name: dsMockUtils.createMockAssetName(),
           asset_type: dsMockUtils.createMockAssetType(),
           divisible: dsMockUtils.createMockBool(),
           total_supply: dsMockUtils.createMockBalance(),
@@ -1156,6 +1176,28 @@ describe('Polymesh Class', () => {
 
       await polymesh.disconnect();
       sinon.assert.calledOnce(dsMockUtils.getContextInstance().disconnect);
+    });
+  });
+
+  describe('method: getNetworkVersion', () => {
+    test('should return the network version', async () => {
+      const networkVersion = '1.0.0';
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, networkVersion } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      const result = await polymesh.getNetworkVersion();
+
+      expect(result).toEqual(networkVersion);
     });
   });
 

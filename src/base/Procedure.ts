@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { TxTag } from 'polymesh-types/types';
 
 import {
   Context,
@@ -26,7 +25,7 @@ interface AddTransactionOptsBase<Values extends unknown[]> {
   fee?: BigNumber;
   resolvers?: ResolverFunctionArray<Values>;
   isCritical?: boolean;
-  paidByThirdParty?: boolean;
+  paidForBy?: Identity;
 }
 
 interface AddBatchTransactionOpts<Values extends unknown[], Args extends unknown[]>
@@ -159,14 +158,22 @@ export class Procedure<
       agentPermissions = permissions,
     } = checkAuthorizationResult;
 
-    let identity: Identity;
+    let identity: Identity | null = null;
     let hasRoles: boolean;
+    let noIdentity = false;
 
-    const fetchIdentity = async (): Promise<Identity> => identity || context.getCurrentIdentity();
+    const account = ctx.getCurrentAccount();
+
+    const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
     if (typeof roles !== 'boolean') {
       identity = await fetchIdentity();
-      hasRoles = await identity.hasRoles(roles);
+      noIdentity = !identity;
+      hasRoles = false;
+
+      if (identity) {
+        hasRoles = await identity.hasRoles(roles);
+      }
     } else {
       hasRoles = roles;
     }
@@ -174,10 +181,9 @@ export class Procedure<
     let hasAgentPermissions: boolean;
     let signerPermissionsAwaitable: boolean | Promise<boolean>;
 
-    const accountFrozenPromise = ctx.getCurrentAccount().isFrozen();
+    const accountFrozenPromise = account.isFrozen();
 
     if (typeof signerPermissions !== 'boolean') {
-      const account = context.getCurrentAccount();
       signerPermissionsAwaitable = account.hasPermissions(signerPermissions);
     } else {
       signerPermissionsAwaitable = signerPermissions;
@@ -192,11 +198,20 @@ export class Procedure<
       if (tokens?.length && transactions?.length) {
         identity = await fetchIdentity();
 
-        const agentPermissionResults = await P.map(tokens, token =>
-          identity.tokenPermissions.hasPermissions({ token, transactions })
-        );
+        noIdentity = !identity;
 
-        hasAgentPermissions = agentPermissionResults.every(perm => perm);
+        hasAgentPermissions = false;
+
+        if (identity) {
+          const agentPermissionResults = await P.map(tokens, token =>
+            // the compiler doesn't recognize that identity is defined even though
+            //   we checked at the top of the block
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            identity!.tokenPermissions.hasPermissions({ token, transactions })
+          );
+
+          hasAgentPermissions = agentPermissionResults.every(perm => perm);
+        }
       }
     } else {
       hasAgentPermissions = agentPermissions;
@@ -211,6 +226,7 @@ export class Procedure<
       signerPermissions: hasSignerPermissions,
       agentPermissions: hasAgentPermissions,
       accountFrozen,
+      noIdentity,
     };
   }
 
@@ -257,7 +273,15 @@ export class Procedure<
         signerPermissions,
         agentPermissions,
         accountFrozen,
+        noIdentity,
       } = await this._checkAuthorization(procArgs, ctx);
+
+      if (noIdentity) {
+        throw new PolymeshError({
+          code: ErrorCode.NotAuthorized,
+          message: 'This procedure requires the Current Account to have an associated Identity',
+        });
+      }
 
       if (accountFrozen) {
         throw new PolymeshError({
@@ -300,38 +324,23 @@ export class Procedure<
   }
 
   /**
-   * Appends a transaction (or [[PostTransactionValue]] that resolves to a transaction) into the TransactionQueue's queue. This defines
+   * Appends a transaction into the TransactionQueue's queue. This defines
    *   what will be run by the TransactionQueue when it is started.
    *
    * @param tx - a transaction that will be run in the Procedure's TransactionQueue
-   * @param options.fee - value in POLYX of the transaction (should only be set manually if the transaction is a future value or other special cases, otherwise it is fetched automatically from the chain)
+   * @param options.fee - value in POLYX of the transaction (should only be set manually in special cases, otherwise it is fetched automatically from the chain)
    * @param options.resolvers - asynchronous callbacks used to return runtime data after
    *   the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
    * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
    * @param options.batchSize - amount of elements in the batch (this is only used for certain transactions whose fees depend on the size of the arg list, like `asset.addDocuments`)
-   * @param options.paidByThirdParty - if the transaction fees will be paid by a third party. Defaults to false
+   * @param options.paidForBy - third party Identity that will pay for the transaction fees
    * @param args - arguments to be passed to the transaction method
    *
    * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
   public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    tx: PolymeshTx<TxArgs>,
-    options: AddTransactionOpts<Values>,
-    ...args: MapMaybePostTransactionValue<TxArgs>
-  ): PostTransactionValueArray<Values>;
-
-  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    tx: PostTransactionValue<PolymeshTx<TxArgs>>,
-    options: Omit<AddTransactionOpts<Values>, 'fee'> & {
-      fee: BigNumber; // fee MUST be provided by hand if the transaction is a future value
-    },
-    ...args: MapMaybePostTransactionValue<TxArgs>
-  ): PostTransactionValueArray<Values>;
-
-  // eslint-disable-next-line require-jsdoc
-  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    transaction: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
+    transaction: PolymeshTx<TxArgs>,
     options: AddTransactionOpts<Values>,
     ...args: MapMaybePostTransactionValue<TxArgs>
   ): PostTransactionValueArray<Values> {
@@ -339,7 +348,7 @@ export class Procedure<
       fee = null,
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
-      paidByThirdParty = false,
+      paidForBy,
       batchSize = null,
     } = options;
     const { context } = this;
@@ -349,7 +358,7 @@ export class Procedure<
 
     const signer = context.getSigner();
 
-    const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
+    const tx = transaction as PolymeshTx<unknown[]>;
 
     this.transactions.push(
       new PolymeshTransaction<unknown[]>(
@@ -361,7 +370,7 @@ export class Procedure<
           signer,
           fee,
           batchSize,
-          paidByThirdParty,
+          paidForBy,
         },
         context
       )
@@ -372,7 +381,7 @@ export class Procedure<
 
   /**
    * Appends a Procedure into this Procedure's queue. This defines
-   * what will be run by the Transaction Queue when it is started.
+   *   what will be run by the Transaction Queue when it is started.
    *
    * @param proc - a Procedure that will be run as part of this Procedure's Transaction Queue
    * @param args - arguments to be passed to the procedure
@@ -409,11 +418,13 @@ export class Procedure<
   }
 
   /**
-   * Appends a batch (or multiple batches) of transactions (or [[PostTransactionValue]]s that resolve to transactions) into the TransactionQueue's queue. This defines
-   *   what will be run by the TransactionQueue when it is started.
+   * Appends a batch of transactions into the TransactionQueue's queue. This defines
+   *   what will be run by the TransactionQueue when it is started
+   *
+   * @note if the argument list is too large, they will be separated into multiple batch transactions
    *
    * @param tx - a transaction that will be run in the Procedure's TransactionQueue
-   * @param options.fee - value in POLYX of the transaction (should only be set manually if the transaction is a future value or other special cases, otherwise it is fetched automatically from the chain)
+   * @param options.fee - value in POLYX of the transaction (should only be set manually in special cases, otherwise it is fetched automatically from the chain)
    * @param options.resolvers - asynchronous callbacks used to return runtime data after
    *   the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
@@ -423,25 +434,10 @@ export class Procedure<
    * @param args - arguments to be passed to each method in the batch
    *
    * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options.
-   *   Resolvers will be run on the last internal batch of the transactions.
+   *   If the batch is separated into smaller batches, resolvers will be run on the last batch
    */
   public addBatchTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    tx: PolymeshTx<TxArgs>,
-    options: AddBatchTransactionOpts<Values, TxArgs>,
-    args: MapMaybePostTransactionValue<TxArgs>[]
-  ): PostTransactionValueArray<Values>;
-
-  public addBatchTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    tx: PostTransactionValue<PolymeshTx<TxArgs>>,
-    options: Omit<AddBatchTransactionOpts<Values, TxArgs>, 'fee'> & {
-      fee: BigNumber; // fee MUST be provided by hand if the transaction is a future value
-    },
-    args: MapMaybePostTransactionValue<TxArgs>[]
-  ): PostTransactionValueArray<Values>;
-
-  // eslint-disable-next-line require-jsdoc
-  public addBatchTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    transaction: MaybePostTransactionValue<PolymeshTx<TxArgs>>,
+    transaction: PolymeshTx<TxArgs>,
     options: AddBatchTransactionOpts<Values, TxArgs>,
     args: MapMaybePostTransactionValue<TxArgs>[]
   ): PostTransactionValueArray<Values> {
@@ -449,7 +445,7 @@ export class Procedure<
       fee = null,
       resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
       isCritical = true,
-      paidByThirdParty = false,
+      paidForBy,
       groupByFn,
     } = options;
     const { context } = this;
@@ -459,15 +455,9 @@ export class Procedure<
 
     const signer = context.getSigner();
 
-    const tx = transaction as MaybePostTransactionValue<PolymeshTx<unknown[]>>;
+    const tx = transaction as PolymeshTx<unknown[]>;
 
-    let tag: TxTag | null;
-
-    if (tx instanceof PostTransactionValue) {
-      tag = null;
-    } else {
-      tag = transactionToTxTag(tx);
-    }
+    const tag = transactionToTxTag(tx);
 
     const specBase = {
       tx,
@@ -475,7 +465,7 @@ export class Procedure<
       isCritical,
       signer,
       fee,
-      paidByThirdParty,
+      paidForBy,
     } as const;
 
     const batches = batchArguments(args, tag, groupByFn);
@@ -525,8 +515,8 @@ export class Procedure<
   }
 
   /**
-   * internal data container. Used to store common fetched/processed data that is
-   *   used by both `prepareTransactions` and `checkAuthorization`
+   * contains the data services, current account, etc. In short, the *context* in which
+   *   the Procedure is being run
    */
   public get context(): Context {
     const { _context: context } = this;

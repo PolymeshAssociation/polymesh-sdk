@@ -3,8 +3,8 @@ import BigNumber from 'bignumber.js';
 import {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
-  consumeJoinIdentityAuthorization,
-  ConsumeJoinIdentityAuthorizationParams,
+  consumeJoinSignerAuthorization,
+  ConsumeJoinSignerAuthorizationParams,
   Context,
   Entity,
   Identity,
@@ -62,17 +62,17 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
   /**
    * authorization request data corresponding to type of authorization
    *
-   * | Type                        | Data      |
-   * |-----------------------------|-----------|
-   * | Attest Primary Key Rotation | DID       |
-   * | Rotate Primary Key          | DID       |
-   * | Transfer Ticker             | Ticker    |
-   * | Add MultiSig Signer         | Account   |
-   * | Transfer Token Ownership    | Ticker    |
-   * | Join Identity               | DID       |
-   * | Portfolio Custody           | Portfolio |
-   * | Custom                      | Custom    |
-   * | No Data                     | N/A       |
+   * | Type                        | Data                            |
+   * |-----------------------------|---------------------------------|
+   * | Add Relayer Paying Key      | Beneficiary, Relayer, Allowance |
+   * | Become Agent                | Permission Group
+   * | Attest Primary Key Rotation | DID                             |
+   * | Rotate Primary Key          | DID                             |
+   * | Transfer Ticker             | Ticker                          |
+   * | Add MultiSig Signer         | Account                         |
+   * | Transfer Token Ownership    | Ticker                          |
+   * | Join Identity               | DID                             |
+   * | Portfolio Custody           | Portfolio                       |
    */
   public data: Authorization;
 
@@ -105,13 +105,17 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.accept = createProcedureMethod<
       void,
-      ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
+      ConsumeAuthorizationRequestsParams | ConsumeJoinSignerAuthorizationParams,
       void
     >(
       {
         getProcedureAndArgs: () => {
-          if (this.data.type === AuthorizationType.JoinIdentity) {
-            return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+          if (
+            [AuthorizationType.JoinIdentity, AuthorizationType.AddMultiSigSigner].includes(
+              this.data.type
+            )
+          ) {
+            return [consumeJoinSignerAuthorization, { authRequest: this, accept: true }];
           }
 
           return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
@@ -122,13 +126,17 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.remove = createProcedureMethod<
       void,
-      ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
+      ConsumeAuthorizationRequestsParams | ConsumeJoinSignerAuthorizationParams,
       void
     >(
       {
         getProcedureAndArgs: () => {
-          if (this.data.type === AuthorizationType.JoinIdentity) {
-            return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+          if (
+            [AuthorizationType.JoinIdentity, AuthorizationType.AddMultiSigSigner].includes(
+              this.data.type
+            )
+          ) {
+            return [consumeJoinSignerAuthorization, { authRequest: this, accept: false }];
           }
 
           return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
