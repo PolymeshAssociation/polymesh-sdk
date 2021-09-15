@@ -431,5 +431,31 @@ describe('TokenPermissions class', () => {
         },
       ]);
     });
+
+    test('should return null if the query result is empty', async () => {
+      /* eslint-disable @typescript-eslint/naming-convention */
+      dsMockUtils.createApolloQueryStub(
+        tickerExternalAgentActions({
+          ticker,
+          caller_did: did,
+          pallet_name: undefined,
+          event_id: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          tickerExternalAgentActions: {
+            totalCount: 0,
+            items: [],
+          },
+        }
+      );
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      const result = await tokenPermissions.getOperationHistory({
+        token: ticker,
+      });
+      expect(result.data).toEqual([]);
+    });
   });
 });
