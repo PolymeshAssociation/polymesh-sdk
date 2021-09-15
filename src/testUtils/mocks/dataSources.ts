@@ -137,6 +137,7 @@ import {
   ZkProofData,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
+import WebSocketAsPromised from 'websocket-as-promised';
 
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
@@ -185,6 +186,20 @@ function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
 
 let apolloConstructorStub: SinonStub;
 
+/**
+ * Create a mock instance of the WebSocketAsPromised lib
+ */
+function createWebSocketAsPromised(): WebSocketAsPromised {
+  return ({
+    open: sinon.stub(),
+    send: sinon.stub(),
+    sendRequest: sinon.stub().resolves({ result: '3.2.0' }),
+    close: sinon.stub(),
+  } as unknown) as WebSocketAsPromised;
+}
+
+let webSocketAsPromisedConstructorStub: SinonStub;
+
 export type MockContext = Mocked<Context>;
 
 export enum MockTxStatus {
@@ -213,6 +228,16 @@ const mockInstanceContainer = {
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
   apolloInstance: createApolloClient(),
+  webSocketAsPromisedInstance: createWebSocketAsPromised(),
+};
+
+const MockWebSocketAsPromisedClass = class {
+  /**
+   * @hidden
+   */
+  public constructor() {
+    return webSocketAsPromisedConstructorStub();
+  }
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -297,6 +322,7 @@ interface ContextOptions {
   addPair?: Pair;
   getAccounts?: Account[];
   currentIdentityIsEqual?: boolean;
+  networkVersion?: string;
 }
 
 interface KeyringOptions {
@@ -475,6 +501,8 @@ export const mockApolloModule = (path: string) => (): Record<string, unknown> =>
   ApolloClient: MockApolloClientClass,
 });
 
+export const mockWebSocketAsPromisedModule = () => (): unknown => MockWebSocketAsPromisedClass;
+
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
@@ -565,6 +593,7 @@ const defaultContextOptions: ContextOptions = {
   },
   getAccounts: [],
   currentIdentityIsEqual: true,
+  networkVersion: '1.0.0',
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -684,6 +713,7 @@ function configureContext(opts: ContextOptions): void {
       .stub()
       .resolves(opts.getDividendDistributionsForTokens),
     addPair: sinon.stub().returns(opts.addPair),
+    getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
   } as unknown) as MockContext;
 
   contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
@@ -929,6 +959,11 @@ export function initMocks(opts?: {
   // Apollo
   apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
 
+  // WebSocketAsPromised
+  webSocketAsPromisedConstructorStub = sinon
+    .stub()
+    .returns(mockInstanceContainer.webSocketAsPromisedInstance);
+
   txMocksData.clear();
   errorStub = sinon.stub().throws(new Error('Error'));
 }
@@ -942,6 +977,7 @@ export function cleanup(): void {
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
   mockInstanceContainer.apolloInstance = createApolloClient();
+  mockInstanceContainer.webSocketAsPromisedInstance = createWebSocketAsPromised();
 }
 
 /**

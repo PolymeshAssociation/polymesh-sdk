@@ -1065,6 +1065,15 @@ export class Context {
   }
 
   /**
+   * Retrieve the network version
+   */
+  public async getNetworkVersion(): Promise<string> {
+    const version = await this.polymeshApi.rpc.system.version();
+
+    return textToString(version);
+  }
+
+  /**
    * Disconnect the Polkadot API, middleware, and render this instance unusable
    *
    * @note after disconnecting, trying to access any property in this objecct will result

@@ -9,6 +9,9 @@ import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 import { TxTag } from 'polymesh-types/types';
+import { satisfies } from 'semver';
+import { w3cwebsocket as W3CWebSocket } from 'websocket';
+import WebSocketAsPromised from 'websocket-as-promised';
 
 import {
   Account,
@@ -54,7 +57,11 @@ import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/interna
 import { Claims } from './Claims';
 // import { Governance } from './Governance';
 import { Middleware } from './Middleware';
-import { TREASURY_MODULE_ADDRESS } from './utils/constants';
+import {
+  SUPPORTED_VERSION_RANGE,
+  SYSTEM_VERSION_RPC_CALL,
+  TREASURY_MODULE_ADDRESS,
+} from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -185,6 +192,32 @@ export class Polymesh {
       middleware,
     } = params;
     let context: Context;
+
+    /* istanbul ignore next: part of configuration, doesn't need to be tested */
+    const wsp = new WebSocketAsPromised(nodeUrl, {
+      createWebSocket: url => (new W3CWebSocket(url) as unknown) as WebSocket,
+      packMessage: data => JSON.stringify(data),
+      unpackMessage: data => JSON.parse(data.toString()),
+      attachRequestId: (data, requestId) => Object.assign({ id: requestId }, data),
+      extractRequestId: data => data && data.id,
+    });
+
+    await wsp.open();
+
+    const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
+
+    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
+      throw new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Unsupported Polymesh version. Please upgrade the SDK',
+        data: {
+          polymeshVersion: version,
+          supportedVersionRange: SUPPORTED_VERSION_RANGE,
+        },
+      });
+    }
+
+    await wsp.close();
 
     try {
       const { types, rpc } = schema;
@@ -717,6 +750,13 @@ export class Polymesh {
    */
   public setSigner(signer: string | Account): void {
     this.context.setPair(signerToString(signer));
+  }
+
+  /**
+   * Fetch the current network version (i.e. 3.1.0)
+   */
+  public async getNetworkVersion(): Promise<string> {
+    return this.context.getNetworkVersion();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
