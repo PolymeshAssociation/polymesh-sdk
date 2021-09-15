@@ -13,7 +13,7 @@ import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { AccountBalance, SubCallback, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
-import { SDK_RANGE_VERSION } from '~/utils/constants';
+import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -226,7 +226,7 @@ describe('Polymesh Class', () => {
       }
 
       expect(err.message).toBe(
-        `This SDK version required a Polymesh version equals or grater than "${SDK_RANGE_VERSION}"`
+        `This SDK version required a Polymesh version equals or grater than "${SUPPORTED_VERSION_RANGE}"`
       );
     });
 

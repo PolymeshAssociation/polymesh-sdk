@@ -58,7 +58,7 @@ import { Claims } from './Claims';
 // import { Governance } from './Governance';
 import { Middleware } from './Middleware';
 import {
-  SDK_RANGE_VERSION,
+  SUPPORTED_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
   TREASURY_MODULE_ADDRESS,
 } from './utils/constants';
@@ -206,10 +206,10 @@ export class Polymesh {
 
     const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
 
-    if (!satisfies(version, SDK_RANGE_VERSION)) {
+    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: `This SDK version required a Polymesh version equals or grater than "${SDK_RANGE_VERSION}"`,
+        message: `This SDK version required a Polymesh version equals or grater than "${SUPPORTED_VERSION_RANGE}"`,
       });
     }
 
