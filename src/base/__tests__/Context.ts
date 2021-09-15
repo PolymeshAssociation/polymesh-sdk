@@ -1472,6 +1472,26 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: getNetworkVersion', () => {
+    test('should return the network version', async () => {
+      const version = '1.0.0';
+
+      dsMockUtils.createRpcStub('system', 'version', {
+        returnValue: dsMockUtils.createMockText(version),
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      const result = await context.getNetworkVersion();
+
+      expect(result).toEqual(version);
+    });
+  });
+
   describe('methd: isMiddlewareEnabled', () => {
     test('should return true if the middleware is enabled', async () => {
       const context = await Context.create({
