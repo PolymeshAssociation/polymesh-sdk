@@ -66,12 +66,12 @@ export class Distributions extends Namespace<SecurityToken> {
     const { id } = args;
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawCaId = numberToU32(id, context);
-    const [corporateAction, capitalDistribution] = await Promise.all([
-      query.corporateAction.corporateActions(rawTicker, rawCaId),
-      query.capitalDistribution.distributions(
-        corporateActionIdentifierToCaId({ ticker, localId: id }, context)
-      ),
+    const rawLocalId = numberToU32(id, context);
+    const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: id }, context);
+    const [corporateAction, capitalDistribution, details] = await Promise.all([
+      query.corporateAction.corporateActions(rawTicker, rawLocalId),
+      query.capitalDistribution.distributions(rawCaId),
+      query.corporateAction.details(rawCaId),
     ]);
 
     if (corporateAction.isNone || capitalDistribution.isNone) {
@@ -87,7 +87,7 @@ export class Distributions extends Namespace<SecurityToken> {
       {
         id,
         ticker,
-        ...meshCorporateActionToCorporateActionParams(corporateAction.unwrap(), context),
+        ...meshCorporateActionToCorporateActionParams(corporateAction.unwrap(), details, context),
         ...distributionToDividendDistributionParams(dist, context),
       },
       context

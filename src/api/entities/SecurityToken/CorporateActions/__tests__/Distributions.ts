@@ -100,7 +100,6 @@ describe('Distributions class', () => {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: 'PredictableBenefit',
-            details: 'something',
             targets: {
               identities: ['someDid'],
               treatment: 'Exclude',
@@ -113,6 +112,9 @@ describe('Distributions class', () => {
             /* eslint-enable @typescript-eslint/naming-convention */
           })
         ),
+      });
+      dsMockUtils.createQueryStub('corporateAction', 'details', {
+        returnValue: dsMockUtils.createMockText('something'),
       });
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(
@@ -153,7 +155,6 @@ describe('Distributions class', () => {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: 'PredictableBenefit',
-            details: 'something',
             targets: {
               identities: ['someDid'],
               treatment: 'Exclude',
@@ -166,6 +167,9 @@ describe('Distributions class', () => {
             /* eslint-enable @typescript-eslint/naming-convention */
           })
         ),
+      });
+      dsMockUtils.createQueryStub('corporateAction', 'details', {
+        returnValue: dsMockUtils.createMockText('something'),
       });
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
