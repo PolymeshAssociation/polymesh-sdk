@@ -119,8 +119,9 @@ interface IdentityOptions {
   did?: string;
   hasRoles?: boolean;
   hasRole?: boolean;
+  hasPermissions?: boolean;
   hasValidCdd?: boolean;
-  getPrimaryKey?: string;
+  getPrimaryKey?: Account;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -179,11 +180,13 @@ interface ProposalOptions {
 interface AccountOptions {
   address?: string;
   key?: string;
+  isFrozen?: boolean;
   getBalance?: AccountBalance;
   getIdentity?: Identity | null;
   getTransactionHistory?: ExtrinsicData[];
   isEqual?: boolean;
   exists?: boolean;
+  hasPermissions?: boolean;
 }
 
 interface VenueOptions {
@@ -353,6 +356,7 @@ let securityTokenExistsStub: SinonStub;
 let authorizationRequestExistsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
+let identityHasPermissionsStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
@@ -369,8 +373,10 @@ let identityExistsStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
+let accountIsFrozenStub: SinonStub;
 let accountIsEqualStub: SinonStub;
 let accountExistsStub: SinonStub;
+let accountHasPermissionsStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let tickerReservationExistsStub: SinonStub;
 let venueDetailsStub: SinonStub;
@@ -681,7 +687,6 @@ export const mockAgentModule = (path: string) => (): Record<string, unknown> => 
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
-  getPrimaryKey: 'someAddress',
   authorizations: {
     getReceived: [],
     getSent: { data: [], next: null },
@@ -707,6 +712,8 @@ const defaultAccountOptions: AccountOptions = {
   getTransactionHistory: [],
   isEqual: true,
   exists: true,
+  isFrozen: false,
+  hasPermissions: true,
 };
 let accountOptions: AccountOptions = defaultAccountOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
@@ -1358,6 +1365,7 @@ function configureIdentity(opts: IdentityOptions): void {
     did: opts.did,
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
+    hasPermissions: identityHasPermissionsStub.resolves(opts.hasPermissions),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     portfolios: {},
@@ -1394,6 +1402,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityConstructorStub = sinon.stub();
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
+  identityHasPermissionsStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
   identityAuthorizationsGetReceivedStub = sinon.stub();
@@ -1472,6 +1481,7 @@ function configureAccount(opts: AccountOptions): void {
     uuid: 'account',
     address: opts.address,
     key: opts.key,
+    isFrozen: accountIsFrozenStub.resolves(opts.isFrozen),
     getBalance: accountGetBalanceStub.resolves(opts.getBalance),
     getIdentity: accountGetIdentityStub.resolves(
       opts.getIdentity === undefined ? mockInstanceContainer.identity : opts.getIdentity
@@ -1479,6 +1489,7 @@ function configureAccount(opts: AccountOptions): void {
     getTransactionHistory: accountGetTransactionHistoryStub.resolves(opts.getTransactionHistory),
     isEqual: accountIsEqualStub.returns(opts.isEqual),
     exists: accountExistsStub.resolves(opts.exists),
+    hasPermissions: accountHasPermissionsStub.returns(opts.hasPermissions),
   } as unknown) as MockAccount;
 
   Object.assign(mockInstanceContainer.account, account);
@@ -1495,11 +1506,13 @@ function configureAccount(opts: AccountOptions): void {
  */
 function initAccount(opts?: AccountOptions): void {
   accountConstructorStub = sinon.stub();
+  accountIsFrozenStub = sinon.stub();
   accountGetBalanceStub = sinon.stub();
   accountGetIdentityStub = sinon.stub();
   accountGetTransactionHistoryStub = sinon.stub();
   accountIsEqualStub = sinon.stub();
   accountExistsStub = sinon.stub();
+  accountHasPermissionsStub = sinon.stub();
 
   accountOptions = { ...defaultAccountOptions, ...opts };
 
@@ -1995,6 +2008,14 @@ export function getIdentityHasRoleStub(): SinonStub {
 
 /**
  * @hidden
+ * Retrieve the stub of the `Identity.hasPermissions` method
+ */
+export function getIdentityHasPermissionsStub(): SinonStub {
+  return identityHasPermissionsStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `Identity.hasValidCdd` method
  */
 export function getIdentityHasValidCddStub(): SinonStub {
@@ -2076,6 +2097,14 @@ export function getAccountInstance(opts?: AccountOptions): MockAccount {
 
 /**
  * @hidden
+ * Retrieve the stub of the `Account.isFrozen` method
+ */
+export function getAccountIsFrozenStub(): SinonStub {
+  return accountIsFrozenStub;
+}
+
+/**
+ * @hidden
  * Retrieve the stub of the `Account.getBalance` method
  */
 export function getAccountGetBalanceStub(): SinonStub {
@@ -2104,6 +2133,14 @@ export function getAccountGetTransactionHistoryStub(): SinonStub {
  */
 export function getAccountIsEqualStub(): SinonStub {
   return accountIsEqualStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Account.isEqual` method
+ */
+export function getAccountHasPermissionsStub(): SinonStub {
+  return accountHasPermissionsStub;
 }
 
 /**

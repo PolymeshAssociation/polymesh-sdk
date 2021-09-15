@@ -8,4 +8,5 @@ export async function fakePromise(): Promise<void> {
   await new Promise(resolve => setImmediate(() => resolve(null)));
   await new Promise(resolve => setImmediate(() => resolve(null)));
   await new Promise(resolve => setImmediate(() => resolve(null)));
+  await new Promise(resolve => setImmediate(() => resolve(null)));
 }

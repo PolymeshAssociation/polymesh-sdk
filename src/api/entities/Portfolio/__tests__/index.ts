@@ -192,10 +192,10 @@ describe('Portfolio class', () => {
       locked1 = new BigNumber(25);
       rawTicker0 = dsMockUtils.createMockTicker(ticker0);
       rawTicker1 = dsMockUtils.createMockTicker(ticker1);
-      rawTotal0 = dsMockUtils.createMockBalance(total0.times(Math.pow(10, 6)).toNumber());
-      rawTotal1 = dsMockUtils.createMockBalance(total1.times(Math.pow(10, 6)).toNumber());
-      rawLocked0 = dsMockUtils.createMockBalance(locked0.times(Math.pow(10, 6)).toNumber());
-      rawLocked1 = dsMockUtils.createMockBalance(locked1.times(Math.pow(10, 6)).toNumber());
+      rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6).toNumber());
+      rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6).toNumber());
+      rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6).toNumber());
+      rawLocked1 = dsMockUtils.createMockBalance(locked1.shiftedBy(6).toNumber());
       rawPortfolioId = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind({
