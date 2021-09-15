@@ -162,7 +162,7 @@ describe('Account class', () => {
             spec_version_id: 2006,
             params: [],
             block_id: blockNumber1.toNumber(),
-            address: address,
+            address,
             success: 0,
             signedby_address: 1,
           },
