@@ -1121,6 +1121,9 @@ export interface TokenWithGroup {
  */
 export interface HistoricAgentOperation {
   identity: Identity;
+  /**
+   * list of Token Operation Events that were triggered by the Agent Identity
+   */
   history: EventIdentifier[];
 }
 
