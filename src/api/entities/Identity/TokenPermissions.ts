@@ -303,7 +303,7 @@ export class TokenPermissions extends Namespace<Identity> {
   >;
 
   /**
-   * Retrieve all transactions for a given agent and asset
+   * Retrieve all Events triggered by Operations this Identity has performed on a specific Security Token
    *
    * @param opts.moduleId - type of the module to fetch
    * @param opts.eventId - type of the event to fetch
