@@ -460,7 +460,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
 
   /**
-   * Retrieve all Agent Operation History
+   * Retrieve this Security Token's Operation History
+   *
+   * @note Operations are grouped by the Agent Identity who performed them
    *
    * @note uses the middleware
    */
