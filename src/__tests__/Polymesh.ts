@@ -213,7 +213,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should throw an error if the Polymesh version not satisfies the requirement version', async () => {
+    test('should throw an error if the Polymesh version does not satisfy the supported version range', async () => {
       jest.spyOn(semver, 'satisfies').mockImplementationOnce(() => false);
 
       let err;
