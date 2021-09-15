@@ -686,7 +686,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
- * Get the history of each external agent in ticker
+ * Get the transaction history of each external agent of a token
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
