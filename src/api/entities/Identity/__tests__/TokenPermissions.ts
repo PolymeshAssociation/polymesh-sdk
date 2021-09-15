@@ -387,7 +387,7 @@ describe('TokenPermissions class', () => {
   });
 
   describe('method: getOperationHistory', () => {
-    test('should return the transaction history for a given agent and asset', async () => {
+    test('should return the Events triggered by Operations the Identity has performed on a specific Security Token', async () => {
       const blockId = new BigNumber(1);
       const eventIndex = 1;
       const datetime = '2020-10-10';
