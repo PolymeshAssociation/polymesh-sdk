@@ -1113,6 +1113,12 @@ export interface TokenWithGroup {
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
+/**
+ * Events triggered by transactions performed by an Agent Identity, related to the Token's configuration
+ *   For example: changing compliance requirements, inviting/removing agent Identities, freezing/unfreezing transfers
+ *
+ * Token transfers (settlements or movements between Portfolios) do not count as Operations
+ */
 export interface HistoricAgentOperation {
   identity: Identity;
   history: EventIdentifier[];
