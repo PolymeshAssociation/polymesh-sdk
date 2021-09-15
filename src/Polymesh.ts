@@ -209,7 +209,11 @@ export class Polymesh {
     if (!satisfies(version, SDK_RANGE_VERSION)) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: `This SDK version required a Polymesh version equals or grater than "${SDK_RANGE_VERSION}"`,
+        message: `Unsupported Polymesh version. Please upgrade the SDK`,
+        data: {
+          polymeshVersion: version,
+          supportedVersionRange: SDK_RANGE_VERSION,
+        }
       });
     }
 
