@@ -195,13 +195,6 @@ describe('TokenPermissions class', () => {
 
       result = await tokenPermissions.hasPermissions({
         token,
-        transactions: [TxTags.identity.AcceptAuthorization],
-      });
-
-      expect(result).toBe(false);
-
-      result = await tokenPermissions.hasPermissions({
-        token,
         transactions: [TxTags.asset.ControllerTransfer],
       });
 

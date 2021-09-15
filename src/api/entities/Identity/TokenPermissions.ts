@@ -139,11 +139,7 @@ export class TokenPermissions extends Namespace<Identity> {
      *   - identity.acceptAuthorization
      */
     if (group.isExceptMeta) {
-      return !transactions.some(
-        tag =>
-          tag.split('.')[0] === ModuleName.ExternalAgents ||
-          tag === TxTags.identity.AcceptAuthorization
-      );
+      return !transactions.some(tag => tag.split('.')[0] === ModuleName.ExternalAgents);
     }
 
     /*

@@ -1566,7 +1566,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       },
       transactions: {
         type: PermissionType.Include,
-        values: [TxTags.identity.AddClaim, ModuleName.Confidential],
+        values: [TxTags.identity.AddClaim, ModuleName.Authorship],
       },
       transactionGroups: [],
       portfolios: {
@@ -1588,7 +1588,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
             }),
           }),
           dsMockUtils.createMockPalletPermissions({
-            pallet_name: dsMockUtils.createMockPalletName('Confidential'),
+            pallet_name: dsMockUtils.createMockPalletName('Authorship'),
             dispatchable_names: dsMockUtils.createMockDispatchableNames('Whole'),
           }),
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -3813,9 +3813,6 @@ describe('txTagToProtocolOp', () => {
     createTypeStub.withArgs('ProtocolOp', 'AssetCreateCheckpointSchedule').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.checkpoint.CreateSchedule, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'DividendNew').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.dividend.New, context)).toEqual(fakeResult);
-
     createTypeStub
       .withArgs('ProtocolOp', 'ComplianceManagerAddComplianceRequirement')
       .returns(fakeResult);
@@ -3823,17 +3820,11 @@ describe('txTagToProtocolOp', () => {
       fakeResult
     );
 
-    createTypeStub.withArgs('ProtocolOp', 'IdentityRegisterDid').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.identity.RegisterDid, context)).toEqual(fakeResult);
-
     createTypeStub.withArgs('ProtocolOp', 'IdentityCddRegisterDid').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.CddRegisterDid, context)).toEqual(fakeResult);
 
     createTypeStub.withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.AddClaim, context)).toEqual(fakeResult);
-
-    createTypeStub.withArgs('ProtocolOp', 'IdentitySetPrimaryKey').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.identity.SetPrimaryKey, context)).toEqual(fakeResult);
 
     createTypeStub
       .withArgs('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
@@ -3845,12 +3836,6 @@ describe('txTagToProtocolOp', () => {
     createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'VotingAddBallot').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.voting.AddBallot, context)).toEqual(fakeResult);
-
-    createTypeStub.withArgs('ProtocolOp', 'ContractsPutCode').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.contracts.PutCode, context)).toEqual(fakeResult);
-
     createTypeStub.withArgs('ProtocolOp', 'BallotAttachBallot').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.corporateBallot.AttachBallot, context)).toEqual(fakeResult);
 
@@ -3859,12 +3844,9 @@ describe('txTagToProtocolOp', () => {
   });
 
   test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
-    const value = TxTags.asset.SetTreasuryDid;
-    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
+    const value = TxTags.asset.MakeDivisible;
     const context = dsMockUtils.getContextInstance();
-    const mockTag = 'AssetSetTreasuryDid';
-
-    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', mockTag).returns(fakeResult);
+    const mockTag = 'AssetMakeDivisible';
 
     expect(() => txTagToProtocolOp(value, context)).toThrow(
       `${mockTag} does not match any ProtocolOp`
@@ -3881,11 +3863,11 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
       callId: CallIdEnum.CddRegisterDid,
     });
 
-    result = txTagToExtrinsicIdentifier(TxTags.finalityTracker.FinalHint);
+    result = txTagToExtrinsicIdentifier(TxTags.babe.ReportEquivocation);
 
     expect(result).toEqual({
-      moduleId: ModuleIdEnum.Finalitytracker,
-      callId: CallIdEnum.FinalHint,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
   });
 
@@ -3898,11 +3880,11 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
     expect(result).toEqual(TxTags.identity.CddRegisterDid);
 
     result = extrinsicIdentifierToTxTag({
-      moduleId: ModuleIdEnum.Finalitytracker,
-      callId: CallIdEnum.FinalHint,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
 
-    expect(result).toEqual(TxTags.finalityTracker.FinalHint);
+    expect(result).toEqual(TxTags.babe.ReportEquivocation);
   });
 });
 
@@ -5224,7 +5206,7 @@ describe('permissionsLikeToPermissions', () => {
         type: PermissionType.Include,
       },
       transactions: {
-        values: [TxTags.asset.Transfer],
+        values: [TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
       },
       transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
@@ -5241,7 +5223,7 @@ describe('permissionsLikeToPermissions', () => {
         type: PermissionType.Include,
       },
       transactions: {
-        values: [TxTags.asset.Transfer],
+        values: [TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
       },
       transactionGroups: [],
@@ -5296,7 +5278,7 @@ describe('permissionsLikeToPermissions', () => {
     args = {
       tokens: null,
       transactions: {
-        values: [TxTags.balances.SetBalance, TxTags.asset.Transfer],
+        values: [TxTags.balances.SetBalance, TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
       },
       transactionGroups: [],
@@ -5307,7 +5289,7 @@ describe('permissionsLikeToPermissions', () => {
     expect(result).toEqual({
       tokens: null,
       transactions: {
-        values: [TxTags.asset.Transfer, TxTags.balances.SetBalance],
+        values: [TxTags.asset.MakeDivisible, TxTags.balances.SetBalance],
         type: PermissionType.Include,
       },
       transactionGroups: [],

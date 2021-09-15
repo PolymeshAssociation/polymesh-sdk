@@ -102,7 +102,7 @@ describe('removeCorporateActionsAgent procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          transactions: [TxTags.corporateAction.ResetCaa],
+          transactions: [TxTags.externalAgents.RemoveAgent],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },

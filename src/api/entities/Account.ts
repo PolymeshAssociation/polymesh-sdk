@@ -348,7 +348,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       ModuleName.Session,
       ModuleName.Authorship,
       ModuleName.Babe,
-      ModuleName.FinalityTracker,
       ModuleName.Grandpa,
       ModuleName.ImOnline,
       ModuleName.Indices,

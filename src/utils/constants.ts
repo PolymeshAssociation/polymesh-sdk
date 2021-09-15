@@ -23,9 +23,8 @@ export const DUMMY_ACCOUNT_ID = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQ
  *   This takes block size into account
  */
 export const MAX_BATCH_ELEMENTS: Record<string, number> = {
-  [TxTags.asset.BatchAddDocument]: 20,
-  [TxTags.asset.BatchRemoveDocument]: 20,
-  [TxTags.identity.AcceptAuthorization]: 100,
+  [TxTags.asset.AddDocuments]: 20,
+  [TxTags.asset.RemoveDocuments]: 20,
   [TxTags.identity.RemoveAuthorization]: 100,
   [TxTags.identity.AddClaim]: 200,
   [TxTags.identity.RevokeClaim]: 200,
@@ -128,7 +127,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_VERSION_RANGE = '3.2.x';
+export const SUPPORTED_VERSION_RANGE = '4.0.x';
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',
