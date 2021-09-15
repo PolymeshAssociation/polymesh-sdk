@@ -209,7 +209,11 @@ export class Polymesh {
     if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: `This SDK version required a Polymesh version equals or grater than "${SUPPORTED_VERSION_RANGE}"`,
+        message: 'Unsupported Polymesh version. Please upgrade the SDK',
+        data: {
+          polymeshVersion: version,
+          supportedVersionRange: SUPPORTED_VERSION_RANGE,
+        },
       });
     }
 
@@ -753,7 +757,7 @@ export class Polymesh {
   }
 
   /**
-   * Fetch the current network version
+   * Fetch the current network version (i.e. 3.1.0)
    */
   public async getNetworkVersion(): Promise<string> {
     return this.context.getNetworkVersion();

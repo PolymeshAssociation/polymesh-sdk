@@ -213,7 +213,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should throw an error if the Polymesh version not satisfies the requirement version', async () => {
+    test('should throw an error if the Polymesh version does not satisfy the supported version range', async () => {
       jest.spyOn(semver, 'satisfies').mockImplementationOnce(() => false);
 
       let err;
@@ -225,9 +225,8 @@ describe('Polymesh Class', () => {
         err = e;
       }
 
-      expect(err.message).toBe(
-        `This SDK version required a Polymesh version equals or grater than "${SUPPORTED_VERSION_RANGE}"`
-      );
+      expect(err.message).toBe('Unsupported Polymesh version. Please upgrade the SDK');
+      expect(err.data.supportedVersionRange).toBe(SUPPORTED_VERSION_RANGE);
     });
 
     test('should throw an error if the middleware credentials are incorrect', async () => {

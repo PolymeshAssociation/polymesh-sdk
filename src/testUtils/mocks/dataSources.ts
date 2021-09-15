@@ -190,7 +190,7 @@ function createWebSocketAsPromised(): WebSocketAsPromised {
   return ({
     open: sinon.stub(),
     send: sinon.stub(),
-    sendRequest: sinon.stub().resolves({ result: '3.0.1' }),
+    sendRequest: sinon.stub().resolves({ result: '3.2.0' }),
     close: sinon.stub(),
   } as unknown) as WebSocketAsPromised;
 }
