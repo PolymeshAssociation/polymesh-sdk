@@ -757,7 +757,7 @@ export class Polymesh {
   }
 
   /**
-   * Fetch the current network version
+   * Fetch the current network version (i.e. 3.1.0)
    */
   public async getNetworkVersion(): Promise<string> {
     return this.context.getNetworkVersion();
