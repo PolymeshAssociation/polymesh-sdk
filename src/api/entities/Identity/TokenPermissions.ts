@@ -305,8 +305,8 @@ export class TokenPermissions extends Namespace<Identity> {
   /**
    * Retrieve all Events triggered by Operations this Identity has performed on a specific Security Token
    *
-   * @param opts.moduleId - type of the module to fetch
-   * @param opts.eventId - type of the event to fetch
+   * @param opts.moduleId - filters results by module
+   * @param opts.eventId - filters results by event
    * @param opts.size - page size
    * @param opts.start - page offset
    *
