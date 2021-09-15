@@ -349,21 +349,18 @@ export class TokenPermissions extends Namespace<Identity> {
     const { items, totalCount: count } = tickerExternalAgentActionsResult;
 
     const data: EventIdentifier[] = [];
-    let next = null;
 
-    if (items) {
-      items.forEach(item => {
-        const { block_id: blockId, datetime, event_idx: eventIndex } = item;
+    items.forEach(item => {
+      const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
-        data.push({
-          blockNumber: new BigNumber(blockId),
-          blockDate: new Date(`${datetime}Z`),
-          eventIndex,
-        });
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockDate: new Date(`${datetime}Z`),
+        eventIndex,
       });
+    });
 
-      next = calculateNextKey(count, size, start);
-    }
+    const next = calculateNextKey(count, size, start);
 
     return {
       data,
