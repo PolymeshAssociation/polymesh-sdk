@@ -1120,6 +1120,9 @@ export interface TokenWithGroup {
  * Token transfers (settlements or movements between Portfolios) do not count as Operations
  */
 export interface HistoricAgentOperation {
+  /**
+   * Agent Identity that performed the operations
+   */
   identity: Identity;
   /**
    * list of Token Operation Events that were triggered by the Agent Identity
