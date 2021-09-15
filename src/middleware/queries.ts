@@ -686,7 +686,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
- * Get list of actions (from the set of actions that can only be performed by external agents) that have been performed in ticker
+ * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Security Token
  */
 export function tickerExternalAgentActions(
   variables: QueryTickerExternalAgentActionsArgs
