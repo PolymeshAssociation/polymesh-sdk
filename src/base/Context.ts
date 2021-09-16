@@ -10,7 +10,14 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { CAId, DidRecord, Distribution, ProtocolOp, TxTag } from 'polymesh-types/types';
+import {
+  CAId,
+  DidRecord,
+  Distribution,
+  ProtocolOp,
+  Subsidy as MeshSubsidy,
+  TxTag,
+} from 'polymesh-types/types';
 
 import { Account, DividendDistribution, Identity, PolymeshError, SecurityToken } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
@@ -31,6 +38,7 @@ import {
   ResultSet,
   SimpleEnumTransactionArgument,
   SubCallback,
+  Subsidy,
   TransactionArgument,
   TransactionArgumentType,
   UiKeyring,
@@ -39,6 +47,7 @@ import {
 import { GraphqlQuery } from '~/types/internal';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
+  accountIdToString,
   balanceToBigNumber,
   boolToBoolean,
   claimTypeToMeshClaimType,
@@ -51,6 +60,7 @@ import {
   numberToU32,
   posRatioToBigNumber,
   signerToString,
+  stringToAccountId,
   stringToIdentityId,
   stringToTicker,
   textToString,
@@ -324,23 +334,23 @@ export class Context {
     this.currentPair = newCurrentPair;
   }
 
+  /**
+   * Retrieve the account level POLYX balance
+   *
+   * @note can be subscribed to
+   */
   public accountBalance(account?: string | Account): Promise<AccountBalance>;
   public accountBalance(
     account: string | Account | undefined,
     callback: SubCallback<AccountBalance>
   ): Promise<UnsubCallback>;
 
-  /**
-   * Retrieve the account level POLYX balance
-   *
-   * @note can be subscribed to
-   */
+  // eslint-disable-next-line require-jsdoc
   public async accountBalance(
     account?: string | Account,
     callback?: SubCallback<AccountBalance>
   ): Promise<AccountBalance | UnsubCallback> {
     const {
-      currentPair,
       polymeshApi: {
         query: { system },
       },
@@ -349,14 +359,11 @@ export class Context {
 
     if (account) {
       address = signerToString(account);
-    } else if (currentPair) {
-      address = currentPair.address;
     } else {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'There is no account associated with the SDK',
-      });
+      ({ address } = this.getCurrentAccount());
     }
+
+    const rawAddress = stringToAccountId(address, this);
 
     const assembleResult = ({
       data: { free: rawFree, miscFrozen, feeFrozen },
@@ -371,14 +378,70 @@ export class Context {
     };
 
     if (callback) {
-      return system.account(address, info => {
+      return system.account(rawAddress, info => {
         callback(assembleResult(info));
       });
     }
 
-    const accountInfo = await this.polymeshApi.query.system.account(address);
+    const accountInfo = await system.account(rawAddress);
 
     return assembleResult(accountInfo);
+  }
+
+  /**
+   * Retrieve the account level subsidizer relationship. If there is no such relationship, return null
+   *
+   * @note can be subscribed to
+   */
+  public accountSubsidy(account?: string | Account): Promise<Omit<Subsidy, 'beneficiary'> | null>;
+  public accountSubsidy(
+    account: string | Account | undefined,
+    callback: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async accountSubsidy(
+    account?: string | Account,
+    callback?: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
+  ): Promise<Omit<Subsidy, 'beneficiary'> | null | UnsubCallback> {
+    const {
+      polymeshApi: {
+        query: { relayer },
+      },
+    } = this;
+    let address: string;
+
+    if (account) {
+      address = signerToString(account);
+    } else {
+      ({ address } = this.getCurrentAccount());
+    }
+
+    const rawAddress = stringToAccountId(address, this);
+
+    const assembleResult = (subsidy: Option<MeshSubsidy>): Omit<Subsidy, 'beneficiary'> | null => {
+      if (subsidy.isNone) {
+        return null;
+      }
+      const { paying_key: payingKey, remaining } = subsidy.unwrap();
+      const allowance = balanceToBigNumber(remaining);
+      const subsidizer = new Account({ address: accountIdToString(payingKey) }, this);
+
+      return {
+        allowance,
+        subsidizer,
+      };
+    };
+
+    if (callback) {
+      return relayer.subsidies(rawAddress, subsidy => {
+        callback(assembleResult(subsidy));
+      });
+    }
+
+    const subsidies = await relayer.subsidies(rawAddress);
+
+    return assembleResult(subsidies);
   }
 
   /**
@@ -387,16 +450,7 @@ export class Context {
    * @throws if there is no current account associated to the SDK instance
    */
   public getCurrentAccount(): Account {
-    const { currentPair } = this;
-
-    if (!currentPair) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'There is no account associated with the SDK',
-      });
-    }
-
-    const { address } = currentPair;
+    const { address } = this.getCurrentPair();
 
     return new Account({ address }, this);
   }
@@ -675,8 +729,9 @@ export class Context {
         ([, action]) => action.unwrap().kind.isUnpredictableBenefit
       );
 
-      unpredictableCas.forEach(
-        ([
+      const corporateActionData = await P.map(
+        unpredictableCas,
+        async ([
           {
             args: [rawTicker, rawId],
           },
@@ -684,13 +739,25 @@ export class Context {
         ]) => {
           const localId = u32ToBigNumber(rawId);
           const ticker = tickerToString(rawTicker);
-          tickers.push(ticker);
-          corporateActionIds.push(localId);
-          distributionsMultiParams.push(corporateActionIdentifierToCaId({ ticker, localId }, this));
+          const caId = corporateActionIdentifierToCaId({ ticker, localId }, this);
+          const details = await query.corporateAction.details(caId);
           const action = corporateAction.unwrap();
-          corporateActionParams.push(meshCorporateActionToCorporateActionParams(action, this));
+
+          return {
+            ticker,
+            localId,
+            caId,
+            corporateAction: meshCorporateActionToCorporateActionParams(action, details, this),
+          };
         }
       );
+
+      corporateActionData.forEach(({ ticker, localId, caId, corporateAction }) => {
+        tickers.push(ticker);
+        corporateActionIds.push(localId);
+        distributionsMultiParams.push(caId);
+        corporateActionParams.push(corporateAction);
+      });
     });
 
     /*
@@ -995,6 +1062,15 @@ export class Context {
     const { number } = await this.polymeshApi.rpc.chain.getHeader();
 
     return u32ToBigNumber(number.unwrap());
+  }
+
+  /**
+   * Retrieve the network version
+   */
+  public async getNetworkVersion(): Promise<string> {
+    const version = await this.polymeshApi.rpc.system.version();
+
+    return textToString(version);
   }
 
   /**

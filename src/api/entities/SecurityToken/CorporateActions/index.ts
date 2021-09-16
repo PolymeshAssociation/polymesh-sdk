@@ -130,7 +130,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Retrieve default values for targets, global tax withholding percentage and per-identity tax withholding perecentages.
+   * Retrieve default values for targets, global tax withholding percentage and per-identity tax withholding percentages.
    *
    *
    * @note These values are applied to every Corporate Action that is created until they are modified. Modifying these values

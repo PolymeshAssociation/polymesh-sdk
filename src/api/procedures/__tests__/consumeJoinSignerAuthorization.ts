@@ -3,17 +3,17 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  ConsumeJoinIdentityAuthorizationParams,
+  ConsumeJoinSignerAuthorizationParams,
   getAuthorization,
-  prepareConsumeJoinIdentityAuthorization,
-} from '~/api/procedures/consumeJoinIdentityAuthorization';
+  prepareConsumeJoinSignerAuthorization,
+} from '~/api/procedures/consumeJoinSignerAuthorization';
 import { AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, Signer, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('consumeJoinIdentityAuthorization procedure', () => {
+describe('consumeJoinSignerAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
@@ -64,20 +64,53 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if the Authorization Request is expired', async () => {
+    const proc = procedureMockUtils.getInstance<ConsumeJoinSignerAuthorizationParams, void>(
+      mockContext
+    );
+
+    const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+
+    expect(
+      prepareConsumeJoinSignerAuthorization.call(proc, {
+        authRequest: new AuthorizationRequest(
+          {
+            target,
+            issuer: entityMockUtils.getIdentityInstance(),
+            authId,
+            expiry: new Date('10/14/1987'),
+            data: {
+              type: AuthorizationType.JoinIdentity,
+              value: {
+                tokens: null,
+                transactions: null,
+                transactionGroups: [],
+                portfolios: null,
+              },
+            },
+          },
+          mockContext
+        ),
+        accept: true,
+      })
+    ).rejects.toThrow('The Authorization Request has expired');
+  });
+
   test('should add a joinIdentityAsKey transaction to the queue if the target is an Account', async () => {
-    const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
+    const proc = procedureMockUtils.getInstance<ConsumeJoinSignerAuthorizationParams, void>(
       mockContext
     );
 
     const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
 
-    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -95,23 +128,54 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
+  });
+
+  test('should add a acceptMultisigSignerAsKey transaction to the queue if the target is an Account', async () => {
+    const proc = procedureMockUtils.getInstance<ConsumeJoinSignerAuthorizationParams, void>(
+      mockContext
+    );
+
+    const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+
+    await prepareConsumeJoinSignerAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer,
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: 'someAccount',
+          },
+        },
+        mockContext
+      ),
+      accept: true,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
   });
 
   test('should add a joinIdentityAsIdentity transaction to the queue if the target is an Identity', async () => {
-    const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
+    const proc = procedureMockUtils.getInstance<ConsumeJoinSignerAuthorizationParams, void>(
       mockContext
     );
 
     const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsIdentity');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     const target = new Identity({ did: 'someOtherDid' }, mockContext);
 
-    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -129,16 +193,47 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidByThirdParty: true }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
+  });
+
+  test('should add a acceptMultisigSignerAsIdentity transaction to the queue if the target is an Identity', async () => {
+    const proc = procedureMockUtils.getInstance<ConsumeJoinSignerAuthorizationParams, void>(
+      mockContext
+    );
+
+    const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsIdentity');
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = new Identity({ did: 'someOtherDid' }, mockContext);
+
+    await prepareConsumeJoinSignerAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer,
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: 'someAccount',
+          },
+        },
+        mockContext
+      ),
+      accept: true,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
   });
 
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
-    const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
+    const proc = procedureMockUtils.getInstance<ConsumeJoinSignerAuthorizationParams, void>(
       mockContext
     );
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
 
+    const issuer = entityMockUtils.getIdentityInstance();
     let target: Signer = new Identity({ did: 'someOtherDid' }, mockContext);
 
     const rawSignatory = dsMockUtils.createMockSignatory({
@@ -147,11 +242,11 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
 
     sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
 
-    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -169,22 +264,15 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      { paidByThirdParty: false },
-      rawSignatory,
-      rawAuthId,
-      rawFalse
-    );
+    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawSignatory, rawAuthId, rawFalse);
 
     target = entityMockUtils.getAccountInstance({ address: targetAddress });
 
-    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
-          issuer: entityMockUtils.getIdentityInstance(),
+          issuer,
           authId,
           expiry: null,
           data: {
@@ -205,7 +293,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      { paidByThirdParty: true },
+      { paidForBy: issuer },
       rawSignatory,
       rawAuthId,
       rawTrue
@@ -214,7 +302,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      const proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void>(
+      const proc = procedureMockUtils.getInstance<ConsumeJoinSignerAuthorizationParams, void>(
         mockContext
       );
       const { address } = mockContext.getCurrentAccount();
@@ -224,7 +312,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
         target: entityMockUtils.getAccountInstance({ address }),
         issuer: new Identity({ did: 'issuerDid1' }, mockContext),
         data: {
-          type: AuthorizationType.NoData,
+          type: AuthorizationType.JoinIdentity,
         } as Authorization,
       };
       const args = {
@@ -250,12 +338,38 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
         },
       });
 
+      args.authRequest.data.type = AuthorizationType.AddMultiSigSigner;
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: false,
+        permissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.multiSig.AcceptMultisigSignerAsIdentity],
+        },
+      });
+
       args.accept = false;
       args.authRequest.issuer = await mockContext.getCurrentIdentity();
 
       result = await boundFunc(args);
       expect(result).toEqual({
         roles: true,
+        permissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.identity.RemoveAuthorization],
+        },
+      });
+
+      mockContext.getCurrentAccount.returns(
+        entityMockUtils.getAccountInstance({ getIdentity: null })
+      );
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: false,
         permissions: {
           tokens: [],
           portfolios: [],

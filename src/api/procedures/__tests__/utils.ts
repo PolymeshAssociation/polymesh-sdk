@@ -157,7 +157,7 @@ describe('assertInstructionValid', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if instruction is not in pending state', async () => {
+  test('should throw an error if instruction is not in pending state', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {

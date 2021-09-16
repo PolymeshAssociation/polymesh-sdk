@@ -79,7 +79,7 @@ describe('deletePortfolio procedure', () => {
     ).rejects.toThrow("The Portfolio doesn't exist");
   });
 
-  test('should throw an error if the portfolio has balance in it', async () => {
+  test('should throw an error if the portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         tokenBalances: [

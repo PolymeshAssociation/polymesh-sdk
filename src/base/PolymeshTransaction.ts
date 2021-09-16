@@ -3,7 +3,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { MapMaybePostTransactionValue, TransactionSpec } from '~/types/internal';
-import { unwrapValue, unwrapValues } from '~/utils/internal';
+import { unwrapValues } from '~/utils/internal';
 
 /**
  * Wrapper class for a Polymesh Transaction
@@ -54,8 +54,6 @@ export class PolymeshTransaction<
   protected composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult> {
     const { tx, args } = this;
 
-    const unwrappedTx = unwrapValue(tx);
-
-    return unwrappedTx(...args);
+    return tx(...args);
   }
 }

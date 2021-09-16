@@ -516,7 +516,7 @@ describe('Instruction class', () => {
             kind: dsMockUtils.createMockPortfolioKind('Default'),
           }),
           asset: dsMockUtils.createMockTicker(ticker),
-          amount: dsMockUtils.createMockBalance(amount.times(Math.pow(10, 6)).toNumber()),
+          amount: dsMockUtils.createMockBalance(amount.shiftedBy(6).toNumber()),
         }),
       ];
 

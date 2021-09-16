@@ -85,7 +85,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve whether the Venue exists
+   * Determine whether this Venue exists on chain
    */
   public async exists(): Promise<boolean> {
     const {
@@ -117,18 +117,20 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const exists = await this.exists();
+    const venueId = numberToU64(id, context);
+    const [venueInfo, details] = await Promise.all([
+      settlement.venueInfo(venueId),
+      settlement.details(venueId),
+    ]);
 
-    if (!exists) {
+    if (venueInfo.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: "The Venue doesn't exist",
       });
     }
 
-    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
-
-    const { creator, details, venue_type: type } = venueInfo.unwrap();
+    const { creator, venue_type: type } = venueInfo.unwrap();
 
     return {
       owner: new Identity({ did: identityIdToString(creator) }, context),
@@ -141,16 +143,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    * Retrieve all pending and failed Instructions in this Venue
    */
   public async getInstructions(): Promise<Pick<GroupedInstructions, 'pending' | 'failed'>> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      id,
-      context,
-    } = this;
-
     const exists = await this.exists();
 
     if (!exists) {
@@ -160,13 +152,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
-
-    const { instructions: rawInstructions } = venueInfo.unwrap();
-
-    const instructions = rawInstructions.map(
-      instructionId => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
-    );
+    const instructions = await this.fetchInstructions();
 
     const failed: Instruction[] = [];
     const pending: Instruction[] = [];
@@ -195,6 +181,28 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    * @deprecated in favor of `getInstructions`
    */
   public async getPendingInstructions(): Promise<Instruction[]> {
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: "The Venue doesn't exist",
+      });
+    }
+
+    const instructions = await this.fetchInstructions();
+
+    return P.filter(instructions, async instruction => {
+      const { status } = await instruction.details();
+
+      return status === InstructionStatus.Pending;
+    });
+  }
+
+  /**
+   * Fetch instructions from the chain
+   */
+  private async fetchInstructions(): Promise<Instruction[]> {
     const {
       context: {
         polymeshApi: {
@@ -205,28 +213,15 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const exists = await this.exists();
+    const instructionEntries = await settlement.venueInstructions.entries(numberToU64(id, context));
 
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Venue doesn't exist",
-      });
-    }
-
-    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
-
-    const { instructions: rawInstructions } = venueInfo.unwrap();
-
-    const instructions = rawInstructions.map(
-      instructionId => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
+    return instructionEntries.map(
+      ([
+        {
+          args: [, instructionId],
+        },
+      ]) => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
     );
-
-    return P.filter(instructions, async instruction => {
-      const { status } = await instruction.details();
-
-      return status === InstructionStatus.Pending;
-    });
   }
 
   /**

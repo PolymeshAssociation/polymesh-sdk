@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import {
   Context,
   createGroup,
@@ -8,11 +10,12 @@ import {
   InviteExternalAgentParams,
   KnownPermissionGroup,
   Namespace,
+  PolymeshError,
   removeExternalAgent,
   RemoveExternalAgentParams,
   SecurityToken,
 } from '~/internal';
-import { AgentWithGroup, PermissionGroupType, ProcedureMethod } from '~/types';
+import { AgentWithGroup, ErrorCode, PermissionGroupType, ProcedureMethod } from '~/types';
 import {
   agentGroupToPermissionGroup,
   identityIdToString,
@@ -65,7 +68,43 @@ export class Permissions extends Namespace<SecurityToken> {
   public removeAgent: ProcedureMethod<RemoveExternalAgentParams, void>;
 
   /**
-   * Retrieve all group permissions of the Security Token
+   * Retrieve a single Permission Group by its ID (or type). Passing an ID will fetch a Custom Permission Group,
+   *   while passing a type will fetch a Known Permission Group
+   *
+   * @throws if there is no Permission Group with the passed ID
+   */
+  public async getGroup(args: { id: BigNumber }): Promise<CustomPermissionGroup>;
+  public async getGroup(args: { type: PermissionGroupType }): Promise<KnownPermissionGroup>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getGroup(
+    args: { id: BigNumber } | { type: PermissionGroupType }
+  ): Promise<CustomPermissionGroup | KnownPermissionGroup> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+
+    if ('type' in args) {
+      return new KnownPermissionGroup({ ticker, type: args.type }, context);
+    }
+
+    const customGroup = new CustomPermissionGroup({ ticker, id: args.id }, context);
+
+    const exists = await customGroup.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Permission Group does not exist',
+      });
+    }
+
+    return customGroup;
+  }
+
+  /**
+   * Retrieve all Permission Groups of this Security Token
    */
   public async getGroups(): Promise<{
     known: KnownPermissionGroup[];

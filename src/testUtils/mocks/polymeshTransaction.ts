@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { PolymeshTransaction } from '~/internal';
+import { Account, PolymeshTransaction } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 
@@ -18,7 +18,7 @@ interface MockTransactionSpec {
     protocol: BigNumber;
     gas: BigNumber;
   };
-  paidByThirdParty?: boolean;
+  payingAccount?: { account: Account; allowance: BigNumber | null };
 }
 
 interface TransactionMockData {
@@ -80,66 +80,64 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
   const error = 'Transaction Error';
   const updateStatusStub = sinon.stub();
 
-  const instances = specs.map(
-    ({ isCritical, autoresolve, fees = null, paidByThirdParty = false }) => {
-      const instance = {} as MockTransaction;
-      if (autoresolve === TransactionStatus.Failed) {
-        instance.run = (sinon
-          .stub()
-          .rejects(new Error(error)) as unknown) as MockTransaction['run'];
-      } else if (autoresolve === TransactionStatus.Succeeded) {
-        instance.run = (sinon.stub().resolves(receipt) as unknown) as MockTransaction['run'];
-      } else {
-        const runStub = sinon.stub().returns(
-          new Promise((resolve, reject) => {
-            updateStatusStub.callsFake((newStatus: TransactionStatus) => {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              const { statusChangeListener } = transactionMocksData.get(instance)!;
+  const instances = specs.map(({ isCritical, autoresolve, fees = null, payingAccount = null }) => {
+    const instance = {} as MockTransaction;
+    if (autoresolve === TransactionStatus.Failed) {
+      instance.run = (sinon.stub().rejects(new Error(error)) as unknown) as MockTransaction['run'];
+    } else if (autoresolve === TransactionStatus.Succeeded) {
+      instance.run = (sinon.stub().resolves(receipt) as unknown) as MockTransaction['run'];
+    } else {
+      const runStub = sinon.stub().returns(
+        new Promise((resolve, reject) => {
+          updateStatusStub.callsFake((newStatus: TransactionStatus) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const { statusChangeListener } = transactionMocksData.get(instance)!;
 
-              statusChangeListener(instance);
+            statusChangeListener(instance);
 
-              if (newStatus === TransactionStatus.Succeeded) {
-                resolve(receipt);
-              }
-              if (
-                [
-                  TransactionStatus.Aborted,
-                  TransactionStatus.Failed,
-                  TransactionStatus.Rejected,
-                ].includes(newStatus)
-              ) {
-                reject(new Error(error));
-              }
-            });
-          })
-        );
-        instance.run = (runStub as unknown) as MockTransaction['run'];
-      }
+            if (newStatus === TransactionStatus.Succeeded) {
+              resolve(receipt);
+            }
+            if (
+              [
+                TransactionStatus.Aborted,
+                TransactionStatus.Failed,
+                TransactionStatus.Rejected,
+              ].includes(newStatus)
+            ) {
+              reject(new Error(error));
+            }
+          });
+        })
+      );
+      instance.run = (runStub as unknown) as MockTransaction['run'];
+    }
 
-      instance.isCritical = isCritical;
-      instance.onStatusChange = (sinon.stub().callsFake(listener => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const mockData = transactionMocksData.get(instance)!;
-
-        transactionMocksData.set(instance, {
-          ...mockData,
-          statusChangeListener: listener,
-        });
-      }) as unknown) as MockTransaction['onStatusChange'];
-
-      instance.status = autoresolve || TransactionStatus.Idle;
-      instance.paidByThirdParty = paidByThirdParty;
-      instance.getFees = sinon.stub().resolves(fees) as MockTransaction['getFees'];
+    instance.isCritical = isCritical;
+    instance.onStatusChange = (sinon.stub().callsFake(listener => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const mockData = transactionMocksData.get(instance)!;
 
       transactionMocksData.set(instance, {
-        updateStatusStub,
-        resolved: !!autoresolve,
-        statusChangeListener: sinon.stub(),
+        ...mockData,
+        statusChangeListener: listener,
       });
+    }) as unknown) as MockTransaction['onStatusChange'];
 
-      return instance;
-    }
-  );
+    instance.status = autoresolve || TransactionStatus.Idle;
+    instance.getPayingAccount = sinon
+      .stub()
+      .resolves(payingAccount) as MockTransaction['getPayingAccount'];
+    instance.getFees = sinon.stub().resolves(fees) as MockTransaction['getFees'];
+
+    transactionMocksData.set(instance, {
+      updateStatusStub,
+      resolved: !!autoresolve,
+      statusChangeListener: sinon.stub(),
+    });
+
+    return instance;
+  });
 
   polymeshTransactionConstructorStub = sinon.stub();
 
