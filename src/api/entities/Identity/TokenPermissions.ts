@@ -15,13 +15,7 @@ import {
   WaivePermissionsParams,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
-import {
-  EventIdEnum as EventId,
-  EventIdEnum,
-  ModuleIdEnum as ModuleId,
-  ModuleIdEnum,
-  Query,
-} from '~/middleware/types';
+import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
   Ensured,
   ErrorCode,
@@ -280,8 +274,8 @@ export class TokenPermissions extends Namespace<Identity> {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Externalagents,
-        eventId: EventIdEnum.AgentAdded,
+        moduleId: ModuleId.Externalagents,
+        eventId: EventId.AgentAdded,
         eventArg1: padString(ticker, MAX_TICKER_LENGTH),
       })
     );
@@ -314,7 +308,7 @@ export class TokenPermissions extends Namespace<Identity> {
    * @note supports pagination
    */
   public async getOperationHistory(opts: {
-    token: string;
+    token: string | SecurityToken;
     moduleId?: ModuleId;
     eventId?: EventId;
     size?: number;
@@ -348,16 +342,14 @@ export class TokenPermissions extends Namespace<Identity> {
 
     const { items, totalCount: count } = tickerExternalAgentActionsResult;
 
-    const data: EventIdentifier[] = [];
-
-    items.forEach(item => {
+    const data = items.map(item => {
       const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
-      data.push({
+      return {
         blockNumber: new BigNumber(blockId),
         blockDate: new Date(`${datetime}Z`),
         eventIndex,
-      });
+      };
     });
 
     const next = calculateNextKey(count, size, start);
