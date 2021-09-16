@@ -3,15 +3,20 @@ import BigNumber from 'bignumber.js';
 import {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
-  consumeJoinIdentityAuthorization,
-  ConsumeJoinIdentityAuthorizationParams,
+  consumeJoinSignerAuthorization,
+  ConsumeJoinSignerAuthorizationParams,
   Context,
   Entity,
   Identity,
 } from '~/internal';
 import { Authorization, AuthorizationType, ProcedureMethod, Signer, SignerValue } from '~/types';
 import { HumanReadableType } from '~/types/utils';
-import { signerToSignerValue } from '~/utils/conversion';
+import {
+  authorizationDataToAuthorization,
+  numberToU64,
+  signerToSignerValue,
+  signerValueToSignatory,
+} from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -62,17 +67,17 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
   /**
    * authorization request data corresponding to type of authorization
    *
-   * | Type                        | Data      |
-   * |-----------------------------|-----------|
-   * | Attest Primary Key Rotation | DID       |
-   * | Rotate Primary Key          | DID       |
-   * | Transfer Ticker             | Ticker    |
-   * | Add MultiSig Signer         | Account   |
-   * | Transfer Token Ownership    | Ticker    |
-   * | Join Identity               | DID       |
-   * | Portfolio Custody           | Portfolio |
-   * | Custom                      | Custom    |
-   * | No Data                     | N/A       |
+   * | Type                        | Data                            |
+   * |-----------------------------|---------------------------------|
+   * | Add Relayer Paying Key      | Beneficiary, Relayer, Allowance |
+   * | Become Agent                | Permission Group
+   * | Attest Primary Key Rotation | DID                             |
+   * | Rotate Primary Key          | DID                             |
+   * | Transfer Ticker             | Ticker                          |
+   * | Add MultiSig Signer         | Account                         |
+   * | Transfer Token Ownership    | Ticker                          |
+   * | Join Identity               | DID                             |
+   * | Portfolio Custody           | Portfolio                       |
    */
   public data: Authorization;
 
@@ -105,13 +110,17 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.accept = createProcedureMethod<
       void,
-      ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
+      ConsumeAuthorizationRequestsParams | ConsumeJoinSignerAuthorizationParams,
       void
     >(
       {
         getProcedureAndArgs: () => {
-          if (this.data.type === AuthorizationType.JoinIdentity) {
-            return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+          if (
+            [AuthorizationType.JoinIdentity, AuthorizationType.AddMultiSigSigner].includes(
+              this.data.type
+            )
+          ) {
+            return [consumeJoinSignerAuthorization, { authRequest: this, accept: true }];
           }
 
           return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
@@ -122,13 +131,17 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.remove = createProcedureMethod<
       void,
-      ConsumeAuthorizationRequestsParams | ConsumeJoinIdentityAuthorizationParams,
+      ConsumeAuthorizationRequestsParams | ConsumeJoinSignerAuthorizationParams,
       void
     >(
       {
         getProcedureAndArgs: () => {
-          if (this.data.type === AuthorizationType.JoinIdentity) {
-            return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+          if (
+            [AuthorizationType.JoinIdentity, AuthorizationType.AddMultiSigSigner].includes(
+              this.data.type
+            )
+          ) {
+            return [consumeJoinSignerAuthorization, { authRequest: this, accept: false }];
           }
 
           return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
@@ -158,6 +171,23 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     const { expiry } = this;
 
     return expiry !== null && expiry < new Date();
+  }
+
+  /**
+   * Determine whether this Authorization Request exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { authId, target, context } = this;
+
+    const auth = await context.polymeshApi.query.identity.authorizations(
+      signerValueToSignatory(signerToSignerValue(target), context),
+      numberToU64(authId, context)
+    );
+
+    return (
+      authorizationDataToAuthorization(auth.authorization_data, context).type !==
+      AuthorizationType.NoData
+    );
   }
 
   /**

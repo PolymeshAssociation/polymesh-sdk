@@ -73,7 +73,7 @@ describe('createPortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the portfolio name is duplicated', async () => {
+  test('should throw an error if the portfolio name is duplicated', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
     return expect(

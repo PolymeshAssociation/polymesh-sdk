@@ -109,26 +109,43 @@ describe('modifyVenue procedure', () => {
     sinon.stub(utilsConversionModule, 'stringToVenueDetails').returns(rawDetails);
     sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType').returns(rawType);
 
-    const transaction = dsMockUtils.createTxStub('settlement', 'updateVenue');
+    const updateVenueDetailsTransaction = dsMockUtils.createTxStub(
+      'settlement',
+      'updateVenueDetails'
+    );
+    const updateVenueTypeTransaction = dsMockUtils.createTxStub('settlement', 'updateVenueType');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareModifyVenue.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawId, rawDetails, rawType);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      updateVenueDetailsTransaction,
+      {},
+      rawId,
+      rawDetails
+    );
+    sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
 
     await prepareModifyVenue.call(proc, {
       venueId,
       type,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawId, null, rawType);
+    sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
 
     await prepareModifyVenue.call(proc, {
       venueId,
       description,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawId, rawDetails, null);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      updateVenueDetailsTransaction,
+      {},
+      rawId,
+      rawDetails
+    );
   });
 
   describe('getAuthorization', () => {

@@ -17,6 +17,7 @@ import {
   ResultSet,
   SimplePermissions,
   SubCallback,
+  Subsidy,
   TxTag,
   TxTags,
   UnsubCallback,
@@ -112,6 +113,30 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     return context.accountBalance(address);
+  }
+
+  /**
+   * Get the subsidized balance of this Account and the subsidizer Account. If
+   *   this Account isn't being subsidized, return null
+   *
+   * @note can be subscribed to
+   */
+  public getSubsidy(): Promise<Omit<Subsidy, 'beneficiary'> | null>;
+  public getSubsidy(
+    callback: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public getSubsidy(
+    callback?: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
+  ): Promise<Omit<Subsidy, 'beneficiary'> | null | UnsubCallback> {
+    const { context, address } = this;
+
+    if (callback) {
+      return context.accountSubsidy(address, callback);
+    }
+
+    return context.accountSubsidy(address);
   }
 
   /**
@@ -245,7 +270,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const primaryKey = await identity.getPrimaryKey();
 
-    if (address === primaryKey) {
+    if (address === primaryKey.address) {
       return false;
     }
 
@@ -265,7 +290,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       currentIdentity.getSecondaryKeys(),
     ]);
 
-    if (address === primaryKey) {
+    if (address === primaryKey.address) {
       return {
         tokens: null,
         transactions: null,
@@ -404,6 +429,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     return hasTokens && hasTransactions && hasPortfolios;
+  }
+
+  /**
+   * Determine whether this Account exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    return true;
   }
 
   /**

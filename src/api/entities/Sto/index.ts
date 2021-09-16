@@ -244,6 +244,20 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
+   * Determine whether this STO exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { ticker, id, context } = this;
+
+    const fundraiser = await context.polymeshApi.query.sto.fundraisers(
+      stringToTicker(ticker, context),
+      numberToU64(id, context)
+    );
+
+    return fundraiser.isSome;
+  }
+
+  /**
    * Return the Sto's ID and Token ticker
    */
   public toJson(): HumanReadable {

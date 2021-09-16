@@ -178,7 +178,6 @@ import {
   TokenDocument,
   TokenIdentifier,
   TokenIdentifierType,
-  TokenType,
   TransactionPermissions,
   TransferBreakdown,
   TransferError,
@@ -193,6 +192,7 @@ import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
   InstructionStatus,
+  InternalTokenType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -1169,6 +1169,19 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  if (auth.isAddRelayerPayingKey) {
+    const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
+
+    return {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: new Account({ address: accountIdToString(userKey) }, context),
+        subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
+        allowance: balanceToBigNumber(polyxLimit),
+      },
+    };
+  }
+
   return {
     type: AuthorizationType.NoData,
   };
@@ -1351,14 +1364,14 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
 /**
  * @hidden
  */
-export function tokenTypeToAssetType(type: TokenType, context: Context): AssetType {
+export function internalTokenTypeToAssetType(type: InternalTokenType, context: Context): AssetType {
   return context.polymeshApi.createType('AssetType', type);
 }
 
 /**
  * @hidden
  */
-export function assetTypeToString(assetType: AssetType): string {
+export function assetTypeToKnownOrId(assetType: AssetType): KnownTokenType | BigNumber {
   if (assetType.isEquityCommon) {
     return KnownTokenType.EquityCommon;
   }
@@ -1390,7 +1403,7 @@ export function assetTypeToString(assetType: AssetType): string {
     return KnownTokenType.StableCoin;
   }
 
-  return u8aToString(assetType.asCustom);
+  return u32ToBigNumber(assetType.asCustom);
 }
 
 /**
@@ -1639,12 +1652,12 @@ export function stringToDocumentHash(docHash: string | undefined, context: Conte
   const { length } = docHash;
 
   // array of Hash types (H128, H160, etc) and their corresponding hex lengths
-  const hashTypes = [32, 40, 48, 56, 64, 80, 96, 128].map(maxLength => ({
-    maxLength: maxLength + 2,
-    key: `H${maxLength * 4}`,
+  const hashTypes = [32, 40, 48, 56, 64, 80, 96, 128].map(max => ({
+    maxLength: max + 2,
+    key: `H${max * 4}`,
   }));
 
-  const type = hashTypes.find(({ maxLength }) => length <= maxLength);
+  const type = hashTypes.find(({ maxLength: max }) => length <= max);
 
   if (!type) {
     throw new PolymeshError({
@@ -2403,18 +2416,20 @@ export function complianceRequirementToRequirement(
  * @hidden
  */
 export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
-  const [moduleName, extrinsicName] = tag.split('.');
-  const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(
-    extrinsicName.replace(new RegExp('Documents$'), 'Document') // `asset.addDocuments` and `asset.removeDocuments`
-  )}`;
+  const exceptions: Record<string, string> = {
+    [TxTags.asset.AddDocuments]: 'AssetAddDocument',
+    [TxTags.capitalDistribution.Distribute]: 'DistributionDistribute',
+    [TxTags.checkpoint.CreateSchedule]: 'AssetCreateCheckpointSchedule',
+    [TxTags.corporateBallot.AttachBallot]: 'BallotAttachBallot',
+  };
 
   const protocolOpTags = [
     TxTags.asset.RegisterTicker,
     TxTags.asset.Issue,
     TxTags.asset.AddDocuments,
     TxTags.asset.CreateAsset,
-    TxTags.asset.CreateCheckpoint,
     TxTags.dividend.New,
+    TxTags.checkpoint.CreateSchedule,
     TxTags.complianceManager.AddComplianceRequirement,
     TxTags.identity.RegisterDid,
     TxTags.identity.CddRegisterDid,
@@ -2427,6 +2442,13 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     TxTags.corporateBallot.AttachBallot,
     TxTags.capitalDistribution.Distribute,
   ];
+
+  let value = exceptions[tag];
+
+  if (!value) {
+    const [moduleName, extrinsicName] = tag.split('.');
+    value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
+  }
 
   if (!includes(protocolOpTags, tag)) {
     throw new PolymeshError({
@@ -3196,12 +3218,12 @@ export function stringToSignature(signature: string, context: Context): Signatur
  */
 export function meshCorporateActionToCorporateActionParams(
   corporateAction: MeshCorporateAction,
+  details: Text,
   context: Context
 ): CorporateActionParams {
   const {
     kind: rawKind,
     decl_date: declDate,
-    details,
     targets: { identities, treatment },
     default_withholding_tax: defaultWithholdingTax,
     withholding_tax: withholdingTax,

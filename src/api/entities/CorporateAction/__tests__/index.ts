@@ -83,7 +83,6 @@ describe('CorporateAction class', () => {
             identities: [],
             treatment: TargetTreatment.Exclude,
           },
-          details: 'something',
           default_withholding_tax: 100000,
           withholding_tax: [],
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -243,7 +242,6 @@ describe('CorporateAction class', () => {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            details: 'something',
             default_withholding_tax: 100000,
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
@@ -276,7 +274,6 @@ describe('CorporateAction class', () => {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            details: 'something',
             default_withholding_tax: 100000,
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */

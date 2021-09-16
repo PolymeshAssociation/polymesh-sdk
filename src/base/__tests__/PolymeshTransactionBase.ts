@@ -6,7 +6,7 @@ import sinon from 'sinon';
 
 import { Context, PolymeshTransaction, PostTransactionValue } from '~/internal';
 import { fakePromise } from '~/testUtils';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
@@ -18,6 +18,7 @@ describe('Polymesh Transaction Base class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -34,6 +35,12 @@ describe('Polymesh Transaction Base class', () => {
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   describe('method: run', () => {
@@ -81,39 +88,6 @@ describe('Polymesh Transaction Base class', () => {
         },
         context
       );
-
-      transaction.run();
-
-      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.InBlock);
-
-      await fakePromise();
-
-      dsMockUtils.updateTxStatus(tx, dsMockUtils.MockTxStatus.Succeeded);
-
-      await fakePromise();
-
-      sinon.assert.calledWith(tx, ticker);
-      expect(transaction.blockHash).toBeDefined();
-      expect(transaction.txHash).toBeDefined();
-      expect(transaction.status).toBe(TransactionStatus.Succeeded);
-    });
-
-    test('should unwrap the method if it is a PostTransactionValue', async () => {
-      const tx = dsMockUtils.createTxStub('asset', 'registerTicker', { autoresolve: false });
-      const ticker = 'NOT_THE_SAME_ONE';
-      const postTransactionTx = new PostTransactionValue(async () => tx);
-      const args = tuple(ticker);
-
-      const transaction = new PolymeshTransaction(
-        {
-          ...txSpec,
-          tx: postTransactionTx,
-          args,
-        },
-        context
-      );
-
-      await postTransactionTx.run({} as ISubmittableResult);
 
       transaction.run();
 
@@ -442,26 +416,12 @@ describe('Polymesh Transaction Base class', () => {
       expect(result?.gas).toEqual(new BigNumber(10));
     });
 
-    test('should return null if the transaction (or its arguments) are not ready', async () => {
+    test('should return null if the transaction arguments are not ready', async () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker', { gas: rawGasFees[0] });
 
       const args = tuple('WILL_IT_EVER_BE_OVER?');
 
-      let transaction = new PolymeshTransaction(
-        {
-          ...txSpec,
-          fee: null,
-          tx: new PostTransactionValue(async () => tx),
-          args,
-        },
-        context
-      );
-
-      let result = await transaction.getFees();
-
-      expect(result).toBe(null);
-
-      transaction = new PolymeshTransaction(
+      const transaction = new PolymeshTransaction(
         {
           ...txSpec,
           fee: null,
@@ -471,9 +431,106 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      result = await transaction.getFees();
+      const result = await transaction.getFees();
 
       expect(result).toBe(null);
+    });
+  });
+
+  describe('method: getPayingAccount', () => {
+    test('should return null if the current Account should pay', async () => {
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+
+      const args = tuple('SOMETHING');
+
+      const transaction = new PolymeshTransaction(
+        {
+          ...txSpec,
+          tx,
+          args,
+        },
+        context
+      );
+
+      const result = await transaction.getPayingAccount();
+
+      expect(result).toBeNull();
+    });
+
+    test('should return null if the transaction is "relayer.removePayingKey"', async () => {
+      const tx = dsMockUtils.createTxStub('relayer', 'removePayingKey');
+      const account = entityMockUtils.getAccountInstance();
+      const allowance = new BigNumber(100);
+      context.accountSubsidy.resolves({
+        subsidizer: account,
+        allowance,
+      });
+
+      const args = tuple('SOMETHING_ELSE');
+
+      const transaction = new PolymeshTransaction(
+        {
+          ...txSpec,
+          tx,
+          args,
+        },
+        context
+      );
+
+      const result = await transaction.getPayingAccount();
+
+      expect(result).toBeNull();
+    });
+
+    test('should return a null allowance if the transaction is paid for a fixed third party', async () => {
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const account = entityMockUtils.getAccountInstance();
+      const paidForBy = entityMockUtils.getIdentityInstance({
+        getPrimaryKey: account,
+      });
+
+      const args = tuple('SOMETHING');
+
+      const transaction = new PolymeshTransaction(
+        {
+          ...txSpec,
+          tx,
+          args,
+          paidForBy,
+        },
+        context
+      );
+
+      const result = await transaction.getPayingAccount();
+
+      expect(result?.account).toEqual(account);
+      expect(result?.allowance).toBeNull();
+    });
+
+    test('should return the account and allowance if the transaction is being subsidized', async () => {
+      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const account = entityMockUtils.getAccountInstance();
+      const allowance = new BigNumber(100);
+      context.accountSubsidy.resolves({
+        subsidizer: account,
+        allowance,
+      });
+
+      const args = tuple('SOMETHING');
+
+      const transaction = new PolymeshTransaction(
+        {
+          ...txSpec,
+          tx,
+          args,
+        },
+        context
+      );
+
+      const result = await transaction.getPayingAccount();
+
+      expect(result?.account).toEqual(account);
+      expect(result?.allowance).toBe(allowance);
     });
   });
 });

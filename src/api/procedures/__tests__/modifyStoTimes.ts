@@ -206,7 +206,7 @@ describe('modifyStoTimes procedure', () => {
     expect(err?.message).toBe(message);
   });
 
-  test('should throw an error if the sto is already closed', async () => {
+  test('should throw an error if the sto is already closed', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {

@@ -6,7 +6,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { BatchTransactionSpec, MapMaybePostTransactionValue } from '~/types/internal';
 import { u32ToBigNumber } from '~/utils/conversion';
-import { unwrapValue, unwrapValues } from '~/utils/internal';
+import { unwrapValues } from '~/utils/internal';
 
 /**
  * Wrapper class for a batch of Polymesh Transactions
@@ -67,9 +67,7 @@ export class PolymeshTransactionBatch<
       args,
     } = this;
 
-    const unwrappedTx = unwrapValue(tx);
-
-    return utility.batchAtomic(args.map(arg => unwrappedTx(...arg)));
+    return utility.batchAtomic(args.map(arg => tx(...arg)));
   }
 
   /**
