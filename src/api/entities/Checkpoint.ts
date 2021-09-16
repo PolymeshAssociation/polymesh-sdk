@@ -217,7 +217,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Retrieve whether the Checkpoint still exists on chain
+   * Determine whether this Checkpoint exists on chain
    */
   public async exists(): Promise<boolean> {
     const {

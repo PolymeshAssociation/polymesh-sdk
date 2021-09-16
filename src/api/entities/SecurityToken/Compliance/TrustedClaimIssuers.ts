@@ -86,7 +86,7 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
   public remove: ProcedureMethod<ModifyTokenTrustedClaimIssuersRemoveParams, SecurityToken>;
 
   /**
-   * Retrieve the current default trusted claim issuers of the Security Token
+   * Retrieve the current Default Trusted Claim Issuers of the Security Token
    *
    * @note can be subscribed to
    */

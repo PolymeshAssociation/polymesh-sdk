@@ -65,7 +65,7 @@ describe('renamePortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the new name is the same as the current one', async () => {
+  test('should throw an error if the new name is the same as the current one', () => {
     const newName = 'newName';
     const rawNewName = dsMockUtils.createMockText(newName);
 
@@ -83,7 +83,7 @@ describe('renamePortfolio procedure', () => {
     ).rejects.toThrow('New name is the same as current name');
   });
 
-  test('should throw an error if there already is a portfolio with the new name', async () => {
+  test('should throw an error if there already is a portfolio with the new name', () => {
     const portfolioName = 'portfolioName';
     const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
     const entryPortfolioName = 'someName';

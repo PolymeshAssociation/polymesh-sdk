@@ -1,8 +1,21 @@
 import BigNumber from 'bignumber.js';
 import { CheckpointId, Moment, Ticker } from 'polymesh-types/types';
 
-import { Checkpoint, Context, createCheckpoint, Namespace, SecurityToken } from '~/internal';
-import { CheckpointWithData, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
+import {
+  Checkpoint,
+  Context,
+  createCheckpoint,
+  Namespace,
+  PolymeshError,
+  SecurityToken,
+} from '~/internal';
+import {
+  CheckpointWithData,
+  ErrorCode,
+  PaginationOptions,
+  ProcedureMethod,
+  ResultSet,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
@@ -40,6 +53,31 @@ export class Checkpoints extends Namespace<SecurityToken> {
    * Create a snapshot of Security Token holders and their respective balances at this moment
    */
   public create: ProcedureMethod<void, Checkpoint>;
+
+  /**
+   * Retrieve a single Checkpoint for this Security Token by its ID
+   *
+   * @throws if there is no Checkpoint with the passed ID
+   */
+  public async getOne(args: { id: BigNumber }): Promise<Checkpoint> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+
+    const checkpoint = new Checkpoint({ id: args.id, ticker }, context);
+
+    const exists = await checkpoint.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Checkpoint does not exist',
+      });
+    }
+
+    return checkpoint;
+  }
 
   /**
    * Retrieve all Checkpoints created on this Security Token, together with their corresponding creation Date and Total Supply

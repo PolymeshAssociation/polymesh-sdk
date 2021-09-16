@@ -1,5 +1,4 @@
-import { PolymeshError } from '~/base/PolymeshError';
-import { Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { ClaimType, ErrorCode, Scope, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization, ScopeClaimProof } from '~/types/internal';
 import {

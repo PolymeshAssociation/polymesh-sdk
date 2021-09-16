@@ -109,6 +109,44 @@ describe('Schedules class', () => {
     });
   });
 
+  describe('method: getOne', () => {
+    let getStub: sinon.SinonStub;
+    let id: BigNumber;
+
+    beforeAll(() => {
+      id = new BigNumber(1);
+    });
+
+    beforeEach(() => {
+      getStub = sinon.stub(schedules, 'get');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the requested Checkpoint Schedule', async () => {
+      const fakeResult = {
+        schedule: entityMockUtils.getCheckpointScheduleInstance({ id }),
+        details: {
+          remainingCheckpoints: 1,
+          nextCheckpointDate: new Date(),
+        },
+      };
+
+      getStub.resolves([fakeResult]);
+
+      const result = await schedules.getOne({ id });
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should throw an error if the Schedule does not exist', () => {
+      getStub.resolves([]);
+
+      return expect(schedules.getOne({ id })).rejects.toThrow('The Schedule does not exist');
+    });
+  });
+
   describe('method: get', () => {
     afterAll(() => {
       sinon.restore();

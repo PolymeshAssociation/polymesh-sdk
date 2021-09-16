@@ -419,11 +419,31 @@ describe('Sto class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    test('should return whether the Offering exists', async () => {
+      const sto = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+
+      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockFundraiser()),
+      });
+
+      let result = await sto.exists();
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      result = await sto.exists();
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
-      const token = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+      const sto = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
-      expect(token.toJson()).toEqual({
+      expect(sto.toJson()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
       });
