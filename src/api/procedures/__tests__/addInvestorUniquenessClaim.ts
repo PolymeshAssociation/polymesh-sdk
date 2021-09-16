@@ -277,11 +277,11 @@ describe('addInvestorUniquenessClaim procedure', () => {
       mockContext
     );
 
-    expect(prepareAddInvestorUniquenessClaim.call(proc, { ...commonArgs, proof })).rejects.toThrow(
-      'Expiry date must be in the future'
-    );
+    await expect(
+      prepareAddInvestorUniquenessClaim.call(proc, { ...commonArgs, proof })
+    ).rejects.toThrow('Expiry date must be in the future');
 
-    expect(
+    return expect(
       prepareAddInvestorUniquenessClaim.call(proc, { ...commonArgs, proof: scopeClaimProof })
     ).rejects.toThrow('Expiry date must be in the future');
   });

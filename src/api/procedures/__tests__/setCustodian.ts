@@ -76,7 +76,7 @@ describe('setCustodian procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the passed account has a pending authorization to accept', async () => {
+  test('should throw an error if the passed account has a pending authorization to accept', () => {
     const did = 'someDid';
     const args = { targetIdentity: 'targetIdentity', did };
 
@@ -107,7 +107,7 @@ describe('setCustodian procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(prepareSetCustodian.call(proc, args)).rejects.toThrow(
+    return expect(prepareSetCustodian.call(proc, args)).rejects.toThrow(
       "The target Identity already has a pending invitation to be the Portfolio's custodian"
     );
   });

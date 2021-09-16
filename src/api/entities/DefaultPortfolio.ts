@@ -16,4 +16,11 @@ export class DefaultPortfolio extends Portfolio {
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super({ ...identifiers, id: undefined }, context);
   }
+
+  /**
+   * Determine whether this Portfolio exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    return true;
+  }
 }

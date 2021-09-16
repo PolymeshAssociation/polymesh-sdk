@@ -10,6 +10,11 @@ class NonAbstract extends Entity<unknown, boolean> {
   public toJson(): boolean {
     return true;
   }
+
+  // eslint-disable-next-line require-jsdoc
+  public async exists(): Promise<boolean> {
+    return true;
+  }
 }
 
 describe('Entity class', () => {

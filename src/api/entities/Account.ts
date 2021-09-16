@@ -432,6 +432,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Determine whether this Account exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    return true;
+  }
+
+  /**
    * Return the Account's address
    */
   public toJson(): string {

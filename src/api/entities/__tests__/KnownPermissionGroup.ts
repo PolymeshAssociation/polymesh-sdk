@@ -111,4 +111,13 @@ describe('KnownPermissionGroup class', () => {
       expect(result).toEqual({ transactions: null, transactionGroups: [] });
     });
   });
+
+  describe('exists', () => {
+    test('should return true', () => {
+      const type = PermissionGroupType.ExceptMeta;
+      const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
+
+      return expect(knownPermissionGroup.exists()).resolves.toBe(true);
+    });
+  });
 });

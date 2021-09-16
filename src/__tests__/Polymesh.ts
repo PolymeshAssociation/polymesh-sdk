@@ -47,6 +47,10 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
   'websocket-as-promised',
   require('~/testUtils/mocks/dataSources').mockWebSocketAsPromisedModule()
 );
@@ -704,10 +708,22 @@ describe('Polymesh Class', () => {
 
       const params = { did: 'testDid' };
 
-      const result = polymesh.getIdentity(params);
+      const result = await polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
 
       expect(result).toMatchObject(new Identity(params, context));
+    });
+
+    test('should throw an error if the Identity does not exist', async () => {
+      entityMockUtils.configureMocks({ identityOptions: { exists: false } });
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        accountUri: '//uri',
+      });
+
+      return expect(polymesh.getIdentity({ did: 'nonExistent' })).rejects.toThrow(
+        'The Identity does not exist'
+      );
     });
   });
 
@@ -778,21 +794,22 @@ describe('Polymesh Class', () => {
   describe('method: isIdentityValid', () => {
     test('should return true if the supplied Identity exists', async () => {
       const did = 'someDid';
-      dsMockUtils.configureMocks({ contextOptions: { invalidDids: [] } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
       });
 
-      const result = await polymesh.isIdentityValid({ identity: did });
+      const result = await polymesh.isIdentityValid({
+        identity: entityMockUtils.getIdentityInstance({ did }),
+      });
 
       expect(result).toBe(true);
     });
 
     test('should return false if the supplied Identity is invalid', async () => {
       const did = 'someDid';
-      dsMockUtils.configureMocks({ contextOptions: { invalidDids: [did] } });
+      entityMockUtils.configureMocks({ identityOptions: { exists: false } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -957,19 +974,8 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getSecurityToken', () => {
-    test('should return a specific security token', async () => {
+    test('should return a specific Security Token', async () => {
       const ticker = 'TEST';
-
-      dsMockUtils.createQueryStub('asset', 'tokens', {
-        returnValue: dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          owner_did: dsMockUtils.createMockIdentityId('someDid'),
-          asset_type: dsMockUtils.createMockAssetType(),
-          divisible: dsMockUtils.createMockBool(),
-          total_supply: dsMockUtils.createMockBalance(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        }),
-      });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -980,19 +986,9 @@ describe('Polymesh Class', () => {
       expect(securityToken.ticker).toBe(ticker);
     });
 
-    test('should throw if security token does not exist', async () => {
+    test('should throw if the Security Token does not exist', async () => {
       const ticker = 'TEST';
-
-      dsMockUtils.createQueryStub('asset', 'tokens', {
-        returnValue: dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          owner_did: dsMockUtils.createMockIdentityId(),
-          asset_type: dsMockUtils.createMockAssetType(),
-          divisible: dsMockUtils.createMockBool(),
-          total_supply: dsMockUtils.createMockBalance(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        }),
-      });
+      entityMockUtils.configureMocks({ securityTokenOptions: { exists: false } });
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',

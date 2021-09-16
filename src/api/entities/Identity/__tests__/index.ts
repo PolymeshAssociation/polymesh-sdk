@@ -580,6 +580,24 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    test('should return whether the Identity exists', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      dsMockUtils.createQueryStub('identity', 'didRecords', {
+        size: 10,
+      });
+
+      await expect(identity.exists()).resolves.toBe(true);
+
+      dsMockUtils.createQueryStub('identity', 'didRecords', {
+        size: 0,
+      });
+
+      return expect(identity.exists()).resolves.toBe(false);
+    });
+  });
+
   describe('method: getScopeId', () => {
     let did: string;
     let ticker: string;

@@ -148,6 +148,16 @@ describe('DividendDistribution class', () => {
 
       expect(result).toEqual(fakeResult);
     });
+
+    test('should throw an error if the Dividend Distribution does not exist', () => {
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      return expect(dividendDistribution.checkpoint()).rejects.toThrow(
+        'The Dividend Distribution no longer exists'
+      );
+    });
   });
 
   describe('method: exists', () => {
@@ -268,6 +278,27 @@ describe('DividendDistribution class', () => {
       const result = await dividendDistribution.getWithheldTax();
 
       expect(result).toEqual(fakeTax);
+    });
+
+    test('should throw an error if the Dividend Distribution does not exist', () => {
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      dsMockUtils.createApolloQueryStub(
+        getWithholdingTaxesOfCa({
+          CAId: { ticker, localId: id.toNumber() },
+        }),
+        {
+          getWithholdingTaxesOfCA: {
+            taxes: 0,
+          },
+        }
+      );
+
+      return expect(dividendDistribution.getWithheldTax()).rejects.toThrow(
+        'The Dividend Distribution no longer exists'
+      );
     });
   });
 
@@ -536,6 +567,32 @@ describe('DividendDistribution class', () => {
       );
       const result = await dividendDistribution.getPaymentHistory();
       expect(result.data).toEqual([]);
+    });
+
+    test('should throw an error if the Dividend Distribution does not exist', () => {
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      dsMockUtils.createApolloQueryStub(
+        getHistoryOfPaymentEventsForCa({
+          CAId: { ticker, localId: id.toNumber() },
+          fromDate: null,
+          toDate: null,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          getHistoryOfPaymentEventsForCA: {
+            totalCount: 0,
+            items: [],
+          },
+        }
+      );
+
+      return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
+        'The Dividend Distribution no longer exists'
+      );
     });
   });
 

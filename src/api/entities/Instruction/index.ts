@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 
-import { PolymeshError } from '~/base/PolymeshError';
 import {
   Context,
   Entity,
   Identity,
   modifyInstructionAffirmation,
+  PolymeshError,
   rescheduleInstruction,
   SecurityToken,
   Venue,
@@ -169,7 +169,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve whether the Instruction exists on chain (or existed and was pruned)
+   * Determine whether this Instruction exists on chain (or existed and was pruned)
    */
   public async exists(): Promise<boolean> {
     const {

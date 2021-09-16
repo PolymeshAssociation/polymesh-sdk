@@ -76,6 +76,8 @@ export interface DividendDistributionParams {
 
 export type Params = Omit<CorporateActionParams, 'kind'> & DividendDistributionParams;
 
+const notExistsMessage = 'The Dividend Distribution no longer exists';
+
 /**
  * Represents a Corporate Action via which a Security Token issuer wishes to distribute dividends
  *   between a subset of the Tokenholders (targets)
@@ -202,6 +204,15 @@ export class DividendDistribution extends CorporateAction {
    *   the corresponding CheckpointSchedule is returned instead
    */
   public async checkpoint(): Promise<Checkpoint | CheckpointSchedule> {
+    const exists = await this.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
     const checkpoint = await super.checkpoint();
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -226,7 +237,7 @@ export class DividendDistribution extends CorporateAction {
     if (distribution.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'The Dividend Distribution no longer exists',
+        message: notExistsMessage,
       });
     }
 
@@ -382,12 +393,21 @@ export class DividendDistribution extends CorporateAction {
   public async getWithheldTax(): Promise<BigNumber> {
     const { id, ticker, context } = this;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
+    const taxPromise = context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
         // eslint-disable-next-line @typescript-eslint/naming-convention
         CAId: { ticker, localId: id.toNumber() },
       })
     );
+
+    const [exists, result] = await Promise.all([this.exists(), taxPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { taxes } = result.data.getWithholdingTaxesOfCA!;
@@ -405,10 +425,11 @@ export class DividendDistribution extends CorporateAction {
     opts: { size?: number; start?: number } = {}
   ): Promise<ResultSet<DistributionPayment>> {
     const { id, ticker, context } = this;
-
     const { size, start } = opts;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'getHistoryOfPaymentEventsForCA'>>(
+    const paymentsPromise = context.queryMiddleware<
+      Ensured<Query, 'getHistoryOfPaymentEventsForCA'>
+    >(
       getHistoryOfPaymentEventsForCa({
         CAId: { ticker, localId: id.toNumber() },
         fromDate: null,
@@ -417,6 +438,15 @@ export class DividendDistribution extends CorporateAction {
         skip: start,
       })
     );
+
+    const [exists, result] = await Promise.all([this.exists(), paymentsPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
 
     const {
       data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },

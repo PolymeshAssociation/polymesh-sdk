@@ -154,7 +154,7 @@ describe('modifySignerPermissions procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
   });
 
-  test('should throw an error if at least one of the Signers for which to modify permissions is not a Secondary Key for the Identity', async () => {
+  test('should throw an error if at least one of the Signers for which to modify permissions is not a Secondary Key for the Identity', () => {
     const secondaryKeys = [
       {
         signer: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
@@ -175,7 +175,7 @@ describe('modifySignerPermissions procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await expect(
+    return expect(
       prepareModifySignerPermissions.call(proc, {
         secondaryKeys,
         identity: entityMockUtils.getIdentityInstance({ getSecondaryKeys: [] }),

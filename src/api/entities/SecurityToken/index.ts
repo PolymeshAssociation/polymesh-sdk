@@ -489,6 +489,19 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
 
   /**
+   * Determine whether this Security Token exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { ticker, context } = this;
+
+    const tokenSize = await context.polymeshApi.query.asset.tokens.size(
+      stringToTicker(ticker, context)
+    );
+
+    return !tokenSize.isZero();
+  }
+
+  /**
    * Return the Token's ticker
    */
   public toJson(): string {

@@ -1,7 +1,16 @@
+import BigNumber from 'bignumber.js';
 import { remove } from 'lodash';
 
-import { Context, launchSto, LaunchStoParams, Namespace, SecurityToken, Sto } from '~/internal';
-import { ProcedureMethod, StoStatus, StoWithDetails } from '~/types';
+import {
+  Context,
+  launchSto,
+  LaunchStoParams,
+  Namespace,
+  PolymeshError,
+  SecurityToken,
+  Sto,
+} from '~/internal';
+import { ErrorCode, ProcedureMethod, StoStatus, StoWithDetails } from '~/types';
 import { fundraiserToStoDetails, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -33,7 +42,32 @@ export class Offerings extends Namespace<SecurityToken> {
   public launch: ProcedureMethod<LaunchStoParams, Sto>;
 
   /**
-   * Retrieve all of the Token's Offerings. Can be filtered using parameters
+   * Retrieve a single Offering associated to this Security Token by its ID
+   *
+   * @throws if there is no Offering with the passed ID
+   */
+  public async getOne(args: { id: BigNumber }): Promise<Sto> {
+    const {
+      parent: { ticker },
+      context,
+    } = this;
+    const { id } = args;
+    const offering = new Sto({ ticker, id }, context);
+
+    const exists = await offering.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Offering does not exist',
+      });
+    }
+
+    return offering;
+  }
+
+  /**
+   * Retrieve all of the Token's Offerings and their details. Can be filtered using parameters
    *
    * @param opts.status - status of the offerings to fetch. If defined, only STOs that have all passed statuses will be returned
    */
