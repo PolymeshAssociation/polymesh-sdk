@@ -44,7 +44,6 @@ import type {
   ComplianceRequirement,
   CorporateAction,
   CustomAssetTypeId,
-  DispatchableName,
   Distribution,
   Document,
   DocumentId,
@@ -62,8 +61,6 @@ import type {
   Leg,
   MaybeBlock,
   Memo,
-  MigrationError,
-  PalletName,
   Permissions,
   PipDescription,
   PipId,
@@ -186,10 +183,6 @@ declare module '@polkadot/api/types/events' {
         ApiType,
         [IdentityId, Ticker, IdentityId, Balance, FundingRoundName, Balance]
       >;
-      /**
-       * Migration error event.
-       **/
-      MigrationFailure: AugmentedEvent<ApiType, [MigrationError]>;
       /**
        * Emit when tokens get redeemed.
        * caller DID, ticker,  from DID, value
@@ -697,13 +690,6 @@ declare module '@polkadot/api/types/events' {
        * DID, primary key account ID, secondary keys
        **/
       DidCreated: AugmentedEvent<ApiType, [IdentityId, AccountId, Vec<SecondaryKey>]>;
-      /**
-       * Forwarded Call - (calling DID, target DID, pallet name, function name)
-       **/
-      ForwardedCall: AugmentedEvent<
-        ApiType,
-        [IdentityId, IdentityId, PalletName, DispatchableName]
-      >;
       /**
        * Mocked InvestorUid created.
        **/

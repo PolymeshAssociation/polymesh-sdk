@@ -1136,17 +1136,6 @@ export default {
       total: 'Balance',
       price: 'Balance',
     },
-    AssetMigrationError: {
-      _enum: {
-        AssetDocumentFail: '(Ticker, DocumentId)',
-      },
-    },
-    MigrationError: {
-      _enum: {
-        DecodeKey: 'Vec<u8>',
-        Map: 'AssetMigrationError',
-      },
-    },
     PermissionedIdentityPrefs: {
       intended_count: 'u32',
       running_count: 'u32',

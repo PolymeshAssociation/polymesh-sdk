@@ -1,10 +1,12 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  consumeAddMultiSigSignerAuthorization,
+  ConsumeAddMultiSigSignerAuthorizationParams,
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
-  consumeJoinSignerAuthorization,
-  ConsumeJoinSignerAuthorizationParams,
+  consumeJoinIdentityAuthorization,
+  ConsumeJoinIdentityAuthorizationParams,
   Context,
   Entity,
   Identity,
@@ -105,20 +107,26 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.accept = createProcedureMethod<
       void,
-      ConsumeAuthorizationRequestsParams | ConsumeJoinSignerAuthorizationParams,
-      void
+      | ConsumeAuthorizationRequestsParams
+      | ConsumeJoinIdentityAuthorizationParams
+      | ConsumeAddMultiSigSignerAuthorizationParams,
+      void,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      any
     >(
       {
         getProcedureAndArgs: () => {
-          if (
-            [AuthorizationType.JoinIdentity, AuthorizationType.AddMultiSigSigner].includes(
-              this.data.type
-            )
-          ) {
-            return [consumeJoinSignerAuthorization, { authRequest: this, accept: true }];
+          switch (this.data.type) {
+            case AuthorizationType.JoinIdentity: {
+              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+            }
+            case AuthorizationType.AddMultiSigSigner: {
+              return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: true }];
+            }
+            default: {
+              return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
+            }
           }
-
-          return [consumeAuthorizationRequests, { authRequests: [this], accept: true }];
         },
       },
       context
@@ -126,20 +134,26 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.remove = createProcedureMethod<
       void,
-      ConsumeAuthorizationRequestsParams | ConsumeJoinSignerAuthorizationParams,
-      void
+      | ConsumeAuthorizationRequestsParams
+      | ConsumeJoinIdentityAuthorizationParams
+      | ConsumeAddMultiSigSignerAuthorizationParams,
+      void,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      any
     >(
       {
         getProcedureAndArgs: () => {
-          if (
-            [AuthorizationType.JoinIdentity, AuthorizationType.AddMultiSigSigner].includes(
-              this.data.type
-            )
-          ) {
-            return [consumeJoinSignerAuthorization, { authRequest: this, accept: false }];
+          switch (this.data.type) {
+            case AuthorizationType.JoinIdentity: {
+              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+            }
+            case AuthorizationType.AddMultiSigSigner: {
+              return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: false }];
+            }
+            default: {
+              return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
+            }
           }
-
-          return [consumeAuthorizationRequests, { authRequests: [this], accept: false }];
         },
       },
       context

@@ -339,6 +339,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     // these transactions are allowed to any account, independent of permissions
     const exemptedTransactions: (TxTag | ModuleName)[] = [
+      TxTags.identity.LeaveIdentityAsKey,
+      TxTags.identity.JoinIdentityAsKey,
+      TxTags.multiSig.AcceptMultisigSignerAsKey,
       ...difference(Object.values(TxTags.balances), [
         TxTags.balances.DepositBlockRewardReserveBalance,
         TxTags.balances.BurnAccountBalance,

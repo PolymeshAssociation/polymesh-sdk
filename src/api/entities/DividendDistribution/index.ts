@@ -171,7 +171,9 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
-   * Claim the dividends corresponding to the current Identity
+   * Claim the Dividends corresponding to the current Identity
+   *
+   * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
   public claim: ProcedureMethod<void, void>;
 
@@ -184,6 +186,7 @@ export class DividendDistribution extends CorporateAction {
    * Transfer the corresponding share of the dividends to a list of Identities
    *
    * @note due to performance issues, we do not validate that the distribution has enough remaining funds to pay the corresponding amount to the supplied Identities
+   * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
   public pay: ProcedureMethod<PayDividendsParams, void>;
 

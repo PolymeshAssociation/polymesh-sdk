@@ -713,10 +713,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       NotPrimaryKey: AugmentedError<ApiType>;
       /**
-       * Do not allow forwarded call to be called recursively
-       **/
-      RecursionNotAllowed: AugmentedError<ApiType>;
-      /**
        * The secondary keys contain the primary key.
        **/
       SecondaryKeysContainPrimaryKey: AugmentedError<ApiType>;
@@ -842,7 +838,6 @@ declare module '@polkadot/api/types/errors' {
       TooManySigners: AugmentedError<ApiType>;
     };
     permissions: {
-      RecursionNotAllowed: AugmentedError<ApiType>;
       /**
        * The caller is not authorized to call the current extrinsic.
        **/

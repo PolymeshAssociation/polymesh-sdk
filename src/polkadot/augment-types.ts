@@ -914,7 +914,6 @@ import type {
   AssetComplianceResult,
   AssetDidResult,
   AssetIdentifier,
-  AssetMigrationError,
   AssetName,
   AssetOwnershipRelation,
   AssetPermissions,
@@ -1012,7 +1011,6 @@ import type {
   MetaDescription,
   MetaUrl,
   MetaVersion,
-  MigrationError,
   Motion,
   MotionInfoLink,
   MotionTitle,
@@ -1263,7 +1261,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<AssetIdentifier>': Option<AssetIdentifier>;
     'Option<AssetInstance>': Option<AssetInstance>;
     'Option<AssetMetadata>': Option<AssetMetadata>;
-    'Option<AssetMigrationError>': Option<AssetMigrationError>;
     'Option<AssetName>': Option<AssetName>;
     'Option<AssetOptions>': Option<AssetOptions>;
     'Option<AssetOwnershipRelation>': Option<AssetOwnershipRelation>;
@@ -1741,7 +1738,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<MetaDescription>': Option<MetaDescription>;
     'Option<MetaUrl>': Option<MetaUrl>;
     'Option<MetaVersion>': Option<MetaVersion>;
-    'Option<MigrationError>': Option<MigrationError>;
     'Option<MmrLeafProof>': Option<MmrLeafProof>;
     'Option<MmrRootHash>': Option<MmrRootHash>;
     'Option<ModuleConstantMetadataLatest>': Option<ModuleConstantMetadataLatest>;
@@ -2298,7 +2294,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<AssetIdentifier>': Vec<AssetIdentifier>;
     'Vec<AssetInstance>': Vec<AssetInstance>;
     'Vec<AssetMetadata>': Vec<AssetMetadata>;
-    'Vec<AssetMigrationError>': Vec<AssetMigrationError>;
     'Vec<AssetName>': Vec<AssetName>;
     'Vec<AssetOptions>': Vec<AssetOptions>;
     'Vec<AssetOwnershipRelation>': Vec<AssetOwnershipRelation>;
@@ -2776,7 +2771,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<MetaDescription>': Vec<MetaDescription>;
     'Vec<MetaUrl>': Vec<MetaUrl>;
     'Vec<MetaVersion>': Vec<MetaVersion>;
-    'Vec<MigrationError>': Vec<MigrationError>;
     'Vec<MmrLeafProof>': Vec<MmrLeafProof>;
     'Vec<MmrRootHash>': Vec<MmrRootHash>;
     'Vec<ModuleConstantMetadataLatest>': Vec<ModuleConstantMetadataLatest>;
@@ -3333,7 +3327,6 @@ declare module '@polkadot/types/types/registry' {
     AssetIdentifier: AssetIdentifier;
     AssetInstance: AssetInstance;
     AssetMetadata: AssetMetadata;
-    AssetMigrationError: AssetMigrationError;
     AssetName: AssetName;
     AssetOptions: AssetOptions;
     AssetOwnershipRelation: AssetOwnershipRelation;
@@ -3811,7 +3804,6 @@ declare module '@polkadot/types/types/registry' {
     MetaDescription: MetaDescription;
     MetaUrl: MetaUrl;
     MetaVersion: MetaVersion;
-    MigrationError: MigrationError;
     MmrLeafProof: MmrLeafProof;
     MmrRootHash: MmrRootHash;
     ModuleConstantMetadataLatest: ModuleConstantMetadataLatest;

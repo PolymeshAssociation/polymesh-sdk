@@ -130,7 +130,6 @@ import type {
   SnapshottedPip,
   StoredSchedule,
   Subsidy,
-  TargetIdAuthorization,
   TargetIdentities,
   Tax,
   Ticker,
@@ -1128,26 +1127,6 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (arg: IdentityId | string | Uint8Array) => Observable<AuthorizationNonce>,
         [IdentityId]
-      >;
-      /**
-       * Inmediate revoke of any off-chain authorization.
-       **/
-      revokeOffChainAuthorization: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Signatory, TargetIdAuthorization]>
-            | [
-                Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
-                (
-                  | TargetIdAuthorization
-                  | { target_id?: any; nonce?: any; expires_at?: any }
-                  | string
-                  | Uint8Array
-                )
-              ]
-        ) => Observable<bool>,
-        [ITuple<[Signatory, TargetIdAuthorization]>]
       >;
       /**
        * Storage version.
