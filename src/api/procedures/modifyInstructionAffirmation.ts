@@ -94,7 +94,6 @@ export async function prepareModifyInstructionAffirmation(
     case InstructionAffirmationOperation.Reject: {
       excludeCriteria.push(AffirmationStatus.Rejected);
       errorMessage = 'The Instruction cannot be rejected';
-      transaction = null;
 
       break;
     }
