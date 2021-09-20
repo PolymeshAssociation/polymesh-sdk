@@ -200,6 +200,7 @@ describe('Account class', () => {
             block_id: blockNumber1.toNumber(),
             address: address,
             success: 0,
+            signedby_address: 1,
           },
           {
             module_id: ModuleIdEnum.Asset,
@@ -209,6 +210,7 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber2.toNumber(),
             success: 1,
+            signedby_address: 1,
           },
         ],
       };
