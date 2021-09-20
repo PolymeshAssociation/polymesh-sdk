@@ -1244,21 +1244,17 @@ export interface Proposer extends Enum {
 export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
   readonly isAssetIssue: boolean;
-  readonly isAssetAddDocument: boolean;
+  readonly isAssetAddDocuments: boolean;
   readonly isAssetCreateAsset: boolean;
-  readonly isAssetCreateCheckpointSchedule: boolean;
-  readonly isDividendNew: boolean;
+  readonly isCheckpointCreateSchedule: boolean;
   readonly isComplianceManagerAddComplianceRequirement: boolean;
-  readonly isIdentityRegisterDid: boolean;
   readonly isIdentityCddRegisterDid: boolean;
   readonly isIdentityAddClaim: boolean;
-  readonly isIdentitySetPrimaryKey: boolean;
   readonly isIdentityAddSecondaryKeysWithAuthorization: boolean;
   readonly isPipsPropose: boolean;
-  readonly isVotingAddBallot: boolean;
   readonly isContractsPutCode: boolean;
-  readonly isBallotAttachBallot: boolean;
-  readonly isDistributionDistribute: boolean;
+  readonly isCorporateBallotAttachBallot: boolean;
+  readonly isCapitalDistributionDistribute: boolean;
 }
 
 /** @name ProverTickerKey */

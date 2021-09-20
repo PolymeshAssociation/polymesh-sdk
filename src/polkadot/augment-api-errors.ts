@@ -649,6 +649,11 @@ declare module '@polkadot/api/types/errors' {
        **/
       CurrentIdentityCannotBeForwarded: AugmentedError<ApiType>;
       /**
+       * A custom scope is too long.
+       * It can at most be `32` characters long.
+       **/
+      CustomScopeTooLong: AugmentedError<ApiType>;
+      /**
        * The DID already exists.
        **/
       DidAlreadyExists: AugmentedError<ApiType>;
@@ -1118,6 +1123,10 @@ declare module '@polkadot/api/types/errors' {
        * Instruction failed to execute.
        **/
       InstructionFailed: AugmentedError<ApiType>;
+      /**
+       * Maximum legs that can be in a single instruction.
+       **/
+      InstructionHasTooManyLegs: AugmentedError<ApiType>;
       /**
        * Instruction has not been affirmed.
        **/

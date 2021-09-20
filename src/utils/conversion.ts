@@ -1487,7 +1487,7 @@ export function isCusipValid(cusip: string): boolean {
 export function isLeiValid(lei: string): boolean {
   lei = lei.toUpperCase();
 
-  if (!/^[0-9A-Z]{18}[0-9]{2}$/.test(lei)) {
+  if (!/^[0-9A-Z]{18}\d{2}$/.test(lei)) {
     return false;
   }
 
@@ -2405,13 +2405,6 @@ export function complianceRequirementToRequirement(
  * @hidden
  */
 export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
-  const exceptions: Record<string, string> = {
-    [TxTags.asset.AddDocuments]: 'AssetAddDocument',
-    [TxTags.capitalDistribution.Distribute]: 'DistributionDistribute',
-    [TxTags.checkpoint.CreateSchedule]: 'AssetCreateCheckpointSchedule',
-    [TxTags.corporateBallot.AttachBallot]: 'BallotAttachBallot',
-  };
-
   const protocolOpTags = [
     TxTags.asset.RegisterTicker,
     TxTags.asset.Issue,
@@ -2428,12 +2421,8 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     TxTags.capitalDistribution.Distribute,
   ];
 
-  let value = exceptions[tag];
-
-  if (!value) {
-    const [moduleName, extrinsicName] = tag.split('.');
-    value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
-  }
+  const [moduleName, extrinsicName] = tag.split('.');
+  const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
 
   if (!includes(protocolOpTags, tag)) {
     throw new PolymeshError({

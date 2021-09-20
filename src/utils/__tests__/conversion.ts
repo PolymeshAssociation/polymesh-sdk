@@ -3804,13 +3804,13 @@ describe('txTagToProtocolOp', () => {
     createTypeStub.withArgs('ProtocolOp', 'AssetIssue').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.Issue, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'AssetAddDocuments').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.AddDocuments, context)).toEqual(fakeResult);
 
     createTypeStub.withArgs('ProtocolOp', 'AssetCreateAsset').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.CreateAsset, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'AssetCreateCheckpointSchedule').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'CheckpointCreateSchedule').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.checkpoint.CreateSchedule, context)).toEqual(fakeResult);
 
     createTypeStub
@@ -3836,10 +3836,10 @@ describe('txTagToProtocolOp', () => {
     createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'BallotAttachBallot').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'CorporateBallotAttachBallot').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.corporateBallot.AttachBallot, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'DistributionDistribute').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'CapitalDistributionDistribute').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
   });
 

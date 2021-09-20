@@ -370,6 +370,31 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         },
       });
 
+      targetAccount = entityMockUtils.getAccountInstance({
+        address,
+        getIdentity: entityMockUtils.getIdentityInstance({ isEqual: false }),
+      });
+
+      proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
+        mockContext,
+        {
+          currentAccount: targetAccount,
+          calledByTarget: false,
+          existingIdentity: null,
+        }
+      );
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: false,
+        permissions: {
+          transactions: [TxTags.identity.RemoveAuthorization],
+        },
+      });
+
+      targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
+
       proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
         mockContext,
         {

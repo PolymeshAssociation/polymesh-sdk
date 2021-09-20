@@ -2245,7 +2245,9 @@ declare module '@polkadot/api/types/submittable' {
         [Signatory, AuthorizationData, Option<Moment>]
       >;
       /**
-       * Adds a new claim record or edits an existing one. Only called by did_issuer's secondary key.
+       * Adds a new claim record or edits an existing one.
+       *
+       * Only called by did_issuer's secondary key.
        **/
       addClaim: AugmentedSubmittable<
         (
@@ -3461,21 +3463,17 @@ declare module '@polkadot/api/types/submittable' {
             | ProtocolOp
             | 'AssetRegisterTicker'
             | 'AssetIssue'
-            | 'AssetAddDocument'
+            | 'AssetAddDocuments'
             | 'AssetCreateAsset'
-            | 'AssetCreateCheckpointSchedule'
-            | 'DividendNew'
+            | 'CheckpointCreateSchedule'
             | 'ComplianceManagerAddComplianceRequirement'
-            | 'IdentityRegisterDid'
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
-            | 'IdentitySetPrimaryKey'
             | 'IdentityAddSecondaryKeysWithAuthorization'
             | 'PipsPropose'
-            | 'VotingAddBallot'
             | 'ContractsPutCode'
-            | 'BallotAttachBallot'
-            | 'DistributionDistribute'
+            | 'CorporateBallotAttachBallot'
+            | 'CapitalDistributionDistribute'
             | number
             | Uint8Array,
           baseFee: Balance | AnyNumber | Uint8Array
@@ -4022,13 +4020,19 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Arguments
        * * `instruction_id` - Instruction id to reject.
+       * * `portfolio` - Portfolio to reject the instruction.
+       * * `num_of_legs` - Number of legs in the instruction.
        *
        * # Permissions
        * * Portfolio
        **/
       rejectInstruction: AugmentedSubmittable<
-        (instructionId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
+        (
+          instructionId: u64 | AnyNumber | Uint8Array,
+          portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          numOfLegs: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, PortfolioId, u32]
       >;
       /**
        * Reschedules a failed instruction.

@@ -285,6 +285,20 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         },
       });
 
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          currentIdentityIsEqual: false,
+        },
+      });
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: false,
+        permissions: {
+          transactions: [TxTags.identity.RemoveAuthorization],
+        },
+      });
+
       mockContext.getCurrentAccount.returns(
         entityMockUtils.getAccountInstance({ address, getIdentity: null })
       );
