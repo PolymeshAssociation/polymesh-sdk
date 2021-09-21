@@ -5,19 +5,14 @@ import { range } from 'lodash';
 import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Context,
-  PolymeshTransaction,
-  PolymeshTransactionBatch,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Context, PolymeshTransaction, PolymeshTransactionBatch, Procedure } from '~/internal';
 import {
   dsMockUtils,
   entityMockUtils,
   polymeshTransactionMockUtils,
   procedureMockUtils,
 } from '~/testUtils/mocks';
+import { MockContext } from '~/testUtils/mocks/dataSources';
 import { Role, RoleType } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -35,7 +30,7 @@ jest.mock(
 );
 
 describe('Procedure class', () => {
-  let context: Context;
+  let context: MockContext;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -80,6 +75,7 @@ describe('Procedure class', () => {
         signerPermissions: true,
         roles: true,
         accountFrozen: false,
+        noIdentity: false,
       });
 
       context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
@@ -98,6 +94,7 @@ describe('Procedure class', () => {
         signerPermissions: false,
         roles: false,
         accountFrozen: false,
+        noIdentity: false,
       });
 
       context = dsMockUtils.getContextInstance({ hasTokenPermissions: true });
@@ -116,6 +113,7 @@ describe('Procedure class', () => {
         signerPermissions: true,
         roles: true,
         accountFrozen: false,
+        noIdentity: false,
       });
 
       authFunc.resolves({
@@ -135,6 +133,7 @@ describe('Procedure class', () => {
         signerPermissions: false,
         roles: true,
         accountFrozen: false,
+        noIdentity: false,
       });
 
       authFunc.resolves({
@@ -158,6 +157,7 @@ describe('Procedure class', () => {
         signerPermissions: true,
         roles: true,
         accountFrozen: false,
+        noIdentity: false,
       });
 
       authFunc.resolves({
@@ -174,6 +174,24 @@ describe('Procedure class', () => {
         signerPermissions: true,
         roles: true,
         accountFrozen: false,
+        noIdentity: false,
+      });
+
+      context = dsMockUtils.getContextInstance();
+      context.getCurrentAccount.returns(
+        entityMockUtils.getAccountInstance({
+          getIdentity: null,
+          isFrozen: false,
+        })
+      );
+
+      result = await procedure.checkAuthorization(args, context);
+      expect(result).toEqual({
+        agentPermissions: true,
+        signerPermissions: true,
+        roles: false,
+        accountFrozen: false,
+        noIdentity: true,
       });
 
       procedure = new Procedure(prepareFunc, { permissions: true, roles: true });
@@ -184,6 +202,7 @@ describe('Procedure class', () => {
         signerPermissions: true,
         roles: true,
         accountFrozen: false,
+        noIdentity: false,
       });
     });
   });
@@ -348,10 +367,11 @@ describe('Procedure class', () => {
       let proc = new Procedure(func, {
         roles: [({ type: 'FakeRole' } as unknown) as Role],
       });
+
       context = dsMockUtils.getContextInstance({
+        isFrozen: false,
         hasRoles: false,
         hasPermissions: false,
-        isFrozen: false,
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
@@ -382,6 +402,18 @@ describe('Procedure class', () => {
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required permissions to execute this procedure"
+      );
+
+      context = dsMockUtils.getContextInstance();
+
+      context.getCurrentAccount.returns(
+        entityMockUtils.getAccountInstance({
+          getIdentity: null,
+        })
+      );
+
+      await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
+        'This procedure requires the Current Account to have an associated Identity'
       );
 
       proc = new Procedure(func, {
@@ -492,7 +524,7 @@ describe('Procedure class', () => {
       let i = 0;
 
       proc.addBatchTransaction(
-        new PostTransactionValue(() => tx),
+        tx,
         {
           fee: new BigNumber(100),
           groupByFn: () => `${i++}`,

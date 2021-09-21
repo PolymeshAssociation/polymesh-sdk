@@ -76,7 +76,7 @@ describe('moveFunds procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if both portfolios do not have the same owner', async () => {
+  test('should throw an error if both portfolios do not have the same owner', () => {
     const fromId = new BigNumber(1);
     const fromDid = 'someDid';
     const toId = new BigNumber(2);
@@ -100,7 +100,7 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Both portfolios should have the same owner');
   });
 
-  test('should throw an error if both portfolios are the same', async () => {
+  test('should throw an error if both portfolios are the same', () => {
     const id = new BigNumber(1);
     const did = 'someDid';
     const samePortfolio = new NumberedPortfolio({ id, did }, mockContext);

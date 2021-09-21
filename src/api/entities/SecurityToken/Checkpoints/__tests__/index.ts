@@ -77,6 +77,28 @@ describe('Checkpoints class', () => {
     });
   });
 
+  describe('method: getOne', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the requested Checkpoint', async () => {
+      const id = new BigNumber(1);
+
+      return expect(checkpoints.getOne({ id })).resolves.toEqual(
+        entityMockUtils.getCheckpointInstance({ id })
+      );
+    });
+
+    test('should throw an error if the Checkpoint does not exist', async () => {
+      const id = new BigNumber(1);
+
+      entityMockUtils.configureMocks({ checkpointOptions: { exists: false } });
+
+      return expect(checkpoints.getOne({ id })).rejects.toThrow('The Checkpoint does not exist');
+    });
+  });
+
   describe('method: get', () => {
     afterAll(() => {
       sinon.restore();

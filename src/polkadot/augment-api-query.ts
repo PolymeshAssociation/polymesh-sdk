@@ -74,6 +74,7 @@ import type {
   AgentGroup,
   AssetCompliance,
   AssetIdentifier,
+  AssetName,
   AssetOwnershipRelation,
   Authorization,
   AuthorizationNonce,
@@ -81,6 +82,7 @@ import type {
   BallotTimeRange,
   BallotVote,
   BridgeTxDetail,
+  CADetails,
   CAId,
   CheckpointId,
   Claim1stKey,
@@ -88,13 +90,13 @@ import type {
   ClassicTickerRegistration,
   CorporateAction,
   Counter,
+  CustomAssetTypeId,
   DepositInfo,
   DidRecord,
   DispatchableName,
   Distribution,
   Document,
   DocumentId,
-  ExtVersion,
   ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
@@ -103,6 +105,7 @@ import type {
   IdentityId,
   InactiveMember,
   Instruction,
+  ItnRewardStatus,
   Leg,
   LegStatus,
   LocalCAId,
@@ -125,11 +128,10 @@ import type {
   Signatory,
   SkippedCount,
   SlashingSwitch,
-  SmartExtension,
-  SmartExtensionType,
   SnapshotMetadata,
   SnapshottedPip,
   StoredSchedule,
+  Subsidy,
   TargetIdAuthorization,
   TargetIdentities,
   Tax,
@@ -139,6 +141,7 @@ import type {
   TransferManager,
   TrustedIssuer,
   Venue,
+  VenueDetails,
   Version,
   VotingResult,
 } from 'polymesh-types/polymesh';
@@ -178,6 +181,15 @@ declare module '@polkadot/api/types/storage' {
       assetDocumentsIdSequence: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<DocumentId>,
+        [Ticker]
+      >;
+      /**
+       * Asset name of the token corresponding to the token ticker.
+       * (ticker) -> `AssetName`
+       **/
+      assetNames: AugmentedQuery<
+        ApiType,
+        (arg: Ticker | string | Uint8Array) => Observable<AssetName>,
         [Ticker]
       >;
       /**
@@ -226,58 +238,37 @@ declare module '@polkadot/api/types/storage' {
         [Ticker]
       >;
       /**
-       * Supported extension version.
+       * The next `AgentType::Custom` ID in the sequence.
+       *
+       * Numbers in the sequence start from 1 rather than 0.
        **/
-      compatibleSmartExtVersion: AugmentedQuery<
+      customTypeIdSequence: AugmentedQuery<ApiType, () => Observable<CustomAssetTypeId>, []>;
+      /**
+       * Maps custom agent type ids to the registered string contents.
+       **/
+      customTypes: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | SmartExtensionType
-            | { TransferManager: any }
-            | { Offerings: any }
-            | { SmartWallet: any }
-            | { Custom: any }
-            | string
-            | Uint8Array
-        ) => Observable<ExtVersion>,
-        [SmartExtensionType]
+        (arg: CustomAssetTypeId | AnyNumber | Uint8Array) => Observable<Bytes>,
+        [CustomAssetTypeId]
       >;
       /**
-       * List of Smart extension added for the given tokens.
-       * ticker, AccountId (SE address) -> SmartExtension detail
+       * Inverse map of `CustomTypes`, from registered string contents to custom agent type ids.
        **/
-      extensionDetails: AugmentedQuery<
+      customTypesInverse: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, AccountId]>
-            | [Ticker | string | Uint8Array, AccountId | string | Uint8Array]
-        ) => Observable<SmartExtension>,
-        [ITuple<[Ticker, AccountId]>]
+        (arg: Bytes | string | Uint8Array) => Observable<CustomAssetTypeId>,
+        [Bytes]
       >;
       /**
-       * List of Smart extension added for the given tokens and for the given type.
-       * ticker, type of SE -> address/AccountId of SE
+       * Decides whether investor uniqueness requirement is enforced for this asset.
+       * `false` means that it is enforced.
+       *
+       * Ticker => bool.
        **/
-      extensions: AugmentedQuery<
+      disableInvestorUniqueness: AugmentedQuery<
         ApiType,
-        (
-          arg:
-            | ITuple<[Ticker, SmartExtensionType]>
-            | [
-                Ticker | string | Uint8Array,
-                (
-                  | SmartExtensionType
-                  | { TransferManager: any }
-                  | { Offerings: any }
-                  | { SmartWallet: any }
-                  | { Custom: any }
-                  | string
-                  | Uint8Array
-                )
-              ]
-        ) => Observable<Vec<AccountId>>,
-        [ITuple<[Ticker, SmartExtensionType]>]
+        (arg: Ticker | string | Uint8Array) => Observable<bool>,
+        [Ticker]
       >;
       /**
        * The set of frozen assets implemented as a membership map.
@@ -514,6 +505,14 @@ declare module '@polkadot/api/types/storage' {
        * transfers some POLY to their identity.
        **/
       controller: AugmentedQuery<ApiType, () => Observable<AccountId>, []>;
+      /**
+       * Freeze bridge admins.  These accounts can only freeze the bridge.
+       **/
+      freezeAdmins: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<bool>,
+        [AccountId]
+      >;
       /**
        * Whether or not the bridge operation is frozen.
        **/
@@ -817,6 +816,17 @@ declare module '@polkadot/api/types/storage' {
         [Ticker]
       >;
       /**
+       * Associates details in free-form text with a CA by its ID.
+       * (CAId => CADetails)
+       **/
+      details: AugmentedQuery<
+        ApiType,
+        (
+          arg: CAId | { ticker?: any; local_id?: any } | string | Uint8Array
+        ) => Observable<CADetails>,
+        [CAId]
+      >;
+      /**
        * The amount of tax to withhold ("withholding tax", WT) for a certain ticker x DID.
        * If an entry exists for a certain DID, it overrides the default in `DefaultWithholdingTax`.
        *
@@ -1023,6 +1033,20 @@ declare module '@polkadot/api/types/storage' {
       state: AugmentedQuery<ApiType, () => Observable<StoredState>, []>;
     };
     identity: {
+      /**
+       * How many "strong" references to the account key.
+       *
+       * Strong references will block a key from leaving it's identity.
+       *
+       * Pallets using "strong" references to account keys:
+       * * Relayer: For `user_key` and `paying_key`
+       *
+       **/
+      accountKeyRefCount: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<u64>,
+        [AccountId]
+      >;
       /**
        * All authorizations that an identity/key has
        **/
@@ -1391,7 +1415,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * The minimum amount to be used as a deposit for community PIP creation.
        **/
-      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<BalanceOf>, []>;
+      minimumProposalDeposit: AugmentedQuery<ApiType, () => Observable<Balance>, []>;
       /**
        * How many blocks will it take, after a `Pending` PIP expires,
        * assuming it has not transitioned to another `ProposalState`?
@@ -1525,6 +1549,18 @@ declare module '@polkadot/api/types/storage' {
     };
     portfolio: {
       /**
+       * Inverse map of `Portfolios` used to ensure bijectivitiy,
+       * and uniqueness of names in `Portfolios`.
+       **/
+      nameToNumber: AugmentedQuery<
+        ApiType,
+        (
+          arg1: IdentityId | string | Uint8Array,
+          arg2: PortfolioName | string
+        ) => Observable<PortfolioNumber>,
+        [IdentityId, PortfolioName]
+      >;
+      /**
        * The next portfolio sequence number of an identity.
        **/
       nextPortfolioNumber: AugmentedQuery<
@@ -1542,6 +1578,14 @@ declare module '@polkadot/api/types/storage' {
           arg2: Ticker | string | Uint8Array
         ) => Observable<Balance>,
         [PortfolioId, Ticker]
+      >;
+      /**
+       * How many assets with non-zero balance this portfolio contains.
+       **/
+      portfolioAssetCount: AugmentedQuery<
+        ApiType,
+        (arg: PortfolioId | { did?: any; kind?: any } | string | Uint8Array) => Observable<u64>,
+        [PortfolioId]
       >;
       /**
        * The custodian of a particular portfolio. None implies that the identity owner is the custodian.
@@ -1624,7 +1668,7 @@ declare module '@polkadot/api/types/storage' {
             | 'DistributionDistribute'
             | number
             | Uint8Array
-        ) => Observable<BalanceOf>,
+        ) => Observable<Balance>,
         [ProtocolOp]
       >;
       /**
@@ -1639,6 +1683,31 @@ declare module '@polkadot/api/types/storage' {
        * the oldest hash.
        **/
       randomMaterial: AugmentedQuery<ApiType, () => Observable<Vec<Hash>>, []>;
+    };
+    relayer: {
+      /**
+       * The subsidy for a `user_key` if they are being subsidised,
+       * as a map `user_key` => `Subsidy`.
+       *
+       * A key can only have one subsidy at a time.  To change subsidisers
+       * a key needs to call `remove_paying_key` to remove the current subsidy,
+       * before they can accept a new subsidiser.
+       **/
+      subsidies: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<Subsidy>>,
+        [AccountId]
+      >;
+    };
+    rewards: {
+      /**
+       * Map of (Itn Address `AccountId`) -> (Reward `ItnRewardStatus`).
+       **/
+      itnRewards: AugmentedQuery<
+        ApiType,
+        (arg: AccountId | string | Uint8Array) => Observable<Option<ItnRewardStatus>>,
+        [AccountId]
+      >;
     };
     scheduler: {
       /**
@@ -1721,6 +1790,15 @@ declare module '@polkadot/api/types/storage' {
           arg2: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
         ) => Observable<AffirmationStatus>,
         [u64, PortfolioId]
+      >;
+      /**
+       * Free-form text about a venue. venue_id -> `VenueDetails`
+       * Only needed for the UI.
+       **/
+      details: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<VenueDetails>,
+        [u64]
       >;
       /**
        * Number of affirmations pending before instruction is executed. instruction_id -> affirm_pending
@@ -1821,12 +1899,26 @@ declare module '@polkadot/api/types/storage' {
         [Ticker]
       >;
       /**
-       * Info about a venue. venue_id -> venue_details
+       * Info about a venue. venue_id -> venue
        **/
       venueInfo: AugmentedQuery<
         ApiType,
         (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<Venue>>,
         [u64]
+      >;
+      /**
+       * Instructions under a venue.
+       * Only needed for the UI.
+       *
+       * venue_id -> instruction_id -> ()
+       **/
+      venueInstructions: AugmentedQuery<
+        ApiType,
+        (
+          arg1: u64 | AnyNumber | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<ITuple<[]>>,
+        [u64, u64]
       >;
       /**
        * Signers allowed by the venue. (venue_id, signer) -> bool

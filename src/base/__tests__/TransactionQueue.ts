@@ -7,7 +7,7 @@ import sinon from 'sinon';
 import { Context, PostTransactionValue, TransactionQueue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { fakePromise } from '~/testUtils';
-import { dsMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 
 jest.mock(
@@ -23,6 +23,7 @@ describe('Transaction Queue class', () => {
   beforeAll(() => {
     jest.useFakeTimers('legacy');
     polymeshTransactionMockUtils.initMocks();
+    entityMockUtils.initMocks();
     dsMockUtils.initMocks({ contextOptions: { middlewareEnabled: false } });
   });
 
@@ -32,11 +33,13 @@ describe('Transaction Queue class', () => {
 
   afterEach(() => {
     polymeshTransactionMockUtils.reset();
+    entityMockUtils.reset();
     dsMockUtils.reset();
   });
 
   afterAll(() => {
     jest.useRealTimers();
+    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -207,6 +210,113 @@ describe('Transaction Queue class', () => {
 
       return expect(runPromise).rejects.toThrow(
         "Not enough POLYX balance to pay for this procedure's fees"
+      );
+    });
+
+    test("should throw an error if any third party account doesn't have enough balance to pay the transaction fees", () => {
+      const account1 = entityMockUtils.getAccountInstance({
+        address: 'account1',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+      const account2 = entityMockUtils.getAccountInstance({
+        address: 'account2',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+      const transactionSpecs = [
+        {
+          args: [1],
+          isCritical: false,
+          fees: {
+            protocol: new BigNumber(100),
+            gas: new BigNumber(100),
+          },
+          payingAccount: {
+            account: account1,
+            allowance: new BigNumber(500),
+          },
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+        {
+          args: ['someArg'],
+          isCritical: true,
+          fees: {
+            protocol: new BigNumber(100),
+            gas: new BigNumber(100),
+          },
+          payingAccount: {
+            account: account2,
+            allowance: null,
+          },
+          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+        },
+      ];
+
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+
+      const procedureResult = 3;
+      const queue = new TransactionQueue({ transactions, procedureResult }, context);
+
+      const runPromise = queue.run();
+
+      return expect(runPromise).rejects.toThrow(
+        "Not enough POLYX third party balance to pay for this procedure's fees"
+      );
+    });
+
+    test("should throw an error if any third party account doesn't have enough allowance to pay the transaction fees", () => {
+      const account = entityMockUtils.getAccountInstance({
+        getBalance: {
+          free: new BigNumber(1000),
+          locked: new BigNumber(0),
+          total: new BigNumber(1000),
+        },
+      });
+      const transactionSpecs = [
+        {
+          args: [1],
+          isCritical: false,
+          fees: {
+            protocol: new BigNumber(100),
+            gas: new BigNumber(100),
+          },
+          payingAccount: {
+            account,
+            allowance: new BigNumber(100),
+          },
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+        },
+        {
+          args: ['someArg'],
+          isCritical: true,
+          fees: {
+            protocol: new BigNumber(100),
+            gas: new BigNumber(100),
+          },
+          payingAccount: {
+            account,
+            allowance: new BigNumber(100),
+          },
+          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+        },
+      ];
+
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+
+      const procedureResult = 3;
+      const queue = new TransactionQueue({ transactions, procedureResult }, context);
+
+      const runPromise = queue.run();
+
+      return expect(runPromise).rejects.toThrow(
+        "Not enough POLYX third party allowance to pay for this procedure's fees"
       );
     });
 
@@ -525,6 +635,13 @@ describe('Transaction Queue class', () => {
 
   describe('method: getMinFees', () => {
     test('should return the sum of all transaction fees', async () => {
+      const account = entityMockUtils.getAccountInstance({
+        getBalance: {
+          free: new BigNumber(1000),
+          locked: new BigNumber(0),
+          total: new BigNumber(1000),
+        },
+      });
       const transactionSpecs = [
         {
           args: [1],
@@ -547,8 +664,28 @@ describe('Transaction Queue class', () => {
         {
           args: [{ foo: 'bar' }],
           isCritical: true,
+          fees: {
+            protocol: new BigNumber(10),
+            gas: new BigNumber(5),
+          },
           autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
-          paidByThirdParty: true,
+          payingAccount: {
+            account,
+            allowance: new BigNumber(100),
+          },
+        },
+        {
+          args: [{ foo: 'bar' }],
+          isCritical: true,
+          fees: {
+            protocol: new BigNumber(10),
+            gas: new BigNumber(5),
+          },
+          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          payingAccount: {
+            account,
+            allowance: new BigNumber(100),
+          },
         },
       ];
 
@@ -556,12 +693,32 @@ describe('Transaction Queue class', () => {
 
       const procedureResult = 3;
       const queue = new TransactionQueue({ transactions, procedureResult }, context);
+      const balance = new BigNumber(500);
+      dsMockUtils.setContextAccountBalance({
+        free: balance,
+        locked: new BigNumber(0),
+        total: balance,
+      });
 
       const fees = await queue.getMinFees();
 
       expect(fees).toEqual({
-        protocol: new BigNumber(150),
-        gas: new BigNumber(3),
+        thirdPartyFees: [
+          {
+            account,
+            fees: {
+              protocol: new BigNumber(20),
+              gas: new BigNumber(10),
+            },
+            allowance: new BigNumber(100),
+            balance: new BigNumber(1000),
+          },
+        ],
+        accountFees: {
+          protocol: new BigNumber(150),
+          gas: new BigNumber(3),
+        },
+        accountBalance: balance,
       });
     });
   });

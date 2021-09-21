@@ -291,6 +291,7 @@ export enum AssetTx {
   AddDocuments = 'asset.addDocuments',
   RemoveDocuments = 'asset.removeDocuments',
   ReserveClassicTicker = 'asset.reserveClassicTicker',
+  RegisterCustomAssetType = 'asset.registerCustomAssetType',
 }
 
 export enum DividendTx {
@@ -365,6 +366,8 @@ export enum BridgeTx {
   FreezeTxs = 'bridge.freezeTxs',
   UnfreezeTxs = 'bridge.unfreezeTxs',
   HandleScheduledBridgeTx = 'bridge.handleScheduledBridgeTx',
+  AddFreezeAdmin = 'bridge.addFreezeAdmin',
+  RemoveFreezeAdmin = 'bridge.removeFreezeAdmin',
 }
 
 export enum ComplianceManagerTx {
@@ -428,6 +431,8 @@ export enum SettlementTx {
   ExecuteScheduledInstruction = 'settlement.executeScheduledInstruction',
   ChangeReceiptValidity = 'settlement.changeReceiptValidity',
   RescheduleInstruction = 'settlement.rescheduleInstruction',
+  UpdateVenueDetails = 'settlement.updateVenueDetails',
+  UpdateVenueType = 'settlement.updateVenueType',
 }
 
 export enum StoTx {
@@ -468,6 +473,7 @@ export enum PortfolioTx {
   MovePortfolioFunds = 'portfolio.movePortfolioFunds',
   RenamePortfolio = 'portfolio.renamePortfolio',
   QuitPortfolioCustody = 'portfolio.quitPortfolioCustody',
+  AcceptPortfolioCustody = 'portfolio.acceptPortfolioCustody',
 }
 
 export enum ConfidentialTx {
@@ -540,6 +546,21 @@ export enum ExternalAgentsTx {
   RemoveAgent = 'externalAgents.removeAgent',
   Abdicate = 'externalAgents.abdicate',
   ChangeGroup = 'externalAgents.changeGroup',
+  AcceptBecomeAgent = 'externalAgents.acceptBecomeAgent',
+}
+
+export enum RelayerTx {
+  SetPayingKey = 'relayer.setPayingKey',
+  AcceptPayingKey = 'relayer.acceptPayingKey',
+  RemovePayingKey = 'relayer.removePayingKey',
+  UpdatePolyxLimit = 'relayer.updatePolyxLimit',
+  IncreasePolyxLimit = 'relayer.increasePolyxLimit',
+  DecreasePolyxLimit = 'relayer.decreasePolyxLimit',
+}
+
+export enum RewardsTx {
+  ClaimItnReward = 'rewards.claimItnReward',
+  SetItnRewardStatus = 'rewards.setItnRewardStatus',
 }
 
 export enum ModuleName {
@@ -588,6 +609,8 @@ export enum ModuleName {
   Statistics = 'statistics',
   TestUtils = 'testUtils',
   ExternalAgents = 'externalAgents',
+  Relayer = 'relayer',
+  Rewards = 'rewards',
 }
 
 export type TxTag =
@@ -635,7 +658,9 @@ export type TxTag =
   | CheckpointTx
   | StatisticsTx
   | TestUtilsTx
-  | ExternalAgentsTx;
+  | ExternalAgentsTx
+  | RelayerTx
+  | RewardsTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -683,4 +708,6 @@ export const TxTags = {
   statistics: StatisticsTx,
   testUtils: TestUtilsTx,
   externalAgents: ExternalAgentsTx,
+  relayer: RelayerTx,
+  rewards: RewardsTx,
 };

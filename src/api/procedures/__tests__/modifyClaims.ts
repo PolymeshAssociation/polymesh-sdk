@@ -371,7 +371,7 @@ describe('modifyClaims procedure', () => {
       new RegExp("Attempt to edit claims that weren't issued by the current Identity")
     );
 
-    await expect(
+    return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
     ).rejects.toThrow(
       new RegExp("Attempt to revoke claims that weren't issued by the current Identity")
@@ -409,7 +409,7 @@ describe('modifyClaims procedure', () => {
     dsMockUtils.createQueryStub('asset', 'aggregateBalance');
     balanceToBigNumberStub.returns(new BigNumber(1));
 
-    await expect(
+    return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
     ).rejects.toThrow(
       new RegExp(

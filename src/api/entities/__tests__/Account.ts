@@ -6,7 +6,7 @@ import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, Permissions, PermissionType, TxTags } from '~/types';
+import { AccountBalance, Permissions, PermissionType, Subsidy, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -114,6 +114,42 @@ describe('Account class', () => {
     });
   });
 
+  describe('method: getSubsidy', () => {
+    let fakeResult: Omit<Subsidy, 'beneficiary'>;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      account = new Account({ address }, context);
+      const subsidizer = new Account({ address: 'subsidizer ' }, context);
+      fakeResult = {
+        allowance: new BigNumber(1000),
+        subsidizer,
+      };
+      context.accountSubsidy.resolves(fakeResult);
+    });
+
+    test("should return the account's balance", async () => {
+      const result = await account.getSubsidy();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+      const callback = sinon.stub();
+
+      context.accountSubsidy.callsFake(async (_, cbFunc) => {
+        cbFunc(fakeResult);
+        return unsubCallback;
+      });
+
+      const result = await account.getSubsidy(callback);
+
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
   describe('method: getIdentity', () => {
     test('should return the Identity associated to the Account', async () => {
       const did = 'someDid';
@@ -162,8 +198,9 @@ describe('Account class', () => {
             spec_version_id: 2006,
             params: [],
             block_id: blockNumber1.toNumber(),
-            address: address,
+            address,
             success: 0,
+            signedby_address: 1,
           },
           {
             module_id: ModuleIdEnum.Asset,
@@ -173,6 +210,7 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber2.toNumber(),
             success: 1,
+            signedby_address: 1,
           },
         ],
       };
@@ -280,6 +318,12 @@ describe('Account class', () => {
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       expect(account.toJson()).toBe(account.address);
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return true', () => {
+      return expect(account.exists()).resolves.toBe(true);
     });
   });
 

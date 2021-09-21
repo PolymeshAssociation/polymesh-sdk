@@ -56,11 +56,16 @@ export abstract class Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Whether this Entity is the same as another one
+   * Determine whether this Entity is the same as another one
    */
   public isEqual(entity: Entity<unknown, unknown>): boolean {
     return this.uuid === entity.uuid;
   }
+
+  /**
+   * Determine whether this Entity exists on chain
+   */
+  public abstract exists(): Promise<boolean>;
 
   /**
    * Returns Entity data in a human readable (JSON) format

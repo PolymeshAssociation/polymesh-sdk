@@ -11,7 +11,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { TransactionPermissions } from '~/types';
+import { PermissionGroupType, TransactionPermissions } from '~/types';
 import { tuple } from '~/types/utils';
 
 import { Permissions } from '../Permissions';
@@ -19,6 +19,18 @@ import { Permissions } from '../Permissions';
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+jest.mock(
+  '~/api/entities/CustomPermissionGroup',
+  require('~/testUtils/mocks/entities').mockCustomPermissionGroupModule(
+    '~/api/entities/CustomPermissionGroup'
+  )
+);
+jest.mock(
+  '~/api/entities/KnownPermissionGroup',
+  require('~/testUtils/mocks/entities').mockKnownPermissionGroupModule(
+    '~/api/entities/KnownPermissionGroup'
+  )
 );
 
 describe('Permissions class', () => {
@@ -129,6 +141,38 @@ describe('Permissions class', () => {
       const queue = await permissions.removeAgent(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getGroup', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should retrieve a specific Custom Permission Group', async () => {
+      const id = new BigNumber(1);
+
+      const result = await permissions.getGroup({ id });
+
+      expect(result).toEqual(entityMockUtils.getCustomPermissionGroupInstance({ id, ticker }));
+    });
+
+    test('should throw an error if the Custom Permission Group does not exist', () => {
+      const id = new BigNumber(1);
+
+      entityMockUtils.configureMocks({ customPermissionGroupOptions: { exists: false } });
+
+      return expect(permissions.getGroup({ id })).rejects.toThrow(
+        'The Permission Group does not exist'
+      );
+    });
+
+    test('should retrieve a specific Known Permission Group', async () => {
+      const type = PermissionGroupType.Full;
+
+      const result = await permissions.getGroup({ type });
+
+      expect(result).toEqual(entityMockUtils.getKnownPermissionGroupInstance({ type, ticker }));
     });
   });
 

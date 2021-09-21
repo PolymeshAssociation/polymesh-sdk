@@ -1,15 +1,16 @@
+import { bool, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import { bool, u64 } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
+  AssetName,
   FundingRoundName,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, SecurityToken, TransactionQueue } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
+import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
@@ -71,23 +72,29 @@ describe('SecurityToken class', () => {
 
   describe('method: details', () => {
     let ticker: string;
+    let name: string;
     let totalSupply: number;
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
+    let iuDisabled: boolean;
     let did: string;
 
     let rawToken: MeshSecurityToken;
+    let rawName: AssetName;
+    let rawIuDisabled: bool;
 
     let context: Context;
     let securityToken: SecurityToken;
 
     beforeAll(() => {
       ticker = 'FAKETICKER';
+      name = 'tokenName';
       totalSupply = 1000;
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
+      iuDisabled = false;
       did = 'someDid';
     });
 
@@ -95,12 +102,13 @@ describe('SecurityToken class', () => {
       rawToken = dsMockUtils.createMockSecurityToken({
         /* eslint-disable @typescript-eslint/naming-convention */
         owner_did: dsMockUtils.createMockIdentityId(owner),
-        name: dsMockUtils.createMockAssetName(ticker),
         asset_type: dsMockUtils.createMockAssetType(assetType),
         divisible: dsMockUtils.createMockBool(isDivisible),
         total_supply: dsMockUtils.createMockBalance(totalSupply),
         /* eslint-enable @typescript-eslint/naming-convention */
       });
+      rawIuDisabled = dsMockUtils.createMockBool(iuDisabled);
+      rawName = dsMockUtils.createMockAssetName(name);
       context = dsMockUtils.getContextInstance();
       securityToken = new SecurityToken({ ticker }, context);
 
@@ -120,16 +128,22 @@ describe('SecurityToken class', () => {
           ),
         ],
       });
+      dsMockUtils.createQueryStub('asset', 'assetNames', {
+        returnValue: rawName,
+      });
+      dsMockUtils.createQueryStub('asset', 'disableInvestorUniqueness', {
+        returnValue: rawIuDisabled,
+      });
     });
 
     test('should return details for a security token', async () => {
-      dsMockUtils.createQueryStub('asset', 'tokens', {
+      const tokensStub = dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: rawToken,
       });
 
       let details = await securityToken.details();
 
-      expect(details.name).toBe(ticker);
+      expect(details.name).toBe(name);
       expect(details.totalSupply).toEqual(
         utilsConversionModule.balanceToBigNumber((totalSupply as unknown) as Balance)
       );
@@ -138,6 +152,7 @@ describe('SecurityToken class', () => {
       expect(details.assetType).toBe(assetType);
       expect(details.primaryIssuanceAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
       expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did: owner })]);
+      expect(details.requiresInvestorUniqueness).toBe(true);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         entries: [
@@ -151,6 +166,26 @@ describe('SecurityToken class', () => {
       details = await securityToken.details();
       expect(details.primaryIssuanceAgents).toEqual([]);
       expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
+
+      tokensStub.resolves(
+        dsMockUtils.createMockSecurityToken({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          owner_did: dsMockUtils.createMockIdentityId(owner),
+          asset_type: dsMockUtils.createMockAssetType({ Custom: dsMockUtils.createMockU32(10) }),
+          divisible: dsMockUtils.createMockBool(isDivisible),
+          total_supply: dsMockUtils.createMockBalance(totalSupply),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      );
+
+      const customType = 'something';
+
+      dsMockUtils.createQueryStub('asset', 'customTypes', {
+        returnValue: dsMockUtils.createMockBytes(customType),
+      });
+
+      details = await securityToken.details();
+      expect(details.assetType).toEqual(customType);
     });
 
     test('should allow subscription', async () => {
@@ -173,11 +208,12 @@ describe('SecurityToken class', () => {
         sinon.match({
           assetType,
           isDivisible,
-          name: ticker,
+          name,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
           fullAgents: [entityMockUtils.getIdentityInstance({ did: owner })],
+          requiresInvestorUniqueness: true,
         })
       );
     });
@@ -621,6 +657,76 @@ describe('SecurityToken class', () => {
       const queue = await securityToken.controllerTransfer({ originPortfolio, amount });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getOperationHistory', () => {
+    test('should return a list of agent operations', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const did = 'someDid';
+      const blockId = new BigNumber(1);
+      const eventIndex = 'eventId';
+      const datetime = '2020-10-10';
+
+      dsMockUtils.createApolloQueryStub(
+        tickerExternalAgentHistory({
+          ticker,
+        }),
+        {
+          tickerExternalAgentHistory: [
+            /* eslint-disable @typescript-eslint/naming-convention */
+            {
+              did,
+              history: [
+                {
+                  block_id: blockId.toNumber(),
+                  datetime,
+                  event_idx: eventIndex,
+                },
+              ],
+            },
+            /* eslint-enable @typescript-eslint/naming-convention */
+          ],
+        }
+      );
+
+      const result = await securityToken.getOperationHistory();
+
+      expect(result.length).toEqual(1);
+      expect(result[0].identity.did).toEqual(did);
+      expect(result[0].history.length).toEqual(1);
+      expect(result[0].history[0]).toEqual({
+        blockNumber: blockId,
+        blockDate: new Date(`${datetime}Z`),
+        eventIndex,
+      });
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return whether the Security Token exists', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      dsMockUtils.createQueryStub('asset', 'tokens', {
+        size: 10,
+      });
+
+      let result = await securityToken.exists();
+
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('asset', 'tokens', {
+        size: 0,
+      });
+
+      result = await securityToken.exists();
+
+      expect(result).toBe(false);
     });
   });
 

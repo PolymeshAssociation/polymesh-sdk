@@ -17,7 +17,7 @@ export class Settlements {
   }
 
   /**
-   * Retrieve a Venue by its id
+   * Retrieve a Venue by its ID
    *
    * @param id - identifier number of the Venue
    */
@@ -38,7 +38,7 @@ export class Settlements {
   }
 
   /**
-   * Retrieve an Instruction by its id
+   * Retrieve an Instruction by its ID
    *
    * @param id - identifier number of the Instruction
    */

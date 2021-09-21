@@ -120,11 +120,12 @@ import { padString } from '~/utils/internal';
 import {
   accountIdToString,
   addressToKey,
+  agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
   assetComplianceResultToCompliance,
   assetIdentifierToTokenIdentifier,
   assetNameToString,
-  assetTypeToString,
+  assetTypeToKnownOrId,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
@@ -157,6 +158,7 @@ import {
   fundraiserToStoDetails,
   granularCanTransferResultToTransferBreakdown,
   identityIdToString,
+  internalTokenTypeToAssetType,
   isCusipValid,
   isIsinValid,
   isLeiValid,
@@ -232,7 +234,6 @@ import {
   toIdentityWithClaimsArray,
   tokenDocumentToDocument,
   tokenIdentifierToAssetIdentifier,
-  tokenTypeToAssetType,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
@@ -275,6 +276,22 @@ jest.mock(
 jest.mock(
   '~/api/entities/Venue',
   require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+jest.mock(
+  '~/api/entities/KnownPermissionGroup',
+  require('~/testUtils/mocks/entities').mockKnownPermissionGroupModule(
+    '~/api/entities/KnownPermissionGroup'
+  )
+);
+jest.mock(
+  '~/api/entities/CustomPermissionGroup',
+  require('~/testUtils/mocks/entities').mockCustomPermissionGroupModule(
+    '~/api/entities/CustomPermissionGroup'
+  )
 );
 
 describe('tickerToDid', () => {
@@ -1126,7 +1143,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       value: 'someBytes',
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
-      custom: dsMockUtils.createMockBytes(fakeResult.value),
+      Custom: dsMockUtils.createMockBytes(fakeResult.value),
     });
 
     result = authorizationDataToAuthorization(authorizationData, context);
@@ -1136,6 +1153,28 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.NoData,
     };
     authorizationData = dsMockUtils.createMockAuthorizationData('NoData');
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    const beneficiaryAddress = 'beneficiaryAddress';
+    const relayerAddress = 'relayerAddress';
+    const allowance = new BigNumber(1000);
+    fakeResult = {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: entityMockUtils.getAccountInstance({ address: beneficiaryAddress }),
+        subsidizer: entityMockUtils.getAccountInstance({ address: relayerAddress }),
+        allowance,
+      },
+    };
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      AddRelayerPayingKey: [
+        dsMockUtils.createMockAccountId(beneficiaryAddress),
+        dsMockUtils.createMockAccountId(relayerAddress),
+        dsMockUtils.createMockBalance(allowance.shiftedBy(6).toNumber()),
+      ],
+    });
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
@@ -2077,7 +2116,7 @@ describe('u8ToTransferStatus', () => {
   });
 });
 
-describe('tokenTypeToAssetType and assetTypeToString', () => {
+describe('internalTokenTypeToAssetType and assetTypeToKnownOrId', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2090,92 +2129,91 @@ describe('tokenTypeToAssetType and assetTypeToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('tokenTypeToAssetType should convert a TokenType to a polkadot AssetType object', () => {
+  test('internalTokenTypeToAssetType should convert a TokenType to a polkadot AssetType object', () => {
     const value = KnownTokenType.Commodity;
     const fakeResult = ('CommodityEnum' as unknown) as AssetType;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
 
-    const result = tokenTypeToAssetType(value, context);
+    const result = internalTokenTypeToAssetType(value, context);
 
     expect(result).toBe(fakeResult);
   });
 
-  test('assetTypeToString should convert a polkadot AssetType object to a string', () => {
+  test('assetTypeToKnownOrId should convert a polkadot AssetType object to a string', () => {
     let fakeResult = KnownTokenType.Commodity;
     let assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    let result = assetTypeToString(assetType);
+    let result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.EquityCommon;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.EquityPreferred;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Commodity;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.FixedIncome;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Reit;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Fund;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.RevenueShareAgreement;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.StructuredProduct;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.Derivative;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = KnownTokenType.StableCoin;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToString(assetType);
+    result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    const fakeType = 'otherType';
     assetType = dsMockUtils.createMockAssetType({
-      Custom: dsMockUtils.createMockBytes(fakeType),
+      Custom: dsMockUtils.createMockU32(1),
     });
 
-    result = assetTypeToString(assetType);
-    expect(result).toEqual(fakeType);
+    result = assetTypeToKnownOrId(assetType);
+    expect(result).toEqual(new BigNumber(1));
   });
 });
 
@@ -3776,27 +3814,70 @@ describe('txTagToProtocolOp', () => {
   });
 
   test('txTagToProtocolOp should convert a TxTag to a polkadot ProtocolOp object', () => {
-    const value = TxTags.identity.AddClaim;
     const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
+    const createTypeStub = dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('ProtocolOp', 'AssetRegisterTicker')
+      .returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.RegisterTicker, context)).toEqual(fakeResult);
 
-    const result = txTagToProtocolOp(value, context);
+    createTypeStub.withArgs('ProtocolOp', 'AssetIssue').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.Issue, context)).toEqual(fakeResult);
 
-    expect(result).toEqual(fakeResult);
-  });
+    createTypeStub.withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.AddDocuments, context)).toEqual(fakeResult);
 
-  test('txTagToProtocolOp should ignore "batch" prefixes and postfixes', () => {
-    const value = TxTags.asset.AddDocuments;
-    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
-    const context = dsMockUtils.getContextInstance();
+    createTypeStub.withArgs('ProtocolOp', 'AssetCreateAsset').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.asset.CreateAsset, context)).toEqual(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'AssetCreateCheckpointSchedule').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.checkpoint.CreateSchedule, context)).toEqual(fakeResult);
 
-    const result = txTagToProtocolOp(value, context);
+    createTypeStub.withArgs('ProtocolOp', 'DividendNew').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.dividend.New, context)).toEqual(fakeResult);
 
-    expect(result).toEqual(fakeResult);
+    createTypeStub
+      .withArgs('ProtocolOp', 'ComplianceManagerAddComplianceRequirement')
+      .returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.complianceManager.AddComplianceRequirement, context)).toEqual(
+      fakeResult
+    );
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentityRegisterDid').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.RegisterDid, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentityCddRegisterDid').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.CddRegisterDid, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.AddClaim, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'IdentitySetPrimaryKey').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.SetPrimaryKey, context)).toEqual(fakeResult);
+
+    createTypeStub
+      .withArgs('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
+      .returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.AddSecondaryKeysWithAuthorization, context)).toEqual(
+      fakeResult
+    );
+
+    createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'VotingAddBallot').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.voting.AddBallot, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'ContractsPutCode').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.contracts.PutCode, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'BallotAttachBallot').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.corporateBallot.AttachBallot, context)).toEqual(fakeResult);
+
+    createTypeStub.withArgs('ProtocolOp', 'DistributionDistribute').returns(fakeResult);
+    expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
   });
 
   test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
@@ -6122,8 +6203,8 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     const fakeResult: CorporateActionParams = {
       kind,
       declarationDate,
-      description,
       targets,
+      description,
       defaultTaxWithholding,
       taxWithholdings,
     };
@@ -6132,7 +6213,6 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind,
       decl_date: declarationDate.getTime(),
       record_date: null,
-      details: description,
       targets: {
         identities: dids,
         treatment: TargetTreatment.Include,
@@ -6142,8 +6222,9 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     };
 
     let corporateAction = dsMockUtils.createMockCorporateAction(params);
+    const details = dsMockUtils.createMockText(description);
 
-    let result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    let result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -6156,7 +6237,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('IssuerNotice'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({
       ...fakeResult,
@@ -6169,7 +6250,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('PredictableBenefit'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({ ...fakeResult, kind: CorporateActionKind.PredictableBenefit });
 
@@ -6178,7 +6259,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('Other'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({ ...fakeResult, kind: CorporateActionKind.Other });
 
@@ -6187,7 +6268,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       kind: dsMockUtils.createMockCAKind('Reorganization'),
     });
 
-    result = meshCorporateActionToCorporateActionParams(corporateAction, context);
+    result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
     expect(result).toEqual({ ...fakeResult, kind: CorporateActionKind.Reorganization });
   });
@@ -6679,5 +6760,71 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     result = transactionPermissionsToExtrinsicPermissions(null, context);
 
     expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('agentGroupToPermissionGroup', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('agentGroupToPermissionGroup should convert a polkadot AgentGroup object to a PermissionGroup entity', () => {
+    const ticker = 'SOME_TICKER';
+    const context = dsMockUtils.getContextInstance();
+
+    let agentGroup = dsMockUtils.createMockAgentGroup('Full');
+
+    let result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({ ticker, type: PermissionGroupType.Full })
+    );
+
+    agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.ExceptMeta,
+      })
+    );
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.PolymeshV1Caa,
+      })
+    );
+
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.PolymeshV1Pia,
+      })
+    );
+
+    const id = new BigNumber(1);
+    const rawAgId = dsMockUtils.createMockU32(id.toNumber()) as AGId;
+    agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
+
+    result = agentGroupToPermissionGroup(agentGroup, ticker, context);
+    expect(result).toEqual(entityMockUtils.getCustomPermissionGroupInstance({ ticker, id }));
   });
 });
