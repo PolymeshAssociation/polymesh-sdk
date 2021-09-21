@@ -13,12 +13,7 @@ import {
 } from '~/internal';
 import { Authorization, AuthorizationType, ProcedureMethod, Signer, SignerValue } from '~/types';
 import { HumanReadableType } from '~/types/utils';
-import {
-  authorizationDataToAuthorization,
-  numberToU64,
-  signerToSignerValue,
-  signerValueToSignatory,
-} from '~/utils/conversion';
+import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -198,10 +193,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       numberToU64(authId, context)
     );
 
-    return (
-      authorizationDataToAuthorization(auth.authorization_data, context).type !==
-      AuthorizationType.NoData
-    );
+    return auth.isNone;
   }
 
   /**
