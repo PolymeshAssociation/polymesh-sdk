@@ -2158,6 +2158,7 @@ export const createMockAuthorizationData = (
     | { PortfolioCustody: PortfolioId }
     | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
     | { BecomeAgent: [Ticker, AgentGroup] }
+    | AuthorizationData
 ): AuthorizationData => {
   if (isCodec<AuthorizationData>(authorizationData)) {
     return authorizationData;

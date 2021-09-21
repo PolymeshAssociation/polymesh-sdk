@@ -193,7 +193,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       numberToU64(authId, context)
     );
 
-    return auth.isNone;
+    return auth.isSome;
   }
 
   /**

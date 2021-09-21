@@ -299,34 +299,27 @@ describe('AuthorizationRequest class', () => {
           expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.NoData },
+          data: { type: AuthorizationType.RotatePrimaryKey },
         },
         context
       );
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          auth_id: 1,
-          authorization_data: dsMockUtils.createMockAuthorizationData('NoData'),
-          authorized_by: 'someDid',
-          expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        }),
+        returnValue: dsMockUtils.createMockOption(),
       });
       await expect(authorizationRequest.exists()).resolves.toBe(false);
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          auth_id: 1,
-          authorization_data: dsMockUtils.createMockAuthorizationData({
-            TransferTicker: dsMockUtils.createMockTicker('SOME_TICKER'),
-          }),
-          authorized_by: 'someDid',
-          expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        }),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAuthorization({
+            /* eslint-disable @typescript-eslint/naming-convention */
+            auth_id: 1,
+            authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+            authorized_by: 'someDid',
+            expiry: dsMockUtils.createMockOption(),
+            /* eslint-enable @typescript-eslint/naming-convention */
+          })
+        ),
       });
       return expect(authorizationRequest.exists()).resolves.toBe(true);
     });

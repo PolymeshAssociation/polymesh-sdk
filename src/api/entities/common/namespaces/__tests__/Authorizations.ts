@@ -170,14 +170,16 @@ describe('Authorizations class', () => {
       };
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-          authorization_data: dsMockUtils.createMockAuthorizationData({
-            TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
-        }),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAuthorization({
+            auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+            authorization_data: dsMockUtils.createMockAuthorizationData({
+              TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+            }),
+            expiry: dsMockUtils.createMockOption(),
+            authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
+          })
+        ),
       });
 
       entityMockUtils.getAuthorizationRequestInstance(authParams);
@@ -210,12 +212,7 @@ describe('Authorizations class', () => {
       };
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-          authorization_data: dsMockUtils.createMockAuthorizationData('NoData'),
-          expiry: dsMockUtils.createMockOption(),
-          authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
-        }),
+        returnValue: dsMockUtils.createMockOption(),
       });
 
       entityMockUtils.getAuthorizationRequestInstance(authParams);
