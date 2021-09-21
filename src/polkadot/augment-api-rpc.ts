@@ -753,8 +753,8 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
             | 'TransferAssetOwnership'
             | 'JoinIdentity'
             | 'PortfolioCustody'
-            | 'Custom'
-            | 'NoData'
+            | 'BecomeAgent'
+            | 'AddRelayerPayingKey'
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -885,21 +885,17 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
             | ProtocolOp
             | 'AssetRegisterTicker'
             | 'AssetIssue'
-            | 'AssetAddDocument'
+            | 'AssetAddDocuments'
             | 'AssetCreateAsset'
-            | 'AssetCreateCheckpointSchedule'
-            | 'DividendNew'
+            | 'CheckpointCreateSchedule'
             | 'ComplianceManagerAddComplianceRequirement'
-            | 'IdentityRegisterDid'
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
-            | 'IdentitySetPrimaryKey'
             | 'IdentityAddSecondaryKeysWithAuthorization'
             | 'PipsPropose'
-            | 'VotingAddBallot'
             | 'ContractsPutCode'
-            | 'BallotAttachBallot'
-            | 'DistributionDistribute'
+            | 'CorporateBallotAttachBallot'
+            | 'CapitalDistributionDistribute'
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array

@@ -306,6 +306,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
       /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
+      /**
        * Group member was added already.
        **/
       DuplicateMember: AugmentedError<ApiType>;
@@ -363,6 +367,10 @@ declare module '@polkadot/api/types/errors' {
        * The limit for the number of concurrent active members for this group has been exceeded.
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
+      /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
       /**
        * Group member was added already.
        **/
@@ -641,6 +649,11 @@ declare module '@polkadot/api/types/errors' {
        **/
       CurrentIdentityCannotBeForwarded: AugmentedError<ApiType>;
       /**
+       * A custom scope is too long.
+       * It can at most be `32` characters long.
+       **/
+      CustomScopeTooLong: AugmentedError<ApiType>;
+      /**
        * The DID already exists.
        **/
       DidAlreadyExists: AugmentedError<ApiType>;
@@ -704,10 +717,6 @@ declare module '@polkadot/api/types/errors' {
        * Only the primary key is allowed to revoke an Identity Signatory off-chain authorization.
        **/
       NotPrimaryKey: AugmentedError<ApiType>;
-      /**
-       * Do not allow forwarded call to be called recursively
-       **/
-      RecursionNotAllowed: AugmentedError<ApiType>;
       /**
        * The secondary keys contain the primary key.
        **/
@@ -834,7 +843,6 @@ declare module '@polkadot/api/types/errors' {
       TooManySigners: AugmentedError<ApiType>;
     };
     permissions: {
-      RecursionNotAllowed: AugmentedError<ApiType>;
       /**
        * The caller is not authorized to call the current extrinsic.
        **/
@@ -953,6 +961,10 @@ declare module '@polkadot/api/types/errors' {
        * Proposal exists, but it has expired.
        **/
       ProposalExpired: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals has been reached.
+       **/
+      ProposalsLimitReached: AugmentedError<ApiType>;
     };
     portfolio: {
       /**
@@ -1111,6 +1123,10 @@ declare module '@polkadot/api/types/errors' {
        * Instruction failed to execute.
        **/
       InstructionFailed: AugmentedError<ApiType>;
+      /**
+       * Maximum legs that can be in a single instruction.
+       **/
+      InstructionHasTooManyLegs: AugmentedError<ApiType>;
       /**
        * Instruction has not been affirmed.
        **/
@@ -1485,12 +1501,20 @@ declare module '@polkadot/api/types/errors' {
        * Proposal exists, but it has expired.
        **/
       ProposalExpired: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals has been reached.
+       **/
+      ProposalsLimitReached: AugmentedError<ApiType>;
     };
     technicalCommitteeMembership: {
       /**
        * The limit for the number of concurrent active members for this group has been exceeded.
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
+      /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
       /**
        * Group member was added already.
        **/
@@ -1554,12 +1578,20 @@ declare module '@polkadot/api/types/errors' {
        * Proposal exists, but it has expired.
        **/
       ProposalExpired: AugmentedError<ApiType>;
+      /**
+       * Maximum number of proposals has been reached.
+       **/
+      ProposalsLimitReached: AugmentedError<ApiType>;
     };
     upgradeCommitteeMembership: {
       /**
        * The limit for the number of concurrent active members for this group has been exceeded.
        **/
       ActiveMembersLimitExceeded: AugmentedError<ApiType>;
+      /**
+       * Active member limit was greater than maximum committee members limit.
+       **/
+      ActiveMembersLimitOverflow: AugmentedError<ApiType>;
       /**
        * Group member was added already.
        **/

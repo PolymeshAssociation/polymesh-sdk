@@ -82,14 +82,24 @@ export async function prepareModifyVenue(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { venueId }: Params
+  { venueId, description, type }: Params
 ): ProcedureAuthorization {
+  const transactions = [];
+
+  if (description) {
+    transactions.push(TxTags.settlement.UpdateVenueDetails);
+  }
+
+  if (type) {
+    transactions.push(TxTags.settlement.UpdateVenueType);
+  }
+
   return {
     roles: [{ type: RoleType.VenueOwner, venueId }],
     permissions: {
       tokens: [],
       portfolios: [],
-      transactions: [TxTags.settlement.UpdateVenue],
+      transactions,
     },
   };
 }

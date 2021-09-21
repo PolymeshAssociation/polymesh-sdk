@@ -1,4 +1,4 @@
-import { AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -42,6 +42,7 @@ describe('inviteExternalAgent procedure', () => {
   let ticker: string;
   let token: SecurityToken;
   let rawTicker: Ticker;
+  let rawAgentGroup: AgentGroup;
   let target: string;
   let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
@@ -59,13 +60,14 @@ describe('inviteExternalAgent procedure', () => {
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
     token = entityMockUtils.getSecurityTokenInstance({ ticker });
     target = 'someDid';
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target),
     });
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferCorporateActionAgent: rawTicker,
+      BecomeAgent: [rawTicker, rawAgentGroup],
     });
   });
 

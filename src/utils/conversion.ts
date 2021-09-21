@@ -1065,7 +1065,7 @@ export function authorizationToAuthorizationData(
 ): AuthorizationData {
   let value;
 
-  if (auth.type === AuthorizationType.NoData) {
+  if (auth.type === AuthorizationType.RotatePrimaryKey) {
     value = null;
   } else if (auth.type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
@@ -1116,7 +1116,6 @@ export function authorizationDataToAuthorization(
   if (auth.isRotatePrimaryKey) {
     return {
       type: AuthorizationType.RotatePrimaryKey,
-      value: identityIdToString(auth.asRotatePrimaryKey),
     };
   }
 
@@ -1155,20 +1154,6 @@ export function authorizationDataToAuthorization(
     };
   }
 
-  if (auth.isTransferCorporateActionAgent) {
-    return {
-      type: AuthorizationType.TransferCorporateActionAgent,
-      value: tickerToString(auth.asTransferCorporateActionAgent),
-    };
-  }
-
-  if (auth.isCustom) {
-    return {
-      type: AuthorizationType.Custom,
-      value: bytesToString(auth.asCustom),
-    };
-  }
-
   if (auth.isAddRelayerPayingKey) {
     const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
 
@@ -1182,9 +1167,13 @@ export function authorizationDataToAuthorization(
     };
   }
 
-  return {
-    type: AuthorizationType.NoData,
-  };
+  throw new PolymeshError({
+    code: ErrorCode.FatalError,
+    message: 'Unsupported Authorization Type. Please contact the Polymath team',
+    data: {
+      auth: JSON.stringify(auth, null, 2),
+    },
+  });
 }
 
 /**
@@ -1498,7 +1487,7 @@ export function isCusipValid(cusip: string): boolean {
 export function isLeiValid(lei: string): boolean {
   lei = lei.toUpperCase();
 
-  if (!/^[0-9A-Z]{18}[0-9]{2}$/.test(lei)) {
+  if (!/^[0-9A-Z]{18}\d{2}$/.test(lei)) {
     return false;
   }
 
@@ -2416,39 +2405,24 @@ export function complianceRequirementToRequirement(
  * @hidden
  */
 export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
-  const exceptions: Record<string, string> = {
-    [TxTags.asset.AddDocuments]: 'AssetAddDocument',
-    [TxTags.capitalDistribution.Distribute]: 'DistributionDistribute',
-    [TxTags.checkpoint.CreateSchedule]: 'AssetCreateCheckpointSchedule',
-    [TxTags.corporateBallot.AttachBallot]: 'BallotAttachBallot',
-  };
-
   const protocolOpTags = [
     TxTags.asset.RegisterTicker,
     TxTags.asset.Issue,
     TxTags.asset.AddDocuments,
     TxTags.asset.CreateAsset,
-    TxTags.dividend.New,
+    TxTags.capitalDistribution.Distribute,
     TxTags.checkpoint.CreateSchedule,
     TxTags.complianceManager.AddComplianceRequirement,
-    TxTags.identity.RegisterDid,
     TxTags.identity.CddRegisterDid,
     TxTags.identity.AddClaim,
-    TxTags.identity.SetPrimaryKey,
     TxTags.identity.AddSecondaryKeysWithAuthorization,
     TxTags.pips.Propose,
-    TxTags.voting.AddBallot,
-    TxTags.contracts.PutCode,
     TxTags.corporateBallot.AttachBallot,
     TxTags.capitalDistribution.Distribute,
   ];
 
-  let value = exceptions[tag];
-
-  if (!value) {
-    const [moduleName, extrinsicName] = tag.split('.');
-    value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
-  }
+  const [moduleName, extrinsicName] = tag.split('.');
+  const value = `${stringUpperFirst(moduleName)}${stringUpperFirst(extrinsicName)}`;
 
   if (!includes(protocolOpTags, tag)) {
     throw new PolymeshError({

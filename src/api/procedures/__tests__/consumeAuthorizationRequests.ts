@@ -86,7 +86,6 @@ describe('consumeAuthorizationRequests procedure', () => {
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid3' }),
         data: {
           type: AuthorizationType.RotatePrimaryKey,
-          value: 'multisigAddress',
         },
       },
       {
@@ -176,25 +175,6 @@ describe('consumeAuthorizationRequests procedure', () => {
     entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  test('should throw an error if attempting to consume a deprecated authorization type', () => {
-    const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
-      mockContext
-    );
-
-    expect(
-      prepareConsumeAuthorizationRequests.call(proc, {
-        accept: true,
-        authRequests: [
-          entityMockUtils.getAuthorizationRequestInstance({
-            data: {
-              type: AuthorizationType.NoData,
-            },
-          }),
-        ],
-      })
-    ).rejects.toThrow('Cannot accept Authorization Requests with a deprecated type');
   });
 
   test('should add a batch of accept authorization transactions (dependent on the type of auth) to the queue and ignore expired requests', async () => {

@@ -91,12 +91,6 @@ export interface AssetIdentifier extends Enum {
   readonly asLei: U8aFixed;
 }
 
-/** @name AssetMigrationError */
-export interface AssetMigrationError extends Enum {
-  readonly isAssetDocumentFail: boolean;
-  readonly asAssetDocumentFail: ITuple<[Ticker, DocumentId]>;
-}
-
 /** @name AssetName */
 export interface AssetName extends Text {}
 
@@ -145,11 +139,8 @@ export interface AuthorizationData extends Enum {
   readonly isAttestPrimaryKeyRotation: boolean;
   readonly asAttestPrimaryKeyRotation: IdentityId;
   readonly isRotatePrimaryKey: boolean;
-  readonly asRotatePrimaryKey: IdentityId;
   readonly isTransferTicker: boolean;
   readonly asTransferTicker: Ticker;
-  readonly isTransferPrimaryIssuanceAgent: boolean;
-  readonly asTransferPrimaryIssuanceAgent: Ticker;
   readonly isAddMultiSigSigner: boolean;
   readonly asAddMultiSigSigner: AccountId;
   readonly isTransferAssetOwnership: boolean;
@@ -158,11 +149,6 @@ export interface AuthorizationData extends Enum {
   readonly asJoinIdentity: Permissions;
   readonly isPortfolioCustody: boolean;
   readonly asPortfolioCustody: PortfolioId;
-  readonly isCustom: boolean;
-  readonly asCustom: Ticker;
-  readonly isNoData: boolean;
-  readonly isTransferCorporateActionAgent: boolean;
-  readonly asTransferCorporateActionAgent: Ticker;
   readonly isBecomeAgent: boolean;
   readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
   readonly isAddRelayerPayingKey: boolean;
@@ -181,8 +167,8 @@ export interface AuthorizationType extends Enum {
   readonly isTransferAssetOwnership: boolean;
   readonly isJoinIdentity: boolean;
   readonly isPortfolioCustody: boolean;
-  readonly isCustom: boolean;
-  readonly isNoData: boolean;
+  readonly isBecomeAgent: boolean;
+  readonly isAddRelayerPayingKey: boolean;
 }
 
 /** @name BallotMeta */
@@ -1048,14 +1034,6 @@ export interface MetaUrl extends Text {}
 /** @name MetaVersion */
 export interface MetaVersion extends u32 {}
 
-/** @name MigrationError */
-export interface MigrationError extends Enum {
-  readonly isDecodeKey: boolean;
-  readonly asDecodeKey: Bytes;
-  readonly isMap: boolean;
-  readonly asMap: AssetMigrationError;
-}
-
 /** @name Moment */
 export interface Moment extends u64 {}
 
@@ -1266,21 +1244,17 @@ export interface Proposer extends Enum {
 export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
   readonly isAssetIssue: boolean;
-  readonly isAssetAddDocument: boolean;
+  readonly isAssetAddDocuments: boolean;
   readonly isAssetCreateAsset: boolean;
-  readonly isAssetCreateCheckpointSchedule: boolean;
-  readonly isDividendNew: boolean;
+  readonly isCheckpointCreateSchedule: boolean;
   readonly isComplianceManagerAddComplianceRequirement: boolean;
-  readonly isIdentityRegisterDid: boolean;
   readonly isIdentityCddRegisterDid: boolean;
   readonly isIdentityAddClaim: boolean;
-  readonly isIdentitySetPrimaryKey: boolean;
   readonly isIdentityAddSecondaryKeysWithAuthorization: boolean;
   readonly isPipsPropose: boolean;
-  readonly isVotingAddBallot: boolean;
   readonly isContractsPutCode: boolean;
-  readonly isBallotAttachBallot: boolean;
-  readonly isDistributionDistribute: boolean;
+  readonly isCorporateBallotAttachBallot: boolean;
+  readonly isCapitalDistributionDistribute: boolean;
 }
 
 /** @name ProverTickerKey */

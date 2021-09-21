@@ -76,7 +76,7 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.NoData },
+          data: { type: AuthorizationType.RotatePrimaryKey },
         },
         context
       );
@@ -113,6 +113,38 @@ describe('AuthorizationRequest class', () => {
               transactionGroups: [],
               portfolios: null,
             },
+          },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+        accept: true,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await authorizationRequest.accept();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    test('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: 'someAddress',
           },
         },
         context
@@ -148,7 +180,7 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.NoData },
+          data: { type: AuthorizationType.RotatePrimaryKey },
         },
         context
       );
@@ -206,6 +238,38 @@ describe('AuthorizationRequest class', () => {
 
       expect(queue).toBe(expectedQueue);
     });
+
+    test('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: 'someAddress',
+          },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+        accept: false,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await authorizationRequest.remove();
+
+      expect(queue).toBe(expectedQueue);
+    });
   });
 
   describe('method: isExpired', () => {
@@ -216,7 +280,7 @@ describe('AuthorizationRequest class', () => {
           expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.NoData },
+          data: { type: AuthorizationType.RotatePrimaryKey },
         },
         context
       );
@@ -235,34 +299,27 @@ describe('AuthorizationRequest class', () => {
           expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.NoData },
+          data: { type: AuthorizationType.RotatePrimaryKey },
         },
         context
       );
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          auth_id: 1,
-          authorization_data: dsMockUtils.createMockAuthorizationData('NoData'),
-          authorized_by: 'someDid',
-          expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        }),
+        returnValue: dsMockUtils.createMockOption(),
       });
       await expect(authorizationRequest.exists()).resolves.toBe(false);
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          auth_id: 1,
-          authorization_data: dsMockUtils.createMockAuthorizationData({
-            TransferTicker: dsMockUtils.createMockTicker('SOME_TICKER'),
-          }),
-          authorized_by: 'someDid',
-          expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
-        }),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAuthorization({
+            /* eslint-disable @typescript-eslint/naming-convention */
+            auth_id: 1,
+            authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+            authorized_by: 'someDid',
+            expiry: dsMockUtils.createMockOption(),
+            /* eslint-enable @typescript-eslint/naming-convention */
+          })
+        ),
       });
       return expect(authorizationRequest.exists()).resolves.toBe(true);
     });
@@ -276,7 +333,7 @@ describe('AuthorizationRequest class', () => {
           expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.NoData },
+          data: { type: AuthorizationType.RotatePrimaryKey },
         },
         context
       );
@@ -288,7 +345,7 @@ describe('AuthorizationRequest class', () => {
           value: 'someDid',
         },
         issuer: 'otherDid',
-        data: { type: AuthorizationType.NoData },
+        data: { type: AuthorizationType.RotatePrimaryKey },
       });
     });
   });

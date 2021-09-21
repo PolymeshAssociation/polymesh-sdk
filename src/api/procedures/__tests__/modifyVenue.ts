@@ -152,15 +152,30 @@ describe('modifyVenue procedure', () => {
     test('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
-      const args = {
+      let args = {
         venueId,
+        type: VenueType.Distribution,
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
         permissions: {
           portfolios: [],
-          transactions: [TxTags.settlement.UpdateVenue],
+          transactions: [TxTags.settlement.UpdateVenueType],
+          tokens: [],
+        },
+      });
+
+      args = {
+        venueId,
+        description: 'someDescription',
+      } as Params;
+
+      expect(boundFunc(args)).toEqual({
+        roles: [{ type: RoleType.VenueOwner, venueId }],
+        permissions: {
+          portfolios: [],
+          transactions: [TxTags.settlement.UpdateVenueDetails],
           tokens: [],
         },
       });
