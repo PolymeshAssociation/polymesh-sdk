@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { uniq } from 'lodash';
 
-import { PolymeshError } from '~/base/PolymeshError';
-import { Identity, Procedure, SecurityToken } from '~/internal';
+import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,

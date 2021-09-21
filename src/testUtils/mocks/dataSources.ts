@@ -193,7 +193,7 @@ function createWebSocketAsPromised(): WebSocketAsPromised {
   return ({
     open: sinon.stub(),
     send: sinon.stub(),
-    sendRequest: sinon.stub().resolves({ result: '3.2.0' }),
+    sendRequest: sinon.stub().resolves({ result: '3.3.0' }),
     close: sinon.stub(),
   } as unknown) as WebSocketAsPromised;
 }
@@ -2161,7 +2161,12 @@ export const createMockAuthorizationData = (
     | { TransferCorporateActionAgent: Ticker }
     | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
     | 'NoData'
+    | AuthorizationData
 ): AuthorizationData => {
+  if (isCodec<AuthorizationData>(authorizationData)) {
+    return authorizationData;
+  }
+
   return createMockEnum(authorizationData) as AuthorizationData;
 };
 
@@ -2170,12 +2175,12 @@ export const createMockAuthorizationData = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAuthorization = (authorization?: {
-  authorization_data: AuthorizationData;
-  authorized_by: IdentityId;
+  authorization_data: AuthorizationData | Parameters<typeof createMockAuthorizationData>[0];
+  authorized_by: IdentityId | Parameters<typeof createMockIdentityId>[0];
   expiry: Option<Moment>;
-  auth_id: u64;
+  auth_id: u64 | Parameters<typeof createMockU64>[0];
 }): Authorization => {
-  const auth = authorization || {
+  const { authorization_data, authorized_by, expiry, auth_id } = authorization || {
     authorization_data: createMockAuthorizationData(),
     authorized_by: createMockIdentityId(),
     expiry: createMockOption(),
@@ -2184,7 +2189,10 @@ export const createMockAuthorization = (authorization?: {
 
   return createMockCodec(
     {
-      ...auth,
+      authorization_data: createMockAuthorizationData(authorization_data),
+      authorized_by: createMockIdentityId(authorized_by),
+      expiry: createMockOption(expiry),
+      auth_id: createMockU64(auth_id),
     },
     !authorization
   ) as Authorization;

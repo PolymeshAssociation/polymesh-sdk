@@ -85,6 +85,13 @@ export class KnownPermissionGroup extends PermissionGroup {
   }
 
   /**
+   * Determine whether this Known Permission Group exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    return true;
+  }
+
+  /**
    * Return the KnownPermissionGroup's static data
    */
   public toJson(): HumanReadable {

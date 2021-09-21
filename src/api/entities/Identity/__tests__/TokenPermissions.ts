@@ -3,7 +3,7 @@ import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Identity, KnownPermissionGroup, Namespace, TransactionQueue } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
+import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -383,6 +383,53 @@ describe('TokenPermissions class', () => {
       expect(result.length).toEqual(1);
       expect(result[0].token.ticker).toEqual(ticker);
       expect(result[0].group instanceof KnownPermissionGroup).toEqual(true);
+    });
+  });
+
+  describe('method: getOperationHistory', () => {
+    test('should return the Events triggered by Operations the Identity has performed on a specific Security Token', async () => {
+      const blockId = new BigNumber(1);
+      const eventIndex = 1;
+      const datetime = '2020-10-10';
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      dsMockUtils.createApolloQueryStub(
+        tickerExternalAgentActions({
+          ticker,
+          caller_did: did,
+          pallet_name: undefined,
+          event_id: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          tickerExternalAgentActions: {
+            totalCount: 1,
+            items: [
+              {
+                block_id: blockId.toNumber(),
+                datetime,
+                event_idx: eventIndex,
+              },
+            ],
+          },
+        }
+      );
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      const result = await tokenPermissions.getOperationHistory({
+        token: ticker,
+      });
+
+      expect(result.next).toEqual(null);
+      expect(result.count).toEqual(1);
+      expect(result.data).toEqual([
+        {
+          blockNumber: blockId,
+          blockDate: new Date(`${datetime}Z`),
+          eventIndex,
+        },
+      ]);
     });
   });
 });

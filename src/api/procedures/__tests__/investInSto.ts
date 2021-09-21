@@ -135,7 +135,7 @@ describe('investInSto procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the STO is not accepting investments', async () => {
+  test('should throw an error if the STO is not accepting investments', () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
@@ -279,11 +279,11 @@ describe('investInSto procedure', () => {
       fundingPortfolioId,
     });
 
-    expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
+    await expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
       'The STO does not have enough remaining tokens'
     );
 
-    expect(prepareInvestInSto.call(proc, { ...args, maxPrice })).rejects.toThrow(
+    return expect(prepareInvestInSto.call(proc, { ...args, maxPrice })).rejects.toThrow(
       'The STO does not have enough remaining tokens below the stipulated max price'
     );
   });

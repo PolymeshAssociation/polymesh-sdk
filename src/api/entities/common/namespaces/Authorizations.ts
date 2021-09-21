@@ -1,13 +1,15 @@
+import BigNumber from 'bignumber.js';
 import { Authorization } from 'polymesh-types/types';
 
-import { AuthorizationRequest, Identity, Namespace } from '~/internal';
-import { AuthorizationType, Signer, SignerValue } from '~/types';
+import { AuthorizationRequest, Identity, Namespace, PolymeshError } from '~/internal';
+import { AuthorizationType, ErrorCode, Signer, SignerValue } from '~/types';
 import {
   authorizationDataToAuthorization,
   authorizationTypeToMeshAuthorizationType,
   booleanToBool,
   identityIdToString,
   momentToDate,
+  numberToU64,
   signerToSignerValue,
   signerValueToSignatory,
   signerValueToSigner,
@@ -19,7 +21,7 @@ import {
  */
 export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
   /**
-   * Fetch all pending authorization requests for which this identity is the target
+   * Fetch all pending Authorization Requests for which this Signer is the target
    *
    * @param opts.type - fetch only authorizations of this type. Fetches all types if not passed
    * @param opts.includeExpired - whether to include expired authorizations. Defaults to true
@@ -53,6 +55,40 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     }
 
     return this.createAuthorizationRequests(result.map(auth => ({ auth, target: signerValue })));
+  }
+
+  /**
+   * Retrieve a single Authorization Request targeting this Signer by its ID
+   *
+   * @throws if there is no Authorization Request with the passed ID targeting this Signer
+   */
+  public async getOne(args: { id: BigNumber }): Promise<AuthorizationRequest> {
+    const {
+      context,
+      parent,
+      context: {
+        polymeshApi: { query },
+      },
+    } = this;
+    const { id } = args;
+
+    const signerValue = signerToSignerValue(parent);
+    const signatory = signerValueToSignatory(signerValue, context);
+    const rawId = numberToU64(id, context);
+
+    const auth = await query.identity.authorizations(signatory, rawId);
+
+    if (
+      authorizationDataToAuthorization(auth.authorization_data, context).type ===
+      AuthorizationType.NoData
+    ) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Authorization Request does not exist',
+      });
+    }
+
+    return this.createAuthorizationRequests([{ auth, target: signerValue }])[0];
   }
 
   /**

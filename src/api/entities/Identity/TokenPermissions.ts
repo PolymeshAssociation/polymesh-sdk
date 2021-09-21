@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import {
@@ -13,8 +14,8 @@ import {
   waivePermissions,
   WaivePermissionsParams,
 } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
+import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
   Ensured,
   ErrorCode,
@@ -22,6 +23,7 @@ import {
   ModuleName,
   PermissionType,
   ProcedureMethod,
+  ResultSet,
   TokenWithGroup,
   TxTag,
   TxTags,
@@ -36,6 +38,7 @@ import {
   tickerToString,
 } from '~/utils/conversion';
 import {
+  calculateNextKey,
   createProcedureMethod,
   getTicker,
   isModuleOrTagMatch,
@@ -271,8 +274,8 @@ export class TokenPermissions extends Namespace<Identity> {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Externalagents,
-        eventId: EventIdEnum.AgentAdded,
+        moduleId: ModuleId.Externalagents,
+        eventId: EventId.AgentAdded,
         eventArg1: padString(ticker, MAX_TICKER_LENGTH),
       })
     );
@@ -292,4 +295,69 @@ export class TokenPermissions extends Namespace<Identity> {
     SetPermissionGroupParams,
     CustomPermissionGroup | KnownPermissionGroup
   >;
+
+  /**
+   * Retrieve all Events triggered by Operations this Identity has performed on a specific Security Token
+   *
+   * @param opts.moduleId - filters results by module
+   * @param opts.eventId - filters results by event
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware
+   * @note supports pagination
+   */
+  public async getOperationHistory(opts: {
+    token: string | SecurityToken;
+    moduleId?: ModuleId;
+    eventId?: EventId;
+    size?: number;
+    start?: number;
+  }): Promise<ResultSet<EventIdentifier>> {
+    const {
+      context,
+      parent: { did },
+    } = this;
+
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const { token, moduleId: pallet_name, eventId: event_id, size, start } = opts;
+
+    const ticker = getTicker(token);
+
+    const result = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
+      tickerExternalAgentActions({
+        ticker,
+        caller_did: did,
+        pallet_name,
+        event_id,
+        count: size,
+        skip: start,
+      })
+    );
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const {
+      data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
+    } = result;
+
+    const { items, totalCount: count } = tickerExternalAgentActionsResult;
+
+    const data = items.map(item => {
+      const { block_id: blockId, datetime, event_idx: eventIndex } = item;
+
+      return {
+        blockNumber: new BigNumber(blockId),
+        blockDate: new Date(`${datetime}Z`),
+        eventIndex,
+      };
+    });
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
 }
