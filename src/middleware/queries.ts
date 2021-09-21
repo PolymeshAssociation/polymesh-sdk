@@ -14,6 +14,7 @@ import {
   QueryScopesByIdentityArgs,
   QuerySettlementsArgs,
   QueryTickerExternalAgentHistoryArgs,
+  QueryTickerExternalAgentActionsArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
@@ -686,7 +687,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
- * Get the transaction history of each external agent of a token
+  * Get the transaction history of each external agent of a token
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
@@ -699,6 +700,54 @@ export function tickerExternalAgentHistory(
           datetime
           block_id
           event_idx
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+          
+/**
+ * @hidden
+ *
+ * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Security Token
+ */
+export function tickerExternalAgentActions(
+  variables: QueryTickerExternalAgentActionsArgs
+): GraphqlQuery<QueryTickerExternalAgentActionsArgs> {
+  const query = gql`
+    query TickerExternalAgentActionsQuery(
+      $ticker: String!
+      $caller_did: String
+      $pallet_name: ModuleIdEnum
+      $event_id: EventIdEnum
+      $max_block: Int
+      $count: Int
+      $skip: Int
+      $order: Order
+    ) {
+      tickerExternalAgentActions(
+        ticker: $ticker
+        caller_did: $caller_did
+        pallet_name: $pallet_name
+        event_id: $event_id
+        max_block: $max_block
+        count: $count
+        skip: $skip
+        order: $order
+      ) {
+        totalCount
+        items {
+          datetime
+          block_id
+          event_idx
+          pallet_name
+          event_id
+          caller_did
         }
       }
     }

@@ -24,6 +24,7 @@ import {
   scopesByIdentity,
   settlements,
   tickerExternalAgentHistory,
+  tickerExternalAgentActions,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
   transactionByHash,
@@ -287,6 +288,20 @@ describe('tickerExternalAgentHistory', () => {
     };
 
     const result = tickerExternalAgentHistory(variables);
+    
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('tickerExternalAgentActions', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      ticker: 'SOMETICKER',
+      caller_did: 'someDid',
+    };
+
+    const result = tickerExternalAgentActions(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
