@@ -10,7 +10,7 @@ import {
 import sinon from 'sinon';
 
 import { Context, Entity, SecurityToken, TransactionQueue } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
+import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TokenIdentifier, TokenIdentifierType } from '~/types';
@@ -657,6 +657,52 @@ describe('SecurityToken class', () => {
       const queue = await securityToken.controllerTransfer({ originPortfolio, amount });
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getOperationHistory', () => {
+    test('should return a list of agent operations', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const securityToken = new SecurityToken({ ticker }, context);
+
+      const did = 'someDid';
+      const blockId = new BigNumber(1);
+      const eventIndex = 'eventId';
+      const datetime = '2020-10-10';
+
+      dsMockUtils.createApolloQueryStub(
+        tickerExternalAgentHistory({
+          ticker,
+        }),
+        {
+          tickerExternalAgentHistory: [
+            /* eslint-disable @typescript-eslint/naming-convention */
+            {
+              did,
+              history: [
+                {
+                  block_id: blockId.toNumber(),
+                  datetime,
+                  event_idx: eventIndex,
+                },
+              ],
+            },
+            /* eslint-enable @typescript-eslint/naming-convention */
+          ],
+        }
+      );
+
+      const result = await securityToken.getOperationHistory();
+
+      expect(result.length).toEqual(1);
+      expect(result[0].identity.did).toEqual(did);
+      expect(result[0].history.length).toEqual(1);
+      expect(result[0].history[0]).toEqual({
+        blockNumber: blockId,
+        blockDate: new Date(`${datetime}Z`),
+        eventIndex,
+      });
     });
   });
 

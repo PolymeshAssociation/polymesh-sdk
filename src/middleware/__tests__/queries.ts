@@ -23,6 +23,7 @@ import {
   proposalVotes,
   scopesByIdentity,
   settlements,
+  tickerExternalAgentHistory,
   tickerExternalAgentActions,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
@@ -275,6 +276,19 @@ describe('getHistoryOfPaymentEventsForCa', () => {
 
     const result = getHistoryOfPaymentEventsForCa(variables);
 
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+  });
+});
+
+describe('tickerExternalAgentHistory', () => {
+  test('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      ticker: 'SOMETICKER',
+    };
+
+    const result = tickerExternalAgentHistory(variables);
+    
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });

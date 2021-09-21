@@ -13,6 +13,7 @@ import {
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
   QuerySettlementsArgs,
+  QueryTickerExternalAgentHistoryArgs,
   QueryTickerExternalAgentActionsArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
@@ -683,6 +684,33 @@ export function getHistoryOfPaymentEventsForCa(
   };
 }
 
+/**
+ * @hidden
+ *
+  * Get the transaction history of each external agent of a token
+ */
+export function tickerExternalAgentHistory(
+  variables: QueryTickerExternalAgentHistoryArgs
+): GraphqlQuery<QueryTickerExternalAgentHistoryArgs> {
+  const query = gql`
+    query TickerExternalAgentHistoryQuery($ticker: String!) {
+      tickerExternalAgentHistory(ticker: $ticker) {
+        did
+        history {
+          datetime
+          block_id
+          event_idx
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+          
 /**
  * @hidden
  *
