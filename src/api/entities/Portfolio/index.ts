@@ -8,6 +8,7 @@ import {
   Identity,
   moveFunds,
   MoveFundsParams,
+  PolymeshError,
   quitCustody,
   SecurityToken,
   setCustodian,
@@ -15,7 +16,7 @@ import {
 } from '~/internal';
 import { settlements } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ProcedureMethod, ResultSet } from '~/types';
+import { Ensured, ErrorCode, ProcedureMethod, ResultSet } from '~/types';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -45,10 +46,12 @@ interface HumanReadable {
   id?: string;
 }
 
+const notExistsMessage = 'The Portfolio was removed and no longer exists';
+
 /**
  * Represents a base Portfolio for a specific Identity in the Polymesh blockchain
  */
-export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
+export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -146,10 +149,18 @@ export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
     } = this;
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
-    const [totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
+    const [exists, totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
+      this.exists(),
       portfolio.portfolioAssetBalances.entries(rawPortfolioId),
       portfolio.portfolioLockedAssets.entries(rawPortfolioId),
     ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
 
     const assetBalances: Record<string, PortfolioBalance> = {};
 
@@ -240,7 +251,17 @@ export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
     } = this;
 
     const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
-    const portfolioCustodian = await portfolio.portfolioCustodian(rawPortfolioId);
+    const [portfolioCustodian, exists] = await Promise.all([
+      portfolio.portfolioCustodian(rawPortfolioId),
+      this.exists(),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
 
     try {
       const rawIdentityId = portfolioCustodian.unwrap();
@@ -277,7 +298,7 @@ export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const { account, ticker, size, start } = filters;
 
-    const result = await context.queryMiddleware<Ensured<Query, 'settlements'>>(
+    const settlementsPromise = context.queryMiddleware<Ensured<Query, 'settlements'>>(
       settlements({
         identityId: did,
         portfolioNumber: number ? number.toString() : null,
@@ -287,6 +308,15 @@ export class Portfolio extends Entity<UniqueIdentifiers, HumanReadable> {
         skip: start,
       })
     );
+
+    const [result, exists] = await Promise.all([settlementsPromise, this.exists()]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
 
     const {
       data: { settlements: settlementsResult },

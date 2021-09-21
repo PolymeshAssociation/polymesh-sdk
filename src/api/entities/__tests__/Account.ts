@@ -198,8 +198,9 @@ describe('Account class', () => {
             spec_version_id: 2006,
             params: [],
             block_id: blockNumber1.toNumber(),
-            address: address,
+            address,
             success: 0,
+            signedby_address: 1,
           },
           {
             module_id: ModuleIdEnum.Asset,
@@ -209,6 +210,7 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber2.toNumber(),
             success: 1,
+            signedby_address: 1,
           },
         ],
       };
@@ -316,6 +318,12 @@ describe('Account class', () => {
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       expect(account.toJson()).toBe(account.address);
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return true', () => {
+      return expect(account.exists()).resolves.toBe(true);
     });
   });
 

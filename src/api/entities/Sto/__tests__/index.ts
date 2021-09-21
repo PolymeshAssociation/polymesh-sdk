@@ -279,6 +279,7 @@ describe('Sto class', () => {
       const raiseToken = 'USD';
       const offeringTokenAmount = new BigNumber(10000);
       const raiseTokenAmount = new BigNumber(1000);
+      const datetime = '2020-10-10';
 
       const items = [
         {
@@ -287,6 +288,7 @@ describe('Sto class', () => {
           raiseToken,
           offeringTokenAmount: offeringTokenAmount.toNumber(),
           raiseTokenAmount: raiseTokenAmount.toNumber(),
+          datetime: '2020-10-10',
         },
       ];
 
@@ -417,11 +419,31 @@ describe('Sto class', () => {
     });
   });
 
+  describe('method: exists', () => {
+    test('should return whether the Offering exists', async () => {
+      const sto = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+
+      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockFundraiser()),
+      });
+
+      let result = await sto.exists();
+      expect(result).toBe(true);
+
+      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      result = await sto.exists();
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
-      const token = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+      const sto = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
-      expect(token.toJson()).toEqual({
+      expect(sto.toJson()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
       });

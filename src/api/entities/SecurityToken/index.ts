@@ -1,4 +1,5 @@
 import { bool, Option, StorageKey } from '@polkadot/types';
+import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
   AssetName,
@@ -25,11 +26,12 @@ import {
   transferTokenOwnership,
   TransferTokenOwnershipParams,
 } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
+import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   Ensured,
   EventIdentifier,
+  HistoricAgentOperation,
   ProcedureMethod,
   SubCallback,
   TokenIdentifier,
@@ -487,6 +489,49 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
    * Force a transfer from a given Portfolio to the caller’s default Portfolio
    */
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
+
+  /**
+   * Retrieve this Security Token's Operation History
+   *
+   * @note Operations are grouped by the Agent Identity who performed them
+   *
+   * @note uses the middleware
+   */
+  public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
+    const { context, ticker } = this;
+
+    const {
+      data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistory'>>(
+      tickerExternalAgentHistory({
+        ticker,
+      })
+    );
+
+    return tickerExternalAgentHistoryResult.map(({ did, history }) => ({
+      identity: new Identity({ did }, context),
+      history: history.map(({ block_id: blockNumber, datetime, event_idx: eventIndex }) => {
+        return {
+          blockNumber: new BigNumber(blockNumber),
+          blockDate: new Date(datetime),
+          eventIndex,
+        };
+      }),
+    }));
+  }
+
+  /**
+   * Determine whether this Security Token exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { ticker, context } = this;
+
+    const tokenSize = await context.polymeshApi.query.asset.tokens.size(
+      stringToTicker(ticker, context)
+    );
+
+    return !tokenSize.isZero();
+  }
 
   /**
    * Return the Token's ticker

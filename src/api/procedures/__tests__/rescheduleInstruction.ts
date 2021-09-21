@@ -51,7 +51,7 @@ describe('rescheduleInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the instruction is not Failed', async () => {
+  test('should throw an error if the instruction is not Failed', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {

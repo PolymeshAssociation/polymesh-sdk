@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
@@ -7,6 +8,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { Distributions } from '../Distributions';
 
@@ -78,6 +80,133 @@ describe('Distributions class', () => {
       const queue = await distributions.configureDividendDistribution(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getOne', () => {
+    beforeAll(() => {
+      sinon.stub(utilsConversionModule, 'stringToTicker');
+      sinon.stub(utilsConversionModule, 'numberToU32');
+    });
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the requested Distribution', async () => {
+      const ticker = 'SOME_TICKER';
+      const id = new BigNumber(1);
+
+      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCorporateAction({
+            kind: 'PredictableBenefit',
+            targets: {
+              identities: ['someDid'],
+              treatment: 'Exclude',
+            },
+            /* eslint-disable @typescript-eslint/naming-convention */
+            decl_date: 0,
+            record_date: null,
+            default_withholding_tax: 3,
+            withholding_tax: [],
+            /* eslint-enable @typescript-eslint/naming-convention */
+          })
+        ),
+      });
+      dsMockUtils.createQueryStub('corporateAction', 'details', {
+        returnValue: dsMockUtils.createMockText('something'),
+      });
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockDistribution({
+            from: { did: 'someDid', kind: 'Default' },
+            currency: 'CLP',
+            /* eslint-disable @typescript-eslint/naming-convention */
+            per_share: 1000000000,
+            amount: 100000000000,
+            remaining: 5000000000,
+            reclaimed: false,
+            payment_at: 10000000000,
+            expires_at: null,
+            /* eslint-enable @typescript-eslint/naming-convention */
+          })
+        ),
+      });
+
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+
+      const target = new Distributions(token, context);
+
+      const { distribution, details } = await target.getOne({ id });
+
+      expect(distribution.id).toEqual(id);
+      expect(distribution.ticker).toBe(ticker);
+      expect(distribution instanceof DividendDistribution).toBe(true);
+      expect(details.fundsReclaimed).toBe(false);
+      expect(details.remainingFunds).toEqual(new BigNumber(5000));
+    });
+
+    test('should throw an error if the Distribution does not exist', async () => {
+      const ticker = 'SOME_TICKER';
+      const id = new BigNumber(1);
+
+      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCorporateAction({
+            kind: 'PredictableBenefit',
+            targets: {
+              identities: ['someDid'],
+              treatment: 'Exclude',
+            },
+            /* eslint-disable @typescript-eslint/naming-convention */
+            decl_date: 0,
+            record_date: null,
+            default_withholding_tax: 3,
+            withholding_tax: [],
+            /* eslint-enable @typescript-eslint/naming-convention */
+          })
+        ),
+      });
+      dsMockUtils.createQueryStub('corporateAction', 'details', {
+        returnValue: dsMockUtils.createMockText('something'),
+      });
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+
+      const target = new Distributions(token, context);
+
+      await expect(target.getOne({ id })).rejects.toThrow(
+        'The Dividend Distribution does not exist'
+      );
+
+      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockDistribution({
+            from: { did: 'someDid', kind: 'Default' },
+            currency: 'CLP',
+            /* eslint-disable @typescript-eslint/naming-convention */
+            per_share: 1000,
+            amount: 100000,
+            remaining: 5000,
+            reclaimed: false,
+            payment_at: 100000000,
+            expires_at: null,
+            /* eslint-enable @typescript-eslint/naming-convention */
+          })
+        ),
+      });
+
+      return expect(target.getOne({ id })).rejects.toThrow(
+        'The Dividend Distribution does not exist'
+      );
     });
   });
 

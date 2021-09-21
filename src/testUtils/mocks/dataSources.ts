@@ -2159,6 +2159,10 @@ export const createMockAuthorizationData = (
     | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
     | { BecomeAgent: [Ticker, AgentGroup] }
 ): AuthorizationData => {
+  if (isCodec<AuthorizationData>(authorizationData)) {
+    return authorizationData;
+  }
+
   return createMockEnum(authorizationData) as AuthorizationData;
 };
 
@@ -2167,12 +2171,12 @@ export const createMockAuthorizationData = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAuthorization = (authorization?: {
-  authorization_data: AuthorizationData;
-  authorized_by: IdentityId;
+  authorization_data: AuthorizationData | Parameters<typeof createMockAuthorizationData>[0];
+  authorized_by: IdentityId | Parameters<typeof createMockIdentityId>[0];
   expiry: Option<Moment>;
-  auth_id: u64;
+  auth_id: u64 | Parameters<typeof createMockU64>[0];
 }): Authorization => {
-  const auth = authorization || {
+  const { authorization_data, authorized_by, expiry, auth_id } = authorization || {
     authorization_data: createMockAuthorizationData(),
     authorized_by: createMockIdentityId(),
     expiry: createMockOption(),
@@ -2181,7 +2185,10 @@ export const createMockAuthorization = (authorization?: {
 
   return createMockCodec(
     {
-      ...auth,
+      authorization_data: createMockAuthorizationData(authorization_data),
+      authorized_by: createMockIdentityId(authorized_by),
+      expiry: createMockOption(expiry),
+      auth_id: createMockU64(auth_id),
     },
     !authorization
   ) as Authorization;

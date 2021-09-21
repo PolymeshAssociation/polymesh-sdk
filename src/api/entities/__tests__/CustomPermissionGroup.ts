@@ -20,6 +20,8 @@ describe('CustomPermissionGroup class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
+
+    sinon.stub(utilsConversionModule, 'stringToTicker');
   });
 
   beforeEach(() => {
@@ -101,7 +103,6 @@ describe('CustomPermissionGroup class', () => {
     test('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      sinon.stub(utilsConversionModule, 'stringToTicker');
       sinon.stub(utilsConversionModule, 'numberToU32');
 
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
@@ -133,6 +134,28 @@ describe('CustomPermissionGroup class', () => {
         transactions: { type: 'Include', values: ['sto.invest', 'identity.addClaim'] },
         transactionGroups: [],
       });
+    });
+  });
+
+  describe('method: exists', () => {
+    test('should return whether the Custom Permission Group exists', async () => {
+      const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
+
+      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
+        returnValue: dsMockUtils.createMockU32(0),
+      });
+
+      await expect(customPermissionGroup.exists()).resolves.toBe(false);
+
+      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
+        returnValue: dsMockUtils.createMockU32(10),
+      });
+
+      await expect(customPermissionGroup.exists()).resolves.toBe(true);
+
+      customPermissionGroup.id = new BigNumber(0);
+
+      return expect(customPermissionGroup.exists()).resolves.toBe(false);
     });
   });
 });

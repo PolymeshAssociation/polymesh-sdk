@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import {
@@ -6,11 +7,12 @@ import {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,
   Namespace,
+  PolymeshError,
   removeCheckpointSchedule,
   RemoveCheckpointScheduleParams,
   SecurityToken,
 } from '~/internal';
-import { CalendarPeriod, ProcedureMethod, ScheduleWithDetails } from '~/types';
+import { CalendarPeriod, ErrorCode, ProcedureMethod, ScheduleWithDetails } from '~/types';
 import {
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
@@ -53,6 +55,26 @@ export class Schedules extends Namespace<SecurityToken> {
    * Remove the supplied Checkpoint Schedule for a given Security Token
    */
   public remove: ProcedureMethod<RemoveCheckpointScheduleParams, void>;
+
+  /**
+   * Retrieve a single Checkpoint Schedule associated to this Security Token by its ID
+   *
+   * @throws if there is no Schedule with the passed ID
+   */
+  public async getOne({ id }: { id: BigNumber }): Promise<ScheduleWithDetails> {
+    const schedules = await this.get();
+
+    const result = schedules.find(({ schedule }) => schedule.id.eq(id));
+
+    if (!result) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Schedule does not exist',
+      });
+    }
+
+    return result;
+  }
 
   /**
    * Retrieve all active Checkpoint Schedules

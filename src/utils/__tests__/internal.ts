@@ -356,7 +356,7 @@ describe('requestAtBlock', () => {
     expect(res).toBe(returnValue);
   });
 
-  test('should throw an error if the node is not archive', async () => {
+  test('should throw an error if the node is not archive', () => {
     const context = dsMockUtils.getContextInstance({
       isArchiveNode: false,
     });
@@ -365,7 +365,7 @@ describe('requestAtBlock', () => {
       returnValue: dsMockUtils.createMockU32(5),
     });
 
-    await expect(
+    return expect(
       requestAtBlock(
         queryStub,
         {

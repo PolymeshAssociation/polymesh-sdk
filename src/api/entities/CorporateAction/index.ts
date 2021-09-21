@@ -159,7 +159,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   public modifyCheckpoint: ProcedureMethod<ModifyCaCheckpointParams, void>;
 
   /**
-   * Retrieve whether the Corporate Action exists
+   * Determine whether this Corporate Action exists on chain
    */
   public async exists(): Promise<boolean> {
     const corporateAction = await this.fetchCorporateAction();

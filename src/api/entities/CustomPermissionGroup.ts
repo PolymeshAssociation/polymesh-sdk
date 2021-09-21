@@ -12,6 +12,7 @@ import {
   numberToU32,
   stringToTicker,
   transactionPermissionsToTxGroups,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -101,5 +102,19 @@ export class CustomPermissionGroup extends PermissionGroup {
       transactions,
       transactionGroups,
     };
+  }
+
+  /**
+   * Determine whether this Custom Permission Group exists on chain
+   */
+  public async exists(): Promise<boolean> {
+    const { ticker, id, context } = this;
+
+    const nextId = await context.polymeshApi.query.externalAgents.agIdSequence(
+      stringToTicker(ticker, context)
+    );
+
+    // 1 < id < next
+    return u32ToBigNumber(nextId).gt(id) && id.gte(1);
   }
 }

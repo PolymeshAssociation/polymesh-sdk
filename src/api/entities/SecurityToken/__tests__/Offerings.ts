@@ -88,6 +88,26 @@ describe('Offerings class', () => {
     });
   });
 
+  describe('method: getOne', () => {
+    test('should return the requested Offering', async () => {
+      const id = new BigNumber(1);
+      const result = await offerings.getOne({ id });
+
+      expect(result).toEqual(entityMockUtils.getStoInstance({ ticker }));
+    });
+
+    test('should throw an error if the Offering does not exist', () => {
+      entityMockUtils.configureMocks({
+        stoOptions: {
+          exists: false,
+        },
+      });
+
+      const id = new BigNumber(1);
+      return expect(offerings.getOne({ id })).rejects.toThrow('The Offering does not exist');
+    });
+  });
+
   describe('method: get', () => {
     let rawTicker: Ticker;
     let rawName: FundraiserName;
