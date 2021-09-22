@@ -676,16 +676,12 @@ export default {
     AuthorizationData: {
       _enum: {
         AttestPrimaryKeyRotation: 'IdentityId',
-        RotatePrimaryKey: 'IdentityId',
+        RotatePrimaryKey: '',
         TransferTicker: 'Ticker',
-        TransferPrimaryIssuanceAgent: 'Ticker',
         AddMultiSigSigner: 'AccountId',
         TransferAssetOwnership: 'Ticker',
         JoinIdentity: 'Permissions',
         PortfolioCustody: 'PortfolioId',
-        Custom: 'Ticker',
-        NoData: '',
-        TransferCorporateActionAgent: 'Ticker',
         BecomeAgent: '(Ticker, AgentGroup)',
         AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
       },
@@ -794,21 +790,17 @@ export default {
       _enum: [
         'AssetRegisterTicker',
         'AssetIssue',
-        'AssetAddDocument',
+        'AssetAddDocuments',
         'AssetCreateAsset',
-        'AssetCreateCheckpointSchedule',
-        'DividendNew',
+        'CheckpointCreateSchedule',
         'ComplianceManagerAddComplianceRequirement',
-        'IdentityRegisterDid',
         'IdentityCddRegisterDid',
         'IdentityAddClaim',
-        'IdentitySetPrimaryKey',
         'IdentityAddSecondaryKeysWithAuthorization',
         'PipsPropose',
-        'VotingAddBallot',
         'ContractsPutCode',
-        'BallotAttachBallot',
-        'DistributionDistribute',
+        'CorporateBallotAttachBallot',
+        'CapitalDistributionDistribute',
       ],
     },
     CddStatus: {
@@ -885,8 +877,8 @@ export default {
         TransferAssetOwnership: '',
         JoinIdentity: '',
         PortfolioCustody: '',
-        Custom: '',
-        NoData: '',
+        BecomeAgent: '',
+        AddRelayerPayingKey: '',
       },
     },
     ProposalDetails: {
@@ -1139,17 +1131,6 @@ export default {
     PriceTier: {
       total: 'Balance',
       price: 'Balance',
-    },
-    AssetMigrationError: {
-      _enum: {
-        AssetDocumentFail: '(Ticker, DocumentId)',
-      },
-    },
-    MigrationError: {
-      _enum: {
-        DecodeKey: 'Vec<u8>',
-        Map: 'AssetMigrationError',
-      },
     },
     PermissionedIdentityPrefs: {
       intended_count: 'u32',

@@ -1,5 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -29,6 +29,7 @@ describe('modifyCorporateActionAgent procedure', () => {
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let ticker: string;
   let rawTicker: Ticker;
+  let rawAgentGroup: AgentGroup;
   let target: string;
   let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
@@ -47,12 +48,13 @@ describe('modifyCorporateActionAgent procedure', () => {
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
     target = 'someDid';
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target),
     });
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferCorporateActionAgent: rawTicker,
+      BecomeAgent: [rawTicker, rawAgentGroup],
     });
   });
 

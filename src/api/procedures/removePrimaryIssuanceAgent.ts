@@ -57,7 +57,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   return {
     permissions: {
-      transactions: [TxTags.asset.RemovePrimaryIssuanceAgent],
+      transactions: [TxTags.externalAgents.RemoveAgent],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],
     },
