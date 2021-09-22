@@ -13,8 +13,8 @@ import {
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
   QuerySettlementsArgs,
-  QueryTickerExternalAgentHistoryArgs,
   QueryTickerExternalAgentActionsArgs,
+  QueryTickerExternalAgentHistoryArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
@@ -279,8 +279,8 @@ export function tokensByTrustedClaimIssuer(
   variables: QueryTokensByTrustedClaimIssuerArgs
 ): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
   const query = gql`
-    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
-      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
+    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!) {
+      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid)
     }
   `;
 
@@ -687,7 +687,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
-  * Get the transaction history of each external agent of a token
+ * Get the transaction history of each external agent of a token
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
@@ -710,7 +710,7 @@ export function tickerExternalAgentHistory(
     variables,
   };
 }
-          
+
 /**
  * @hidden
  *
