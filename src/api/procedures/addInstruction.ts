@@ -27,6 +27,7 @@ import {
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   dateToMoment,
   endConditionToSettlementType,
@@ -149,7 +150,8 @@ async function getTxArgsAndErrors(
   context: Context
 ): Promise<{
   errIndexes: {
-    legErrIndexes: number[];
+    legEmptyErrIndexes: number[];
+    legLengthErrIndexes: number[];
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
   };
@@ -159,13 +161,18 @@ async function getTxArgsAndErrors(
   const addAndAffirmInstructionParams: AddAndAffirmInstructionParams = [];
   const addInstructionParams: InternalAddInstructionParams = [];
 
-  const legErrIndexes: number[] = [];
+  const legEmptyErrIndexes: number[] = [];
+  const legLengthErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
   const datesErrIndexes: number[] = [];
 
   await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate }, i) => {
     if (!legs.length) {
-      legErrIndexes.push(i);
+      legEmptyErrIndexes.push(i);
+    }
+
+    if (legs.length > MAX_LEGS_LENGTH) {
+      legLengthErrIndexes.push(i);
     }
 
     let endCondition;
@@ -184,7 +191,12 @@ async function getTxArgsAndErrors(
       datesErrIndexes.push(i);
     }
 
-    if (!legErrIndexes.length && !endBlockErrIndexes.length && !datesErrIndexes.length) {
+    if (
+      !legEmptyErrIndexes.length &&
+      !legLengthErrIndexes.length &&
+      !endBlockErrIndexes.length &&
+      !datesErrIndexes.length
+    ) {
       const rawVenueId = numberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
@@ -243,7 +255,8 @@ async function getTxArgsAndErrors(
 
   return {
     errIndexes: {
-      legErrIndexes,
+      legEmptyErrIndexes,
+      legLengthErrIndexes,
       endBlockErrIndexes,
       datesErrIndexes,
     },
@@ -282,17 +295,28 @@ export async function prepareAddInstruction(
   }
 
   const {
-    errIndexes: { legErrIndexes, endBlockErrIndexes, datesErrIndexes },
+    errIndexes: { legEmptyErrIndexes, legLengthErrIndexes, endBlockErrIndexes, datesErrIndexes },
     addAndAffirmInstructionParams,
     addInstructionParams,
   } = await getTxArgsAndErrors(instructions, portfoliosToAffirm, latestBlock, venueId, context);
 
-  if (legErrIndexes.length) {
+  if (legEmptyErrIndexes.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "The legs array can't be empty",
       data: {
-        failedInstructionIndexes: legErrIndexes,
+        failedInstructionIndexes: legEmptyErrIndexes,
+      },
+    });
+  }
+
+  if (legLengthErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Legs size exceeds limit',
+      data: {
+        maxLength: MAX_LEGS_LENGTH,
+        failedInstructionIndexes: legLengthErrIndexes,
       },
     });
   }

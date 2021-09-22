@@ -260,6 +260,35 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
+  test('should throw an error if the legs array exceeds limit', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+    });
+
+    let error;
+
+    const legs = Array(11).fill({
+      from,
+      to,
+      amount,
+      token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+    });
+
+    try {
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Legs size exceeds limit');
+  });
+
   test('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
 
