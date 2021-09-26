@@ -289,7 +289,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     if (token.owner_did.isEmpty) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: `There is no Security Token with ticker "${ticker}"`,
       });
     }

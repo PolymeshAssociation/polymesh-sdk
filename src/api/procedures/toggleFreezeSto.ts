@@ -39,7 +39,7 @@ export async function prepareToggleFreezeSto(
 
   if (timing === StoTimingStatus.Expired) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The STO has already ended',
     });
   }
@@ -47,7 +47,7 @@ export async function prepareToggleFreezeSto(
   if (freeze) {
     if (sale === StoSaleStatus.Frozen) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The STO is already frozen',
       });
     }
@@ -56,14 +56,14 @@ export async function prepareToggleFreezeSto(
   } else {
     if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.UnmetPrerequisite,
         message: 'The STO is already closed',
       });
     }
 
     if (sale !== StoSaleStatus.Frozen) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The STO is already unfrozen',
       });
     }

@@ -77,7 +77,7 @@ describe('Context class', () => {
     });
 
     expect(() => context.polymeshApi.tx).toThrow(
-      'Cannot perform transactions without an active account'
+      'Cannot perform transactions without an active Account'
     );
   });
 
@@ -361,7 +361,7 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      expect(() => context.getAccounts()).toThrow('There is no account associated with the SDK');
+      expect(() => context.getAccounts()).toThrow('There is no Account associated with the SDK');
     });
   });
 
@@ -431,7 +431,7 @@ describe('Context class', () => {
       });
 
       return expect(context.accountBalance()).rejects.toThrow(
-        'There is no account associated with the current SDK instance'
+        'There is no Account associated with the current SDK instance'
       );
     });
 
@@ -540,7 +540,7 @@ describe('Context class', () => {
       });
 
       return expect(context.accountSubsidy()).rejects.toThrow(
-        'There is no account associated with the current SDK instance'
+        'There is no Account associated with the current SDK instance'
       );
     });
 
@@ -669,7 +669,7 @@ describe('Context class', () => {
       });
 
       return expect(context.getCurrentIdentity()).rejects.toThrow(
-        'The current account does not have an associated Identity'
+        'The current Account does not have an associated Identity'
       );
     });
   });
@@ -718,7 +718,7 @@ describe('Context class', () => {
         err = e;
       }
 
-      expect(err.message).toBe('There is no account associated with the current SDK instance');
+      expect(err.message).toBe('There is no Account associated with the current SDK instance');
     });
   });
 
@@ -758,7 +758,7 @@ describe('Context class', () => {
       });
 
       expect(() => context.getCurrentPair()).toThrow(
-        'There is no account associated with the current SDK instance'
+        'There is no Account associated with the current SDK instance'
       );
     });
   });

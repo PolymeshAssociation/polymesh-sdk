@@ -62,7 +62,7 @@ export async function prepareModifyInstructionAffirmation(
 
   if (!portfolios.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Current Identity is not involved in this Instruction',
     });
   }
@@ -113,7 +113,7 @@ export async function prepareModifyInstructionAffirmation(
 
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: errorMessage,
     });
   }

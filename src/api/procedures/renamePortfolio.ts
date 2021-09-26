@@ -43,7 +43,7 @@ export async function prepareRenamePortfolio(
 
   if (textToString(rawPortfolioName) === newName) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'New name is the same as current name',
     });
   }
@@ -52,7 +52,7 @@ export async function prepareRenamePortfolio(
 
   if (portfolioNames.includes(newName)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'A portfolio with that name already exists',
     });
   }

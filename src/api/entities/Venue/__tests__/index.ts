@@ -102,21 +102,6 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should throw an error if the venue doesn't exist", () => {
-      dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .resolves(dsMockUtils.createMockOption());
-      dsMockUtils.createQueryStub('settlement', 'details');
-
-      entityMockUtils.configureMocks({
-        numberedPortfolioOptions: {
-          exists: false,
-        },
-      });
-
-      return expect(venue.details()).rejects.toThrow("The Venue doesn't exist");
-    });
-
     test('should return the Venue details', async () => {
       const description = 'someDescription';
       const type = VenueType.Other;
@@ -155,20 +140,6 @@ describe('Venue class', () => {
   describe('method: getInstructions', () => {
     afterAll(() => {
       sinon.restore();
-    });
-
-    test("should throw an error if the Venue doesn't exist", () => {
-      dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .resolves(dsMockUtils.createMockOption());
-
-      entityMockUtils.configureMocks({
-        numberedPortfolioOptions: {
-          exists: false,
-        },
-      });
-
-      return expect(venue.getInstructions()).rejects.toThrow("The Venue doesn't exist");
     });
 
     test("should return the Venue's pending and failed instructions", async () => {
@@ -212,20 +183,6 @@ describe('Venue class', () => {
   describe('method: getPendingInstructions', () => {
     afterAll(() => {
       sinon.restore();
-    });
-
-    test("should throw an error if the venue doesn't exist", () => {
-      dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .resolves(dsMockUtils.createMockOption());
-
-      entityMockUtils.configureMocks({
-        numberedPortfolioOptions: {
-          exists: false,
-        },
-      });
-
-      return expect(venue.getPendingInstructions()).rejects.toThrow("The Venue doesn't exist");
     });
 
     test("should return the Venue's pending instructions", async () => {
@@ -293,7 +250,7 @@ describe('Venue class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { instructions: [{ legs, tradeDate, endBlock }], venueId: id },
+            args: { instructions: [{ legs, tradeDate, endBlock }], venue },
             transformer: addInstructionTransformer,
           },
           context
@@ -344,7 +301,7 @@ describe('Venue class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { venueId: id, instructions },
+            args: { venue, instructions },
             transformer: undefined,
           },
           context
@@ -371,7 +328,7 @@ describe('Venue class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { venueId: id, description, type },
+            args: { venue, description, type },
             transformer: undefined,
           },
           context

@@ -99,7 +99,7 @@ export async function prepareSetTransferRestrictions(
     !exemptionsToRemoveAmount
   ) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: newRestrictionAmount
         ? 'The supplied restrictions are already in place'
         : 'There are no restrictions to remove',
@@ -112,7 +112,7 @@ export async function prepareSetTransferRestrictions(
   const finalCount = occupiedSlots + newRestrictionAmount;
   if (finalCount >= maxTransferManagers) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.LimitExceeded,
       message: 'Cannot set more Transfer Restrictions than there are slots available',
       data: {
         availableSlots: maxTransferManagers - occupiedSlots,

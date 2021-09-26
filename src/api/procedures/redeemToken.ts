@@ -45,7 +45,7 @@ export async function prepareRedeemToken(
 
   if (free.lt(amount)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.InsufficientBalance,
       message: 'Insufficient free balance',
       data: {
         free,
@@ -53,14 +53,12 @@ export async function prepareRedeemToken(
     });
   }
 
-  if (amount.decimalPlaces() && !isDivisible) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Security Token must be divisible',
-    });
-  }
-
-  this.addTransaction(tx.asset.redeem, {}, rawTicker, numberToBalance(amount, context));
+  this.addTransaction(
+    tx.asset.redeem,
+    {},
+    rawTicker,
+    numberToBalance(amount, context, isDivisible)
+  );
 }
 
 /**

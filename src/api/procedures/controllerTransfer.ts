@@ -54,8 +54,8 @@ export async function prepareControllerTransfer(
 
   if (free.lt(amount)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Portfolio does not have enough free balance for this transfer',
+      code: ErrorCode.InsufficientBalance,
+      message: 'The origin Portfolio does not have enough free balance for this transfer',
       data: { free },
     });
   }
