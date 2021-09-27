@@ -93,7 +93,6 @@ import type {
   CustomAssetTypeId,
   DepositInfo,
   DidRecord,
-  DispatchableName,
   Distribution,
   Document,
   DocumentId,
@@ -110,7 +109,6 @@ import type {
   LegStatus,
   LocalCAId,
   MaybeBlock,
-  PalletName,
   PermissionedIdentityPrefs,
   Pip,
   PipId,
@@ -132,7 +130,6 @@ import type {
   SnapshottedPip,
   StoredSchedule,
   Subsidy,
-  TargetIdAuthorization,
   TargetIdentities,
   Tax,
   Ticker,
@@ -238,13 +235,13 @@ declare module '@polkadot/api/types/storage' {
         [Ticker]
       >;
       /**
-       * The next `AgentType::Custom` ID in the sequence.
+       * The next `AssetType::Custom` ID in the sequence.
        *
        * Numbers in the sequence start from 1 rather than 0.
        **/
       customTypeIdSequence: AugmentedQuery<ApiType, () => Observable<CustomAssetTypeId>, []>;
       /**
-       * Maps custom agent type ids to the registered string contents.
+       * Maps custom asset type ids to the registered string contents.
        **/
       customTypes: AugmentedQuery<
         ApiType,
@@ -252,7 +249,7 @@ declare module '@polkadot/api/types/storage' {
         [CustomAssetTypeId]
       >;
       /**
-       * Inverse map of `CustomTypes`, from registered string contents to custom agent type ids.
+       * Inverse map of `CustomTypes`, from registered string contents to custom asset type ids.
        **/
       customTypesInverse: AugmentedQuery<
         ApiType,
@@ -1055,7 +1052,7 @@ declare module '@polkadot/api/types/storage' {
         (
           arg1: Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
-        ) => Observable<Authorization>,
+        ) => Observable<Option<Authorization>>,
         [Signatory, u64]
       >;
       /**
@@ -1130,26 +1127,6 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (arg: IdentityId | string | Uint8Array) => Observable<AuthorizationNonce>,
         [IdentityId]
-      >;
-      /**
-       * Inmediate revoke of any off-chain authorization.
-       **/
-      revokeOffChainAuthorization: AugmentedQuery<
-        ApiType,
-        (
-          arg:
-            | ITuple<[Signatory, TargetIdAuthorization]>
-            | [
-                Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
-                (
-                  | TargetIdAuthorization
-                  | { target_id?: any; nonce?: any; expires_at?: any }
-                  | string
-                  | Uint8Array
-                )
-              ]
-        ) => Observable<bool>,
-        [ITuple<[Signatory, TargetIdAuthorization]>]
       >;
       /**
        * Storage version.
@@ -1357,16 +1334,6 @@ declare module '@polkadot/api/types/storage' {
         (arg: Kind | string | Uint8Array) => Observable<Bytes>,
         [Kind]
       >;
-    };
-    permissions: {
-      /**
-       * The name of the current function (aka extrinsic).
-       **/
-      currentDispatchableName: AugmentedQuery<ApiType, () => Observable<DispatchableName>, []>;
-      /**
-       * The name of the current pallet (aka module name).
-       **/
-      currentPalletName: AugmentedQuery<ApiType, () => Observable<PalletName>, []>;
     };
     pips: {
       /**
@@ -1651,21 +1618,17 @@ declare module '@polkadot/api/types/storage' {
             | ProtocolOp
             | 'AssetRegisterTicker'
             | 'AssetIssue'
-            | 'AssetAddDocument'
+            | 'AssetAddDocuments'
             | 'AssetCreateAsset'
-            | 'AssetCreateCheckpointSchedule'
-            | 'DividendNew'
+            | 'CheckpointCreateSchedule'
             | 'ComplianceManagerAddComplianceRequirement'
-            | 'IdentityRegisterDid'
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
-            | 'IdentitySetPrimaryKey'
             | 'IdentityAddSecondaryKeysWithAuthorization'
             | 'PipsPropose'
-            | 'VotingAddBallot'
             | 'ContractsPutCode'
-            | 'BallotAttachBallot'
-            | 'DistributionDistribute'
+            | 'CorporateBallotAttachBallot'
+            | 'CapitalDistributionDistribute'
             | number
             | Uint8Array
         ) => Observable<Balance>,
@@ -2477,7 +2440,6 @@ declare module '@polkadot/api/types/storage' {
        **/
       inactiveMembers: AugmentedQuery<ApiType, () => Observable<Vec<InactiveMember>>, []>;
     };
-    testUtils: {};
     timestamp: {
       /**
        * Did the timestamp get updated in this block?

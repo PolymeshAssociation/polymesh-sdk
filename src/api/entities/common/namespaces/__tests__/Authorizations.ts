@@ -64,7 +64,7 @@ describe('Authorizations class', () => {
 
     test('should retrieve all pending authorizations received by the identity and filter out expired ones', async () => {
       const did = 'someDid';
-      const filter = AuthorizationType.NoData;
+      const filter = AuthorizationType.RotatePrimaryKey;
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
@@ -129,7 +129,7 @@ describe('Authorizations class', () => {
       expect(JSON.stringify(result)).toBe(JSON.stringify(expectedAuthorizations));
 
       result = await authsNamespace.getReceived({
-        type: AuthorizationType.NoData,
+        type: AuthorizationType.RotatePrimaryKey,
         includeExpired: false,
       });
 
@@ -170,14 +170,16 @@ describe('Authorizations class', () => {
       };
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-          authorization_data: dsMockUtils.createMockAuthorizationData({
-            TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
-          }),
-          expiry: dsMockUtils.createMockOption(),
-          authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
-        }),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAuthorization({
+            auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+            authorization_data: dsMockUtils.createMockAuthorizationData({
+              TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+            }),
+            expiry: dsMockUtils.createMockOption(),
+            authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
+          })
+        ),
       });
 
       entityMockUtils.getAuthorizationRequestInstance(authParams);
@@ -210,12 +212,7 @@ describe('Authorizations class', () => {
       };
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
-        returnValue: dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
-          authorization_data: dsMockUtils.createMockAuthorizationData('NoData'),
-          expiry: dsMockUtils.createMockOption(),
-          authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
-        }),
+        returnValue: dsMockUtils.createMockOption(),
       });
 
       entityMockUtils.getAuthorizationRequestInstance(authParams);

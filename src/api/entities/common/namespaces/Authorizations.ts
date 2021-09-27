@@ -78,17 +78,14 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
 
     const auth = await query.identity.authorizations(signatory, rawId);
 
-    if (
-      authorizationDataToAuthorization(auth.authorization_data, context).type ===
-      AuthorizationType.NoData
-    ) {
+    if (auth.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: 'The Authorization Request does not exist',
       });
     }
 
-    return this.createAuthorizationRequests([{ auth, target: signerValue }])[0];
+    return this.createAuthorizationRequests([{ auth: auth.unwrap(), target: signerValue }])[0];
   }
 
   /**

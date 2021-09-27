@@ -33,6 +33,7 @@ export interface ModifyInstructionAffirmationParams {
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
   senderLegAmount: number;
+  totalLegAmount: number;
 }
 
 /**
@@ -50,7 +51,7 @@ export async function prepareModifyInstructionAffirmation(
       },
     },
     context,
-    storage: { portfolios, senderLegAmount },
+    storage: { portfolios, senderLegAmount, totalLegAmount },
   } = this;
 
   const { operation, id } = args;
@@ -73,7 +74,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PortfolioId[], u32]>;
+  let transaction: PolymeshTx<[u64, PortfolioId[], u32]> | null = null;
 
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {
@@ -93,7 +94,6 @@ export async function prepareModifyInstructionAffirmation(
     case InstructionAffirmationOperation.Reject: {
       excludeCriteria.push(AffirmationStatus.Rejected);
       errorMessage = 'The Instruction cannot be rejected';
-      transaction = settlementTx.rejectInstruction;
 
       break;
     }
@@ -118,13 +118,24 @@ export async function prepareModifyInstructionAffirmation(
     });
   }
 
-  this.addTransaction(
-    transaction,
-    { batchSize: senderLegAmount },
-    rawInstructionId,
-    validPortfolioIds,
-    numberToU32(senderLegAmount, context)
-  );
+  // rejection works a bit different
+  if (transaction) {
+    this.addTransaction(
+      transaction,
+      { batchSize: senderLegAmount },
+      rawInstructionId,
+      validPortfolioIds,
+      numberToU32(senderLegAmount, context)
+    );
+  } else {
+    this.addTransaction(
+      settlementTx.rejectInstruction,
+      { batchSize: totalLegAmount },
+      rawInstructionId,
+      validPortfolioIds[0],
+      numberToU32(totalLegAmount, context)
+    );
+  }
 
   return instruction;
 }
@@ -213,7 +224,7 @@ export async function prepareStorage(
     [[], 0]
   );
 
-  return { portfolios, senderLegAmount };
+  return { portfolios, senderLegAmount, totalLegAmount: legs.length };
 }
 
 /**
