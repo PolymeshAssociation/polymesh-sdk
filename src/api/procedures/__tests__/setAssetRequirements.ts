@@ -15,7 +15,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Condition, Requirement } from '~/types';
+import { Condition, ConditionTarget, ConditionType, Requirement } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -177,6 +177,51 @@ describe('setAssetRequirements procedure', () => {
     return expect(prepareSetAssetRequirements.call(proc, args)).rejects.toThrow(
       'The supplied condition list is equal to the current one'
     );
+  });
+
+  test('should throw an error if some of the identities list no longer exists', async () => {
+    assetCompliancesStub.withArgs(rawTicker).returns({
+      requirements: rawComplianceRequirement,
+    });
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+
+    const didOne = 'someDid';
+    const didTwo = 'otherDid';
+
+    let error;
+
+    try {
+      await prepareSetAssetRequirements.call(proc, {
+        ticker,
+        requirements: [
+          [
+            {
+              target: ConditionTarget.Receiver,
+              type: ConditionType.IsIdentity,
+              identity: entityMockUtils.getIdentityInstance({
+                did: didOne,
+                exists: false,
+              }),
+            },
+          ],
+          [
+            {
+              target: ConditionTarget.Receiver,
+              type: ConditionType.IsIdentity,
+              identity: entityMockUtils.getIdentityInstance({
+                did: didTwo,
+                exists: false,
+              }),
+            },
+          ],
+        ],
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Some identities no longer exists');
+    expect(error.data.dids).toEqual([didOne, didTwo]);
   });
 
   test('should add a reset asset compliance transaction and add compliance requirement transactions to the queue', async () => {

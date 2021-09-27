@@ -366,7 +366,7 @@ export type MultiClaimCondition = ConditionBase & {
 
 export type IdentityCondition = ConditionBase & {
   type: ConditionType.IsIdentity;
-  identity: Identity;
+  identity: Identity | string;
 };
 
 export type ExternalAgentCondition = ConditionBase & {

@@ -2155,9 +2155,8 @@ export function requirementToComplianceRequirement(
       const { claims } = condition;
       conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
     } else if (condition.type === ConditionType.IsIdentity) {
-      const {
-        identity: { did },
-      } = condition;
+      const { identity } = condition;
+      const did = identity instanceof Identity ? identity.did : identity;
       conditionContent = stringToTargetIdentity(did, context);
     } else {
       // IsExternalAgent does not exist as a condition type in Polymesh, it's SDK sugar

@@ -23,8 +23,8 @@ import {
   proposalVotes,
   scopesByIdentity,
   settlements,
-  tickerExternalAgentHistory,
   tickerExternalAgentActions,
+  tickerExternalAgentHistory,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
   transactionByHash,
@@ -288,7 +288,7 @@ describe('tickerExternalAgentHistory', () => {
     };
 
     const result = tickerExternalAgentHistory(variables);
-    
+
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });

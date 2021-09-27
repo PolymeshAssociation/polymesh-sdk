@@ -1,7 +1,8 @@
-import { differenceWith, isEqual } from 'lodash';
+import P from 'bluebird';
+import { differenceWith, flattenDeep, isEqual } from 'lodash';
 
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { Condition, ErrorCode, TxTags } from '~/types';
+import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Condition, ConditionType, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   complianceRequirementToRequirement,
@@ -71,6 +72,29 @@ export async function prepareSetAssetRequirements(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied condition list is equal to the current one',
+    });
+  }
+
+  const identityErr: string[] = [];
+
+  await P.each(flattenDeep<Condition>(requirements), async requirement => {
+    if (requirement.type === ConditionType.IsIdentity) {
+      let { identity } = requirement;
+      identity = identity instanceof Identity ? identity : new Identity({ did: identity }, context);
+      const exits = await identity.exists();
+      if (!exits) {
+        identityErr.push(identity.did);
+      }
+    }
+  });
+
+  if (identityErr.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Some identities no longer exists',
+      data: {
+        dids: identityErr,
+      },
     });
   }
 
