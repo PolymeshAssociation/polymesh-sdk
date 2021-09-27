@@ -64,7 +64,6 @@ import type {
   FundingRoundName,
   FundraiserName,
   IdentityId,
-  InvestorUid,
   InvestorZKProofData,
   ItnRewardStatus,
   Leg,
@@ -96,7 +95,6 @@ import type {
   SkippedCount,
   SlashingSwitch,
   SnapshotResult,
-  TargetIdAuthorization,
   TargetIdentities,
   Tax,
   Ticker,
@@ -977,7 +975,9 @@ declare module '@polkadot/api/types/submittable' {
        * Taxes are withheld as specified by the CA.
        * Post-tax earnings are then transferred to the default portfolio of the `origin`'s DID.
        *
-       * All benefits are rounded by truncation (down to first integer below).
+       * All benefits are rounded by truncation, down to first integer below.
+       * Moreover, before post-tax earnings, in indivisible currencies are transferred,
+       * they are rounded down to a whole unit.
        *
        * ## Arguments
        * - `origin` which must be a holder of for a CAA of `ca_id`.
@@ -1006,6 +1006,15 @@ declare module '@polkadot/api/types/submittable' {
        *
        * The distribution will commence at `payment_at` and expire at `expires_at`,
        * if provided, or if `None`, then there's no expiry.
+       *
+       * The funds will be locked in `portfolio` from when `distribute` is called.
+       * When there's no expiry, some funds may be locked indefinitely in `portfolio`,
+       * due to claimants not withdrawing or no benefits being pushed to them.
+       * For indivisible currencies, unlocked amounts, of less than one whole unit,
+       * will not be transferable from `portfolio`.
+       * However, if we imagine that users `Alice` and `Bob` both are entitled to 1.5 units,
+       * and only receive `1` units each, then `0.5 + 0.5 = 1` units are left in `portfolio`,
+       * which is now transferrable.
        *
        * ## Arguments
        * - `origin` which must be a signer for a CAA of `ca_id`.
@@ -1052,7 +1061,9 @@ declare module '@polkadot/api/types/submittable' {
        * Taxes are withheld as specified by the CA.
        * Post-tax earnings are then transferred to the default portfolio of the `origin`'s DID.
        *
-       * All benefits are rounded by truncation (down to first integer below).
+       * All benefits are rounded by truncation, down to first integer below.
+       * Moreover, before post-tax earnings, in indivisible currencies are transferred,
+       * they are rounded down to a whole unit.
        *
        * ## Arguments
        * - `origin` which must be a holder of for a CAA of `ca_id`.
@@ -1201,7 +1212,7 @@ declare module '@polkadot/api/types/submittable' {
        * Change this group's limit for how many concurrent active members they may be.
        *
        * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
+       * * `limit` - the number of active members there may be concurrently.
        **/
       setActiveMembersLimit: AugmentedSubmittable<
         (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -1398,7 +1409,7 @@ declare module '@polkadot/api/types/submittable' {
        * Change this group's limit for how many concurrent active members they may be.
        *
        * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
+       * * `limit` - the number of active members there may be concurrently.
        **/
       setActiveMembersLimit: AugmentedSubmittable<
         (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -2221,14 +2232,10 @@ declare module '@polkadot/api/types/submittable' {
             | { AttestPrimaryKeyRotation: any }
             | { RotatePrimaryKey: any }
             | { TransferTicker: any }
-            | { TransferPrimaryIssuanceAgent: any }
             | { AddMultiSigSigner: any }
             | { TransferAssetOwnership: any }
             | { JoinIdentity: any }
             | { PortfolioCustody: any }
-            | { Custom: any }
-            | { NoData: any }
-            | { TransferCorporateActionAgent: any }
             | { BecomeAgent: any }
             | { AddRelayerPayingKey: any }
             | string
@@ -2238,7 +2245,9 @@ declare module '@polkadot/api/types/submittable' {
         [Signatory, AuthorizationData, Option<Moment>]
       >;
       /**
-       * Adds a new claim record or edits an existing one. Only called by did_issuer's secondary key.
+       * Adds a new claim record or edits an existing one.
+       *
+       * Only called by did_issuer's secondary key.
        **/
       addClaim: AugmentedSubmittable<
         (
@@ -2356,8 +2365,6 @@ declare module '@polkadot/api/types/submittable' {
        * Failure
        * - It can only called by primary key owner.
        * - Keys should be able to linked to any identity.
-       *
-       * NB: The current weight is a defensive approximation.
        **/
       addSecondaryKeysWithAuthorization: AugmentedSubmittable<
         (
@@ -2441,25 +2448,11 @@ declare module '@polkadot/api/types/submittable' {
         [IdentityId, Moment, Option<Moment>]
       >;
       /**
-       * Join an identity as a secondary identity.
-       **/
-      joinIdentityAsIdentity: AugmentedSubmittable<
-        (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
-      >;
-      /**
        * Join an identity as a secondary key.
        **/
       joinIdentityAsKey: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [u64]
-      >;
-      /**
-       * Leave an identity as a secondary identity.
-       **/
-      leaveIdentityAsIdentity: AugmentedSubmittable<
-        (did: IdentityId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [IdentityId]
       >;
       /**
        * Leave the secondary key's identity.
@@ -2567,21 +2560,6 @@ declare module '@polkadot/api/types/submittable' {
           scope: Option<Scope> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [IdentityId, ClaimType, Option<Scope>]
-      >;
-      /**
-       * It revokes the `auth` off-chain authorization of `signer`. It only takes effect if
-       * the authorized transaction is not yet executed.
-       **/
-      revokeOffchainAuthorization: AugmentedSubmittable<
-        (
-          signer: Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
-          auth:
-            | TargetIdAuthorization
-            | { target_id?: any; nonce?: any; expires_at?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Signatory, TargetIdAuthorization]
       >;
       /**
        * It sets permissions for an specific `target_key` key.
@@ -2771,7 +2749,7 @@ declare module '@polkadot/api/types/submittable' {
        * Accepts a multisig signer authorization given to signer's identity.
        *
        * # Arguments
-       * * `proposal_id` - Auth id of the authorization.
+       * * `auth_id` - Auth id of the authorization.
        **/
       acceptMultisigSignerAsIdentity: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -2781,7 +2759,7 @@ declare module '@polkadot/api/types/submittable' {
        * Accepts a multisig signer authorization given to signer's key (AccountId).
        *
        * # Arguments
-       * * `proposal_id` - Auth id of the authorization.
+       * * `auth_id` - Auth id of the authorization.
        **/
       acceptMultisigSignerAsKey: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -3485,21 +3463,17 @@ declare module '@polkadot/api/types/submittable' {
             | ProtocolOp
             | 'AssetRegisterTicker'
             | 'AssetIssue'
-            | 'AssetAddDocument'
+            | 'AssetAddDocuments'
             | 'AssetCreateAsset'
-            | 'AssetCreateCheckpointSchedule'
-            | 'DividendNew'
+            | 'CheckpointCreateSchedule'
             | 'ComplianceManagerAddComplianceRequirement'
-            | 'IdentityRegisterDid'
             | 'IdentityCddRegisterDid'
             | 'IdentityAddClaim'
-            | 'IdentitySetPrimaryKey'
             | 'IdentityAddSecondaryKeysWithAuthorization'
             | 'PipsPropose'
-            | 'VotingAddBallot'
             | 'ContractsPutCode'
-            | 'BallotAttachBallot'
-            | 'DistributionDistribute'
+            | 'CorporateBallotAttachBallot'
+            | 'CapitalDistributionDistribute'
             | number
             | Uint8Array,
           baseFee: Balance | AnyNumber | Uint8Array
@@ -4046,10 +4020,19 @@ declare module '@polkadot/api/types/submittable' {
        *
        * # Arguments
        * * `instruction_id` - Instruction id to reject.
+       * * `portfolio` - Portfolio to reject the instruction.
+       * * `num_of_legs` - Number of legs in the instruction.
+       *
+       * # Permissions
+       * * Portfolio
        **/
       rejectInstruction: AugmentedSubmittable<
-        (instructionId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
+        (
+          instructionId: u64 | AnyNumber | Uint8Array,
+          portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          numOfLegs: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, PortfolioId, u32]
       >;
       /**
        * Reschedules a failed instruction.
@@ -5593,7 +5576,7 @@ declare module '@polkadot/api/types/submittable' {
        * Change this group's limit for how many concurrent active members they may be.
        *
        * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
+       * * `limit` - the number of active members there may be concurrently.
        **/
       setActiveMembersLimit: AugmentedSubmittable<
         (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -5615,58 +5598,6 @@ declare module '@polkadot/api/types/submittable' {
           add: IdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [IdentityId, IdentityId]
-      >;
-    };
-    testUtils: {
-      /**
-       * Emits an event with caller's identity and CDD status.
-       **/
-      getCddOf: AugmentedSubmittable<
-        (of: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId]
-      >;
-      /**
-       * Emits an event with caller's identity.
-       **/
-      getMyDid: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Registers a new Identity for the `target_account` and issues a CDD claim to it.
-       * The Investor UID is generated deterministically by the hash of the generated DID and
-       * then we fix it to be compliant with UUID v4.
-       *
-       * # See
-       * - [RFC 4122: UUID](https://tools.ietf.org/html/rfc4122)
-       *
-       * # Failure
-       * - `origin` has to be an active CDD provider. Inactive CDD providers cannot add new
-       * claims.
-       * - `target_account` (primary key of the new Identity) can be linked to just one and only
-       * one identity.
-       **/
-      mockCddRegisterDid: AugmentedSubmittable<
-        (targetAccount: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [AccountId]
-      >;
-      /**
-       * Generates a new `IdentityID` for the caller, and issues a self-generated CDD claim.
-       *
-       * The caller account will be the primary key of that identity.
-       * For each account of `secondary_keys`, a new `JoinIdentity` authorization is created, so
-       * each of them will need to accept it before become part of this new `IdentityID`.
-       *
-       * # Errors
-       * - `AlreadyLinked` if the caller account or if any of the given `secondary_keys` has already linked to an `IdentityID`
-       * - `SecondaryKeysContainPrimaryKey` if `secondary_keys` contains the caller account.
-       * - `DidAlreadyExists` if auto-generated DID already exists.
-       **/
-      registerDid: AugmentedSubmittable<
-        (
-          uid: InvestorUid | string | Uint8Array,
-          secondaryKeys:
-            | Vec<SecondaryKey>
-            | (SecondaryKey | { signer?: any; permissions?: any } | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [InvestorUid, Vec<SecondaryKey>]
       >;
     };
     timestamp: {
@@ -5892,7 +5823,7 @@ declare module '@polkadot/api/types/submittable' {
        * Change this group's limit for how many concurrent active members they may be.
        *
        * # Arguments
-       * * `limit` - the numer of active members there may be concurrently.
+       * * `limit` - the number of active members there may be concurrently.
        **/
       setActiveMembersLimit: AugmentedSubmittable<
         (limit: MemberCount | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -5922,7 +5853,7 @@ declare module '@polkadot/api/types/submittable' {
        *
        * This will execute until the first one fails and then stop.
        *
-       * May be called from any origin.
+       * May be called from root or a signed origin.
        *
        * # Parameters
        * - `calls`: The calls to be dispatched from the same origin.
@@ -5931,7 +5862,7 @@ declare module '@polkadot/api/types/submittable' {
        * - The sum of the weights of the `calls`.
        * - One event.
        *
-       * This will return `Ok` in all circumstances. To determine the success of the batch, an
+       * This will return `Ok` in all circumstances except an unsigned origin. To determine the success of the batch, an
        * event is deposited. If a call failed and the batch was interrupted, then the
        * `BatchInterrupted` event is deposited, along with the number of successful calls made
        * and the error of the failed call. If all were successful, then the `BatchCompleted`
@@ -5950,7 +5881,7 @@ declare module '@polkadot/api/types/submittable' {
        * in which case the state changes are rolled back.
        * On failure, an event `BatchInterrupted(failure_idx, error)` is deposited.
        *
-       * May be called from any origin.
+       * May be called from root or a signed origin.
        *
        * # Parameters
        * - `calls`: The calls to be dispatched from the same origin.
@@ -5959,7 +5890,7 @@ declare module '@polkadot/api/types/submittable' {
        * - The sum of the weights of the `calls`.
        * - One event.
        *
-       * This will return `Ok` in all circumstances.
+       * This will return `Ok` in all circumstances except an unsigned origin.
        * To determine the success of the batch, an event is deposited.
        * If any call failed, then `BatchInterrupted` is deposited.
        * If all were successful, then the `BatchCompleted` event is deposited.
@@ -5976,7 +5907,7 @@ declare module '@polkadot/api/types/submittable' {
        * This will execute all calls, in order, irrespective of failures.
        * Any failures will be available in a `BatchOptimisticFailed` event.
        *
-       * May be called from any origin.
+       * May be called from root or a signed origin.
        *
        * # Parameters
        * - `calls`: The calls to be dispatched from the same origin.
@@ -5986,7 +5917,7 @@ declare module '@polkadot/api/types/submittable' {
        * - The sum of the weights of the `calls`.
        * - One event.
        *
-       * This will return `Ok` in all circumstances.
+       * This will return `Ok` in all circumstances except an unsigned origin.
        * To determine the success of the batch, an event is deposited.
        * If any call failed, then `BatchOptimisticFailed` is deposited,
        * with a vector of event counts for each call as well as a vector

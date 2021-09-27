@@ -127,20 +127,6 @@ export class Context {
   private constructor(params: ConstructorParams) {
     const { polymeshApi, middlewareApi, keyring, ss58Format } = params;
 
-    const callback = (): void => {
-      polymeshApi.off('disconnected', callback);
-      polymeshApi.off('error', callback);
-
-      if (this.isDisconnected) {
-        return;
-      }
-
-      this.disconnect();
-    };
-
-    polymeshApi.on('disconnected', callback);
-    polymeshApi.on('error', callback);
-
     this._middlewareApi = middlewareApi;
     this._polymeshApi = polymeshApi;
     this.polymeshApi = Context.createPolymeshApiProxy(this);

@@ -208,22 +208,6 @@ export interface TokenDocument {
  * Type of Authorization Request
  */
 export enum AuthorizationType {
-  /**
-   * @deprecated
-   */
-  NoData = 'NoData',
-  /**
-   * @deprecated
-   */
-  Custom = 'Custom',
-  /**
-   * @deprecated
-   */
-  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
-  /**
-   * @deprecated
-   */
-  TransferCorporateActionAgent = 'TransferCorporateActionAgent',
   AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
   RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
@@ -878,7 +862,7 @@ export interface Subsidy {
  * Authorization request data corresponding to type
  */
 export type Authorization =
-  | { type: AuthorizationType.NoData }
+  | { type: AuthorizationType.RotatePrimaryKey }
   | { type: AuthorizationType.JoinIdentity; value: Permissions }
   | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
   | { type: AuthorizationType.BecomeAgent; value: KnownPermissionGroup | CustomPermissionGroup }
@@ -886,7 +870,7 @@ export type Authorization =
   | {
       type: Exclude<
         AuthorizationType,
-        | AuthorizationType.NoData
+        | AuthorizationType.RotatePrimaryKey
         | AuthorizationType.JoinIdentity
         | AuthorizationType.PortfolioCustody
         | AuthorizationType.BecomeAgent

@@ -111,7 +111,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          transactions: [TxTags.asset.RemovePrimaryIssuanceAgent],
+          transactions: [TxTags.externalAgents.RemoveAgent],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },
