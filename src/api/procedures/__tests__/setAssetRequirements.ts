@@ -23,6 +23,10 @@ jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
+jest.mock(
+  '~/api/entities/Identity',
+  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
@@ -187,6 +191,7 @@ describe('setAssetRequirements procedure', () => {
 
     const didOne = 'someDid';
     const didTwo = 'otherDid';
+    const didThree = 'someOtherDid';
 
     let error;
 
@@ -213,6 +218,11 @@ describe('setAssetRequirements procedure', () => {
                 exists: false,
               }),
             },
+            {
+              target: ConditionTarget.Receiver,
+              type: ConditionType.IsIdentity,
+              identity: didThree,
+            },
           ],
         ],
       });
@@ -221,7 +231,7 @@ describe('setAssetRequirements procedure', () => {
     }
 
     expect(error.message).toBe('Some identities no longer exists');
-    expect(error.data.dids).toEqual([didOne, didTwo]);
+    expect(error.data.dids).toEqual([didOne, didTwo, didThree]);
   });
 
   test('should add a reset asset compliance transaction and add compliance requirement transactions to the queue', async () => {
