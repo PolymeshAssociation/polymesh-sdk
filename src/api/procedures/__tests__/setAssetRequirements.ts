@@ -63,7 +63,17 @@ describe('setAssetRequirements procedure', () => {
     );
     ticker = 'someTicker';
     requirements = ([
-      ['condition0', 'condition1'],
+      [
+        {
+          target: ConditionTarget.Receiver,
+          type: ConditionType.IsIdentity,
+          identity: entityMockUtils.getIdentityInstance({
+            did: 'someDid',
+            exists: true,
+          }),
+        },
+        'condition1',
+      ],
       ['condition1', 'condition2', 'condition3'],
       ['condition4'],
     ] as unknown) as Condition[][];
