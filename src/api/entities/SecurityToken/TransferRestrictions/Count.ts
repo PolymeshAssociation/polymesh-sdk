@@ -3,6 +3,7 @@ import { AddCountTransferRestrictionParams, SetCountTransferRestrictionsParams }
 import {
   ActiveTransferRestrictions,
   CountTransferRestriction,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   TransferRestrictionType,
 } from '~/types';
@@ -35,7 +36,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions!: ProcedureMethod<void, number>;
+  public removeRestrictions!: NoArgsProcedureMethod<number>;
 
   /**
    * Retrieve all active Count Transfer Restrictions

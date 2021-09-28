@@ -34,6 +34,7 @@ import {
   ErrorCode,
   isEntity,
   NextKey,
+  NoArgsProcedureMethod,
   PaginationOptions,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
@@ -409,7 +410,44 @@ export function calculateNextKey(totalCount: number, size?: number, start?: numb
  * Create a method that prepares a procedure
  */
 export function createProcedureMethod<
-  MethodArgs,
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: () => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    voidArgs: true;
+  },
+  context: Context
+): NoArgsProcedureMethod<ProcedureReturnValue, ProcedureReturnValue>;
+export function createProcedureMethod<
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  ReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: () => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    voidArgs: true;
+    transformer: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
+  context: Context
+): NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs extends {},
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   Storage = Record<string, unknown>
@@ -428,7 +466,8 @@ export function createProcedureMethod<
   context: Context
 ): ProcedureMethod<MethodArgs, ProcedureReturnValue, ProcedureReturnValue>;
 export function createProcedureMethod<
-  MethodArgs,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs extends {},
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   ReturnValue,
@@ -458,7 +497,7 @@ export function createProcedureMethod<
 >(
   args: {
     getProcedureAndArgs: (
-      methodArgs: MethodArgs
+      methodArgs?: MethodArgs
     ) => [
       (
         | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
@@ -467,10 +506,32 @@ export function createProcedureMethod<
       ProcedureArgs
     ];
     transformer?: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+    voidArgs?: true;
   },
   context: Context
-): ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue> {
-  const { getProcedureAndArgs, transformer } = args;
+):
+  | ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
+  | NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue> {
+  const { getProcedureAndArgs, transformer, voidArgs } = args;
+
+  if (voidArgs) {
+    const method = (
+      opts: ProcedureOpts = {}
+    ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+      const [proc, procArgs] = getProcedureAndArgs();
+      return proc().prepare({ args: procArgs, transformer }, context, opts);
+    };
+
+    method.checkAuthorization = async (
+      opts: ProcedureOpts = {}
+    ): Promise<ProcedureAuthorizationStatus> => {
+      const [proc, procArgs] = getProcedureAndArgs();
+
+      return proc().checkAuthorization(procArgs, context, opts);
+    };
+
+    return method;
+  }
 
   const method = (
     methodArgs: MethodArgs,

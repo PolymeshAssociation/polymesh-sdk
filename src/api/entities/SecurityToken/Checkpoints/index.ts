@@ -12,8 +12,8 @@ import {
 import {
   CheckpointWithData,
   ErrorCode,
+  NoArgsProcedureMethod,
   PaginationOptions,
-  ProcedureMethod,
   ResultSet,
 } from '~/types';
 import { tuple } from '~/types/utils';
@@ -42,7 +42,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
     const { ticker } = parent;
 
     this.create = createProcedureMethod(
-      { getProcedureAndArgs: () => [createCheckpoint, { ticker }] },
+      { getProcedureAndArgs: () => [createCheckpoint, { ticker }], voidArgs: true },
       context
     );
 
@@ -52,7 +52,7 @@ export class Checkpoints extends Namespace<SecurityToken> {
   /**
    * Create a snapshot of Security Token holders and their respective balances at this moment
    */
-  public create: ProcedureMethod<void, Checkpoint>;
+  public create: NoArgsProcedureMethod<Checkpoint>;
 
   /**
    * Retrieve a single Checkpoint for this Security Token by its ID

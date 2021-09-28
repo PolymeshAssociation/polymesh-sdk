@@ -16,7 +16,7 @@ import {
   removeCorporateActionsAgent,
   SecurityToken,
 } from '~/internal';
-import { ProcedureMethod } from '~/types';
+import { NoArgsProcedureMethod, ProcedureMethod } from '~/types';
 import {
   identityIdToString,
   permillToBigNumber,
@@ -55,7 +55,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
     );
 
     this.removeAgent = createProcedureMethod(
-      { getProcedureAndArgs: () => [removeCorporateActionsAgent, { ticker }] },
+      { getProcedureAndArgs: () => [removeCorporateActionsAgent, { ticker }], voidArgs: true },
       context
     );
 
@@ -92,7 +92,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *
    * @deprecated
    */
-  public removeAgent: ProcedureMethod<void, void>;
+  public removeAgent: NoArgsProcedureMethod<void>;
 
   /**
    * Remove a Corporate Action

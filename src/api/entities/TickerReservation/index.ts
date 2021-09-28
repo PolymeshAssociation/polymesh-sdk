@@ -12,7 +12,7 @@ import {
   transferTickerOwnership,
   TransferTickerOwnershipParams,
 } from '~/internal';
-import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import { NoArgsProcedureMethod, ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -57,7 +57,10 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     this.ticker = ticker;
 
     this.extend = createProcedureMethod(
-      { getProcedureAndArgs: () => [reserveTicker, { ticker, extendPeriod: true }] },
+      {
+        getProcedureAndArgs: () => [reserveTicker, { ticker, extendPeriod: true }],
+        voidArgs: true,
+      },
       context
     );
 
@@ -161,7 +164,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * @note required role:
    *   - Ticker Owner
    */
-  public extend: ProcedureMethod<void, TickerReservation>;
+  public extend: NoArgsProcedureMethod<TickerReservation>;
 
   /**
    * Create a Security Token using the reserved ticker

@@ -36,6 +36,7 @@ import {
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isVenueOwnerRole,
+  NoArgsProcedureMethod,
   Order,
   PermissionType,
   ProcedureMethod,
@@ -161,11 +162,17 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context
     );
     this.freezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true, identity: this }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true, identity: this }],
+        voidArgs: true,
+      },
       context
     );
     this.unfreezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }],
+        voidArgs: true,
+      },
       context
     );
   }
@@ -202,12 +209,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Freeze all the secondary keys in this Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
    */
-  public freezeSecondaryKeys: ProcedureMethod<void, void>;
+  public freezeSecondaryKeys: NoArgsProcedureMethod<void>;
 
   /**
    * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
    */
-  public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
+  public unfreezeSecondaryKeys: NoArgsProcedureMethod<void>;
 
   /**
    * Check whether this Identity possesses the specified Role
