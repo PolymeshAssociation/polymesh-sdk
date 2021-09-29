@@ -16,6 +16,8 @@ const myArray: (string | number | null)[] = [
 
 myArray.sort();
 
+myArray.sort();
+
 export function firstElement(): string | number | null {
   const element = myArray[0];
 
