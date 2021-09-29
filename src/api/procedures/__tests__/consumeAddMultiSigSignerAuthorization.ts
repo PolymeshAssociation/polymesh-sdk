@@ -96,6 +96,37 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     ).rejects.toThrow('The Authorization Request has expired');
   });
 
+  test('should throw an error if the passed account is already part of an Identity', () => {
+    const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
+      mockContext
+    );
+
+    const identity = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: identity,
+    });
+
+    expect(
+      prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
+        authRequest: new AuthorizationRequest(
+          {
+            target,
+            issuer: entityMockUtils.getIdentityInstance(),
+            authId,
+            expiry: null,
+            data: {
+              type: AuthorizationType.AddMultiSigSigner,
+              value: 'someAddress',
+            },
+          },
+          mockContext
+        ),
+        accept: true,
+      })
+    ).rejects.toThrow('The target Account is already part of an Identity');
+  });
+
   test('should add a acceptMultisigSignerAsKey transaction to the queue if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
@@ -104,7 +135,10 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
 
     const issuer = entityMockUtils.getIdentityInstance();
-    const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
 
     await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
