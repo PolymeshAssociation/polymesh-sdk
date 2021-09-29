@@ -1,7 +1,7 @@
-import { element0 } from '~/sonarTest';
+import { firstElement } from '~/sonarTest';
 
-describe('element0', () => {
+describe('firstElement', () => {
   test('should return the first element', () => {
-    expect(element0()).toBe(1);
+    expect(firstElement()).toBe(1);
   });
 });
