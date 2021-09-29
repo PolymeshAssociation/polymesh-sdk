@@ -14,6 +14,8 @@ const myArray: (string | number | null)[] = [
   null,
 ];
 
+myArray.sort();
+
 export function firstElement(): string | number | null {
   const element = myArray[0];
 
@@ -28,150 +30,110 @@ export function thirdElement(): string | number | null {
   return myArray[2];
 }
 
-export function someConvolutedPieceOfCode(array: number[]): number[] {
-  array.reverse();
-  array.sort();
-  const otherArray = array.map(n => n * 2);
-
-  otherArray.reverse();
-  otherArray.sort();
-
-  const thirdArray = array.concat(otherArray);
-
-  thirdArray.reverse();
-  thirdArray.sort();
-  thirdArray.reverse();
-  thirdArray.sort();
-  thirdArray.reverse();
-  thirdArray.sort();
-  thirdArray.reverse();
-  thirdArray.sort();
-  thirdArray.reverse();
-  thirdArray.sort();
-
-  const fourthArray = thirdArray.map(n => n - 1);
-  fourthArray.reverse();
-  fourthArray.sort();
-  fourthArray.reverse();
-  fourthArray.sort();
-  fourthArray.reverse();
-  fourthArray.sort();
-  fourthArray.reverse();
-  fourthArray.sort();
-  fourthArray.reverse();
-  fourthArray.sort();
-
-  if (fourthArray.length >= 10) {
-    fourthArray.splice(1, 5);
+export function numberToWord(n: number): string {
+  if (n === 1) {
+    return 'One';
+  }
+  if (n === 2) {
+    return 'Two';
+  }
+  if (n === 3) {
+    return 'Three';
+  }
+  if (n === 4) {
+    return 'Four';
+  }
+  if (n === 5) {
+    return 'Five';
+  }
+  if (n === 6) {
+    return 'Six';
+  }
+  if (n === 7) {
+    return 'Seven';
+  }
+  if (n === 8) {
+    return 'Eight';
+  }
+  if (n === 9) {
+    return 'Nine';
+  }
+  if (n === 10) {
+    return 'Ten';
+  }
+  if (n === 11) {
+    return 'Eleven';
+  }
+  if (n === 12) {
+    return 'Twelve';
+  }
+  if (n === 13) {
+    return 'Thirteen';
+  }
+  if (n === 14) {
+    return 'Fourteen';
+  }
+  if (n === 15) {
+    return 'Fifteen';
+  }
+  if (n === 16) {
+    return 'Sixteen';
   }
 
-  switch (fourthArray[0]) {
-    case 0: {
-      console.log('ZERO');
-
-      break;
-    }
-    case 1: {
-      console.log('ONE');
-
-      break;
-    }
-    case 2: {
-      console.log('TWO');
-
-      break;
-    }
-    case 3: {
-      console.log('THREE');
-
-      break;
-    }
-    case 4: {
-      console.log('FOUR');
-
-      break;
-    }
-    default: {
-      console.log('NONE');
-
-      break;
-    }
-  }
-
-  return fourthArray;
+  return 'Something';
 }
 
-export function anotherConvolutedPieceOfCodeThatDoesSomethingVerySimilar(): number[] {
-  const someArray = [1, 2, 3, 4];
+export function similarWayOfDoingIt(): string {
+  const num = 1;
 
-  someArray.reverse();
-  someArray.sort();
-  const secondArray = someArray.map(n => n * 2);
-
-  secondArray.reverse();
-  secondArray.sort();
-
-  const renamedArray = someArray.concat(secondArray);
-
-  renamedArray.reverse();
-  renamedArray.sort();
-  renamedArray.reverse();
-  renamedArray.sort();
-  renamedArray.reverse();
-  renamedArray.sort();
-  renamedArray.reverse();
-  renamedArray.sort();
-  renamedArray.reverse();
-  renamedArray.sort();
-
-  const notTheFourth = renamedArray.map(n => n - 1);
-  notTheFourth.reverse();
-  notTheFourth.sort();
-  notTheFourth.reverse();
-  notTheFourth.sort();
-  notTheFourth.reverse();
-  notTheFourth.sort();
-  notTheFourth.reverse();
-  notTheFourth.sort();
-  notTheFourth.reverse();
-  notTheFourth.sort();
-
-  if (notTheFourth.length >= 10) {
-    notTheFourth.splice(1, 5);
+  if (num === 1) {
+    return 'One';
+  }
+  if (num === 2) {
+    return 'Two';
+  }
+  if (num === 3) {
+    return 'Three';
+  }
+  if (num === 4) {
+    return 'Four';
+  }
+  if (num === 5) {
+    return 'Five';
+  }
+  if (num === 6) {
+    return 'Six';
+  }
+  if (num === 7) {
+    return 'Seven';
+  }
+  if (num === 8) {
+    return 'Eight';
+  }
+  if (num === 9) {
+    return 'Nine';
+  }
+  if (num === 10) {
+    return 'Ten';
+  }
+  if (num === 11) {
+    return 'Eleven';
+  }
+  if (num === 12) {
+    return 'Twelve';
+  }
+  if (num === 13) {
+    return 'Thirteen';
+  }
+  if (num === 14) {
+    return 'Fourteen';
+  }
+  if (num === 15) {
+    return 'Fifteen';
+  }
+  if (num === 16) {
+    return 'Sixteen';
   }
 
-  switch (notTheFourth[0]) {
-    case 0: {
-      console.log('ZERO');
-
-      break;
-    }
-    case 1: {
-      console.log('ONE');
-
-      break;
-    }
-    case 2: {
-      console.log('TWO');
-
-      break;
-    }
-    case 3: {
-      console.log('THREE');
-
-      break;
-    }
-    case 4: {
-      console.log('FOUR');
-
-      break;
-    }
-    default: {
-      console.log('NONE');
-
-      break;
-    }
-  }
-
-  return notTheFourth;
+  return 'Something';
 }
