@@ -515,14 +515,14 @@ export function createProcedureMethod<
   const { getProcedureAndArgs, transformer, voidArgs } = args;
 
   if (voidArgs) {
-    const method = (
+    const voidMethod = (
       opts: ProcedureOpts = {}
     ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
       const [proc, procArgs] = getProcedureAndArgs();
       return proc().prepare({ args: procArgs, transformer }, context, opts);
     };
 
-    method.checkAuthorization = async (
+    voidMethod.checkAuthorization = async (
       opts: ProcedureOpts = {}
     ): Promise<ProcedureAuthorizationStatus> => {
       const [proc, procArgs] = getProcedureAndArgs();
@@ -530,7 +530,7 @@ export function createProcedureMethod<
       return proc().checkAuthorization(procArgs, context, opts);
     };
 
-    return method;
+    return voidMethod;
   }
 
   const method = (
