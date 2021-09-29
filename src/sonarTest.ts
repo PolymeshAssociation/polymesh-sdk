@@ -72,3 +72,75 @@ export function element11(): string | number | null {
 
   return element;
 }
+
+export function element12(): string | number | null {
+  const element = myArray[12];
+
+  return element;
+}
+
+export function element13(): string | number | null {
+  const element = myArray[13];
+
+  return element;
+}
+
+export function element14(): string | number | null {
+  const element = myArray[14];
+
+  return element;
+}
+
+export function element15(): string | number | null {
+  const element = myArray[15];
+
+  return element;
+}
+
+export function element16(): string | number | null {
+  const element = myArray[16];
+
+  return element;
+}
+
+export function element17(): string | number | null {
+  const element = myArray[17];
+
+  return element;
+}
+
+export function element18(): string | number | null {
+  const element = myArray[18];
+
+  return element;
+}
+
+export function element19(): string | number | null {
+  const element = myArray[19];
+
+  return element;
+}
+
+export function element20(): string | number | null {
+  const element = myArray[20];
+
+  return element;
+}
+
+export function element21(): string | number | null {
+  const element = myArray[21];
+
+  return element;
+}
+
+export function element22(): string | number | null {
+  const element = myArray[22];
+
+  return element;
+}
+
+export function element23(): string | number | null {
+  const element = myArray[23];
+
+  return element;
+}
