@@ -78,48 +78,48 @@ export function numberToWord(n: number): string {
 }
 
 export function similarWayOfDoingIt(): string {
-  const n = 1;
+  const num = 1;
 
-  if (n === 1) {
+  if (num === 1) {
     return 'One';
   }
-  if (n === 2) {
+  if (num === 2) {
     return 'Two';
   }
-  if (n === 3) {
+  if (num === 3) {
     return 'Three';
   }
-  if (n === 4) {
+  if (num === 4) {
     return 'Four';
   }
-  if (n === 5) {
+  if (num === 5) {
     return 'Five';
   }
-  if (n === 6) {
+  if (num === 6) {
     return 'Six';
   }
-  if (n === 7) {
+  if (num === 7) {
     return 'Seven';
   }
-  if (n === 8) {
+  if (num === 8) {
     return 'Eight';
   }
-  if (n === 9) {
+  if (num === 9) {
     return 'Nine';
   }
-  if (n === 10) {
+  if (num === 10) {
     return 'Ten';
   }
-  if (n === 11) {
+  if (num === 11) {
     return 'Eleven';
   }
-  if (n === 12) {
+  if (num === 12) {
     return 'Twelve';
   }
-  if (n === 13) {
+  if (num === 13) {
     return 'Thirteen';
   }
-  if (n === 14) {
+  if (num === 14) {
     return 'Fourteen';
   }
 
