@@ -85,14 +85,13 @@ export async function prepareModifyInstructionAffirmation(
       break;
     }
     case InstructionAffirmationOperation.Withdraw: {
-      excludeCriteria.push(AffirmationStatus.Pending, AffirmationStatus.Rejected);
+      excludeCriteria.push(AffirmationStatus.Pending);
       errorMessage = 'The instruction is not affirmed';
       transaction = settlementTx.withdrawAffirmation;
 
       break;
     }
     case InstructionAffirmationOperation.Reject: {
-      excludeCriteria.push(AffirmationStatus.Rejected);
       errorMessage = 'The Instruction cannot be rejected';
 
       break;

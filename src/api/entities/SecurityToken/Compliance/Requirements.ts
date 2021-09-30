@@ -206,8 +206,8 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const { is_paused: isPaused } = await complianceManager.assetCompliances(rawTicker);
+    const { paused } = await complianceManager.assetCompliances(rawTicker);
 
-    return boolToBoolean(isPaused);
+    return boolToBoolean(paused);
   }
 }

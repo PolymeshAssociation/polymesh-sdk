@@ -11,8 +11,8 @@ export default {
         },
         {
           name: 'from_custodian',
-          type: 'Option<IdentityId>',
-          isOptional: false,
+          type: 'IdentityId',
+          isOptional: true,
         },
         {
           name: 'from_portfolio',
@@ -21,8 +21,8 @@ export default {
         },
         {
           name: 'to_custodian',
-          type: 'Option<IdentityId>',
-          isOptional: false,
+          type: 'IdentityId',
+          isOptional: true,
         },
         {
           name: 'to_portfolio',
@@ -53,8 +53,8 @@ export default {
       params: [
         {
           name: 'from_custodian',
-          type: 'Option<IdentityId>',
-          isOptional: false,
+          type: 'IdentityId',
+          isOptional: true,
         },
         {
           name: 'from_portfolio',
@@ -63,8 +63,8 @@ export default {
         },
         {
           name: 'to_custodian',
-          type: 'Option<IdentityId>',
-          isOptional: false,
+          type: 'IdentityId',
+          isOptional: true,
         },
         {
           name: 'to_portfolio',

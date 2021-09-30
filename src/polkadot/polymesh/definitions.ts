@@ -485,10 +485,6 @@ export default {
       expiry: 'Option<Moment>',
       claim: 'Claim',
     },
-    IdentityClaimKey: {
-      id: 'IdentityId',
-      claim_type: 'ClaimType',
-    },
     ComplianceRequirement: {
       sender_conditions: 'Vec<Condition>',
       receiver_conditions: 'Vec<Condition>',
@@ -527,12 +523,6 @@ export default {
       condition: 'Condition',
       result: 'bool',
     },
-    SimpleTokenRecord: {
-      ticker: 'Ticker',
-      total_supply: 'Balance',
-      owner_did: 'IdentityId',
-    },
-    FeeOf: 'Balance',
     TargetIdAuthorization: {
       target_id: 'IdentityId',
       nonce: 'u64',
@@ -637,7 +627,6 @@ export default {
       index: 'u32',
       ayes: 'Vec<(IdentityId, Balance)>',
       nays: 'Vec<(IdentityId, Balance)>',
-      end: 'BlockNumber',
       expiry: 'MaybeBlock',
     },
     PipId: 'u32',
@@ -655,11 +644,6 @@ export default {
         Hash: 'Hash',
         Proposal: 'Vec<u8>',
       },
-    },
-    TickerTransferApproval: {
-      authorized_by: 'IdentityId',
-      next_ticker: 'Option<Ticker>',
-      previous_ticker: 'Option<Ticker>',
     },
     OffChainSignature: {
       _enum: {
@@ -718,9 +702,6 @@ export default {
       owner: 'IdentityId',
       frozen: 'bool',
     },
-    ProportionMatch: {
-      _enum: ['AtLeast', 'MoreThan'],
-    },
     AuthorizationNonce: 'u64',
     Counter: 'u64',
     Percentage: 'Permill',
@@ -734,24 +715,14 @@ export default {
       _enum: ['Valid', 'Invalid', 'ForceValid'],
     },
     Memo: '[u8;32]',
-    IssueRecipient: {
-      _enum: {
-        Account: 'AccountId',
-        Identity: 'IdentityId',
-      },
-    },
     BridgeTx: {
       nonce: 'u32',
       recipient: 'AccountId',
-      value: 'Balance',
+      amount: 'Balance',
       tx_hash: 'H256',
     },
-    PendingTx: {
-      did: 'IdentityId',
-      bridge_tx: 'BridgeTx',
-    },
     AssetCompliance: {
-      is_paused: 'bool',
+      paused: 'bool',
       requirements: 'Vec<ComplianceRequirement>',
     },
     AssetComplianceResult: {
@@ -766,15 +737,6 @@ export default {
     Claim2ndKey: {
       issuer: 'IdentityId',
       scope: 'Option<Scope>',
-    },
-    BatchAddClaimItem: {
-      target: 'IdentityId',
-      claim: 'Claim',
-      expiry: 'Option<Moment>',
-    },
-    BatchRevokeClaimItem: {
-      target: 'IdentityId',
-      claim: 'Claim',
     },
     InactiveMember: {
       id: 'IdentityId',
@@ -818,7 +780,7 @@ export default {
     },
     DidRecordsSuccess: {
       primary_key: 'AccountId',
-      secondary_key: 'Vec<SecondaryKey>',
+      secondary_keys: 'Vec<SecondaryKey>',
     },
     DidRecords: {
       _enum: {
@@ -833,7 +795,7 @@ export default {
     VoteCount: {
       _enum: {
         ProposalFound: 'VoteCountProposalFound',
-        ProposalNotFound: 'Vec<u8>',
+        ProposalNotFound: '',
       },
     },
     Vote: '(bool, Balance)',
@@ -917,15 +879,6 @@ export default {
       did: 'IdentityId',
       kind: 'PortfolioKind',
     },
-    ProverTickerKey: {
-      prover: 'IdentityId',
-      ticker: 'Ticker',
-    },
-    TickerRangeProof: {
-      initial_message: '[u8; 32]',
-      final_response: 'Vec<u8>',
-      max_two_exp: 'u32',
-    },
     Moment: 'u64',
     CalendarUnit: {
       _enum: ['Second', 'Minute', 'Hour', 'Day', 'Week', 'Month', 'Year'],
@@ -970,7 +923,6 @@ export default {
         Unknown: '',
         Pending: '',
         Affirmed: '',
-        Rejected: '',
       },
     },
     SettlementType: {
@@ -1058,11 +1010,6 @@ export default {
     },
     VenueType: {
       _enum: ['Other', 'Distribution', 'Sto', 'Exchange'],
-    },
-    Payload: {
-      block_number: 'BlockNumber',
-      nominators: 'Vec<AccountId>',
-      public: 'H256',
     },
     ExtensionAttributes: {
       usage_fee: 'Balance',

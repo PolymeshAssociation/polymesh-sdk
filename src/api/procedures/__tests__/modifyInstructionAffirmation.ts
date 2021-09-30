@@ -231,33 +231,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The instruction is not affirmed');
   });
 
-  test('should throw an error if operation is Withdraw and the current status of the instruction is rejected', () => {
-    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Rejected');
-    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
-      multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Rejected);
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
-    });
-
-    return expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
-        operation: InstructionAffirmationOperation.Withdraw,
-      })
-    ).rejects.toThrow('The instruction is not affirmed');
-  });
-
   test('should add a withdraw instruction transaction to the queue', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
@@ -294,33 +267,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     );
 
     expect(result.id).toEqual(id);
-  });
-
-  test('should throw an error if operation is Reject and the current status of the instruction is rejected', () => {
-    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Rejected');
-    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
-      multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Rejected);
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
-    });
-
-    return expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
-        operation: InstructionAffirmationOperation.Reject,
-      })
-    ).rejects.toThrow('The Instruction cannot be rejected');
   });
 
   test('should add a reject instruction transaction to the queue', async () => {
