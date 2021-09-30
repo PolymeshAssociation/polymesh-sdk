@@ -11,8 +11,9 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, Identity, isEntity, TransactionPermissions, TxGroup } from '~/types';
+import { ErrorCode, Identity, TransactionPermissions, TxGroup } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
+import { isEntity } from '~/utils';
 import {
   permissionGroupIdentifierToAgentGroup,
   stringToIdentityId,
