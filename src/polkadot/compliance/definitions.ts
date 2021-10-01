@@ -12,13 +12,13 @@ export default {
         },
         {
           name: 'from_did',
-          type: 'IdentityId',
-          isOptional: true,
+          type: 'Option<IdentityId>',
+          isOptional: false,
         },
         {
           name: 'to_did',
-          type: 'IdentityId',
-          isOptional: true,
+          type: 'Option<IdentityId>',
+          isOptional: false,
         },
         {
           name: 'blockHash',

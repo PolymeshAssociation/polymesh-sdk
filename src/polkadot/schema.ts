@@ -1139,13 +1139,13 @@ export default {
           },
           {
             name: 'from_did',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'to_did',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'blockHash',
@@ -1362,8 +1362,8 @@ export default {
           },
           {
             name: 'from_custodian',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'from_portfolio',
@@ -1372,8 +1372,8 @@ export default {
           },
           {
             name: 'to_custodian',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'to_portfolio',
@@ -1404,8 +1404,8 @@ export default {
         params: [
           {
             name: 'from_custodian',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'from_portfolio',
@@ -1414,8 +1414,8 @@ export default {
           },
           {
             name: 'to_custodian',
-            type: 'IdentityId',
-            isOptional: true,
+            type: 'Option<IdentityId>',
+            isOptional: false,
           },
           {
             name: 'to_portfolio',
