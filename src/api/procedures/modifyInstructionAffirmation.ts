@@ -91,11 +91,6 @@ export async function prepareModifyInstructionAffirmation(
 
       break;
     }
-    case InstructionAffirmationOperation.Reject: {
-      errorMessage = 'The Instruction cannot be rejected';
-
-      break;
-    }
   }
 
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
@@ -113,7 +108,10 @@ export async function prepareModifyInstructionAffirmation(
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: errorMessage,
+      // As InstructionAffirmationOperation.Reject has no excludeCriteria, if this error is thrown
+      // it means that the operation had to be either affirm or withdraw, and so the errorMessage was set
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      message: errorMessage!,
     });
   }
 
