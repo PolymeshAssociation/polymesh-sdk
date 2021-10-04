@@ -4,7 +4,7 @@ import { CAId } from 'polymesh-types/polymesh';
 
 import {
   Context,
-  CorporateAction,
+  CorporateActionBase,
   DividendDistribution,
   PolymeshError,
   Procedure,
@@ -20,7 +20,7 @@ import {
 } from '~/utils/conversion';
 
 export interface RemoveCorporateActionParams {
-  corporateAction: CorporateAction | BigNumber;
+  corporateAction: CorporateActionBase | BigNumber;
 }
 
 /**
@@ -48,7 +48,7 @@ const assertCaIsRemovable = async (
   query: QueryableStorage<'promise'>,
   ticker: string,
   context: Context,
-  corporateAction: CorporateAction | BigNumber
+  corporateAction: CorporateActionBase | BigNumber
 ): Promise<void> => {
   const isBn = corporateAction instanceof BigNumber;
   const distribution = await query.capitalDistribution.distributions(rawCaId);
@@ -97,7 +97,8 @@ export async function prepareRemoveCorporateAction(
   } = this;
   const { ticker, corporateAction } = args;
 
-  const localId = corporateAction instanceof CorporateAction ? corporateAction.id : corporateAction;
+  const localId =
+    corporateAction instanceof CorporateActionBase ? corporateAction.id : corporateAction;
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
   if (corporateAction instanceof DividendDistribution || corporateAction instanceof BigNumber) {
