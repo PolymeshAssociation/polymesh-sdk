@@ -85,15 +85,9 @@ export async function prepareModifyInstructionAffirmation(
       break;
     }
     case InstructionAffirmationOperation.Withdraw: {
-      excludeCriteria.push(AffirmationStatus.Pending, AffirmationStatus.Rejected);
+      excludeCriteria.push(AffirmationStatus.Pending);
       errorMessage = 'The instruction is not affirmed';
       transaction = settlementTx.withdrawAffirmation;
-
-      break;
-    }
-    case InstructionAffirmationOperation.Reject: {
-      excludeCriteria.push(AffirmationStatus.Rejected);
-      errorMessage = 'The Instruction cannot be rejected';
 
       break;
     }
@@ -114,7 +108,10 @@ export async function prepareModifyInstructionAffirmation(
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: errorMessage,
+      // As InstructionAffirmationOperation.Reject has no excludeCriteria, if this error is thrown
+      // it means that the operation had to be either affirm or withdraw, and so the errorMessage was set
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      message: errorMessage!,
     });
   }
 
