@@ -2,7 +2,7 @@ import { find } from 'lodash';
 
 import { assertSecondaryKeys } from '~/api/procedures/utils';
 import { Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, Signer, TxTags } from '~/types';
+import { ErrorCode, Signer, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
@@ -10,16 +10,19 @@ export interface RemoveSecondaryKeysParams {
   signers: Signer[];
 }
 
-export type Params = RemoveSecondaryKeysParams & {
+/**
+ * @hidden
+ */
+export interface Storage {
   identity: Identity;
-};
+}
 
 /**
  * @hidden
  */
 export async function prepareRemoveSecondaryKeys(
-  this: Procedure<Params>,
-  args: Params
+  this: Procedure<RemoveSecondaryKeysParams>,
+  args: RemoveSecondaryKeysParams
 ): Promise<void> {
   const {
     context: {
@@ -28,7 +31,9 @@ export async function prepareRemoveSecondaryKeys(
     context,
   } = this;
 
-  const { signers, identity } = args;
+  const { signers } = args;
+
+  const identity = await context.getCurrentIdentity();
 
   const [primaryKey, secondaryKeys] = await Promise.all([
     identity.getPrimaryKey(),
@@ -58,11 +63,9 @@ export async function prepareRemoveSecondaryKeys(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params>,
-  { identity: { did } }: Params
+  this: Procedure<RemoveSecondaryKeysParams>
 ): ProcedureAuthorization {
   return {
-    roles: [{ type: RoleType.Identity, did }],
     permissions: {
       transactions: [TxTags.identity.RemoveSecondaryKeys],
       tokens: [],
@@ -74,5 +77,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const removeSecondaryKeys = (): Procedure<Params> =>
+export const removeSecondaryKeys = (): Procedure<RemoveSecondaryKeysParams> =>
   new Procedure(prepareRemoveSecondaryKeys, getAuthorization);

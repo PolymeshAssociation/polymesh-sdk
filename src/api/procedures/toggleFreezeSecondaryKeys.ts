@@ -1,10 +1,9 @@
-import { Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 
 export interface ToggleFreezeSecondaryKeysParams {
   freeze: boolean;
-  identity: Identity;
 }
 
 /**
@@ -20,8 +19,11 @@ export async function prepareToggleFreezeSecondaryKeys(
         tx: { identity: identityTx },
       },
     },
+    context,
   } = this;
-  const { freeze, identity } = args;
+  const { freeze } = args;
+
+  const identity = await context.getCurrentIdentity();
 
   const areSecondaryKeysFrozen = await identity.areSecondaryKeysFrozen();
 
@@ -51,10 +53,9 @@ export async function prepareToggleFreezeSecondaryKeys(
  */
 export function getAuthorization(
   this: Procedure<ToggleFreezeSecondaryKeysParams, void>,
-  { freeze, identity: { did } }: ToggleFreezeSecondaryKeysParams
+  { freeze }: ToggleFreezeSecondaryKeysParams
 ): ProcedureAuthorization {
   return {
-    roles: [{ type: RoleType.Identity, did }],
     permissions: {
       transactions: [
         freeze ? TxTags.identity.FreezeSecondaryKeys : TxTags.identity.UnfreezeSecondaryKeys,

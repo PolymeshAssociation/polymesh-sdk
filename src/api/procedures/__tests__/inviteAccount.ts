@@ -3,7 +3,11 @@ import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getAuthorization, Params, prepareInviteAccount } from '~/api/procedures/inviteAccount';
+import {
+  getAuthorization,
+  InviteAccountParams,
+  prepareInviteAccount,
+} from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -12,7 +16,6 @@ import {
   AuthorizationType,
   Identity,
   ResultSet,
-  RoleType,
   SignerType,
   SignerValue,
 } from '~/types';
@@ -35,7 +38,7 @@ describe('inviteAccount procedure', () => {
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let permissionsLikeToPermissionsStub: sinon.SinonStub;
 
-  let args: Params;
+  let args: InviteAccountParams;
   const authId = new BigNumber(1);
   const address = 'targetAccount';
 
@@ -60,7 +63,7 @@ describe('inviteAccount procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    args = { targetAccount: address, identity: entityMockUtils.getIdentityInstance() };
+    args = { targetAccount: address };
   });
 
   afterEach(() => {
@@ -143,7 +146,7 @@ describe('inviteAccount procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
@@ -203,9 +206,9 @@ describe('inviteAccount procedure', () => {
 
     signerToStringStub.withArgs(args.targetAccount).returns(address);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
-    return expect(prepareInviteAccount.call(proc, { targetAccount, identity })).rejects.toThrow(
+    return expect(prepareInviteAccount.call(proc, { targetAccount })).rejects.toThrow(
       'The target Account is already part of an Identity'
     );
   });
@@ -241,42 +244,59 @@ describe('inviteAccount procedure', () => {
       count: 1,
     };
 
-    const identity = entityMockUtils.getIdentityInstance({
-      authorizations: {
-        getSent: sentAuthorizations,
-      },
-      getSecondaryKeys: [
-        {
-          signer,
-          permissions: {
-            tokens: null,
-            portfolios: null,
-            transactions: null,
-            transactionGroups: [],
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        withSeed: true,
+        sentAuthorizations: sentAuthorizations,
+        secondaryKeys: [
+          {
+            signer,
+            permissions: {
+              tokens: null,
+              portfolios: null,
+              transactions: null,
+              transactionGroups: [],
+            },
           },
-        },
-      ],
+        ],
+      },
     });
+
+    // entityMockUtils.getIdentityInstance({
+    //   authorizations: {
+    //     getSent: sentAuthorizations,
+    //   },
+    //   getSecondaryKeys: [
+    //     {
+    //       signer,
+    //       permissions: {
+    //         tokens: null,
+    //         portfolios: null,
+    //         transactions: null,
+    //         transactionGroups: [],
+    //       },
+    //     },
+    //   ],
+    // });
 
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(address);
     signerToStringStub.withArgs(target).returns(address);
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
-    return expect(prepareInviteAccount.call(proc, { ...args, identity })).rejects.toThrow(
+    return expect(prepareInviteAccount.call(proc, { ...args })).rejects.toThrow(
       'The target Account already has a pending invitation to join this Identity'
     );
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.Identity, did: args.identity.did }],
+      expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
           tokens: [],

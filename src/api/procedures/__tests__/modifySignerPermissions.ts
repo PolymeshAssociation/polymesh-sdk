@@ -3,13 +3,13 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  Params,
+  ModifySignerPermissionsParams,
   prepareModifySignerPermissions,
 } from '~/api/procedures/modifySignerPermissions';
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionType, RoleType, SecondaryKey, Signer, SignerType, SignerValue } from '~/types';
+import { PermissionType, SecondaryKey, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {
@@ -114,7 +114,7 @@ describe('modifySignerPermissions procedure', () => {
 
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'setPermissionToSigner');
 
@@ -122,7 +122,7 @@ describe('modifySignerPermissions procedure', () => {
 
     let signersList = [[rawSignatory, fakeMeshPermissions]];
 
-    await prepareModifySignerPermissions.call(proc, { secondaryKeys, identity });
+    await prepareModifySignerPermissions.call(proc, { secondaryKeys });
 
     sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
 
@@ -173,7 +173,7 @@ describe('modifySignerPermissions procedure', () => {
 
     signerToSignerValueStub.withArgs(secondaryKeys[0].signer).returns(signerValue);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
 
     return expect(
       prepareModifySignerPermissions.call(proc, {
@@ -185,22 +185,10 @@ describe('modifySignerPermissions procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const secondaryKeys = [
-        {
-          signer: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
-          permissions: {
-            tokens: null,
-            transactions: null,
-            portfolios: null,
-          },
-        },
-      ];
-
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ secondaryKeys, identity })).toEqual({
-        roles: [{ type: RoleType.Identity, did: identity.did }],
+      expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.identity.SetPermissionToSigner],
           tokens: [],

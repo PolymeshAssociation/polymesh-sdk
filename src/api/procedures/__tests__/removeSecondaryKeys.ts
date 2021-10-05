@@ -3,13 +3,13 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  Params,
   prepareRemoveSecondaryKeys,
+  RemoveSecondaryKeysParams,
 } from '~/api/procedures/removeSecondaryKeys';
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionType, RoleType, Signer, SignerType, SignerValue } from '~/types';
+import { Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryKeys procedure', () => {
@@ -18,7 +18,7 @@ describe('removeSecondaryKeys procedure', () => {
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
 
-  let args: Params;
+  let args: RemoveSecondaryKeysParams;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -35,27 +35,6 @@ describe('removeSecondaryKeys procedure', () => {
     const signers = [entityMockUtils.getAccountInstance({ address: 'someFakeAccount' })];
     args = {
       signers,
-      identity: entityMockUtils.getIdentityInstance({
-        getPrimaryKey: entityMockUtils.getAccountInstance({ address: 'primaryKey' }),
-        getSecondaryKeys: signers.map(signer => ({
-          signer,
-          permissions: {
-            tokens: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            portfolios: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            transactions: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            transactionGroups: [],
-          },
-        })),
-      }),
     };
   });
 
@@ -96,7 +75,7 @@ describe('removeSecondaryKeys procedure', () => {
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeSecondaryKeys');
 
@@ -106,7 +85,7 @@ describe('removeSecondaryKeys procedure', () => {
   });
 
   test('should throw an error if attempting to remove the primary key', () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
     const signer = entityMockUtils.getAccountInstance({ address: 'primaryKey' });
 
     signerToSignerValueStub
@@ -127,7 +106,7 @@ describe('removeSecondaryKeys procedure', () => {
 
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
 
     return expect(
       prepareRemoveSecondaryKeys.call(proc, {
@@ -142,11 +121,10 @@ describe('removeSecondaryKeys procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.Identity, did: args.identity.did }],
+      expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.identity.RemoveSecondaryKeys],
           tokens: [],
