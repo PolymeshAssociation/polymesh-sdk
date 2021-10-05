@@ -443,7 +443,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
     const affirmed: Instruction[] = [];
-    const rejected: Instruction[] = [];
     const pending: Instruction[] = [];
     const failed: Instruction[] = [];
 
@@ -467,8 +466,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
           failed.push(instruction);
         } else if (status.isAffirmed) {
           affirmed.push(instruction);
-        } else if (status.isRejected) {
-          rejected.push(instruction);
         } else if (status.isPending) {
           pending.push(instruction);
         }
@@ -477,7 +474,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return {
       affirmed,
-      rejected,
       pending,
       failed,
     };
