@@ -99,7 +99,7 @@ describe('createCheckpoint procedure', () => {
     test('should return the new Checkpoint', () => {
       const result = createCheckpointResolver(ticker, mockContext)({} as ISubmittableResult);
 
-      expect(result.ticker).toBe(ticker);
+      expect(result.token.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
     });
   });

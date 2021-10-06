@@ -69,7 +69,11 @@ export async function prepareModifyDistributionCheckpoint(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { distribution: { ticker } }: Params
+  {
+    distribution: {
+      token: { ticker },
+    },
+  }: Params
 ): ProcedureAuthorization {
   const { context } = this;
 

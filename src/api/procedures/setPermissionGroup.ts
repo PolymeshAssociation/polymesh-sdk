@@ -181,7 +181,7 @@ export function prepareStorage(
   let token: string | SecurityToken;
 
   if (isEntity(group)) {
-    ({ ticker: token } = group);
+    ({ token } = group);
   } else {
     ({ token } = group);
   }

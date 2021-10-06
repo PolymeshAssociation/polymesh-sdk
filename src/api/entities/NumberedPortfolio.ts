@@ -38,7 +38,7 @@ export class NumberedPortfolio extends Portfolio {
   }
 
   /**
-   * portfolio identifier number
+   * Portfolio identifier number
    */
   public id: BigNumber;
 
@@ -99,7 +99,7 @@ export class NumberedPortfolio extends Portfolio {
   }
 
   /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this portfolio was created
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Portfolio was created
    *
    * @note uses the middleware
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned

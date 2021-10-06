@@ -25,7 +25,11 @@ export async function prepareReclaimDividendDistributionFunds(
   } = this;
 
   const {
-    distribution: { id: localId, ticker, expiryDate },
+    distribution: {
+      id: localId,
+      token: { ticker },
+      expiryDate,
+    },
     distribution,
   } = args;
 
@@ -57,7 +61,12 @@ export async function prepareReclaimDividendDistributionFunds(
  */
 export async function getAuthorization(
   this: Procedure<Params, void>,
-  { distribution: { origin, ticker } }: Params
+  {
+    distribution: {
+      origin,
+      token: { ticker },
+    },
+  }: Params
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 

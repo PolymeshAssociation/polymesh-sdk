@@ -57,12 +57,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Polymesh-specific address of the account. Serves as an identifier
+   * Polymesh-specific address of the Account. Serves as an identifier
    */
   public address: string;
 
   /**
-   * public key of the account. This is a hex representation of the address that is transversal to any Substrate chain
+   * public key of the Account. This is a hex representation of the address that is transversal to any Substrate chain
    */
   public key: string;
 
@@ -95,7 +95,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public leaveIdentity: ProcedureMethod<void, void>;
 
   /**
-   * Get the free/locked POLYX balance of the account
+   * Get the free/locked POLYX balance of the Account
    *
    * @note can be subscribed to
    */
@@ -165,7 +165,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve a list of transactions signed by this account. Can be filtered using parameters
+   * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
    *
    * @param filters.tag - tag associated with the transaction
    * @param filters.success - whether the transaction was successful or not
@@ -278,7 +278,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the Permissions this Signer has as a Signing Key for its corresponding Identity
+   * Retrieve the Permissions this Account has as a Signing Key for its corresponding Identity
    */
   public async getPermissions(): Promise<Permissions> {
     const { context, address } = this;

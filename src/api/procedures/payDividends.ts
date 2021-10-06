@@ -39,7 +39,7 @@ export async function preparePayDividends(
     distribution: {
       targets: { identities, treatment },
       id: localId,
-      ticker,
+      token: { ticker },
       paymentDate,
       expiryDate,
     },

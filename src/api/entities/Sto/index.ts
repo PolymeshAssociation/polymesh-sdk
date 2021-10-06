@@ -12,6 +12,7 @@ import {
   modifyStoTimes,
   ModifyStoTimesParams,
   PolymeshError,
+  SecurityToken,
   toggleFreezeSto,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
@@ -59,9 +60,9 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   public id: BigNumber;
 
   /**
-   * ticker of the Security Token being offered
+   * Security Token being offered
    */
-  public ticker: string;
+  public token: SecurityToken;
 
   /**
    * @hidden
@@ -72,7 +73,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.ticker = ticker;
+    this.token = new SecurityToken({ ticker }, context);
 
     this.freeze = createProcedureMethod(
       { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: true }] },
@@ -113,7 +114,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       id,
-      ticker,
+      token: { ticker },
       context,
     } = this;
 
@@ -197,7 +198,11 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
       start?: number;
     } = {}
   ): Promise<ResultSet<Investment>> {
-    const { context, id, ticker } = this;
+    const {
+      context,
+      id,
+      token: { ticker },
+    } = this;
 
     const { size, start } = opts;
 
@@ -247,7 +252,11 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
    * Determine whether this STO exists on chain
    */
   public async exists(): Promise<boolean> {
-    const { ticker, id, context } = this;
+    const {
+      token: { ticker },
+      id,
+      context,
+    } = this;
 
     const fundraiser = await context.polymeshApi.query.sto.fundraisers(
       stringToTicker(ticker, context),
@@ -261,10 +270,10 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
    * Return the Sto's ID and Token ticker
    */
   public toJson(): HumanReadable {
-    const { ticker, id } = this;
+    const { token, id } = this;
 
     return toHumanReadable({
-      ticker,
+      ticker: token,
       id,
     });
   }

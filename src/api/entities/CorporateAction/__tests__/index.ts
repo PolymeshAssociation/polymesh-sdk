@@ -29,6 +29,10 @@ jest.mock(
   )
 );
 jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
@@ -124,7 +128,7 @@ describe('CorporateAction class', () => {
   describe('constructor', () => {
     test('should assign parameters to instance', () => {
       expect(corporateAction.id).toEqual(id);
-      expect(corporateAction.ticker).toBe(ticker);
+      expect(corporateAction.token.ticker).toBe(ticker);
       expect(corporateAction.declarationDate).toEqual(declarationDate);
       expect(corporateAction.description).toEqual(description);
       expect(corporateAction.targets).toEqual(targets);

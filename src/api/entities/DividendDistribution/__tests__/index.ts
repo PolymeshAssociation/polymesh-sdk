@@ -24,8 +24,8 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
 describe('DividendDistribution class', () => {
@@ -130,7 +130,7 @@ describe('DividendDistribution class', () => {
   describe('constructor', () => {
     test('should assign parameters to instance', () => {
       expect(dividendDistribution.id).toEqual(id);
-      expect(dividendDistribution.ticker).toBe(ticker);
+      expect(dividendDistribution.token.ticker).toBe(ticker);
       expect(dividendDistribution.declarationDate).toEqual(declarationDate);
       expect(dividendDistribution.description).toEqual(description);
       expect(dividendDistribution.targets).toEqual(targets);

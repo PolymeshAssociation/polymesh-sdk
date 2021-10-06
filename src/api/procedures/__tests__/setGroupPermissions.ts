@@ -13,11 +13,6 @@ import { PermissionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
-jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
-);
-
 describe('setGroupPermissions procedure', () => {
   const ticker = 'SOME_TICKER';
   const permissions = {

@@ -10,10 +10,9 @@ export interface UniqueIdentifiers {
 export class DefaultPortfolio extends Portfolio {
   /**
    * @hidden
-   *
-   * NOTE: this is necessary to remove `id` from the DefaultPortfolio constructor signature
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
+    // NOTE @monitz87: this is necessary to remove `id` from the DefaultPortfolio constructor signature
     super({ ...identifiers, id: undefined }, context);
   }
 

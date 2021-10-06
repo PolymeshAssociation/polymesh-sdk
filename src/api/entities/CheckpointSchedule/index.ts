@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { Checkpoint, Context, Entity, PolymeshError } from '~/internal';
+import { Checkpoint, Context, Entity, PolymeshError, SecurityToken } from '~/internal';
 import { CalendarPeriod, ErrorCode, ScheduleDetails } from '~/types';
 import {
   momentToDate,
@@ -56,9 +56,9 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   public id: BigNumber;
 
   /**
-   * ticker of the Security Token for which Checkpoints are scheduled
+   * Security Token for which Checkpoints are scheduled
    */
-  public ticker: string;
+  public token: SecurityToken;
 
   /**
    * how often this Schedule creates a Checkpoint. A null value means this Schedule
@@ -95,7 +95,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
     const noPeriod = period.amount === 0;
 
     this.id = id;
-    this.ticker = ticker;
+    this.token = new SecurityToken({ ticker }, context);
     this.period = noPeriod ? null : period;
     this.start = start;
     this.complexity = periodComplexity(period);
@@ -125,7 +125,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
       },
       id,
       context,
-      ticker,
+      token: { ticker },
     } = this;
 
     const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
@@ -158,7 +158,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         },
       },
       context,
-      ticker,
+      token: { ticker },
       id,
     } = this;
 
@@ -190,7 +190,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         },
       },
       context,
-      ticker,
+      token: { ticker },
       id,
     } = this;
 
@@ -202,13 +202,13 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Return the Schedule's ID and Token ticker
+   * Return the Schedule's static data
    */
   public toJson(): HumanReadable {
-    const { ticker, id, expiryDate, complexity, start, period } = this;
+    const { token, id, expiryDate, complexity, start, period } = this;
 
     return toHumanReadable({
-      ticker,
+      ticker: token,
       id,
       start,
       expiryDate,
