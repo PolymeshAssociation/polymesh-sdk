@@ -267,6 +267,7 @@ describe('inviteAccount procedure', () => {
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(address);
     signerToStringStub.withArgs(target).returns(address);
+
     const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
 
     return expect(prepareInviteAccount.call(proc, { ...args })).rejects.toThrow(
