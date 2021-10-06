@@ -262,23 +262,6 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    // entityMockUtils.getIdentityInstance({
-    //   authorizations: {
-    //     getSent: sentAuthorizations,
-    //   },
-    //   getSecondaryKeys: [
-    //     {
-    //       signer,
-    //       permissions: {
-    //         tokens: null,
-    //         portfolios: null,
-    //         transactions: null,
-    //         transactionGroups: [],
-    //       },
-    //     },
-    //   ],
-    // });
-
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     signerToStringStub.withArgs(signer).returns(signer.address);
