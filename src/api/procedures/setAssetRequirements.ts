@@ -5,6 +5,7 @@ import { Condition, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   complianceRequirementToRequirement,
+  numberToU32,
   requirementToComplianceRequirement,
   stringToTicker,
   u32ToBigNumber,
@@ -86,19 +87,24 @@ export async function prepareSetAssetRequirements(
     };
   });
 
-  if (currentRequirements.length) {
+  if (!requirements.length) {
     this.addTransaction(tx.complianceManager.resetAssetCompliance, {}, rawTicker);
-  }
+  } else {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const assetCompliance = rawConditions.map(({ senderConditions, receiverConditions }, i) => ({
+      sender_conditions: senderConditions,
+      receiver_conditions: receiverConditions,
+      id: numberToU32(i, context),
+    }));
+    /* eslint-enable @typescript-eslint/naming-convention */
 
-  rawConditions.forEach(({ senderConditions, receiverConditions }) => {
     this.addTransaction(
-      tx.complianceManager.addComplianceRequirement,
+      tx.complianceManager.replaceAssetCompliance,
       {},
       rawTicker,
-      senderConditions,
-      receiverConditions
+      assetCompliance
     );
-  });
+  }
 
   return new SecurityToken({ ticker }, context);
 }
