@@ -98,7 +98,7 @@ export class CurrentIdentity {
   public revokePermissions: ProcedureMethod<{ secondaryKeys: Signer[] }, void>;
 
   /**
-   * Modify all permissions of a list of secondary keys associated with the Identity
+   * Modify all permissions of a list of secondary keys associated with the Current Identity
    */
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
