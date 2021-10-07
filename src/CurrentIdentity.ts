@@ -117,7 +117,7 @@ export class CurrentIdentity {
   public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
 
   /**
-   * Freeze all the secondary keys in this Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
+   * Freeze all the secondary keys in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
    */
   public freezeSecondaryKeys: ProcedureMethod<void, void>;
 
