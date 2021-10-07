@@ -112,7 +112,7 @@ export class CurrentIdentity {
   public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
 
   /**
-   * Create a Venue
+   * Create a Venue under the ownership of the Current Identity
    */
   public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
 
