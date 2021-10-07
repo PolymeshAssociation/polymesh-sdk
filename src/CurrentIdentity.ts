@@ -88,7 +88,7 @@ export class CurrentIdentity {
   }
 
   /**
-   * Remove a list of secondary keys associated with the Identity
+   * Remove a list of secondary keys associated with the Current Identity
    */
   public removeSecondaryKeys: ProcedureMethod<RemoveSecondaryKeysParams, void>;
 
