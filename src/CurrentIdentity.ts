@@ -122,7 +122,7 @@ export class CurrentIdentity {
   public freezeSecondaryKeys: ProcedureMethod<void, void>;
 
   /**
-   * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
+   * Unfreeze all the secondary keys in the Current Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
 
