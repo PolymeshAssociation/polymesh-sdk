@@ -18,7 +18,7 @@ import { PermissionType, ProcedureMethod, Signer } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
- * Handles all CurrentIdentity related functionality
+ * Handles functionality related to the Current Identity
  */
 export class CurrentIdentity {
   private context: Context;
