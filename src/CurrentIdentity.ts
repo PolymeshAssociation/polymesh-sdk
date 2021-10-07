@@ -127,7 +127,7 @@ export class CurrentIdentity {
   public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
 
   /**
-   * Reserve a ticker symbol to later use in the creation of a Security Token.
+   * Reserve a ticker symbol under the ownership of the Current Identity to later use in the creation of a Security Token.
    *   The ticker will expire after a set amount of time, after which other users can reserve it
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
