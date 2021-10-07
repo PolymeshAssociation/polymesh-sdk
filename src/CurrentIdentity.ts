@@ -93,7 +93,7 @@ export class CurrentIdentity {
   public removeSecondaryKeys: ProcedureMethod<RemoveSecondaryKeysParams, void>;
 
   /**
-   * Revoke all permissions of a list of secondary keys associated with the Identity
+   * Revoke all permissions of a list of secondary keys associated with the Current Identity
    */
   public revokePermissions: ProcedureMethod<{ secondaryKeys: Signer[] }, void>;
 
