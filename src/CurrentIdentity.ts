@@ -103,7 +103,7 @@ export class CurrentIdentity {
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
   /**
-   * Send an invitation to an Account to join this Identity
+   * Send an invitation to an Account to join the Current Identity as a secondary key
    *
    * @note this may create AuthorizationRequest which have to be accepted by
    *   the corresponding Account. An Account or Identity can
