@@ -105,8 +105,8 @@ export class CurrentIdentity {
   /**
    * Send an invitation to an Account to join the Current Identity as a secondary key
    *
-   * @note this may create AuthorizationRequest which have to be accepted by
-   *   the corresponding Account. An Account or Identity can
+   * @note this will create an AuthorizationRequest which has to be accepted by
+   *   the corresponding Account. An Account can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
   public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
