@@ -1,11 +1,9 @@
-import { Vec } from '@polkadot/types/codec';
-import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { CheckpointId, IdentityId, Ticker } from 'polymesh-types/types';
 
 import { Context, Entity, Identity } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -102,7 +100,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   ): Promise<ResultSet<IdentityBalance>> {
     const {
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { checkpoint, asset },
+        },
       },
       context,
       ticker,
@@ -111,7 +111,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const { entries, lastKey: next } = await requestPaginated(query.asset.balanceOf, {
+    const { entries, lastKey: next } = await requestPaginated(asset.balanceOf, {
       arg: rawTicker,
       paginationOpts,
     });
@@ -130,9 +130,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       balanceUpdatesMultiParams.push(tuple(rawTicker, identityId));
     });
 
-    const rawBalanceUpdates = await query.checkpoint.balanceUpdates.multi<Vec<CheckpointId>>(
-      balanceUpdatesMultiParams
-    );
+    const rawBalanceUpdates = await checkpoint.balanceUpdates.multi<
+      QueryReturnType<typeof checkpoint.balanceUpdates>
+    >(balanceUpdatesMultiParams);
 
     const checkpointBalanceMultiParams: {
       did: string;
@@ -158,9 +158,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       }
     });
 
-    const checkpointBalances = await query.checkpoint.balance.multi<Balance>(
-      checkpointBalanceMultiParams.map(({ params }) => params)
-    );
+    const checkpointBalances = await checkpoint.balance.multi<
+      QueryReturnType<typeof checkpoint.balance>
+    >(checkpointBalanceMultiParams.map(({ params }) => params));
 
     return {
       data: [
