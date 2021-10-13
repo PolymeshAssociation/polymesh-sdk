@@ -1,12 +1,7 @@
 import { u32, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import {
-  AffirmationStatus as MeshAffirmationStatus,
-  PortfolioId,
-  TxTag,
-  TxTags,
-} from 'polymesh-types/types';
+import { PortfolioId, TxTag, TxTags } from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
@@ -16,7 +11,7 @@ import {
   PolymeshTx,
   ProcedureAuthorization,
 } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import {
   meshAffirmationStatusToAffirmationStatus,
   numberToU32,
@@ -95,9 +90,9 @@ export async function prepareModifyInstructionAffirmation(
 
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
 
-  const rawAffirmationStatuses = await settlement.userAffirmations.multi<MeshAffirmationStatus>(
-    multiArgs
-  );
+  const rawAffirmationStatuses = await settlement.userAffirmations.multi<
+    QueryReturnType<typeof settlement.userAffirmations>
+  >(multiArgs);
 
   const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
 
