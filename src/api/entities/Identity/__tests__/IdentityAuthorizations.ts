@@ -108,7 +108,9 @@ describe('IdentityAuthorizations class', () => {
       );
 
       const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');
-      authorizationsStub.multi.withArgs(authsMultiArgs).resolves(authorizations);
+      authorizationsStub.multi
+        .withArgs(authsMultiArgs)
+        .resolves(authorizations.map(dsMockUtils.createMockOption));
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
         entityMockUtils.getAuthorizationRequestInstance({

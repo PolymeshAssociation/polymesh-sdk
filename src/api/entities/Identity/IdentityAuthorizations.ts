@@ -1,3 +1,4 @@
+import { Option } from '@polkadot/types';
 import { Authorization } from 'polymesh-types/types';
 
 import { AuthorizationRequest, Authorizations, Identity } from '~/internal';
@@ -36,13 +37,13 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
       tuple(signatory, storageKey.args[1])
     );
 
-    const authorizations = await polymeshApi.query.identity.authorizations.multi<Authorization>(
-      authQueryParams
-    );
+    const authorizations = await polymeshApi.query.identity.authorizations.multi<
+      Option<Authorization>
+    >(authQueryParams);
 
     const data = this.createAuthorizationRequests(
       authorizations.map((auth, index) => ({
-        auth,
+        auth: auth.unwrap(),
         target: signatoryToSignerValue(authQueryParams[index][0]),
       }))
     );
