@@ -1,11 +1,28 @@
 import BigNumber from 'bignumber.js';
-import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
+import {
+  difference,
+  differenceBy,
+  differenceWith,
+  intersection,
+  intersectionBy,
+  intersectionWith,
+  isEqual,
+  union,
+} from 'lodash';
 
-import { Authorizations, Context, Entity, Identity, leaveIdentity } from '~/internal';
+import {
+  Authorizations,
+  Context,
+  Entity,
+  Identity,
+  leaveIdentity,
+  SecurityToken,
+} from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
+  CheckPermissionsResult,
   DefaultPortfolio,
   Ensured,
   ExtrinsicData,
@@ -15,6 +32,7 @@ import {
   PermissionType,
   ProcedureMethod,
   ResultSet,
+  SignerType,
   SimplePermissions,
   SubCallback,
   Subsidy,
@@ -306,9 +324,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check if this Account possesses certain Permissions for its corresponding Identity
+   * Check if this Account posseses certain Permissions to act on behalf of its corresponding Identity
+   *
+   * @return which permissions the Account is missing (if any) and the final result
    */
-  public async hasPermissions(permissions: SimplePermissions): Promise<boolean> {
+  public async checkPermissions(
+    permissions: SimplePermissions
+  ): Promise<CheckPermissionsResult<SignerType.Account>> {
     const { tokens, transactions, portfolios } = permissions;
 
     const {
@@ -317,20 +339,30 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       portfolios: currentPortfolios,
     } = await this.getPermissions();
 
+    const missingPermissions: SimplePermissions = {};
+
     let hasTokens;
     if (currentTokens === null) {
       hasTokens = true;
     } else if (tokens === null) {
+      missingPermissions.tokens = null;
       hasTokens = false;
     } else if (tokens) {
       const { type: tokensType, values: tokensValues } = currentTokens;
-      if (tokens.length === 0) {
-        hasTokens = true;
-      } else {
+      hasTokens = true;
+
+      if (tokens.length) {
+        let missingTokens: SecurityToken[];
+
         if (tokensType === PermissionType.Include) {
-          hasTokens = !differenceBy(tokens, tokensValues, 'ticker').length;
+          missingTokens = differenceBy(tokens, tokensValues, 'ticker');
         } else {
-          hasTokens = differenceBy(tokens, tokensValues, 'ticker').length === tokens.length;
+          missingTokens = intersectionBy(tokens, tokensValues, 'ticker');
+        }
+
+        if (missingTokens.length) {
+          hasTokens = false;
+          missingPermissions.tokens = missingTokens;
         }
       }
     } else {
@@ -363,6 +395,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     if (currentTransactions === null) {
       hasTransactions = true;
     } else if (transactions === null) {
+      missingPermissions.transactions = null;
       hasTransactions = false;
     } else if (transactions) {
       const {
@@ -370,28 +403,45 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         values: transactionsValues,
         exceptions = [],
       } = currentTransactions;
-      if (transactions.length === 0) {
-        hasTransactions = true;
-      } else {
+      hasTransactions = true;
+
+      if (transactions.length) {
+        let missingTransactions: TxTag[];
+        const exceptionMatches = intersection(transactions, exceptions);
+
         if (transactionsType === PermissionType.Include) {
-          const includedTransactions = differenceWith(
-            union(transactionsValues, exemptedTransactions),
-            exceptions,
-            isModuleOrTagMatch
-          );
-          hasTransactions = transactions.every(
-            tag => !!includedTransactions.find(included => isModuleOrTagMatch(included, tag))
+          const includedTransactions = union(transactionsValues, exemptedTransactions);
+          missingTransactions = union(
+            differenceWith(transactions, includedTransactions, isModuleOrTagMatch),
+            exceptionMatches
           );
         } else {
           const excludedTransactions = differenceWith(
             transactionsValues,
             exemptedTransactions,
-            exceptions,
-            isModuleOrTagMatch
+            (tx, exemptedTx) => {
+              /*
+               * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
+               *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
+               *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
+               *   removing the entire Identity module from the result, which doesn't make sense
+               */
+              if (!tx.includes('.')) {
+                return tx === exemptedTx;
+              }
+
+              return isModuleOrTagMatch(tx, exemptedTx);
+            }
           );
-          hasTransactions = !transactions.some(
-            tag => !!excludedTransactions.find(excluded => isModuleOrTagMatch(excluded, tag))
+          missingTransactions = difference(
+            intersectionWith(transactions, excludedTransactions, isModuleOrTagMatch),
+            exceptionMatches
           );
+        }
+
+        if (missingTransactions.length) {
+          hasTransactions = false;
+          missingPermissions.transactions = missingTransactions;
         }
       }
     } else {
@@ -402,13 +452,14 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     if (currentPortfolios === null) {
       hasPortfolios = true;
     } else if (portfolios === null) {
+      missingPermissions.portfolios = null;
       hasPortfolios = false;
     } else if (portfolios) {
       const { type: portfoliosType, values: portfoliosValues } = currentPortfolios;
+      hasPortfolios = true;
 
-      if (portfolios.length === 0) {
-        hasPortfolios = true;
-      } else {
+      if (portfolios.length) {
+        let missingPortfolios: (DefaultPortfolio | NumberedPortfolio)[];
         const portfolioComparator = (
           a: DefaultPortfolio | NumberedPortfolio,
           b: DefaultPortfolio | NumberedPortfolio
@@ -419,18 +470,41 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           return isEqual(aId, bId);
         };
         if (portfoliosType === PermissionType.Include) {
-          hasPortfolios = !differenceWith(portfolios, portfoliosValues, portfolioComparator).length;
+          missingPortfolios = differenceWith(portfolios, portfoliosValues, portfolioComparator);
         } else {
-          hasPortfolios =
-            differenceWith(portfolios, portfoliosValues, portfolioComparator).length ===
-            portfolios.length;
+          missingPortfolios = intersectionWith(portfolios, portfoliosValues, portfolioComparator);
+        }
+
+        if (missingPortfolios.length) {
+          hasPortfolios = false;
+          missingPermissions.portfolios = missingPortfolios;
         }
       }
     } else {
       hasPortfolios = true;
     }
 
-    return hasTokens && hasTransactions && hasPortfolios;
+    const result = hasTokens && hasTransactions && hasPortfolios;
+
+    if (result) {
+      return { result };
+    }
+
+    return {
+      result,
+      missingPermissions,
+    };
+  }
+
+  /**
+   * Check if this Account possesses certain Permissions to act on behalf of its corresponding Identity
+   *
+   * @deprecated in favor of `checkPermissions`
+   */
+  public async hasPermissions(permissions: SimplePermissions): Promise<boolean> {
+    const { result } = await this.checkPermissions(permissions);
+
+    return result;
   }
 
   /**

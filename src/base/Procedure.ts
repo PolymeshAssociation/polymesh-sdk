@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
 
 import {
   Context,
@@ -9,7 +8,15 @@ import {
   PostTransactionValue,
   TransactionQueue,
 } from '~/internal';
-import { ErrorCode, Identity, ProcedureAuthorizationStatus, ProcedureOpts } from '~/types';
+import {
+  CheckPermissionsResult,
+  CheckRolesResult,
+  ErrorCode,
+  Identity,
+  ProcedureAuthorizationStatus,
+  ProcedureOpts,
+  SignerType,
+} from '~/types';
 import {
   MapMaybePostTransactionValue,
   MaybePostTransactionValue,
@@ -159,62 +166,73 @@ export class Procedure<
     } = checkAuthorizationResult;
 
     let identity: Identity | null = null;
-    let hasRoles: boolean;
+    let rolesResult: CheckRolesResult;
     let noIdentity = false;
 
     const account = ctx.getCurrentAccount();
 
     const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
-    if (typeof roles !== 'boolean') {
+    if (typeof roles !== 'boolean' && typeof roles !== 'string') {
       identity = await fetchIdentity();
       noIdentity = !identity;
-      hasRoles = false;
+      rolesResult = { result: false, missingRoles: roles };
 
       if (identity) {
-        hasRoles = await identity.hasRoles(roles);
+        rolesResult = await identity.checkRoles(roles);
       }
+    } else if (typeof roles === 'string') {
+      rolesResult = { result: false, message: roles };
     } else {
-      hasRoles = roles;
+      rolesResult = { result: roles };
     }
 
-    let hasAgentPermissions: boolean;
-    let signerPermissionsAwaitable: boolean | Promise<boolean>;
+    let agentPermissionsResult: CheckPermissionsResult<SignerType.Identity>;
+    let signerPermissionsAwaitable:
+      | CheckPermissionsResult<SignerType.Account>
+      | Promise<CheckPermissionsResult<SignerType.Account>>;
 
     const accountFrozenPromise = account.isFrozen();
 
-    if (typeof signerPermissions !== 'boolean') {
-      signerPermissionsAwaitable = account.hasPermissions(signerPermissions);
+    if (typeof signerPermissions !== 'boolean' && typeof signerPermissions !== 'string') {
+      signerPermissionsAwaitable = account.checkPermissions(signerPermissions);
+    } else if (typeof signerPermissions === 'string') {
+      signerPermissionsAwaitable = { result: false, message: signerPermissions };
     } else {
-      signerPermissionsAwaitable = signerPermissions;
+      signerPermissionsAwaitable = { result: signerPermissions };
     }
 
-    if (typeof agentPermissions !== 'boolean') {
+    if (typeof agentPermissions !== 'boolean' && typeof agentPermissions !== 'string') {
       const { tokens, transactions } = agentPermissions;
 
-      hasAgentPermissions = true;
+      agentPermissionsResult = { result: true };
 
-      // we assume the same permissions are required for each token
       if (tokens?.length && transactions?.length) {
+        if (tokens.length > 1) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message:
+              'Procedures cannot require permissions for more than one Security Token. Please contact the Polymath team',
+          });
+        }
+
         identity = await fetchIdentity();
 
         noIdentity = !identity;
 
-        hasAgentPermissions = false;
+        agentPermissionsResult = { result: false, missingPermissions: transactions };
 
         if (identity) {
-          const agentPermissionResults = await P.map(tokens, token =>
-            // the compiler doesn't recognize that identity is defined even though
-            //   we checked at the top of the block
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            identity!.tokenPermissions.hasPermissions({ token, transactions })
-          );
-
-          hasAgentPermissions = agentPermissionResults.every(perm => perm);
+          agentPermissionsResult = await identity.tokenPermissions.checkPermissions({
+            token: tokens[0],
+            transactions,
+          });
         }
       }
+    } else if (typeof agentPermissions === 'string') {
+      agentPermissionsResult = { result: false, message: agentPermissions };
     } else {
-      hasAgentPermissions = agentPermissions;
+      agentPermissionsResult = { result: agentPermissions };
     }
 
     const hasSignerPermissions = await signerPermissionsAwaitable;
@@ -222,9 +240,9 @@ export class Procedure<
     const accountFrozen = await accountFrozenPromise;
 
     return {
-      roles: hasRoles,
+      roles: rolesResult,
       signerPermissions: hasSignerPermissions,
-      agentPermissions: hasAgentPermissions,
+      agentPermissions: agentPermissionsResult,
       accountFrozen,
       noIdentity,
     };
@@ -290,26 +308,44 @@ export class Procedure<
         });
       }
 
-      if (!signerPermissions) {
+      if (!signerPermissions.result) {
+        const { message, missingPermissions } = signerPermissions;
+
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
             "Current Account doesn't have the required permissions to execute this procedure",
+          data: {
+            message,
+            missingPermissions,
+          },
         });
       }
 
-      if (!agentPermissions) {
+      if (!agentPermissions.result) {
+        const { message, missingPermissions } = agentPermissions;
+
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
             "Current Identity doesn't have the required permissions to execute this procedure",
+          data: {
+            message,
+            missingPermissions,
+          },
         });
       }
 
-      if (!roles) {
+      if (!roles.result) {
+        const { message, missingRoles } = roles;
+
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message: "Current Identity doesn't have the required roles to execute this procedure",
+          data: {
+            message,
+            missingRoles,
+          },
         });
       }
 

@@ -118,6 +118,49 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: checkRoles', () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
+    });
+
+    test('should return whether the Identity possesses all roles', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const roles: TickerOwnerRole[] = [
+        { type: RoleType.TickerOwner, ticker: 'someTicker' },
+        { type: RoleType.TickerOwner, ticker: 'otherTicker' },
+      ];
+
+      let result = await identity.checkRoles(roles);
+
+      expect(result).toEqual({
+        result: true,
+      });
+
+      entityMockUtils.reset();
+
+      const stub = entityMockUtils.getTickerReservationDetailsStub();
+
+      stub.onSecondCall().returns({
+        owner: null,
+      });
+
+      result = await identity.checkRoles(roles);
+
+      expect(result).toEqual({
+        result: false,
+        missingRoles: [{ type: RoleType.TickerOwner, ticker: 'otherTicker' }],
+      });
+    });
+  });
+
   describe('method: hasRole and hasRoles', () => {
     beforeAll(() => {
       entityMockUtils.initMocks();

@@ -55,7 +55,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const currentAccount = this.context.getCurrentAccount();
 
-  const roles = account.isEqual(currentAccount);
+  const hasRoles = account.isEqual(currentAccount);
 
   const permissions = {
     tokens: [],
@@ -64,7 +64,7 @@ export function getAuthorization(
   };
 
   return {
-    roles,
+    roles: hasRoles || 'Only the current Account can leave its Identity',
     permissions,
   };
 }

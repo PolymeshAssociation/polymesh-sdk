@@ -90,7 +90,7 @@ export async function getAuthorization(
   const { target, issuer } = authRequest;
   const { context } = this;
 
-  let roles;
+  let hasRoles;
   let transactions: TxTag[] = [];
 
   const currentAccount = context.getCurrentAccount();
@@ -100,17 +100,19 @@ export async function getAuthorization(
 
   if (target instanceof Account) {
     calledByTarget = currentAccount.address === target.address;
-    roles = calledByTarget;
+    hasRoles = calledByTarget;
     transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
   } else {
     calledByTarget = !!identity?.isEqual(target);
-    roles = calledByTarget;
+    hasRoles = calledByTarget;
     transactions = [TxTags.multiSig.AcceptMultisigSignerAsIdentity];
   }
 
   if (accept) {
     return {
-      roles,
+      roles:
+        hasRoles ||
+        '"AddMultiSigSigner" Authorization Requests can only be accepted by the target Signer',
       permissions: {
         transactions,
       },
@@ -119,21 +121,23 @@ export async function getAuthorization(
 
   transactions = [TxTags.identity.RemoveAuthorization];
 
-  // both the issuer and the target can remove the authorization request
-  roles = roles || !!identity?.isEqual(issuer);
-
   /*
    * if the target is removing the auth request and they don't have an Identity,
    *   no permissions are required
    */
   if (calledByTarget && !identity) {
     return {
-      roles,
+      roles: true,
     };
   }
 
+  // both the issuer and the target can remove the authorization request
+  hasRoles = hasRoles || !!identity?.isEqual(issuer);
+
   return {
-    roles,
+    roles:
+      hasRoles ||
+      '"AddMultiSigSigner" Authorization Request can only be removed by the issuing Identity or the target Signer',
     permissions: { transactions },
   };
 }

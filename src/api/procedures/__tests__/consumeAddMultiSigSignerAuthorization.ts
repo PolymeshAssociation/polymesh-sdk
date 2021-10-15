@@ -262,7 +262,8 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        roles: false,
+        roles:
+          '"AddMultiSigSigner" Authorization Requests can only be accepted by the target Signer',
         permissions: {
           transactions: [TxTags.multiSig.AcceptMultisigSignerAsIdentity],
         },
@@ -293,7 +294,8 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        roles: false,
+        roles:
+          '"AddMultiSigSigner" Authorization Request can only be removed by the issuing Identity or the target Signer',
         permissions: {
           transactions: [TxTags.identity.RemoveAuthorization],
         },
@@ -305,7 +307,8 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        roles: false,
+        roles:
+          '"AddMultiSigSigner" Authorization Request can only be removed by the issuing Identity or the target Signer',
         permissions: {
           transactions: [TxTags.identity.RemoveAuthorization],
         },
