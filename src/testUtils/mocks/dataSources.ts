@@ -2701,7 +2701,7 @@ export const createMockSettlementType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAffirmationStatus = (
-  authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed' | 'Rejected'
+  authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed'
 ): AffirmationStatus => {
   return createMockEnum(authorizationStatus) as AffirmationStatus;
 };
