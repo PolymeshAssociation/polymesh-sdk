@@ -926,8 +926,6 @@ import type {
   BallotTimeRange,
   BallotTitle,
   BallotVote,
-  BatchAddClaimItem,
-  BatchRevokeClaimItem,
   Beneficiary,
   BridgeTx,
   BridgeTxDetail,
@@ -981,7 +979,6 @@ import type {
   ExtVersion,
   ExtensionAttributes,
   ExtrinsicPermissions,
-  FeeOf,
   FundingRoundName,
   Fundraiser,
   FundraiserName,
@@ -990,7 +987,6 @@ import type {
   GranularCanTransferResult,
   HandledTxStatus,
   IdentityClaim,
-  IdentityClaimKey,
   IdentityId,
   IdentityRole,
   InactiveMember,
@@ -998,7 +994,6 @@ import type {
   InstructionStatus,
   InvestorUid,
   InvestorZKProofData,
-  IssueRecipient,
   ItnRewardStatus,
   KeyIdentityData,
   Leg,
@@ -1018,8 +1013,6 @@ import type {
   OffChainSignature,
   PalletName,
   PalletPermissions,
-  Payload,
-  PendingTx,
   Percentage,
   PermissionedIdentityPrefs,
   Permissions,
@@ -1037,14 +1030,12 @@ import type {
   PosRatio,
   PreAuthorizedKeyInfo,
   PriceTier,
-  ProportionMatch,
   ProposalData,
   ProposalDetails,
   ProposalState,
   ProposalStatus,
   Proposer,
   ProtocolOp,
-  ProverTickerKey,
   Receipt,
   ReceiptDetails,
   ReceiptMetadata,
@@ -1063,7 +1054,6 @@ import type {
   SecurityToken,
   SettlementType,
   Signatory,
-  SimpleTokenRecord,
   SkippedCount,
   SlashingSwitch,
   SmartExtension,
@@ -1083,10 +1073,8 @@ import type {
   TemplateDetails,
   TemplateMetadata,
   Ticker,
-  TickerRangeProof,
   TickerRegistration,
   TickerRegistrationConfig,
-  TickerTransferApproval,
   TransferManager,
   TransferManagerResult,
   TrustedFor,
@@ -1138,7 +1126,6 @@ declare module '@polkadot/types/types/registry' {
     'Compact<DocumentId>': Compact<DocumentId>;
     'Compact<EventIndex>': Compact<EventIndex>;
     'Compact<ExtVersion>': Compact<ExtVersion>;
-    'Compact<FeeOf>': Compact<FeeOf>;
     'Compact<FixedU128>': Compact<FixedU128>;
     'Compact<FixedU64>': Compact<FixedU64>;
     'Compact<FundIndex>': Compact<FundIndex>;
@@ -1301,8 +1288,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<BallotTimeRange>': Option<BallotTimeRange>;
     'Option<BallotTitle>': Option<BallotTitle>;
     'Option<BallotVote>': Option<BallotVote>;
-    'Option<BatchAddClaimItem>': Option<BatchAddClaimItem>;
-    'Option<BatchRevokeClaimItem>': Option<BatchRevokeClaimItem>;
     'Option<BeefyCommitment>': Option<BeefyCommitment>;
     'Option<BeefyId>': Option<BeefyId>;
     'Option<BeefyKey>': Option<BeefyKey>;
@@ -1575,7 +1560,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<ExtrinsicV4>': Option<ExtrinsicV4>;
     'Option<ExtVersion>': Option<ExtVersion>;
     'Option<FeeDetails>': Option<FeeDetails>;
-    'Option<FeeOf>': Option<FeeOf>;
     'Option<Fixed128>': Option<Fixed128>;
     'Option<Fixed64>': Option<Fixed64>;
     'Option<FixedI128>': Option<FixedI128>;
@@ -1655,7 +1639,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<I8>': Option<I8>;
     'Option<IdentificationTuple>': Option<IdentificationTuple>;
     'Option<IdentityClaim>': Option<IdentityClaim>;
-    'Option<IdentityClaimKey>': Option<IdentityClaimKey>;
     'Option<IdentityId>': Option<IdentityId>;
     'Option<IdentityRole>': Option<IdentityRole>;
     'Option<ImmortalEra>': Option<ImmortalEra>;
@@ -1685,7 +1668,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<InvalidTransaction>': Option<InvalidTransaction>;
     'Option<InvestorUid>': Option<InvestorUid>;
     'Option<InvestorZKProofData>': Option<InvestorZKProofData>;
-    'Option<IssueRecipient>': Option<IssueRecipient>;
     'Option<ItnRewardStatus>': Option<ItnRewardStatus>;
     'Option<Json>': Option<Json>;
     'Option<Junction>': Option<Junction>;
@@ -1835,7 +1817,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<ParathreadClaimQueue>': Option<ParathreadClaimQueue>;
     'Option<ParathreadEntry>': Option<ParathreadEntry>;
     'Option<ParaValidatorIndex>': Option<ParaValidatorIndex>;
-    'Option<Payload>': Option<Payload>;
     'Option<Pays>': Option<Pays>;
     'Option<Peer>': Option<Peer>;
     'Option<PeerEndpoint>': Option<PeerEndpoint>;
@@ -1845,7 +1826,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<PendingChange>': Option<PendingChange>;
     'Option<PendingPause>': Option<PendingPause>;
     'Option<PendingResume>': Option<PendingResume>;
-    'Option<PendingTx>': Option<PendingTx>;
     'Option<Perbill>': Option<Perbill>;
     'Option<Percent>': Option<Percent>;
     'Option<Percentage>': Option<Percentage>;
@@ -1892,7 +1872,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<Priority>': Option<Priority>;
     'Option<PriorLock>': Option<PriorLock>;
     'Option<PropIndex>': Option<PropIndex>;
-    'Option<ProportionMatch>': Option<ProportionMatch>;
     'Option<Proposal>': Option<Proposal>;
     'Option<ProposalData>': Option<ProposalData>;
     'Option<ProposalDetails>': Option<ProposalDetails>;
@@ -1901,7 +1880,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<ProposalStatus>': Option<ProposalStatus>;
     'Option<Proposer>': Option<Proposer>;
     'Option<ProtocolOp>': Option<ProtocolOp>;
-    'Option<ProverTickerKey>': Option<ProverTickerKey>;
     'Option<ProxyAnnouncement>': Option<ProxyAnnouncement>;
     'Option<ProxyDefinition>': Option<ProxyDefinition>;
     'Option<ProxyState>': Option<ProxyState>;
@@ -2033,7 +2011,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<SignerPayload>': Option<SignerPayload>;
     'Option<SigningContext>': Option<SigningContext>;
     'Option<SiLookupTypeId>': Option<SiLookupTypeId>;
-    'Option<SimpleTokenRecord>': Option<SimpleTokenRecord>;
     'Option<SiPath>': Option<SiPath>;
     'Option<SiType>': Option<SiType>;
     'Option<SiTypeDef>': Option<SiTypeDef>;
@@ -2125,10 +2102,8 @@ declare module '@polkadot/types/types/registry' {
     'Option<TemplateMetadata>': Option<TemplateMetadata>;
     'Option<Text>': Option<Text>;
     'Option<Ticker>': Option<Ticker>;
-    'Option<TickerRangeProof>': Option<TickerRangeProof>;
     'Option<TickerRegistration>': Option<TickerRegistration>;
     'Option<TickerRegistrationConfig>': Option<TickerRegistrationConfig>;
-    'Option<TickerTransferApproval>': Option<TickerTransferApproval>;
     'Option<Timepoint>': Option<Timepoint>;
     'Option<TokenError>': Option<TokenError>;
     'Option<TombstoneContractInfo>': Option<TombstoneContractInfo>;
@@ -2334,8 +2309,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<BallotTimeRange>': Vec<BallotTimeRange>;
     'Vec<BallotTitle>': Vec<BallotTitle>;
     'Vec<BallotVote>': Vec<BallotVote>;
-    'Vec<BatchAddClaimItem>': Vec<BatchAddClaimItem>;
-    'Vec<BatchRevokeClaimItem>': Vec<BatchRevokeClaimItem>;
     'Vec<BeefyCommitment>': Vec<BeefyCommitment>;
     'Vec<BeefyId>': Vec<BeefyId>;
     'Vec<BeefyKey>': Vec<BeefyKey>;
@@ -2608,7 +2581,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ExtrinsicV4>': Vec<ExtrinsicV4>;
     'Vec<ExtVersion>': Vec<ExtVersion>;
     'Vec<FeeDetails>': Vec<FeeDetails>;
-    'Vec<FeeOf>': Vec<FeeOf>;
     'Vec<Fixed128>': Vec<Fixed128>;
     'Vec<Fixed64>': Vec<Fixed64>;
     'Vec<FixedI128>': Vec<FixedI128>;
@@ -2688,7 +2660,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<I8>': Vec<I8>;
     'Vec<IdentificationTuple>': Vec<IdentificationTuple>;
     'Vec<IdentityClaim>': Vec<IdentityClaim>;
-    'Vec<IdentityClaimKey>': Vec<IdentityClaimKey>;
     'Vec<IdentityId>': Vec<IdentityId>;
     'Vec<IdentityRole>': Vec<IdentityRole>;
     'Vec<ImmortalEra>': Vec<ImmortalEra>;
@@ -2718,7 +2689,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<InvalidTransaction>': Vec<InvalidTransaction>;
     'Vec<InvestorUid>': Vec<InvestorUid>;
     'Vec<InvestorZKProofData>': Vec<InvestorZKProofData>;
-    'Vec<IssueRecipient>': Vec<IssueRecipient>;
     'Vec<ItnRewardStatus>': Vec<ItnRewardStatus>;
     'Vec<Json>': Vec<Json>;
     'Vec<Junction>': Vec<Junction>;
@@ -2868,7 +2838,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ParathreadClaimQueue>': Vec<ParathreadClaimQueue>;
     'Vec<ParathreadEntry>': Vec<ParathreadEntry>;
     'Vec<ParaValidatorIndex>': Vec<ParaValidatorIndex>;
-    'Vec<Payload>': Vec<Payload>;
     'Vec<Pays>': Vec<Pays>;
     'Vec<Peer>': Vec<Peer>;
     'Vec<PeerEndpoint>': Vec<PeerEndpoint>;
@@ -2878,7 +2847,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<PendingChange>': Vec<PendingChange>;
     'Vec<PendingPause>': Vec<PendingPause>;
     'Vec<PendingResume>': Vec<PendingResume>;
-    'Vec<PendingTx>': Vec<PendingTx>;
     'Vec<Perbill>': Vec<Perbill>;
     'Vec<Percent>': Vec<Percent>;
     'Vec<Percentage>': Vec<Percentage>;
@@ -2925,7 +2893,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<Priority>': Vec<Priority>;
     'Vec<PriorLock>': Vec<PriorLock>;
     'Vec<PropIndex>': Vec<PropIndex>;
-    'Vec<ProportionMatch>': Vec<ProportionMatch>;
     'Vec<Proposal>': Vec<Proposal>;
     'Vec<ProposalData>': Vec<ProposalData>;
     'Vec<ProposalDetails>': Vec<ProposalDetails>;
@@ -2934,7 +2901,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<ProposalStatus>': Vec<ProposalStatus>;
     'Vec<Proposer>': Vec<Proposer>;
     'Vec<ProtocolOp>': Vec<ProtocolOp>;
-    'Vec<ProverTickerKey>': Vec<ProverTickerKey>;
     'Vec<ProxyAnnouncement>': Vec<ProxyAnnouncement>;
     'Vec<ProxyDefinition>': Vec<ProxyDefinition>;
     'Vec<ProxyState>': Vec<ProxyState>;
@@ -3066,7 +3032,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<SignerPayload>': Vec<SignerPayload>;
     'Vec<SigningContext>': Vec<SigningContext>;
     'Vec<SiLookupTypeId>': Vec<SiLookupTypeId>;
-    'Vec<SimpleTokenRecord>': Vec<SimpleTokenRecord>;
     'Vec<SiPath>': Vec<SiPath>;
     'Vec<SiType>': Vec<SiType>;
     'Vec<SiTypeDef>': Vec<SiTypeDef>;
@@ -3158,10 +3123,8 @@ declare module '@polkadot/types/types/registry' {
     'Vec<TemplateMetadata>': Vec<TemplateMetadata>;
     'Vec<Text>': Vec<Text>;
     'Vec<Ticker>': Vec<Ticker>;
-    'Vec<TickerRangeProof>': Vec<TickerRangeProof>;
     'Vec<TickerRegistration>': Vec<TickerRegistration>;
     'Vec<TickerRegistrationConfig>': Vec<TickerRegistrationConfig>;
-    'Vec<TickerTransferApproval>': Vec<TickerTransferApproval>;
     'Vec<Timepoint>': Vec<Timepoint>;
     'Vec<TokenError>': Vec<TokenError>;
     'Vec<TombstoneContractInfo>': Vec<TombstoneContractInfo>;
@@ -3367,8 +3330,6 @@ declare module '@polkadot/types/types/registry' {
     BallotTimeRange: BallotTimeRange;
     BallotTitle: BallotTitle;
     BallotVote: BallotVote;
-    BatchAddClaimItem: BatchAddClaimItem;
-    BatchRevokeClaimItem: BatchRevokeClaimItem;
     BeefyCommitment: BeefyCommitment;
     BeefyId: BeefyId;
     BeefyKey: BeefyKey;
@@ -3641,7 +3602,6 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicV4: ExtrinsicV4;
     ExtVersion: ExtVersion;
     FeeDetails: FeeDetails;
-    FeeOf: FeeOf;
     Fixed128: Fixed128;
     Fixed64: Fixed64;
     FixedI128: FixedI128;
@@ -3721,7 +3681,6 @@ declare module '@polkadot/types/types/registry' {
     I8: I8;
     IdentificationTuple: IdentificationTuple;
     IdentityClaim: IdentityClaim;
-    IdentityClaimKey: IdentityClaimKey;
     IdentityId: IdentityId;
     IdentityRole: IdentityRole;
     ImmortalEra: ImmortalEra;
@@ -3751,7 +3710,6 @@ declare module '@polkadot/types/types/registry' {
     InvalidTransaction: InvalidTransaction;
     InvestorUid: InvestorUid;
     InvestorZKProofData: InvestorZKProofData;
-    IssueRecipient: IssueRecipient;
     ItnRewardStatus: ItnRewardStatus;
     Json: Json;
     Junction: Junction;
@@ -3901,7 +3859,6 @@ declare module '@polkadot/types/types/registry' {
     ParathreadClaimQueue: ParathreadClaimQueue;
     ParathreadEntry: ParathreadEntry;
     ParaValidatorIndex: ParaValidatorIndex;
-    Payload: Payload;
     Pays: Pays;
     Peer: Peer;
     PeerEndpoint: PeerEndpoint;
@@ -3911,7 +3868,6 @@ declare module '@polkadot/types/types/registry' {
     PendingChange: PendingChange;
     PendingPause: PendingPause;
     PendingResume: PendingResume;
-    PendingTx: PendingTx;
     Perbill: Perbill;
     Percent: Percent;
     Percentage: Percentage;
@@ -3958,7 +3914,6 @@ declare module '@polkadot/types/types/registry' {
     Priority: Priority;
     PriorLock: PriorLock;
     PropIndex: PropIndex;
-    ProportionMatch: ProportionMatch;
     Proposal: Proposal;
     ProposalData: ProposalData;
     ProposalDetails: ProposalDetails;
@@ -3967,7 +3922,6 @@ declare module '@polkadot/types/types/registry' {
     ProposalStatus: ProposalStatus;
     Proposer: Proposer;
     ProtocolOp: ProtocolOp;
-    ProverTickerKey: ProverTickerKey;
     ProxyAnnouncement: ProxyAnnouncement;
     ProxyDefinition: ProxyDefinition;
     ProxyState: ProxyState;
@@ -4099,7 +4053,6 @@ declare module '@polkadot/types/types/registry' {
     SignerPayload: SignerPayload;
     SigningContext: SigningContext;
     SiLookupTypeId: SiLookupTypeId;
-    SimpleTokenRecord: SimpleTokenRecord;
     SiPath: SiPath;
     SiType: SiType;
     SiTypeDef: SiTypeDef;
@@ -4191,10 +4144,8 @@ declare module '@polkadot/types/types/registry' {
     TemplateMetadata: TemplateMetadata;
     Text: Text;
     Ticker: Ticker;
-    TickerRangeProof: TickerRangeProof;
     TickerRegistration: TickerRegistration;
     TickerRegistrationConfig: TickerRegistrationConfig;
-    TickerTransferApproval: TickerTransferApproval;
     Timepoint: Timepoint;
     TokenError: TokenError;
     TombstoneContractInfo: TombstoneContractInfo;
