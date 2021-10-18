@@ -1,8 +1,7 @@
-import { Signatory, TxTags } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getAuthorization,
   ModifySignerPermissionsParams,
   prepareModifySignerPermissions,
 } from '~/api/procedures/modifySignerPermissions';
@@ -181,20 +180,5 @@ describe('modifySignerPermissions procedure', () => {
         identity: entityMockUtils.getIdentityInstance({ getSecondaryKeys: [] }),
       })
     ).rejects.toThrow('One of the Signers is not a Secondary Key for the Identity');
-  });
-
-  describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(boundFunc()).toEqual({
-        permissions: {
-          transactions: [TxTags.identity.SetPermissionToSigner],
-          tokens: [],
-          portfolios: [],
-        },
-      });
-    });
   });
 });

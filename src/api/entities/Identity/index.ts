@@ -27,7 +27,6 @@ import {
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isVenueOwnerRole,
-  NoArgsProcedureMethod,
   Order,
   ResultSet,
   Role,

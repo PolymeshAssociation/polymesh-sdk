@@ -1,8 +1,7 @@
-import { Signatory, TxTags } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  getAuthorization,
   prepareRemoveSecondaryKeys,
   RemoveSecondaryKeysParams,
 } from '~/api/procedures/removeSecondaryKeys';
@@ -117,20 +116,5 @@ describe('removeSecondaryKeys procedure', () => {
         }),
       })
     ).rejects.toThrow('One of the Signers is not a Secondary Key for the Identity');
-  });
-
-  describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(boundFunc()).toEqual({
-        permissions: {
-          transactions: [TxTags.identity.RemoveSecondaryKeys],
-          tokens: [],
-          portfolios: [],
-        },
-      });
-    });
   });
 });

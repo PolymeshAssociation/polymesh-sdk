@@ -1,13 +1,9 @@
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
+import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  getAuthorization,
-  InviteAccountParams,
-  prepareInviteAccount,
-} from '~/api/procedures/inviteAccount';
+import { InviteAccountParams, prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -273,20 +269,5 @@ describe('inviteAccount procedure', () => {
     return expect(prepareInviteAccount.call(proc, { ...args })).rejects.toThrow(
       'The target Account already has a pending invitation to join this Identity'
     );
-  });
-
-  describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
-
-      expect(boundFunc()).toEqual({
-        permissions: {
-          transactions: [TxTags.identity.AddAuthorization],
-          tokens: [],
-          portfolios: [],
-        },
-      });
-    });
   });
 });
