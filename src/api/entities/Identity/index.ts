@@ -453,17 +453,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middleware
    */
-  public async getTrustingTokens(
-    args: { order: Order } = { order: Order.Asc }
-  ): Promise<SecurityToken[]> {
+  public async getTrustingTokens(): Promise<SecurityToken[]> {
     const { context, did } = this;
-
-    const { order } = args;
 
     const {
       data: { tokensByTrustedClaimIssuer: tickers },
     } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
-      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did })
     );
 
     return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
