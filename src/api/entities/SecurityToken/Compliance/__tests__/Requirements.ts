@@ -373,7 +373,7 @@ describe('Requirements class', () => {
         .createQueryStub('complianceManager', 'assetCompliances')
         .withArgs(rawTicker)
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        .resolves({ is_paused: mockBool });
+        .resolves({ paused: mockBool });
 
       const result = await requeriments.arePaused();
 

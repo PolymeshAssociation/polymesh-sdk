@@ -1176,10 +1176,6 @@ export interface GroupedInstructions {
    */
   affirmed: Instruction[];
   /**
-   * Instructions that have already been rejected by the Identity
-   */
-  rejected: Instruction[];
-  /**
    * Instructions that still need to be affirmed/rejected by the Identity
    */
   pending: Instruction[];
