@@ -136,6 +136,6 @@ export const SYSTEM_VERSION_RPC_CALL = {
 };
 
 /**
- * Biggest size of legs used in a single instruction
+ * Maximum amount of legs allowed in a single instruction
  */
 export const MAX_LEGS_LENGTH = 10;
