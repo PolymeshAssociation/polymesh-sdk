@@ -6,7 +6,7 @@ import { stringToVenueDetails, u64ToBigNumber, venueTypeToMeshVenueType } from '
 import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateVenueParams {
-  details: string;
+  description: string;
   type: VenueType;
 }
 
@@ -37,9 +37,9 @@ export async function prepareCreateVenue(
     },
     context,
   } = this;
-  const { details, type } = args;
+  const { description, type } = args;
 
-  const rawDetails = stringToVenueDetails(details, context);
+  const rawDetails = stringToVenueDetails(description, context);
   const rawType = venueTypeToMeshVenueType(type, context);
 
   // NOTE @monitz87: we're sending an empty signer array for the moment

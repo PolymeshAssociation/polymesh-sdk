@@ -1308,7 +1308,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       const args = {
-        details: 'details',
+        description: 'description',
         type: VenueType.Distribution,
       };
 
