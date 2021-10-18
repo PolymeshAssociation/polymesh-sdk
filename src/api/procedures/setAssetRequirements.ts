@@ -2,7 +2,7 @@ import P from 'bluebird';
 import { differenceWith, flattenDeep, isEqual } from 'lodash';
 
 import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { Condition, ConditionType, ErrorCode, TxTags } from '~/types';
+import { Condition, ConditionType, ErrorCode, RequirementCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   complianceRequirementToRequirement,
@@ -16,7 +16,7 @@ export interface SetAssetRequirementsParams {
    * array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
    * while conditions inside each array are *AND* between them
    */
-  requirements: Condition[][];
+  requirements: RequirementCondition[][];
 }
 
 /**
@@ -65,8 +65,21 @@ export async function prepareSetAssetRequirements(
     return !differenceWith(a, b, isEqual).length && a.length === b.length;
   };
 
+  const requirementsCondition = (requirements.map(requirementCondition => {
+    requirementCondition.map(requirement => {
+      if (requirement.type === ConditionType.IsIdentity) {
+        const { identity } = requirement;
+        return {
+          ...requirement,
+          identity: identity instanceof Identity ? identity.did : identity,
+        };
+      }
+      return requirement;
+    });
+  }) as unknown) as Condition[][];
+
   if (
-    !differenceWith(requirements, currentRequirements, comparator).length &&
+    !differenceWith(requirementsCondition, currentRequirements, comparator).length &&
     requirements.length === currentRequirements.length
   ) {
     throw new PolymeshError({
@@ -75,30 +88,30 @@ export async function prepareSetAssetRequirements(
     });
   }
 
-  const identityErr: string[] = [];
+  const invalidDids: string[] = [];
 
-  await P.each(flattenDeep<Condition>(requirements), async requirement => {
+  await P.each(flattenDeep<Condition>(requirementsCondition), async requirement => {
     if (requirement.type === ConditionType.IsIdentity) {
       let { identity } = requirement;
       identity = identity instanceof Identity ? identity : new Identity({ did: identity }, context);
-      const exits = await identity.exists();
-      if (!exits) {
-        identityErr.push(identity.did);
+      const exists = await identity.exists();
+      if (!exists) {
+        invalidDids.push(identity.did);
       }
     }
   });
 
-  if (identityErr.length) {
+  if (invalidDids.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Some identities no longer exists',
+      message: 'Some of the passed "isIdentity" conditions reference Identities that do not exist',
       data: {
-        dids: identityErr,
+        dids: invalidDids,
       },
     });
   }
 
-  const rawConditions = requirements.map(requirement => {
+  const rawConditions = requirementsCondition.map(requirement => {
     const {
       sender_conditions: senderConditions,
       receiver_conditions: receiverConditions,

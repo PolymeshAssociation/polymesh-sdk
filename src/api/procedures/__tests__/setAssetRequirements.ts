@@ -240,7 +240,9 @@ describe('setAssetRequirements procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Some identities no longer exists');
+    expect(error.message).toBe(
+      'Some of the passed "isIdentity" conditions reference Identities that do not exist'
+    );
     expect(error.data.dids).toEqual([didOne, didTwo, didThree]);
   });
 

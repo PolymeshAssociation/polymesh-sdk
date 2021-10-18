@@ -24,6 +24,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
+import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
 
@@ -366,7 +367,7 @@ export type MultiClaimCondition = ConditionBase & {
 
 export type IdentityCondition = ConditionBase & {
   type: ConditionType.IsIdentity;
-  identity: Identity | string;
+  identity: Identity;
 };
 
 export type ExternalAgentCondition = ConditionBase & {
@@ -378,6 +379,10 @@ export type Condition =
   | MultiClaimCondition
   | IdentityCondition
   | ExternalAgentCondition;
+
+export type RequirementCondition =
+  | Exclude<Condition, IdentityCondition>
+  | Modify<IdentityCondition, { identity: Identity | string }>;
 
 /**
  * @hidden
