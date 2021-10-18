@@ -313,7 +313,7 @@ export async function prepareAddInstruction(
   if (legLengthErrIndexes.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Legs size exceeds limit',
+      message: 'The legs array exceeds the maximum allowed length',
       data: {
         maxLength: MAX_LEGS_LENGTH,
         failedInstructionIndexes: legLengthErrIndexes,

@@ -286,7 +286,7 @@ describe('addInstruction procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Legs size exceeds limit');
+    expect(error.message).toBe('The legs array exceeds the maximum allowed length');
   });
 
   test('should throw an error if the end block is in the past', async () => {
