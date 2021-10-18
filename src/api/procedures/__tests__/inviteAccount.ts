@@ -194,22 +194,6 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  test('should throw an error if the passed account is already part of an Identity', () => {
-    const identity = entityMockUtils.getIdentityInstance();
-    const targetAccount = entityMockUtils.getAccountInstance({
-      address: 'someAddress',
-      getIdentity: identity,
-    });
-
-    signerToStringStub.withArgs(args.targetAccount).returns(address);
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    return expect(prepareInviteAccount.call(proc, { targetAccount, identity })).rejects.toThrow(
-      'The target Account is already part of an Identity'
-    );
-  });
-
   test('should throw an error if the passed account has a pending authorization to accept', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
