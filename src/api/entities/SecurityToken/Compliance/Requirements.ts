@@ -11,7 +11,15 @@ import {
   SetAssetRequirementsParams,
   togglePauseRequirements,
 } from '~/internal';
-import { Compliance, ProcedureMethod, Requirement, SubCallback, UnsubCallback } from '~/types';
+import {
+  Compliance,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  Requirement,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import {
   assetComplianceResultToCompliance,
   boolToBoolean,
@@ -40,15 +48,24 @@ export class Requirements extends Namespace<SecurityToken> {
       context
     );
     this.reset = createProcedureMethod(
-      { getProcedureAndArgs: () => [setAssetRequirements, { ticker, requirements: [] }] },
+      {
+        getProcedureAndArgs: () => [setAssetRequirements, { ticker, requirements: [] }],
+        voidArgs: true,
+      },
       context
     );
     this.pause = createProcedureMethod(
-      { getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: true }] },
+      {
+        getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: true }],
+        voidArgs: true,
+      },
       context
     );
     this.unpause = createProcedureMethod(
-      { getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: false }] },
+      {
+        getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: false }],
+        voidArgs: true,
+      },
       context
     );
   }
@@ -108,7 +125,12 @@ export class Requirements extends Namespace<SecurityToken> {
     };
 
     if (callback) {
-      return queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>(
+      return queryMulti<
+        [
+          QueryReturnType<typeof complianceManager.assetCompliances>,
+          QueryReturnType<typeof complianceManager.trustedClaimIssuer>
+        ]
+      >(
         [
           [
             (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
@@ -125,7 +147,12 @@ export class Requirements extends Namespace<SecurityToken> {
       );
     }
 
-    const result = await queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>([
+    const result = await queryMulti<
+      [
+        QueryReturnType<typeof complianceManager.assetCompliances>,
+        QueryReturnType<typeof complianceManager.trustedClaimIssuer>
+      ]
+    >([
       [
         (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
         rawTicker,
@@ -142,17 +169,17 @@ export class Requirements extends Namespace<SecurityToken> {
   /**
    * Detele all the current requirements for the Security Token.
    */
-  public reset: ProcedureMethod<void, SecurityToken>;
+  public reset: NoArgsProcedureMethod<SecurityToken>;
 
   /**
    * Pause all the Security Token's requirements. This means that all transfers will be allowed until requirements are unpaused
    */
-  public pause: ProcedureMethod<void, SecurityToken>;
+  public pause: NoArgsProcedureMethod<SecurityToken>;
 
   /**
    * Un-pause all the Security Token's current requirements
    */
-  public unpause: ProcedureMethod<void, SecurityToken>;
+  public unpause: NoArgsProcedureMethod<SecurityToken>;
 
   /**
    * Check whether the sender and receiver Identities in a transfer comply with all the requirements of this asset
@@ -206,8 +233,8 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const { is_paused: isPaused } = await complianceManager.assetCompliances(rawTicker);
+    const { paused } = await complianceManager.assetCompliances(rawTicker);
 
-    return boolToBoolean(isPaused);
+    return boolToBoolean(paused);
   }
 }

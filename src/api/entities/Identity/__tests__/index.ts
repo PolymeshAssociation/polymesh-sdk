@@ -728,7 +728,7 @@ describe('Identity class', () => {
           ),
           tuple(
             { args: [rawPortfolio, rawId3] },
-            dsMockUtils.createMockAffirmationStatus('Rejected')
+            dsMockUtils.createMockAffirmationStatus('Unknown')
           ),
           tuple(
             { args: [rawPortfolio, rawId4] },
@@ -774,7 +774,7 @@ describe('Identity class', () => {
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
           venue_id: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           created_at: dsMockUtils.createMockOption(),
           trade_date: dsMockUtils.createMockOption(),
@@ -806,7 +806,6 @@ describe('Identity class', () => {
 
       expect(result.affirmed).toEqual([entityMockUtils.getInstructionInstance({ id: id1 })]);
       expect(result.pending).toEqual([entityMockUtils.getInstructionInstance({ id: id2 })]);
-      expect(result.rejected).toEqual([entityMockUtils.getInstructionInstance({ id: id3 })]);
       expect(result.failed).toEqual([entityMockUtils.getInstructionInstance({ id: id4 })]);
     });
   });
@@ -1306,7 +1305,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       const args = {
-        details: 'details',
+        description: 'description',
         type: VenueType.Distribution,
       };
 
