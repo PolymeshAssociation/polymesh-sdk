@@ -1,4 +1,4 @@
-import { bool, Option } from '@polkadot/types';
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -39,7 +39,7 @@ import {
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { HumanReadableType, tuple } from '~/types/utils';
+import { HumanReadableType, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -492,7 +492,16 @@ export class DividendDistribution extends CorporateAction {
   private async getParticipantStatuses(
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
-    const { ticker, id: localId, context } = this;
+    const {
+      ticker,
+      id: localId,
+      context: {
+        polymeshApi: {
+          query: { capitalDistribution },
+        },
+      },
+      context,
+    } = this;
 
     /*
      * For optimization, we separate the participants into chunks that can fit into one multi call
@@ -511,7 +520,9 @@ export class DividendDistribution extends CorporateAction {
           tuple(caId, stringToIdentityId(did, context))
         );
 
-        return context.polymeshApi.query.capitalDistribution.holderPaid.multi<bool>(multiParams);
+        return capitalDistribution.holderPaid.multi<
+          QueryReturnType<typeof capitalDistribution.holderPaid>
+        >(multiParams);
       });
 
       const results = await Promise.all(parallelMultiCalls);

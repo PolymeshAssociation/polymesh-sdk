@@ -19,6 +19,8 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
+import { Compliance, ProcedureMethod, Requirement, SubCallback, UnsubCallback } from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import {
   assetComplianceResultToCompliance,
   boolToBoolean,
@@ -124,7 +126,12 @@ export class Requirements extends Namespace<SecurityToken> {
     };
 
     if (callback) {
-      return queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>(
+      return queryMulti<
+        [
+          QueryReturnType<typeof complianceManager.assetCompliances>,
+          QueryReturnType<typeof complianceManager.trustedClaimIssuer>
+        ]
+      >(
         [
           [
             (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
@@ -141,7 +148,12 @@ export class Requirements extends Namespace<SecurityToken> {
       );
     }
 
-    const result = await queryMulti<[AssetCompliance, Vec<TrustedIssuer>]>([
+    const result = await queryMulti<
+      [
+        QueryReturnType<typeof complianceManager.assetCompliances>,
+        QueryReturnType<typeof complianceManager.trustedClaimIssuer>
+      ]
+    >([
       [
         (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
         rawTicker,
@@ -222,8 +234,8 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const { is_paused: isPaused } = await complianceManager.assetCompliances(rawTicker);
+    const { paused } = await complianceManager.assetCompliances(rawTicker);
 
-    return boolToBoolean(isPaused);
+    return boolToBoolean(paused);
   }
 }

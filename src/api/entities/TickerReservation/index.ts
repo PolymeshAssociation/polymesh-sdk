@@ -13,6 +13,8 @@ import {
   TransferTickerOwnershipParams,
 } from '~/internal';
 import { NoArgsProcedureMethod, ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -137,7 +139,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     if (callback) {
       // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-      return queryMulti<[TickerRegistration, MeshToken]>(
+      return queryMulti<
+        [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
+      >(
         [
           [(asset.tickers as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
           [(asset.tokens as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
@@ -149,7 +153,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     }
 
     // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-    const [tickerRegistration, securityToken] = await queryMulti<[TickerRegistration, MeshToken]>([
+    const [tickerRegistration, securityToken] = await queryMulti<
+      [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
+    >([
       [(asset.tickers as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
       [(asset.tokens as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
     ]);

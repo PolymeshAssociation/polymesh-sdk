@@ -1,7 +1,4 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
-import { Vec } from '@polkadot/types/codec';
-import type { ITuple } from '@polkadot/types/types';
-import { IdentityId, TargetIdentities, Tax } from 'polymesh-types/types';
 
 import {
   Context,
@@ -17,6 +14,8 @@ import {
   SecurityToken,
 } from '~/internal';
 import { NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { ProcedureMethod } from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import {
   identityIdToString,
   permillToBigNumber,
@@ -152,7 +151,11 @@ export class CorporateActions extends Namespace<SecurityToken> {
     const rawTicker = stringToTicker(ticker, context);
 
     const [targets, defaultTaxWithholding, taxWithholdings] = await polymeshApi.queryMulti<
-      [TargetIdentities, Tax, Vec<ITuple<[IdentityId, Tax]>>]
+      [
+        QueryReturnType<typeof corporateAction.defaultTargetIdentities>,
+        QueryReturnType<typeof corporateAction.defaultWithholdingTax>,
+        QueryReturnType<typeof corporateAction.didWithholdingTax>
+      ]
     >([
       [
         (corporateAction.defaultTargetIdentities as unknown) as QueryableStorageEntry<'promise'>,
