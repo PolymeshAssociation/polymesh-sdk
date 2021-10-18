@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
+import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -27,6 +27,7 @@ import {
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isVenueOwnerRole,
+  NoArgsProcedureMethod,
   Order,
   ResultSet,
   Role,
@@ -34,7 +35,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
@@ -342,17 +343,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middleware
    */
-  public async getTrustingTokens(
-    args: { order: Order } = { order: Order.Asc }
-  ): Promise<SecurityToken[]> {
+  public async getTrustingTokens(): Promise<SecurityToken[]> {
     const { context, did } = this;
-
-    const { order } = args;
 
     const {
       data: { tokensByTrustedClaimIssuer: tickers },
     } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
-      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did })
     );
 
     return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
@@ -455,9 +452,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
         ({ id }) => id.toNumber()
       );
-      const instructions = await settlement.instructionDetails.multi<MeshInstruction>(
-        uniqueEntries.map(({ id }) => id)
-      );
+      const instructions = await settlement.instructionDetails.multi<
+        QueryReturnType<typeof settlement.instructionDetails>
+      >(uniqueEntries.map(({ id }) => id));
 
       uniqueEntries.forEach(({ id, status }, index) => {
         const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
@@ -520,7 +517,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key]) => key.args[1]),
         id => id.toNumber()
       );
-      return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);
+      return settlement.instructionDetails.multi<
+        QueryReturnType<typeof settlement.instructionDetails>
+      >(instructionIds);
     });
 
     const rawInstructions = flatten(chunkedInstructions);

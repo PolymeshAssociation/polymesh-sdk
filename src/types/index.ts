@@ -1147,6 +1147,11 @@ export interface ProcedureMethod<
   ) => Promise<ProcedureAuthorizationStatus>;
 }
 
+export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
+  (opts?: ProcedureOpts): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
+  checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
+}
+
 export enum SignerType {
   /* eslint-disable @typescript-eslint/no-shadow */
   Identity = 'Identity',

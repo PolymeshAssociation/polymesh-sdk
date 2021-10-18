@@ -480,12 +480,9 @@ describe('Identity class', () => {
     test('should return a list of security tokens', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloQueryStub(
-        tokensByTrustedClaimIssuer({ claimIssuerDid: did, order: Order.Asc }),
-        {
-          tokensByTrustedClaimIssuer: tickers,
-        }
-      );
+      dsMockUtils.createApolloQueryStub(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
+        tokensByTrustedClaimIssuer: tickers,
+      });
 
       const result = await identity.getTrustingTokens();
 

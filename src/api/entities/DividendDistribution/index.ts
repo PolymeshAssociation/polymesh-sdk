@@ -1,4 +1,4 @@
-import { bool, Option } from '@polkadot/types';
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -34,11 +34,12 @@ import {
   Ensured,
   ErrorCode,
   IdentityBalance,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { HumanReadableType, tuple } from '~/types/utils';
+import { HumanReadableType, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -150,7 +151,7 @@ export class DividendDistribution extends CorporateAction {
     );
 
     this.claim = createProcedureMethod(
-      { getProcedureAndArgs: () => [claimDividends, { distribution: this }] },
+      { getProcedureAndArgs: () => [claimDividends, { distribution: this }], voidArgs: true },
       context
     );
 
@@ -167,6 +168,7 @@ export class DividendDistribution extends CorporateAction {
     this.reclaimFunds = createProcedureMethod(
       {
         getProcedureAndArgs: () => [reclaimDividendDistributionFunds, { distribution: this }],
+        voidArgs: true,
       },
       context
     );
@@ -177,7 +179,7 @@ export class DividendDistribution extends CorporateAction {
    *
    * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
-  public claim: ProcedureMethod<void, void>;
+  public claim: NoArgsProcedureMethod<void>;
 
   /**
    * Modify the Distribution's checkpoint
@@ -200,7 +202,7 @@ export class DividendDistribution extends CorporateAction {
    * @note required roles:
    *   - Origin Portfolio Custodian
    */
-  public reclaimFunds: ProcedureMethod<void, void>;
+  public reclaimFunds: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,
@@ -490,7 +492,16 @@ export class DividendDistribution extends CorporateAction {
   private async getParticipantStatuses(
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
-    const { ticker, id: localId, context } = this;
+    const {
+      ticker,
+      id: localId,
+      context: {
+        polymeshApi: {
+          query: { capitalDistribution },
+        },
+      },
+      context,
+    } = this;
 
     /*
      * For optimization, we separate the participants into chunks that can fit into one multi call
@@ -509,7 +520,9 @@ export class DividendDistribution extends CorporateAction {
           tuple(caId, stringToIdentityId(did, context))
         );
 
-        return context.polymeshApi.query.capitalDistribution.holderPaid.multi<bool>(multiParams);
+        return capitalDistribution.holderPaid.multi<
+          QueryReturnType<typeof capitalDistribution.holderPaid>
+        >(multiParams);
       });
 
       const results = await Promise.all(parallelMultiCalls);
