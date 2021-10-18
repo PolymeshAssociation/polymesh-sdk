@@ -279,8 +279,8 @@ export function tokensByTrustedClaimIssuer(
   variables: QueryTokensByTrustedClaimIssuerArgs
 ): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
   const query = gql`
-    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!, $order: Order) {
-      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid, order: $order)
+    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!) {
+      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid)
     }
   `;
 

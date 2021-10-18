@@ -134,7 +134,6 @@ describe('tokensByTrustedClaimIssuer', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       claimIssuerDid: 'someDid',
-      order: Order.Asc,
     };
 
     const result = tokensByTrustedClaimIssuer(variables);

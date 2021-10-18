@@ -16,7 +16,7 @@ import {
 } from '~/internal';
 import { settlements } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, ProcedureMethod, ResultSet } from '~/types';
+import { Ensured, ErrorCode, NoArgsProcedureMethod, ProcedureMethod, ResultSet } from '~/types';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -92,7 +92,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       context
     );
     this.quitCustody = createProcedureMethod(
-      { getProcedureAndArgs: () => [quitCustody, { portfolio: this }] },
+      { getProcedureAndArgs: () => [quitCustody, { portfolio: this }], voidArgs: true },
       context
     );
   }
@@ -230,7 +230,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    * @note required role:
    *   - Portfolio Custodian
    */
-  public quitCustody: ProcedureMethod<void, void>;
+  public quitCustody: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve the custodian Identity of this Portfolio
