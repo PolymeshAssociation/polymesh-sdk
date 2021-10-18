@@ -302,7 +302,7 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: getParticipants', () => {
+  describe.only('method: getParticipants', () => {
     test('should return the distribution participants', async () => {
       const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
       dividendDistribution.targets = {

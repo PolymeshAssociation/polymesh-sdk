@@ -66,12 +66,13 @@ export async function prepareSetAssetRequirements(
   };
 
   const requirementsCondition = (requirements.map(requirementCondition => {
-    requirementCondition.map(requirement => {
+    return requirementCondition.map(requirement => {
       if (requirement.type === ConditionType.IsIdentity) {
         const { identity } = requirement;
         return {
           ...requirement,
-          identity: identity instanceof Identity ? identity.did : identity,
+          identity:
+            identity instanceof Identity ? identity : new Identity({ did: identity }, context),
         };
       }
       return requirement;

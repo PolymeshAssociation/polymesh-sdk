@@ -3569,11 +3569,6 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         identity: new Identity({ did }, context),
       },
       {
-        type: ConditionType.IsIdentity,
-        target: ConditionTarget.Sender,
-        identity: 'otherDid',
-      },
-      {
         type: ConditionType.IsExternalAgent,
         target: ConditionTarget.Receiver,
       },
@@ -3605,7 +3600,6 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         sender_conditions: [
           'meshConditionIsPresent',
           'meshConditionIsNoneOf',
-          'meshConditionIsIdentity',
           'meshConditionIsIdentity',
         ],
         receiver_conditions: [
