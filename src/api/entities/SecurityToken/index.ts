@@ -32,6 +32,7 @@ import {
   Ensured,
   EventIdentifier,
   HistoricAgentOperation,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   SubCallback,
   TokenIdentifier,
@@ -144,11 +145,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       context
     );
     this.freeze = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: true }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: true }],
+        voidArgs: true,
+      },
       context
     );
     this.unfreeze = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }],
+        voidArgs: true,
+      },
       context
     );
     this.modifyPrimaryIssuanceAgent = createProcedureMethod(
@@ -156,7 +163,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       context
     );
     this.removePrimaryIssuanceAgent = createProcedureMethod(
-      { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }] },
+      { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }], voidArgs: true },
       context
     );
     this.redeem = createProcedureMethod(
@@ -379,12 +386,12 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
   /**
    * Freezes transfers and minting of the Security Token
    */
-  public freeze: ProcedureMethod<void, SecurityToken>;
+  public freeze: NoArgsProcedureMethod<SecurityToken>;
 
   /**
    * Unfreeze transfers and minting of the Security Token
    */
-  public unfreeze: ProcedureMethod<void, SecurityToken>;
+  public unfreeze: NoArgsProcedureMethod<SecurityToken>;
 
   /**
    * Check whether transfers are frozen for the Security Token
@@ -437,7 +444,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
    *
    * @deprecated
    */
-  public removePrimaryIssuanceAgent: ProcedureMethod<void, void>;
+  public removePrimaryIssuanceAgent: NoArgsProcedureMethod<void>;
 
   /**
    * Redeem (burn) an amount of this Security Token
