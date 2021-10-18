@@ -9,7 +9,6 @@ import {
   PermissionType,
   SignerType,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -120,18 +119,11 @@ export async function prepareInviteAccount(
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<InviteAccountParams>): ProcedureAuthorization {
-  return {
+export const inviteAccount = (): Procedure<InviteAccountParams, void> =>
+  new Procedure(prepareInviteAccount, {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       tokens: [],
       portfolios: [],
     },
-  };
-}
-
-/**
- * @hidden
- */
-export const inviteAccount = (): Procedure<InviteAccountParams, void> =>
-  new Procedure(prepareInviteAccount, getAuthorization);
+  });
