@@ -13,7 +13,6 @@ import {
   TransferTickerOwnershipParams,
 } from '~/internal';
 import { NoArgsProcedureMethod, ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
-import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';

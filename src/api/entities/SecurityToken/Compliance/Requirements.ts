@@ -19,7 +19,6 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Compliance, ProcedureMethod, Requirement, SubCallback, UnsubCallback } from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import {
   assetComplianceResultToCompliance,

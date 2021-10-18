@@ -14,7 +14,6 @@ import {
   SecurityToken,
 } from '~/internal';
 import { NoArgsProcedureMethod, ProcedureMethod } from '~/types';
-import { ProcedureMethod } from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import {
   identityIdToString,
