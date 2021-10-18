@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
+import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -46,7 +46,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
@@ -547,7 +547,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
     const affirmed: Instruction[] = [];
-    const rejected: Instruction[] = [];
     const pending: Instruction[] = [];
     const failed: Instruction[] = [];
 
@@ -560,9 +559,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
         ({ id }) => id.toNumber()
       );
-      const instructions = await settlement.instructionDetails.multi<MeshInstruction>(
-        uniqueEntries.map(({ id }) => id)
-      );
+      const instructions = await settlement.instructionDetails.multi<
+        QueryReturnType<typeof settlement.instructionDetails>
+      >(uniqueEntries.map(({ id }) => id));
 
       uniqueEntries.forEach(({ id, status }, index) => {
         const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
@@ -571,8 +570,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
           failed.push(instruction);
         } else if (status.isAffirmed) {
           affirmed.push(instruction);
-        } else if (status.isRejected) {
-          rejected.push(instruction);
         } else if (status.isPending) {
           pending.push(instruction);
         }
@@ -581,7 +578,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return {
       affirmed,
-      rejected,
       pending,
       failed,
     };
@@ -628,7 +624,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key]) => key.args[1]),
         id => id.toNumber()
       );
-      return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);
+      return settlement.instructionDetails.multi<
+        QueryReturnType<typeof settlement.instructionDetails>
+      >(instructionIds);
     });
 
     const rawInstructions = flatten(chunkedInstructions);

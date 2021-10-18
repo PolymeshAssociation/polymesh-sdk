@@ -968,7 +968,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     expect(result).toBe(fakeResult);
 
     value = {
-      type: AuthorizationType.NoData,
+      type: AuthorizationType.RotatePrimaryKey,
     };
 
     dsMockUtils
@@ -1039,11 +1039,8 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.RotatePrimaryKey,
-      value: 'someIdentity',
     };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      RotatePrimaryKey: dsMockUtils.createMockIdentityId(fakeResult.value),
-    });
+    authorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKey');
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
@@ -1127,36 +1124,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = {
-      type: AuthorizationType.TransferCorporateActionAgent,
-      value: 'someTicker',
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferCorporateActionAgent: dsMockUtils.createMockTicker(fakeResult.value),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.Custom,
-      value: 'someBytes',
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      Custom: dsMockUtils.createMockBytes(fakeResult.value),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.NoData,
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData('NoData');
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
     const beneficiaryAddress = 'beneficiaryAddress';
     const relayerAddress = 'relayerAddress';
     const allowance = new BigNumber(1000);
@@ -1178,6 +1145,17 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
+  });
+
+  test('shoould throw an error if the authorization has an unsupported type', () => {
+    const context = dsMockUtils.getContextInstance();
+    const authorizationData = dsMockUtils.createMockAuthorizationData(
+      'Whatever' as 'RotatePrimaryKey'
+    );
+
+    expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
+      'Unsupported Authorization Type. Please contact the Polymath team'
+    );
   });
 });
 
@@ -1588,7 +1566,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       },
       transactions: {
         type: PermissionType.Include,
-        values: [TxTags.identity.AddClaim, ModuleName.Confidential],
+        values: [TxTags.identity.AddClaim, ModuleName.Authorship],
       },
       transactionGroups: [],
       portfolios: {
@@ -1610,7 +1588,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
             }),
           }),
           dsMockUtils.createMockPalletPermissions({
-            pallet_name: dsMockUtils.createMockPalletName('Confidential'),
+            pallet_name: dsMockUtils.createMockPalletName('Authorship'),
             dispatchable_names: dsMockUtils.createMockDispatchableNames('Whole'),
           }),
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -3826,17 +3804,14 @@ describe('txTagToProtocolOp', () => {
     createTypeStub.withArgs('ProtocolOp', 'AssetIssue').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.Issue, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'AssetAddDocument').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'AssetAddDocuments').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.AddDocuments, context)).toEqual(fakeResult);
 
     createTypeStub.withArgs('ProtocolOp', 'AssetCreateAsset').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.CreateAsset, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'AssetCreateCheckpointSchedule').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'CheckpointCreateSchedule').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.checkpoint.CreateSchedule, context)).toEqual(fakeResult);
-
-    createTypeStub.withArgs('ProtocolOp', 'DividendNew').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.dividend.New, context)).toEqual(fakeResult);
 
     createTypeStub
       .withArgs('ProtocolOp', 'ComplianceManagerAddComplianceRequirement')
@@ -3845,17 +3820,11 @@ describe('txTagToProtocolOp', () => {
       fakeResult
     );
 
-    createTypeStub.withArgs('ProtocolOp', 'IdentityRegisterDid').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.identity.RegisterDid, context)).toEqual(fakeResult);
-
     createTypeStub.withArgs('ProtocolOp', 'IdentityCddRegisterDid').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.CddRegisterDid, context)).toEqual(fakeResult);
 
     createTypeStub.withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.AddClaim, context)).toEqual(fakeResult);
-
-    createTypeStub.withArgs('ProtocolOp', 'IdentitySetPrimaryKey').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.identity.SetPrimaryKey, context)).toEqual(fakeResult);
 
     createTypeStub
       .withArgs('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
@@ -3867,26 +3836,17 @@ describe('txTagToProtocolOp', () => {
     createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'VotingAddBallot').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.voting.AddBallot, context)).toEqual(fakeResult);
-
-    createTypeStub.withArgs('ProtocolOp', 'ContractsPutCode').returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.contracts.PutCode, context)).toEqual(fakeResult);
-
-    createTypeStub.withArgs('ProtocolOp', 'BallotAttachBallot').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'CorporateBallotAttachBallot').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.corporateBallot.AttachBallot, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'DistributionDistribute').returns(fakeResult);
+    createTypeStub.withArgs('ProtocolOp', 'CapitalDistributionDistribute').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
   });
 
   test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
-    const value = TxTags.asset.SetTreasuryDid;
-    const fakeResult = ('convertedProtocolOp' as unknown) as ProtocolOp;
+    const value = TxTags.asset.MakeDivisible;
     const context = dsMockUtils.getContextInstance();
-    const mockTag = 'AssetSetTreasuryDid';
-
-    dsMockUtils.getCreateTypeStub().withArgs('ProtocolOp', mockTag).returns(fakeResult);
+    const mockTag = 'AssetMakeDivisible';
 
     expect(() => txTagToProtocolOp(value, context)).toThrow(
       `${mockTag} does not match any ProtocolOp`
@@ -3903,11 +3863,11 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
       callId: CallIdEnum.CddRegisterDid,
     });
 
-    result = txTagToExtrinsicIdentifier(TxTags.finalityTracker.FinalHint);
+    result = txTagToExtrinsicIdentifier(TxTags.babe.ReportEquivocation);
 
     expect(result).toEqual({
-      moduleId: ModuleIdEnum.Finalitytracker,
-      callId: CallIdEnum.FinalHint,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
   });
 
@@ -3920,11 +3880,11 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
     expect(result).toEqual(TxTags.identity.CddRegisterDid);
 
     result = extrinsicIdentifierToTxTag({
-      moduleId: ModuleIdEnum.Finalitytracker,
-      callId: CallIdEnum.FinalHint,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
 
-    expect(result).toEqual(TxTags.finalityTracker.FinalHint);
+    expect(result).toEqual(TxTags.babe.ReportEquivocation);
   });
 });
 
@@ -4666,9 +4626,6 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
     result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AffirmationStatus.Rejected;
-    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
-
     result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
@@ -4873,9 +4830,6 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
 
     let result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
-
-    fakeResult = AffirmationStatus.Rejected;
-    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
     result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
@@ -5246,7 +5200,7 @@ describe('permissionsLikeToPermissions', () => {
         type: PermissionType.Include,
       },
       transactions: {
-        values: [TxTags.asset.Transfer],
+        values: [TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
       },
       transactionGroups: [TxGroup.TrustedClaimIssuersManagement],
@@ -5263,7 +5217,7 @@ describe('permissionsLikeToPermissions', () => {
         type: PermissionType.Include,
       },
       transactions: {
-        values: [TxTags.asset.Transfer],
+        values: [TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
       },
       transactionGroups: [],
@@ -5318,7 +5272,7 @@ describe('permissionsLikeToPermissions', () => {
     args = {
       tokens: null,
       transactions: {
-        values: [TxTags.balances.SetBalance, TxTags.asset.Transfer],
+        values: [TxTags.balances.SetBalance, TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
       },
       transactionGroups: [],
@@ -5329,7 +5283,7 @@ describe('permissionsLikeToPermissions', () => {
     expect(result).toEqual({
       tokens: null,
       transactions: {
-        values: [TxTags.asset.Transfer, TxTags.balances.SetBalance],
+        values: [TxTags.asset.MakeDivisible, TxTags.balances.SetBalance],
         type: PermissionType.Include,
       },
       transactionGroups: [],
