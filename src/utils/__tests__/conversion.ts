@@ -4632,9 +4632,6 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
     result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = AffirmationStatus.Rejected;
-    permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
-
     result = meshAffirmationStatusToAffirmationStatus(permission);
     expect(result).toEqual(fakeResult);
 
@@ -4839,9 +4836,6 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
 
     let result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
-
-    fakeResult = AffirmationStatus.Rejected;
-    authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
     result = meshAffirmationStatusToAffirmationStatus(authorizationStatus);
     expect(result).toEqual(fakeResult);
