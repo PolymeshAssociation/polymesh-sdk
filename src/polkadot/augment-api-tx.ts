@@ -760,7 +760,7 @@ declare module '@polkadot/api/types/submittable' {
             | Vec<BridgeTx>
             | (
                 | BridgeTx
-                | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+                | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
                 | string
                 | Uint8Array
               )[]
@@ -836,7 +836,7 @@ declare module '@polkadot/api/types/submittable' {
         (
           bridgeTx:
             | BridgeTx
-            | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+            | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -866,7 +866,7 @@ declare module '@polkadot/api/types/submittable' {
             | Vec<BridgeTx>
             | (
                 | BridgeTx
-                | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+                | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
                 | string
                 | Uint8Array
               )[]
@@ -885,7 +885,7 @@ declare module '@polkadot/api/types/submittable' {
         (
           bridgeTx:
             | BridgeTx
-            | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+            | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -903,7 +903,7 @@ declare module '@polkadot/api/types/submittable' {
         (
           bridgeTx:
             | BridgeTx
-            | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+            | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -921,7 +921,7 @@ declare module '@polkadot/api/types/submittable' {
         (
           bridgeTx:
             | BridgeTx
-            | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+            | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -960,7 +960,7 @@ declare module '@polkadot/api/types/submittable' {
             | Vec<BridgeTx>
             | (
                 | BridgeTx
-                | { nonce?: any; recipient?: any; value?: any; tx_hash?: any }
+                | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
                 | string
                 | Uint8Array
               )[]

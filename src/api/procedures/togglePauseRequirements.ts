@@ -31,12 +31,12 @@ export async function prepareTogglePauseRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const { is_paused: isPaused } = await query.complianceManager.assetCompliances(rawTicker);
+  const { paused } = await query.complianceManager.assetCompliances(rawTicker);
 
-  if (pause === boolToBoolean(isPaused)) {
+  if (pause === boolToBoolean(paused)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Requirements are already ${isPaused ? '' : 'un'}paused`,
+      message: `Requirements are already ${paused ? '' : 'un'}paused`,
     });
   }
 
