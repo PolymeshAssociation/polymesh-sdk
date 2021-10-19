@@ -5,6 +5,10 @@ import { PolymeshTransaction as PolymeshTransactionClass } from './PolymeshTrans
 import { TransactionQueue as TransactionQueueClass } from './TransactionQueue';
 
 export type PolymeshTransaction = InstanceType<typeof PolymeshTransactionClass>;
-export type TransactionQueue = InstanceType<typeof TransactionQueueClass>;
-export type PolymeshError = InstanceType<typeof PolymeshErrorClass>;
+export type TransactionQueue<
+  ProcedureReturnType = void,
+  ReturnType = ProcedureReturnType,
+  TransactionArgs extends unknown[][] = unknown[][]
+> = TransactionQueueClass<ProcedureReturnType, ReturnType, TransactionArgs>;
+export type PolymeshError = PolymeshErrorClass;
 export { isPolymeshError } from './PolymeshError';
