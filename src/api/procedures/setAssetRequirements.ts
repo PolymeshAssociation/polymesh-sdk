@@ -1,7 +1,7 @@
 import P from 'bluebird';
 import { differenceWith, flattenDeep, isEqual } from 'lodash';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ConditionType, ErrorCode, RequirementCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -25,6 +25,28 @@ export interface SetAssetRequirementsParams {
 export type Params = SetAssetRequirementsParams & {
   ticker: string;
 };
+
+/**
+ * @hidden
+ */
+function identityTransformation(
+  requirements: RequirementCondition[][],
+  context: Context
+): Condition[][] {
+  return (requirements.map(requirementCondition => {
+    return requirementCondition.map(requirement => {
+      if (requirement.type === ConditionType.IsIdentity) {
+        const { identity } = requirement;
+        return {
+          ...requirement,
+          identity:
+            identity instanceof Identity ? identity : new Identity({ did: identity }, context),
+        };
+      }
+      return requirement;
+    });
+  }) as unknown) as Condition[][];
+}
 
 /**
  * @hidden
@@ -65,19 +87,7 @@ export async function prepareSetAssetRequirements(
     return !differenceWith(a, b, isEqual).length && a.length === b.length;
   };
 
-  const requirementsCondition = (requirements.map(requirementCondition => {
-    return requirementCondition.map(requirement => {
-      if (requirement.type === ConditionType.IsIdentity) {
-        const { identity } = requirement;
-        return {
-          ...requirement,
-          identity:
-            identity instanceof Identity ? identity : new Identity({ did: identity }, context),
-        };
-      }
-      return requirement;
-    });
-  }) as unknown) as Condition[][];
+  const requirementsCondition = identityTransformation(requirements, context);
 
   if (
     !differenceWith(requirementsCondition, currentRequirements, comparator).length &&
@@ -93,8 +103,7 @@ export async function prepareSetAssetRequirements(
 
   await P.each(flattenDeep<Condition>(requirementsCondition), async requirement => {
     if (requirement.type === ConditionType.IsIdentity) {
-      let { identity } = requirement;
-      identity = identity instanceof Identity ? identity : new Identity({ did: identity }, context);
+      const { identity } = requirement;
       const exists = await identity.exists();
       if (!exists) {
         invalidDids.push(identity.did);
