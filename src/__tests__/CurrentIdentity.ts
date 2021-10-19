@@ -132,7 +132,7 @@ describe('CurrentIdentity class', () => {
       const currentIdentity = new CurrentIdentity(context);
 
       const args = {
-        details: 'details',
+        description: 'description',
         type: VenueType.Distribution,
       };
 

@@ -46,7 +46,6 @@ export async function prepareInviteAccount(
   const authorizationRequests = await identity.authorizations.getSent();
 
   const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
-    console.log(authorizationRequest.data);
     const {
       target,
       data: { type },

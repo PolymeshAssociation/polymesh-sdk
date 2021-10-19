@@ -14,7 +14,7 @@ import {
   toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
-import { PermissionType, ProcedureMethod, Signer } from '~/types';
+import { NoArgsProcedureMethod, PermissionType, ProcedureMethod, Signer } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -72,11 +72,11 @@ export class CurrentIdentity {
       context
     );
     this.freezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true }] },
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true }], voidArgs: true },
       context
     );
     this.unfreezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false }] },
+      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false }], voidArgs: true },
       context
     );
     this.reserveTicker = createProcedureMethod(
@@ -119,12 +119,12 @@ export class CurrentIdentity {
   /**
    * Freeze all the secondary keys in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
    */
-  public freezeSecondaryKeys: ProcedureMethod<void, void>;
+  public freezeSecondaryKeys: NoArgsProcedureMethod<void>;
 
   /**
    * Unfreeze all the secondary keys in the Current Identity. This will restore their permissions as they were before being frozen
    */
-  public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
+  public unfreezeSecondaryKeys: NoArgsProcedureMethod<void>;
 
   /**
    * Reserve a ticker symbol under the ownership of the Current Identity to later use in the creation of a Security Token.
