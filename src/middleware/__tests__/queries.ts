@@ -23,8 +23,8 @@ import {
   proposalVotes,
   scopesByIdentity,
   settlements,
-  tickerExternalAgentHistory,
   tickerExternalAgentActions,
+  tickerExternalAgentHistory,
   tokensByTrustedClaimIssuer,
   tokensHeldByDid,
   transactionByHash,
@@ -134,7 +134,6 @@ describe('tokensByTrustedClaimIssuer', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       claimIssuerDid: 'someDid',
-      order: Order.Asc,
     };
 
     const result = tokensByTrustedClaimIssuer(variables);
@@ -288,7 +287,7 @@ describe('tickerExternalAgentHistory', () => {
     };
 
     const result = tickerExternalAgentHistory(variables);
-    
+
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });
