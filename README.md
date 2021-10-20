@@ -6,7 +6,7 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v3.2.0
+This release is compatible with Polymesh v4.0.0
 
 ## Getting Started
 
