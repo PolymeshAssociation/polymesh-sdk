@@ -1,4 +1,5 @@
 import { Option } from '@polkadot/types';
+import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -44,6 +45,8 @@ import {
   balanceToBigNumber,
   boolToBoolean,
   corporateActionIdentifierToCaId,
+  hashToString,
+  numberToU32,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
@@ -427,7 +430,16 @@ export class DividendDistribution extends CorporateAction {
   public async getPaymentHistory(
     opts: { size?: number; start?: number } = {}
   ): Promise<ResultSet<DistributionPayment>> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      ticker,
+      context,
+      context: {
+        polymeshApi: {
+          query: { system },
+        },
+      },
+    } = this;
     const { size, start } = opts;
 
     const paymentsPromise = context.queryMiddleware<
@@ -457,7 +469,8 @@ export class DividendDistribution extends CorporateAction {
 
     const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult;
 
-    const data: DistributionPayment[] = [];
+    const data: Omit<DistributionPayment, 'blockHash'>[] = [];
+    const multiParams: BlockNumber[] = [];
     let next = null;
 
     if (items) {
@@ -465,6 +478,7 @@ export class DividendDistribution extends CorporateAction {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { blockId, datetime, eventDid: did, balance, tax } = item!;
 
+        multiParams.push(numberToU32(blockId, context));
         data.push({
           blockNumber: new BigNumber(blockId),
           date: new Date(datetime),
@@ -477,8 +491,15 @@ export class DividendDistribution extends CorporateAction {
       next = calculateNextKey(count, size, start);
     }
 
+    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
+      multiParams
+    );
+
     return {
-      data,
+      data: data.map((payment, index) => ({
+        ...payment,
+        blockHash: hashToString(hashes[index]),
+      })),
       next,
       count,
     };

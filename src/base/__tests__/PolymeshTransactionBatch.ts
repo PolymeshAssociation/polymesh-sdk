@@ -78,6 +78,7 @@ describe('Polymesh Transaction Batch class', () => {
       sinon.assert.calledWith(tx, ...args[0]);
       sinon.assert.calledOnce(batchStub);
       expect(transaction.blockHash).toBeDefined();
+      expect(transaction.blockNumber).toBeDefined();
       expect(transaction.txHash).toBeDefined();
       expect(transaction.status).toBe(TransactionStatus.Succeeded);
     });

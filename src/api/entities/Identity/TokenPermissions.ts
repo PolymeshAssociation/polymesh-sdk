@@ -1,3 +1,4 @@
+import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -28,11 +29,14 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
   extrinsicPermissionsToTransactionPermissions,
+  hashToString,
   middlewareEventToEventIdentifier,
+  numberToU32,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -311,6 +315,11 @@ export class TokenPermissions extends Namespace<Identity> {
     start?: number;
   }): Promise<ResultSet<EventIdentifier>> {
     const {
+      context: {
+        polymeshApi: {
+          query: { system },
+        },
+      },
       context,
       parent: { did },
     } = this;
@@ -338,20 +347,31 @@ export class TokenPermissions extends Namespace<Identity> {
 
     const { items, totalCount: count } = tickerExternalAgentActionsResult;
 
-    const data = items.map(item => {
+    const multiParams: BlockNumber[] = [];
+    const data: Omit<EventIdentifier, 'blockHash'>[] = [];
+
+    items.forEach(item => {
       const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
-      return {
+      multiParams.push(numberToU32(blockId, context));
+      data.push({
         blockNumber: new BigNumber(blockId),
         blockDate: new Date(`${datetime}Z`),
         eventIndex,
-      };
+      });
     });
+
+    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
+      multiParams
+    );
 
     const next = calculateNextKey(count, size, start);
 
     return {
-      data,
+      data: data.map((event, index) => ({
+        ...event,
+        blockHash: hashToString(hashes[index]),
+      })),
       next,
       count,
     };

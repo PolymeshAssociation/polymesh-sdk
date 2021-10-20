@@ -263,7 +263,7 @@ export function isPrintableAscii(value: string): boolean {
  * @hidden
  *
  * Makes an entries request to the chain. If pagination options are supplied,
- * the request will be paginated. Otherwise, all entries will be requested at once
+ *  the request will be paginated. Otherwise, all entries will be requested at once
  */
 export async function requestPaginated<F extends AnyFunction, T extends AnyTuple>(
   query: AugmentedQuery<'promise', F, T> | AugmentedQueryDoubleMap<'promise', F, T>,
@@ -310,7 +310,7 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
  * @hidden
  *
  * Makes a request to the chain. If a block hash is supplied,
- * the request will be made at that block. Otherwise, the most recent block will be queried
+ *  the request will be made at that block. Otherwise, the most recent block will be queried
  */
 export async function requestAtBlock<F extends AnyFunction>(
   query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,

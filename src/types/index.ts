@@ -319,6 +319,7 @@ export interface IdentityWithClaims {
 }
 
 export interface ExtrinsicData {
+  blockHash: string;
   blockNumber: BigNumber;
   extrinsicIdx: number;
   address: string | null;
@@ -560,6 +561,7 @@ export interface UiKeyring {
 
 export interface EventIdentifier {
   blockNumber: BigNumber;
+  blockHash: string;
   blockDate: Date;
   eventIndex: number;
 }
@@ -1120,6 +1122,7 @@ export interface DistributionWithDetails {
 
 export interface DistributionPayment {
   blockNumber: BigNumber;
+  blockHash: string;
   date: Date;
   target: Identity;
   amount: BigNumber;

@@ -1,4 +1,5 @@
 import { bool, Option, StorageKey } from '@polkadot/types';
+import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
@@ -37,6 +38,7 @@ import {
   TokenIdentifier,
   UnsubCallback,
 } from '~/types';
+import { Modify, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,
@@ -45,6 +47,7 @@ import {
   boolToBoolean,
   bytesToString,
   fundingRoundNameToString,
+  hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
   numberToU32,
@@ -498,7 +501,15 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
    * @note uses the middleware
    */
   public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
-    const { context, ticker } = this;
+    const {
+      context: {
+        polymeshApi: {
+          query: { system },
+        },
+      },
+      context,
+      ticker,
+    } = this;
 
     const {
       data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },
@@ -508,16 +519,60 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       })
     );
 
-    return tickerExternalAgentHistoryResult.map(({ did, history }) => ({
-      identity: new Identity({ did }, context),
-      history: history.map(({ block_id: blockNumber, datetime, event_idx: eventIndex }) => {
-        return {
+    const multiParams: BlockNumber[] = [];
+    const results: Modify<
+      HistoricAgentOperation,
+      {
+        history: Omit<EventIdentifier, 'blockHash'>[];
+      }
+    >[] = [];
+
+    tickerExternalAgentHistoryResult.forEach(({ did, history }) => {
+      const historyResult: Omit<EventIdentifier, 'blockHash'>[] = [];
+      history.forEach(({ block_id: blockNumber, datetime, event_idx: eventIndex }) => {
+        multiParams.push(numberToU32(blockNumber, context));
+        historyResult.push({
           blockNumber: new BigNumber(blockNumber),
           blockDate: new Date(datetime),
           eventIndex,
-        };
-      }),
-    }));
+        });
+      });
+      results.push({
+        identity: new Identity({ did }, context),
+        history: historyResult,
+      });
+    });
+
+    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
+      multiParams
+    );
+
+    const finalResults: HistoricAgentOperation[] = [];
+
+    results.forEach(({ identity, history }) => {
+      const historyWithHashes: EventIdentifier[] = [];
+
+      history.forEach(event => {
+        /*
+         * Since we filled the params array in the order in which the events appeared and this is being done
+         *   synchronously, the order and amount of results should be the same and the array should never be empty
+         *   until all the data is in place
+         */
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const blockHash = hashToString(hashes.shift()!);
+        historyWithHashes.push({
+          ...event,
+          blockHash,
+        });
+      });
+
+      finalResults.push({
+        identity,
+        history: historyWithHashes,
+      });
+    });
+
+    return finalResults;
   }
 
   /**

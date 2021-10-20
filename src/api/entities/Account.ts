@@ -29,7 +29,9 @@ import {
   portfolioToPortfolioId,
   signerToString,
   stringToAccountId,
+  stringToHash,
   txTagToExtrinsicIdentifier,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import {
   assertFormatValid,
@@ -167,6 +169,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve a list of transactions signed by this account. Can be filtered using parameters
    *
+   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
+   *
    * @param filters.tag - tag associated with the transaction
    * @param filters.success - whether the transaction was successful or not
    * @param filters.size - page size
@@ -177,6 +181,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public async getTransactionHistory(
     filters: {
       blockNumber?: BigNumber;
+      blockHash?: string;
       tag?: TxTag;
       success?: boolean;
       size?: number;
@@ -186,7 +191,18 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context, address } = this;
 
-    const { blockNumber, tag, success, size, start, orderBy } = filters;
+    const { tag, success, size, start, orderBy, blockHash } = filters;
+    let { blockNumber } = filters;
+
+    if (!blockNumber && blockHash) {
+      const {
+        block: {
+          header: { number },
+        },
+      } = await context.polymeshApi.rpc.chain.getBlock(stringToHash(blockHash, context));
+
+      blockNumber = u32ToBigNumber(number.unwrap());
+    }
 
     let moduleId;
     let callId;
@@ -214,9 +230,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       },
     } = result;
 
-    const data: ExtrinsicData[] = [];
-
-    transactionList.forEach(
+    const data = transactionList.map(
       ({
         block_id,
         extrinsic_idx,
@@ -228,11 +242,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         success: txSuccess,
         spec_version_id,
         extrinsic_hash,
+        block,
       }) => {
         // TODO remove null check once types fixed
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        data.push({
+        return {
           blockNumber: new BigNumber(block_id),
+          blockHash: block!.hash!,
           extrinsicIdx: extrinsic_idx,
           address: rawAddress ?? null,
           nonce: nonce!,
@@ -241,7 +257,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           success: !!txSuccess,
           specVersionId: spec_version_id,
           extrinsicHash: extrinsic_hash!,
-        });
+        };
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
       }
     );

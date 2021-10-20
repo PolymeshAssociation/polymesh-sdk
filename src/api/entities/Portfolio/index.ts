@@ -1,3 +1,4 @@
+import { BlockNumber } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
@@ -17,12 +18,15 @@ import {
 import { settlements } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { Ensured, ErrorCode, ProcedureMethod, ResultSet } from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
+  hashToString,
   identityIdToString,
   keyToAddress,
   middlewarePortfolioToPortfolio,
+  numberToU32,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
@@ -291,6 +295,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = {}
   ): Promise<ResultSet<HistoricSettlement>> {
     const {
+      context: {
+        polymeshApi: {
+          query: { system },
+        },
+      },
       context,
       owner: { did },
       _id: number,
@@ -325,7 +334,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { items, totalCount: count } = settlementsResult!;
 
-    const data: HistoricSettlement[] = [];
+    const multiParams: BlockNumber[] = [];
+    const data: Omit<HistoricSettlement, 'blockHash'>[] = [];
     let next = null;
 
     if (items) {
@@ -333,6 +343,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
         const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
 
+        multiParams.push(numberToU32(blockId, context));
         data.push({
           blockNumber: new BigNumber(blockId),
           status,
@@ -355,8 +366,15 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       next = calculateNextKey(count, size, start);
     }
 
+    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
+      multiParams
+    );
+
     return {
-      data,
+      data: data.map((settlement, index) => ({
+        ...settlement,
+        blockHash: hashToString(hashes[index]),
+      })),
       next,
       count,
     };

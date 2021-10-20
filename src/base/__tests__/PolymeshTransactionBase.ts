@@ -69,6 +69,7 @@ describe('Polymesh Transaction Base class', () => {
 
       sinon.assert.calledWith(tx, ...args);
       expect(transaction.blockHash).toBeDefined();
+      expect(transaction.blockNumber).toBeDefined();
       expect(transaction.txHash).toBeDefined();
       expect(transaction.status).toBe(TransactionStatus.Succeeded);
     });
@@ -101,6 +102,7 @@ describe('Polymesh Transaction Base class', () => {
 
       sinon.assert.calledWith(tx, ticker);
       expect(transaction.blockHash).toBeDefined();
+      expect(transaction.blockNumber).toBeDefined();
       expect(transaction.txHash).toBeDefined();
       expect(transaction.status).toBe(TransactionStatus.Succeeded);
     });
