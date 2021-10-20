@@ -44,6 +44,21 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: run', () => {
+    beforeEach(() => {
+      dsMockUtils.createRpcStub('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(1)),
+              parentHash: 'hash',
+              stateRoot: 'hash',
+              extrinsicsRoot: 'hash',
+            },
+          },
+        }),
+      });
+    });
+
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker', { autoresolve: false });
       const args = tuple('A_TICKER');

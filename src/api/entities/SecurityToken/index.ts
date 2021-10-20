@@ -1,5 +1,5 @@
 import { bool, Option, StorageKey } from '@polkadot/types';
-import { BlockNumber } from '@polkadot/types/interfaces/runtime';
+import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
@@ -550,9 +550,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
       });
     });
 
-    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
-      multiParams
-    );
+    let hashes: Hash[] = [];
+
+    if (multiParams.length) {
+      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+    }
 
     const finalResults: HistoricAgentOperation[] = [];
 

@@ -382,9 +382,13 @@ describe('TokenPermissions class', () => {
   describe('method: getOperationHistory', () => {
     test('should return the Events triggered by Operations the Identity has performed on a specific Security Token', async () => {
       const blockId = new BigNumber(1);
+      const blockHash = 'someHash';
       const eventIndex = 1;
       const datetime = '2020-10-10';
 
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        multi: [dsMockUtils.createMockHash(blockHash)],
+      });
       /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryStub(
         tickerExternalAgentActions({
@@ -410,7 +414,7 @@ describe('TokenPermissions class', () => {
       );
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      const result = await tokenPermissions.getOperationHistory({
+      let result = await tokenPermissions.getOperationHistory({
         token: ticker,
       });
 
@@ -419,10 +423,38 @@ describe('TokenPermissions class', () => {
       expect(result.data).toEqual([
         {
           blockNumber: blockId,
+          blockHash,
           blockDate: new Date(`${datetime}Z`),
           eventIndex,
         },
       ]);
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      dsMockUtils.createApolloQueryStub(
+        tickerExternalAgentActions({
+          ticker,
+          caller_did: did,
+          pallet_name: undefined,
+          event_id: undefined,
+          count: undefined,
+          skip: undefined,
+        }),
+        {
+          tickerExternalAgentActions: {
+            totalCount: 0,
+            items: [],
+          },
+        }
+      );
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      result = await tokenPermissions.getOperationHistory({
+        token: ticker,
+      });
+
+      expect(result.next).toEqual(null);
+      expect(result.count).toEqual(0);
+      expect(result.data).toEqual([]);
     });
   });
 });

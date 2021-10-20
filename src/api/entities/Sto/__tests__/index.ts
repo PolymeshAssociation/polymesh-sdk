@@ -333,7 +333,7 @@ describe('Sto class', () => {
         {
           investments: {
             totalCount: 0,
-            items: null,
+            items: [],
           },
         }
       );

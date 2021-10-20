@@ -221,27 +221,23 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
       data: { investments: investmentsResult },
     } = result;
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     const { items, totalCount: count } = investmentsResult!;
 
     const data: Investment[] = [];
-    let next = null;
 
-    if (items) {
-      items.forEach(item => {
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const { investor: did, offeringTokenAmount, raiseTokenAmount } = item!;
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+    items!.forEach(item => {
+      const { investor: did, offeringTokenAmount, raiseTokenAmount } = item!;
 
-        data.push({
-          investor: new Identity({ did }, context),
-          soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
-          investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
-        });
+      data.push({
+        investor: new Identity({ did }, context),
+        soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
+        investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
       });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-      next = calculateNextKey(count, size, start);
-    }
+    const next = calculateNextKey(count, size, start);
 
     return {
       data,

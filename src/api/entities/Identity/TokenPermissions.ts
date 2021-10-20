@@ -1,4 +1,4 @@
-import { BlockNumber } from '@polkadot/types/interfaces/runtime';
+import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -361,9 +361,11 @@ export class TokenPermissions extends Namespace<Identity> {
       });
     });
 
-    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
-      multiParams
-    );
+    let hashes: Hash[] = [];
+
+    if (multiParams.length) {
+      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+    }
 
     const next = calculateNextKey(count, size, start);
 

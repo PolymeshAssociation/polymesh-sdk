@@ -1,4 +1,4 @@
-import { BlockNumber } from '@polkadot/types/interfaces/runtime';
+import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
@@ -331,44 +331,42 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       data: { settlements: settlementsResult },
     } = result;
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     const { items, totalCount: count } = settlementsResult!;
 
     const multiParams: BlockNumber[] = [];
     const data: Omit<HistoricSettlement, 'blockHash'>[] = [];
-    let next = null;
 
-    if (items) {
-      items.forEach(item => {
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
+    items!.forEach(item => {
+      const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
 
-        multiParams.push(numberToU32(blockId, context));
-        data.push({
-          blockNumber: new BigNumber(blockId),
-          status,
-          accounts: addresses!.map(
-            address => new Account({ address: keyToAddress('0x' + address, context) }, context)
-          ),
-          legs: settlementLegs.map(leg => {
-            return {
-              token: new SecurityToken({ ticker: leg!.ticker }, context),
-              amount: new BigNumber(leg!.amount).shiftedBy(-6),
-              direction: leg!.direction,
-              from: middlewarePortfolioToPortfolio(leg!.from, context),
-              to: middlewarePortfolioToPortfolio(leg!.to, context),
-            };
-          }),
-        });
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      multiParams.push(numberToU32(blockId, context));
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        status,
+        accounts: addresses!.map(
+          address => new Account({ address: keyToAddress('0x' + address, context) }, context)
+        ),
+        legs: settlementLegs.map(leg => {
+          return {
+            token: new SecurityToken({ ticker: leg!.ticker }, context),
+            amount: new BigNumber(leg!.amount).shiftedBy(-6),
+            direction: leg!.direction,
+            from: middlewarePortfolioToPortfolio(leg!.from, context),
+            to: middlewarePortfolioToPortfolio(leg!.to, context),
+          };
+        }),
       });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-      next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, size, start);
+
+    let hashes: Hash[] = [];
+
+    if (multiParams.length) {
+      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
     }
-
-    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
-      multiParams
-    );
 
     return {
       data: data.map((settlement, index) => ({

@@ -1,5 +1,5 @@
 import { bool, Bytes, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
@@ -157,6 +157,7 @@ import {
   fundraiserTierToTier,
   fundraiserToStoDetails,
   granularCanTransferResultToTransferBreakdown,
+  hashToString,
   identityIdToString,
   internalTokenTypeToAssetType,
   isCusipValid,
@@ -216,6 +217,7 @@ import {
   stringToDocumentUri,
   stringToEcdsaSignature,
   stringToFundingRoundName,
+  stringToHash,
   stringToIdentityId,
   stringToInvestorZKProofData,
   stringToMemo,
@@ -632,7 +634,7 @@ describe('dateToMoment and momentToDate', () => {
   });
 });
 
-describe('stringToAccountId and accountIdToSting', () => {
+describe('stringToAccountId and accountIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -657,11 +659,45 @@ describe('stringToAccountId and accountIdToSting', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  test('accountIdToSting should convert a polkadot AccountId object to a string', () => {
+  test('accountIdToString should convert a polkadot AccountId object to a string', () => {
     const fakeResult = 'someAccountId';
     const accountId = dsMockUtils.createMockAccountId(fakeResult);
 
     const result = accountIdToString(accountId);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('stringToHash and hashToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('stringToHash should convert a string to a polkadot Hash object', () => {
+    const value = 'someHash';
+    const fakeResult = ('convertedHash' as unknown) as Hash;
+    const context = dsMockUtils.getContextInstance();
+
+    dsMockUtils.getCreateTypeStub().withArgs('Hash', value).returns(fakeResult);
+
+    const result = stringToHash(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  test('hashToString should convert a polkadot Hash object to a string', () => {
+    const fakeResult = 'someHash';
+    const accountId = dsMockUtils.createMockHash(fakeResult);
+
+    const result = hashToString(accountId);
     expect(result).toEqual(fakeResult);
   });
 });

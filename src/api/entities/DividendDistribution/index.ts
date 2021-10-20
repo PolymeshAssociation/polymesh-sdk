@@ -1,5 +1,5 @@
 import { Option } from '@polkadot/types';
-import { BlockNumber } from '@polkadot/types/interfaces/runtime';
+import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -473,29 +473,29 @@ export class DividendDistribution extends CorporateAction {
 
     const data: Omit<DistributionPayment, 'blockHash'>[] = [];
     const multiParams: BlockNumber[] = [];
-    let next = null;
 
-    if (items) {
-      items.forEach(item => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { blockId, datetime, eventDid: did, balance, tax } = item!;
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    items!.forEach(item => {
+      const { blockId, datetime, eventDid: did, balance, tax } = item!;
 
-        multiParams.push(numberToU32(blockId, context));
-        data.push({
-          blockNumber: new BigNumber(blockId),
-          date: new Date(datetime),
-          target: new Identity({ did }, context),
-          amount: new BigNumber(balance),
-          withheldTax: new BigNumber(tax),
-        });
+      multiParams.push(numberToU32(blockId, context));
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        date: new Date(datetime),
+        target: new Identity({ did }, context),
+        amount: new BigNumber(balance),
+        withheldTax: new BigNumber(tax),
       });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-      next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, size, start);
+
+    let hashes: Hash[] = [];
+
+    if (multiParams.length) {
+      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
     }
-
-    const hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(
-      multiParams
-    );
 
     return {
       data: data.map((payment, index) => ({
