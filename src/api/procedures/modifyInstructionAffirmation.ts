@@ -103,7 +103,10 @@ export async function prepareModifyInstructionAffirmation(
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: errorMessage,
+      // As InstructionAffirmationOperation.Reject has no excludeCriteria, if this error is thrown
+      // it means that the operation had to be either affirm or withdraw, and so the errorMessage was set
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      message: errorMessage!,
     });
   }
 
