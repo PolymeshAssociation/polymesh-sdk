@@ -74,6 +74,15 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
   let transaction = multiSig.acceptMultisigSignerAsIdentity;
 
   if (target instanceof Account) {
+    const existingIdentity = await target.getIdentity();
+
+    if (existingIdentity) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already part of an Identity',
+      });
+    }
+
     transaction = multiSig.acceptMultisigSignerAsKey;
   }
 

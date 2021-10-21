@@ -48,18 +48,18 @@ describe('createVenue procedure', () => {
   });
 
   test('should add a createVenue transaction to the queue', async () => {
-    const details = 'details';
+    const description = 'description';
     const type = VenueType.Distribution;
     const args = {
-      details,
+      description,
       type,
     };
-    const rawDetails = dsMockUtils.createMockVenueDetails(details);
+    const rawDetails = dsMockUtils.createMockVenueDetails(description);
     const rawType = dsMockUtils.createMockVenueType(type);
 
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
-    stringToVenueDetailsStub.withArgs(details, mockContext).returns(rawDetails);
+    stringToVenueDetailsStub.withArgs(description, mockContext).returns(rawDetails);
     venueTypeToMeshVenueTypeStub.withArgs(type, mockContext).returns(rawType);
 
     const result = await prepareCreateVenue.call(proc, args);

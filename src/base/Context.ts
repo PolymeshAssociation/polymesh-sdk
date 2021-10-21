@@ -12,7 +12,6 @@ import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import {
   CAId,
-  DidRecord,
   Distribution,
   ProtocolOp,
   Subsidy as MeshSubsidy,
@@ -45,6 +44,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
+import { QueryReturnType } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
   accountIdToString,
@@ -126,20 +126,6 @@ export class Context {
    */
   private constructor(params: ConstructorParams) {
     const { polymeshApi, middlewareApi, keyring, ss58Format } = params;
-
-    const callback = (): void => {
-      polymeshApi.off('disconnected', callback);
-      polymeshApi.off('error', callback);
-
-      if (this.isDisconnected) {
-        return;
-      }
-
-      this.disconnect();
-    };
-
-    polymeshApi.on('disconnected', callback);
-    polymeshApi.on('error', callback);
 
     this._middlewareApi = middlewareApi;
     this._polymeshApi = polymeshApi;
@@ -510,9 +496,15 @@ export class Context {
    * Check whether Identities exist
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
+
     const dids = identities.map(signerToString);
     const rawIdentities = dids.map(did => stringToIdentityId(did, this));
-    const records = await this.polymeshApi.query.identity.didRecords.multi<DidRecord>(
+    const records = await identity.didRecords.multi<QueryReturnType<typeof identity.didRecords>>(
       rawIdentities
     );
 
@@ -709,7 +701,9 @@ export class Context {
     tokens: SecurityToken[];
   }): Promise<DistributionWithDetails[]> {
     const {
-      polymeshApi: { query },
+      polymeshApi: {
+        query: { corporateAction: corporateActionQuery, capitalDistribution },
+      },
     } = this;
     const { tokens } = args;
     const distributionsMultiParams: CAId[] = [];
@@ -722,7 +716,7 @@ export class Context {
     await P.each(tokenChunks, async tokenChunk => {
       const corporateActions = await Promise.all(
         tokenChunk.map(({ ticker }) =>
-          query.corporateAction.corporateActions.entries(stringToTicker(ticker, this))
+          corporateActionQuery.corporateActions.entries(stringToTicker(ticker, this))
         )
       );
       const unpredictableCas = flatten(corporateActions).filter(
@@ -740,7 +734,7 @@ export class Context {
           const localId = u32ToBigNumber(rawId);
           const ticker = tickerToString(rawTicker);
           const caId = corporateActionIdentifierToCaId({ ticker, localId }, this);
-          const details = await query.corporateAction.details(caId);
+          const details = await corporateActionQuery.details(caId);
           const action = corporateAction.unwrap();
 
           return {
@@ -768,7 +762,9 @@ export class Context {
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
         requestChunk.map(paramChunk =>
-          query.capitalDistribution.distributions.multi<Option<Distribution>>(paramChunk)
+          capitalDistribution.distributions.multi<
+            QueryReturnType<typeof capitalDistribution.distributions>
+          >(paramChunk)
         )
       )
     );

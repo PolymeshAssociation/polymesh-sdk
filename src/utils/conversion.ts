@@ -2677,11 +2677,7 @@ export function meshAffirmationStatusToAffirmationStatus(
     return AffirmationStatus.Pending;
   }
 
-  if (status.isAffirmed) {
-    return AffirmationStatus.Affirmed;
-  }
-
-  return AffirmationStatus.Rejected;
+  return AffirmationStatus.Affirmed;
 }
 
 /**

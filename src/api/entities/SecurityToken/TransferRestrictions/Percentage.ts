@@ -5,6 +5,7 @@ import {
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  NoArgsProcedureMethod,
   PercentageTransferRestriction,
   ProcedureMethod,
   TransferRestrictionType,
@@ -41,7 +42,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions!: ProcedureMethod<void, number>;
+  public removeRestrictions!: NoArgsProcedureMethod<number>;
 
   /**
    * Retrieve all active Percentage Transfer Restrictions
