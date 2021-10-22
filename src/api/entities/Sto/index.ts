@@ -17,7 +17,6 @@ import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   Ensured,
-  ErrorCode,
   NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
