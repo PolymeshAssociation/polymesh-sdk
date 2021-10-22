@@ -2,7 +2,7 @@ import { u64 } from '@polkadot/types';
 import { BigNumber } from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord, Instruction as MeshInstruction } from 'polymesh-types/types';
+import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -36,6 +36,7 @@ import {
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isVenueOwnerRole,
+  NoArgsProcedureMethod,
   Order,
   PermissionType,
   ProcedureMethod,
@@ -46,7 +47,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
@@ -161,11 +162,17 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context
     );
     this.freezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true, identity: this }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true, identity: this }],
+        voidArgs: true,
+      },
       context
     );
     this.unfreezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }],
+        voidArgs: true,
+      },
       context
     );
   }
@@ -202,12 +209,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Freeze all the secondary keys in this Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
    */
-  public freezeSecondaryKeys: ProcedureMethod<void, void>;
+  public freezeSecondaryKeys: NoArgsProcedureMethod<void>;
 
   /**
    * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
    */
-  public unfreezeSecondaryKeys: ProcedureMethod<void, void>;
+  public unfreezeSecondaryKeys: NoArgsProcedureMethod<void>;
 
   /**
    * Check whether this Identity possesses the specified Role
@@ -446,17 +453,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middleware
    */
-  public async getTrustingTokens(
-    args: { order: Order } = { order: Order.Asc }
-  ): Promise<SecurityToken[]> {
+  public async getTrustingTokens(): Promise<SecurityToken[]> {
     const { context, did } = this;
-
-    const { order } = args;
 
     const {
       data: { tokensByTrustedClaimIssuer: tickers },
     } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
-      tokensByTrustedClaimIssuer({ claimIssuerDid: did, order })
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did })
     );
 
     return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
@@ -547,7 +550,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
     const affirmed: Instruction[] = [];
-    const rejected: Instruction[] = [];
     const pending: Instruction[] = [];
     const failed: Instruction[] = [];
 
@@ -560,9 +562,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
         ({ id }) => id.toNumber()
       );
-      const instructions = await settlement.instructionDetails.multi<MeshInstruction>(
-        uniqueEntries.map(({ id }) => id)
-      );
+      const instructions = await settlement.instructionDetails.multi<
+        QueryReturnType<typeof settlement.instructionDetails>
+      >(uniqueEntries.map(({ id }) => id));
 
       uniqueEntries.forEach(({ id, status }, index) => {
         const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
@@ -571,8 +573,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
           failed.push(instruction);
         } else if (status.isAffirmed) {
           affirmed.push(instruction);
-        } else if (status.isRejected) {
-          rejected.push(instruction);
         } else if (status.isPending) {
           pending.push(instruction);
         }
@@ -581,7 +581,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return {
       affirmed,
-      rejected,
       pending,
       failed,
     };
@@ -628,7 +627,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key]) => key.args[1]),
         id => id.toNumber()
       );
-      return settlement.instructionDetails.multi<MeshInstruction>(instructionIds);
+      return settlement.instructionDetails.multi<
+        QueryReturnType<typeof settlement.instructionDetails>
+      >(instructionIds);
     });
 
     const rawInstructions = flatten(chunkedInstructions);

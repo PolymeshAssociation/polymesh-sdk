@@ -70,7 +70,7 @@ describe('DividendDistribution class', () => {
     perShare = new BigNumber(10);
     maxAmount = new BigNumber(10000);
     expiryDate = null;
-    paymentDate = new Date('10/14/2021');
+    paymentDate = new Date(new Date().getTime() + 60 * 60 * 24 * 365);
     dividendDistribution = new DividendDistribution(
       {
         id,

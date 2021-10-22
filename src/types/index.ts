@@ -1147,6 +1147,11 @@ export interface ProcedureMethod<
   ) => Promise<ProcedureAuthorizationStatus>;
 }
 
+export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
+  (opts?: ProcedureOpts): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
+  checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
+}
+
 export enum SignerType {
   /* eslint-disable @typescript-eslint/no-shadow */
   Identity = 'Identity',
@@ -1170,10 +1175,6 @@ export interface GroupedInstructions {
    * Instructions that have already been affirmed by the Identity
    */
   affirmed: Instruction[];
-  /**
-   * Instructions that have already been rejected by the Identity
-   */
-  rejected: Instruction[];
   /**
    * Instructions that still need to be affirmed/rejected by the Identity
    */
