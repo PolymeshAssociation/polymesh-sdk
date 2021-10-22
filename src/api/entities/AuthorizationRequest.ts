@@ -11,7 +11,13 @@ import {
   Entity,
   Identity,
 } from '~/internal';
-import { Authorization, AuthorizationType, ProcedureMethod, Signer, SignerValue } from '~/types';
+import {
+  Authorization,
+  AuthorizationType,
+  NoArgsProcedureMethod,
+  Signer,
+  SignerValue,
+} from '~/types';
 import { HumanReadableType } from '~/types/utils';
 import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
@@ -106,7 +112,6 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     this.data = data;
 
     this.accept = createProcedureMethod<
-      void,
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinIdentityAuthorizationParams
       | ConsumeAddMultiSigSignerAuthorizationParams,
@@ -128,12 +133,12 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
             }
           }
         },
+        voidArgs: true,
       },
       context
     );
 
     this.remove = createProcedureMethod<
-      void,
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinIdentityAuthorizationParams
       | ConsumeAddMultiSigSignerAuthorizationParams,
@@ -155,6 +160,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
             }
           }
         },
+        voidArgs: true,
       },
       context
     );
@@ -163,7 +169,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
   /**
    * Accept the Authorization Request. You must be the target of the Request to be able to accept it
    */
-  public accept: ProcedureMethod<void, void>;
+  public accept: NoArgsProcedureMethod<void>;
 
   /**
    * Remove the Authorization Request
@@ -171,7 +177,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
    * - If you are the Request issuer, this will cancel the Authorization
    * - If you are the Request target, this will reject the Authorization
    */
-  public remove: ProcedureMethod<void, void>;
+  public remove: NoArgsProcedureMethod<void>;
 
   /**
    * Returns whether the Authorization Request has expired

@@ -10,10 +10,10 @@ import {
   Ensured,
   ExtrinsicData,
   ModuleName,
+  NoArgsProcedureMethod,
   NumberedPortfolio,
   Permissions,
   PermissionType,
-  ProcedureMethod,
   ResultSet,
   SimplePermissions,
   SubCallback,
@@ -84,7 +84,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     this.authorizations = new Authorizations(this, context);
 
     this.leaveIdentity = createProcedureMethod(
-      { getProcedureAndArgs: () => [leaveIdentity, { account: this }] },
+      { getProcedureAndArgs: () => [leaveIdentity, { account: this }], voidArgs: true },
       context
     );
   }
@@ -92,7 +92,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Leave the Account's Identity. This operation can only be done if the Account is a secondary key for the Identity
    */
-  public leaveIdentity: ProcedureMethod<void, void>;
+  public leaveIdentity: NoArgsProcedureMethod<void>;
 
   /**
    * Get the free/locked POLYX balance of the Account

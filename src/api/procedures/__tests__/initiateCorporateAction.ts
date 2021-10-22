@@ -87,7 +87,7 @@ describe('initiateCorporateAction procedure', () => {
     ticker = 'SOME_TICKER';
     kind = CorporateActionKind.UnpredictableBenefit;
     declarationDate = new Date('10/14/1987');
-    checkpoint = new Date('10/14/2021');
+    checkpoint = new Date(new Date().getTime() + 60 * 60 * 24 * 365);
     description = 'someDescription';
     targets = {
       identities: ['someDid'],

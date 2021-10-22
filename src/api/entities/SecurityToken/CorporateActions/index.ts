@@ -1,7 +1,4 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
-import { Vec } from '@polkadot/types/codec';
-import type { ITuple } from '@polkadot/types/types';
-import { IdentityId, TargetIdentities, Tax } from 'polymesh-types/types';
 
 import {
   Context,
@@ -16,7 +13,8 @@ import {
   removeCorporateActionsAgent,
   SecurityToken,
 } from '~/internal';
-import { ProcedureMethod } from '~/types';
+import { NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import {
   identityIdToString,
   permillToBigNumber,
@@ -55,7 +53,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
     );
 
     this.removeAgent = createProcedureMethod(
-      { getProcedureAndArgs: () => [removeCorporateActionsAgent, { ticker }] },
+      { getProcedureAndArgs: () => [removeCorporateActionsAgent, { ticker }], voidArgs: true },
       context
     );
 
@@ -92,7 +90,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
    *
    * @deprecated
    */
-  public removeAgent: ProcedureMethod<void, void>;
+  public removeAgent: NoArgsProcedureMethod<void>;
 
   /**
    * Remove a Corporate Action
@@ -152,7 +150,11 @@ export class CorporateActions extends Namespace<SecurityToken> {
     const rawTicker = stringToTicker(ticker, context);
 
     const [targets, defaultTaxWithholding, taxWithholdings] = await polymeshApi.queryMulti<
-      [TargetIdentities, Tax, Vec<ITuple<[IdentityId, Tax]>>]
+      [
+        QueryReturnType<typeof corporateAction.defaultTargetIdentities>,
+        QueryReturnType<typeof corporateAction.defaultWithholdingTax>,
+        QueryReturnType<typeof corporateAction.didWithholdingTax>
+      ]
     >([
       [
         (corporateAction.defaultTargetIdentities as unknown) as QueryableStorageEntry<'promise'>,
