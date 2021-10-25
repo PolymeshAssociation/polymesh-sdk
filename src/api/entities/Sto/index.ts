@@ -11,14 +11,12 @@ import {
   InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
-  PolymeshError,
   toggleFreezeSto,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   Ensured,
-  ErrorCode,
   NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
@@ -127,16 +125,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     const assembleResult = (
       rawFundraiser: Option<Fundraiser>,
       rawName: FundraiserName
-    ): StoDetails => {
-      if (rawFundraiser.isSome) {
-        return fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
-      } else {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'STO no longer exists',
-        });
-      }
-    };
+    ): StoDetails => fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = numberToU64(id, context);

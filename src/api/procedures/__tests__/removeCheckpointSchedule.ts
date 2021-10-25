@@ -103,7 +103,7 @@ describe('removeCheckpointSchedule procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareRemoveCheckpointSchedule.call(proc, args)).rejects.toThrow(
-      'You cannot remove this Schedule'
+      'This Schedule is being referenced by other Entities. It cannot be removed'
     );
   });
 

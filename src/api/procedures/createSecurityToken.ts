@@ -132,14 +132,14 @@ export async function prepareCreateSecurityToken(
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: `A Security Token with ticker "${ticker}" already exists`,
     });
   }
 
   if (status === TickerReservationStatus.Free) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
     });
   }

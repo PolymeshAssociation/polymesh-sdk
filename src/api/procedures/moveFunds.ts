@@ -100,7 +100,7 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
 
   if (balanceExceeded.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.InsufficientBalance,
       message: "Some of the amounts being transferred exceed the Portfolio's balance",
       data: {
         balanceExceeded,

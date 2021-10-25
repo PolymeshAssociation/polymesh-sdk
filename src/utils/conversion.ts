@@ -282,7 +282,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
   if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
     });
   }
 
@@ -790,7 +790,7 @@ function buildPalletPermissions(
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message:
-          'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
+          'Attempting to add a transaction permission exception without its corresponding module being included/excluded',
       });
     } else if (pallet === null) {
       extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
@@ -1168,7 +1168,7 @@ export function authorizationDataToAuthorization(
   }
 
   throw new PolymeshError({
-    code: ErrorCode.FatalError,
+    code: ErrorCode.UnexpectedError,
     message: 'Unsupported Authorization Type. Please contact the Polymath team',
     data: {
       auth: JSON.stringify(auth, null, 2),
@@ -1182,13 +1182,11 @@ export function authorizationDataToAuthorization(
 export function numberToBalance(
   value: number | BigNumber,
   context: Context,
-  divisible?: boolean
+  divisible = true
 ): Balance {
   const rawValue = new BigNumber(value);
 
   assertIsPositive(value);
-
-  divisible = divisible ?? true;
 
   if (rawValue.isGreaterThan(MAX_BALANCE)) {
     throw new PolymeshError({
@@ -1343,7 +1341,7 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     }
     default: {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.UnexpectedError,
         message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymath team`,
       });
     }
@@ -1529,7 +1527,7 @@ export function tokenIdentifierToAssetIdentifier(
   if (error) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Error while checking value identifier ${value} as ${type} type`,
+      message: `Invalid token identifier ${value} of type ${type}`,
     });
   }
 
@@ -1768,7 +1766,7 @@ export function canTransferResultToTransferStatus(
 ): TransferStatus {
   if (canTransferResult.isErr) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.UnexpectedError,
       message: `Error while checking transfer validity: ${bytesToString(canTransferResult.asErr)}`,
     });
   }

@@ -150,7 +150,7 @@ export async function prepareLaunchSto(
 
   if (!venueId) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: 'A valid Venue for the Offering was neither supplied nor found',
     });
   }
@@ -162,7 +162,7 @@ export async function prepareLaunchSto(
 
   if (totalTierBalance.gt(free)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.InsufficientBalance,
       message: "There isn't enough free balance in the offering Portfolio",
       data: {
         free,
