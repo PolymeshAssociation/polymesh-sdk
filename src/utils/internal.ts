@@ -32,7 +32,6 @@ import {
   CommonKeyring,
   CountryCode,
   ErrorCode,
-  isEntity,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
@@ -55,6 +54,7 @@ import {
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
+import { isEntity } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
