@@ -57,13 +57,13 @@ export async function prepareReserveTicker(
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: `A Security Token with ticker "${ticker}" already exists`,
     });
   } else if (status === TickerReservationStatus.Reserved) {
     if (!extendPeriod) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.UnmetPrerequisite,
         message: `Ticker "${ticker}" already reserved`,
         data: {
           expiryDate,
@@ -73,7 +73,7 @@ export async function prepareReserveTicker(
   } else {
     if (extendPeriod) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.UnmetPrerequisite,
         message: 'Ticker not reserved or the reservation has expired',
       });
     }

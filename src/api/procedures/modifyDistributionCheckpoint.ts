@@ -39,7 +39,7 @@ export async function prepareModifyDistributionCheckpoint(
 
   if (paymentDate <= now) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Distribution is already in its payment period',
     });
   }
@@ -50,7 +50,7 @@ export async function prepareModifyDistributionCheckpoint(
 
   if (expiryDate && expiryDate < now) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Distribution has already expired',
       data: {
         expiryDate,

@@ -15,6 +15,7 @@ import {
 import {
   ActiveTransferRestrictions,
   CountTransferRestriction,
+  NoArgsProcedureMethod,
   PercentageTransferRestriction,
   ProcedureMethod,
   TransferRestrictionType,
@@ -91,7 +92,6 @@ export abstract class TransferRestrictionBase<
     );
 
     this.removeRestrictions = createProcedureMethod<
-      void,
       SetTransferRestrictionsParams,
       number,
       SetTransferRestrictionsStorage
@@ -105,6 +105,7 @@ export abstract class TransferRestrictionBase<
             ticker,
           } as unknown) as SetTransferRestrictionsParams,
         ],
+        voidArgs: true,
       },
       context
     );
@@ -129,7 +130,7 @@ export abstract class TransferRestrictionBase<
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions: ProcedureMethod<void, number>;
+  public removeRestrictions: NoArgsProcedureMethod<number>;
 
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type

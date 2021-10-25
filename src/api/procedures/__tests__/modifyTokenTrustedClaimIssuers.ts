@@ -164,7 +164,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Some of the supplied Identity IDs do not exist');
+    expect(error.message).toBe('Some of the supplied Identities do not exist');
     expect(error.data).toMatchObject({ nonExistentDids: [nonExistentDid] });
   });
 

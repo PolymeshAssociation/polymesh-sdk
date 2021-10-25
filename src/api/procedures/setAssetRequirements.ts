@@ -69,7 +69,7 @@ export async function prepareSetAssetRequirements(
     requirements.length === currentRequirements.length
   ) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is equal to the current one',
     });
   }

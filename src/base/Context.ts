@@ -12,7 +12,6 @@ import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import {
   CAId,
-  DidRecord,
   Distribution,
   ProtocolOp,
   Subsidy as MeshSubsidy,
@@ -45,6 +44,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
+import { QueryReturnType } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
   accountIdToString,
@@ -149,8 +149,8 @@ export class Context {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
         if (prop === 'tx' && !ctx.currentPair) {
           throw new PolymeshError({
-            code: ErrorCode.FatalError,
-            message: 'Cannot perform transactions without an active account',
+            code: ErrorCode.General,
+            message: 'Cannot perform transactions without an active Account',
           });
         }
 
@@ -242,8 +242,8 @@ export class Context {
 
     if (!currentPair) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'There is no account associated with the SDK',
+        code: ErrorCode.General,
+        message: 'There is no Account associated with the SDK',
       });
     }
 
@@ -312,7 +312,7 @@ export class Context {
       newCurrentPair = keyring.getPair(address);
     } catch (e) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.General,
         message: 'The address is not present in the keyring set',
       });
     }
@@ -433,7 +433,7 @@ export class Context {
   /**
    * Retrieve current Account
    *
-   * @throws if there is no current account associated to the SDK instance
+   * @throws if there is no current Account associated to the SDK instance
    */
   public getCurrentAccount(): Account {
     const { address } = this.getCurrentPair();
@@ -453,8 +453,8 @@ export class Context {
 
     if (identity === null) {
       throw new PolymeshError({
-        code: ErrorCode.IdentityNotPresent,
-        message: 'The current account does not have an associated Identity',
+        code: ErrorCode.DataUnavailable,
+        message: 'The current Account does not have an associated Identity',
       });
     }
 
@@ -471,8 +471,8 @@ export class Context {
 
     if (!currentPair) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'There is no account associated with the current SDK instance',
+        code: ErrorCode.General,
+        message: 'There is no Account associated with the current SDK instance',
       });
     }
 
@@ -496,9 +496,15 @@ export class Context {
    * Check whether Identities exist
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
+    const {
+      polymeshApi: {
+        query: { identity },
+      },
+    } = this;
+
     const dids = identities.map(signerToString);
     const rawIdentities = dids.map(did => stringToIdentityId(did, this));
-    const records = await this.polymeshApi.query.identity.didRecords.multi<DidRecord>(
+    const records = await identity.didRecords.multi<QueryReturnType<typeof identity.didRecords>>(
       rawIdentities
     );
 
@@ -695,7 +701,9 @@ export class Context {
     tokens: SecurityToken[];
   }): Promise<DistributionWithDetails[]> {
     const {
-      polymeshApi: { query },
+      polymeshApi: {
+        query: { corporateAction: corporateActionQuery, capitalDistribution },
+      },
     } = this;
     const { tokens } = args;
     const distributionsMultiParams: CAId[] = [];
@@ -708,7 +716,7 @@ export class Context {
     await P.each(tokenChunks, async tokenChunk => {
       const corporateActions = await Promise.all(
         tokenChunk.map(({ ticker }) =>
-          query.corporateAction.corporateActions.entries(stringToTicker(ticker, this))
+          corporateActionQuery.corporateActions.entries(stringToTicker(ticker, this))
         )
       );
       const unpredictableCas = flatten(corporateActions).filter(
@@ -726,7 +734,7 @@ export class Context {
           const localId = u32ToBigNumber(rawId);
           const ticker = tickerToString(rawTicker);
           const caId = corporateActionIdentifierToCaId({ ticker, localId }, this);
-          const details = await query.corporateAction.details(caId);
+          const details = await corporateActionQuery.details(caId);
           const action = corporateAction.unwrap();
 
           return {
@@ -754,7 +762,9 @@ export class Context {
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
         requestChunk.map(paramChunk =>
-          query.capitalDistribution.distributions.multi<Option<Distribution>>(paramChunk)
+          capitalDistribution.distributions.multi<
+            QueryReturnType<typeof capitalDistribution.distributions>
+          >(paramChunk)
         )
       )
     );
@@ -962,7 +972,7 @@ export class Context {
 
     if (!targets) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.MiddlewareError,
         message: 'Cannot perform this action without an active middleware connection',
       });
     }
@@ -991,7 +1001,7 @@ export class Context {
 
     if (!api) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.MiddlewareError,
         message: 'Cannot perform this action without an active middleware connection',
       });
     }

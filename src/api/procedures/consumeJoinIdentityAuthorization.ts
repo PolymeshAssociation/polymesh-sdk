@@ -46,7 +46,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
 
   if (authRequest.isExpired()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Authorization Request has expired',
       data: {
         expiry,
@@ -76,7 +76,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
 
   if (existingIdentity) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'This Account is already part of an Identity',
     });
   }

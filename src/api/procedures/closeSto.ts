@@ -35,7 +35,7 @@ export async function prepareCloseSto(this: Procedure<Params, void>, args: Param
 
   if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The STO is already closed',
     });
   }

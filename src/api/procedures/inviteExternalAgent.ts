@@ -97,7 +97,7 @@ export async function prepareInviteExternalAgent(
 
   if (isAgent) {
     throw new PolymeshError({
-      code: ErrorCode.IdentityNotPresent,
+      code: ErrorCode.NoDataChange,
       message: 'The target Identity is already an External Agent',
     });
   }

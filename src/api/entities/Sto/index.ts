@@ -11,14 +11,13 @@ import {
   InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
-  PolymeshError,
   toggleFreezeSto,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   Ensured,
-  ErrorCode,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
   SubCallback,
@@ -75,15 +74,21 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     this.ticker = ticker;
 
     this.freeze = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: true }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: true }],
+        voidArgs: true,
+      },
       context
     );
     this.unfreeze = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: false }] },
+      {
+        getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: false }],
+        voidArgs: true,
+      },
       context
     );
     this.close = createProcedureMethod(
-      { getProcedureAndArgs: () => [closeSto, { ticker, id }] },
+      { getProcedureAndArgs: () => [closeSto, { ticker, id }], voidArgs: true },
       context
     );
     this.modifyTimes = createProcedureMethod(
@@ -120,16 +125,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     const assembleResult = (
       rawFundraiser: Option<Fundraiser>,
       rawName: FundraiserName
-    ): StoDetails => {
-      if (rawFundraiser.isSome) {
-        return fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
-      } else {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'STO no longer exists',
-        });
-      }
-    };
+    ): StoDetails => fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = numberToU64(id, context);
@@ -151,17 +147,17 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Close the STO
    */
-  public close: ProcedureMethod<void, void>;
+  public close: NoArgsProcedureMethod<void>;
 
   /**
    * Freeze the STO
    */
-  public freeze: ProcedureMethod<void, Sto>;
+  public freeze: NoArgsProcedureMethod<Sto>;
 
   /**
    * Unfreeze the STO
    */
-  public unfreeze: ProcedureMethod<void, Sto>;
+  public unfreeze: NoArgsProcedureMethod<Sto>;
 
   /**
    * Modify the start/end time of the STO

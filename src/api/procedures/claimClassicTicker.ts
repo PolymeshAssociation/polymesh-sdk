@@ -66,7 +66,7 @@ export async function prepareClaimClassicTicker(
 
   if (classicReservation.isNone) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The supplied ticker is not in the reserved classic ticker list',
     });
   }
@@ -75,7 +75,7 @@ export async function prepareClaimClassicTicker(
 
   if (reservationExpired) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: "The Ticker's claiming period has already expired",
     });
   }
@@ -84,7 +84,7 @@ export async function prepareClaimClassicTicker(
 
   if (ownerDid !== CLASSIC_TICKER_OWNER_DID) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Ticker already claimed',
       data: {
         ownerDid,
@@ -113,7 +113,7 @@ export async function prepareClaimClassicTicker(
 
   if (signerAddress !== u8aToString(ethOwner).toLowerCase()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The account that signed the message is not the classic Ticker owner',
       data: {
         signerAddress,

@@ -147,7 +147,7 @@ export class Portfolios extends Namespace<Identity> {
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: "The Portfolio doesn't exist",
       });
     }
