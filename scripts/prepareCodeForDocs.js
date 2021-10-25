@@ -18,7 +18,7 @@ const ts = require('typescript');
 const replace = require('replace-in-file');
 const path = require('path');
 
-const methodRegex = /\*\/\n\s+?public ((?:abstract) \w+?)!?: ((?:NoArgs)?ProcedureMethod<[\w\W]+?>);/gs;
+const methodRegex = /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:NoArgs)?ProcedureMethod<[\w\W]+?>);/gs;
 const importRegex = /(import .+? from '.+?';\n)\n/s;
 
 /**
