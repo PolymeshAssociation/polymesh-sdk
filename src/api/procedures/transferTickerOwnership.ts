@@ -49,7 +49,7 @@ export async function prepareTransferTickerOwnership(
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'A Security Token with this ticker has already been created',
     });
   }

@@ -35,7 +35,7 @@ export type Params = RemoveCorporateActionParams & {
  */
 const throwCorporateActionError = (): void => {
   throw new PolymeshError({
-    code: ErrorCode.ValidationError,
+    code: ErrorCode.DataUnavailable,
     message: "The Corporate Action doesn't exist",
   });
 };
@@ -56,7 +56,7 @@ const assertCaIsRemovable = async (
 
   if (!exists && !isBn) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: "The Distribution doesn't exist",
     });
   }
@@ -66,7 +66,7 @@ const assertCaIsRemovable = async (
 
     if (momentToDate(rawPaymentAt) < new Date()) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.UnmetPrerequisite,
         message: 'The Distribution has already started',
       });
     }

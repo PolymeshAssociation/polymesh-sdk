@@ -57,7 +57,7 @@ export async function prepareModifyInstructionAffirmation(
 
   if (!portfolios.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Current Identity is not involved in this Instruction',
     });
   }
@@ -102,7 +102,7 @@ export async function prepareModifyInstructionAffirmation(
 
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       // As InstructionAffirmationOperation.Reject has no excludeCriteria, if this error is thrown
       // it means that the operation had to be either affirm or withdraw, and so the errorMessage was set
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

@@ -40,7 +40,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   if (authRequest.isExpired()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Authorization Request has expired',
       data: {
         expiry,

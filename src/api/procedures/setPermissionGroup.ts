@@ -107,7 +107,7 @@ export async function prepareSetPermissionGroup(
     );
     if (fullGroupAgents.length === 1) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.EntityInUse,
         message:
           'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions',
       });
@@ -116,7 +116,7 @@ export async function prepareSetPermissionGroup(
 
   if (!currentAgents.find(({ agent }) => agent.did === did)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The target must already be an Agent for the Security Token',
     });
   }
@@ -135,7 +135,7 @@ export async function prepareSetPermissionGroup(
   } else {
     if (group.isEqual(currentGroup)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The Agent is already part of this permission group',
       });
     }

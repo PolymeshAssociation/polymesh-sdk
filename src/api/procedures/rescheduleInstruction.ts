@@ -32,7 +32,7 @@ export async function prepareRescheduleInstruction(
 
   if (status !== InstructionStatus.Failed) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Only failed Instructions can be rescheduled',
       data: {
         instructionStatus: status,
