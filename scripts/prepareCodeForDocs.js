@@ -18,7 +18,7 @@ const ts = require('typescript');
 const replace = require('replace-in-file');
 const path = require('path');
 
-const methodRegex = /\*\/\n\s+?public (\w+?)!?: ((?:NoArgs)?ProcedureMethod<[\w\W]+?>);/gs;
+const methodRegex = /\*\/\n\s+?public ((?:abstract) \w+?)!?: ((?:NoArgs)?ProcedureMethod<[\w\W]+?>);/gs;
 const importRegex = /(import .+? from '.+?';\n)\n/s;
 
 /**
@@ -71,15 +71,19 @@ const createReplacementSignature = (_, funcName, type) => {
 
   const args = `args: ${methodArgs}, `;
   const funcArgs = `(${kind === 'ProcedureMethod' ? args : ''}opts?: ProcedureOpts)`;
+  const name = funcName.replace('abstract ', '');
+  const isAbstract = name !== funcName;
+
+  const implementation = ` {
+    return {} as ${returnType};
+  }`;
 
   // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
   return `*
-   * @note this method is of type [[${kind}]], which means you can call \`${funcName}.checkAuthorization\`
+   * @note this method is of type [[${kind}]], which means you can call \`${name}.checkAuthorization\`
    *   on it to see whether the Current Account has the required permissions to run it
    */
-  public ${funcName}${funcArgs}: ${returnType} {
-    return {} as ${returnType};
-  }`;
+  public ${funcName}${funcArgs}: ${returnType}${isAbstract ? ';' : implementation}`;
 };
 
 const createReplacementImport = (_, importStatement) =>
