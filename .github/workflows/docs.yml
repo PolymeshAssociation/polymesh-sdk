@@ -44,3 +44,22 @@ jobs:
           ref: ${{ steps.setBranch.outputs.result }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  readme:
+    name: Readme
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
+      - name: install dependencies
+        run: yarn --frozen-lockfile
+      - name: update readme
+        run: yarn update-readme
+      - name: commit readme
+        uses: EndBug/add-and-commit@v4
+        with:
+          add: 'README.md'
+          message: 'docs: update chain version in readme'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

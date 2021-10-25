@@ -7,8 +7,9 @@ const { forEach } = require('lodash');
 const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
+const { NODE_URL } = require('./consts');
 
-const websocket = new w3cwebsocket('wss://dev.polymesh.live');
+const websocket = new w3cwebsocket(`wss://${NODE_URL}`);
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };
