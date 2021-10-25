@@ -56,14 +56,14 @@ export async function prepareModifyCorporateActionsAgent(
 
   if (invalidDids.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: 'The supplied Identity does not exist',
     });
   }
 
   if (agents.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Corporate Actions Agent must be undefined to perform this procedure',
     });
   }

@@ -211,7 +211,7 @@ export async function prepareModifyClaims(
 
   if (nonExistentDids.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: 'Some of the supplied Identity IDs do not exist',
       data: {
         nonExistentDids,
@@ -250,7 +250,7 @@ export async function prepareModifyClaims(
 
     if (claimsByOtherIssuers.length) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.UnmetPrerequisite,
         message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the current Identity`,
         data: {
           claimsByOtherIssuers,
@@ -264,7 +264,7 @@ export async function prepareModifyClaims(
 
     if (claimsWithBalance.length) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.EntityInUse,
         message:
           'Attempt to revoke Investor Uniqueness claims from investors with positive balance',
         data: {
@@ -287,7 +287,7 @@ export async function prepareModifyClaims(
 
     if (invalidCddClaims.length) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.UnmetPrerequisite,
         message: 'A target Identity cannot have CDD claims with different IDs',
         data: {
           invalidCddClaims,

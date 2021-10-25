@@ -64,7 +64,7 @@ export async function prepareCreatePortfolio(
 
   if (portfolioNames.includes(portfolioName)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'A portfolio with that name already exists',
     });
   }
