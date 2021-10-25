@@ -136,7 +136,7 @@ export class TransactionQueue<
   public async run(): Promise<ReturnType> {
     if (this.hasRun) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.General,
         message: 'Cannot re-run a Transaction Queue',
       });
     }
@@ -319,7 +319,7 @@ export class TransactionQueue<
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): () => void {
     if (!this.context.isMiddlewareEnabled()) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.General,
         message: 'Cannot subscribe without an enabled middleware connection',
       });
     }
@@ -450,7 +450,7 @@ export class TransactionQueue<
 
     if (noThirdPartyAllowance.length) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.InsufficientBalance,
         message: "Not enough POLYX third party allowance to pay for this procedure's fees",
         data: {
           thirdPartyFees: noThirdPartyAllowance,
@@ -459,7 +459,7 @@ export class TransactionQueue<
     }
     if (noThirdPartyBalance.length) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.InsufficientBalance,
         message: "Not enough POLYX third party balance to pay for this procedure's fees",
         data: {
           thirdPartyFees: noThirdPartyBalance,
@@ -471,7 +471,7 @@ export class TransactionQueue<
 
     if (accountBalance.lt(totalFees)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.InsufficientBalance,
         message: "Not enough POLYX balance to pay for this procedure's fees",
         data: {
           balance: accountBalance,

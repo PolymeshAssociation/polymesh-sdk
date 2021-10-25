@@ -217,7 +217,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (status === InternalInstructionStatus.Unknown) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
@@ -269,7 +269,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (isExecuted) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
@@ -313,7 +313,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (isExecuted) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
@@ -377,7 +377,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.DataUnavailable,
       message: "It isn't possible to determine the current status of this Instruction",
     });
   }

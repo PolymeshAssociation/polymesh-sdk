@@ -58,7 +58,7 @@ export async function prepareModifyStoTimes(
 
   if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The STO is already closed',
     });
   }
@@ -68,7 +68,7 @@ export async function prepareModifyStoTimes(
 
   if (areSameTimes) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'Nothing to modify',
     });
   }
@@ -77,14 +77,14 @@ export async function prepareModifyStoTimes(
 
   if (timing === StoTimingStatus.Expired) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The STO has already ended',
     });
   }
 
   if (timing !== StoTimingStatus.NotStarted && newStart) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Cannot modify the start time of an STO that already started',
     });
   }
