@@ -61,14 +61,14 @@ export async function prepareModifyPrimaryIssuanceAgent(
 
   if (primaryIssuanceAgents.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Primary Issuance Agents must be undefined to perform this procedure',
     });
   }
 
   if (invalidDids.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: 'The supplied Identity does not exist',
     });
   }

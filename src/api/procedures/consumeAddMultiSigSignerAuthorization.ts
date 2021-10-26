@@ -40,7 +40,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   if (authRequest.isExpired()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Authorization Request has expired',
       data: {
         expiry,
@@ -74,6 +74,15 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
   let transaction = multiSig.acceptMultisigSignerAsIdentity;
 
   if (target instanceof Account) {
+    const existingIdentity = await target.getIdentity();
+
+    if (existingIdentity) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already part of an Identity',
+      });
+    }
+
     transaction = multiSig.acceptMultisigSignerAsKey;
   }
 

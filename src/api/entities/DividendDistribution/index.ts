@@ -1,4 +1,4 @@
-import { bool, Option } from '@polkadot/types';
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -8,16 +8,16 @@ import {
   Params as CorporateActionParams,
   UniqueIdentifiers,
 } from '~/api/entities/CorporateAction';
+import { CorporateActionBase } from '~/api/entities/CorporateActionBase';
 import {
   Checkpoint,
   CheckpointSchedule,
   claimDividends,
   Context,
-  CorporateAction,
   DefaultPortfolio,
   Identity,
+  ModifyCaCheckpointParams,
   modifyDistributionCheckpoint,
-  ModifyDistributionCheckpointParams,
   NumberedPortfolio,
   payDividends,
   PayDividendsParams,
@@ -34,11 +34,12 @@ import {
   Ensured,
   ErrorCode,
   IdentityBalance,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { HumanReadableType, tuple } from '~/types/utils';
+import { HumanReadableType, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -82,7 +83,7 @@ const notExistsMessage = 'The Dividend Distribution no longer exists';
  * Represents a Corporate Action via which a Security Token issuer wishes to distribute dividends
  *   between a subset of the Tokenholders (targets)
  */
-export class DividendDistribution extends CorporateAction {
+export class DividendDistribution extends CorporateActionBase {
   /**
    * Portfolio from which the dividends will be distributed
    */
@@ -150,7 +151,7 @@ export class DividendDistribution extends CorporateAction {
     );
 
     this.claim = createProcedureMethod(
-      { getProcedureAndArgs: () => [claimDividends, { distribution: this }] },
+      { getProcedureAndArgs: () => [claimDividends, { distribution: this }], voidArgs: true },
       context
     );
 
@@ -167,6 +168,7 @@ export class DividendDistribution extends CorporateAction {
     this.reclaimFunds = createProcedureMethod(
       {
         getProcedureAndArgs: () => [reclaimDividendDistributionFunds, { distribution: this }],
+        voidArgs: true,
       },
       context
     );
@@ -177,12 +179,17 @@ export class DividendDistribution extends CorporateAction {
    *
    * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
-  public claim: ProcedureMethod<void, void>;
+  public claim: NoArgsProcedureMethod<void>;
 
   /**
-   * Modify the Distribution's checkpoint
+   * Modify the Distribution's Checkpoint
    */
-  public modifyCheckpoint: ProcedureMethod<ModifyDistributionCheckpointParams, void>;
+  public modifyCheckpoint: ProcedureMethod<
+    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
+      checkpoint: Checkpoint | CheckpointSchedule | Date;
+    },
+    void
+  >;
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
@@ -200,7 +207,7 @@ export class DividendDistribution extends CorporateAction {
    * @note required roles:
    *   - Origin Portfolio Custodian
    */
-  public reclaimFunds: ProcedureMethod<void, void>;
+  public reclaimFunds: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,
@@ -490,7 +497,16 @@ export class DividendDistribution extends CorporateAction {
   private async getParticipantStatuses(
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
-    const { ticker, id: localId, context } = this;
+    const {
+      ticker,
+      id: localId,
+      context: {
+        polymeshApi: {
+          query: { capitalDistribution },
+        },
+      },
+      context,
+    } = this;
 
     /*
      * For optimization, we separate the participants into chunks that can fit into one multi call
@@ -509,7 +525,9 @@ export class DividendDistribution extends CorporateAction {
           tuple(caId, stringToIdentityId(did, context))
         );
 
-        return context.polymeshApi.query.capitalDistribution.holderPaid.multi<bool>(multiParams);
+        return capitalDistribution.holderPaid.multi<
+          QueryReturnType<typeof capitalDistribution.holderPaid>
+        >(multiParams);
       });
 
       const results = await Promise.all(parallelMultiCalls);

@@ -16,8 +16,8 @@ import {
   Ensured,
   ErrorCode,
   EventIdentifier,
+  NoArgsProcedureMethod,
   PaginationOptions,
-  ProcedureMethod,
   ResultSet,
 } from '~/types';
 import {
@@ -90,6 +90,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Reject },
         ],
+        voidArgs: true,
       },
       context
     );
@@ -100,6 +101,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Affirm },
         ],
+        voidArgs: true,
       },
       context
     );
@@ -110,6 +112,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Withdraw },
         ],
+        voidArgs: true,
       },
       context
     );
@@ -117,6 +120,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     this.reschedule = createProcedureMethod(
       {
         getProcedureAndArgs: () => [rescheduleInstruction, { id }],
+        voidArgs: true,
       },
       context
     );
@@ -213,7 +217,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (status === InternalInstructionStatus.Unknown) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
@@ -265,7 +269,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (isExecuted) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
@@ -309,7 +313,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (isExecuted) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
@@ -373,7 +377,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.DataUnavailable,
       message: "It isn't possible to determine the current status of this Instruction",
     });
   }
@@ -385,23 +389,23 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note reject on `SettleOnBlock` behaves just like unauthorize
    */
 
-  public reject: ProcedureMethod<void, Instruction>;
+  public reject: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Affirm this instruction (authorize)
    */
 
-  public affirm: ProcedureMethod<void, Instruction>;
+  public affirm: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw: ProcedureMethod<void, Instruction>;
+  public withdraw: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Schedule a failed Instructi oto rwaa
    */
-  public reschedule: ProcedureMethod<void, Instruction>;
+  public reschedule: NoArgsProcedureMethod<Instruction>;
 
   /**
    * @hidden

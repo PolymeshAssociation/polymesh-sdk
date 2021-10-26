@@ -4,10 +4,9 @@ import sinon from 'sinon';
 import {
   Checkpoint,
   Context,
-  CorporateAction,
+  CorporateActionBase,
   DefaultPortfolio,
   DividendDistribution,
-  Entity,
   TransactionQueue,
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
@@ -70,7 +69,7 @@ describe('DividendDistribution class', () => {
     perShare = new BigNumber(10);
     maxAmount = new BigNumber(10000);
     expiryDate = null;
-    paymentDate = new Date('10/14/2021');
+    paymentDate = new Date(new Date().getTime() + 60 * 60 * 24 * 365);
     dividendDistribution = new DividendDistribution(
       {
         id,
@@ -123,8 +122,8 @@ describe('DividendDistribution class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
-    expect(DividendDistribution.prototype instanceof Entity).toBe(true);
+  test('should extend CorporateActionBase', () => {
+    expect(DividendDistribution.prototype instanceof CorporateActionBase).toBe(true);
   });
 
   describe('constructor', () => {
@@ -142,7 +141,7 @@ describe('DividendDistribution class', () => {
   describe('method: checkpoint', () => {
     test('should just pass the call down the line', async () => {
       const fakeResult = ('checkpoint' as unknown) as Checkpoint;
-      sinon.stub(CorporateAction.prototype, 'checkpoint').resolves(fakeResult);
+      sinon.stub(CorporateActionBase.prototype, 'checkpoint').resolves(fakeResult);
 
       const result = await dividendDistribution.checkpoint();
 

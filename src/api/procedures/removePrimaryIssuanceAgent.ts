@@ -36,7 +36,7 @@ export async function prepareRemovePrimaryIssuanceAgent(
 
   if (primaryIssuanceAgents.length !== 1) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message:
         'There must be one (and only one) Primary Issuance Agent assigned to this Security Token',
     });

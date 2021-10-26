@@ -40,7 +40,7 @@ export async function prepareToggleFreezeTransfers(
   if (freeze) {
     if (isFrozen) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The Security Token is already frozen',
       });
     }
@@ -49,7 +49,7 @@ export async function prepareToggleFreezeTransfers(
   } else {
     if (!isFrozen) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The Security Token is already unfrozen',
       });
     }

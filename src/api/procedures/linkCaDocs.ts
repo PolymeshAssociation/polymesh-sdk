@@ -59,7 +59,7 @@ export async function prepareLinkCaDocs(
 
   if (documentsCopy.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Some of the provided documents are not associated with the Security Token',
       data: {
         documents: documentsCopy,

@@ -9,7 +9,6 @@ import {
   Entity,
   linkCaDocs,
   LinkCaDocsParams,
-  modifyCaCheckpoint,
   ModifyCaCheckpointParams,
   PolymeshError,
 } from '~/internal';
@@ -53,7 +52,7 @@ export interface Params {
  * Represents an action initiated by the issuer of a Security Token which may affect the positions of
  *   the Tokenholders
  */
-export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
+export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unknown> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -85,7 +84,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   public description: string;
 
   /**
-   * tokenholder identities related to this Corporate action. If the treatment is `Exclude`, the identities
+   * tokenholder identities related to this Corporate action. If the treatment is `Exclude`, the Identities
    *   are not targeted by the Action, and any identities left out of the array will be targeted, and vice versa
    */
   public targets: CorporateActionTargets;
@@ -134,16 +133,6 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
       { getProcedureAndArgs: procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }] },
       context
     );
-
-    this.modifyCheckpoint = createProcedureMethod(
-      {
-        getProcedureAndArgs: modifyCaCheckpointArgs => [
-          modifyCaCheckpoint,
-          { corporateAction: this, ...modifyCaCheckpointArgs },
-        ],
-      },
-      context
-    );
   }
 
   /**
@@ -156,7 +145,12 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   /**
    * Modify the Corporate Action's Checkpoint
    */
-  public modifyCheckpoint: ProcedureMethod<ModifyCaCheckpointParams, void>;
+  public abstract modifyCheckpoint: ProcedureMethod<
+    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
+      checkpoint: Checkpoint | CheckpointSchedule | Date;
+    },
+    void
+  >;
 
   /**
    * Determine whether this Corporate Action exists on chain

@@ -66,7 +66,7 @@ export async function prepareSetCustodian(
 
   if (hasPendingAuth) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message:
         "The target Identity already has a pending invitation to be the Portfolio's custodian",
     });

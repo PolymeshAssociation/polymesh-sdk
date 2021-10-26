@@ -70,7 +70,7 @@ describe('modifyCaCheckpoint procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Only Seconday Keys are allowed to leave an Identity');
+    expect(error.message).toBe('Only Secondary Keys are allowed to leave an Identity');
   });
 
   test('should add a leave identity as key transaction to the queue', async () => {

@@ -66,7 +66,7 @@ export async function assertInstructionValid(
 
   if (status !== InstructionStatus.Pending) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Instruction must be in pending state',
     });
   }
@@ -77,8 +77,8 @@ export async function assertInstructionValid(
 
     if (latestBlock >= endBlock) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The instruction cannot be modified; it has already reached its end block',
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The Instruction cannot be modified; it has already reached its end block',
         data: {
           currentBlock: latestBlock,
           endBlock,
@@ -103,7 +103,7 @@ export async function assertPortfolioExists(
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: "The Portfolio doesn't exist",
         data: {
           did,
@@ -133,7 +133,7 @@ export function assertSecondaryKeys(
 
   if (notInTheList.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'One of the Signers is not a Secondary Key for the Identity',
       data: {
         missing: notInTheList,
@@ -150,7 +150,7 @@ export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | nul
 
   if (paymentDate > now) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: "The Distribution's payment date hasn't been reached",
       data: { paymentDate },
     });
@@ -158,7 +158,7 @@ export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | nul
 
   if (expiryDate && expiryDate < now) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Distribution has already expired',
       data: {
         expiryDate,
@@ -200,7 +200,7 @@ export function assertCaTaxWithholdingsValid(
   if (maxWithholdingEntries.lt(taxWithholdings.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Too many tax withholding emties',
+      message: 'Too many tax withholding entries',
       data: {
         maxWithholdingEntries,
       },
@@ -226,7 +226,7 @@ export async function assertCaCheckpointValid(
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message:
           checkpoint instanceof Checkpoint
             ? "Checkpoint doesn't exist"
