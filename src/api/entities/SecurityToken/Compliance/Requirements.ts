@@ -3,9 +3,13 @@ import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, TrustedIssuer } from 'polymesh-types/types';
 
 import {
+  addAssetRequirement,
+  AddAssetRequirementParams,
   Context,
   Identity,
   Namespace,
+  removeAssetRequirement,
+  RemoveAssetRequirementParams,
   SecurityToken,
   setAssetRequirements,
   SetAssetRequirementsParams,
@@ -35,6 +39,14 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
+    this.add = createProcedureMethod(
+      { getProcedureAndArgs: args => [addAssetRequirement, { ticker, ...args }] },
+      context
+    );
+    this.remove = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeAssetRequirement, { ticker, ...args }] },
+      context
+    );
     this.set = createProcedureMethod(
       { getProcedureAndArgs: args => [setAssetRequirements, { ticker, ...args }] },
       context
@@ -52,13 +64,23 @@ export class Requirements extends Namespace<SecurityToken> {
       context
     );
   }
+
+  /**
+   * Add a compliance to the current requirements for the Security Token.
+   */
+  public add: ProcedureMethod<AddAssetRequirementParams, SecurityToken>;
+
+  /**
+   * Remove a compliance from the current requirements for the Security Token.
+   */
+  public remove: ProcedureMethod<RemoveAssetRequirementParams, SecurityToken>;
+
   /**
    * Configure asset compliance requirements for the Security Token. This operation will replace all existing requirements with a new requirement set
    *
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.
    */
-
   public set: ProcedureMethod<SetAssetRequirementsParams, SecurityToken>;
 
   /**

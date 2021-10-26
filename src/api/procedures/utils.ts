@@ -9,6 +9,9 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
+  Condition,
+  ConditionTarget,
+  ConditionType,
   ErrorCode,
   InputTargets,
   InputTaxWithholding,
@@ -269,4 +272,39 @@ export async function assertDistributionDatesValid(
  */
 export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGroup): boolean {
   return group instanceof KnownPermissionGroup && group.type === PermissionGroupType.Full;
+}
+
+/**
+ * @hidden
+ */
+export function assertComplianceConditionComplexity(
+  maxConditionComplexity: number,
+  requirements: Condition[]
+): void {
+  let complexitySum = 0;
+
+  requirements.forEach(conditions => {
+    switch (conditions.type) {
+      case ConditionType.IsPresent:
+      case ConditionType.IsIdentity:
+      case ConditionType.IsAbsent:
+        complexitySum += 1;
+        break;
+      case ConditionType.IsAnyOf:
+      case ConditionType.IsNoneOf:
+        complexitySum += conditions.claims.length;
+        break;
+    }
+    if (conditions.target === ConditionTarget.Both) {
+      complexitySum = complexitySum * 2;
+    }
+  });
+
+  if (complexitySum >= maxConditionComplexity) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Condition limit reached',
+      data: { limit: maxConditionComplexity },
+    });
+  }
 }

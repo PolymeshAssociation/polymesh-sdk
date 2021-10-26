@@ -1,5 +1,6 @@
-import { differenceWith, isEqual } from 'lodash';
+import { differenceWith, flattenDeep, isEqual } from 'lodash';
 
+import { assertComplianceConditionComplexity } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -47,13 +48,7 @@ export async function prepareSetAssetRequirements(
     consts.complianceManager.maxConditionComplexity
   ).toNumber();
 
-  if (requirements.length >= maxConditionComplexity) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Condition limit reached',
-      data: { limit: maxConditionComplexity },
-    });
-  }
+  assertComplianceConditionComplexity(maxConditionComplexity, flattenDeep<Condition>(requirements));
 
   const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
 
