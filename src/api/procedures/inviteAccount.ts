@@ -62,7 +62,7 @@ export async function prepareInviteAccount(
 
   if (existingIdentity) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The target Account is already part of an Identity',
     });
   }
@@ -81,7 +81,7 @@ export async function prepareInviteAccount(
 
   if (hasPendingAuth) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'The target Account already has a pending invitation to join this Identity',
     });
   }

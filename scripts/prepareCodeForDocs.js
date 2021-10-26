@@ -6,7 +6,7 @@
  *  (and we're using an older version), the way we're handling it is:
  *
  *   1. copy and rename the `src` directory
- *   2. replace all `ProcedureMethod` declarations in the code to resemble a method signature
+ *   2. replace all `ProcedureMethod` and `NoArgsProcedureMethod` declarations in the code to resemble a method signature
  *   3. add a `@note` tag explaining the special functionality of procedure methods
  *   4. add necessary imports to modified files
  *   5. run typedoc targeting the modified source code
@@ -18,31 +18,41 @@ const ts = require('typescript');
 const replace = require('replace-in-file');
 const path = require('path');
 
-const methodRegex = /\*\/\n\s+?public (\w+?)!?: (ProcedureMethod<[\w\W]+?>);/gs;
+const methodRegex = /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:NoArgs)?ProcedureMethod<[\w\W]+?>);/gs;
 const importRegex = /(import .+? from '.+?';\n)\n/s;
 
 /**
- * Get type arguments from a `ProcedureMethod` type declaration
+ * Get type arguments from a `ProcedureMethod` or `NoArgsProcedureMethod`  type declaration
  *
- * - calling the function with `ProcedureMethod<Foo, Bar, Baz>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: 'Baz' }`
- * - calling the function with `ProcedureMethod<Foo, Bar>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: undefined }`
+ * - calling the function with `ProcedureMethod<Foo, Bar, Baz>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: 'Baz', kind: 'ProcedureMethod' }`
+ * - calling the function with `ProcedureMethod<Foo, Bar>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: undefined, kind: 'ProcedureMethod' }`
+ * - calling the function with `NoArgsProcedureMethod<Foo, Bar>` will yield `{ procedureReturnValue: 'Foo', returnValue: 'Bar', kind: 'NoArgsProcedureMethod' }`
+ * - calling the function with `NoArgsProcedureMethod<Foo>` will yield `{ procedureReturnValue: 'Foo', returnValue: undefined, kind: 'NoArgsProcedureMethod' }`
  */
 const getTypeArgumentsFromProcedureMethod = typeString => {
   const source = ts.createSourceFile('temp', typeString);
 
   // NOTE @monitz87: this is very ugly but it's the quickest way I found of getting the type arguments
-  const [methodArgs, , procedureReturnValue, , returnValue] = source
-    .getChildren(source)[0]
-    .getChildren(source)[0]
-    .getChildren(source)[0]
+  const signature = source.getChildren(source)[0].getChildren(source)[0].getChildren(source)[0];
+  const kind = signature.getChildren(source)[0].getText(source);
+  const [first, , second, , third] = signature
     .getChildren(source)[2]
     .getChildren(source)
     .map(child => child.getText(source));
 
+  if (kind === 'ProcedureMethod') {
+    return {
+      methodArgs: first,
+      procedureReturnValue: second,
+      returnValue: third,
+      kind,
+    };
+  }
+
   return {
-    methodArgs,
-    procedureReturnValue,
-    returnValue,
+    procedureReturnValue: first,
+    returnValue: second,
+    kind,
   };
 };
 
@@ -50,20 +60,30 @@ const getTypeArgumentsFromProcedureMethod = typeString => {
  * Assemble a method signature according to the Procedure Method that is being replaced
  */
 const createReplacementSignature = (_, funcName, type) => {
-  const { methodArgs, returnValue, procedureReturnValue } = getTypeArgumentsFromProcedureMethod(
-    type
-  );
+  const {
+    methodArgs,
+    returnValue,
+    procedureReturnValue,
+    kind,
+  } = getTypeArgumentsFromProcedureMethod(type);
   const returnValueString = returnValue ? `, ${returnValue}` : '';
   const returnType = `Promise<TransactionQueue<${procedureReturnValue}${returnValueString}>>`;
 
-  // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
-  return `*
-   * @note this method is of type [[ProcedureMethod]], which means you can call \`${funcName}.checkAuthorization\`
-   *   on it to see whether the Current Account has the required permissions to run it
-   */
-  public ${funcName}(args: ${methodArgs}, opts?: ProcedureOpts): ${returnType} {
+  const args = `args: ${methodArgs}, `;
+  const funcArgs = `(${kind === 'ProcedureMethod' ? args : ''}opts?: ProcedureOpts)`;
+  const name = funcName.replace('abstract ', '');
+  const isAbstract = name !== funcName;
+
+  const implementation = ` {
     return {} as ${returnType};
   }`;
+
+  // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
+  return `*
+   * @note this method is of type [[${kind}]], which means you can call \`${name}.checkAuthorization\`
+   *   on it to see whether the Current Account has the required permissions to run it
+   */
+  public ${funcName}${funcArgs}: ${returnType}${isAbstract ? ';' : implementation}`;
 };
 
 const createReplacementImport = (_, importStatement) =>

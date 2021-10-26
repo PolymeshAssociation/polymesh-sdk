@@ -1551,7 +1551,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const context = dsMockUtils.getContextInstance();
 
     expect(() => permissionsToMeshPermissions(value, context)).toThrow(
-      'Attempting to add an transaction permission exception without its corresponding module being included/excluded'
+      'Attempting to add a transaction permission exception without its corresponding module being included/excluded'
     );
   });
 
@@ -2278,19 +2278,19 @@ describe('tokenIdentifierToAssetIdentifier and assetIdentifierToTokenIdentifier'
     let identifier = { type: TokenIdentifierType.Isin, value: 'US0373431005' };
 
     expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Error while checking value identifier ${identifier.value} as Isin type`
+      `Invalid token identifier ${identifier.value} of type Isin`
     );
 
     identifier = { type: TokenIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
 
     expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Error while checking value identifier ${identifier.value} as Lei type`
+      `Invalid token identifier ${identifier.value} of type Lei`
     );
 
     identifier = { type: TokenIdentifierType.Cusip, value: '037831200' };
 
     expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Error while checking value identifier ${identifier.value} as Cusip type`
+      `Invalid token identifier ${identifier.value} of type Cusip`
     );
   });
 

@@ -29,7 +29,7 @@ export class Settlements {
     const venueExists = await venue.exists();
     if (!venueExists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: "The Venue doesn't exist",
       });
     }
@@ -50,7 +50,7 @@ export class Settlements {
     const instructionExists = await instruction.exists();
     if (!instructionExists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: "The Instruction doesn't exist",
       });
     }
