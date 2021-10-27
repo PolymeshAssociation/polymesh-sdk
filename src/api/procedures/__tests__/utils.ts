@@ -198,7 +198,7 @@ describe('assertInstructionValid', () => {
     }
 
     expect(error.message).toBe(
-      'The instruction cannot be modified; it has already reached its end block'
+      'The Instruction cannot be modified; it has already reached its end block'
     );
     expect(error.data.currentBlock).toBe(latestBlock);
     expect(error.data.endBlock).toEqual(endBlock);
@@ -401,7 +401,7 @@ describe('assertCaTaxWithholdingsValid', () => {
         ],
         mockContext
       )
-    ).toThrow('Too many tax withholding emties');
+    ).toThrow('Too many tax withholding entries');
   });
 
   test('should not throw an error if the number of target identities is appropriate', async () => {

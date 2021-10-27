@@ -60,7 +60,7 @@ export async function preparePayDividends(
 
   if (excluded.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Some of the supplied Identities are not included in this Distribution',
       data: { excluded },
     });
@@ -83,7 +83,7 @@ export async function preparePayDividends(
 
   if (alreadyClaimedList.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message:
         'Some of the supplied Identities have already either been paid or claimed their share of the Distribution',
       data: {

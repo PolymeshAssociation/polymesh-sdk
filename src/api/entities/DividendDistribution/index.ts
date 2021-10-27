@@ -8,16 +8,16 @@ import {
   Params as CorporateActionParams,
   UniqueIdentifiers,
 } from '~/api/entities/CorporateAction';
+import { CorporateActionBase } from '~/api/entities/CorporateActionBase';
 import {
   Checkpoint,
   CheckpointSchedule,
   claimDividends,
   Context,
-  CorporateAction,
   DefaultPortfolio,
   Identity,
+  ModifyCaCheckpointParams,
   modifyDistributionCheckpoint,
-  ModifyDistributionCheckpointParams,
   NumberedPortfolio,
   payDividends,
   PayDividendsParams,
@@ -83,7 +83,7 @@ const notExistsMessage = 'The Dividend Distribution no longer exists';
  * Represents a Corporate Action via which a Security Token issuer wishes to distribute dividends
  *   between a subset of the Tokenholders (targets)
  */
-export class DividendDistribution extends CorporateAction {
+export class DividendDistribution extends CorporateActionBase {
   /**
    * Portfolio from which the dividends will be distributed
    */
@@ -182,9 +182,14 @@ export class DividendDistribution extends CorporateAction {
   public claim: NoArgsProcedureMethod<void>;
 
   /**
-   * Modify the Distribution's checkpoint
+   * Modify the Distribution's Checkpoint
    */
-  public modifyCheckpoint: ProcedureMethod<ModifyDistributionCheckpointParams, void>;
+  public modifyCheckpoint: ProcedureMethod<
+    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
+      checkpoint: Checkpoint | CheckpointSchedule | Date;
+    },
+    void
+  >;
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities

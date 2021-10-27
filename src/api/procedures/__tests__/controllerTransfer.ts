@@ -104,7 +104,7 @@ describe('controllerTransfer procedure', () => {
         originPortfolio,
         amount: new BigNumber(1000),
       })
-    ).rejects.toThrow('The Portfolio does not have enough free balance for this transfer');
+    ).rejects.toThrow('The origin Portfolio does not have enough free balance for this transfer');
   });
 
   test('should add a controller transfer transaction to the queue', async () => {

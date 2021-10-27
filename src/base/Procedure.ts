@@ -411,7 +411,10 @@ export class Procedure<
 
       return returnValue;
     } catch (err) {
-      throw new PolymeshError({ code: err.code || ErrorCode.FatalError, message: err.message });
+      throw new PolymeshError({
+        code: err.code || ErrorCode.UnexpectedError,
+        message: err.message,
+      });
     } finally {
       procedure.cleanup();
     }

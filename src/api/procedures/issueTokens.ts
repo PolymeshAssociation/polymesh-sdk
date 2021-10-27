@@ -36,7 +36,7 @@ export async function prepareIssueTokens(
 
   if (supplyAfterMint.isGreaterThan(MAX_BALANCE)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.LimitExceeded,
       message: `This issuance operation will cause the total supply of "${ticker}" to exceed the supply limit`,
       data: {
         currentSupply: totalSupply,

@@ -76,7 +76,7 @@ export interface AddInstructionsParams {
  * @hidden
  */
 export type Params = AddInstructionsParams & {
-  venueId: BigNumber;
+  venue: Venue;
 };
 
 /**
@@ -164,6 +164,9 @@ async function getTxArgsAndErrors(
   const legEmptyErrIndexes: number[] = [];
   const legLengthErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
+  /**
+   * array of indexes of Instructions where the value date is before the trade date
+   */
   const datesErrIndexes: number[] = [];
 
   await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate }, i) => {
@@ -281,18 +284,12 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const { instructions, venueId } = args;
+  const {
+    instructions,
+    venue: { id: venueId },
+  } = args;
 
-  const venue = new Venue({ id: venueId }, context);
-
-  const [exists, latestBlock] = await Promise.all([venue.exists(), context.getLatestBlock()]);
-
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: "The Venue doesn't exist",
-    });
-  }
+  const latestBlock = await context.getLatestBlock();
 
   const {
     errIndexes: { legEmptyErrIndexes, legLengthErrIndexes, endBlockErrIndexes, datesErrIndexes },
@@ -372,7 +369,7 @@ export async function prepareAddInstruction(
  */
 export async function getAuthorization(
   this: Procedure<Params, Instruction[], Storage>,
-  { venueId }: Params
+  { venue: { id: venueId } }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { portfoliosToAffirm },

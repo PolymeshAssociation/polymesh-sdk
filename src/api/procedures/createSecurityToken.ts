@@ -66,9 +66,9 @@ export interface CreateSecurityTokenParams {
   documents?: TokenDocument[];
   /**
    * whether this asset requires investors to have a Investor Uniqueness Claim in order
-   *   to hold it. Optional, defaults to true. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
+   *   to hold it. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
    */
-  requireInvestorUniqueness?: boolean;
+  requireInvestorUniqueness: boolean;
 }
 
 /**
@@ -118,7 +118,7 @@ export async function prepareCreateSecurityToken(
     tokenIdentifiers = [],
     fundingRound,
     documents,
-    requireInvestorUniqueness = true,
+    requireInvestorUniqueness,
   } = args;
 
   const reservation = new TickerReservation({ ticker }, context);
@@ -132,14 +132,14 @@ export async function prepareCreateSecurityToken(
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: `A Security Token with ticker "${ticker}" already exists`,
     });
   }
 
   if (status === TickerReservationStatus.Free) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
     });
   }
