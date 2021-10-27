@@ -285,7 +285,7 @@ describe('addInstruction procedure', () => {
     });
 
     try {
-      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
+      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs }] });
     } catch (err) {
       error = err;
     }
