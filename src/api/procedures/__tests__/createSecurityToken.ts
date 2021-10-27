@@ -162,6 +162,7 @@ describe('createSecurityToken procedure', () => {
       tokenType,
       tokenIdentifiers,
       fundingRound,
+      requireInvestorUniqueness,
     };
   });
 
