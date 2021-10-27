@@ -57,7 +57,7 @@ export async function prepareAddAssetRequirement(
 
   if (differenceWith(flattenDeep<Condition>(currentRequirements), requirements, isEqual)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is already in the current one',
     });
   }
