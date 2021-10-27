@@ -5,6 +5,7 @@ import {
   assertCaCheckpointValid,
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
+  assertComplianceConditionComplexity,
   assertDistributionDatesValid,
   assertInstructionValid,
   assertPortfolioExists,
@@ -15,6 +16,9 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
+  Condition,
+  ConditionTarget,
+  ConditionType,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
@@ -563,5 +567,40 @@ describe('assertCaCheckpointValid', () => {
     return expect(
       assertDistributionDatesValid(checkpoint, paymentDate, expiryDate)
     ).resolves.not.toThrow();
+  });
+});
+
+describe('assertComplianceConditionComplexity', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if the complexity sumatory is greater than max condition complexity', async () => {
+    expect(() =>
+      assertComplianceConditionComplexity(2, [
+        { type: ConditionType.IsPresent, target: ConditionTarget.Both },
+        {
+          type: ConditionType.IsAnyOf,
+          claims: [dsMockUtils.createMockClaim(), dsMockUtils.createMockClaim()],
+          target: ConditionTarget.Sender,
+        },
+      ] as Condition[])
+    ).toThrow('Condition limit reached');
+  });
+
+  test('should not throw an error if the complexity is less than the max condition complexity', async () => {
+    expect(() =>
+      assertComplianceConditionComplexity(10, [
+        { type: ConditionType.IsPresent, target: ConditionTarget.Receiver },
+      ] as Condition[])
+    ).not.toThrow();
   });
 });
