@@ -55,7 +55,7 @@ export async function prepareAddAssetRequirement(
     requirement => complianceRequirementToRequirement(requirement, context).conditions
   );
 
-  if (differenceWith(flattenDeep<Condition>(currentRequirements), requirements, isEqual)) {
+  if (!differenceWith(flattenDeep<Condition>(currentRequirements), requirements, isEqual).length) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is already in the current one',
