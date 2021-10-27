@@ -149,8 +149,8 @@ export class Context {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
         if (prop === 'tx' && !ctx.currentPair) {
           throw new PolymeshError({
-            code: ErrorCode.FatalError,
-            message: 'Cannot perform transactions without an active account',
+            code: ErrorCode.General,
+            message: 'Cannot perform transactions without an active Account',
           });
         }
 
@@ -242,8 +242,8 @@ export class Context {
 
     if (!currentPair) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'There is no account associated with the SDK',
+        code: ErrorCode.General,
+        message: 'There is no Account associated with the SDK',
       });
     }
 
@@ -312,7 +312,7 @@ export class Context {
       newCurrentPair = keyring.getPair(address);
     } catch (e) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.General,
         message: 'The address is not present in the keyring set',
       });
     }
@@ -433,7 +433,7 @@ export class Context {
   /**
    * Retrieve current Account
    *
-   * @throws if there is no current account associated to the SDK instance
+   * @throws if there is no current Account associated to the SDK instance
    */
   public getCurrentAccount(): Account {
     const { address } = this.getCurrentPair();
@@ -453,8 +453,8 @@ export class Context {
 
     if (identity === null) {
       throw new PolymeshError({
-        code: ErrorCode.IdentityNotPresent,
-        message: 'The current account does not have an associated Identity',
+        code: ErrorCode.DataUnavailable,
+        message: 'The current Account does not have an associated Identity',
       });
     }
 
@@ -471,8 +471,8 @@ export class Context {
 
     if (!currentPair) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'There is no account associated with the current SDK instance',
+        code: ErrorCode.General,
+        message: 'There is no Account associated with the current SDK instance',
       });
     }
 
@@ -972,7 +972,7 @@ export class Context {
 
     if (!targets) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.MiddlewareError,
         message: 'Cannot perform this action without an active middleware connection',
       });
     }
@@ -1001,7 +1001,7 @@ export class Context {
 
     if (!api) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.MiddlewareError,
         message: 'Cannot perform this action without an active middleware connection',
       });
     }

@@ -58,7 +58,7 @@ export async function prepareTransferPolyx(
 
   if (amount.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.InsufficientBalance,
       message: 'Insufficient free balance',
       data: {
         freeBalance,
@@ -68,7 +68,7 @@ export async function prepareTransferPolyx(
 
   if (!receiverIdentity) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: "The destination account doesn't have an asssociated Identity",
     });
   }
@@ -82,14 +82,14 @@ export async function prepareTransferPolyx(
 
   if (!senderCdd) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The sender Identity has an invalid CDD claim',
     });
   }
 
   if (!receiverCdd) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The receiver Identity has an invalid CDD claim',
     });
   }

@@ -19,6 +19,7 @@ import {
   Instruction,
   NumberedPortfolio,
   PostTransactionValue,
+  Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -68,6 +69,7 @@ describe('addInstruction procedure', () => {
   let valueDate: Date;
   let endBlock: BigNumber;
   let args: Params;
+  let venue: Mocked<Venue>;
 
   let rawVenueId: u64;
   let rawAmount: Balance;
@@ -151,21 +153,6 @@ describe('addInstruction procedure', () => {
       amount: rawAmount,
       asset: rawToken,
     };
-    args = {
-      venueId,
-      instructions: [
-        {
-          legs: [
-            {
-              from,
-              to,
-              token,
-              amount,
-            },
-          ],
-        },
-      ],
-    };
 
     instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
   });
@@ -228,6 +215,23 @@ describe('addInstruction procedure', () => {
       .returns(rawAuthSettlementType);
     dateToMomentStub.withArgs(tradeDate, mockContext).returns(rawTradeDate);
     dateToMomentStub.withArgs(valueDate, mockContext).returns(rawValueDate);
+
+    venue = entityMockUtils.getVenueInstance({ id: venueId });
+    args = {
+      venue,
+      instructions: [
+        {
+          legs: [
+            {
+              from,
+              to,
+              token,
+              amount,
+            },
+          ],
+        },
+      ],
+    };
   });
 
   afterEach(() => {
@@ -251,7 +255,7 @@ describe('addInstruction procedure', () => {
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
+      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs: [] }] });
     } catch (err) {
       error = err;
     }
@@ -277,7 +281,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venueId,
+        venue,
         instructions: [
           {
             legs: [
@@ -315,7 +319,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venueId,
+        venue,
         instructions: [
           {
             legs: [
@@ -377,7 +381,7 @@ describe('addInstruction procedure', () => {
     });
 
     const result = await prepareAddInstruction.call(proc, {
-      venueId,
+      venue,
       instructions: [
         {
           legs: [
@@ -406,28 +410,6 @@ describe('addInstruction procedure', () => {
     expect(result).toBe(instruction);
   });
 
-  test("should throw an error if the venue doesn't exist", async () => {
-    entityMockUtils.configureMocks({
-      venueOptions: {
-        exists: false,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
-    });
-
-    let error;
-
-    try {
-      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe("The Venue doesn't exist");
-  });
-
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
@@ -436,7 +418,7 @@ describe('addInstruction procedure', () => {
       let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc({
-        venueId,
+        venue,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
         ],
@@ -457,7 +439,7 @@ describe('addInstruction procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({
-        venueId,
+        venue,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
         ],

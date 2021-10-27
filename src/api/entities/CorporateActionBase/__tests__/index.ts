@@ -5,7 +5,7 @@ import {
   Checkpoint,
   CheckpointSchedule,
   Context,
-  CorporateAction,
+  CorporateActionBase,
   Entity,
   TransactionQueue,
 } from '~/internal';
@@ -44,9 +44,15 @@ describe('CorporateAction class', () => {
   let defaultTaxWithholding: BigNumber;
   let taxWithholdings: TaxWithholding[];
 
-  let corporateAction: CorporateAction;
+  let corporateAction: CorporateActionBase;
 
   let corporateActionsQueryStub: sinon.SinonStub;
+
+  // eslint-disable-next-line require-jsdoc
+  class NonAbstract extends CorporateActionBase {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    modifyCheckpoint = {} as any;
+  }
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -90,7 +96,7 @@ describe('CorporateAction class', () => {
       ),
     });
 
-    corporateAction = new CorporateAction(
+    corporateAction = new NonAbstract(
       {
         id,
         ticker,
@@ -118,7 +124,7 @@ describe('CorporateAction class', () => {
   });
 
   test('should extend Entity', () => {
-    expect(CorporateAction.prototype instanceof Entity).toBe(true);
+    expect(CorporateActionBase.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
@@ -135,12 +141,12 @@ describe('CorporateAction class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(CorporateAction.isUniqueIdentifiers({ ticker: 'SYMBOL', id: new BigNumber(1) })).toBe(
-        true
-      );
-      expect(CorporateAction.isUniqueIdentifiers({})).toBe(false);
-      expect(CorporateAction.isUniqueIdentifiers({ ticker: 'SYMBOL' })).toBe(false);
-      expect(CorporateAction.isUniqueIdentifiers({ id: 1 })).toBe(false);
+      expect(
+        CorporateActionBase.isUniqueIdentifiers({ ticker: 'SYMBOL', id: new BigNumber(1) })
+      ).toBe(true);
+      expect(CorporateActionBase.isUniqueIdentifiers({})).toBe(false);
+      expect(CorporateActionBase.isUniqueIdentifiers({ ticker: 'SYMBOL' })).toBe(false);
+      expect(CorporateActionBase.isUniqueIdentifiers({ id: 1 })).toBe(false);
     });
   });
 
@@ -285,24 +291,6 @@ describe('CorporateAction class', () => {
 
       expect(result.id).toEqual(new BigNumber(1));
       expect(result instanceof Checkpoint);
-    });
-  });
-
-  describe('method: modifyCaCheckpoint', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-      const args = {
-        checkpoint: new Date(),
-      };
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await corporateAction.modifyCheckpoint(args);
-
-      expect(queue).toBe(expectedQueue);
     });
   });
 

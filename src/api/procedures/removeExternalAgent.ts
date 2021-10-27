@@ -53,7 +53,7 @@ export async function prepareRemoveExternalAgent(
 
   if (!agentWithGroup) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The target Identity is not an External Agent',
     });
   }
@@ -62,7 +62,7 @@ export async function prepareRemoveExternalAgent(
     const fullGroupAgents = currentAgents.filter(({ group }) => isFullGroupType(group));
     if (fullGroupAgents.length === 1) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.EntityInUse,
         message:
           'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions',
       });

@@ -44,7 +44,7 @@ export async function prepareWaivePermissions(
 
   if (!isAgent) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Identity is not an Agent for the Security Token',
     });
   }

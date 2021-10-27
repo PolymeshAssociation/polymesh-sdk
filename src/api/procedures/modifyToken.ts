@@ -58,7 +58,7 @@ export async function prepareModifyToken(
 
   if (noArguments) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'Nothing to modify',
     });
   }
@@ -76,7 +76,7 @@ export async function prepareModifyToken(
   if (makeDivisible) {
     if (isDivisible) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The Security Token is already divisible',
       });
     }
@@ -87,7 +87,7 @@ export async function prepareModifyToken(
   if (newName) {
     if (newName === name) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'New name is the same as current name',
       });
     }
@@ -98,7 +98,7 @@ export async function prepareModifyToken(
   if (newFundingRound) {
     if (newFundingRound === fundingRound) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'New funding round name is the same as current funding round',
       });
     }
@@ -118,7 +118,7 @@ export async function prepareModifyToken(
 
     if (identifiersAreEqual) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'New identifiers are the same as current identifiers',
       });
     }
