@@ -30,7 +30,7 @@ export async function prepareToggleFreezeSecondaryKeys(
   if (freeze) {
     if (areSecondaryKeysFrozen) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The secondary keys are already frozen',
       });
     }
@@ -39,7 +39,7 @@ export async function prepareToggleFreezeSecondaryKeys(
   } else {
     if (!areSecondaryKeysFrozen) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The secondary keys are already unfrozen',
       });
     }

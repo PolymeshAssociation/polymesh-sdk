@@ -31,7 +31,7 @@ export async function prepareReclaimDividendDistributionFunds(
 
   if (expiryDate && expiryDate >= new Date()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Distribution must be expired',
       data: {
         expiryDate,
@@ -43,7 +43,7 @@ export async function prepareReclaimDividendDistributionFunds(
 
   if (fundsReclaimed) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Distribution funds have already been reclaimed',
     });
   }

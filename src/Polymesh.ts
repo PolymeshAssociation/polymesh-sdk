@@ -284,7 +284,7 @@ export class Polymesh {
           err.message.indexOf('Missing Authentication Token') > -1
         ) {
           throw new PolymeshError({
-            code: ErrorCode.NotAuthorized,
+            code: ErrorCode.FatalError,
             message: 'Incorrect middleware URL or API key',
           });
         }
@@ -446,13 +446,13 @@ export class Polymesh {
       }
 
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.UnmetPrerequisite,
         message: `${ticker} token has been created`,
       });
     }
 
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.UnmetPrerequisite,
       message: `There is no reservation for ${ticker} ticker`,
     });
   }

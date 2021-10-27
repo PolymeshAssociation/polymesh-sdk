@@ -37,7 +37,7 @@ export async function prepareRemoveSecondaryKeys(
 
   if (isPrimaryKeyPresent) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'You cannot remove the primary key',
     });
   }

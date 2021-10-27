@@ -43,7 +43,25 @@ export async function prepareInviteAccount(
 
   const address = signerToString(targetAccount);
 
-  const authorizationRequests = await identity.authorizations.getSent();
+  let account: Account;
+
+  if (targetAccount instanceof Account) {
+    account = targetAccount;
+  } else {
+    account = new Account({ address: targetAccount }, context);
+  }
+
+  const [authorizationRequests, existingIdentity] = await Promise.all([
+    identity.authorizations.getSent(),
+    account.getIdentity(),
+  ] as const);
+
+  if (existingIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target Account is already part of an Identity',
+    });
+  }
 
   const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
     const {
@@ -59,7 +77,7 @@ export async function prepareInviteAccount(
 
   if (hasPendingAuth) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'The target Account already has a pending invitation to join this Identity',
     });
   }

@@ -34,7 +34,7 @@ export async function prepareClaimDividends(
 
   if (!participant) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The current Identity is not included in this Distribution',
     });
   }
@@ -43,7 +43,7 @@ export async function prepareClaimDividends(
 
   if (paid) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The current Identity has already claimed dividends',
     });
   }
