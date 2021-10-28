@@ -9,7 +9,6 @@ import {
   numberToU32,
   requirementToComplianceRequirement,
   stringToTicker,
-  u32ToBigNumber,
 } from '~/utils/conversion';
 
 export interface SetAssetRequirementsParams {
@@ -44,9 +43,7 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxConditionComplexity = u32ToBigNumber(
-    consts.complianceManager.maxConditionComplexity
-  ).toNumber();
+  const { maxConditionComplexity } = consts.complianceManager;
 
   assertComplianceConditionComplexity(maxConditionComplexity, flattenDeep<Condition>(requirements));
 

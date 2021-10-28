@@ -585,7 +585,7 @@ describe('assertComplianceConditionComplexity', () => {
 
   test('should throw an error if the complexity sumatory is greater than max condition complexity', async () => {
     expect(() =>
-      assertComplianceConditionComplexity(2, [
+      assertComplianceConditionComplexity(dsMockUtils.createMockU32(2), [
         { type: ConditionType.IsPresent, target: ConditionTarget.Both },
         {
           type: ConditionType.IsAnyOf,
@@ -598,7 +598,7 @@ describe('assertComplianceConditionComplexity', () => {
 
   test('should not throw an error if the complexity is less than the max condition complexity', async () => {
     expect(() =>
-      assertComplianceConditionComplexity(10, [
+      assertComplianceConditionComplexity(dsMockUtils.createMockU32(10), [
         { type: ConditionType.IsPresent, target: ConditionTarget.Receiver },
       ] as Condition[])
     ).not.toThrow();

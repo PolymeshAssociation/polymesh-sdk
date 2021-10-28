@@ -8,7 +8,6 @@ import {
   complianceRequirementToRequirement,
   requirementToComplianceRequirement,
   stringToTicker,
-  u32ToBigNumber,
 } from '~/utils/conversion';
 
 export interface AddAssetRequirementParams {
@@ -43,9 +42,7 @@ export async function prepareAddAssetRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxConditionComplexity = u32ToBigNumber(
-    consts.complianceManager.maxConditionComplexity
-  ).toNumber();
+  const { maxConditionComplexity } = consts.complianceManager;
 
   assertComplianceConditionComplexity(maxConditionComplexity, flattenDeep<Condition>(requirements));
 

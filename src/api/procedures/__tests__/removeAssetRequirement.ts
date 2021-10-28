@@ -106,7 +106,7 @@ describe('removeAssetRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test.only('should throw an error if the supplied id is not present in the current requirements', () => {
+  test('should throw an error if the supplied id is not present in the current requirements', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     return expect(

@@ -1,3 +1,5 @@
+import { u32 } from '@polkadot/types';
+
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -22,7 +24,7 @@ import {
   SignerValue,
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
-import { signerToSignerValue, u64ToBigNumber } from '~/utils/conversion';
+import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 // import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
@@ -278,7 +280,7 @@ export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGr
  * @hidden
  */
 export function assertComplianceConditionComplexity(
-  maxConditionComplexity: number,
+  maxConditionComplexity: u32,
   requirements: Condition[]
 ): void {
   let complexitySum = 0;
@@ -300,7 +302,9 @@ export function assertComplianceConditionComplexity(
     }
   });
 
-  if (complexitySum >= maxConditionComplexity) {
+  const maxComplexity = u32ToBigNumber(maxConditionComplexity).toNumber();
+
+  if (complexitySum >= maxComplexity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Condition limit reached',
