@@ -109,7 +109,7 @@ describe('Requirements class', () => {
       const requirements = new Requirements(token, context);
 
       const args = {
-        requirement: [
+        requirements: [
           {
             type: ConditionType.IsPresent,
             claim: {

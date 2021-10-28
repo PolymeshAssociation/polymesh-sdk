@@ -36,7 +36,7 @@ describe('addAssetRequirement procedure', () => {
   >;
   let assetCompliancesStub: sinon.SinonStub;
   let ticker: string;
-  let requirement: Condition[];
+  let requirements: Condition[];
   let rawTicker: Ticker;
   let senderConditions: MeshCondition[][];
   let receiverConditions: MeshCondition[][];
@@ -57,11 +57,11 @@ describe('addAssetRequirement procedure', () => {
       'complianceRequirementToRequirement'
     );
     ticker = 'someTicker';
-    requirement = (['condition0', 'condition1'] as unknown) as Condition[];
+    requirements = (['condition0', 'condition1'] as unknown) as Condition[];
 
     args = {
       ticker,
-      requirement,
+      requirements,
     };
   });
 
@@ -107,7 +107,7 @@ describe('addAssetRequirement procedure', () => {
         } as ComplianceRequirement)
     );
 
-    requirement.forEach((condition, index) => {
+    requirements.forEach((condition, index) => {
       complianceRequirementToRequirementStub
         .withArgs(
           sinon.match({
