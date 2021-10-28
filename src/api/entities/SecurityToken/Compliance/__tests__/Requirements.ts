@@ -1,4 +1,5 @@
 import { Vec } from '@polkadot/types/codec';
+import BigNumber from 'bignumber.js';
 import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -8,6 +9,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
+  Condition,
   ConditionTarget,
   ConditionType,
   Requirement,
@@ -91,6 +93,77 @@ describe('Requirements class', () => {
         .resolves(expectedQueue);
 
       const queue = await requirements.set(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: add', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const requirements = new Requirements(token, context);
+
+      const args = {
+        requirements: [
+          {
+            type: ConditionType.IsPresent,
+            claim: {
+              type: ClaimType.Exempted,
+              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+            },
+            target: ConditionTarget.Both,
+          },
+          {
+            type: ConditionType.IsAbsent,
+            claim: {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+            },
+            target: ConditionTarget.Both,
+          },
+        ] as Condition[],
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await requirements.add(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: remove', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const requirements = new Requirements(token, context);
+
+      const args = {
+        id: new BigNumber(10),
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await requirements.remove(args);
 
       expect(queue).toBe(expectedQueue);
     });

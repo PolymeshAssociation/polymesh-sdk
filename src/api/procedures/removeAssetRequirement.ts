@@ -35,7 +35,7 @@ export async function prepareRemoveAssetRequirement(
 
   const { requirements } = await query.complianceManager.assetCompliances(rawTicker);
 
-  if (requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(id))) {
+  if (requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(id)).length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The supplied id is not valid',
