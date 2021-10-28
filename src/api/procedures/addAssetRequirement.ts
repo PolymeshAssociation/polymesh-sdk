@@ -15,7 +15,7 @@ export interface AddAssetRequirementParams {
    * array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
    * while conditions inside each array are *AND* between them
    */
-  requirements: Condition[];
+  requirement: Condition[];
 }
 
 /**
@@ -38,21 +38,21 @@ export async function prepareAddAssetRequirement(
     },
     context,
   } = this;
-  const { ticker, requirements } = args;
+  const { ticker, requirement } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
   const { maxConditionComplexity } = consts.complianceManager;
 
-  assertComplianceConditionComplexity(maxConditionComplexity, flattenDeep<Condition>(requirements));
+  assertComplianceConditionComplexity(maxConditionComplexity, flattenDeep<Condition>(requirement));
 
   const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
 
   const currentRequirements = rawCurrentAssetCompliance.requirements.map(
-    requirement => complianceRequirementToRequirement(requirement, context).conditions
+    req => complianceRequirementToRequirement(req, context).conditions
   );
 
-  if (!differenceWith(flattenDeep<Condition>(currentRequirements), requirements, isEqual).length) {
+  if (!differenceWith(flattenDeep<Condition>(currentRequirements), requirement, isEqual).length) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is already in the current one',
@@ -62,7 +62,7 @@ export async function prepareAddAssetRequirement(
   const {
     sender_conditions: senderConditions,
     receiver_conditions: receiverConditions,
-  } = requirementToComplianceRequirement({ conditions: requirements, id: 1 }, context);
+  } = requirementToComplianceRequirement({ conditions: requirement, id: 1 }, context);
 
   this.addTransaction(
     tx.complianceManager.addComplianceRequirement,
