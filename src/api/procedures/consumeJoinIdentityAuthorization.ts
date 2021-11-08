@@ -101,12 +101,13 @@ export async function getAuthorization(
 
   let roles = calledByTarget;
 
+  /*
+   * when accepting a JoinIdentity request, you don't need permissions (and can't have them by definition),
+   *   you just need to be the target
+   */
   if (accept) {
     return {
       roles,
-      permissions: {
-        transactions: [TxTags.identity.JoinIdentityAsKey],
-      },
     };
   }
 

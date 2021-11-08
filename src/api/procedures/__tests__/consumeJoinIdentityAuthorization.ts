@@ -327,9 +327,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       let result = await boundFunc(args);
       expect(result).toEqual({
         roles: true,
-        permissions: {
-          transactions: [TxTags.identity.JoinIdentityAsKey],
-        },
       });
 
       args.accept = false;
