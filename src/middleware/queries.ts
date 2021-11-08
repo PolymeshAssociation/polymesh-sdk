@@ -1,9 +1,6 @@
-import { ApolloQueryResult } from 'apollo-client';
 import gql from 'graphql-tag';
 
 import {
-  Exact,
-  Query,
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,

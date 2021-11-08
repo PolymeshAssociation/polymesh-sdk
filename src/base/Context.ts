@@ -44,7 +44,7 @@ import {
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { MultiGraphqlQuery } from '~/types/internal';
+import { GraphqlQuery, MultiGraphqlQuery } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
@@ -1064,22 +1064,7 @@ export class Context {
     try {
       if (this.isMiddlewareV1Enabled()) {
         const resultPromise = this.middlewareApi.query(query.v1);
-        if (query.v2 && this.isMiddlewareV2Enabled()) {
-          const resultV2 = await this.middlewareV2Api.query(query.v2.query);
-          if (resultV2.data) {
-            const mapped = query.v2.mapper(resultV2.data);
-            const result = await resultPromise;
-            if (!deepEqual(mapped, result.data)) {
-              this.middlewareDiffLogger(
-                `Error, results from middleware instances differ:\n${JSON.stringify(
-                  result.data,
-                  null,
-                  2
-                )}\n--------------------------\n${JSON.stringify(mapped, null, 2)}`
-              );
-            }
-          }
-        }
+        await this.queryAndCompareMiddlewareV2(query, resultPromise);
         return await resultPromise;
       } else {
         if (!query.v2) {
@@ -1102,6 +1087,34 @@ export class Context {
         code: ErrorCode.MiddlewareError,
         message: `Error in middleware query: ${message}`,
       });
+    }
+  }
+
+  /**
+   * Queries the middleware v2 and compares its result to the one from middleware v1.
+   * If they are different, the difference gets reported through the middlewareDiffLogger.
+   */
+  private async queryAndCompareMiddlewareV2<Result extends Partial<Query>>(
+    query: MultiGraphqlQuery<unknown>,
+    v1ResultPromise: Promise<ApolloQueryResult<Result>>
+  ) {
+    if (!query.v2 || !this.isMiddlewareV2Enabled()) {
+      return;
+    }
+    const v2Result = await this.middlewareV2Api.query(query.v2.query);
+    if (!v2Result.data) {
+      return;
+    }
+    const v1Result = await v1ResultPromise;
+    const mapped = query.v2.mapper(v2Result.data);
+    if (!deepEqual(mapped, v1Result.data)) {
+      this.middlewareDiffLogger(
+        `Error, results from middleware instances differ:\n${JSON.stringify(
+          v1Result.data,
+          null,
+          2
+        )}\n--------------------------\n${JSON.stringify(mapped, null, 2)}`
+      );
     }
   }
 

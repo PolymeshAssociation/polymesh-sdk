@@ -8,7 +8,7 @@ import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import { ClaimType, CorporateActionKind, TargetTreatment, TransactionArgumentType } from '~/types';
-import { GraphqlQuery,MultiGraphqlQuery  } from '~/types/internal';
+import { GraphqlQuery, MultiGraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -1674,7 +1674,7 @@ describe('Context class', () => {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
         accountSeed: '0x6'.padEnd(66, '0'),
-        middlewareV2Api: dsMockUtils.getMiddlewareV2Api(),
+        middlewareV2Api: null,
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
