@@ -12,10 +12,13 @@ import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
 import { Identity, PostTransactionValue } from '~/internal';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { CallIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/types-v2';
 import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
+  DeepPartial,
+  Ensured,
   KnownTokenType,
   PermissionGroupType,
   Role,
@@ -164,6 +167,18 @@ export interface GraphqlQuery<Variables = undefined> {
   query: DocumentNode;
   variables: Variables;
 }
+
+export type MultiGraphqlQuery<
+  Args = undefined,
+  Q2 extends keyof QueryV2 = keyof QueryV2,
+  Q1 extends keyof Query = keyof Query
+> = {
+  v1: GraphqlQuery<Args>;
+  v2?: {
+    query: GraphqlQuery<Args>;
+    mapper: (input: Ensured<QueryV2, Q2>) => DeepPartial<Ensured<Query, Q1>>;
+  };
+};
 
 export enum ClaimOperation {
   Revoke = 'Revoke',

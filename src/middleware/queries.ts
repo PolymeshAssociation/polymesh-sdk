@@ -1,6 +1,9 @@
+import { ApolloQueryResult } from 'apollo-client';
 import gql from 'graphql-tag';
 
 import {
+  Exact,
+  Query,
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
@@ -20,7 +23,7 @@ import {
   QueryTransactionByHashArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
-import { GraphqlQuery } from '~/types/internal';
+import { MultiGraphqlQuery } from '~/types/internal';
 
 /**
  * @hidden
@@ -29,7 +32,7 @@ import { GraphqlQuery } from '~/types/internal';
  */
 export function proposalVotes(
   variables: QueryProposalVotesArgs
-): GraphqlQuery<QueryProposalVotesArgs> {
+): MultiGraphqlQuery<QueryProposalVotesArgs> {
   const query = gql`
     query ProposalVotesQuery(
       $pipId: Int!
@@ -49,8 +52,10 @@ export function proposalVotes(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -61,7 +66,7 @@ export function proposalVotes(
  */
 export function didsWithClaims(
   variables: QueryDidsWithClaimsArgs
-): GraphqlQuery<QueryDidsWithClaimsArgs> {
+): MultiGraphqlQuery<QueryDidsWithClaimsArgs> {
   const query = gql`
     query DidsWithClaimsQuery(
       $dids: [String!]
@@ -104,8 +109,10 @@ export function didsWithClaims(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -116,7 +123,7 @@ export function didsWithClaims(
  */
 export function eventByIndexedArgs(
   variables: QueryEventsByIndexedArgsArgs
-): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
+): MultiGraphqlQuery<QueryEventsByIndexedArgsArgs> {
   const query = gql`
     query EventByIndexedArgsQuery(
       $moduleId: ModuleIdEnum!
@@ -143,8 +150,10 @@ export function eventByIndexedArgs(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -155,7 +164,7 @@ export function eventByIndexedArgs(
  */
 export function eventsByIndexedArgs(
   variables: QueryEventsByIndexedArgsArgs
-): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
+): MultiGraphqlQuery<QueryEventsByIndexedArgsArgs> {
   const query = gql`
     query EventsByIndexedArgsQuery(
       $moduleId: ModuleIdEnum!
@@ -186,8 +195,10 @@ export function eventsByIndexedArgs(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -198,7 +209,7 @@ export function eventsByIndexedArgs(
  */
 export function transactionByHash(
   variables: QueryTransactionByHashArgs
-): GraphqlQuery<QueryTransactionByHashArgs> {
+): MultiGraphqlQuery<QueryTransactionByHashArgs> {
   const query = gql`
     query TransactionByHashQuery($transactionHash: String) {
       transactionByHash(transactionHash: $transactionHash) {
@@ -217,8 +228,10 @@ export function transactionByHash(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -229,7 +242,7 @@ export function transactionByHash(
  */
 export function proposals(
   variables?: QueryProposalsArgs
-): GraphqlQuery<QueryProposalsArgs | undefined> {
+): MultiGraphqlQuery<QueryProposalsArgs | undefined> {
   const query = gql`
     query ProposalsQuery(
       $pipIds: [Int!]
@@ -265,8 +278,10 @@ export function proposals(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -277,7 +292,7 @@ export function proposals(
  */
 export function tokensByTrustedClaimIssuer(
   variables: QueryTokensByTrustedClaimIssuerArgs
-): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
+): MultiGraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
   const query = gql`
     query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!) {
       tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid)
@@ -285,8 +300,10 @@ export function tokensByTrustedClaimIssuer(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -297,7 +314,7 @@ export function tokensByTrustedClaimIssuer(
  */
 export function tokensHeldByDid(
   variables: QueryTokensHeldByDidArgs
-): GraphqlQuery<QueryTokensHeldByDidArgs> {
+): MultiGraphqlQuery<QueryTokensHeldByDidArgs> {
   const query = gql`
     query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
       tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
@@ -308,8 +325,10 @@ export function tokensHeldByDid(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -320,7 +339,7 @@ export function tokensHeldByDid(
  */
 export function transactions(
   variables?: QueryTransactionsArgs
-): GraphqlQuery<QueryTransactionsArgs | undefined> {
+): MultiGraphqlQuery<QueryTransactionsArgs | undefined> {
   const query = gql`
     query TransactionsQuery(
       $block_id: Int
@@ -360,8 +379,10 @@ export function transactions(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -372,7 +393,7 @@ export function transactions(
  */
 export function scopesByIdentity(
   variables: QueryScopesByIdentityArgs
-): GraphqlQuery<QueryScopesByIdentityArgs> {
+): MultiGraphqlQuery<QueryScopesByIdentityArgs> {
   const query = gql`
     query ScopesByIdentityQuery($did: String!) {
       scopesByIdentity(did: $did) {
@@ -386,8 +407,10 @@ export function scopesByIdentity(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -398,7 +421,7 @@ export function scopesByIdentity(
  */
 export function issuerDidsWithClaimsByTarget(
   variables: QueryIssuerDidsWithClaimsByTargetArgs
-): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs> {
+): MultiGraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs> {
   const query = gql`
     query IssuerDidsWithClaimsByTargetQuery(
       $target: String!
@@ -439,8 +462,10 @@ export function issuerDidsWithClaimsByTarget(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -449,7 +474,7 @@ export function issuerDidsWithClaimsByTarget(
  *
  * Get a proposal by its pipId
  */
-export function proposal(variables: QueryProposalArgs): GraphqlQuery<QueryProposalArgs> {
+export function proposal(variables: QueryProposalArgs): MultiGraphqlQuery<QueryProposalArgs> {
   const query = gql`
     query ProposalQuery($pipId: Int!) {
       proposal(pipId: $pipId) {
@@ -471,8 +496,10 @@ export function proposal(variables: QueryProposalArgs): GraphqlQuery<QueryPropos
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -481,8 +508,15 @@ export function proposal(variables: QueryProposalArgs): GraphqlQuery<QueryPropos
  *
  * Fetch the number of the latest block that has been processed by the middleware
  */
-export function latestProcessedBlock(): GraphqlQuery {
+export function latestProcessedBlock(): MultiGraphqlQuery<undefined, 'blocks', 'latestBlock'> {
   const query = gql`
+    query {
+      latestBlock {
+        id
+      }
+    }
+  `;
+  const queryv2 = gql`
     query {
       latestBlock {
         id
@@ -491,8 +525,14 @@ export function latestProcessedBlock(): GraphqlQuery {
   `;
 
   return {
-    query,
-    variables: undefined,
+    v1: {
+      query,
+      variables: undefined,
+    },
+    v2: {
+      query: { query: queryv2, variables: undefined },
+      mapper: r => ({ latestBlock: { __typename: 'Block', id: r.blocks!.nodes[0]!.blockId } }),
+    },
   };
 }
 
@@ -501,16 +541,31 @@ export function latestProcessedBlock(): GraphqlQuery {
  *
  * Middleware heartbeat
  */
-export function heartbeat(): GraphqlQuery {
+export function heartbeat(): MultiGraphqlQuery<undefined, 'block', 'heartbeat'> {
   const query = gql`
     query {
       heartbeat
     }
   `;
+  const queryv2 = gql`
+    query {
+      query {
+        block(id: "1") {
+          id
+        }
+      }
+    }
+  `;
 
   return {
-    query,
-    variables: undefined,
+    v1: {
+      query,
+      variables: undefined,
+    },
+    v2: {
+      query: { query: queryv2, variables: undefined },
+      mapper: () => ({ heartbeat: true }),
+    },
   };
 }
 
@@ -521,7 +576,7 @@ export function heartbeat(): GraphqlQuery {
  */
 export function eventByAddedTrustedClaimIssuer(
   variables: QueryEventByAddedTrustedClaimIssuerArgs
-): GraphqlQuery<QueryEventByAddedTrustedClaimIssuerArgs> {
+): MultiGraphqlQuery<QueryEventByAddedTrustedClaimIssuerArgs> {
   const query = gql`
     query EventByAddedTrustedClaimIssuerQuery($ticker: String!, $identityId: String!) {
       eventByAddedTrustedClaimIssuer(ticker: $ticker, identityId: $identityId) {
@@ -536,8 +591,10 @@ export function eventByAddedTrustedClaimIssuer(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -546,7 +603,9 @@ export function eventByAddedTrustedClaimIssuer(
  *
  * Get Settlements where a Portfolio is involved
  */
-export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<QuerySettlementsArgs> {
+export function settlements(
+  variables: QuerySettlementsArgs
+): MultiGraphqlQuery<QuerySettlementsArgs> {
   const query = gql`
     query SettlementsQuery(
       $identityId: String!
@@ -588,8 +647,10 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -598,7 +659,9 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
  *
  * Get all investments for a given offering
  */
-export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<QueryInvestmentsArgs> {
+export function investments(
+  variables: QueryInvestmentsArgs
+): MultiGraphqlQuery<QueryInvestmentsArgs, 'investments', 'investments'> {
   const query = gql`
     query InvestmentsQuery($stoId: Int!, $ticker: String!, $count: Int, $skip: Int) {
       investments(stoId: $stoId, ticker: $ticker, count: $count, skip: $skip) {
@@ -612,9 +675,40 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
     }
   `;
 
+  const queryv2 = gql`
+    query InvestmentsQuery($stoId: Int!, $ticker: String!, $count: Int, $skip: Int) {
+      investments(
+        first: $count
+        offset: $skip
+        filter: { stoId: { equalTo: $stoId }, offeringToken: { equalTo: $ticker } }
+      ) {
+        totalCount
+        nodes {
+          investor
+          offeringTokenAmount
+          raiseTokenAmount
+        }
+      }
+    }
+  `;
+
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
+    v2: {
+      query: { query: queryv2, variables },
+      mapper: a => {
+        return {
+          investments: {
+            __typename: 'InvestmentResult',
+            totalCount: a.investments!.totalCount,
+            items: a.investments!.nodes,
+          },
+        };
+      },
+    },
   };
 }
 
@@ -625,7 +719,7 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
  */
 export function getWithholdingTaxesOfCa(
   variables: QueryGetWithholdingTaxesOfCaArgs
-): GraphqlQuery<QueryGetWithholdingTaxesOfCaArgs> {
+): MultiGraphqlQuery<QueryGetWithholdingTaxesOfCaArgs> {
   const query = gql`
     query GetWithholdingTaxesOfCAQuery($CAId: CAId!, $fromDate: DateTime, $toDate: DateTime) {
       getWithholdingTaxesOfCA(CAId: $CAId, fromDate: $fromDate, toDate: $toDate) {
@@ -635,8 +729,10 @@ export function getWithholdingTaxesOfCa(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -647,7 +743,7 @@ export function getWithholdingTaxesOfCa(
  */
 export function getHistoryOfPaymentEventsForCa(
   variables: QueryGetHistoryOfPaymentEventsForCaArgs
-): GraphqlQuery<QueryGetHistoryOfPaymentEventsForCaArgs> {
+): MultiGraphqlQuery<QueryGetHistoryOfPaymentEventsForCaArgs> {
   const query = gql`
     query GetHistoryOfPaymentEventsForCAQuery(
       $CAId: CaId!
@@ -679,8 +775,10 @@ export function getHistoryOfPaymentEventsForCa(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -691,7 +789,7 @@ export function getHistoryOfPaymentEventsForCa(
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
-): GraphqlQuery<QueryTickerExternalAgentHistoryArgs> {
+): MultiGraphqlQuery<QueryTickerExternalAgentHistoryArgs> {
   const query = gql`
     query TickerExternalAgentHistoryQuery($ticker: String!) {
       tickerExternalAgentHistory(ticker: $ticker) {
@@ -706,8 +804,10 @@ export function tickerExternalAgentHistory(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }
 
@@ -718,7 +818,7 @@ export function tickerExternalAgentHistory(
  */
 export function tickerExternalAgentActions(
   variables: QueryTickerExternalAgentActionsArgs
-): GraphqlQuery<QueryTickerExternalAgentActionsArgs> {
+): MultiGraphqlQuery<QueryTickerExternalAgentActionsArgs> {
   const query = gql`
     query TickerExternalAgentActionsQuery(
       $ticker: String!
@@ -754,7 +854,9 @@ export function tickerExternalAgentActions(
   `;
 
   return {
-    query,
-    variables,
+    v1: {
+      query,
+      variables,
+    },
   };
 }

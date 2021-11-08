@@ -153,7 +153,7 @@ import {
   SecondaryKey,
   Subsidy,
 } from '~/types';
-import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
+import { Consts, Extrinsics, MultiGraphqlQuery , PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
@@ -228,6 +228,7 @@ const mockInstanceContainer = {
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
   apolloInstance: createApolloClient(),
+  apolloInstanceV2: createApolloClient(),
   webSocketAsPromisedInstance: createWebSocketAsPromised(),
 };
 
@@ -695,7 +696,7 @@ function configureContext(opts: ContextOptions): void {
     middlewareApi: mockInstanceContainer.apolloInstance,
     queryMiddleware: sinon
       .stub()
-      .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
+      .callsFake(query => mockInstanceContainer.apolloInstance.query(query.v1)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
@@ -1075,16 +1076,25 @@ export function createTxStub<
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
-  const instance = mockInstanceContainer.apolloInstance;
+export function createApolloQueryStub(
+  query: MultiGraphqlQuery<any>,
+  returnData: unknown,
+  returnDataV2?: unknown
+): SinonStub {
   const stub = sinon.stub();
-
-  stub.withArgs(query).resolves({
+  const instance = mockInstanceContainer.apolloInstance;
+  stub.withArgs(query.v1).resolves({
     data: returnData,
   });
-
   instance.query = stub;
-
+  if (returnDataV2) {
+    const stub2 = sinon.stub();
+    const instance2 = mockInstanceContainer.apolloInstanceV2;
+    stub2.withArgs(query.v2!.query).resolves({
+      data: returnDataV2,
+    });
+    instance2.query = stub2;
+  }
   return stub;
 }
 
@@ -1095,13 +1105,13 @@ export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unkn
  * @param queries - query and returnData for each stubbed query
  */
 export function createApolloMultipleQueriesStub(
-  queries: { query: GraphqlQuery<any>; returnData: unknown }[]
+  queries: { query: MultiGraphqlQuery<any>; returnData: unknown }[]
 ): SinonStub {
   const instance = mockInstanceContainer.apolloInstance;
   const stub = sinon.stub();
 
   queries.forEach(q => {
-    stub.withArgs(q.query).resolves({
+    stub.withArgs(q.query.v1).resolves({
       data: q.returnData,
     });
   });
@@ -1353,6 +1363,16 @@ export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> 
 export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
   SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
   return mockInstanceContainer.apolloInstance as ApolloClient<NormalizedCacheObject> &
+    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+}
+
+/**
+ * @hidden
+ * Retrieve an instance of the mocked v2 Apollo Client
+ */
+export function getMiddlewareV2Api(): ApolloClient<NormalizedCacheObject> &
+  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstanceV2 as ApolloClient<NormalizedCacheObject> &
     SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
 }
 

@@ -8,6 +8,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import deepEqual from 'deep-equal';
 import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import {
@@ -43,7 +44,7 @@ import {
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
+import { MultiGraphqlQuery } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
@@ -80,8 +81,10 @@ import {
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+  middlewareV2Api: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
   ss58Format: number;
+  middlewareDiffLogger?: (error: string) => void;
 }
 
 interface AddPairBaseParams {
@@ -118,6 +121,8 @@ export class Context {
   public ss58Format: number;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+  private _middlewareV2Api: ApolloClient<NormalizedCacheObject> | null;
+  private middlewareDiffLogger: (error: string) => void = console.error;
 
   private _polymeshApi: ApiPromise;
 
@@ -125,13 +130,25 @@ export class Context {
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, keyring, ss58Format } = params;
+    const {
+      polymeshApi,
+      middlewareApi,
+      keyring,
+      ss58Format,
+      middlewareV2Api,
+      middlewareDiffLogger,
+    } = params;
 
     this._middlewareApi = middlewareApi;
+    this._middlewareV2Api = middlewareV2Api;
     this._polymeshApi = polymeshApi;
     this.polymeshApi = Context.createPolymeshApiProxy(this);
     this.keyring = keyring;
     this.ss58Format = ss58Format;
+
+    if (middlewareDiffLogger) {
+      this.middlewareDiffLogger = middlewareDiffLogger;
+    }
 
     const currentPair = keyring.getPairs()[0];
 
@@ -165,6 +182,8 @@ export class Context {
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+    middlewareV2Api: ApolloClient<NormalizedCacheObject> | null;
+    middlewareDiffLogger?: (error: string) => void;
     accountSeed?: string;
     keyring?: CommonKeyring | UiKeyring;
     accountUri?: string;
@@ -173,10 +192,12 @@ export class Context {
     const {
       polymeshApi,
       middlewareApi,
+      middlewareV2Api,
       accountSeed,
       keyring: passedKeyring,
       accountUri,
       accountMnemonic,
+      middlewareDiffLogger,
     } = params;
 
     const ss58Format: number | undefined = u8ToBigNumber(
@@ -197,7 +218,14 @@ export class Context {
       });
     }
 
-    const context = new Context({ polymeshApi, middlewareApi, keyring, ss58Format });
+    const context = new Context({
+      polymeshApi,
+      middlewareApi,
+      middlewareV2Api,
+      keyring,
+      ss58Format,
+      middlewareDiffLogger,
+    });
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
 
@@ -992,7 +1020,7 @@ export class Context {
   }
 
   /**
-   * Retrieve the middleware client
+   * Retrieve the middleware v1 client
    *
    * @throws if the middleware is not enabled
    */
@@ -1002,7 +1030,25 @@ export class Context {
     if (!api) {
       throw new PolymeshError({
         code: ErrorCode.MiddlewareError,
-        message: 'Cannot perform this action without an active middleware connection',
+        message: 'Cannot perform this action without an active middleware v1 connection',
+      });
+    }
+
+    return api;
+  }
+
+  /**
+   * Retrieve the middleware v2 client
+   *
+   * @throws if the middleware is not enabled
+   */
+  public get middlewareV2Api(): ApolloClient<NormalizedCacheObject> {
+    const { _middlewareV2Api: api } = this;
+
+    if (!api) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: 'Cannot perform this action without an active middleware v2 connection',
       });
     }
 
@@ -1013,12 +1059,42 @@ export class Context {
    * Make a query to the middleware server using the apollo client
    */
   public async queryMiddleware<Result extends Partial<Query>>(
-    query: GraphqlQuery<unknown>
+    query: MultiGraphqlQuery<unknown>
   ): Promise<ApolloQueryResult<Result>> {
-    let result: ApolloQueryResult<Result>;
     try {
-      result = await this.middlewareApi.query(query);
-    } catch (err) {
+      if (this.isMiddlewareV1Enabled()) {
+        const resultPromise = this.middlewareApi.query(query.v1);
+        if (query.v2 && this.isMiddlewareV2Enabled()) {
+          const resultV2 = await this.middlewareV2Api.query(query.v2.query);
+          if (resultV2.data) {
+            const mapped = query.v2.mapper(resultV2.data);
+            const result = await resultPromise;
+            if (!deepEqual(mapped, result.data)) {
+              this.middlewareDiffLogger(
+                `Error, results from middleware instances differ:\n${JSON.stringify(
+                  result.data,
+                  null,
+                  2
+                )}\n--------------------------\n${JSON.stringify(mapped, null, 2)}`
+              );
+            }
+          }
+        }
+        return await resultPromise;
+      } else {
+        if (!query.v2) {
+          throw new PolymeshError({
+            code: ErrorCode.MiddlewareError,
+            message: 'You must provide a middleware v1 configuration to use this query',
+          });
+        }
+        const result = await this.middlewareV2Api.query(query.v2.query);
+        return {
+          ...result,
+          data: result.data ? ((query.v2.mapper(result.data) as unknown) as Result) : result.data,
+        };
+      }
+    } catch (err: any) {
       const resultMessage = err.networkError?.result?.message;
       const { message: errorMessage } = err;
       const message = resultMessage ?? errorMessage;
@@ -1027,15 +1103,27 @@ export class Context {
         message: `Error in middleware query: ${message}`,
       });
     }
-
-    return result;
   }
 
   /**
-   * Return whether the middleware was enabled at startup
+   * Return whether either middleware was enabled at startup
    */
   public isMiddlewareEnabled(): boolean {
+    return this.isMiddlewareV1Enabled() || this.isMiddlewareV2Enabled();
+  }
+
+  /**
+   * Return whether the middleware v1 was enabled at startup
+   */
+  public isMiddlewareV1Enabled(): boolean {
     return !!this._middlewareApi;
+  }
+
+  /**
+   * Return whether the middleware v2 was enabled at startup
+   */
+  public isMiddlewareV2Enabled(): boolean {
+    return !!this._middlewareV2Api;
   }
 
   /**
@@ -1043,7 +1131,13 @@ export class Context {
    */
   public async isMiddlewareAvailable(): Promise<boolean> {
     try {
-      this.middlewareApi.query(heartbeat());
+      if (this.isMiddlewareV1Enabled()) {
+        this.middlewareApi.query(heartbeat().v1);
+      } else if (this.isMiddlewareV1Enabled()) {
+        this.middlewareV2Api.query(heartbeat().v2!.query);
+      } else {
+        return false;
+      }
     } catch (err) {
       return false;
     }
@@ -1078,13 +1172,18 @@ export class Context {
   public disconnect(): Promise<void> {
     const { polymeshApi } = this;
     let middlewareApi;
+    let middlewareV2Api;
 
-    if (this.isMiddlewareEnabled()) {
+    if (this.isMiddlewareV1Enabled()) {
       ({ middlewareApi } = this);
+    }
+    if (this.isMiddlewareV2Enabled()) {
+      ({ middlewareV2Api } = this);
     }
     this.isDisconnected = true;
 
     middlewareApi && middlewareApi.stop();
+    middlewareV2Api && middlewareV2Api.stop();
 
     return polymeshApi.disconnect();
   }

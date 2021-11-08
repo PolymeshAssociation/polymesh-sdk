@@ -102,6 +102,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareV2Api: null,
         accountSeed,
         accountUri: undefined,
         accountMnemonic: undefined,
@@ -122,6 +123,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareV2Api: null,
         keyring,
         accountSeed: undefined,
         accountUri: undefined,
@@ -142,6 +144,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareV2Api: null,
         keyring: { keyring },
         accountSeed: undefined,
         accountUri: undefined,
@@ -162,6 +165,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareV2Api: null,
         accountUri,
         accountSeed: undefined,
         accountMnemonic: undefined,
@@ -183,6 +187,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareV2Api: null,
         accountMnemonic,
         accountSeed: undefined,
         accountUri: undefined,
@@ -210,6 +215,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareV2Api: null,
         accountUri,
         accountSeed: undefined,
         accountMnemonic: undefined,
@@ -302,6 +308,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareV2Api: null,
         accountSeed,
         accountUri: undefined,
         accountMnemonic: undefined,

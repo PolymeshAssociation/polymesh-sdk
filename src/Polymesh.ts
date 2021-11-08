@@ -67,6 +67,8 @@ interface ConnectParamsBase {
   nodeUrl: string;
   signer?: PolkadotSigner;
   middleware?: MiddlewareConfig;
+  middlewareV2?: MiddlewareConfig;
+  middlewareDiffLogger?: (error: string) => void;
 }
 
 /**
@@ -190,6 +192,8 @@ export class Polymesh {
       accountMnemonic,
       signer,
       middleware,
+      middlewareV2,
+      middlewareDiffLogger,
     } = params;
     let context: Context;
 
@@ -228,36 +232,8 @@ export class Polymesh {
         rpc,
       });
 
-      let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
-
-      if (middleware) {
-        middlewareApi = new ApolloClient({
-          link: setContext((_, { headers }) => {
-            return {
-              headers: {
-                ...headers,
-                'x-api-key': middleware.key,
-              },
-            };
-          }).concat(
-            ApolloLink.from([
-              new HttpLink({
-                uri: middleware.link,
-                fetch,
-              }),
-            ])
-          ),
-          cache: new InMemoryCache(),
-          defaultOptions: {
-            watchQuery: {
-              fetchPolicy: 'no-cache',
-            },
-            query: {
-              fetchPolicy: 'no-cache',
-            },
-          },
-        });
-      }
+      const middlewareApi = middleware ? createApi(middleware) : null;
+      const middlewareV2Api = middlewareV2 ? createApi(middlewareV2) : null;
 
       if (signer) {
         polymeshApi.setSigner(signer);
@@ -266,12 +242,14 @@ export class Polymesh {
       context = await Context.create({
         polymeshApi,
         middlewareApi,
+        middlewareV2Api,
         accountSeed,
         accountUri,
         accountMnemonic,
         keyring,
+        middlewareDiffLogger,
       });
-    } catch (err) {
+    } catch (err: any) {
       const { message, code } = err;
       throw new PolymeshError({
         code,
@@ -284,7 +262,7 @@ export class Polymesh {
     if (middleware) {
       try {
         await context.queryMiddleware(heartbeat());
-      } catch (err) {
+      } catch (err: any) {
         if (
           err.message.indexOf('Forbidden') > -1 ||
           err.message.indexOf('Missing Authentication Token') > -1
@@ -785,3 +763,31 @@ export class Polymesh {
   }
   /* eslint-enable @typescript-eslint/naming-convention */
 }
+
+const createApi = (middleware: MiddlewareConfig) =>
+  new ApolloClient({
+    link: setContext((_, { headers }) => {
+      return {
+        headers: {
+          ...headers,
+          'x-api-key': middleware.key,
+        },
+      };
+    }).concat(
+      ApolloLink.from([
+        new HttpLink({
+          uri: middleware.link,
+          fetch,
+        }),
+      ])
+    ),
+    cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: {
+        fetchPolicy: 'no-cache',
+      },
+      query: {
+        fetchPolicy: 'no-cache',
+      },
+    },
+  });

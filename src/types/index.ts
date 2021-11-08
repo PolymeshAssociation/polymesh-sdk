@@ -599,6 +599,10 @@ export type UnsubCallback = () => void;
 
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
+export type DeepPartial<T> = {
+  [P in keyof T]?: DeepPartial<T[P]>;
+};
+
 export interface MiddlewareConfig {
   link: string;
   key: string;

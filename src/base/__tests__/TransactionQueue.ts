@@ -532,7 +532,7 @@ describe('Transaction Queue class', () => {
       });
 
       stub
-        .withArgs(latestProcessedBlock())
+        .withArgs(latestProcessedBlock().v1)
         .onCall(3)
         .resolves({ data: { latestBlock: { id: blockNumber.toNumber() } } });
 

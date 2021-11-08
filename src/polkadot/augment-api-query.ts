@@ -99,13 +99,16 @@ import type {
   ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
+  FundraiserId,
   FundraiserName,
   IdentityClaim,
   IdentityId,
   InactiveMember,
   Instruction,
+  InstructionId,
   ItnRewardStatus,
   Leg,
+  LegId,
   LegStatus,
   LocalCAId,
   MaybeBlock,
@@ -126,6 +129,7 @@ import type {
   Signatory,
   SkippedCount,
   SlashingSwitch,
+  SnapshotId,
   SnapshotMetadata,
   SnapshottedPip,
   StoredSchedule,
@@ -139,6 +143,7 @@ import type {
   TrustedIssuer,
   Venue,
   VenueDetails,
+  VenueId,
   Version,
   VotingResult,
 } from 'polymesh-types/polymesh';
@@ -1186,7 +1191,7 @@ declare module '@polkadot/api/types/storage' {
     };
     multiSig: {
       /**
-       * Maps a multisig secondary key to a multisig address.
+       * Maps a multisig signer key to a multisig address.
        **/
       keyToMultiSig: AugmentedQuery<
         ApiType,
@@ -1391,7 +1396,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * Proposals so far. id can be used to keep track of PIPs off-chain.
        **/
-      pipIdSequence: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      pipIdSequence: AugmentedQuery<ApiType, () => Observable<PipId>, []>;
       /**
        * The number of times a certain PIP has been skipped.
        * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
@@ -1454,7 +1459,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * Snapshots so far. id can be used to keep track of snapshots off-chain.
        **/
-      snapshotIdSequence: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      snapshotIdSequence: AugmentedQuery<ApiType, () => Observable<SnapshotId>, []>;
       /**
        * The metadata of the snapshot, if there is one.
        **/
@@ -1749,10 +1754,10 @@ declare module '@polkadot/api/types/storage' {
       affirmsReceived: AugmentedQuery<
         ApiType,
         (
-          arg1: u64 | AnyNumber | Uint8Array,
+          arg1: InstructionId | AnyNumber | Uint8Array,
           arg2: PortfolioId | { did?: any; kind?: any } | string | Uint8Array
         ) => Observable<AffirmationStatus>,
-        [u64, PortfolioId]
+        [InstructionId, PortfolioId]
       >;
       /**
        * Free-form text about a venue. venue_id -> `VenueDetails`
@@ -1760,36 +1765,39 @@ declare module '@polkadot/api/types/storage' {
        **/
       details: AugmentedQuery<
         ApiType,
-        (arg: u64 | AnyNumber | Uint8Array) => Observable<VenueDetails>,
-        [u64]
+        (arg: VenueId | AnyNumber | Uint8Array) => Observable<VenueDetails>,
+        [VenueId]
       >;
       /**
        * Number of affirmations pending before instruction is executed. instruction_id -> affirm_pending
        **/
       instructionAffirmsPending: AugmentedQuery<
         ApiType,
-        (arg: u64 | AnyNumber | Uint8Array) => Observable<u64>,
-        [u64]
+        (arg: InstructionId | AnyNumber | Uint8Array) => Observable<u64>,
+        [InstructionId]
       >;
       /**
        * Number of instructions in the system (It's one more than the actual number)
        **/
-      instructionCounter: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      instructionCounter: AugmentedQuery<ApiType, () => Observable<InstructionId>, []>;
       /**
        * Details about an instruction. instruction_id -> instruction_details
        **/
       instructionDetails: AugmentedQuery<
         ApiType,
-        (arg: u64 | AnyNumber | Uint8Array) => Observable<Instruction>,
-        [u64]
+        (arg: InstructionId | AnyNumber | Uint8Array) => Observable<Instruction>,
+        [InstructionId]
       >;
       /**
        * Legs under an instruction. (instruction_id, leg_id) -> Leg
        **/
       instructionLegs: AugmentedQuery<
         ApiType,
-        (arg1: u64 | AnyNumber | Uint8Array, arg2: u64 | AnyNumber | Uint8Array) => Observable<Leg>,
-        [u64, u64]
+        (
+          arg1: InstructionId | AnyNumber | Uint8Array,
+          arg2: LegId | AnyNumber | Uint8Array
+        ) => Observable<Leg>,
+        [InstructionId, LegId]
       >;
       /**
        * Status of a leg under an instruction. (instruction_id, leg_id) -> LegStatus
@@ -1797,10 +1805,10 @@ declare module '@polkadot/api/types/storage' {
       instructionLegStatus: AugmentedQuery<
         ApiType,
         (
-          arg1: u64 | AnyNumber | Uint8Array,
-          arg2: u64 | AnyNumber | Uint8Array
+          arg1: InstructionId | AnyNumber | Uint8Array,
+          arg2: LegId | AnyNumber | Uint8Array
         ) => Observable<LegStatus>,
-        [u64, u64]
+        [InstructionId, LegId]
       >;
       /**
        * Tracks redemption of receipts. (signer, receipt_uid) -> receipt_used
@@ -1825,34 +1833,34 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (
           arg1: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          arg2: u64 | AnyNumber | Uint8Array
+          arg2: InstructionId | AnyNumber | Uint8Array
         ) => Observable<AffirmationStatus>,
-        [PortfolioId, u64]
+        [PortfolioId, InstructionId]
       >;
       /**
        * Array of venues created by an identity. Only needed for the UI. IdentityId -> Vec<venue_id>
        **/
       userVenues: AugmentedQuery<
         ApiType,
-        (arg: IdentityId | string | Uint8Array) => Observable<Vec<u64>>,
+        (arg: IdentityId | string | Uint8Array) => Observable<Vec<VenueId>>,
         [IdentityId]
       >;
       /**
-       * Venues that are allowed to create instructions involving a particular ticker. Oly used if filtering is enabled.
+       * Venues that are allowed to create instructions involving a particular ticker. Only used if filtering is enabled.
        * (ticker, venue_id) -> allowed
        **/
       venueAllowList: AugmentedQuery<
         ApiType,
         (
           arg1: Ticker | string | Uint8Array,
-          arg2: u64 | AnyNumber | Uint8Array
+          arg2: VenueId | AnyNumber | Uint8Array
         ) => Observable<bool>,
-        [Ticker, u64]
+        [Ticker, VenueId]
       >;
       /**
        * Number of venues in the system (It's one more than the actual number)
        **/
-      venueCounter: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      venueCounter: AugmentedQuery<ApiType, () => Observable<VenueId>, []>;
       /**
        * Tracks if a token has enabled filtering venues that can create instructions involving their token. Ticker -> filtering_enabled
        **/
@@ -1866,8 +1874,8 @@ declare module '@polkadot/api/types/storage' {
        **/
       venueInfo: AugmentedQuery<
         ApiType,
-        (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<Venue>>,
-        [u64]
+        (arg: VenueId | AnyNumber | Uint8Array) => Observable<Option<Venue>>,
+        [VenueId]
       >;
       /**
        * Instructions under a venue.
@@ -1878,10 +1886,10 @@ declare module '@polkadot/api/types/storage' {
       venueInstructions: AugmentedQuery<
         ApiType,
         (
-          arg1: u64 | AnyNumber | Uint8Array,
-          arg2: u64 | AnyNumber | Uint8Array
+          arg1: VenueId | AnyNumber | Uint8Array,
+          arg2: InstructionId | AnyNumber | Uint8Array
         ) => Observable<ITuple<[]>>,
-        [u64, u64]
+        [VenueId, InstructionId]
       >;
       /**
        * Signers allowed by the venue. (venue_id, signer) -> bool
@@ -1889,10 +1897,10 @@ declare module '@polkadot/api/types/storage' {
       venueSigners: AugmentedQuery<
         ApiType,
         (
-          arg1: u64 | AnyNumber | Uint8Array,
+          arg1: VenueId | AnyNumber | Uint8Array,
           arg2: AccountId | string | Uint8Array
         ) => Observable<bool>,
-        [u64, AccountId]
+        [VenueId, AccountId]
       >;
     };
     staking: {
@@ -2250,20 +2258,20 @@ declare module '@polkadot/api/types/storage' {
        **/
       fundraiserCount: AugmentedQuery<
         ApiType,
-        (arg: Ticker | string | Uint8Array) => Observable<u64>,
+        (arg: Ticker | string | Uint8Array) => Observable<FundraiserId>,
         [Ticker]
       >;
       /**
-       * Name for the Fundraiser. It is only used offchain.
+       * Name for the Fundraiser. Only used offchain.
        * (ticker, fundraiser_id) -> Fundraiser name
        **/
       fundraiserNames: AugmentedQuery<
         ApiType,
         (
           arg1: Ticker | string | Uint8Array,
-          arg2: u64 | AnyNumber | Uint8Array
+          arg2: FundraiserId | AnyNumber | Uint8Array
         ) => Observable<FundraiserName>,
-        [Ticker, u64]
+        [Ticker, FundraiserId]
       >;
       /**
        * All fundraisers that are currently running.
@@ -2273,9 +2281,9 @@ declare module '@polkadot/api/types/storage' {
         ApiType,
         (
           arg1: Ticker | string | Uint8Array,
-          arg2: u64 | AnyNumber | Uint8Array
+          arg2: FundraiserId | AnyNumber | Uint8Array
         ) => Observable<Option<Fundraiser>>,
-        [Ticker, u64]
+        [Ticker, FundraiserId]
       >;
     };
     sudo: {

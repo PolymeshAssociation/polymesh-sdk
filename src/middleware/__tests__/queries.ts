@@ -46,8 +46,8 @@ describe('proposalVotes', () => {
 
     const result = proposalVotes(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -64,8 +64,8 @@ describe('didsWithClaims', () => {
 
     const result = didsWithClaims(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -79,8 +79,8 @@ describe('eventByIndexedArgs', () => {
 
     const result = eventByIndexedArgs(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -94,8 +94,8 @@ describe('eventsByIndexedArgs', () => {
 
     const result = eventsByIndexedArgs(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -107,8 +107,8 @@ describe('transactionByHash', () => {
 
     const result = transactionByHash(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -125,8 +125,8 @@ describe('proposals', () => {
 
     const result = proposals(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -138,8 +138,8 @@ describe('tokensByTrustedClaimIssuer', () => {
 
     const result = tokensByTrustedClaimIssuer(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -151,8 +151,8 @@ describe('tokensHeldByDid', () => {
 
     const result = tokensHeldByDid(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -160,15 +160,15 @@ describe('transactions', () => {
   test('should pass the variables to the grapqhl query', () => {
     let result = transactions();
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toBeUndefined();
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toBeUndefined();
 
     const variables = {
       address: 'someAddress',
     };
     result = transactions(variables);
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -180,8 +180,8 @@ describe('scopesByIdentity', () => {
 
     const result = scopesByIdentity(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -195,8 +195,8 @@ describe('issuerDidsWithClaimsByTarget', () => {
 
     const result = issuerDidsWithClaimsByTarget(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -208,8 +208,8 @@ describe('proposal', () => {
 
     const result = proposal(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -222,8 +222,8 @@ describe('eventByAddedTrustedClaimIssuer', () => {
 
     const result = eventByAddedTrustedClaimIssuer(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -235,8 +235,8 @@ describe('settlements', () => {
 
     const result = settlements(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -249,8 +249,8 @@ describe('investments', () => {
 
     const result = investments(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -262,8 +262,8 @@ describe('getWithholdingTaxesOfCa', () => {
 
     const result = getWithholdingTaxesOfCa(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -275,8 +275,8 @@ describe('getHistoryOfPaymentEventsForCa', () => {
 
     const result = getHistoryOfPaymentEventsForCa(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -288,8 +288,8 @@ describe('tickerExternalAgentHistory', () => {
 
     const result = tickerExternalAgentHistory(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
 
@@ -302,7 +302,7 @@ describe('tickerExternalAgentActions', () => {
 
     const result = tickerExternalAgentActions(variables);
 
-    expect(result.query).toBeDefined();
-    expect(result.variables).toEqual(variables);
+    expect(result.v1.query).toBeDefined();
+    expect(result.v1.variables).toEqual(variables);
   });
 });
