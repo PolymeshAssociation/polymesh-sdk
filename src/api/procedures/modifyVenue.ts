@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-
 import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -22,7 +20,7 @@ export type ModifyVenueParams =
 /**
  * @hidden
  */
-export type Params = { venueId: BigNumber } & ModifyVenueParams;
+export type Params = { venue: Venue } & ModifyVenueParams;
 
 /**
  * @hidden
@@ -38,22 +36,22 @@ export async function prepareModifyVenue(
     context,
   } = this;
 
-  const { venueId, description, type } = args;
+  const { venue, description, type } = args;
 
-  const venue = new Venue({ id: venueId }, context);
+  const { id: venueId } = venue;
 
   const { description: currentDescription, type: currentType } = await venue.details();
 
   if (currentDescription === description) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'New description is the same as the current one',
     });
   }
 
   if (currentType === type) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'New type is the same as the current one',
     });
   }
@@ -82,7 +80,7 @@ export async function prepareModifyVenue(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { venueId, description, type }: Params
+  { venue: { id: venueId }, description, type }: Params
 ): ProcedureAuthorization {
   const transactions = [];
 

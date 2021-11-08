@@ -1006,7 +1006,10 @@ function configureVenue(opts: VenueOptions): void {
   Object.assign(mockInstanceContainer.venue, venue);
   venueConstructorStub.callsFake(args => {
     const value = merge({}, venue, args);
-    Object.setPrototypeOf(value, require('~/internal').Venue.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Venue.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Venue.prototype);
     return value;
   });
 }
@@ -1048,6 +1051,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     const value = merge({}, numberedPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Portfolio.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
     Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
     return value;
@@ -1095,6 +1099,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Portfolio.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
     Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
     return value;
@@ -1139,6 +1144,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
     const value = merge({}, customPermissionGroup, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.PermissionGroup.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(
       entities.CustomPermissionGroup.prototype,
       entities.PermissionGroup.prototype
@@ -1183,6 +1189,7 @@ function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void 
     const value = merge({}, knownPermissionGroup, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.PermissionGroup.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(
       entities.KnownPermissionGroup.prototype,
       entities.PermissionGroup.prototype
@@ -1225,7 +1232,10 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
   authorizationRequestConstructorStub.callsFake(args => {
     const value = merge({}, authorizationRequest, args);
-    Object.setPrototypeOf(value, require('~/internal').AuthorizationRequest.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.AuthorizationRequest.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.AuthorizationRequest.prototype);
     return value;
   });
 }
@@ -1291,7 +1301,10 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
   Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.callsFake(args => {
     const value = merge({}, securityToken, args);
-    Object.setPrototypeOf(value, require('~/internal').SecurityToken.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.SecurityToken.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.SecurityToken.prototype);
     return value;
   });
 }
@@ -1338,7 +1351,10 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.callsFake(args => {
     const value = merge({}, tickerReservation, args);
-    Object.setPrototypeOf(value, require('~/internal').TickerReservation.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.TickerReservation.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.TickerReservation.prototype);
     return value;
   });
 }
@@ -1394,7 +1410,10 @@ function configureIdentity(opts: IdentityOptions): void {
   Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.callsFake(args => {
     const value = merge({}, identity, args);
-    Object.setPrototypeOf(value, require('~/internal').Identity.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Identity.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Identity.prototype);
     return value;
   });
 }
@@ -1456,7 +1475,10 @@ function configureInstruction(opts: InstructionOptions): void {
   Object.assign(mockInstanceContainer.instruction, instruction);
   instructionConstructorStub.callsFake(args => {
     const value = merge({}, instruction, args);
-    Object.setPrototypeOf(value, require('~/internal').Instruction.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Instruction.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Instruction.prototype);
     return value;
   });
 }
@@ -1500,7 +1522,10 @@ function configureAccount(opts: AccountOptions): void {
   Object.assign(mockInstanceContainer.account, account);
   accountConstructorStub.callsFake(args => {
     const value = merge({}, account, args);
-    Object.setPrototypeOf(value, require('~/internal').Account.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Account.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Account.prototype);
     return value;
   });
 }
@@ -1548,7 +1573,10 @@ function configureSto(opts: StoOptions): void {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   stoConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, sto, args);
-    Object.setPrototypeOf(value, require('~/internal').Sto.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Sto.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Sto.prototype);
     return value;
   });
 }
@@ -1596,7 +1624,10 @@ function configureCheckpoint(opts: CheckpointOptions): void {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   checkpointConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, checkpoint, args);
-    Object.setPrototypeOf(value, require('~/internal').Checkpoint.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Checkpoint.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Checkpoint.prototype);
     return value;
   });
 }
@@ -1639,7 +1670,10 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   checkpointScheduleConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, checkpointSchedule, args);
-    Object.setPrototypeOf(value, require('~/internal').CheckpointSchedule.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.CheckpointSchedule.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.CheckpointSchedule.prototype);
     return value;
   });
 }
@@ -1680,7 +1714,14 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   corporateActionConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, corporateAction, args);
-    Object.setPrototypeOf(value, require('~/internal').CorporateAction.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.CorporateActionBase.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(
+      entities.CorporateAction.prototype,
+      entities.CorporateActionBase.prototype
+    );
+    Object.setPrototypeOf(value, entities.CorporateAction.prototype);
     return value;
   });
 }
@@ -1735,7 +1776,14 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   dividendDistributionConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, dividendDistribution, args);
-    Object.setPrototypeOf(value, require('~/internal').DividendDistribution.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.CorporateActionBase.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(
+      entities.DividendDistribution.prototype,
+      entities.CorporateActionBase.prototype
+    );
+    Object.setPrototypeOf(value, entities.DividendDistribution.prototype);
     return value;
   });
 }

@@ -51,7 +51,7 @@ export async function prepareSetTokenDocuments(
     currentDocs.length === documents.length
   ) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'The supplied document list is equal to the current one',
     });
   }

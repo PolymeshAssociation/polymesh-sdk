@@ -46,7 +46,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
 
   if (authRequest.isExpired()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Authorization Request has expired',
       data: {
         expiry,
@@ -76,7 +76,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
 
   if (existingIdentity) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'This Account is already part of an Identity',
     });
   }
@@ -101,12 +101,13 @@ export async function getAuthorization(
 
   let roles = calledByTarget;
 
+  /*
+   * when accepting a JoinIdentity request, you don't need permissions (and can't have them by definition),
+   *   you just need to be the target
+   */
   if (accept) {
     return {
       roles,
-      permissions: {
-        transactions: [TxTags.identity.JoinIdentityAsKey],
-      },
     };
   }
 

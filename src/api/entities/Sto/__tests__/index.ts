@@ -180,17 +180,6 @@ describe('Sto class', () => {
       expect(details).toEqual(fakeResult);
     });
 
-    test('should throw if security token offering does not exist', async () => {
-      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
-        returnValue: dsMockUtils.createMockFundraiserName(),
-      });
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      return expect(sto.details()).rejects.toThrow('STO no longer exists');
-    });
-
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 

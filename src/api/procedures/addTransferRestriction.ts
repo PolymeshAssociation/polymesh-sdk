@@ -66,7 +66,7 @@ export async function prepareAddTransferRestriction(
 
   if (restrictionAmount >= maxTransferManagers) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.LimitExceeded,
       message: 'Transfer Restriction limit reached',
       data: { limit: maxTransferManagers },
     });
@@ -88,7 +88,7 @@ export async function prepareAddTransferRestriction(
 
   if (exists) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'Cannot add the same restriction more than once',
     });
   }

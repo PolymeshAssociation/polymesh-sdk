@@ -360,7 +360,7 @@ describe('configureDividendDistribution procedure', () => {
     }
 
     expect(err.message).toBe(
-      'Origin Portfolio free balance is not enough to cover the distribution amount'
+      "The origin Portfolio's free balance is not enough to cover the Distribution amount"
     );
     expect(err.data).toEqual({
       free: new BigNumber(1),
@@ -399,7 +399,7 @@ describe('configureDividendDistribution procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe("The Portfolio doesn't exist");
+    expect(err.message).toBe("The origin Portfolio doesn't exist");
   });
 
   test('should add a distribute transaction to the queue', async () => {

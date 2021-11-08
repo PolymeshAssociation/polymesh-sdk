@@ -25,7 +25,7 @@ export abstract class Entity<UniqueIdentifiers, HumanReadable> {
 
     if (!this.isUniqueIdentifiers(unserialized)) {
       throw new PolymeshError({
-        code: ErrorCode.InvalidUuid,
+        code: ErrorCode.ValidationError,
         message: `The string doesn't correspond to the UUID of type ${this.name}`,
       });
     }

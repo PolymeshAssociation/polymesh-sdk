@@ -134,7 +134,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     if (!schedule) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: notExistsMessage,
       });
     }
@@ -166,7 +166,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: notExistsMessage,
       });
     }

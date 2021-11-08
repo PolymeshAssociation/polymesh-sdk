@@ -3,7 +3,7 @@ import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyVenue } from '~/api/procedures/modifyVenue';
-import { Context } from '~/internal';
+import { Context, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, VenueType } from '~/types';
@@ -19,6 +19,8 @@ describe('modifyVenue procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let venueId: BigNumber;
 
+  let venue: Venue;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -30,6 +32,8 @@ describe('modifyVenue procedure', () => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
+
+    venue = entityMockUtils.getVenueInstance({ id: venueId });
   });
 
   afterEach(() => {
@@ -48,7 +52,7 @@ describe('modifyVenue procedure', () => {
     const description = 'someDetails';
 
     const args = {
-      venueId,
+      venue,
       description,
     };
 
@@ -71,7 +75,7 @@ describe('modifyVenue procedure', () => {
     const type = VenueType.Exchange;
 
     const args = {
-      venueId,
+      venue,
       type,
     };
 
@@ -100,7 +104,7 @@ describe('modifyVenue procedure', () => {
     const rawId = dsMockUtils.createMockU64(venueId.toNumber());
 
     const args = {
-      venueId,
+      venue,
       description,
       type,
     };
@@ -128,14 +132,14 @@ describe('modifyVenue procedure', () => {
     sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
 
     await prepareModifyVenue.call(proc, {
-      venueId,
+      venue,
       type,
     });
 
     sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
 
     await prepareModifyVenue.call(proc, {
-      venueId,
+      venue,
       description,
     });
 
@@ -153,7 +157,7 @@ describe('modifyVenue procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       let args = {
-        venueId,
+        venue,
         type: VenueType.Distribution,
       } as Params;
 
@@ -167,7 +171,7 @@ describe('modifyVenue procedure', () => {
       });
 
       args = {
-        venueId,
+        venue,
         description: 'someDescription',
       } as Params;
 

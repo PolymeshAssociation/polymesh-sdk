@@ -11,4 +11,3 @@ export type TransactionQueue<
   TransactionArgs extends unknown[][] = unknown[][]
 > = TransactionQueueClass<ProcedureReturnType, ReturnType, TransactionArgs>;
 export type PolymeshError = PolymeshErrorClass;
-export { isPolymeshError } from './PolymeshError';

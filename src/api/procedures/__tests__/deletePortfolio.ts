@@ -67,8 +67,11 @@ describe('deletePortfolio procedure', () => {
   });
 
   test('should throw an error if the portfolio does not exist', async () => {
-    dsMockUtils.createQueryStub('portfolio', 'portfolios').returns(dsMockUtils.createMockBytes());
-
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        exists: false,
+      },
+    });
     const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
 
     return expect(
@@ -96,7 +99,7 @@ describe('deletePortfolio procedure', () => {
         id,
         did,
       })
-    ).rejects.toThrow('You cannot delete a Portfolio that contains any assets');
+    ).rejects.toThrow('Only empty Portfolios can be deleted');
   });
 
   test('should add a delete portfolio transaction to the queue', async () => {

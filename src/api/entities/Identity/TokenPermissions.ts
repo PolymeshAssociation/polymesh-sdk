@@ -242,7 +242,7 @@ export class TokenPermissions extends Namespace<Identity> {
 
     if (rawGroupPermissions.isNone) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: 'This Identity is no longer an Agent for this Security Token',
       });
     }

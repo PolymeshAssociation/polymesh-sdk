@@ -48,7 +48,7 @@ export async function prepareSetGroupPermissions(
 
   if (isEqual(transactionPermissions, transactions)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'New permissions are the same as the current ones',
     });
   }
