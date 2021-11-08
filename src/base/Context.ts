@@ -1133,7 +1133,7 @@ export class Context {
     try {
       if (this.isMiddlewareV1Enabled()) {
         this.middlewareApi.query(heartbeat().v1);
-      } else if (this.isMiddlewareV1Enabled()) {
+      } else if (this.isMiddlewareV2Enabled()) {
         this.middlewareV2Api.query(heartbeat().v2!.query);
       } else {
         return false;
