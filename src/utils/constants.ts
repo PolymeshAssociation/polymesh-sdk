@@ -134,3 +134,8 @@ export const SYSTEM_VERSION_RPC_CALL = {
   method: 'system_version',
   params: [],
 };
+
+/**
+ * Maximum amount of legs allowed in a single instruction
+ */
+export const MAX_LEGS_LENGTH = 10;
