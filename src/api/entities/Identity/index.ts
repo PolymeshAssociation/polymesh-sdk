@@ -706,7 +706,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     return P.filter(
       distributions,
       async ({ distribution }): Promise<boolean> => {
-        const { expiryDate, ticker, id: localId, paymentDate } = distribution;
+        const {
+          expiryDate,
+          token: { ticker },
+          id: localId,
+          paymentDate,
+        } = distribution;
 
         const isExpired = expiryDate && expiryDate < now;
         const hasNotStarted = paymentDate > now;

@@ -95,11 +95,11 @@ export class KnownPermissionGroup extends PermissionGroup {
    * Return the KnownPermissionGroup's static data
    */
   public toJson(): HumanReadable {
-    const { type, ticker } = this;
+    const { type, token } = this;
 
     return toHumanReadable({
       type,
-      ticker,
+      ticker: token,
     });
   }
 }

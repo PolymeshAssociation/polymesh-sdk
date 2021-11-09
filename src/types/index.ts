@@ -3,8 +3,6 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
@@ -13,10 +11,12 @@ import {
   Account,
   Checkpoint,
   CheckpointSchedule,
+  CustomPermissionGroup,
   DefaultPortfolio,
   DividendDistribution,
   Identity,
   Instruction,
+  KnownPermissionGroup,
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,

@@ -6,6 +6,10 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
@@ -49,7 +53,7 @@ describe('CustomPermissionGroup class', () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       expect(customPermissionGroup.id).toBe(id);
-      expect(customPermissionGroup.ticker).toBe(ticker);
+      expect(customPermissionGroup.token.ticker).toBe(ticker);
     });
   });
 
@@ -65,9 +69,14 @@ describe('CustomPermissionGroup class', () => {
 
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
+      entityMockUtils.configureMocks({
+        securityTokenOptions: {
+          toJson: ticker,
+        },
+      });
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
       expect(customPermissionGroup.toJson()).toEqual({
-        id,
+        id: id.toString(),
         ticker,
       });
     });

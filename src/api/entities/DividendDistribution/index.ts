@@ -8,12 +8,12 @@ import {
   Params as CorporateActionParams,
   UniqueIdentifiers,
 } from '~/api/entities/CorporateAction';
-import { CorporateActionBase } from '~/api/entities/CorporateActionBase';
 import {
   Checkpoint,
   CheckpointSchedule,
   claimDividends,
   Context,
+  CorporateActionBase,
   DefaultPortfolio,
   Identity,
   ModifyCaCheckpointParams,
@@ -332,7 +332,7 @@ export class DividendDistribution extends CorporateActionBase {
   }): Promise<DistributionParticipant | null> {
     const {
       id: localId,
-      ticker,
+      token: { ticker },
       targets: { identities: targetIdentities, treatment },
       paymentDate,
       perShare,
@@ -388,7 +388,11 @@ export class DividendDistribution extends CorporateActionBase {
    * @hidden
    */
   private fetchDistribution(): Promise<Option<Distribution>> {
-    const { ticker, id, context } = this;
+    const {
+      token: { ticker },
+      id,
+      context,
+    } = this;
 
     return context.polymeshApi.query.capitalDistribution.distributions(
       corporateActionIdentifierToCaId({ ticker, localId: id }, context)
@@ -401,7 +405,11 @@ export class DividendDistribution extends CorporateActionBase {
    * @note uses the middleware
    */
   public async getWithheldTax(): Promise<BigNumber> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      token: { ticker },
+      context,
+    } = this;
 
     const taxPromise = context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
@@ -434,7 +442,11 @@ export class DividendDistribution extends CorporateActionBase {
   public async getPaymentHistory(
     opts: { size?: number; start?: number } = {}
   ): Promise<ResultSet<DistributionPayment>> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      token: { ticker },
+      context,
+    } = this;
     const { size, start } = opts;
 
     const paymentsPromise = context.queryMiddleware<
@@ -498,7 +510,7 @@ export class DividendDistribution extends CorporateActionBase {
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
     const {
-      ticker,
+      token: { ticker },
       id: localId,
       context: {
         polymeshApi: {

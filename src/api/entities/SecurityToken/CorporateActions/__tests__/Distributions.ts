@@ -141,7 +141,7 @@ describe('Distributions class', () => {
       const { distribution, details } = await target.getOne({ id });
 
       expect(distribution.id).toEqual(id);
-      expect(distribution.ticker).toBe(ticker);
+      expect(distribution.token.ticker).toBe(ticker);
       expect(distribution instanceof DividendDistribution).toBe(true);
       expect(details.fundsReclaimed).toBe(false);
       expect(details.remainingFunds).toEqual(new BigNumber(5000));

@@ -50,7 +50,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Identifier number of the venue
+   * identifier number of the Venue
    */
   public id: BigNumber;
 
