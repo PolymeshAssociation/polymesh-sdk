@@ -1,3 +1,4 @@
+import { hexStripPrefix } from '@polkadot/util';
 import gql from 'graphql-tag';
 
 import {
@@ -19,8 +20,11 @@ import {
   QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
   QueryTransactionsArgs,
+  SettlementDirectionEnum,
+  SettlementLeg,
 } from '~/middleware/types';
 import { MultiGraphqlQuery } from '~/types/internal';
+import { keyToAddress } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -602,7 +606,7 @@ export function eventByAddedTrustedClaimIssuer(
  */
 export function settlements(
   variables: QuerySettlementsArgs
-): MultiGraphqlQuery<QuerySettlementsArgs> {
+): MultiGraphqlQuery<QuerySettlementsArgs, 'settlements', 'settlements'> {
   const query = gql`
     query SettlementsQuery(
       $identityId: String!
@@ -643,10 +647,121 @@ export function settlements(
     }
   `;
 
+  const queryV2 = gql`
+    query SettlementsQuery(
+      $identityId: String!
+      $portfolioNumber: Int
+      $addressFilter: JSON!
+      $tickerFilter: String
+      $count: Int
+      $skip: Int
+    ) {
+      settlements(
+        first: $count
+        offset: $skip
+        filter: {
+          and: [
+            {
+              or: [
+                {
+                  legs: {
+                    contains: [
+                      { to: { did: $identityId, number: $portfolioNumber }, ticker: $tickerFilter }
+                    ]
+                  }
+                }
+                {
+                  legs: {
+                    contains: [
+                      {
+                        from: { did: $identityId, number: $portfolioNumber }
+                        ticker: $tickerFilter
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+            { addresses: { contains: $addressFilter } }
+          ]
+        }
+      ) {
+        totalCount
+        nodes {
+          addresses
+          result
+          blockId
+          legs
+        }
+      }
+    }
+  `;
+
+  type V2Leg = {
+    to: { did: string; number: number };
+    from: { did: string; number: number };
+    amount: string;
+    ticker: string;
+  };
+
+  // Null is not the same as undefined for subquery filters.
+  // We also want the actual number in subquery, not a string
+  const portfolioNumber = variables.portfolioNumber
+    ? (parseInt(variables.portfolioNumber) as any)
+    : undefined;
+
   return {
     v1: {
       query,
       variables,
+    },
+    v2: {
+      query: {
+        query: queryV2,
+        variables: {
+          ...variables,
+          portfolioNumber,
+          // The address filter arg is an array in subquery.
+          addressFilter: variables.addressFilter ? ([variables.addressFilter] as any) : ([] as any),
+        },
+      },
+      mapper: ({ settlements }) => {
+        return {
+          settlements: {
+            __typename: 'SettlementResult',
+            totalCount: settlements?.totalCount,
+            items: settlements?.nodes.map(n => ({
+              __typename: 'Settlement',
+              block_id: n?.blockId,
+              result: n?.result as any,
+              addresses: n?.addresses.map(hexStripPrefix),
+              legs: n?.legs.map(
+                (leg: V2Leg): SettlementLeg => ({
+                  __typename: 'SettlementLeg',
+                  ...leg,
+                  from: {
+                    __typename: 'Portfolio',
+                    did: leg.from.did,
+                    kind: leg.from.number === 0 ? 'Default' : leg.from.number.toString(),
+                  },
+                  to: {
+                    __typename: 'Portfolio',
+                    did: leg.to.did,
+                    kind: leg.to.number === 0 ? 'Default' : leg.to.number.toString(),
+                  },
+                  direction:
+                    leg.from.did === variables.identityId &&
+                    // If this was !portfolioNumber, it could be 0,
+                    // but since variables.portfolioNumber is a string, this is fine.
+                    (!variables.portfolioNumber || portfolioNumber === leg.from.number)
+                      ? SettlementDirectionEnum.Outgoing
+                      : SettlementDirectionEnum.Incoming,
+                })
+              ),
+            })),
+          },
+        };
+      },
     },
   };
 }
