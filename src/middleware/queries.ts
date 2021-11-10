@@ -550,10 +550,8 @@ export function heartbeat(): MultiGraphqlQuery<undefined, 'block', 'heartbeat'> 
   `;
   const queryv2 = gql`
     query {
-      query {
-        block(id: "1") {
-          id
-        }
+      block(id: "1") {
+        id
       }
     }
   `;
