@@ -93,7 +93,7 @@ export async function prepareCreateGroup(
     const group = allGroups[duplicatedGroupIndex];
 
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'There already exists a group with the exact same permissions',
       data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
     });

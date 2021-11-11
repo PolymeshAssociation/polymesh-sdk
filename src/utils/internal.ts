@@ -32,8 +32,8 @@ import {
   CommonKeyring,
   CountryCode,
   ErrorCode,
-  isEntity,
   NextKey,
+  NoArgsProcedureMethod,
   PaginationOptions,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
@@ -54,6 +54,7 @@ import {
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
+import { isEntity } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -223,7 +224,7 @@ export function filterEventRecords<
 
   if (!eventRecords.length) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
     });
   }
@@ -310,7 +311,7 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
  * @hidden
  *
  * Makes a request to the chain. If a block hash is supplied,
- * the request will be made at that block. Otherwise, the most recent block will be queried
+ *   the request will be made at that block. Otherwise, the most recent block will be queried
  */
 export async function requestAtBlock<F extends AnyFunction>(
   query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
@@ -366,8 +367,8 @@ export function batchArguments<Args>(
   groups.forEach(group => {
     if (group.length > batchLimit) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Batch size exceeds limit',
+        code: ErrorCode.UnexpectedError,
+        message: 'Batch size exceeds limit. Please report this to the Polymath team',
         data: {
           batch: group,
           limit: batchLimit,
@@ -409,7 +410,44 @@ export function calculateNextKey(totalCount: number, size?: number, start?: numb
  * Create a method that prepares a procedure
  */
 export function createProcedureMethod<
-  MethodArgs,
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: () => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    voidArgs: true;
+  },
+  context: Context
+): NoArgsProcedureMethod<ProcedureReturnValue, ProcedureReturnValue>;
+export function createProcedureMethod<
+  ProcedureArgs extends unknown,
+  ProcedureReturnValue,
+  ReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: () => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    voidArgs: true;
+    transformer: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
+  context: Context
+): NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs extends {},
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   Storage = Record<string, unknown>
@@ -428,7 +466,8 @@ export function createProcedureMethod<
   context: Context
 ): ProcedureMethod<MethodArgs, ProcedureReturnValue, ProcedureReturnValue>;
 export function createProcedureMethod<
-  MethodArgs,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs extends {},
   ProcedureArgs extends unknown,
   ProcedureReturnValue,
   ReturnValue,
@@ -458,7 +497,7 @@ export function createProcedureMethod<
 >(
   args: {
     getProcedureAndArgs: (
-      methodArgs: MethodArgs
+      methodArgs?: MethodArgs
     ) => [
       (
         | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
@@ -467,10 +506,32 @@ export function createProcedureMethod<
       ProcedureArgs
     ];
     transformer?: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+    voidArgs?: true;
   },
   context: Context
-): ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue> {
-  const { getProcedureAndArgs, transformer } = args;
+):
+  | ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
+  | NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue> {
+  const { getProcedureAndArgs, transformer, voidArgs } = args;
+
+  if (voidArgs) {
+    const voidMethod = (
+      opts: ProcedureOpts = {}
+    ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+      const [proc, procArgs] = getProcedureAndArgs();
+      return proc().prepare({ args: procArgs, transformer }, context, opts);
+    };
+
+    voidMethod.checkAuthorization = async (
+      opts: ProcedureOpts = {}
+    ): Promise<ProcedureAuthorizationStatus> => {
+      const [proc, procArgs] = getProcedureAndArgs();
+
+      return proc().checkAuthorization(procArgs, context, opts);
+    };
+
+    return voidMethod;
+  }
 
   const method = (
     methodArgs: MethodArgs,
@@ -542,7 +603,7 @@ export function assertFormatValid(address: string, ss58Format: number): void {
 
   if (address !== encodedAddress) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.ValidationError,
       message: "The supplied address is not encoded with the chain's SS58 format",
       data: {
         ss58Format,

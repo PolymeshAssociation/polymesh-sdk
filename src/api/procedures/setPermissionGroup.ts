@@ -11,8 +11,9 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, Identity, isEntity, TransactionPermissions, TxGroup } from '~/types';
+import { ErrorCode, Identity, TransactionPermissions, TxGroup } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
+import { isEntity } from '~/utils';
 import {
   permissionGroupIdentifierToAgentGroup,
   stringToIdentityId,
@@ -106,7 +107,7 @@ export async function prepareSetPermissionGroup(
     );
     if (fullGroupAgents.length === 1) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.EntityInUse,
         message:
           'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions',
       });
@@ -115,7 +116,7 @@ export async function prepareSetPermissionGroup(
 
   if (!currentAgents.find(({ agent }) => agent.did === did)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The target must already be an Agent for the Security Token',
     });
   }
@@ -134,7 +135,7 @@ export async function prepareSetPermissionGroup(
   } else {
     if (group.isEqual(currentGroup)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The Agent is already part of this permission group',
       });
     }
@@ -174,17 +175,9 @@ export function getAuthorization(
  */
 export function prepareStorage(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
-  { group }: Params
+  { group: { token } }: Params
 ): Storage {
   const { context } = this;
-
-  let token: string | SecurityToken;
-
-  if (isEntity(group)) {
-    ({ ticker: token } = group);
-  } else {
-    ({ token } = group);
-  }
 
   return {
     token: getToken(token, context),

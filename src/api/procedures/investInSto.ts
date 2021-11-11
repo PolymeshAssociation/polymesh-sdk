@@ -151,7 +151,7 @@ export async function prepareInvestInSto(
 
   if (sale !== StoSaleStatus.Live || timing !== StoTimingStatus.Started) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The STO is not accepting investments at the moment',
     });
   }
@@ -160,7 +160,7 @@ export async function prepareInvestInSto(
 
   if (priceTotal.lt(minInvestment)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Minimum investment not reached',
       data: { priceTotal },
     });
@@ -168,7 +168,7 @@ export async function prepareInvestInSto(
 
   if (freeTokenBalance.lt(priceTotal)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.InsufficientBalance,
       message: 'The Portfolio does not have enough free balance for this investment',
       data: { free: freeTokenBalance, priceTotal },
     });
@@ -176,7 +176,7 @@ export async function prepareInvestInSto(
 
   if (remainingTotal.lt(purchaseAmount)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: `The STO does not have enough remaining tokens${
         maxPrice ? ' below the stipulated max price' : ''
       }`,

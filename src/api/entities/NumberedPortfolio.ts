@@ -9,7 +9,7 @@ import {
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier, ProcedureMethod } from '~/types';
+import { Ensured, EventIdentifier, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
 import {
   middlewareEventToEventIdentifier,
   numberToU64,
@@ -38,7 +38,7 @@ export class NumberedPortfolio extends Portfolio {
   }
 
   /**
-   * portfolio identifier number
+   * Portfolio identifier number
    */
   public id: BigNumber;
 
@@ -53,7 +53,7 @@ export class NumberedPortfolio extends Portfolio {
     this.id = id;
 
     this.delete = createProcedureMethod(
-      { getProcedureAndArgs: () => [deletePortfolio, { did, id }] },
+      { getProcedureAndArgs: () => [deletePortfolio, { did, id }], voidArgs: true },
       context
     );
     this.modifyName = createProcedureMethod(
@@ -68,7 +68,7 @@ export class NumberedPortfolio extends Portfolio {
    * @note required role:
    *   - Portfolio Custodian
    */
-  public delete: ProcedureMethod<void, void>;
+  public delete: NoArgsProcedureMethod<void>;
 
   /**
    * Rename portfolio
@@ -99,7 +99,7 @@ export class NumberedPortfolio extends Portfolio {
   }
 
   /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this portfolio was created
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Portfolio was created
    *
    * @note uses the middleware
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned

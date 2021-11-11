@@ -163,6 +163,7 @@ interface SecurityTokenOptions {
   permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
   isEqual?: boolean;
   exists?: boolean;
+  toJson?: string;
 }
 
 interface AuthorizationRequestOptions {
@@ -359,6 +360,7 @@ let securityTokenPermissionsGetGroupsStub: SinonStub;
 let securityTokenPermissionsGetAgentsStub: SinonStub;
 let securityTokenIsEqualStub: SinonStub;
 let securityTokenExistsStub: SinonStub;
+let securityTokenToJsonStub: SinonStub;
 let authorizationRequestExistsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
@@ -775,6 +777,7 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   },
   isEqual: false,
   exists: true,
+  toJson: 'SOME_TICKER',
 };
 let securityTokenOptions = defaultSecurityTokenOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
@@ -1019,7 +1022,10 @@ function configureVenue(opts: VenueOptions): void {
   Object.assign(mockInstanceContainer.venue, venue);
   venueConstructorStub.callsFake(args => {
     const value = merge({}, venue, args);
-    Object.setPrototypeOf(value, require('~/internal').Venue.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Venue.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Venue.prototype);
     return value;
   });
 }
@@ -1061,6 +1067,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     const value = merge({}, numberedPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Portfolio.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
     Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
     return value;
@@ -1108,6 +1115,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     const value = merge({}, defaultPortfolio, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Portfolio.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
     Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
     return value;
@@ -1140,7 +1148,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
   const customPermissionGroup = ({
     uuid: 'customPermissionGroup',
     id: opts.id,
-    ticker: opts.ticker,
+    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: customPermissionGroupIsEqualStub.returns(opts.isEqual),
     exists: customPermissionGroupExistsStub.resolves(opts.exists),
@@ -1148,10 +1156,11 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
 
   Object.assign(mockInstanceContainer.customPermissionGroup, customPermissionGroup);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  customPermissionGroupConstructorStub.callsFake(args => {
+  customPermissionGroupConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, customPermissionGroup, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.PermissionGroup.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(
       entities.CustomPermissionGroup.prototype,
       entities.PermissionGroup.prototype
@@ -1183,7 +1192,7 @@ function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
 function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void {
   const knownPermissionGroup = ({
     uuid: 'knownPermissionGroup',
-    ticker: opts.ticker,
+    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     type: opts.type,
     getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: knownPermissionGroupIsEqualStub.returns(opts.isEqual),
@@ -1192,10 +1201,11 @@ function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void 
 
   Object.assign(mockInstanceContainer.knownPermissionGroup, knownPermissionGroup);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  knownPermissionGroupConstructorStub.callsFake(args => {
+  knownPermissionGroupConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, knownPermissionGroup, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
+    Object.setPrototypeOf(entities.PermissionGroup.prototype, entities.Entity.prototype);
     Object.setPrototypeOf(
       entities.KnownPermissionGroup.prototype,
       entities.PermissionGroup.prototype
@@ -1238,7 +1248,10 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
   authorizationRequestConstructorStub.callsFake(args => {
     const value = merge({}, authorizationRequest, args);
-    Object.setPrototypeOf(value, require('~/internal').AuthorizationRequest.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.AuthorizationRequest.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.AuthorizationRequest.prototype);
     return value;
   });
 }
@@ -1298,12 +1311,16 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     },
     isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
     exists: securityTokenExistsStub.resolves(opts.exists),
+    toJson: securityTokenToJsonStub.returns(opts.toJson),
   } as unknown) as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.callsFake(args => {
     const value = merge({}, securityToken, args);
-    Object.setPrototypeOf(value, require('~/internal').SecurityToken.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.SecurityToken.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.SecurityToken.prototype);
     return value;
   });
 }
@@ -1327,6 +1344,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenPermissionsGetAgentsStub = sinon.stub();
   securityTokenIsEqualStub = sinon.stub();
   securityTokenExistsStub = sinon.stub();
+  securityTokenToJsonStub = sinon.stub();
 
   securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
 
@@ -1349,7 +1367,10 @@ function configureTickerReservation(opts: TickerReservationOptions): void {
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.callsFake(args => {
     const value = merge({}, tickerReservation, args);
-    Object.setPrototypeOf(value, require('~/internal').TickerReservation.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.TickerReservation.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.TickerReservation.prototype);
     return value;
   });
 }
@@ -1411,7 +1432,10 @@ function configureIdentity(opts: IdentityOptions): void {
   Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.callsFake(args => {
     const value = merge({}, identity, args);
-    Object.setPrototypeOf(value, require('~/internal').Identity.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Identity.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Identity.prototype);
     return value;
   });
 }
@@ -1475,7 +1499,10 @@ function configureInstruction(opts: InstructionOptions): void {
   Object.assign(mockInstanceContainer.instruction, instruction);
   instructionConstructorStub.callsFake(args => {
     const value = merge({}, instruction, args);
-    Object.setPrototypeOf(value, require('~/internal').Instruction.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Instruction.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Instruction.prototype);
     return value;
   });
 }
@@ -1520,7 +1547,10 @@ function configureAccount(opts: AccountOptions): void {
   Object.assign(mockInstanceContainer.account, account);
   accountConstructorStub.callsFake(args => {
     const value = merge({}, account, args);
-    Object.setPrototypeOf(value, require('~/internal').Account.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Account.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Account.prototype);
     return value;
   });
 }
@@ -1560,15 +1590,19 @@ function configureSto(opts: StoOptions): void {
   const sto = ({
     uuid: 'sto',
     details: stoDetailsStub.resolves(details),
-    ticker: opts.ticker,
+    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     id: opts.id,
     exists: stoExistsStub.resolves(opts.exists),
   } as unknown) as MockSto;
 
   Object.assign(mockInstanceContainer.sto, sto);
-  stoConstructorStub.callsFake(args => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  stoConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, sto, args);
-    Object.setPrototypeOf(value, require('~/internal').Sto.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Sto.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Sto.prototype);
     return value;
   });
 }
@@ -1605,7 +1639,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     uuid: 'checkpoint',
     createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
     totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
-    ticker: opts.ticker,
+    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     id: opts.id,
     exists: checkpointExistsStub.resolves(opts.exists),
     allBalances: checkpointAllBalancesStub.resolves(allBalances),
@@ -1613,9 +1647,13 @@ function configureCheckpoint(opts: CheckpointOptions): void {
   } as unknown) as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
-  checkpointConstructorStub.callsFake(args => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  checkpointConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, checkpoint, args);
-    Object.setPrototypeOf(value, require('~/internal').Checkpoint.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Checkpoint.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Checkpoint.prototype);
     return value;
   });
 }
@@ -1645,7 +1683,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
   const checkpointSchedule = ({
     uuid: 'checkpointSchedule',
     id: opts.id,
-    ticker: opts.ticker,
+    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     start: opts.start,
     period: opts.period,
     expiryDate: opts.expiryDate,
@@ -1655,9 +1693,13 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
   } as unknown) as MockCheckpointSchedule;
 
   Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
-  checkpointScheduleConstructorStub.callsFake(args => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  checkpointScheduleConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, checkpointSchedule, args);
-    Object.setPrototypeOf(value, require('~/internal').CheckpointSchedule.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.CheckpointSchedule.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.CheckpointSchedule.prototype);
     return value;
   });
 }
@@ -1684,7 +1726,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
   const corporateAction = ({
     uuid: 'corporateAction',
     id: opts.id,
-    ticker: opts.ticker,
+    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     kind: opts.kind,
     declarationDate: opts.declarationDate,
     description: opts.description,
@@ -1695,9 +1737,17 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
   } as unknown) as MockCorporateAction;
 
   Object.assign(mockInstanceContainer.corporateAction, corporateAction);
-  corporateActionConstructorStub.callsFake(args => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  corporateActionConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, corporateAction, args);
-    Object.setPrototypeOf(value, require('~/internal').CorporateAction.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.CorporateActionBase.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(
+      entities.CorporateAction.prototype,
+      entities.CorporateActionBase.prototype
+    );
+    Object.setPrototypeOf(value, entities.CorporateAction.prototype);
     return value;
   });
 }
@@ -1729,7 +1779,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
   const dividendDistribution = ({
     uuid: 'dividendDistribution',
     id: opts.id,
-    ticker: opts.ticker,
+    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     kind: CorporateActionKind.UnpredictableBenefit,
     declarationDate: opts.declarationDate,
     description: opts.description,
@@ -1749,9 +1799,17 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
   } as unknown) as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
-  dividendDistributionConstructorStub.callsFake(args => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dividendDistributionConstructorStub.callsFake(({ ticker, ...args } = {}) => {
     const value = merge({}, dividendDistribution, args);
-    Object.setPrototypeOf(value, require('~/internal').DividendDistribution.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.CorporateActionBase.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(
+      entities.DividendDistribution.prototype,
+      entities.CorporateActionBase.prototype
+    );
+    Object.setPrototypeOf(value, entities.DividendDistribution.prototype);
     return value;
   });
 }

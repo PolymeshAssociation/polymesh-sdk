@@ -6,6 +6,7 @@ import {
   PolymeshTransaction,
   PolymeshTransactionBatch,
   PostTransactionValue,
+  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import {
@@ -16,6 +17,7 @@ import {
   ProcedureAuthorizationStatus,
   ProcedureOpts,
   SignerType,
+  TxTag,
 } from '~/types';
 import {
   MapMaybePostTransactionValue,
@@ -173,7 +175,11 @@ export class Procedure<
 
     const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
-    if (typeof roles !== 'boolean' && typeof roles !== 'string') {
+    if (typeof roles === 'boolean') {
+      rolesResult = { result: roles };
+    } else if (typeof roles === 'string') {
+      rolesResult = { result: false, message: roles };
+    } else {
       identity = await fetchIdentity();
       noIdentity = !identity;
       rolesResult = { result: false, missingRoles: roles };
@@ -181,10 +187,6 @@ export class Procedure<
       if (identity) {
         rolesResult = await identity.checkRoles(roles);
       }
-    } else if (typeof roles === 'string') {
-      rolesResult = { result: false, message: roles };
-    } else {
-      rolesResult = { result: roles };
     }
 
     let agentPermissionsResult: CheckPermissionsResult<SignerType.Identity>;
@@ -194,45 +196,32 @@ export class Procedure<
 
     const accountFrozenPromise = account.isFrozen();
 
-    if (typeof signerPermissions !== 'boolean' && typeof signerPermissions !== 'string') {
-      signerPermissionsAwaitable = account.checkPermissions(signerPermissions);
+    if (typeof signerPermissions === 'boolean') {
+      signerPermissionsAwaitable = { result: signerPermissions };
     } else if (typeof signerPermissions === 'string') {
       signerPermissionsAwaitable = { result: false, message: signerPermissions };
     } else {
-      signerPermissionsAwaitable = { result: signerPermissions };
+      signerPermissionsAwaitable = account.checkPermissions(signerPermissions);
     }
 
-    if (typeof agentPermissions !== 'boolean' && typeof agentPermissions !== 'string') {
+    if (typeof agentPermissions === 'boolean') {
+      agentPermissionsResult = { result: agentPermissions };
+    } else if (typeof agentPermissions === 'string') {
+      agentPermissionsResult = { result: false, message: agentPermissions };
+    } else {
       const { tokens, transactions } = agentPermissions;
 
       agentPermissionsResult = { result: true };
 
       if (tokens?.length && transactions?.length) {
-        if (tokens.length > 1) {
-          throw new PolymeshError({
-            code: ErrorCode.FatalError,
-            message:
-              'Procedures cannot require permissions for more than one Security Token. Please contact the Polymath team',
-          });
-        }
+        assertOnlyOneToken(tokens);
 
         identity = await fetchIdentity();
 
         noIdentity = !identity;
 
-        agentPermissionsResult = { result: false, missingPermissions: transactions };
-
-        if (identity) {
-          agentPermissionsResult = await identity.tokenPermissions.checkPermissions({
-            token: tokens[0],
-            transactions,
-          });
-        }
+        agentPermissionsResult = await getAgentPermissionsResult(identity, tokens[0], transactions);
       }
-    } else if (typeof agentPermissions === 'string') {
-      agentPermissionsResult = { result: false, message: agentPermissions };
-    } else {
-      agentPermissionsResult = { result: agentPermissions };
     }
 
     const hasSignerPermissions = await signerPermissionsAwaitable;
@@ -447,7 +436,10 @@ export class Procedure<
 
       return returnValue;
     } catch (err) {
-      throw new PolymeshError({ code: err.code || ErrorCode.FatalError, message: err.message });
+      throw new PolymeshError({
+        code: err.code || ErrorCode.UnexpectedError,
+        message: err.message,
+      });
     } finally {
       procedure.cleanup();
     }
@@ -566,4 +558,33 @@ export class Procedure<
 
     return context;
   }
+}
+
+/**
+ * @hidden
+ */
+function assertOnlyOneToken(tokens: SecurityToken[]) {
+  if (tokens.length > 1) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message:
+        'Procedures cannot require permissions for more than one Security Token. Please contact the Polymath team',
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+async function getAgentPermissionsResult(
+  identity: Identity | null,
+  token: SecurityToken,
+  transactions: TxTag[] | null
+): Promise<CheckPermissionsResult<SignerType.Identity>> {
+  return identity
+    ? identity.tokenPermissions.checkPermissions({
+        token,
+        transactions,
+      })
+    : { result: false, missingPermissions: transactions };
 }

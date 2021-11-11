@@ -121,28 +121,6 @@ describe('redeemToken procedure', () => {
     ).rejects.toThrow('Insufficient free balance');
   });
 
-  test('should throw an error if the security token is not divisible', () => {
-    entityMockUtils.configureMocks({
-      defaultPortfolioOptions: {
-        tokenBalances: [
-          {
-            token: new SecurityToken({ ticker }, mockContext),
-            free: new BigNumber(500),
-          } as PortfolioBalance,
-        ],
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    return expect(
-      prepareRedeemToken.call(proc, {
-        ticker,
-        amount: new BigNumber(100.5),
-      })
-    ).rejects.toThrow('The Security Token must be divisible');
-  });
-
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
       const params = {

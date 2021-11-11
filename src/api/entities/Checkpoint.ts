@@ -1,11 +1,9 @@
-import { Vec } from '@polkadot/types/codec';
-import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { CheckpointId, IdentityId, Ticker } from 'polymesh-types/types';
 
-import { Context, Entity, Identity } from '~/internal';
+import { Context, Entity, Identity, SecurityToken } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -43,14 +41,14 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * checkpoint identifier number
+   * Checkpoint identifier number
    */
   public id: BigNumber;
 
   /**
-   * ticker of the Security Token whose balances are being recorded
+   * Security Token whose balances are being recorded in this Checkpoint
    */
-  public ticker: string;
+  public token: SecurityToken;
 
   /**
    * @hidden
@@ -61,14 +59,18 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.ticker = ticker;
+    this.token = new SecurityToken({ ticker }, context);
   }
 
   /**
    * Retrieve the Security Token's total supply at this checkpoint
    */
   public async totalSupply(): Promise<BigNumber> {
-    const { context, ticker, id } = this;
+    const {
+      context,
+      token: { ticker },
+      id,
+    } = this;
 
     const rawSupply = await context.polymeshApi.query.checkpoint.totalSupply(
       stringToTicker(ticker, context),
@@ -82,7 +84,11 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * Retrieve this Checkpoint's creation date
    */
   public async createdAt(): Promise<Date> {
-    const { context, ticker, id } = this;
+    const {
+      context,
+      token: { ticker },
+      id,
+    } = this;
 
     const creationTime = await context.polymeshApi.query.checkpoint.timestamps(
       stringToTicker(ticker, context),
@@ -102,16 +108,18 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   ): Promise<ResultSet<IdentityBalance>> {
     const {
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { checkpoint, asset },
+        },
       },
       context,
-      ticker,
+      token: { ticker },
       id,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const { entries, lastKey: next } = await requestPaginated(query.asset.balanceOf, {
+    const { entries, lastKey: next } = await requestPaginated(asset.balanceOf, {
       arg: rawTicker,
       paginationOpts,
     });
@@ -130,9 +138,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       balanceUpdatesMultiParams.push(tuple(rawTicker, identityId));
     });
 
-    const rawBalanceUpdates = await query.checkpoint.balanceUpdates.multi<Vec<CheckpointId>>(
-      balanceUpdatesMultiParams
-    );
+    const rawBalanceUpdates = await checkpoint.balanceUpdates.multi<
+      QueryReturnType<typeof checkpoint.balanceUpdates>
+    >(balanceUpdatesMultiParams);
 
     const checkpointBalanceMultiParams: {
       did: string;
@@ -158,9 +166,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       }
     });
 
-    const checkpointBalances = await query.checkpoint.balance.multi<Balance>(
-      checkpointBalanceMultiParams.map(({ params }) => params)
-    );
+    const checkpointBalances = await checkpoint.balance.multi<
+      QueryReturnType<typeof checkpoint.balance>
+    >(checkpointBalanceMultiParams.map(({ params }) => params));
 
     return {
       data: [
@@ -187,7 +195,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           query: { checkpoint },
         },
       },
-      ticker,
+      token: { ticker },
       id,
     } = this;
 
@@ -227,7 +235,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       context,
-      ticker,
+      token: { ticker },
       id,
     } = this;
 
@@ -240,10 +248,10 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * Return the Checkpoint's ticker and identifier
    */
   public toJson(): HumanReadable {
-    const { ticker, id } = this;
+    const { token, id } = this;
 
     return toHumanReadable({
-      ticker,
+      ticker: token,
       id,
     });
   }

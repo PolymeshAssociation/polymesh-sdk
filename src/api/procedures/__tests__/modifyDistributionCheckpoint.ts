@@ -182,7 +182,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         distribution: {
-          ticker,
+          token: { ticker },
         },
       } as Params;
 

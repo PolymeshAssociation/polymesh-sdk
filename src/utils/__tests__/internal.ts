@@ -5,11 +5,17 @@ import { range } from 'lodash';
 import { ModuleName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { Context, PostTransactionValue, Procedure } from '~/internal';
+import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { CalendarPeriod, CalendarUnit, ClaimType, CommonKeyring, CountryCode } from '~/types';
+import {
+  CalendarPeriod,
+  CalendarUnit,
+  ClaimType,
+  CommonKeyring,
+  CountryCode,
+  ProcedureMethod,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
@@ -492,8 +498,8 @@ describe('createProcedureMethod', () => {
         checkAuthorization,
       } as unknown) as Procedure<number, void>);
 
-    const method = createProcedureMethod(
-      { getProcedureAndArgs: (args: number) => [fakeProcedure, args], transformer },
+    const method: ProcedureMethod<number, void> = createProcedureMethod(
+      { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
       context
     );
 
@@ -505,6 +511,30 @@ describe('createProcedureMethod', () => {
     await method.checkAuthorization(procArgs);
 
     sinon.assert.calledWithExactly(checkAuthorization, procArgs, context, {});
+  });
+
+  test('should return a NoArgsProcedureMethod object', async () => {
+    const prepare = sinon.stub();
+    const checkAuthorization = sinon.stub();
+    const transformer = sinon.stub();
+    const fakeProcedure = (): Procedure<void, void> =>
+      (({
+        prepare,
+        checkAuthorization,
+      } as unknown) as Procedure<void, void>);
+
+    const method = createProcedureMethod(
+      { getProcedureAndArgs: () => [fakeProcedure, undefined], transformer, voidArgs: true },
+      context
+    );
+
+    await method();
+
+    sinon.assert.calledWithExactly(prepare, { transformer, args: undefined }, context, {});
+
+    await method.checkAuthorization();
+
+    sinon.assert.calledWithExactly(checkAuthorization, undefined, context, {});
   });
 });
 

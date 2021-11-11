@@ -234,7 +234,7 @@ export abstract class PolymeshTransactionBase<
             error = { code: ErrorCode.TransactionRejectedByUser };
           } else {
             // unexpected error
-            error = { code: ErrorCode.FatalError, message: err.message };
+            error = { code: ErrorCode.UnexpectedError, message: err.message };
           }
 
           reject(new PolymeshError(error));

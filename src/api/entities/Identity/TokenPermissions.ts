@@ -173,24 +173,11 @@ export class TokenPermissions extends Namespace<Identity> {
 
       const { type, exceptions, values } = permissions;
 
-      /*
-       * if type is include:
-       *  the passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
-       * if type is exclude:
-       *  the passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
-       */
-      const isPresent = (tag: TxTag, flipResult: boolean) => {
-        const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
-        const isInExceptions = !!exceptions?.includes(tag);
-
-        const result = isInValues && !isInExceptions;
-
-        return flipResult ? result : !result;
-      };
-
       const isInclude = type === PermissionType.Include;
 
-      missingPermissions = transactions.filter(tag => !isPresent(tag, isInclude));
+      missingPermissions = transactions.filter(
+        tag => !isPresent(tag, values, exceptions, isInclude)
+      );
     }
 
     if (transactions === null) {
@@ -302,7 +289,7 @@ export class TokenPermissions extends Namespace<Identity> {
 
     if (rawGroupPermissions.isNone) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: 'This Identity is no longer an Agent for this Security Token',
       });
     }
@@ -416,4 +403,28 @@ export class TokenPermissions extends Namespace<Identity> {
       count,
     };
   }
+}
+
+/**
+ * @hidden
+ *
+ * Check whether a tag is "present" in (represented by) a set of values and exceptions, using the following criteria:
+ *
+ * - if type is include:
+ *   the passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
+ * - if type is exclude:
+ *   the passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
+ */
+function isPresent(
+  tag: TxTag,
+  values: (TxTag | ModuleName)[],
+  exceptions: TxTag[] | undefined,
+  flipResult: boolean
+) {
+  const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
+  const isInExceptions = !!exceptions?.includes(tag);
+
+  const result = isInValues && !isInExceptions;
+
+  return flipResult ? result : !result;
 }

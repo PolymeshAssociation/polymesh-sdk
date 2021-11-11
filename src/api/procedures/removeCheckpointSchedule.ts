@@ -42,7 +42,7 @@ export async function prepareRemoveCheckpointSchedule(
 
   if (!exists) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: 'Schedule no longer exists. It was either removed or it expired',
     });
   }
@@ -50,11 +50,15 @@ export async function prepareRemoveCheckpointSchedule(
   const rawScheduleId = numberToU64(id, context);
 
   const scheduleRefCount = await query.checkpoint.scheduleRefCount(rawTicker, rawScheduleId);
+  const referenceCount = u32ToBigNumber(scheduleRefCount);
 
-  if (u32ToBigNumber(scheduleRefCount).gt(0)) {
+  if (referenceCount.gt(0)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You cannot remove this Schedule',
+      code: ErrorCode.EntityInUse,
+      message: 'This Schedule is being referenced by other Entities. It cannot be removed',
+      data: {
+        referenceCount,
+      },
     });
   }
 

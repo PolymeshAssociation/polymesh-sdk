@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 
-import { CustomPermissionGroup, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { CustomPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -48,12 +48,15 @@ export async function prepareSetGroupPermissions(
 
   if (isEqual(transactionPermissions, transactions)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'New permissions are the same as the current ones',
     });
   }
 
-  const { ticker, id } = group;
+  const {
+    token: { ticker },
+    id,
+  } = group;
   const rawTicker = stringToTicker(ticker, context);
   const rawAgId = numberToU32(id, context);
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
@@ -75,14 +78,13 @@ export async function prepareSetGroupPermissions(
  */
 export function getAuthorization(
   this: Procedure<Params>,
-  { group: { ticker } }: Params
+  { group: { token } }: Params
 ): ProcedureAuthorization {
-  const { context } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.SetGroupPermissions],
       portfolios: [],
-      tokens: [new SecurityToken({ ticker }, context)],
+      tokens: [token],
     },
   };
 }

@@ -1,10 +1,8 @@
-import { bool } from '@polkadot/types';
-
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TargetTreatment, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import {
   boolToBoolean,
   corporateActionIdentifierToCaId,
@@ -31,7 +29,10 @@ export async function preparePayDividends(
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: {
+        tx,
+        query: { capitalDistribution },
+      },
     },
     context,
   } = this;
@@ -39,7 +40,7 @@ export async function preparePayDividends(
     distribution: {
       targets: { identities, treatment },
       id: localId,
-      ticker,
+      token: { ticker },
       paymentDate,
       expiryDate,
     },
@@ -59,7 +60,7 @@ export async function preparePayDividends(
 
   if (excluded.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Some of the supplied Identities are not included in this Distribution',
       data: { excluded },
     });
@@ -69,9 +70,9 @@ export async function preparePayDividends(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
-  const holderPaidList = await query.capitalDistribution.holderPaid.multi<bool>(
-    rawDids.map(rawDid => tuple(rawCaId, rawDid))
-  );
+  const holderPaidList = await capitalDistribution.holderPaid.multi<
+    QueryReturnType<typeof capitalDistribution.holderPaid>
+  >(rawDids.map(rawDid => tuple(rawCaId, rawDid)));
 
   const alreadyClaimedList: Identity[] = [];
   holderPaidList.forEach((holderPaid, i) => {
@@ -82,7 +83,7 @@ export async function preparePayDividends(
 
   if (alreadyClaimedList.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message:
         'Some of the supplied Identities have already either been paid or claimed their share of the Distribution',
       data: {

@@ -150,6 +150,11 @@ describe('Permissions class', () => {
     });
 
     test('should retrieve a specific Custom Permission Group', async () => {
+      entityMockUtils.configureMocks({
+        customPermissionGroupOptions: {
+          ticker,
+        },
+      });
       const id = new BigNumber(1);
 
       const result = await permissions.getGroup({ id });
@@ -168,6 +173,11 @@ describe('Permissions class', () => {
     });
 
     test('should retrieve a specific Known Permission Group', async () => {
+      entityMockUtils.configureMocks({
+        knownPermissionGroupOptions: {
+          ticker,
+        },
+      });
       const type = PermissionGroupType.Full;
 
       const result = await permissions.getGroup({ type });
