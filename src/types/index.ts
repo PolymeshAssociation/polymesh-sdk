@@ -612,6 +612,7 @@ export type CommonKeyring = Pick<
   | 'addFromSeed'
   | 'addFromUri'
   | 'addFromMnemonic'
+  | 'addFromAddress'
   | 'addPair'
   | 'encodeAddress'
 >;

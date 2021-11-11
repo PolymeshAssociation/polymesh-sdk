@@ -7,6 +7,7 @@ import { TxTags } from 'polymesh-types/types';
 import semver from 'semver';
 import sinon from 'sinon';
 
+import { VaultSigner } from '~/externalSigners/VaultSigner';
 import { Account, Identity, TickerReservation, TransactionQueue } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
@@ -106,6 +107,7 @@ describe('Polymesh Class', () => {
         accountUri: undefined,
         accountMnemonic: undefined,
         keyring: undefined,
+        signer: undefined,
       });
     });
 
@@ -122,10 +124,11 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        keyring,
         accountSeed: undefined,
         accountUri: undefined,
         accountMnemonic: undefined,
+        keyring,
+        signer: undefined,
       });
     });
 
@@ -142,10 +145,11 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        keyring: { keyring },
         accountSeed: undefined,
         accountUri: undefined,
         accountMnemonic: undefined,
+        keyring: { keyring },
+        signer: undefined,
       });
     });
 
@@ -166,6 +170,28 @@ describe('Polymesh Class', () => {
         accountSeed: undefined,
         accountMnemonic: undefined,
         keyring: undefined,
+        signer: undefined,
+      });
+    });
+
+    test('should instantiate Context with VaultSigner and return a Polymesh instance', async () => {
+      const createStub = dsMockUtils.getContextCreateStub();
+      const signer = new VaultSigner('http://example.com', 'some_secret');
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        signer,
+      });
+
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledWith(createStub, {
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        accountSeed: undefined,
+        accountUri: undefined,
+        accountMnemonic: undefined,
+        keyring: undefined,
+        signer,
       });
     });
 
@@ -187,6 +213,7 @@ describe('Polymesh Class', () => {
         accountSeed: undefined,
         accountUri: undefined,
         keyring: undefined,
+        signer: undefined,
       });
     });
 
@@ -214,6 +241,7 @@ describe('Polymesh Class', () => {
         accountSeed: undefined,
         accountMnemonic: undefined,
         keyring: undefined,
+        signer: undefined,
       });
     });
 
@@ -306,8 +334,8 @@ describe('Polymesh Class', () => {
         accountUri: undefined,
         accountMnemonic: undefined,
         keyring: undefined,
+        signer,
       });
-      sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
     });
 
     test('should throw if Context fails in the connection process', async () => {

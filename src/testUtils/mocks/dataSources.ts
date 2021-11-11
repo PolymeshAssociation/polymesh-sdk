@@ -340,6 +340,7 @@ interface KeyringOptions {
   addFromUri?: Pair;
   addFromSeed?: Pair;
   addFromMnemonic?: Pair;
+  addFromAddress?: Pair;
   addPair?: Pair;
   encodeAddress?: string;
   /**
@@ -869,7 +870,7 @@ function initQueryMulti(): void {
  * @hidden
  */
 function initApi(): void {
-  mockInstanceContainer.apiInstance.registry = ('registry' as unknown) as Registry;
+  mockInstanceContainer.apiInstance.registry = ({ createType: jest.fn() } as unknown) as Registry;
   mockInstanceContainer.apiInstance.createType = sinon.stub();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
 
@@ -894,6 +895,7 @@ function configureKeyring(opts: KeyringOptions): void {
     addFromUri,
     addFromSeed,
     addFromMnemonic,
+    addFromAddress,
     addPair,
     encodeAddress,
   } = opts;
@@ -906,6 +908,7 @@ function configureKeyring(opts: KeyringOptions): void {
     addFromSeed: sinon.stub().returns(addFromSeed),
     addFromUri: sinon.stub().returns(addFromUri),
     addFromMnemonic: sinon.stub().returns(addFromMnemonic),
+    addFromAddress: sinon.stub().returns(addFromAddress),
     addPair: sinon.stub().returns(addPair),
     encodeAddress: sinon.stub().returns(encodeAddress),
   };

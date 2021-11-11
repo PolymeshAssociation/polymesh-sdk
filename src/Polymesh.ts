@@ -1,5 +1,4 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -13,6 +12,7 @@ import { satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import WebSocketAsPromised from 'websocket-as-promised';
 
+import { ExternalSigner } from '~/externalSigners/ExternalSigner';
 import {
   Account,
   claimClassicTicker,
@@ -33,6 +33,7 @@ import {
   AccountBalance,
   CommonKeyring,
   ErrorCode,
+  KeyringPair,
   MiddlewareConfig,
   NetworkProperties,
   ProcedureMethod,
@@ -64,7 +65,7 @@ import {
 
 interface ConnectParamsBase {
   nodeUrl: string;
-  signer?: PolkadotSigner;
+  signer?: ExternalSigner;
   middleware?: MiddlewareConfig;
 }
 
@@ -253,10 +254,6 @@ export class Polymesh {
         });
       }
 
-      if (signer) {
-        polymeshApi.setSigner(signer);
-      }
-
       context = await Context.create({
         polymeshApi,
         middlewareApi,
@@ -264,6 +261,7 @@ export class Polymesh {
         accountUri,
         accountMnemonic,
         keyring,
+        signer,
       });
     } catch (err) {
       const { message, code } = err;
@@ -736,6 +734,25 @@ export class Polymesh {
     const { address } = this.context.addPair(params);
 
     return new Account({ address }, context);
+  }
+
+  /**
+   * Adds a new signing key from an external signer. This will not change the current signer. For that,
+   *   you must explicitly call [[setSigner]]
+   *
+   * @param keyId unique identifier for the key in the external signer
+   */
+  public async addExternalSignatory(keyId: string): Promise<KeyringPair> {
+    return this.context.addExternalSignatory(keyId);
+  }
+
+  /**
+   * Sets an external signer to use
+   * @throws if an external signer is already set
+   * @param signer The external signer to use
+   */
+  public setExternalSigner(signer: ExternalSigner): void {
+    return this.context.setExternalSigner(signer);
   }
 
   /**

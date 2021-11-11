@@ -18,6 +18,7 @@ import {
   TxTag,
 } from 'polymesh-types/types';
 
+import { ExternalSigner } from '~/externalSigners/ExternalSigner';
 import { Account, DividendDistribution, Identity, PolymeshError, SecurityToken } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
@@ -34,6 +35,7 @@ import {
   ErrorCode,
   KeyringPair,
   PlainTransactionArgument,
+  PolkadotSigner,
   ResultSet,
   SimpleEnumTransactionArgument,
   SubCallback,
@@ -82,6 +84,7 @@ interface ConstructorParams {
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
   ss58Format: number;
+  signer?: ExternalSigner;
 }
 
 interface AddPairBaseParams {
@@ -121,11 +124,13 @@ export class Context {
 
   private _polymeshApi: ApiPromise;
 
+  private _externalSigner: ExternalSigner | undefined;
+
   /**
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, keyring, ss58Format } = params;
+    const { polymeshApi, middlewareApi, keyring, ss58Format, signer } = params;
 
     this._middlewareApi = middlewareApi;
     this._polymeshApi = polymeshApi;
@@ -138,6 +143,13 @@ export class Context {
     if (currentPair) {
       assertFormatValid(currentPair.address, ss58Format);
       this.currentPair = currentPair;
+    }
+    if (signer) {
+      if (signer.configure) {
+        signer.configure(polymeshApi.registry, ss58Format);
+      }
+      this._externalSigner = signer;
+      this.polymeshApi.setSigner(signer);
     }
   }
 
@@ -169,6 +181,7 @@ export class Context {
     keyring?: CommonKeyring | UiKeyring;
     accountUri?: string;
     accountMnemonic?: string;
+    signer?: PolkadotSigner;
   }): Promise<Context> {
     const {
       polymeshApi,
@@ -177,6 +190,7 @@ export class Context {
       keyring: passedKeyring,
       accountUri,
       accountMnemonic,
+      signer,
     } = params;
 
     const ss58Format: number | undefined = u8ToBigNumber(
@@ -197,7 +211,7 @@ export class Context {
       });
     }
 
-    const context = new Context({ polymeshApi, middlewareApi, keyring, ss58Format });
+    const context = new Context({ polymeshApi, middlewareApi, keyring, ss58Format, signer });
 
     context.isArchiveNode = await context.isCurrentNodeArchive();
 
@@ -262,7 +276,52 @@ export class Context {
    */
   public addPair(params: AddPairParams): KeyringPair {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return Context._addPair({ ...params, keyring: this.keyring })!;
+    return Context._addPair({
+      ...params,
+      keyring: this.keyring,
+    })!;
+  }
+
+  /**
+   * Sets an external signer to be used with the SDK
+   * @param signer The ExternalSigner to set
+   * @throws if an ExternalSigner has already been set
+   */
+  public setExternalSigner(signer: ExternalSigner): void {
+    if (this._externalSigner) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'An external signer has already been set',
+      });
+    }
+    if (signer.configure) {
+      signer.configure(this.polymeshApi.registry, this.ss58Format);
+    }
+    this._externalSigner = signer;
+    this.polymeshApi.setSigner(signer);
+  }
+
+  /**
+   * Add a signing key that is persisted in an external signer
+   * @param keyId A unique identifier of the key in the external signer
+   * @throws if an ExternalSigner has not been set, of if this signer does not support that functionality
+   * @returns the keyring pair
+   */
+  public async addExternalSignatory(keyId: string): Promise<KeyringPair> {
+    if (!this._externalSigner) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'An external signer has not been set',
+      });
+    }
+    if (!this._externalSigner.addKey) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'The External Signer does not support adding keys dynamically',
+      });
+    }
+    const address = await this._externalSigner.addKey(keyId);
+    return this.keyring.addFromAddress(address);
   }
 
   /**

@@ -2,12 +2,21 @@ import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { PolymeshError } from '~/base/PolymeshError';
+import { ExternalSigner } from '~/externalSigners/ExternalSigner';
 import { Account, Context, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
+import { polymesh } from '~/polkadot/definitions';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, CorporateActionKind, TargetTreatment, TransactionArgumentType } from '~/types';
+import {
+  ClaimType,
+  CorporateActionKind,
+  ErrorCode,
+  TargetTreatment,
+  TransactionArgumentType,
+} from '~/types';
 import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
@@ -275,6 +284,18 @@ describe('Context class', () => {
       });
 
       expect(context.currentPair).toBe(undefined);
+    });
+
+    test('should call externalSigner.configure if signer implements the method', async () => {
+      const signer = { configure: jest.fn() } as ExternalSigner;
+
+      await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        signer,
+      });
+
+      expect(signer.configure).toBeCalled();
     });
   });
 
@@ -1659,6 +1680,93 @@ describe('Context class', () => {
       context.addPair({ pair });
 
       sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addPair, pair);
+    });
+  });
+
+  describe('method: addExternalSignatory', () => {
+    test('should add a new pair to the keyring via addExternalSignatory', async () => {
+      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+      const keyring = dsMockUtils.getKeyringInstance();
+      const signer = { addKey: jest.fn().mockResolvedValue(address) } as ExternalSigner;
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        keyring,
+        signer,
+      });
+
+      await context.addExternalSignatory('MyKey');
+      sinon.assert.calledWith(keyring.addFromAddress, address);
+    });
+
+    test('should throw if no signer is set', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'An external signer has not been set',
+      });
+
+      let error;
+      try {
+        await context.addExternalSignatory('MyKey');
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).toStrictEqual(expectedError);
+    });
+  });
+
+  describe('method: setExternalSigner', () => {
+    test('should set an external signer', async () => {
+      const polymeshApi = dsMockUtils.getApiInstance();
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const signer = {} as ExternalSigner;
+      context.setExternalSigner(signer);
+      sinon.assert.calledWith(polymeshApi.setSigner, signer);
+    });
+
+    test('should call configure if the signer implements it', async () => {
+      const signer = { configure: jest.fn() } as ExternalSigner;
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      context.setExternalSigner(signer);
+
+      expect(signer.configure).toBeCalledWith(context.polymeshApi.registry, context.ss58Format);
+    });
+
+    test('should throw if an external signer is already set', async () => {
+      const signer = {} as ExternalSigner;
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        signer,
+      });
+
+      let error;
+      try {
+        context.setExternalSigner(signer);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'An external signer has already been set',
+      });
+
+      expect(error).toStrictEqual(expectedError);
     });
   });
 
