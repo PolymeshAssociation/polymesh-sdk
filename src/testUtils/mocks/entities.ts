@@ -36,6 +36,8 @@ import {
   AuthorizationType,
   CalendarPeriod,
   CalendarUnit,
+  CheckPermissionsResult,
+  CheckRolesResult,
   CorporateActionDefaults,
   CorporateActionKind,
   CorporateActionTargets,
@@ -56,6 +58,7 @@ import {
   ScheduleDetails,
   SecondaryKey,
   SecurityTokenDetails,
+  SignerType,
   StoBalanceStatus,
   StoDetails,
   StoSaleStatus,
@@ -119,7 +122,9 @@ interface IdentityOptions {
   did?: string;
   hasRoles?: boolean;
   hasRole?: boolean;
-  hasPermissions?: boolean;
+  checkRoles?: CheckRolesResult;
+  tokenPermissionsHasPermissions?: boolean;
+  tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   getPrimaryKey?: Account;
   authorizations?: {
@@ -188,6 +193,7 @@ interface AccountOptions {
   isEqual?: boolean;
   exists?: boolean;
   hasPermissions?: boolean;
+  checkPermissions?: CheckPermissionsResult<SignerType.Account>;
 }
 
 interface VenueOptions {
@@ -358,7 +364,7 @@ let securityTokenToJsonStub: SinonStub;
 let authorizationRequestExistsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
-let identityHasPermissionsStub: SinonStub;
+let identityCheckRolesStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
 let identityGetPrimaryKeyStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
@@ -369,6 +375,8 @@ let identityGetTokenBalanceStub: SinonStub;
 let identityGetSecondaryKeysStub: SinonStub;
 let identityAreSecondaryKeysFrozenStub: SinonStub;
 let identityIsEqualStub: SinonStub;
+let identityTokenPermissionsHasPermissionsStub: SinonStub;
+let identityTokenPermissionsCheckPermissionsStub: SinonStub;
 let identityTokenPermissionsGetStub: SinonStub;
 let identityTokenPermissionsGetGroupStub: SinonStub;
 let identityExistsStub: SinonStub;
@@ -379,6 +387,7 @@ let accountIsFrozenStub: SinonStub;
 let accountIsEqualStub: SinonStub;
 let accountExistsStub: SinonStub;
 let accountHasPermissionsStub: SinonStub;
+let accountCheckPermissionsStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let tickerReservationExistsStub: SinonStub;
 let venueDetailsStub: SinonStub;
@@ -700,6 +709,10 @@ const defaultIdentityOptions: IdentityOptions = {
   areScondaryKeysFrozen: false,
   isEqual: true,
   tokenPermissionsGet: [],
+  tokenPermissionsCheckPermissions: {
+    result: true,
+  },
+  tokenPermissionsHasPermissions: true,
   exists: true,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
@@ -716,6 +729,9 @@ const defaultAccountOptions: AccountOptions = {
   exists: true,
   isFrozen: false,
   hasPermissions: true,
+  checkPermissions: {
+    result: true,
+  },
 };
 let accountOptions: AccountOptions = defaultAccountOptions;
 const defaultTickerReservationOptions: TickerReservationOptions = {
@@ -1385,8 +1401,8 @@ function configureIdentity(opts: IdentityOptions): void {
     uuid: 'identity',
     did: opts.did,
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
+    checkRoles: identityCheckRolesStub.resolves(opts.checkRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
-    hasPermissions: identityHasPermissionsStub.resolves(opts.hasPermissions),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
     getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
     portfolios: {},
@@ -1397,6 +1413,12 @@ function configureIdentity(opts: IdentityOptions): void {
     tokenPermissions: {
       get: identityTokenPermissionsGetStub.resolves(opts.tokenPermissionsGet),
       getGroup: identityTokenPermissionsGetGroupStub.resolves(opts.tokenPermissionsGetGroup),
+      hasPermissions: identityTokenPermissionsHasPermissionsStub.resolves(
+        opts.tokenPermissionsHasPermissions
+      ),
+      checkPermissions: identityTokenPermissionsCheckPermissionsStub.resolves(
+        opts.tokenPermissionsCheckPermissions
+      ),
     },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
@@ -1426,7 +1448,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityConstructorStub = sinon.stub();
   identityHasRolesStub = sinon.stub();
   identityHasRoleStub = sinon.stub();
-  identityHasPermissionsStub = sinon.stub();
+  identityCheckRolesStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
   identityGetPrimaryKeyStub = sinon.stub();
   identityAuthorizationsGetReceivedStub = sinon.stub();
@@ -1439,6 +1461,8 @@ function initIdentity(opts?: IdentityOptions): void {
   identityIsEqualStub = sinon.stub();
   identityTokenPermissionsGetStub = sinon.stub();
   identityTokenPermissionsGetGroupStub = sinon.stub();
+  identityTokenPermissionsHasPermissionsStub = sinon.stub();
+  identityTokenPermissionsCheckPermissionsStub = sinon.stub();
   identityExistsStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
@@ -1517,6 +1541,7 @@ function configureAccount(opts: AccountOptions): void {
     isEqual: accountIsEqualStub.returns(opts.isEqual),
     exists: accountExistsStub.resolves(opts.exists),
     hasPermissions: accountHasPermissionsStub.returns(opts.hasPermissions),
+    checkPermissions: accountCheckPermissionsStub.returns(opts.checkPermissions),
   } as unknown) as MockAccount;
 
   Object.assign(mockInstanceContainer.account, account);
@@ -1543,6 +1568,7 @@ function initAccount(opts?: AccountOptions): void {
   accountIsEqualStub = sinon.stub();
   accountExistsStub = sinon.stub();
   accountHasPermissionsStub = sinon.stub();
+  accountCheckPermissionsStub = sinon.stub();
 
   accountOptions = { ...defaultAccountOptions, ...opts };
 
@@ -2066,10 +2092,10 @@ export function getIdentityHasRoleStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.hasPermissions` method
+ * Retrieve the stub of the `Identity.tokenPermissions.hasPermissions` method
  */
-export function getIdentityHasPermissionsStub(): SinonStub {
-  return identityHasPermissionsStub;
+export function getIdentityTokenPermissionsHasPermissionsStub(): SinonStub {
+  return identityTokenPermissionsHasPermissionsStub;
 }
 
 /**
