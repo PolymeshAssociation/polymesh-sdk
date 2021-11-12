@@ -13,8 +13,8 @@ import {
   QueryProposalVotesArgs,
   QueryScopesByIdentityArgs,
   QuerySettlementsArgs,
-  QueryTickerExternalAgentHistoryArgs,
   QueryTickerExternalAgentActionsArgs,
+  QueryTickerExternalAgentHistoryArgs,
   QueryTokensByTrustedClaimIssuerArgs,
   QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
@@ -651,8 +651,8 @@ export function getHistoryOfPaymentEventsForCa(
   const query = gql`
     query GetHistoryOfPaymentEventsForCAQuery(
       $CAId: CaId!
-      $fromDate: String
-      $toDate: String
+      $fromDate: DateTime
+      $toDate: DateTime
       $count: Int
       $skip: Int
     ) {
@@ -687,7 +687,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
-  * Get the transaction history of each external agent of a token
+ * Get the transaction history of each external agent of a token
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
@@ -710,7 +710,7 @@ export function tickerExternalAgentHistory(
     variables,
   };
 }
-          
+
 /**
  * @hidden
  *
