@@ -650,7 +650,7 @@ export function getHistoryOfPaymentEventsForCa(
 ): GraphqlQuery<QueryGetHistoryOfPaymentEventsForCaArgs> {
   const query = gql`
     query GetHistoryOfPaymentEventsForCAQuery(
-      $CAId: CaId!
+      $CAId: CAId!
       $fromDate: DateTime
       $toDate: DateTime
       $count: Int
