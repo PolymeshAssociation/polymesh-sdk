@@ -11,6 +11,7 @@
     "generate:polkadot-types": "yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:tags",
     "generate:middleware-types": "graphql-codegen -r dotenv/config",
     "fetch-definitions": "cross-env node scripts/fetchDefinitions.js",
+    "update-readme": "cross-env node scripts/updateReadme.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://dev.polymesh.live --output ./src/polkadot --strict",
     "generate:tags": "cross-env node scripts/generateTxTags.js",

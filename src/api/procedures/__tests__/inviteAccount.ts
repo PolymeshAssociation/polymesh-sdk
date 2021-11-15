@@ -158,7 +158,10 @@ describe('inviteAccount procedure', () => {
       null
     );
 
-    await prepareInviteAccount.call(proc, { ...args, expiry });
+    await prepareInviteAccount.call(proc, {
+      ...args,
+      expiry,
+    });
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -242,7 +245,41 @@ describe('inviteAccount procedure', () => {
       ],
     });
 
-    entityMockUtils.getAccountGetIdentityStub().resolves(null);
+    signerToStringStub.withArgs(signer).returns(signer.address);
+    signerToStringStub.withArgs(args.targetAccount).returns(address);
+    signerToStringStub.withArgs(target).returns(address);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(
+      prepareInviteAccount.call(proc, {
+        ...args,
+        identity,
+        targetAccount: entityMockUtils.getAccountInstance({ address, getIdentity: null }),
+      })
+    ).rejects.toThrow('The target Account already has a pending invitation to join this Identity');
+  });
+
+  test('should throw an error if the passed account is already part of an Identity', () => {
+    const target = entityMockUtils.getAccountInstance({
+      address,
+    });
+    const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
+
+    const identity = entityMockUtils.getIdentityInstance({
+      getSecondaryKeys: [
+        {
+          signer,
+          permissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
+      ],
+    });
+
+    entityMockUtils.getAccountGetIdentityStub().resolves(entityMockUtils.getIdentityInstance());
 
     signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(address);
@@ -250,7 +287,7 @@ describe('inviteAccount procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareInviteAccount.call(proc, { ...args, identity })).rejects.toThrow(
-      'The target Account already has a pending invitation to join this Identity'
+      'The target Account is already part of an Identity'
     );
   });
 

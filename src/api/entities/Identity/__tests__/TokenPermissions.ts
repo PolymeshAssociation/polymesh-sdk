@@ -149,6 +149,211 @@ describe('TokenPermissions class', () => {
     });
   });
 
+  describe('method: checkPermissions', () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      entityMockUtils.cleanup();
+    });
+
+    test('should check whether the Identity has the appropriate permissions for the token', async () => {
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      let result = await tokenPermissions.checkPermissions({ token, transactions: null });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: null,
+        message: 'The Identity is not an Agent for the Security Token',
+      });
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
+      });
+
+      result = await tokenPermissions.checkPermissions({ token, transactions: null });
+
+      expect(result).toEqual({ result: true });
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
+      });
+
+      result = await tokenPermissions.checkPermissions({ token, transactions: null });
+
+      expect(result).toEqual({ result: false, missingPermissions: null });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.externalAgents.RemoveAgent],
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: [TxTags.externalAgents.RemoveAgent],
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer],
+      });
+
+      expect(result).toEqual({ result: true });
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup('PolymeshV1Pia')
+        ),
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: [TxTags.asset.CreateAsset],
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.Invest],
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: [TxTags.sto.Invest],
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.FreezeFundraiser],
+      });
+
+      expect(result).toEqual({
+        result: true,
+      });
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup('PolymeshV1Caa')
+        ),
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: [TxTags.asset.CreateAsset],
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.corporateAction.ChangeRecordDate],
+      });
+
+      expect(result).toEqual({
+        result: true,
+      });
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(1) })
+        ),
+      });
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions('Whole')
+        ),
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.corporateAction.ChangeRecordDate],
+      });
+
+      expect(result).toEqual({
+        result: true,
+      });
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            These: [
+              dsMockUtils.createMockPalletPermissions({
+                pallet_name: 'asset',
+                dispatchable_names: {
+                  Except: [dsMockUtils.createMockDispatchableName('createAsset')],
+                },
+              }),
+            ],
+          })
+        ),
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: null,
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: null,
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.asset.CreateAsset],
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: [TxTags.asset.CreateAsset],
+      });
+
+      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockExtrinsicPermissions({
+            Except: [
+              dsMockUtils.createMockPalletPermissions({
+                pallet_name: 'asset',
+                dispatchable_names: 'Whole',
+              }),
+            ],
+          })
+        ),
+      });
+
+      result = await tokenPermissions.checkPermissions({
+        token,
+        transactions: [TxTags.identity.AddClaim],
+      });
+
+      expect(result).toEqual({
+        result: true,
+      });
+      /* eslint-enable @typescript-eslint/naming-convention */
+    });
+
+    test('should throw an error if the transaction array is empty', async () => {
+      expect(tokenPermissions.checkPermissions({ token, transactions: [] })).rejects.toThrow(
+        'Cannot check Permissions for an empty transaction array'
+      );
+    });
+  });
+
   describe('method: hasPermissions', () => {
     beforeAll(() => {
       entityMockUtils.initMocks();
@@ -167,147 +372,9 @@ describe('TokenPermissions class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      let result = await tokenPermissions.hasPermissions({ token, transactions: [] });
+      const result = await tokenPermissions.hasPermissions({ token, transactions: null });
 
       expect(result).toBe(false);
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
-      });
-
-      result = await tokenPermissions.hasPermissions({ token, transactions: [] });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
-      });
-
-      result = await tokenPermissions.hasPermissions({ token, transactions: null });
-
-      expect(result).toBe(false);
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.externalAgents.RemoveAgent],
-      });
-
-      expect(result).toBe(false);
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.asset.ControllerTransfer],
-      });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Pia')
-        ),
-      });
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.asset.CreateAsset],
-      });
-
-      expect(result).toBe(false);
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.Invest],
-      });
-
-      expect(result).toBe(false);
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.FreezeFundraiser],
-      });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Caa')
-        ),
-      });
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.asset.CreateAsset],
-      });
-
-      expect(result).toBe(false);
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.corporateAction.ChangeRecordDate],
-      });
-
-      expect(result).toBe(true);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(1) })
-        ),
-      });
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockExtrinsicPermissions('Whole')
-        ),
-      });
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.corporateAction.ChangeRecordDate],
-      });
-
-      expect(result).toBe(true);
-
-      /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockExtrinsicPermissions({
-            These: [
-              dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: {
-                  Except: [dsMockUtils.createMockDispatchableName('createAsset')],
-                },
-              }),
-            ],
-          })
-        ),
-      });
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.asset.CreateAsset],
-      });
-
-      expect(result).toBe(false);
-
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
-        returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockExtrinsicPermissions({
-            Except: [
-              dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: 'Whole',
-              }),
-            ],
-          })
-        ),
-      });
-
-      result = await tokenPermissions.hasPermissions({
-        token,
-        transactions: [TxTags.identity.AddClaim],
-      });
-
-      expect(result).toBe(true);
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
   });
 

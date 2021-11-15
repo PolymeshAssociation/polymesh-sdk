@@ -5,8 +5,7 @@ import { range } from 'lodash';
 import { ModuleName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { SecurityToken } from '~/api/entities/SecurityToken';
-import { Context, PostTransactionValue, Procedure } from '~/internal';
+import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {

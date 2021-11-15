@@ -9,9 +9,9 @@ import {
   Entity,
   linkCaDocs,
   LinkCaDocsParams,
-  modifyCaCheckpoint,
   ModifyCaCheckpointParams,
   PolymeshError,
+  SecurityToken,
 } from '~/internal';
 import { ErrorCode, ProcedureMethod } from '~/types';
 import { HumanReadableType } from '~/types/utils';
@@ -53,7 +53,7 @@ export interface Params {
  * Represents an action initiated by the issuer of a Security Token which may affect the positions of
  *   the Tokenholders
  */
-export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
+export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unknown> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -70,9 +70,9 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   public id: BigNumber;
 
   /**
-   * ticker of the Security Token
+   * Security Token affected by this Corporate Action
    */
-  public ticker: string;
+  public token: SecurityToken;
 
   /**
    * date at which the Corporate Action was created
@@ -85,7 +85,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   public description: string;
 
   /**
-   * tokenholder identities related to this Corporate action. If the treatment is `Exclude`, the identities
+   * tokenholder identities related to this Corporate action. If the treatment is `Exclude`, the Identities
    *   are not targeted by the Action, and any identities left out of the array will be targeted, and vice versa
    */
   public targets: CorporateActionTargets;
@@ -122,7 +122,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.ticker = ticker;
+    this.token = new SecurityToken({ ticker }, context);
     this.kind = kind;
     this.declarationDate = declarationDate;
     this.description = description;
@@ -132,16 +132,6 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
 
     this.linkDocuments = createProcedureMethod(
       { getProcedureAndArgs: procedureArgs => [linkCaDocs, { id, ticker, ...procedureArgs }] },
-      context
-    );
-
-    this.modifyCheckpoint = createProcedureMethod(
-      {
-        getProcedureAndArgs: modifyCaCheckpointArgs => [
-          modifyCaCheckpoint,
-          { corporateAction: this, ...modifyCaCheckpointArgs },
-        ],
-      },
       context
     );
   }
@@ -156,7 +146,12 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
   /**
    * Modify the Corporate Action's Checkpoint
    */
-  public modifyCheckpoint: ProcedureMethod<ModifyCaCheckpointParams, void>;
+  public abstract modifyCheckpoint: ProcedureMethod<
+    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
+      checkpoint: Checkpoint | CheckpointSchedule | Date;
+    },
+    void
+  >;
 
   /**
    * Determine whether this Corporate Action exists on chain
@@ -178,7 +173,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
         polymeshApi: { query },
       },
       context,
-      ticker,
+      token: { ticker },
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
@@ -240,7 +235,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
       },
       context,
       id,
-      ticker,
+      token: { ticker },
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
@@ -253,7 +248,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
    */
   public toJson(): HumanReadable {
     const {
-      ticker,
+      token,
       id,
       declarationDate,
       description,
@@ -263,7 +258,7 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
     } = this;
 
     return toHumanReadable({
-      ticker,
+      ticker: token,
       id,
       declarationDate,
       defaultTaxWithholding,

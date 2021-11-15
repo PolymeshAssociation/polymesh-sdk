@@ -2,7 +2,7 @@ import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
-  CorporateAction,
+  CorporateActionBase,
   Procedure,
   SecurityToken,
 } from '~/internal';
@@ -15,11 +15,11 @@ import { optionize } from '~/utils/internal';
  * @hidden
  */
 export interface ModifyCaCheckpointParams {
-  checkpoint: Checkpoint | CheckpointSchedule | Date;
+  checkpoint: Checkpoint | CheckpointSchedule | Date | null;
 }
 
 export type Params = ModifyCaCheckpointParams & {
-  corporateAction: CorporateAction;
+  corporateAction: CorporateActionBase;
 };
 
 /**
@@ -37,10 +37,15 @@ export async function prepareModifyCaCheckpoint(
   } = this;
   const {
     checkpoint,
-    corporateAction: { id: localId, ticker },
+    corporateAction: {
+      id: localId,
+      token: { ticker },
+    },
   } = args;
 
-  await assertCaCheckpointValid(checkpoint);
+  if (checkpoint) {
+    await assertCaCheckpointValid(checkpoint);
+  }
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
   const rawRecordDateSpec = optionize(checkpointToRecordDateSpec)(checkpoint, context);
@@ -53,7 +58,11 @@ export async function prepareModifyCaCheckpoint(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { corporateAction: { ticker } }: Params
+  {
+    corporateAction: {
+      token: { ticker },
+    },
+  }: Params
 ): ProcedureAuthorization {
   const { context } = this;
 

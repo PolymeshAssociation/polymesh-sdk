@@ -172,7 +172,7 @@ describe('toggleFreezeSto procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawId);
 
-    expect(sto.ticker).toBe(result.ticker);
+    expect(sto.token.ticker).toBe(result.token.ticker);
   });
 
   test('should add a unfreeze transaction to the queue', async () => {
@@ -200,7 +200,7 @@ describe('toggleFreezeSto procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawId);
 
-    expect(sto.ticker).toBe(result.ticker);
+    expect(sto.token.ticker).toBe(result.token.ticker);
   });
 
   describe('getAuthorization', () => {

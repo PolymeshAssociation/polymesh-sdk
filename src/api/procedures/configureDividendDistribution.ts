@@ -164,8 +164,8 @@ export async function prepareConfigureDividendDistribution(
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Portfolio doesn't exist",
+        code: ErrorCode.DataUnavailable,
+        message: "The origin Portfolio doesn't exist",
       });
     }
   }
@@ -174,8 +174,8 @@ export async function prepareConfigureDividendDistribution(
 
   if (free.lt(maxAmount)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Origin Portfolio free balance is not enough to cover the distribution amount',
+      code: ErrorCode.InsufficientBalance,
+      message: "The origin Portfolio's free balance is not enough to cover the Distribution amount",
       data: {
         free,
       },

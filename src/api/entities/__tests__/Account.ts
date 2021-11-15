@@ -6,7 +6,7 @@ import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, Permissions, PermissionType, Subsidy, TxTags } from '~/types';
+import { AccountBalance, ModuleName, Permissions, PermissionType, Subsidy, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -426,15 +426,17 @@ describe('Account class', () => {
     });
   });
 
-  describe('method: hasPermissions', () => {
+  describe('method: checkPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
       context = dsMockUtils.getContextInstance({ primaryKey: address });
 
       account = new Account({ address }, context);
 
-      let result = await account.hasPermissions({ tokens: [], portfolios: [], transactions: [] });
+      let result = await account.checkPermissions({ tokens: [], portfolios: [], transactions: [] });
 
-      expect(result).toEqual(true);
+      expect(result).toEqual({
+        result: true,
+      });
 
       let permissions: Permissions = {
         tokens: null,
@@ -448,8 +450,14 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
-      result = await account.hasPermissions({ tokens: null, portfolios: null, transactions: null });
-      expect(result).toEqual(true);
+      result = await account.checkPermissions({
+        tokens: null,
+        portfolios: null,
+        transactions: null,
+      });
+      expect(result).toEqual({
+        result: true,
+      });
 
       const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
       permissions = {
@@ -467,13 +475,18 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
-      result = await account.hasPermissions({
+      result = await account.checkPermissions({
         tokens: [token],
         portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
         transactions: [TxTags.asset.CreateAsset],
       });
 
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: {
+          portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+        },
+      });
 
       permissions = {
         tokens: { values: [token], type: PermissionType.Exclude },
@@ -490,33 +503,116 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
-      result = await account.hasPermissions({
+      result = await account.checkPermissions({
         tokens: [token],
         portfolios: null,
         transactions: null,
       });
 
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: {
+          tokens: [token],
+          portfolios: null,
+          transactions: null,
+        },
+      });
 
-      result = await account.hasPermissions({
+      result = await account.checkPermissions({
         tokens: null,
         portfolios: [],
         transactions: [TxTags.asset.CreateAsset],
       });
 
-      expect(result).toEqual(false);
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: {
+          tokens: null,
+          transactions: [TxTags.asset.CreateAsset],
+        },
+      });
 
-      result = await account.hasPermissions({
+      result = await account.checkPermissions({
         tokens: [],
         portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
         transactions: [],
       });
 
-      expect(result).toEqual(true);
+      expect(result).toEqual({
+        result: true,
+      });
 
-      result = await account.hasPermissions({});
+      result = await account.checkPermissions({});
 
-      expect(result).toEqual(true);
+      expect(result).toEqual({
+        result: true,
+      });
+
+      permissions = {
+        tokens: { values: [token], type: PermissionType.Exclude },
+        transactions: {
+          values: [ModuleName.Identity, TxTags.identity.LeaveIdentityAsKey],
+          type: PermissionType.Exclude,
+          exceptions: [TxTags.identity.AddClaim],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
+          type: PermissionType.Exclude,
+        },
+      };
+      context = dsMockUtils.getContextInstance({
+        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+      });
+
+      account = new Account({ address }, context);
+
+      result = await account.checkPermissions({
+        tokens: [],
+        portfolios: null,
+        transactions: [TxTags.identity.AcceptPrimaryKey, TxTags.identity.LeaveIdentityAsKey],
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: {
+          portfolios: null,
+          transactions: [TxTags.identity.AcceptPrimaryKey],
+        },
+      });
+
+      permissions = {
+        tokens: { values: [token], type: PermissionType.Exclude },
+        transactions: {
+          values: [ModuleName.Identity],
+          type: PermissionType.Include,
+          exceptions: [TxTags.identity.AddClaim],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })],
+          type: PermissionType.Exclude,
+        },
+      };
+      context = dsMockUtils.getContextInstance({
+        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+      });
+
+      account = new Account({ address }, context);
+
+      result = await account.checkPermissions({
+        tokens: [],
+        portfolios: null,
+        transactions: [TxTags.identity.AddClaim],
+      });
+
+      expect(result).toEqual({
+        result: false,
+        missingPermissions: {
+          portfolios: null,
+          transactions: [TxTags.identity.AddClaim],
+        },
+      });
     });
 
     test('should exempt certain transactions from requiring permissions', async () => {
@@ -524,7 +620,7 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
-      const result = await account.hasPermissions({
+      const result = await account.checkPermissions({
         tokens: [],
         portfolios: [],
         transactions: [
@@ -535,6 +631,20 @@ describe('Account class', () => {
           TxTags.session.PurgeKeys,
         ],
       });
+
+      expect(result).toEqual({
+        result: true,
+      });
+    });
+  });
+
+  describe('method: hasPermissions', () => {
+    test('should return whether the Account has the passed permissions', async () => {
+      context = dsMockUtils.getContextInstance({ primaryKey: address });
+
+      account = new Account({ address }, context);
+
+      const result = await account.hasPermissions({ tokens: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual(true);
     });

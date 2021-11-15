@@ -4,10 +4,9 @@ import sinon from 'sinon';
 import {
   Checkpoint,
   Context,
-  CorporateAction,
+  CorporateActionBase,
   DefaultPortfolio,
   DividendDistribution,
-  Entity,
   TransactionQueue,
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
@@ -24,8 +23,8 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
 describe('DividendDistribution class', () => {
@@ -123,14 +122,14 @@ describe('DividendDistribution class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
-    expect(DividendDistribution.prototype instanceof Entity).toBe(true);
+  test('should extend CorporateActionBase', () => {
+    expect(DividendDistribution.prototype instanceof CorporateActionBase).toBe(true);
   });
 
   describe('constructor', () => {
     test('should assign parameters to instance', () => {
       expect(dividendDistribution.id).toEqual(id);
-      expect(dividendDistribution.ticker).toBe(ticker);
+      expect(dividendDistribution.token.ticker).toBe(ticker);
       expect(dividendDistribution.declarationDate).toEqual(declarationDate);
       expect(dividendDistribution.description).toEqual(description);
       expect(dividendDistribution.targets).toEqual(targets);
@@ -142,7 +141,7 @@ describe('DividendDistribution class', () => {
   describe('method: checkpoint', () => {
     test('should just pass the call down the line', async () => {
       const fakeResult = ('checkpoint' as unknown) as Checkpoint;
-      sinon.stub(CorporateAction.prototype, 'checkpoint').resolves(fakeResult);
+      sinon.stub(CorporateActionBase.prototype, 'checkpoint').resolves(fakeResult);
 
       const result = await dividendDistribution.checkpoint();
 

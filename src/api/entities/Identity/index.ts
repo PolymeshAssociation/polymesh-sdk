@@ -27,6 +27,7 @@ import {
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
+  CheckRolesResult,
   DistributionWithDetails,
   Ensured,
   ErrorCode,
@@ -296,7 +297,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     if (token.owner_did.isEmpty) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: `There is no Security Token with ticker "${ticker}"`,
       });
     }
@@ -441,6 +442,30 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Check whether this Identity possesses all specified roles
+   */
+  public async checkRoles(roles: Role[]): Promise<CheckRolesResult> {
+    const missingRoles = await P.filter(roles, async role => {
+      const hasRole = await this.hasRole(role);
+
+      return !hasRole;
+    });
+
+    if (missingRoles.length) {
+      return {
+        missingRoles,
+        result: false,
+      };
+    }
+
+    return {
+      result: true,
+    };
+  }
+
+  /**
+   * Check whether this Identity possesses all specified roles
+   *
+   * @deprecated in favor of `checkRoles`
    */
   public async hasRoles(roles: Role[]): Promise<boolean> {
     const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
@@ -706,7 +731,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     return P.filter(
       distributions,
       async ({ distribution }): Promise<boolean> => {
-        const { expiryDate, ticker, id: localId, paymentDate } = distribution;
+        const {
+          expiryDate,
+          token: { ticker },
+          id: localId,
+          paymentDate,
+        } = distribution;
 
         const isExpired = expiryDate && expiryDate < now;
         const hasNotStarted = paymentDate > now;

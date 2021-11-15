@@ -35,7 +35,7 @@ export async function prepareTogglePauseRequirements(
 
   if (pause === boolToBoolean(paused)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: `Requirements are already ${paused ? '' : 'un'}paused`,
     });
   }

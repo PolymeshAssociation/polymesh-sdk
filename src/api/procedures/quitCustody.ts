@@ -36,7 +36,7 @@ export async function prepareQuitCustody(
 
   if (isOwnedBy) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Portfolio owner cannot quit custody',
     });
   }

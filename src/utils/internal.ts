@@ -32,7 +32,6 @@ import {
   CommonKeyring,
   CountryCode,
   ErrorCode,
-  isEntity,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
@@ -55,6 +54,7 @@ import {
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
+import { isEntity } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -224,7 +224,7 @@ export function filterEventRecords<
 
   if (!eventRecords.length) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
     });
   }
@@ -311,7 +311,7 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
  * @hidden
  *
  * Makes a request to the chain. If a block hash is supplied,
- *  the request will be made at that block. Otherwise, the most recent block will be queried
+ *   the request will be made at that block. Otherwise, the most recent block will be queried
  */
 export async function requestAtBlock<F extends AnyFunction>(
   query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
@@ -367,8 +367,8 @@ export function batchArguments<Args>(
   groups.forEach(group => {
     if (group.length > batchLimit) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Batch size exceeds limit',
+        code: ErrorCode.UnexpectedError,
+        message: 'Batch size exceeds limit. Please report this to the Polymath team',
         data: {
           batch: group,
           limit: batchLimit,
@@ -603,7 +603,7 @@ export function assertFormatValid(address: string, ss58Format: number): void {
 
   if (address !== encodedAddress) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.ValidationError,
       message: "The supplied address is not encoded with the chain's SS58 format",
       data: {
         ss58Format,

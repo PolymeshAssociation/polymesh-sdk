@@ -36,7 +36,7 @@ export async function prepareRemoveCorporateActionsAgent(
 
   if (agents.length !== 1) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message:
         'There must be one (and only one) Corporate Actions Agent assigned to this Security Token',
     });

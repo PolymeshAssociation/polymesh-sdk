@@ -27,7 +27,7 @@ export async function prepareLeaveIdentity(
 
   if (!currentIdentity) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'There is no Identity associated to this Account',
     });
   }
@@ -38,8 +38,8 @@ export async function prepareLeaveIdentity(
 
   if (!isSecondaryKey) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only Seconday Keys are allowed to leave an Identity',
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Only Secondary Keys are allowed to leave an Identity',
     });
   }
 
@@ -55,7 +55,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const currentAccount = this.context.getCurrentAccount();
 
-  const roles = account.isEqual(currentAccount);
+  const hasRoles = account.isEqual(currentAccount);
 
   const permissions = {
     tokens: [],
@@ -64,7 +64,7 @@ export function getAuthorization(
   };
 
   return {
-    roles,
+    roles: hasRoles || 'Only the current Account can leave its Identity',
     permissions,
   };
 }

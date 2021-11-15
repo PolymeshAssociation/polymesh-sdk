@@ -70,7 +70,7 @@ describe('modifyCaCheckpoint procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Only Seconday Keys are allowed to leave an Identity');
+    expect(error.message).toBe('Only Secondary Keys are allowed to leave an Identity');
   });
 
   test('should add a leave identity as key transaction to the queue', async () => {
@@ -106,7 +106,7 @@ describe('modifyCaCheckpoint procedure', () => {
       let account = entityMockUtils.getAccountInstance({ isEqual: false });
 
       expect(boundFunc({ account })).toEqual({
-        roles: false,
+        roles: 'Only the current Account can leave its Identity',
         permissions: {
           tokens: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],

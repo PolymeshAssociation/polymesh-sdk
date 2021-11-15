@@ -84,7 +84,7 @@ export async function prepareModifyCaDefaults(
 
   if (noArguments) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'Nothing to modify',
     });
   }
@@ -109,7 +109,7 @@ export async function prepareModifyCaDefaults(
   if (newTargets) {
     if (areSameTargets(targets, newTargets)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'New targets are the same as the current ones',
       });
     }
@@ -125,7 +125,7 @@ export async function prepareModifyCaDefaults(
   if (newDefaultTaxWithholding) {
     if (newDefaultTaxWithholding.eq(defaultTaxWithholding)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'New default tax withholding is the same as the current one',
       });
     }
@@ -149,7 +149,7 @@ export async function prepareModifyCaDefaults(
 
     if (areSameWithholdings) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'New per-Identity tax withholding percentages are the same as current ones',
       });
     }

@@ -3,8 +3,6 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
@@ -13,10 +11,12 @@ import {
   Account,
   Checkpoint,
   CheckpointSchedule,
+  CustomPermissionGroup,
   DefaultPortfolio,
   DividendDistribution,
   Identity,
   Instruction,
+  KnownPermissionGroup,
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
@@ -419,16 +419,77 @@ export interface Compliance {
  * Specifies possible types of errors in the SDK
  */
 export enum ErrorCode {
+  /**
+   * transaction removed from the tx pool
+   */
   TransactionAborted = 'TransactionAborted',
+  /**
+   * user rejected the transaction in their wallet
+   */
   TransactionRejectedByUser = 'TransactionRejectedByUser',
+  /**
+   * transaction failed due to an on-chain error. This is a business logic error,
+   *   and it should be caught by the SDK before being sent to the chain.
+   *   Please report it to the Polymath team
+   */
   TransactionReverted = 'TransactionReverted',
+  /**
+   * error that should cause termination of the calling application
+   */
   FatalError = 'FatalError',
-  InvalidUuid = 'InvalidUuid',
+  /**
+   * user input error. This means that one or more inputs passed by the user
+   *   do not conform to expected value ranges or types
+   */
   ValidationError = 'ValidationError',
+  /**
+   * user does not have the required roles/permissions to perform an operation
+   */
   NotAuthorized = 'NotAuthorized',
+  /**
+   * errors encountered when interacting with the historic data middleware (GQL server)
+   */
   MiddlewareError = 'MiddlewareError',
-  IdentityNotPresent = 'IdentityNotPresent',
+  /**
+   * the data that is being fetched does not exist on-chain, or relies on non-existent data. There are
+   *   some cases where the data did exist at some point, but has been deleted to save storage space
+   */
   DataUnavailable = 'DataUnavailable',
+  /**
+   * the data that is being written to the chain is the same data that is already in place. This would result
+   *   in a redundant/useless transaction being executed
+   */
+  NoDataChange = 'NoDataChange',
+  /**
+   * the data that is being written to the chain would result in some limit being exceeded. For example, adding a transfer
+   *   restriction when the maximum possible amount has already been added
+   */
+  LimitExceeded = 'LimitExceeded',
+  /**
+   * one or more base prerequisites for a transaction to be successful haven't been met. For example, reserving a ticker requires
+   *   said ticker to not be already reserved. Attempting to reserve a ticker without that prerequisite being met would result in this
+   *   type of error. Attempting to create an entity that already exists would also fall into this category,
+   *   if the entity in question is supposed to be unique
+   */
+  UnmetPrerequisite = 'UnmetPrerequisite',
+  /**
+   * this type of error is thrown when attempting to delete/modify an entity which has other entities depending on it. For example, deleting
+   *   a Portfolio that still holds assets, or removing a Checkpoint Schedule that is being referenced by a Corporate Action
+   */
+  EntityInUse = 'EntityInUse',
+  /**
+   * one or more parties involved in the transaction do not have enough balance to perform it
+   */
+  InsufficientBalance = 'InsufficientBalance',
+  /**
+   * errors that are the result of something unforeseen.
+   *   These should generally be reported to the Polymath team
+   */
+  UnexpectedError = 'UnexpectedError',
+  /**
+   * general purpose errors that don't fit well into the other categories
+   */
+  General = 'General',
 }
 
 /**
@@ -653,6 +714,24 @@ export interface FeesBreakdown {
   accountBalance: BigNumber;
 }
 
+export enum SignerType {
+  /* eslint-disable @typescript-eslint/no-shadow */
+  Identity = 'Identity',
+  Account = 'Account',
+  /* eslint-enable @typescript-eslint/no-shadow */
+}
+
+export interface SignerValue {
+  /**
+   * whether the signer is an Account or Identity
+   */
+  type: SignerType;
+  /**
+   * address or DID (depending on whether the signer is an Account or Identity)
+   */
+  value: string;
+}
+
 /**
  * Transaction Groups (for permissions purposes)
  */
@@ -803,7 +882,7 @@ export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGr
 /**
  * This represents positive permissions (i.e. only "includes"). It is used
  *   for specifying procedure requirements and querying if an account has certain
- *   permissions
+ *   permissions. Null values represent full permissions in that category
  */
 export interface SimplePermissions {
   /**
@@ -816,6 +895,44 @@ export interface SimplePermissions {
   transactions?: TxTag[] | null;
   /* list of required Portfolio permissions */
   portfolios?: (DefaultPortfolio | NumberedPortfolio)[] | null;
+}
+
+/**
+ * Result of a `checkRoles` call
+ */
+export interface CheckRolesResult {
+  /**
+   * required roles which the Identity *DOESN'T* have. Only present if `result` is `false`
+   */
+  missingRoles?: Role[];
+  /**
+   * whether the signer posseses all the required roles or not
+   */
+  result: boolean;
+  /**
+   * optional message explaining the reason for failure in special cases
+   */
+  message?: string;
+}
+
+/**
+ * Result of a `checkPermissions` call. If `Type` is `Account`, represents whether the Account
+ *   has all the necessary secondary key Permissions. If `Type` is `Identity`, represents whether the
+ *   Identity has all the necessary external agent Permissions
+ */
+export interface CheckPermissionsResult<Type extends SignerType> {
+  /**
+   * required permissions which the signer *DOESN'T* have. Only present if `result` is `false`
+   */
+  missingPermissions?: Type extends SignerType.Account ? SimplePermissions : TxTag[] | null;
+  /**
+   * whether the signer complies with the required permissions or not
+   */
+  result: boolean;
+  /**
+   * optional message explaining the reason for failure in special cases
+   */
+  message?: string;
 }
 
 export enum PermissionGroupType {
@@ -1012,15 +1129,15 @@ export interface ProcedureAuthorizationStatus {
   /**
    * whether the Identity complies with all required Agent permissions
    */
-  agentPermissions: boolean;
+  agentPermissions: CheckPermissionsResult<SignerType.Identity>;
   /**
    * whether the Account complies with all required Signer permissions
    */
-  signerPermissions: boolean;
+  signerPermissions: CheckPermissionsResult<SignerType.Account>;
   /**
    * whether the Identity complies with all required Roles
    */
-  roles: boolean;
+  roles: CheckRolesResult;
   /**
    * whether the Account is frozen (i.e. can't perform any transactions)
    */
@@ -1153,24 +1270,6 @@ export interface ProcedureMethod<
 export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
   (opts?: ProcedureOpts): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
-}
-
-export enum SignerType {
-  /* eslint-disable @typescript-eslint/no-shadow */
-  Identity = 'Identity',
-  Account = 'Account',
-  /* eslint-enable @typescript-eslint/no-shadow */
-}
-
-export interface SignerValue {
-  /**
-   * whether the signer is an Account or Identity
-   */
-  type: SignerType;
-  /**
-   * address or DID (depending on whether the signer is an Account or Identity)
-   */
-  value: string;
 }
 
 export interface GroupedInstructions {

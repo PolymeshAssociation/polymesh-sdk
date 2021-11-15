@@ -14,11 +14,11 @@ import {
   CheckpointSchedule,
   claimDividends,
   Context,
-  CorporateAction,
+  CorporateActionBase,
   DefaultPortfolio,
   Identity,
+  ModifyCaCheckpointParams,
   modifyDistributionCheckpoint,
-  ModifyDistributionCheckpointParams,
   NumberedPortfolio,
   payDividends,
   PayDividendsParams,
@@ -86,7 +86,7 @@ const notExistsMessage = 'The Dividend Distribution no longer exists';
  * Represents a Corporate Action via which a Security Token issuer wishes to distribute dividends
  *   between a subset of the Tokenholders (targets)
  */
-export class DividendDistribution extends CorporateAction {
+export class DividendDistribution extends CorporateActionBase {
   /**
    * Portfolio from which the dividends will be distributed
    */
@@ -185,9 +185,14 @@ export class DividendDistribution extends CorporateAction {
   public claim: NoArgsProcedureMethod<void>;
 
   /**
-   * Modify the Distribution's checkpoint
+   * Modify the Distribution's Checkpoint
    */
-  public modifyCheckpoint: ProcedureMethod<ModifyDistributionCheckpointParams, void>;
+  public modifyCheckpoint: ProcedureMethod<
+    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
+      checkpoint: Checkpoint | CheckpointSchedule | Date;
+    },
+    void
+  >;
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
@@ -330,7 +335,7 @@ export class DividendDistribution extends CorporateAction {
   }): Promise<DistributionParticipant | null> {
     const {
       id: localId,
-      ticker,
+      token: { ticker },
       targets: { identities: targetIdentities, treatment },
       paymentDate,
       perShare,
@@ -386,7 +391,11 @@ export class DividendDistribution extends CorporateAction {
    * @hidden
    */
   private fetchDistribution(): Promise<Option<Distribution>> {
-    const { ticker, id, context } = this;
+    const {
+      token: { ticker },
+      id,
+      context,
+    } = this;
 
     return context.polymeshApi.query.capitalDistribution.distributions(
       corporateActionIdentifierToCaId({ ticker, localId: id }, context)
@@ -399,7 +408,11 @@ export class DividendDistribution extends CorporateAction {
    * @note uses the middleware
    */
   public async getWithheldTax(): Promise<BigNumber> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      token: { ticker },
+      context,
+    } = this;
 
     const taxPromise = context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
@@ -434,7 +447,7 @@ export class DividendDistribution extends CorporateAction {
   ): Promise<ResultSet<DistributionPayment>> {
     const {
       id,
-      ticker,
+      token: { ticker },
       context,
       context: {
         polymeshApi: {
@@ -514,7 +527,7 @@ export class DividendDistribution extends CorporateAction {
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
     const {
-      ticker,
+      token: { ticker },
       id: localId,
       context: {
         polymeshApi: {
