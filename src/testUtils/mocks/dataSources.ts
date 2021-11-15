@@ -193,7 +193,7 @@ function createWebSocketAsPromised(): WebSocketAsPromised {
   return ({
     open: sinon.stub(),
     send: sinon.stub(),
-    sendRequest: sinon.stub().resolves({ result: '3.3.0' }),
+    sendRequest: sinon.stub().resolves({ result: '4.0.0' }),
     close: sinon.stub(),
   } as unknown) as WebSocketAsPromised;
 }
@@ -2150,17 +2150,14 @@ export const createMockDispatchableNames = (
 export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: IdentityId }
-    | { RotatePrimaryKey: IdentityId }
+    | 'RotatePrimaryKey'
     | { TransferTicker: Ticker }
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }
     | { JoinIdentity: Permissions }
-    | { TransferPrimaryIssuanceAgent: Ticker }
     | { PortfolioCustody: PortfolioId }
-    | { Custom: Bytes }
-    | { TransferCorporateActionAgent: Ticker }
     | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
-    | 'NoData'
+    | { BecomeAgent: [Ticker, AgentGroup] }
     | AuthorizationData
 ): AuthorizationData => {
   if (isCodec<AuthorizationData>(authorizationData)) {
@@ -2704,7 +2701,7 @@ export const createMockSettlementType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAffirmationStatus = (
-  authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed' | 'Rejected'
+  authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed'
 ): AffirmationStatus => {
   return createMockEnum(authorizationStatus) as AffirmationStatus;
 };

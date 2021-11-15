@@ -42,7 +42,6 @@ export interface AffirmationStatus extends Enum {
   readonly isUnknown: boolean;
   readonly isPending: boolean;
   readonly isAffirmed: boolean;
-  readonly isRejected: boolean;
 }
 
 /** @name AgentGroup */
@@ -60,7 +59,7 @@ export interface AGId extends u32 {}
 
 /** @name AssetCompliance */
 export interface AssetCompliance extends Struct {
-  readonly is_paused: bool;
+  readonly paused: bool;
   readonly requirements: Vec<ComplianceRequirement>;
 }
 
@@ -89,12 +88,6 @@ export interface AssetIdentifier extends Enum {
   readonly asIsin: U8aFixed;
   readonly isLei: boolean;
   readonly asLei: U8aFixed;
-}
-
-/** @name AssetMigrationError */
-export interface AssetMigrationError extends Enum {
-  readonly isAssetDocumentFail: boolean;
-  readonly asAssetDocumentFail: ITuple<[Ticker, DocumentId]>;
 }
 
 /** @name AssetName */
@@ -145,11 +138,8 @@ export interface AuthorizationData extends Enum {
   readonly isAttestPrimaryKeyRotation: boolean;
   readonly asAttestPrimaryKeyRotation: IdentityId;
   readonly isRotatePrimaryKey: boolean;
-  readonly asRotatePrimaryKey: IdentityId;
   readonly isTransferTicker: boolean;
   readonly asTransferTicker: Ticker;
-  readonly isTransferPrimaryIssuanceAgent: boolean;
-  readonly asTransferPrimaryIssuanceAgent: Ticker;
   readonly isAddMultiSigSigner: boolean;
   readonly asAddMultiSigSigner: AccountId;
   readonly isTransferAssetOwnership: boolean;
@@ -158,11 +148,6 @@ export interface AuthorizationData extends Enum {
   readonly asJoinIdentity: Permissions;
   readonly isPortfolioCustody: boolean;
   readonly asPortfolioCustody: PortfolioId;
-  readonly isCustom: boolean;
-  readonly asCustom: Ticker;
-  readonly isNoData: boolean;
-  readonly isTransferCorporateActionAgent: boolean;
-  readonly asTransferCorporateActionAgent: Ticker;
   readonly isBecomeAgent: boolean;
   readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
   readonly isAddRelayerPayingKey: boolean;
@@ -181,8 +166,8 @@ export interface AuthorizationType extends Enum {
   readonly isTransferAssetOwnership: boolean;
   readonly isJoinIdentity: boolean;
   readonly isPortfolioCustody: boolean;
-  readonly isCustom: boolean;
-  readonly isNoData: boolean;
+  readonly isBecomeAgent: boolean;
+  readonly isAddRelayerPayingKey: boolean;
 }
 
 /** @name BallotMeta */
@@ -206,19 +191,6 @@ export interface BallotVote extends Struct {
   readonly fallback: Option<u16>;
 }
 
-/** @name BatchAddClaimItem */
-export interface BatchAddClaimItem extends Struct {
-  readonly target: IdentityId;
-  readonly claim: Claim;
-  readonly expiry: Option<Moment>;
-}
-
-/** @name BatchRevokeClaimItem */
-export interface BatchRevokeClaimItem extends Struct {
-  readonly target: IdentityId;
-  readonly claim: Claim;
-}
-
 /** @name Beneficiary */
 export interface Beneficiary extends Struct {
   readonly id: IdentityId;
@@ -229,7 +201,7 @@ export interface Beneficiary extends Struct {
 export interface BridgeTx extends Struct {
   readonly nonce: u32;
   readonly recipient: AccountId;
-  readonly value: Balance;
+  readonly amount: Balance;
   readonly tx_hash: H256;
 }
 
@@ -737,7 +709,7 @@ export interface DidRecords extends Enum {
 /** @name DidRecordsSuccess */
 export interface DidRecordsSuccess extends Struct {
   readonly primary_key: AccountId;
-  readonly secondary_key: Vec<SecondaryKey>;
+  readonly secondary_keys: Vec<SecondaryKey>;
 }
 
 /** @name DidStatus */
@@ -846,9 +818,6 @@ export interface ExtrinsicPermissions extends Enum {
 /** @name ExtVersion */
 export interface ExtVersion extends u32 {}
 
-/** @name FeeOf */
-export interface FeeOf extends Balance {}
-
 /** @name FundingRoundName */
 export interface FundingRoundName extends Text {}
 
@@ -918,12 +887,6 @@ export interface IdentityClaim extends Struct {
   readonly claim: Claim;
 }
 
-/** @name IdentityClaimKey */
-export interface IdentityClaimKey extends Struct {
-  readonly id: IdentityId;
-  readonly claim_type: ClaimType;
-}
-
 /** @name IdentityId */
 export interface IdentityId extends U8aFixed {}
 
@@ -971,14 +934,6 @@ export interface InvestorUid extends U8aFixed {}
 
 /** @name InvestorZKProofData */
 export interface InvestorZKProofData extends Signature {}
-
-/** @name IssueRecipient */
-export interface IssueRecipient extends Enum {
-  readonly isAccount: boolean;
-  readonly asAccount: AccountId;
-  readonly isIdentity: boolean;
-  readonly asIdentity: IdentityId;
-}
 
 /** @name ItnRewardStatus */
 export interface ItnRewardStatus extends Enum {
@@ -1048,14 +1003,6 @@ export interface MetaUrl extends Text {}
 /** @name MetaVersion */
 export interface MetaVersion extends u32 {}
 
-/** @name MigrationError */
-export interface MigrationError extends Enum {
-  readonly isDecodeKey: boolean;
-  readonly asDecodeKey: Bytes;
-  readonly isMap: boolean;
-  readonly asMap: AssetMigrationError;
-}
-
 /** @name Moment */
 export interface Moment extends u64 {}
 
@@ -1096,19 +1043,6 @@ export interface PalletName extends Text {}
 export interface PalletPermissions extends Struct {
   readonly pallet_name: PalletName;
   readonly dispatchable_names: DispatchableNames;
-}
-
-/** @name Payload */
-export interface Payload extends Struct {
-  readonly block_number: BlockNumber;
-  readonly nominators: Vec<AccountId>;
-  readonly public: H256;
-}
-
-/** @name PendingTx */
-export interface PendingTx extends Struct {
-  readonly did: IdentityId;
-  readonly bridge_tx: BridgeTx;
 }
 
 /** @name Percentage */
@@ -1156,7 +1090,6 @@ export interface PolymeshVotes extends Struct {
   readonly index: u32;
   readonly ayes: Vec<ITuple<[IdentityId, Balance]>>;
   readonly nays: Vec<ITuple<[IdentityId, Balance]>>;
-  readonly end: BlockNumber;
   readonly expiry: MaybeBlock;
 }
 
@@ -1212,12 +1145,6 @@ export interface PriceTier extends Struct {
   readonly price: Balance;
 }
 
-/** @name ProportionMatch */
-export interface ProportionMatch extends Enum {
-  readonly isAtLeast: boolean;
-  readonly isMoreThan: boolean;
-}
-
 /** @name ProposalData */
 export interface ProposalData extends Enum {
   readonly isHash: boolean;
@@ -1266,27 +1193,17 @@ export interface Proposer extends Enum {
 export interface ProtocolOp extends Enum {
   readonly isAssetRegisterTicker: boolean;
   readonly isAssetIssue: boolean;
-  readonly isAssetAddDocument: boolean;
+  readonly isAssetAddDocuments: boolean;
   readonly isAssetCreateAsset: boolean;
-  readonly isAssetCreateCheckpointSchedule: boolean;
-  readonly isDividendNew: boolean;
+  readonly isCheckpointCreateSchedule: boolean;
   readonly isComplianceManagerAddComplianceRequirement: boolean;
-  readonly isIdentityRegisterDid: boolean;
   readonly isIdentityCddRegisterDid: boolean;
   readonly isIdentityAddClaim: boolean;
-  readonly isIdentitySetPrimaryKey: boolean;
   readonly isIdentityAddSecondaryKeysWithAuthorization: boolean;
   readonly isPipsPropose: boolean;
-  readonly isVotingAddBallot: boolean;
   readonly isContractsPutCode: boolean;
-  readonly isBallotAttachBallot: boolean;
-  readonly isDistributionDistribute: boolean;
-}
-
-/** @name ProverTickerKey */
-export interface ProverTickerKey extends Struct {
-  readonly prover: IdentityId;
-  readonly ticker: Ticker;
+  readonly isCorporateBallotAttachBallot: boolean;
+  readonly isCapitalDistributionDistribute: boolean;
 }
 
 /** @name Receipt */
@@ -1404,13 +1321,6 @@ export interface Signatory extends Enum {
   readonly asAccount: AccountId;
 }
 
-/** @name SimpleTokenRecord */
-export interface SimpleTokenRecord extends Struct {
-  readonly ticker: Ticker;
-  readonly total_supply: Balance;
-  readonly owner_did: IdentityId;
-}
-
 /** @name SkippedCount */
 export interface SkippedCount extends u8 {}
 
@@ -1526,13 +1436,6 @@ export interface TemplateMetadata extends Struct {
 /** @name Ticker */
 export interface Ticker extends U8aFixed {}
 
-/** @name TickerRangeProof */
-export interface TickerRangeProof extends Struct {
-  readonly initial_message: U8aFixed;
-  readonly final_response: Bytes;
-  readonly max_two_exp: u32;
-}
-
 /** @name TickerRegistration */
 export interface TickerRegistration extends Struct {
   readonly owner: IdentityId;
@@ -1543,13 +1446,6 @@ export interface TickerRegistration extends Struct {
 export interface TickerRegistrationConfig extends Struct {
   readonly max_ticker_length: u8;
   readonly registration_length: Option<Moment>;
-}
-
-/** @name TickerTransferApproval */
-export interface TickerTransferApproval extends Struct {
-  readonly authorized_by: IdentityId;
-  readonly next_ticker: Option<Ticker>;
-  readonly previous_ticker: Option<Ticker>;
 }
 
 /** @name TransferManager */
@@ -1622,7 +1518,6 @@ export interface VoteCount extends Enum {
   readonly isProposalFound: boolean;
   readonly asProposalFound: VoteCountProposalFound;
   readonly isProposalNotFound: boolean;
-  readonly asProposalNotFound: Bytes;
 }
 
 /** @name VoteCountProposalFound */

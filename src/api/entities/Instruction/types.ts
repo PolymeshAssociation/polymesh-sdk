@@ -47,7 +47,6 @@ export enum AffirmationStatus {
   Unknown = 'Unknown',
   Pending = 'Pending',
   Affirmed = 'Affirmed',
-  Rejected = 'Rejected',
 }
 
 export interface InstructionAffirmation {

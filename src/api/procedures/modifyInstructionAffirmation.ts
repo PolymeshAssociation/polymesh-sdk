@@ -1,12 +1,7 @@
 import { u32, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import {
-  AffirmationStatus as MeshAffirmationStatus,
-  PortfolioId,
-  TxTag,
-  TxTags,
-} from 'polymesh-types/types';
+import { PortfolioId, TxTag, TxTags } from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
@@ -16,7 +11,7 @@ import {
   PolymeshTx,
   ProcedureAuthorization,
 } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import {
   meshAffirmationStatusToAffirmationStatus,
   numberToU32,
@@ -33,6 +28,7 @@ export interface ModifyInstructionAffirmationParams {
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
   senderLegAmount: number;
+  totalLegAmount: number;
 }
 
 /**
@@ -50,7 +46,7 @@ export async function prepareModifyInstructionAffirmation(
       },
     },
     context,
-    storage: { portfolios, senderLegAmount },
+    storage: { portfolios, senderLegAmount, totalLegAmount },
   } = this;
 
   const { operation, id } = args;
@@ -73,7 +69,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PortfolioId[], u32]>;
+  let transaction: PolymeshTx<[u64, PortfolioId[], u32]> | null = null;
 
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {
@@ -84,16 +80,9 @@ export async function prepareModifyInstructionAffirmation(
       break;
     }
     case InstructionAffirmationOperation.Withdraw: {
-      excludeCriteria.push(AffirmationStatus.Pending, AffirmationStatus.Rejected);
+      excludeCriteria.push(AffirmationStatus.Pending);
       errorMessage = 'The instruction is not affirmed';
       transaction = settlementTx.withdrawAffirmation;
-
-      break;
-    }
-    case InstructionAffirmationOperation.Reject: {
-      excludeCriteria.push(AffirmationStatus.Rejected);
-      errorMessage = 'The Instruction cannot be rejected';
-      transaction = settlementTx.rejectInstruction;
 
       break;
     }
@@ -101,9 +90,9 @@ export async function prepareModifyInstructionAffirmation(
 
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
 
-  const rawAffirmationStatuses = await settlement.userAffirmations.multi<MeshAffirmationStatus>(
-    multiArgs
-  );
+  const rawAffirmationStatuses = await settlement.userAffirmations.multi<
+    QueryReturnType<typeof settlement.userAffirmations>
+  >(multiArgs);
 
   const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
 
@@ -114,17 +103,31 @@ export async function prepareModifyInstructionAffirmation(
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: errorMessage,
+      // As InstructionAffirmationOperation.Reject has no excludeCriteria, if this error is thrown
+      // it means that the operation had to be either affirm or withdraw, and so the errorMessage was set
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      message: errorMessage!,
     });
   }
 
-  this.addTransaction(
-    transaction,
-    { batchSize: senderLegAmount },
-    rawInstructionId,
-    validPortfolioIds,
-    numberToU32(senderLegAmount, context)
-  );
+  // rejection works a bit different
+  if (transaction) {
+    this.addTransaction(
+      transaction,
+      { batchSize: senderLegAmount },
+      rawInstructionId,
+      validPortfolioIds,
+      numberToU32(senderLegAmount, context)
+    );
+  } else {
+    this.addTransaction(
+      settlementTx.rejectInstruction,
+      { batchSize: totalLegAmount },
+      rawInstructionId,
+      validPortfolioIds[0],
+      numberToU32(totalLegAmount, context)
+    );
+  }
 
   return instruction;
 }
@@ -213,7 +216,7 @@ export async function prepareStorage(
     [[], 0]
   );
 
-  return { portfolios, senderLegAmount };
+  return { portfolios, senderLegAmount, totalLegAmount: legs.length };
 }
 
 /**

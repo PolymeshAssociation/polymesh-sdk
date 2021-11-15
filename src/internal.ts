@@ -9,9 +9,13 @@ export { Entity } from '~/api/entities/Entity';
 export { Namespace } from '~/api/entities/Namespace';
 export { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
 export {
-  consumeJoinSignerAuthorization,
-  ConsumeJoinSignerAuthorizationParams,
-} from '~/api/procedures/consumeJoinSignerAuthorization';
+  consumeAddMultiSigSignerAuthorization,
+  ConsumeAddMultiSigSignerAuthorizationParams,
+} from '~/api/procedures/consumeAddMultiSigSignerAuthorization';
+export {
+  consumeJoinIdentityAuthorization,
+  ConsumeJoinIdentityAuthorizationParams,
+} from '~/api/procedures/consumeJoinIdentityAuthorization';
 export {
   addInstruction,
   AddInstructionParams,

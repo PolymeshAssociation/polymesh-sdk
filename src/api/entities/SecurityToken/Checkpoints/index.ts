@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { CheckpointId, Moment, Ticker } from 'polymesh-types/types';
+import { CheckpointId, Ticker } from 'polymesh-types/types';
 
 import {
   Checkpoint,
@@ -16,7 +16,7 @@ import {
   ProcedureMethod,
   ResultSet,
 } from '~/types';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   momentToDate,
@@ -89,13 +89,15 @@ export class Checkpoints extends Namespace<SecurityToken> {
       parent: { ticker },
       context,
       context: {
-        polymeshApi: { query },
+        polymeshApi: {
+          query: { checkpoint: checkpointQuery },
+        },
       },
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const { entries, lastKey: next } = await requestPaginated(query.checkpoint.totalSupply, {
+    const { entries, lastKey: next } = await requestPaginated(checkpointQuery.totalSupply, {
       arg: rawTicker,
       paginationOpts,
     });
@@ -118,7 +120,9 @@ export class Checkpoints extends Namespace<SecurityToken> {
       }
     );
 
-    const timestamps = await query.checkpoint.timestamps.multi<Moment>(checkpointsMultiParams);
+    const timestamps = await checkpointQuery.timestamps.multi<
+      QueryReturnType<typeof checkpointQuery.timestamps>
+    >(checkpointsMultiParams);
 
     const data = timestamps.map((moment, i) => {
       const { totalSupply, checkpoint } = checkpoints[i];

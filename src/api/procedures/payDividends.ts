@@ -1,10 +1,8 @@
-import { bool } from '@polkadot/types';
-
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TargetTreatment, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { QueryReturnType, tuple } from '~/types/utils';
 import {
   boolToBoolean,
   corporateActionIdentifierToCaId,
@@ -31,7 +29,10 @@ export async function preparePayDividends(
 ): Promise<void> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: {
+        tx,
+        query: { capitalDistribution },
+      },
     },
     context,
   } = this;
@@ -69,9 +70,9 @@ export async function preparePayDividends(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
-  const holderPaidList = await query.capitalDistribution.holderPaid.multi<bool>(
-    rawDids.map(rawDid => tuple(rawCaId, rawDid))
-  );
+  const holderPaidList = await capitalDistribution.holderPaid.multi<
+    QueryReturnType<typeof capitalDistribution.holderPaid>
+  >(rawDids.map(rawDid => tuple(rawCaId, rawDid)));
 
   const alreadyClaimedList: Identity[] = [];
   holderPaidList.forEach((holderPaid, i) => {

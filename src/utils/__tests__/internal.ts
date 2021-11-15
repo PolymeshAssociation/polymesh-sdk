@@ -380,7 +380,7 @@ describe('requestAtBlock', () => {
 
 describe('batchArguments', () => {
   test('should return chunks of data', () => {
-    const tag = TxTags.asset.BatchAddDocument;
+    const tag = TxTags.asset.AddDocuments;
     const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
 
     const elements = range(0, 3 * expectedBatchLength + 1);
@@ -415,7 +415,7 @@ describe('batchArguments', () => {
   });
 
   test('should throw an error if a custom batch has a size bigger than the limit', () => {
-    const tag = TxTags.asset.BatchAddDocument;
+    const tag = TxTags.asset.AddDocuments;
     const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
 
     const elements = range(0, 3 * expectedBatchLength);

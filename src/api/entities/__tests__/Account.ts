@@ -358,7 +358,7 @@ describe('Account class', () => {
             permissions: {
               tokens: null,
               transactions: {
-                values: [TxTags.identity.AcceptAuthorization],
+                values: [TxTags.identity.AcceptPrimaryKey],
                 type: PermissionType.Include,
               },
               transactionGroups: [],

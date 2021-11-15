@@ -1,4 +1,4 @@
-import { bool, Option } from '@polkadot/types';
+import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -38,7 +38,7 @@ import {
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { HumanReadableType, tuple } from '~/types/utils';
+import { HumanReadableType, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -173,7 +173,9 @@ export class DividendDistribution extends CorporateAction {
   }
 
   /**
-   * Claim the dividends corresponding to the current Identity
+   * Claim the Dividends corresponding to the current Identity
+   *
+   * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
   public claim: ProcedureMethod<void, void>;
 
@@ -186,6 +188,7 @@ export class DividendDistribution extends CorporateAction {
    * Transfer the corresponding share of the dividends to a list of Identities
    *
    * @note due to performance issues, we do not validate that the distribution has enough remaining funds to pay the corresponding amount to the supplied Identities
+   * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
   public pay: ProcedureMethod<PayDividendsParams, void>;
 
@@ -487,7 +490,16 @@ export class DividendDistribution extends CorporateAction {
   private async getParticipantStatuses(
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
-    const { ticker, id: localId, context } = this;
+    const {
+      ticker,
+      id: localId,
+      context: {
+        polymeshApi: {
+          query: { capitalDistribution },
+        },
+      },
+      context,
+    } = this;
 
     /*
      * For optimization, we separate the participants into chunks that can fit into one multi call
@@ -506,7 +518,9 @@ export class DividendDistribution extends CorporateAction {
           tuple(caId, stringToIdentityId(did, context))
         );
 
-        return context.polymeshApi.query.capitalDistribution.holderPaid.multi<bool>(multiParams);
+        return capitalDistribution.holderPaid.multi<
+          QueryReturnType<typeof capitalDistribution.holderPaid>
+        >(multiParams);
       });
 
       const results = await Promise.all(parallelMultiCalls);
