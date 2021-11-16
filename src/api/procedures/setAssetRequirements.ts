@@ -5,7 +5,6 @@ import { Condition, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   complianceRequirementToRequirement,
-  numberToU32,
   requirementToComplianceRequirement,
   stringToTicker,
   u32ToBigNumber,
@@ -78,11 +77,16 @@ export async function prepareSetAssetRequirements(
   if (!requirements.length) {
     this.addTransaction(tx.complianceManager.resetAssetCompliance, {}, rawTicker);
   } else {
-    const rawConditions = requirements.map((requirement, index) =>
+    const rawAssetCompliance = requirements.map((requirement, index) =>
       requirementToComplianceRequirement({ conditions: requirement, id: index }, context)
     );
 
-    this.addTransaction(tx.complianceManager.replaceAssetCompliance, {}, rawTicker, rawConditions);
+    this.addTransaction(
+      tx.complianceManager.replaceAssetCompliance,
+      {},
+      rawTicker,
+      rawAssetCompliance
+    );
   }
 
   return new SecurityToken({ ticker }, context);
