@@ -90,10 +90,15 @@ describe('Offerings class', () => {
 
   describe('method: getOne', () => {
     test('should return the requested Offering', async () => {
+      entityMockUtils.configureMocks({
+        stoOptions: {
+          ticker,
+        },
+      });
       const id = new BigNumber(1);
       const result = await offerings.getOne({ id });
 
-      expect(result).toEqual(entityMockUtils.getStoInstance({ ticker }));
+      expect(result).toEqual(entityMockUtils.getStoInstance());
     });
 
     test('should throw an error if the Offering does not exist', () => {

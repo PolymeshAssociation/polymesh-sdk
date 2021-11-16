@@ -142,7 +142,9 @@ export async function getAuthorization(
   }
 
   return {
-    roles: authorized.every(res => res),
+    roles:
+      authorized.every(res => res) ||
+      'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
     permissions: {
       transactions,
       tokens: [],

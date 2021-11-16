@@ -190,7 +190,7 @@ describe('modifyCaCheckpoint procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         corporateAction: {
-          ticker,
+          token: { ticker },
         },
       } as Params;
 

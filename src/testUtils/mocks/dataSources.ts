@@ -143,6 +143,8 @@ import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
+  CheckPermissionsResult,
+  CheckRolesResult,
   ClaimData,
   ClaimType,
   CountryCode as CountryCodeEnum,
@@ -151,6 +153,7 @@ import {
   KeyringPair,
   ResultSet,
   SecondaryKey,
+  SignerType,
   Subsidy,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
@@ -296,8 +299,11 @@ interface ContextOptions {
   balance?: AccountBalance;
   subsidy?: Omit<Subsidy, 'beneficiary'>;
   hasRoles?: boolean;
+  checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
+  checkPermissions?: CheckPermissionsResult<SignerType.Account>;
   hasTokenPermissions?: boolean;
+  checkTokenPermissions?: CheckPermissionsResult<SignerType.Identity>;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
   invalidDids?: string[];
@@ -522,8 +528,17 @@ const defaultContextOptions: ContextOptions = {
     total: new BigNumber(110),
   },
   hasRoles: true,
+  checkRoles: {
+    result: true,
+  },
   hasPermissions: true,
+  checkPermissions: {
+    result: true,
+  },
   hasTokenPermissions: true,
+  checkTokenPermissions: {
+    result: true,
+  },
   validCdd: true,
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
@@ -636,6 +651,7 @@ function configureContext(opts: ContextOptions): void {
   const identity = {
     did: opts.did,
     hasRoles: sinon.stub().resolves(opts.hasRoles),
+    checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
     getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
@@ -645,6 +661,7 @@ function configureContext(opts: ContextOptions): void {
     },
     tokenPermissions: {
       hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
+      checkPermissions: sinon.stub().resolves(opts.checkTokenPermissions),
     },
     areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
     isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
@@ -663,6 +680,7 @@ function configureContext(opts: ContextOptions): void {
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
+        checkPermissions: sinon.stub().resolves(opts.checkPermissions),
         isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
     : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
