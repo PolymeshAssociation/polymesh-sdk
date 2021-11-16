@@ -101,6 +101,9 @@ export class CorporateAction extends Entity<UniqueIdentifiers, unknown> {
    */
   public taxWithholdings: TaxWithholding[];
 
+  /**
+   * type of corporate action being represented
+   */
   protected kind: CorporateActionKind;
 
   /**
