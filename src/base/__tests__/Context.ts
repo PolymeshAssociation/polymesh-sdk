@@ -1682,7 +1682,7 @@ describe('Context class', () => {
       const corporateActions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
-            kind: CorporateActionKind.UnpredictableBenefit,
+            kind: CorporateActionKind.PredictableBenefit,
             decl_date: new Date('10/14/1987').getTime(),
             record_date: dsMockUtils.createMockRecordDate({
               date: new Date('10/14/2019').getTime(),
