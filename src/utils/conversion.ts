@@ -1,5 +1,5 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
   hexToU8a,
   isHex,
@@ -345,6 +345,20 @@ export function stringToAccountId(accountId: string, context: Context): AccountI
  */
 export function accountIdToString(accountId: AccountId): string {
   return accountId.toString();
+}
+
+/**
+ * @hidden
+ */
+export function hashToString(hash: Hash): string {
+  return hash.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToHash(hash: string, context: Context): Hash {
+  return context.polymeshApi.createType('Hash', hash);
 }
 
 /**
@@ -1930,8 +1944,10 @@ export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventI
 
   return {
     blockNumber: new BigNumber(blockNumber),
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     blockDate: new Date(block!.datetime),
+    blockHash: block!.hash!,
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
     eventIndex,
   };
 }

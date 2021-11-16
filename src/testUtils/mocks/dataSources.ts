@@ -11,19 +11,22 @@ import {
   AccountId,
   AccountInfo,
   Balance,
+  Block,
+  Call,
   DispatchError,
   DispatchErrorModule,
   EventRecord,
   ExtrinsicStatus,
   Hash,
+  Header,
   Index,
   Moment,
   Permill,
   RefCount,
   RuntimeVersion,
   Signature,
+  SignedBlock,
 } from '@polkadot/types/interfaces';
-import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { hexToU8a, stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
@@ -1717,7 +1720,13 @@ export const createMockBytes = (value?: string): Bytes => createMockU8aCodec(val
 /**
  * @hidden
  */
-export const createMockHash = (value?: string): Hash => createMockStringCodec(value) as Hash;
+export const createMockHash = (value?: string | Hash): Hash => {
+  if (isCodec<Hash>(value)) {
+    return value;
+  }
+
+  return createMockStringCodec(value) as Hash;
+};
 
 /**
  * @hidden
@@ -3472,4 +3481,79 @@ export const createMockClassicTickerRegistration = (
     },
     !registration
   ) as ClassicTickerRegistration;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignedBlock = (
+  signedBlock?:
+    | SignedBlock
+    | {
+        block: Block | Parameters<typeof createMockBlock>[0];
+      }
+): SignedBlock => {
+  const { block } = signedBlock || {
+    block: createMockBlock(),
+  };
+
+  return createMockCodec(
+    {
+      block: createMockBlock(block),
+    },
+    !signedBlock
+  ) as SignedBlock;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBlock = (
+  block?:
+    | Block
+    | {
+        header: Header | Parameters<typeof createMockHeader>[0];
+      }
+): Block => {
+  const { header } = block || {
+    header: createMockHeader(),
+  };
+
+  return createMockCodec(
+    {
+      header: createMockHeader(header),
+    },
+    !block
+  ) as Block;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockHeader = (
+  header?:
+    | Header
+    | {
+        parentHash: Hash | Parameters<typeof createMockHash>[0];
+        number: Compact<u32>;
+        stateRoot: Hash | Parameters<typeof createMockHash>[0];
+        extrinsicsRoot: Hash | Parameters<typeof createMockHash>[0];
+      }
+): Header => {
+  const { parentHash, number, stateRoot, extrinsicsRoot } = header || {
+    parentHash: createMockHash(),
+    number: createMockCompact(),
+    stateRoot: createMockHash(),
+    extrinsicsRoot: createMockHash(),
+  };
+
+  return createMockCodec(
+    {
+      parentHash: createMockHash(parentHash),
+      number: createMockCompact(number.unwrap()),
+      stateRoot: createMockHash(stateRoot),
+      extrinsicsRoot: createMockHash(extrinsicsRoot),
+    },
+    !header
+  ) as Header;
 };
