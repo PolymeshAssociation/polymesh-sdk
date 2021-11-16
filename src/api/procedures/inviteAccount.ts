@@ -27,7 +27,7 @@ export interface InviteAccountParams {
  * @hidden
  */
 export async function prepareInviteAccount(
-  this: Procedure<InviteAccountParams, void>,
+  this: Procedure<InviteAccountParams>,
   args: InviteAccountParams
 ): Promise<void> {
   const {
@@ -119,7 +119,7 @@ export async function prepareInviteAccount(
 /**
  * @hidden
  */
-export const inviteAccount = (): Procedure<InviteAccountParams, void> =>
+export const inviteAccount = (): Procedure<InviteAccountParams> =>
   new Procedure(prepareInviteAccount, {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
