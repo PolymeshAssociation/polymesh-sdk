@@ -1,15 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  Context,
-  DefaultPortfolio,
-  Entity,
-  Identity,
-  Sto,
-  TransactionQueue,
-  Venue,
-} from '~/internal';
+import { Context, Entity, Sto, TransactionQueue } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
 import { InvestmentResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -28,6 +20,12 @@ jest.mock(
   '~/api/entities/DefaultPortfolio',
   require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
     '~/api/entities/DefaultPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
   )
 );
 jest.mock(
@@ -74,7 +72,7 @@ describe('Sto class', () => {
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
-      expect(sto.ticker).toBe(ticker);
+      expect(sto.token.ticker).toBe(ticker);
       expect(sto.id).toEqual(id);
     });
   });
@@ -112,7 +110,7 @@ describe('Sto class', () => {
         offering_asset: dsMockUtils.createMockTicker(ticker),
         raising_portfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(otherDid),
-          kind: dsMockUtils.createMockPortfolioKind('Default'),
+          kind: dsMockUtils.createMockPortfolioKind({ User: dsMockUtils.createMockU64(1) }),
         }),
         raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
         tiers: [
@@ -142,10 +140,13 @@ describe('Sto class', () => {
 
     test('should return details for a security token offering', async () => {
       const fakeResult = {
-        creator: new Identity({ did: someDid }, context),
+        creator: entityMockUtils.getIdentityInstance({ did: someDid }),
         name,
-        offeringPortfolio: new DefaultPortfolio({ did: someDid }, context),
-        raisingPortfolio: new DefaultPortfolio({ did: otherDid }, context),
+        offeringPortfolio: entityMockUtils.getDefaultPortfolioInstance({ did: someDid }),
+        raisingPortfolio: entityMockUtils.getNumberedPortfolioInstance({
+          did: otherDid,
+          id: new BigNumber(1),
+        }),
         raisingCurrency,
         tiers: [
           {
@@ -154,7 +155,7 @@ describe('Sto class', () => {
             remaining: remaining.shiftedBy(-6),
           },
         ],
-        venue: new Venue({ id: new BigNumber(1) }, context),
+        venue: entityMockUtils.getVenueInstance({ id: new BigNumber(1) }),
         start: date,
         end: date,
         status: {
@@ -378,8 +379,8 @@ describe('Sto class', () => {
       const sto = new Sto({ id, ticker }, context);
       const did = 'someDid';
 
-      const purchasePortfolio = new DefaultPortfolio({ did }, context);
-      const fundingPortfolio = new DefaultPortfolio({ did }, context);
+      const purchasePortfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
+      const fundingPortfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
       const purchaseAmount = new BigNumber(10);
 
       const args = {

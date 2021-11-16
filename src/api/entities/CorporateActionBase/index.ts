@@ -11,6 +11,7 @@ import {
   LinkCaDocsParams,
   ModifyCaCheckpointParams,
   PolymeshError,
+  SecurityToken,
 } from '~/internal';
 import { ErrorCode, ProcedureMethod } from '~/types';
 import { HumanReadableType } from '~/types/utils';
@@ -69,9 +70,9 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   public id: BigNumber;
 
   /**
-   * ticker of the Security Token
+   * Security Token affected by this Corporate Action
    */
-  public ticker: string;
+  public token: SecurityToken;
 
   /**
    * date at which the Corporate Action was created
@@ -121,7 +122,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.ticker = ticker;
+    this.token = new SecurityToken({ ticker }, context);
     this.kind = kind;
     this.declarationDate = declarationDate;
     this.description = description;
@@ -172,7 +173,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
         polymeshApi: { query },
       },
       context,
-      ticker,
+      token: { ticker },
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
@@ -234,7 +235,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       },
       context,
       id,
-      ticker,
+      token: { ticker },
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
@@ -247,7 +248,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    */
   public toJson(): HumanReadable {
     const {
-      ticker,
+      token,
       id,
       declarationDate,
       description,
@@ -257,7 +258,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     } = this;
 
     return toHumanReadable({
-      ticker,
+      ticker: token,
       id,
       declarationDate,
       defaultTaxWithholding,

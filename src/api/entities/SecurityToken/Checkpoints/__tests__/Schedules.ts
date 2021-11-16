@@ -197,7 +197,7 @@ describe('Schedules class', () => {
         nextCheckpointDate,
       });
       expect(result[0].schedule.id).toEqual(id);
-      expect(result[0].schedule.ticker).toEqual(ticker);
+      expect(result[0].schedule.token.ticker).toEqual(ticker);
       expect(result[0].schedule.start).toEqual(start);
       expect(result[0].schedule.period).toEqual(period);
     });

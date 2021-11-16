@@ -71,14 +71,27 @@ describe('Procedure class', () => {
 
       let result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: true,
-        signerPermissions: true,
-        roles: true,
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: true },
         accountFrozen: false,
         noIdentity: false,
       });
 
-      context = dsMockUtils.getContextInstance({ hasRoles: false, hasPermissions: false });
+      context = dsMockUtils.getContextInstance({
+        checkRoles: {
+          result: false,
+          missingRoles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
+        },
+        checkPermissions: {
+          result: false,
+          missingPermissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+          },
+        },
+      });
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
@@ -90,9 +103,16 @@ describe('Procedure class', () => {
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: true,
-        signerPermissions: false,
-        roles: false,
+        agentPermissions: { result: true },
+        signerPermissions: {
+          result: false,
+          missingPermissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+          },
+        },
+        roles: { result: false, missingRoles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }] },
         accountFrozen: false,
         noIdentity: false,
       });
@@ -109,9 +129,9 @@ describe('Procedure class', () => {
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: true,
-        signerPermissions: true,
-        roles: true,
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: true },
         accountFrozen: false,
         noIdentity: false,
       });
@@ -123,22 +143,24 @@ describe('Procedure class', () => {
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
-        agentPermissions: false,
-        signerPermissions: false,
+        agentPermissions: 'Some Message',
+        signerPermissions: 'Another Message',
       });
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: false,
-        signerPermissions: false,
-        roles: true,
+        agentPermissions: {
+          result: false,
+          message: 'Some Message',
+        },
+        signerPermissions: { result: false, message: 'Another Message' },
+        roles: { result: true },
         accountFrozen: false,
         noIdentity: false,
       });
 
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
-        permissions: false,
         signerPermissions: {
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
@@ -153,9 +175,9 @@ describe('Procedure class', () => {
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: true,
-        signerPermissions: true,
-        roles: true,
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: true },
         accountFrozen: false,
         noIdentity: false,
       });
@@ -170,9 +192,9 @@ describe('Procedure class', () => {
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: true,
-        signerPermissions: true,
-        roles: true,
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: true },
         accountFrozen: false,
         noIdentity: false,
       });
@@ -187,9 +209,9 @@ describe('Procedure class', () => {
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: true,
-        signerPermissions: true,
-        roles: false,
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: false, missingRoles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }] },
         accountFrozen: false,
         noIdentity: true,
       });
@@ -198,12 +220,33 @@ describe('Procedure class', () => {
 
       result = await procedure.checkAuthorization(args, context);
       expect(result).toEqual({
-        agentPermissions: true,
-        signerPermissions: true,
-        roles: true,
+        agentPermissions: { result: true },
+        signerPermissions: { result: true },
+        roles: { result: true },
         accountFrozen: false,
         noIdentity: false,
       });
+    });
+
+    test('should throw an error if the Procedure requires permissions over more than one token', () => {
+      const prepareFunc = sinon.stub();
+      const authFunc = sinon.stub();
+      authFunc.resolves({
+        permissions: {
+          tokens: [
+            entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' }),
+            entityMockUtils.getSecurityTokenInstance({ ticker: 'OTHER_TICKER' }),
+          ],
+          transactions: [TxTags.asset.Freeze],
+        },
+      });
+      const procedure = new Procedure(prepareFunc, authFunc);
+
+      const args = 'args';
+
+      return expect(procedure.checkAuthorization(args, context)).rejects.toThrow(
+        'Procedures cannot require permissions for more than one Security Token. Please contact the Polymath team'
+      );
     });
   });
 
@@ -370,8 +413,16 @@ describe('Procedure class', () => {
 
       context = dsMockUtils.getContextInstance({
         isFrozen: false,
-        hasRoles: false,
-        hasPermissions: false,
+        checkRoles: {
+          result: false,
+          missingRoles: [({ type: 'FakeRole' } as unknown) as Role],
+        },
+        checkPermissions: {
+          result: false,
+        },
+        checkTokenPermissions: {
+          result: false,
+        },
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
@@ -398,7 +449,9 @@ describe('Procedure class', () => {
         },
       });
 
-      context = dsMockUtils.getContextInstance({ hasTokenPermissions: false });
+      context = dsMockUtils.getContextInstance({
+        checkTokenPermissions: { result: false, missingPermissions: [TxTags.asset.Freeze] },
+      });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required permissions to execute this procedure"
@@ -417,14 +470,14 @@ describe('Procedure class', () => {
       );
 
       proc = new Procedure(func, {
-        permissions: false,
+        permissions: 'Some Failure Message',
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Account doesn't have the required permissions to execute this procedure"
       );
 
-      proc = new Procedure(func, async () => ({ roles: false }));
+      proc = new Procedure(func, async () => ({ roles: 'Failed just because' }));
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
         "Current Identity doesn't have the required roles to execute this procedure"

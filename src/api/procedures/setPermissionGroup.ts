@@ -175,17 +175,9 @@ export function getAuthorization(
  */
 export function prepareStorage(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
-  { group }: Params
+  { group: { token } }: Params
 ): Storage {
   const { context } = this;
-
-  let token: string | SecurityToken;
-
-  if (isEntity(group)) {
-    ({ ticker: token } = group);
-  } else {
-    ({ token } = group);
-  }
 
   return {
     token: getToken(token, context),

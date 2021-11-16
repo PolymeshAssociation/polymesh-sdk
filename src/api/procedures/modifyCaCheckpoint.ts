@@ -37,7 +37,10 @@ export async function prepareModifyCaCheckpoint(
   } = this;
   const {
     checkpoint,
-    corporateAction: { id: localId, ticker },
+    corporateAction: {
+      id: localId,
+      token: { ticker },
+    },
   } = args;
 
   if (checkpoint) {
@@ -55,7 +58,11 @@ export async function prepareModifyCaCheckpoint(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { corporateAction: { ticker } }: Params
+  {
+    corporateAction: {
+      token: { ticker },
+    },
+  }: Params
 ): ProcedureAuthorization {
   const { context } = this;
 
