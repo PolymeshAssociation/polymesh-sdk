@@ -181,7 +181,7 @@ describe('setAssetRequirements procedure', () => {
     );
   });
 
-  test('should add a reset asset compliance transaction to the queue', async () => {
+  test('should add a reset asset compliance transaction to the queue if the new requirements are empty', async () => {
     const currentComplianceRequirement = rawComplianceRequirement;
     assetCompliancesStub.withArgs(rawTicker).returns({
       requirements: currentComplianceRequirement,
