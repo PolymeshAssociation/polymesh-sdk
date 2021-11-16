@@ -1,7 +1,11 @@
 import BigNumber from 'bignumber.js';
 
-import { CorporateActionBase } from '~/api/entities/CorporateActionBase';
-import { Context, modifyCaCheckpoint, ModifyCaCheckpointParams } from '~/internal';
+import {
+  Context,
+  CorporateActionBase,
+  modifyCaCheckpoint,
+  ModifyCaCheckpointParams,
+} from '~/internal';
 import {
   CorporateActionKind,
   CorporateActionTargets,

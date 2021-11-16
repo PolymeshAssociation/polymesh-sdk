@@ -106,7 +106,7 @@ describe('modifyCaCheckpoint procedure', () => {
       let account = entityMockUtils.getAccountInstance({ isEqual: false });
 
       expect(boundFunc({ account })).toEqual({
-        roles: false,
+        roles: 'Only the current Account can leave its Identity',
         permissions: {
           tokens: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],
