@@ -484,12 +484,16 @@ describe('DividendDistribution class', () => {
   describe('method: getPaymentHistory', () => {
     test('should return the amount of the withheld tax', async () => {
       const blockId = new BigNumber(1);
+      const blockHash = 'someHash';
       const eventId = 'eventId';
       const datetime = '2020-10-10';
       const eventDid = 'eventDid';
       const balance = new BigNumber(100);
       const tax = new BigNumber(10);
 
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        multi: [dsMockUtils.createMockHash(blockHash)],
+      });
       dsMockUtils.createApolloQueryStub(
         getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
@@ -515,37 +519,18 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      let result = await dividendDistribution.getPaymentHistory();
+      const result = await dividendDistribution.getPaymentHistory();
 
       expect(result.data).toEqual([
         {
           blockNumber: blockId,
+          blockHash,
           date: new Date(`${datetime}Z`),
           target: entityMockUtils.getIdentityInstance({ did: eventDid }),
           amount: balance,
           withheldTax: tax,
         },
       ]);
-
-      dsMockUtils.createApolloQueryStub(
-        getHistoryOfPaymentEventsForCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          getHistoryOfPaymentEventsForCA: {
-            totalCount: 1,
-            items: undefined,
-          },
-        }
-      );
-
-      result = await dividendDistribution.getPaymentHistory();
-
-      expect(result.data).toEqual([]);
     });
 
     test('should return null if the query result is empty', async () => {
@@ -566,6 +551,7 @@ describe('DividendDistribution class', () => {
       );
       const result = await dividendDistribution.getPaymentHistory();
       expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
     });
 
     test('should throw an error if the Dividend Distribution does not exist', () => {
