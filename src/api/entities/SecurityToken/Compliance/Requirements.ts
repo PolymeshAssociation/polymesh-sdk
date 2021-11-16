@@ -83,7 +83,7 @@ export class Requirements extends Namespace<SecurityToken> {
   }
 
   /**
-   * Add a compliance to the current requirements for the Security Token.
+   * Add a new compliance requirement to the the Security Token. This doesn't modify existing requirements
    */
   public add: ProcedureMethod<AddAssetRequirementParams, SecurityToken>;
 
