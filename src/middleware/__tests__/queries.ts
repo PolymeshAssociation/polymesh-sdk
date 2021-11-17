@@ -1,13 +1,13 @@
+import { Context } from '~/internal';
 import {
   ClaimScopeTypeEnum,
   ClaimTypeEnum,
   EventIdEnum,
   ModuleIdEnum,
   Order,
-  ProposalOrderFields,
-  ProposalStateEnum,
   ProposalVotesOrderFields,
 } from '~/middleware/types';
+import { dsMockUtils } from '~/testUtils/mocks';
 
 import {
   didsWithClaims,
@@ -18,8 +18,6 @@ import {
   getWithholdingTaxesOfCa,
   investments,
   issuerDidsWithClaimsByTarget,
-  proposal,
-  proposals,
   proposalVotes,
   scopesByIdentity,
   settlements,
@@ -105,25 +103,7 @@ describe('transactionByHash', () => {
       transactionHash: 'someTransactionHash',
     };
 
-    const result = transactionByHash(variables);
-
-    expect(result.v1.query).toBeDefined();
-    expect(result.v1.variables).toEqual(variables);
-  });
-});
-
-describe('proposals', () => {
-  test('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      proposers: ['someProposer'],
-      states: [ProposalStateEnum.Scheduled],
-      orderBy: {
-        field: ProposalOrderFields.VotesCount,
-        order: Order.Desc,
-      },
-    };
-
-    const result = proposals(variables);
+    const result = transactionByHash(variables, dsMockUtils.getContextInstance());
 
     expect(result.v1.query).toBeDefined();
     expect(result.v1.variables).toEqual(variables);
@@ -158,15 +138,15 @@ describe('tokensHeldByDid', () => {
 
 describe('transactions', () => {
   test('should pass the variables to the grapqhl query', () => {
-    let result = transactions();
+    let result = transactions(undefined, dsMockUtils.getContextInstance());
 
     expect(result.v1.query).toBeDefined();
-    expect(result.v1.variables).toBeUndefined();
+    expect(result.v1.variables).toEqual({});
 
     const variables = {
-      address: 'someAddress',
+      address: '5Dr6HW25yAgXKPs5re5qXsDi7wWzwSF7xQgGYJvQeFFJoGpV',
     };
-    result = transactions(variables);
+    result = transactions(variables, dsMockUtils.getContextInstance());
     expect(result.v1.query).toBeDefined();
     expect(result.v1.variables).toEqual(variables);
   });
@@ -194,19 +174,6 @@ describe('issuerDidsWithClaimsByTarget', () => {
     };
 
     const result = issuerDidsWithClaimsByTarget(variables);
-
-    expect(result.v1.query).toBeDefined();
-    expect(result.v1.variables).toEqual(variables);
-  });
-});
-
-describe('proposal', () => {
-  test('should pass the variables to the grapqhl query', () => {
-    const variables = {
-      pipId: 1,
-    };
-
-    const result = proposal(variables);
 
     expect(result.v1.query).toBeDefined();
     expect(result.v1.variables).toEqual(variables);

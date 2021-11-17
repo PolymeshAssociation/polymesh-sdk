@@ -328,6 +328,18 @@ export type Block = Node & {
   specVersionId: Scalars['String'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads and enables pagination through a set of `Event`. */
+  eventsByParentBlockId: EventsConnection;
+};
+
+export type BlockEventsByParentBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<EventsOrderBy>>;
+  filter?: Maybe<EventFilter>;
 };
 
 /** A filter to be used against `Block` object types. All fields are combined with a logical ‘and.’ */
@@ -468,8 +480,8 @@ export type Claim = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  targetDid: Scalars['String'];
-  issuer: Scalars['String'];
+  targetDidId: Scalars['String'];
+  issuerId: Scalars['String'];
   issuanceDate: Scalars['BigFloat'];
   lastUpdateDate: Scalars['BigFloat'];
   expiry?: Maybe<Scalars['BigFloat']>;
@@ -480,16 +492,20 @@ export type Claim = Node & {
   cddId?: Maybe<Scalars['String']>;
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `IdentityWithClaim` that is related to this `Claim`. */
+  targetDid?: Maybe<IdentityWithClaim>;
+  /** Reads a single `IssuerIdentityWithClaim` that is related to this `Claim`. */
+  issuer?: Maybe<IssuerIdentityWithClaim>;
 };
 
 /** A filter to be used against `Claim` object types. All fields are combined with a logical ‘and.’ */
 export type ClaimFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
-  /** Filter by the object’s `targetDid` field. */
-  targetDid?: Maybe<StringFilter>;
-  /** Filter by the object’s `issuer` field. */
-  issuer?: Maybe<StringFilter>;
+  /** Filter by the object’s `targetDidId` field. */
+  targetDidId?: Maybe<StringFilter>;
+  /** Filter by the object’s `issuerId` field. */
+  issuerId?: Maybe<StringFilter>;
   /** Filter by the object’s `issuanceDate` field. */
   issuanceDate?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `lastUpdateDate` field. */
@@ -620,10 +636,10 @@ export enum ClaimsOrderBy {
   Natural = 'NATURAL',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  TargetDidAsc = 'TARGET_DID_ASC',
-  TargetDidDesc = 'TARGET_DID_DESC',
-  IssuerAsc = 'ISSUER_ASC',
-  IssuerDesc = 'ISSUER_DESC',
+  TargetDidIdAsc = 'TARGET_DID_ID_ASC',
+  TargetDidIdDesc = 'TARGET_DID_ID_DESC',
+  IssuerIdAsc = 'ISSUER_ID_ASC',
+  IssuerIdDesc = 'ISSUER_ID_DESC',
   IssuanceDateAsc = 'ISSUANCE_DATE_ASC',
   IssuanceDateDesc = 'ISSUANCE_DATE_DESC',
   LastUpdateDateAsc = 'LAST_UPDATE_DATE_ASC',
@@ -646,6 +662,349 @@ export enum ClaimsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+}
+
+export type DataBlock = {
+  __typename?: 'DataBlock';
+  id?: Maybe<Scalars['Int']>;
+  parentId?: Maybe<Scalars['Int']>;
+  hash?: Maybe<Scalars['String']>;
+  parentHash?: Maybe<Scalars['String']>;
+  stateRoot?: Maybe<Scalars['String']>;
+  extrinsicsRoot?: Maybe<Scalars['String']>;
+  countExtrinsics?: Maybe<Scalars['Int']>;
+  countExtrinsicsUnsigned?: Maybe<Scalars['Int']>;
+  countExtrinsicsSigned?: Maybe<Scalars['Int']>;
+  countExtrinsicsError?: Maybe<Scalars['Int']>;
+  countExtrinsicsSuccess?: Maybe<Scalars['Int']>;
+  countEvents?: Maybe<Scalars['Int']>;
+  datetime?: Maybe<Scalars['Datetime']>;
+  specVersionId?: Maybe<Scalars['String']>;
+};
+
+/** A filter to be used against `DataBlock` object types. All fields are combined with a logical ‘and.’ */
+export type DataBlockFilter = {
+  /** Filter by the object’s `id` field. */
+  id?: Maybe<IntFilter>;
+  /** Filter by the object’s `parentId` field. */
+  parentId?: Maybe<IntFilter>;
+  /** Filter by the object’s `hash` field. */
+  hash?: Maybe<StringFilter>;
+  /** Filter by the object’s `parentHash` field. */
+  parentHash?: Maybe<StringFilter>;
+  /** Filter by the object’s `stateRoot` field. */
+  stateRoot?: Maybe<StringFilter>;
+  /** Filter by the object’s `extrinsicsRoot` field. */
+  extrinsicsRoot?: Maybe<StringFilter>;
+  /** Filter by the object’s `countExtrinsics` field. */
+  countExtrinsics?: Maybe<IntFilter>;
+  /** Filter by the object’s `countExtrinsicsUnsigned` field. */
+  countExtrinsicsUnsigned?: Maybe<IntFilter>;
+  /** Filter by the object’s `countExtrinsicsSigned` field. */
+  countExtrinsicsSigned?: Maybe<IntFilter>;
+  /** Filter by the object’s `countExtrinsicsError` field. */
+  countExtrinsicsError?: Maybe<IntFilter>;
+  /** Filter by the object’s `countExtrinsicsSuccess` field. */
+  countExtrinsicsSuccess?: Maybe<IntFilter>;
+  /** Filter by the object’s `countEvents` field. */
+  countEvents?: Maybe<IntFilter>;
+  /** Filter by the object’s `datetime` field. */
+  datetime?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `specVersionId` field. */
+  specVersionId?: Maybe<StringFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<DataBlockFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<DataBlockFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<DataBlockFilter>;
+};
+
+/** A connection to a list of `DataBlock` values. */
+export type DataBlocksConnection = {
+  __typename?: 'DataBlocksConnection';
+  /** A list of `DataBlock` objects. */
+  nodes: Array<Maybe<DataBlock>>;
+  /** A list of edges which contains the `DataBlock` and cursor to aid in pagination. */
+  edges: Array<DataBlocksEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `DataBlock` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `DataBlock` edge in the connection. */
+export type DataBlocksEdge = {
+  __typename?: 'DataBlocksEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `DataBlock` at the end of the edge. */
+  node?: Maybe<DataBlock>;
+};
+
+/** Methods to use when ordering `DataBlock`. */
+export enum DataBlocksOrderBy {
+  Natural = 'NATURAL',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  ParentIdAsc = 'PARENT_ID_ASC',
+  ParentIdDesc = 'PARENT_ID_DESC',
+  HashAsc = 'HASH_ASC',
+  HashDesc = 'HASH_DESC',
+  ParentHashAsc = 'PARENT_HASH_ASC',
+  ParentHashDesc = 'PARENT_HASH_DESC',
+  StateRootAsc = 'STATE_ROOT_ASC',
+  StateRootDesc = 'STATE_ROOT_DESC',
+  ExtrinsicsRootAsc = 'EXTRINSICS_ROOT_ASC',
+  ExtrinsicsRootDesc = 'EXTRINSICS_ROOT_DESC',
+  CountExtrinsicsAsc = 'COUNT_EXTRINSICS_ASC',
+  CountExtrinsicsDesc = 'COUNT_EXTRINSICS_DESC',
+  CountExtrinsicsUnsignedAsc = 'COUNT_EXTRINSICS_UNSIGNED_ASC',
+  CountExtrinsicsUnsignedDesc = 'COUNT_EXTRINSICS_UNSIGNED_DESC',
+  CountExtrinsicsSignedAsc = 'COUNT_EXTRINSICS_SIGNED_ASC',
+  CountExtrinsicsSignedDesc = 'COUNT_EXTRINSICS_SIGNED_DESC',
+  CountExtrinsicsErrorAsc = 'COUNT_EXTRINSICS_ERROR_ASC',
+  CountExtrinsicsErrorDesc = 'COUNT_EXTRINSICS_ERROR_DESC',
+  CountExtrinsicsSuccessAsc = 'COUNT_EXTRINSICS_SUCCESS_ASC',
+  CountExtrinsicsSuccessDesc = 'COUNT_EXTRINSICS_SUCCESS_DESC',
+  CountEventsAsc = 'COUNT_EVENTS_ASC',
+  CountEventsDesc = 'COUNT_EVENTS_DESC',
+  DatetimeAsc = 'DATETIME_ASC',
+  DatetimeDesc = 'DATETIME_DESC',
+  SpecVersionIdAsc = 'SPEC_VERSION_ID_ASC',
+  SpecVersionIdDesc = 'SPEC_VERSION_ID_DESC',
+}
+
+export type DataEvent = {
+  __typename?: 'DataEvent';
+  blockId?: Maybe<Scalars['Int']>;
+  eventIdx?: Maybe<Scalars['Int']>;
+  extrinsicIdx?: Maybe<Scalars['Int']>;
+  specVersionId?: Maybe<Scalars['Int']>;
+  moduleId?: Maybe<Scalars['String']>;
+  eventId?: Maybe<Scalars['String']>;
+  attributes?: Maybe<Scalars['JSON']>;
+  eventArg0?: Maybe<Scalars['String']>;
+  eventArg1?: Maybe<Scalars['String']>;
+  eventArg2?: Maybe<Scalars['String']>;
+  eventArg3?: Maybe<Scalars['String']>;
+  claimType?: Maybe<Scalars['String']>;
+  claimScope?: Maybe<Scalars['String']>;
+  claimIssuer?: Maybe<Scalars['String']>;
+  claimExpiry?: Maybe<Scalars['String']>;
+  corporateActionTicker?: Maybe<Scalars['String']>;
+  fundraiserOfferingAsset?: Maybe<Scalars['String']>;
+  transferTo?: Maybe<Scalars['String']>;
+};
+
+/** A filter to be used against `DataEvent` object types. All fields are combined with a logical ‘and.’ */
+export type DataEventFilter = {
+  /** Filter by the object’s `blockId` field. */
+  blockId?: Maybe<IntFilter>;
+  /** Filter by the object’s `eventIdx` field. */
+  eventIdx?: Maybe<IntFilter>;
+  /** Filter by the object’s `extrinsicIdx` field. */
+  extrinsicIdx?: Maybe<IntFilter>;
+  /** Filter by the object’s `specVersionId` field. */
+  specVersionId?: Maybe<IntFilter>;
+  /** Filter by the object’s `moduleId` field. */
+  moduleId?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventId` field. */
+  eventId?: Maybe<StringFilter>;
+  /** Filter by the object’s `attributes` field. */
+  attributes?: Maybe<JsonFilter>;
+  /** Filter by the object’s `eventArg0` field. */
+  eventArg0?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventArg1` field. */
+  eventArg1?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventArg2` field. */
+  eventArg2?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventArg3` field. */
+  eventArg3?: Maybe<StringFilter>;
+  /** Filter by the object’s `claimType` field. */
+  claimType?: Maybe<StringFilter>;
+  /** Filter by the object’s `claimScope` field. */
+  claimScope?: Maybe<StringFilter>;
+  /** Filter by the object’s `claimIssuer` field. */
+  claimIssuer?: Maybe<StringFilter>;
+  /** Filter by the object’s `claimExpiry` field. */
+  claimExpiry?: Maybe<StringFilter>;
+  /** Filter by the object’s `corporateActionTicker` field. */
+  corporateActionTicker?: Maybe<StringFilter>;
+  /** Filter by the object’s `fundraiserOfferingAsset` field. */
+  fundraiserOfferingAsset?: Maybe<StringFilter>;
+  /** Filter by the object’s `transferTo` field. */
+  transferTo?: Maybe<StringFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<DataEventFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<DataEventFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<DataEventFilter>;
+};
+
+/** A connection to a list of `DataEvent` values. */
+export type DataEventsConnection = {
+  __typename?: 'DataEventsConnection';
+  /** A list of `DataEvent` objects. */
+  nodes: Array<Maybe<DataEvent>>;
+  /** A list of edges which contains the `DataEvent` and cursor to aid in pagination. */
+  edges: Array<DataEventsEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `DataEvent` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `DataEvent` edge in the connection. */
+export type DataEventsEdge = {
+  __typename?: 'DataEventsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `DataEvent` at the end of the edge. */
+  node?: Maybe<DataEvent>;
+};
+
+/** Methods to use when ordering `DataEvent`. */
+export enum DataEventsOrderBy {
+  Natural = 'NATURAL',
+  BlockIdAsc = 'BLOCK_ID_ASC',
+  BlockIdDesc = 'BLOCK_ID_DESC',
+  EventIdxAsc = 'EVENT_IDX_ASC',
+  EventIdxDesc = 'EVENT_IDX_DESC',
+  ExtrinsicIdxAsc = 'EXTRINSIC_IDX_ASC',
+  ExtrinsicIdxDesc = 'EXTRINSIC_IDX_DESC',
+  SpecVersionIdAsc = 'SPEC_VERSION_ID_ASC',
+  SpecVersionIdDesc = 'SPEC_VERSION_ID_DESC',
+  ModuleIdAsc = 'MODULE_ID_ASC',
+  ModuleIdDesc = 'MODULE_ID_DESC',
+  EventIdAsc = 'EVENT_ID_ASC',
+  EventIdDesc = 'EVENT_ID_DESC',
+  AttributesAsc = 'ATTRIBUTES_ASC',
+  AttributesDesc = 'ATTRIBUTES_DESC',
+  EventArg_0Asc = 'EVENT_ARG_0_ASC',
+  EventArg_0Desc = 'EVENT_ARG_0_DESC',
+  EventArg_1Asc = 'EVENT_ARG_1_ASC',
+  EventArg_1Desc = 'EVENT_ARG_1_DESC',
+  EventArg_2Asc = 'EVENT_ARG_2_ASC',
+  EventArg_2Desc = 'EVENT_ARG_2_DESC',
+  EventArg_3Asc = 'EVENT_ARG_3_ASC',
+  EventArg_3Desc = 'EVENT_ARG_3_DESC',
+  ClaimTypeAsc = 'CLAIM_TYPE_ASC',
+  ClaimTypeDesc = 'CLAIM_TYPE_DESC',
+  ClaimScopeAsc = 'CLAIM_SCOPE_ASC',
+  ClaimScopeDesc = 'CLAIM_SCOPE_DESC',
+  ClaimIssuerAsc = 'CLAIM_ISSUER_ASC',
+  ClaimIssuerDesc = 'CLAIM_ISSUER_DESC',
+  ClaimExpiryAsc = 'CLAIM_EXPIRY_ASC',
+  ClaimExpiryDesc = 'CLAIM_EXPIRY_DESC',
+  CorporateActionTickerAsc = 'CORPORATE_ACTION_TICKER_ASC',
+  CorporateActionTickerDesc = 'CORPORATE_ACTION_TICKER_DESC',
+  FundraiserOfferingAssetAsc = 'FUNDRAISER_OFFERING_ASSET_ASC',
+  FundraiserOfferingAssetDesc = 'FUNDRAISER_OFFERING_ASSET_DESC',
+  TransferToAsc = 'TRANSFER_TO_ASC',
+  TransferToDesc = 'TRANSFER_TO_DESC',
+}
+
+export type DataExtrinsic = {
+  __typename?: 'DataExtrinsic';
+  blockId?: Maybe<Scalars['Int']>;
+  extrinsicIdx?: Maybe<Scalars['Int']>;
+  signed?: Maybe<Scalars['Int']>;
+  callId?: Maybe<Scalars['String']>;
+  moduleId?: Maybe<Scalars['String']>;
+  nonce?: Maybe<Scalars['Int']>;
+  extrinsicHash?: Maybe<Scalars['String']>;
+  address?: Maybe<Scalars['String']>;
+  signedbyAddress?: Maybe<Scalars['Int']>;
+  params?: Maybe<Scalars['JSON']>;
+  success?: Maybe<Scalars['Int']>;
+  specVersionId?: Maybe<Scalars['Int']>;
+};
+
+/** A filter to be used against `DataExtrinsic` object types. All fields are combined with a logical ‘and.’ */
+export type DataExtrinsicFilter = {
+  /** Filter by the object’s `blockId` field. */
+  blockId?: Maybe<IntFilter>;
+  /** Filter by the object’s `extrinsicIdx` field. */
+  extrinsicIdx?: Maybe<IntFilter>;
+  /** Filter by the object’s `signed` field. */
+  signed?: Maybe<IntFilter>;
+  /** Filter by the object’s `callId` field. */
+  callId?: Maybe<StringFilter>;
+  /** Filter by the object’s `moduleId` field. */
+  moduleId?: Maybe<StringFilter>;
+  /** Filter by the object’s `nonce` field. */
+  nonce?: Maybe<IntFilter>;
+  /** Filter by the object’s `extrinsicHash` field. */
+  extrinsicHash?: Maybe<StringFilter>;
+  /** Filter by the object’s `address` field. */
+  address?: Maybe<StringFilter>;
+  /** Filter by the object’s `signedbyAddress` field. */
+  signedbyAddress?: Maybe<IntFilter>;
+  /** Filter by the object’s `params` field. */
+  params?: Maybe<JsonFilter>;
+  /** Filter by the object’s `success` field. */
+  success?: Maybe<IntFilter>;
+  /** Filter by the object’s `specVersionId` field. */
+  specVersionId?: Maybe<IntFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<DataExtrinsicFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<DataExtrinsicFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<DataExtrinsicFilter>;
+};
+
+/** A connection to a list of `DataExtrinsic` values. */
+export type DataExtrinsicsConnection = {
+  __typename?: 'DataExtrinsicsConnection';
+  /** A list of `DataExtrinsic` objects. */
+  nodes: Array<Maybe<DataExtrinsic>>;
+  /** A list of edges which contains the `DataExtrinsic` and cursor to aid in pagination. */
+  edges: Array<DataExtrinsicsEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `DataExtrinsic` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `DataExtrinsic` edge in the connection. */
+export type DataExtrinsicsEdge = {
+  __typename?: 'DataExtrinsicsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `DataExtrinsic` at the end of the edge. */
+  node?: Maybe<DataExtrinsic>;
+};
+
+/** Methods to use when ordering `DataExtrinsic`. */
+export enum DataExtrinsicsOrderBy {
+  Natural = 'NATURAL',
+  BlockIdAsc = 'BLOCK_ID_ASC',
+  BlockIdDesc = 'BLOCK_ID_DESC',
+  ExtrinsicIdxAsc = 'EXTRINSIC_IDX_ASC',
+  ExtrinsicIdxDesc = 'EXTRINSIC_IDX_DESC',
+  SignedAsc = 'SIGNED_ASC',
+  SignedDesc = 'SIGNED_DESC',
+  CallIdAsc = 'CALL_ID_ASC',
+  CallIdDesc = 'CALL_ID_DESC',
+  ModuleIdAsc = 'MODULE_ID_ASC',
+  ModuleIdDesc = 'MODULE_ID_DESC',
+  NonceAsc = 'NONCE_ASC',
+  NonceDesc = 'NONCE_DESC',
+  ExtrinsicHashAsc = 'EXTRINSIC_HASH_ASC',
+  ExtrinsicHashDesc = 'EXTRINSIC_HASH_DESC',
+  AddressAsc = 'ADDRESS_ASC',
+  AddressDesc = 'ADDRESS_DESC',
+  SignedbyAddressAsc = 'SIGNEDBY_ADDRESS_ASC',
+  SignedbyAddressDesc = 'SIGNEDBY_ADDRESS_DESC',
+  ParamsAsc = 'PARAMS_ASC',
+  ParamsDesc = 'PARAMS_DESC',
+  SuccessAsc = 'SUCCESS_ASC',
+  SuccessDesc = 'SUCCESS_DESC',
+  SpecVersionIdAsc = 'SPEC_VERSION_ID_ASC',
+  SpecVersionIdDesc = 'SPEC_VERSION_ID_DESC',
 }
 
 /** A filter to be used against Datetime fields. All fields are combined with a logical ‘and.’ */
@@ -750,6 +1109,7 @@ export type Event = Node & {
   nodeId: Scalars['ID'];
   id: Scalars['String'];
   blockId: Scalars['Int'];
+  parentBlockId: Scalars['String'];
   eventIdx: Scalars['Int'];
   extrinsicIdx?: Maybe<Scalars['Int']>;
   specVersionId: Scalars['Int'];
@@ -769,6 +1129,9 @@ export type Event = Node & {
   transferTo?: Maybe<Scalars['String']>;
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  attributes?: Maybe<Scalars['JSON']>;
+  /** Reads a single `Block` that is related to this `Event`. */
+  parentBlock?: Maybe<Block>;
 };
 
 /** A filter to be used against `Event` object types. All fields are combined with a logical ‘and.’ */
@@ -777,6 +1140,8 @@ export type EventFilter = {
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
   blockId?: Maybe<IntFilter>;
+  /** Filter by the object’s `parentBlockId` field. */
+  parentBlockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `extrinsicIdx` field. */
@@ -815,6 +1180,8 @@ export type EventFilter = {
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `attributes` field. */
+  attributes?: Maybe<JsonFilter>;
   /** Checks for all expressions in this list. */
   and?: Maybe<Array<EventFilter>>;
   /** Checks for any expressions in this list. */
@@ -852,6 +1219,8 @@ export enum EventsOrderBy {
   IdDesc = 'ID_DESC',
   BlockIdAsc = 'BLOCK_ID_ASC',
   BlockIdDesc = 'BLOCK_ID_DESC',
+  ParentBlockIdAsc = 'PARENT_BLOCK_ID_ASC',
+  ParentBlockIdDesc = 'PARENT_BLOCK_ID_DESC',
   EventIdxAsc = 'EVENT_IDX_ASC',
   EventIdxDesc = 'EVENT_IDX_DESC',
   ExtrinsicIdxAsc = 'EXTRINSIC_IDX_ASC',
@@ -890,6 +1259,8 @@ export enum EventsOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
   UpdatedAtDesc = 'UPDATED_AT_DESC',
+  AttributesAsc = 'ATTRIBUTES_ASC',
+  AttributesDesc = 'ATTRIBUTES_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
@@ -914,6 +1285,7 @@ export type Extrinsic = Node & {
   specVersionId: Scalars['Int'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  params?: Maybe<Scalars['JSON']>;
 };
 
 /** A filter to be used against `Extrinsic` object types. All fields are combined with a logical ‘and.’ */
@@ -950,6 +1322,8 @@ export type ExtrinsicFilter = {
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `params` field. */
+  params?: Maybe<JsonFilter>;
   /** Checks for all expressions in this list. */
   and?: Maybe<Array<ExtrinsicFilter>>;
   /** Checks for any expressions in this list. */
@@ -1015,6 +1389,8 @@ export enum ExtrinsicsOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
   UpdatedAtDesc = 'UPDATED_AT_DESC',
+  ParamsAsc = 'PARAMS_ASC',
+  ParamsDesc = 'PARAMS_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
@@ -1349,20 +1725,50 @@ export type IdentityWithClaim = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  did: Scalars['String'];
-  claims: Scalars['JSON'];
+  scopeIndex: Scalars['JSON'];
+  issuerIndex: Scalars['JSON'];
+  typeIndex: Scalars['JSON'];
+  maxExpiry: Scalars['BigFloat'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+  /** Reads and enables pagination through a set of `IssuerIdentityWithClaim`. */
+  issuerIdentityWithClaimsByClaimTargetDidIdAndIssuerId: IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection;
+};
+
+export type IdentityWithClaimClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
+};
+
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<IssuerIdentityWithClaimsOrderBy>>;
+  filter?: Maybe<IssuerIdentityWithClaimFilter>;
 };
 
 /** A filter to be used against `IdentityWithClaim` object types. All fields are combined with a logical ‘and.’ */
 export type IdentityWithClaimFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
-  /** Filter by the object’s `did` field. */
-  did?: Maybe<StringFilter>;
-  /** Filter by the object’s `claims` field. */
-  claims?: Maybe<JsonFilter>;
+  /** Filter by the object’s `scopeIndex` field. */
+  scopeIndex?: Maybe<JsonFilter>;
+  /** Filter by the object’s `issuerIndex` field. */
+  issuerIndex?: Maybe<JsonFilter>;
+  /** Filter by the object’s `typeIndex` field. */
+  typeIndex?: Maybe<JsonFilter>;
+  /** Filter by the object’s `maxExpiry` field. */
+  maxExpiry?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `createdAt` field. */
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
@@ -1373,6 +1779,41 @@ export type IdentityWithClaimFilter = {
   or?: Maybe<Array<IdentityWithClaimFilter>>;
   /** Negates the expression. */
   not?: Maybe<IdentityWithClaimFilter>;
+};
+
+/** A connection to a list of `IssuerIdentityWithClaim` values, with data from `Claim`. */
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection = {
+  __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection';
+  /** A list of `IssuerIdentityWithClaim` objects. */
+  nodes: Array<Maybe<IssuerIdentityWithClaim>>;
+  /** A list of edges which contains the `IssuerIdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
+  edges: Array<IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `IssuerIdentityWithClaim` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge = {
+  __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `IssuerIdentityWithClaim` at the end of the edge. */
+  node?: Maybe<IssuerIdentityWithClaim>;
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+};
+
+/** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdgeClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
 };
 
 /** A connection to a list of `IdentityWithClaim` values. */
@@ -1402,10 +1843,14 @@ export enum IdentityWithClaimsOrderBy {
   Natural = 'NATURAL',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  DidAsc = 'DID_ASC',
-  DidDesc = 'DID_DESC',
-  ClaimsAsc = 'CLAIMS_ASC',
-  ClaimsDesc = 'CLAIMS_DESC',
+  ScopeIndexAsc = 'SCOPE_INDEX_ASC',
+  ScopeIndexDesc = 'SCOPE_INDEX_DESC',
+  IssuerIndexAsc = 'ISSUER_INDEX_ASC',
+  IssuerIndexDesc = 'ISSUER_INDEX_DESC',
+  TypeIndexAsc = 'TYPE_INDEX_ASC',
+  TypeIndexDesc = 'TYPE_INDEX_DESC',
+  MaxExpiryAsc = 'MAX_EXPIRY_ASC',
+  MaxExpiryDesc = 'MAX_EXPIRY_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
@@ -1640,20 +2085,50 @@ export type IssuerIdentityWithClaim = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  did: Scalars['String'];
-  claims: Scalars['JSON'];
+  scopeIndex: Scalars['JSON'];
+  targetIndex: Scalars['JSON'];
+  typeIndex: Scalars['JSON'];
+  maxExpiry: Scalars['BigFloat'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+  /** Reads and enables pagination through a set of `IdentityWithClaim`. */
+  identityWithClaimsByClaimIssuerIdAndTargetDidId: IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection;
+};
+
+export type IssuerIdentityWithClaimClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
+};
+
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<IdentityWithClaimsOrderBy>>;
+  filter?: Maybe<IdentityWithClaimFilter>;
 };
 
 /** A filter to be used against `IssuerIdentityWithClaim` object types. All fields are combined with a logical ‘and.’ */
 export type IssuerIdentityWithClaimFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
-  /** Filter by the object’s `did` field. */
-  did?: Maybe<StringFilter>;
-  /** Filter by the object’s `claims` field. */
-  claims?: Maybe<JsonFilter>;
+  /** Filter by the object’s `scopeIndex` field. */
+  scopeIndex?: Maybe<JsonFilter>;
+  /** Filter by the object’s `targetIndex` field. */
+  targetIndex?: Maybe<JsonFilter>;
+  /** Filter by the object’s `typeIndex` field. */
+  typeIndex?: Maybe<JsonFilter>;
+  /** Filter by the object’s `maxExpiry` field. */
+  maxExpiry?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `createdAt` field. */
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
@@ -1664,6 +2139,41 @@ export type IssuerIdentityWithClaimFilter = {
   or?: Maybe<Array<IssuerIdentityWithClaimFilter>>;
   /** Negates the expression. */
   not?: Maybe<IssuerIdentityWithClaimFilter>;
+};
+
+/** A connection to a list of `IdentityWithClaim` values, with data from `Claim`. */
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection = {
+  __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection';
+  /** A list of `IdentityWithClaim` objects. */
+  nodes: Array<Maybe<IdentityWithClaim>>;
+  /** A list of edges which contains the `IdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
+  edges: Array<IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `IdentityWithClaim` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge = {
+  __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `IdentityWithClaim` at the end of the edge. */
+  node?: Maybe<IdentityWithClaim>;
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+};
+
+/** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdgeClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
 };
 
 /** A connection to a list of `IssuerIdentityWithClaim` values. */
@@ -1693,10 +2203,14 @@ export enum IssuerIdentityWithClaimsOrderBy {
   Natural = 'NATURAL',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  DidAsc = 'DID_ASC',
-  DidDesc = 'DID_DESC',
-  ClaimsAsc = 'CLAIMS_ASC',
-  ClaimsDesc = 'CLAIMS_DESC',
+  ScopeIndexAsc = 'SCOPE_INDEX_ASC',
+  ScopeIndexDesc = 'SCOPE_INDEX_DESC',
+  TargetIndexAsc = 'TARGET_INDEX_ASC',
+  TargetIndexDesc = 'TARGET_INDEX_DESC',
+  TypeIndexAsc = 'TYPE_INDEX_ASC',
+  TypeIndexDesc = 'TYPE_INDEX_DESC',
+  MaxExpiryAsc = 'MAX_EXPIRY_ASC',
+  MaxExpiryDesc = 'MAX_EXPIRY_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
@@ -2003,6 +2517,12 @@ export type Query = Node & {
   claimScopes?: Maybe<ClaimScopesConnection>;
   /** Reads and enables pagination through a set of `Claim`. */
   claims?: Maybe<ClaimsConnection>;
+  /** Reads and enables pagination through a set of `DataBlock`. */
+  dataBlocks?: Maybe<DataBlocksConnection>;
+  /** Reads and enables pagination through a set of `DataEvent`. */
+  dataEvents?: Maybe<DataEventsConnection>;
+  /** Reads and enables pagination through a set of `DataExtrinsic`. */
+  dataExtrinsics?: Maybe<DataExtrinsicsConnection>;
   /** Reads and enables pagination through a set of `Debug`. */
   debugs?: Maybe<DebugsConnection>;
   /** Reads and enables pagination through a set of `Event`. */
@@ -2043,6 +2563,8 @@ export type Query = Node & {
   tickerExternalAgentAddeds?: Maybe<TickerExternalAgentAddedsConnection>;
   /** Reads and enables pagination through a set of `TickerExternalAgentHistory`. */
   tickerExternalAgentHistories?: Maybe<TickerExternalAgentHistoriesConnection>;
+  /** Reads and enables pagination through a set of `TrustedClaimIssuerTicker`. */
+  trustedClaimIssuerTickers?: Maybe<TrustedClaimIssuerTickersConnection>;
   /** Reads and enables pagination through a set of `WithholdingTaxesOfCa`. */
   withholdingTaxesOfCas?: Maybe<WithholdingTaxesOfCasConnection>;
   agentGroupMembership?: Maybe<AgentGroupMembership>;
@@ -2072,6 +2594,7 @@ export type Query = Node & {
   tickerExternalAgentAction?: Maybe<TickerExternalAgentAction>;
   tickerExternalAgentAdded?: Maybe<TickerExternalAgentAdded>;
   tickerExternalAgentHistory?: Maybe<TickerExternalAgentHistory>;
+  trustedClaimIssuerTicker?: Maybe<TrustedClaimIssuerTicker>;
   withholdingTaxesOfCa?: Maybe<WithholdingTaxesOfCa>;
   /** Reads a single `AgentGroupMembership` using its globally unique `ID`. */
   agentGroupMembershipByNodeId?: Maybe<AgentGroupMembership>;
@@ -2125,6 +2648,8 @@ export type Query = Node & {
   tickerExternalAgentAddedByNodeId?: Maybe<TickerExternalAgentAdded>;
   /** Reads a single `TickerExternalAgentHistory` using its globally unique `ID`. */
   tickerExternalAgentHistoryByNodeId?: Maybe<TickerExternalAgentHistory>;
+  /** Reads a single `TrustedClaimIssuerTicker` using its globally unique `ID`. */
+  trustedClaimIssuerTickerByNodeId?: Maybe<TrustedClaimIssuerTicker>;
   /** Reads a single `WithholdingTaxesOfCa` using its globally unique `ID`. */
   withholdingTaxesOfCaByNodeId?: Maybe<WithholdingTaxesOfCa>;
 };
@@ -2198,6 +2723,39 @@ export type QueryClaimsArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<ClaimsOrderBy>>;
   filter?: Maybe<ClaimFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryDataBlocksArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<DataBlocksOrderBy>>;
+  filter?: Maybe<DataBlockFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryDataEventsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<DataEventsOrderBy>>;
+  filter?: Maybe<DataEventFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryDataExtrinsicsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<DataExtrinsicsOrderBy>>;
+  filter?: Maybe<DataExtrinsicFilter>;
 };
 
 /** The root query type which gives access points into the data universe. */
@@ -2421,6 +2979,17 @@ export type QueryTickerExternalAgentHistoriesArgs = {
 };
 
 /** The root query type which gives access points into the data universe. */
+export type QueryTrustedClaimIssuerTickersArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<TrustedClaimIssuerTickersOrderBy>>;
+  filter?: Maybe<TrustedClaimIssuerTickerFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
 export type QueryWithholdingTaxesOfCasArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
@@ -2567,6 +3136,11 @@ export type QueryTickerExternalAgentHistoryArgs = {
 };
 
 /** The root query type which gives access points into the data universe. */
+export type QueryTrustedClaimIssuerTickerArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
 export type QueryWithholdingTaxesOfCaArgs = {
   id: Scalars['String'];
 };
@@ -2698,6 +3272,11 @@ export type QueryTickerExternalAgentAddedByNodeIdArgs = {
 
 /** The root query type which gives access points into the data universe. */
 export type QueryTickerExternalAgentHistoryByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryTrustedClaimIssuerTickerByNodeIdArgs = {
   nodeId: Scalars['ID'];
 };
 
@@ -3412,6 +3991,76 @@ export type TickerExternalAgentHistoryFilter = {
   /** Negates the expression. */
   not?: Maybe<TickerExternalAgentHistoryFilter>;
 };
+
+export type TrustedClaimIssuerTicker = Node & {
+  __typename?: 'TrustedClaimIssuerTicker';
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  id: Scalars['String'];
+  ticker: Scalars['String'];
+  issuer: Scalars['String'];
+  createdAt: Scalars['Datetime'];
+  updatedAt: Scalars['Datetime'];
+};
+
+/** A filter to be used against `TrustedClaimIssuerTicker` object types. All fields are combined with a logical ‘and.’ */
+export type TrustedClaimIssuerTickerFilter = {
+  /** Filter by the object’s `id` field. */
+  id?: Maybe<StringFilter>;
+  /** Filter by the object’s `ticker` field. */
+  ticker?: Maybe<StringFilter>;
+  /** Filter by the object’s `issuer` field. */
+  issuer?: Maybe<StringFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: Maybe<DatetimeFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<TrustedClaimIssuerTickerFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<TrustedClaimIssuerTickerFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<TrustedClaimIssuerTickerFilter>;
+};
+
+/** A connection to a list of `TrustedClaimIssuerTicker` values. */
+export type TrustedClaimIssuerTickersConnection = {
+  __typename?: 'TrustedClaimIssuerTickersConnection';
+  /** A list of `TrustedClaimIssuerTicker` objects. */
+  nodes: Array<Maybe<TrustedClaimIssuerTicker>>;
+  /** A list of edges which contains the `TrustedClaimIssuerTicker` and cursor to aid in pagination. */
+  edges: Array<TrustedClaimIssuerTickersEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `TrustedClaimIssuerTicker` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A `TrustedClaimIssuerTicker` edge in the connection. */
+export type TrustedClaimIssuerTickersEdge = {
+  __typename?: 'TrustedClaimIssuerTickersEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `TrustedClaimIssuerTicker` at the end of the edge. */
+  node?: Maybe<TrustedClaimIssuerTicker>;
+};
+
+/** Methods to use when ordering `TrustedClaimIssuerTicker`. */
+export enum TrustedClaimIssuerTickersOrderBy {
+  Natural = 'NATURAL',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  TickerAsc = 'TICKER_ASC',
+  TickerDesc = 'TICKER_DESC',
+  IssuerAsc = 'ISSUER_ASC',
+  IssuerDesc = 'ISSUER_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+}
 
 export type WithholdingTaxesOfCa = Node & {
   __typename?: 'WithholdingTaxesOfCa';

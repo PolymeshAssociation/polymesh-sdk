@@ -493,8 +493,6 @@ describe('DividendDistribution class', () => {
       dsMockUtils.createApolloQueryStub(
         getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
           count: undefined,
           skip: undefined,
         }),
@@ -530,8 +528,6 @@ describe('DividendDistribution class', () => {
       dsMockUtils.createApolloQueryStub(
         getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
           count: undefined,
           skip: undefined,
         }),
@@ -552,8 +548,6 @@ describe('DividendDistribution class', () => {
       dsMockUtils.createApolloQueryStub(
         getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
           count: undefined,
           skip: undefined,
         }),

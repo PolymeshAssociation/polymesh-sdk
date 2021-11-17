@@ -196,16 +196,19 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
-      transactionsQuery({
-        block_id: blockNumber ? blockNumber.toNumber() : undefined,
-        address: addressToKey(address, context),
-        module_id: moduleId,
-        call_id: callId,
-        success,
-        count: size,
-        skip: start,
-        orderBy,
-      })
+      transactionsQuery(
+        {
+          block_id: blockNumber ? blockNumber.toNumber() : undefined,
+          address: addressToKey(address, context),
+          module_id: moduleId,
+          call_id: callId,
+          success,
+          count: size,
+          skip: start,
+          orderBy,
+        },
+        context
+      )
     );
 
     const {

@@ -232,8 +232,8 @@ export class Polymesh {
         rpc,
       });
 
-      const middlewareApi = middleware ? createApi(middleware) : null;
-      const middlewareV2Api = middlewareV2 ? createApi(middlewareV2) : null;
+      const middlewareApi = middleware ? createMiddlewareApi(middleware) : null;
+      const middlewareV2Api = middlewareV2 ? createMiddlewareApi(middlewareV2) : null;
 
       if (signer) {
         polymeshApi.setSigner(signer);
@@ -764,8 +764,11 @@ export class Polymesh {
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
-const createApi = (middleware: MiddlewareConfig) =>
-  new ApolloClient({
+/**
+ * @hidden
+ */
+function createMiddlewareApi(middleware: MiddlewareConfig) {
+  return new ApolloClient({
     link: setContext((_, { headers }) => {
       return {
         headers: {
@@ -791,3 +794,4 @@ const createApi = (middleware: MiddlewareConfig) =>
       },
     },
   });
+}

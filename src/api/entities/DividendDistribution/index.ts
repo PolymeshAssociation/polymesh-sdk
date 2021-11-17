@@ -442,8 +442,6 @@ export class DividendDistribution extends CorporateActionBase {
     >(
       getHistoryOfPaymentEventsForCa({
         CAId: { ticker, localId: id.toNumber() },
-        fromDate: null,
-        toDate: null,
         count: size,
         skip: start,
       })
@@ -457,7 +455,6 @@ export class DividendDistribution extends CorporateActionBase {
         message: notExistsMessage,
       });
     }
-
     const {
       data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
     } = result;

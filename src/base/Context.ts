@@ -8,8 +8,8 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import deepEqual from 'deep-equal';
-import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
+import { diff } from 'jest-diff';
+import { chunk, clone, cloneDeep, flatMap, flatten, flattenDeep, isEqual, remove } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import {
   CAId,
@@ -30,6 +30,7 @@ import {
   CommonKeyring,
   ComplexTransactionArgument,
   CorporateActionParams,
+  DeepPartial,
   DistributionWithDetails,
   Ensured,
   ErrorCode,
@@ -44,7 +45,7 @@ import {
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import { GraphqlQuery, MultiGraphqlQuery } from '~/types/internal';
+import { MultiGraphqlQuery } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
@@ -748,7 +749,8 @@ export class Context {
         )
       );
       const unpredictableCas = flatten(corporateActions).filter(
-        ([, action]) => action.unwrap().kind.isUnpredictableBenefit
+        ([, action]) =>
+          action.unwrap().kind.isUnpredictableBenefit || action.unwrap().kind.isPredictableBenefit
       );
 
       const corporateActionData = await P.map(
@@ -1067,22 +1069,26 @@ export class Context {
         await this.queryAndCompareMiddlewareV2(query, resultPromise);
         return await resultPromise;
       } else {
-        if (!query.v2) {
+        const { v2 } = query;
+        if (!v2) {
           throw new PolymeshError({
             code: ErrorCode.MiddlewareError,
             message: 'You must provide a middleware v1 configuration to use this query',
           });
         }
-        const result = await this.middlewareV2Api.query(query.v2.query);
+        const result = await this.middlewareV2Api.query(v2.request);
+        const { data } = result;
         return {
           ...result,
-          data: result.data ? ((query.v2.mapper(result.data) as unknown) as Result) : result.data,
+          data: data ? v2.mapper(data) : data,
         };
       }
     } catch (err: any) {
+      console.error(err);
       const resultMessage = err.networkError?.result?.message;
       const { message: errorMessage } = err;
       const message = resultMessage ?? errorMessage;
+      console.error(JSON.stringify(err, null, 2));
       throw new PolymeshError({
         code: ErrorCode.MiddlewareError,
         message: `Error in middleware query: ${message}`,
@@ -1091,30 +1097,35 @@ export class Context {
   }
 
   /**
-   * Queries the middleware v2 and compares its result to the one from middleware v1.
-   * If they are different, the difference gets reported through the middlewareDiffLogger.
+   * Query the v2 middleware and compare its result to the one from the v1 middleware.
+   * If they are different, the difference is reported through the middlewareDiffLogger.
    */
   private async queryAndCompareMiddlewareV2<Result extends Partial<Query>>(
     query: MultiGraphqlQuery<unknown>,
     v1ResultPromise: Promise<ApolloQueryResult<Result>>
   ) {
-    if (!query.v2 || !this.isMiddlewareV2Enabled()) {
+    const { v2 } = query;
+    if (!this.isMiddlewareV2Enabled()) {
       return;
     }
-    const v2Result = await this.middlewareV2Api.query(query.v2.query);
-    if (!v2Result.data) {
+    const { data: v2Data } = await this.middlewareV2Api.query(v2.request);
+    if (!v2Data) {
       return;
     }
-    const v1Result = await v1ResultPromise;
-    const mapped = query.v2.mapper(v2Result.data);
-    if (!deepEqual(mapped, v1Result.data)) {
-      this.middlewareDiffLogger(
-        `Error, results from middleware instances differ:\n${JSON.stringify(
-          v1Result.data,
-          null,
-          2
-        )}\n--------------------------\n${JSON.stringify(mapped, null, 2)}`
-      );
+    const { data: v1Data } = await v1ResultPromise;
+    const mapped = semanticCompareTransform(v2.mapper(v2Data));
+    const comparableV1Data = semanticCompareTransform(v1Data);
+
+    if (!isEqual(mapped, comparableV1Data)) {
+      const noColor = (s: string) => s;
+      const delta = diff(comparableV1Data, mapped, {
+        aColor: noColor,
+        bColor: noColor,
+        changeColor: noColor,
+        commonColor: noColor,
+        patchColor: noColor,
+      });
+      this.middlewareDiffLogger(`Error, results from middleware instances differ:\n${delta}`);
     }
   }
 
@@ -1147,7 +1158,7 @@ export class Context {
       if (this.isMiddlewareV1Enabled()) {
         this.middlewareApi.query(heartbeat().v1);
       } else if (this.isMiddlewareV2Enabled()) {
-        this.middlewareV2Api.query(heartbeat().v2!.query);
+        this.middlewareV2Api.query(heartbeat().v2.request);
       } else {
         return false;
       }
@@ -1211,4 +1222,56 @@ export class Context {
 
     return cloned;
   }
+}
+
+const TROUBLESOME_QUERIES = new Set([
+  'didsWithClaims',
+  'eventByIndexedArgs',
+  'eventsByIndexedArgs',
+  'transactions',
+  'eventByAddedTrustedClaimIssuer',
+  'issuerDidsWithClaimsByTarget',
+  'getHistoryOfPaymentEventsForCA',
+  'tickerExternalAgentHistory',
+  'tickerExternalAgentActions',
+]);
+const INCOMPARABLE_KEYS = new Set(['last_update_date', 'datetime', 'issuance_date']);
+/**
+ * @hidden
+ * Returns response with incomparable keys removed (like last_updated_date) because of precision issues.
+ */
+function semanticCompareTransform(response: DeepPartial<Query>): any {
+  /**
+   * @hidden
+   */
+  function inner(o: any) {
+    if (typeof o !== 'object' || !o) {
+      return;
+    }
+    for (const key of Object.keys(o)) {
+      if (INCOMPARABLE_KEYS.has(key)) {
+        delete o[key];
+      } else if (Array.isArray(o[key])) {
+        for (const item of o[key]) {
+          inner(item);
+        }
+      } else {
+        inner(o[key]);
+      }
+    }
+  }
+  /**
+   * @hidden
+   */
+  function isTroublesome(name: string): name is keyof Query {
+    return TROUBLESOME_QUERIES.has(name);
+  }
+
+  const name = Object.keys(response).filter(key => key !== '__typename')[0];
+  if (isTroublesome(name)) {
+    const ret = cloneDeep(response);
+    inner(ret[name]);
+    return ret;
+  }
+  return response;
 }

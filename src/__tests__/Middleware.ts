@@ -152,20 +152,23 @@ describe('Middleware Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
-      dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        transactionByHash: {
-          module_id: ModuleIdEnum.Asset,
-          call_id: CallIdEnum.RegisterTicker,
-          extrinsic_idx: extrinsicIdx,
-          spec_version_id: specVersionId,
-          params: [],
-          block_id: blockNumber.toNumber(),
-          address,
-          success: 0,
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      });
+      dsMockUtils.createApolloQueryStub(
+        transactionByHash({ transactionHash: variable.txHash }, dsMockUtils.getContextInstance()),
+        {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          transactionByHash: {
+            module_id: ModuleIdEnum.Asset,
+            call_id: CallIdEnum.RegisterTicker,
+            extrinsic_idx: extrinsicIdx,
+            spec_version_id: specVersionId,
+            params: [],
+            block_id: blockNumber.toNumber(),
+            address,
+            success: 0,
+          },
+          /* eslint-enable @typescript-eslint/naming-convention */
+        }
+      );
 
       let result = await middleware.getTransactionByHash(variable);
       expect(result).toEqual({
@@ -180,20 +183,23 @@ describe('Middleware Class', () => {
         extrinsicHash: undefined,
       });
 
-      dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        transactionByHash: {
-          module_id: ModuleIdEnum.Asset,
-          call_id: CallIdEnum.RegisterTicker,
-          extrinsic_idx: extrinsicIdx,
-          spec_version_id: specVersionId,
-          params: [],
-          block_id: blockNumber.toNumber(),
-          address: null,
-          success: 0,
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      });
+      dsMockUtils.createApolloQueryStub(
+        transactionByHash({ transactionHash: variable.txHash }, dsMockUtils.getContextInstance()),
+        {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          transactionByHash: {
+            module_id: ModuleIdEnum.Asset,
+            call_id: CallIdEnum.RegisterTicker,
+            extrinsic_idx: extrinsicIdx,
+            spec_version_id: specVersionId,
+            params: [],
+            block_id: blockNumber.toNumber(),
+            address: null,
+            success: 0,
+          },
+          /* eslint-enable @typescript-eslint/naming-convention */
+        }
+      );
 
       result = await middleware.getTransactionByHash(variable);
       expect(result).toEqual({
@@ -211,9 +217,12 @@ describe('Middleware Class', () => {
 
     test('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryStub(
-        transactionByHash({
-          transactionHash: variable.txHash,
-        }),
+        transactionByHash(
+          {
+            transactionHash: variable.txHash,
+          },
+          dsMockUtils.getContextInstance()
+        ),
         {}
       );
       const result = await middleware.getTransactionByHash(variable);

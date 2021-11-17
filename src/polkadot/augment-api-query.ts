@@ -1472,6 +1472,7 @@ declare module '@polkadot/api/types/storage' {
        * Once a (configurable) threshhold is exceeded, a PIP cannot be skipped again.
        **/
       snapshotQueue: AugmentedQuery<ApiType, () => Observable<Vec<SnapshottedPip>>, []>;
+      storageVersion: AugmentedQuery<ApiType, () => Observable<Version>, []>;
     };
     polymeshCommittee: {
       /**

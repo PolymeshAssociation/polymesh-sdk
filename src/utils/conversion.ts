@@ -2512,6 +2512,13 @@ export function addressToKey(address: string, context: Context): string {
 /**
  * @hidden
  */
+export function removeNullChars(s: string): string {
+  return s.replace(/\0/g, '');
+}
+
+/**
+ * @hidden
+ */
 export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
   const { section, method } = context.polymeshApi.createType('Proposal', bytes);
 

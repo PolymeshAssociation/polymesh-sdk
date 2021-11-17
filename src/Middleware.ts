@@ -120,9 +120,12 @@ export class Middleware {
     const { txHash: transactionHash } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'transactionByHash'>>(
-      transactionByHash({
-        transactionHash,
-      })
+      transactionByHash(
+        {
+          transactionHash,
+        },
+        context
+      )
     );
 
     const {

@@ -153,7 +153,7 @@ import {
   SecondaryKey,
   Subsidy,
 } from '~/types';
-import { Consts, Extrinsics, MultiGraphqlQuery , PolymeshTx, Queries } from '~/types/internal';
+import { Consts, Extrinsics, MultiGraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
@@ -1090,7 +1090,7 @@ export function createApolloQueryStub(
   if (returnDataV2) {
     const stub2 = sinon.stub();
     const instance2 = mockInstanceContainer.apolloInstanceV2;
-    stub2.withArgs(query.v2!.query).resolves({
+    stub2.withArgs(query.v2.request).resolves({
       data: returnDataV2,
     });
     instance2.query = stub2;

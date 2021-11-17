@@ -1185,7 +1185,7 @@ describe('Context class', () => {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         accountSeed: '0x6'.padEnd(66, '0'),
-        middlewareV2Api: dsMockUtils.getMiddlewareV2Api(),
+        middlewareV2Api: null,
       });
 
       const targetDid = 'someTargetDid';
@@ -1474,9 +1474,9 @@ describe('Context class', () => {
       const fakeResult2 = 'res2';
       const fakeQuery2 = ('fakeQuery2' as unknown) as GraphqlQuery<undefined>;
 
-      const middlewareDiffLogger = jest.fn();
-      const mapper = jest.fn();
-      mapper.mockReturnValue(fakeResult1);
+      const middlewareDiffLogger = sinon.stub();
+      const mapper = sinon.stub();
+      mapper.returns(fakeResult1);
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1488,15 +1488,15 @@ describe('Context class', () => {
 
       const fakeQuery: MultiGraphqlQuery = {
         v1: fakeQuery1,
-        v2: { query: fakeQuery2, mapper },
+        v2: { request: fakeQuery2, mapper },
       };
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult1, fakeResult2);
 
       const res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult1);
-      expect(middlewareDiffLogger).not.toHaveBeenCalled();
-      expect(mapper).toHaveBeenCalledWith(fakeResult2);
+      sinon.assert.notCalled(middlewareDiffLogger);
+      sinon.assert.calledWith(mapper, fakeResult2);
     });
 
     test('should report differences in results between middleware instances', async () => {
@@ -1506,9 +1506,9 @@ describe('Context class', () => {
       const fakeResult2 = 'res2';
       const fakeQuery2 = ('fakeQuery2' as unknown) as GraphqlQuery<undefined>;
 
-      const middlewareDiffLogger = jest.fn();
-      const mapper = jest.fn();
-      mapper.mockReturnValue(fakeResult2);
+      const middlewareDiffLogger = sinon.stub();
+      const mapper = sinon.stub();
+      mapper.returns(fakeResult2);
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1518,21 +1518,20 @@ describe('Context class', () => {
         middlewareDiffLogger,
       });
 
-      const fakeQuery: MultiGraphqlQuery = {
+      const fakeQuery: MultiGraphqlQuery<undefined> = {
         v1: fakeQuery1,
-        v2: { query: fakeQuery2, mapper },
+        v2: { request: fakeQuery2, mapper },
       };
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult1, fakeResult2);
 
       const res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult1);
-      expect(middlewareDiffLogger)
-        .toHaveBeenCalledWith(`Error, results from middleware instances differ:
-"res1"
---------------------------
-"res2"`);
-      expect(mapper).toHaveBeenCalledWith(fakeResult2);
+      sinon.assert.calledWith(
+        middlewareDiffLogger,
+        'Error, results from middleware instances differ:\n- Expected\n+ Received\n\n- res1\n+ res2'
+      );
+      sinon.assert.calledWith(mapper, fakeResult2);
     });
 
     test('should use only middleware v2 if middleware v1 is not available', async () => {
@@ -1542,9 +1541,9 @@ describe('Context class', () => {
       const fakeResult2 = 'res2';
       const fakeQuery2 = ('fakeQuery2' as unknown) as GraphqlQuery<undefined>;
 
-      const middlewareDiffLogger = jest.fn();
-      const mapper = jest.fn();
-      mapper.mockReturnValue(fakeResult2);
+      const middlewareDiffLogger = sinon.stub();
+      const mapper = sinon.stub();
+      mapper.returns(fakeResult2);
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1556,15 +1555,15 @@ describe('Context class', () => {
 
       const fakeQuery: MultiGraphqlQuery = {
         v1: fakeQuery1,
-        v2: { query: fakeQuery2, mapper },
+        v2: { request: fakeQuery2, mapper },
       };
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult1, fakeResult2);
 
       const res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult2);
-      expect(middlewareDiffLogger).not.toHaveBeenCalled();
-      expect(mapper).toHaveBeenCalledWith(fakeResult2);
+      sinon.assert.notCalled(middlewareDiffLogger);
+      sinon.assert.calledWith(mapper, fakeResult2);
     });
   });
 

@@ -170,13 +170,14 @@ export interface GraphqlQuery<Variables = undefined> {
 
 export type MultiGraphqlQuery<
   Args = undefined,
-  Q2 extends keyof QueryV2 = keyof QueryV2,
-  Q1 extends keyof Query = keyof Query
+  V2QueryName extends keyof QueryV2 = keyof QueryV2,
+  V1QueryName extends keyof Query = keyof Query,
+  ArgsV2 = Args
 > = {
   v1: GraphqlQuery<Args>;
-  v2?: {
-    query: GraphqlQuery<Args>;
-    mapper: (input: Ensured<QueryV2, Q2>) => DeepPartial<Ensured<Query, Q1>>;
+  v2: {
+    request: GraphqlQuery<ArgsV2>;
+    mapper: (input: Ensured<QueryV2, V2QueryName>) => DeepPartial<Ensured<Query, V1QueryName>>;
   };
 };
 

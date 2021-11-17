@@ -32,7 +32,7 @@ describe('Account class', () => {
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
 
     address = 'someAddress';
-    key = 'someKey';
+    key = '0x342f43d';
   });
 
   beforeEach(() => {
@@ -220,16 +220,19 @@ describe('Account class', () => {
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       dsMockUtils.createApolloQueryStub(
-        transactions({
-          block_id: blockNumber1.toNumber(),
-          address: key,
-          module_id: moduleId,
-          call_id: callId,
-          success: undefined,
-          count: 2,
-          skip: 1,
-          orderBy: undefined,
-        }),
+        transactions(
+          {
+            block_id: blockNumber1.toNumber(),
+            address: key,
+            module_id: moduleId,
+            call_id: callId,
+            success: undefined,
+            count: 2,
+            skip: 1,
+            orderBy: undefined,
+          },
+          dsMockUtils.getContextInstance()
+        ),
         {
           transactions: transactionsQueryResponse,
         }
@@ -252,16 +255,19 @@ describe('Account class', () => {
       expect(result.next).toEqual(3);
 
       dsMockUtils.createApolloQueryStub(
-        transactions({
-          block_id: undefined,
-          address: key,
-          module_id: undefined,
-          call_id: undefined,
-          success: undefined,
-          count: undefined,
-          skip: undefined,
-          orderBy: undefined,
-        }),
+        transactions(
+          {
+            block_id: undefined,
+            address: key,
+            module_id: undefined,
+            call_id: undefined,
+            success: undefined,
+            count: undefined,
+            skip: undefined,
+            orderBy: undefined,
+          },
+          dsMockUtils.getContextInstance()
+        ),
         {
           transactions: transactionsQueryResponse,
         }
