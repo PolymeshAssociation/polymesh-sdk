@@ -78,7 +78,7 @@ export interface DividendDistributionParams {
   paymentDate: Date;
 }
 
-export type Params = Omit<CorporateActionParams, 'kind'> & DividendDistributionParams;
+export type Params = CorporateActionParams & DividendDistributionParams;
 
 const notExistsMessage = 'The Dividend Distribution no longer exists';
 
@@ -118,7 +118,12 @@ export class DividendDistribution extends CorporateActionBase {
    */
   public paymentDate: Date;
 
-  protected kind!: CorporateActionKind.UnpredictableBenefit;
+  /**
+   * type of dividend distribution being represented. The chain enforces it to be either PredictableBenefit or UnpredictableBenefit
+   */
+  protected kind!:
+    | CorporateActionKind.UnpredictableBenefit
+    | CorporateActionKind.PredictableBenefit;
 
   /**
    * @hidden
@@ -134,7 +139,7 @@ export class DividendDistribution extends CorporateActionBase {
       ...corporateActionArgs
     } = args;
 
-    super({ ...corporateActionArgs, kind: CorporateActionKind.UnpredictableBenefit }, context);
+    super({ ...corporateActionArgs }, context);
 
     this.origin = origin;
     this.currency = currency;
