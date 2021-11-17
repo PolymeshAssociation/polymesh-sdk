@@ -146,6 +146,7 @@ describe('Middleware Class', () => {
 
     test('should return a transaction', async () => {
       const blockNumber = new BigNumber(1);
+      const blockHash = 'someHash';
       const extrinsicIdx = 2;
       const address = 'someAddress';
       const specVersionId = 2006;
@@ -165,6 +166,9 @@ describe('Middleware Class', () => {
             block_id: blockNumber.toNumber(),
             address,
             success: 0,
+            block: {
+              hash: blockHash,
+            },
           },
           /* eslint-enable @typescript-eslint/naming-convention */
         }
@@ -173,6 +177,7 @@ describe('Middleware Class', () => {
       let result = await middleware.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
+        blockHash,
         extrinsicIdx: extrinsicIdx,
         address,
         nonce: undefined,
@@ -196,6 +201,9 @@ describe('Middleware Class', () => {
             block_id: blockNumber.toNumber(),
             address: null,
             success: 0,
+            block: {
+              hash: blockHash,
+            },
           },
           /* eslint-enable @typescript-eslint/naming-convention */
         }
@@ -204,6 +212,7 @@ describe('Middleware Class', () => {
       result = await middleware.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
+        blockHash,
         extrinsicIdx: extrinsicIdx,
         address: null,
         nonce: undefined,

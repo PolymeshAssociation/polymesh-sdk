@@ -278,7 +278,8 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        roles: false,
+        roles:
+          'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
         permissions: {
           tokens: [],
           portfolios: [],
@@ -290,7 +291,8 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        roles: false,
+        roles:
+          'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
         permissions: {
           tokens: [],
           portfolios: [],

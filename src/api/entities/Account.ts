@@ -1,11 +1,28 @@
 import BigNumber from 'bignumber.js';
-import { difference, differenceBy, differenceWith, isEqual, union } from 'lodash';
+import {
+  difference,
+  differenceBy,
+  differenceWith,
+  intersection,
+  intersectionBy,
+  intersectionWith,
+  isEqual,
+  union,
+} from 'lodash';
 
-import { Authorizations, Context, Entity, Identity, leaveIdentity } from '~/internal';
+import {
+  Authorizations,
+  Context,
+  Entity,
+  Identity,
+  leaveIdentity,
+  SecurityToken,
+} from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
+  CheckPermissionsResult,
   DefaultPortfolio,
   Ensured,
   ExtrinsicData,
@@ -15,9 +32,12 @@ import {
   Permissions,
   PermissionType,
   ResultSet,
+  SectionPermissions,
+  SignerType,
   SimplePermissions,
   SubCallback,
   Subsidy,
+  TransactionPermissions,
   TxTag,
   TxTags,
   UnsubCallback,
@@ -29,7 +49,9 @@ import {
   portfolioToPortfolioId,
   signerToString,
   stringToAccountId,
+  stringToHash,
   txTagToExtrinsicIdentifier,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import {
   assertFormatValid,
@@ -57,12 +79,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Polymesh-specific address of the account. Serves as an identifier
+   * Polymesh-specific address of the Account. Serves as an identifier
    */
   public address: string;
 
   /**
-   * public key of the account. This is a hex representation of the address that is transversal to any Substrate chain
+   * public key of the Account. This is a hex representation of the address that is transversal to any Substrate chain
    */
   public key: string;
 
@@ -95,7 +117,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public leaveIdentity: NoArgsProcedureMethod<void>;
 
   /**
-   * Get the free/locked POLYX balance of the account
+   * Get the free/locked POLYX balance of the Account
    *
    * @note can be subscribed to
    */
@@ -165,7 +187,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve a list of transactions signed by this account. Can be filtered using parameters
+   * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
+   *
+   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
    *
    * @param filters.tag - tag associated with the transaction
    * @param filters.success - whether the transaction was successful or not
@@ -177,6 +201,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public async getTransactionHistory(
     filters: {
       blockNumber?: BigNumber;
+      blockHash?: string;
       tag?: TxTag;
       success?: boolean;
       size?: number;
@@ -186,7 +211,18 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context, address } = this;
 
-    const { blockNumber, tag, success, size, start, orderBy } = filters;
+    const { tag, success, size, start, orderBy, blockHash } = filters;
+    let { blockNumber } = filters;
+
+    if (!blockNumber && blockHash) {
+      const {
+        block: {
+          header: { number },
+        },
+      } = await context.polymeshApi.rpc.chain.getBlock(stringToHash(blockHash, context));
+
+      blockNumber = u32ToBigNumber(number.unwrap());
+    }
 
     let moduleId;
     let callId;
@@ -217,9 +253,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       },
     } = result;
 
-    const data: ExtrinsicData[] = [];
-
-    transactionList.forEach(
+    const data = transactionList.map(
       ({
         block_id,
         extrinsic_idx,
@@ -231,11 +265,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         success: txSuccess,
         spec_version_id,
         extrinsic_hash,
+        block,
       }) => {
         // TODO remove null check once types fixed
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        data.push({
+        return {
           blockNumber: new BigNumber(block_id),
+          blockHash: block!.hash!,
           extrinsicIdx: extrinsic_idx,
           address: rawAddress ?? null,
           nonce: nonce!,
@@ -244,7 +280,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           success: !!txSuccess,
           specVersionId: spec_version_id,
           extrinsicHash: extrinsic_hash!,
-        });
+        };
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */
       }
     );
@@ -281,7 +317,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the Permissions this Signer has as a Signing Key for its corresponding Identity
+   * Retrieve the Permissions this Account has as a Signing Key for its corresponding Identity
    */
   public async getPermissions(): Promise<Permissions> {
     const { context, address } = this;
@@ -309,9 +345,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check if this Account possesses certain Permissions for its corresponding Identity
+   * Check if this Account posseses certain Permissions to act on behalf of its corresponding Identity
+   *
+   * @return which permissions the Account is missing (if any) and the final result
    */
-  public async hasPermissions(permissions: SimplePermissions): Promise<boolean> {
+  public async checkPermissions(
+    permissions: SimplePermissions
+  ): Promise<CheckPermissionsResult<SignerType.Account>> {
     const { tokens, transactions, portfolios } = permissions;
 
     const {
@@ -320,120 +360,56 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       portfolios: currentPortfolios,
     } = await this.getPermissions();
 
-    let hasTokens;
-    if (currentTokens === null) {
-      hasTokens = true;
-    } else if (tokens === null) {
-      hasTokens = false;
-    } else if (tokens) {
-      const { type: tokensType, values: tokensValues } = currentTokens;
-      if (tokens.length === 0) {
-        hasTokens = true;
-      } else {
-        if (tokensType === PermissionType.Include) {
-          hasTokens = !differenceBy(tokens, tokensValues, 'ticker').length;
-        } else {
-          hasTokens = differenceBy(tokens, tokensValues, 'ticker').length === tokens.length;
-        }
-      }
-    } else {
-      hasTokens = true;
+    const missingPermissions: SimplePermissions = {};
+
+    const missingTokenPermissions = getMissingTokenPermissions(tokens, currentTokens);
+
+    const hasTokens = missingTokenPermissions === undefined;
+    if (!hasTokens) {
+      missingPermissions.tokens = missingTokenPermissions;
     }
 
-    // these transactions are allowed to any account, independent of permissions
-    const exemptedTransactions: (TxTag | ModuleName)[] = [
-      TxTags.identity.LeaveIdentityAsKey,
-      TxTags.identity.JoinIdentityAsKey,
-      TxTags.multiSig.AcceptMultisigSignerAsKey,
-      ...difference(Object.values(TxTags.balances), [
-        TxTags.balances.DepositBlockRewardReserveBalance,
-        TxTags.balances.BurnAccountBalance,
-      ]),
-      ModuleName.Staking,
-      ModuleName.Sudo,
-      ModuleName.Session,
-      ModuleName.Authorship,
-      ModuleName.Babe,
-      ModuleName.Grandpa,
-      ModuleName.ImOnline,
-      ModuleName.Indices,
-      ModuleName.Scheduler,
-      ModuleName.System,
-      ModuleName.Timestamp,
-    ];
+    const missingTransactionPermissions = getMissingTransactionPermissions(
+      transactions,
+      currentTransactions
+    );
 
-    let hasTransactions;
-    if (currentTransactions === null) {
-      hasTransactions = true;
-    } else if (transactions === null) {
-      hasTransactions = false;
-    } else if (transactions) {
-      const {
-        type: transactionsType,
-        values: transactionsValues,
-        exceptions = [],
-      } = currentTransactions;
-      if (transactions.length === 0) {
-        hasTransactions = true;
-      } else {
-        if (transactionsType === PermissionType.Include) {
-          const includedTransactions = differenceWith(
-            union(transactionsValues, exemptedTransactions),
-            exceptions,
-            isModuleOrTagMatch
-          );
-          hasTransactions = transactions.every(
-            tag => !!includedTransactions.find(included => isModuleOrTagMatch(included, tag))
-          );
-        } else {
-          const excludedTransactions = differenceWith(
-            transactionsValues,
-            exemptedTransactions,
-            exceptions,
-            isModuleOrTagMatch
-          );
-          hasTransactions = !transactions.some(
-            tag => !!excludedTransactions.find(excluded => isModuleOrTagMatch(excluded, tag))
-          );
-        }
-      }
-    } else {
-      hasTransactions = true;
+    const hasTransactions = missingTransactionPermissions === undefined;
+    if (!hasTransactions) {
+      missingPermissions.transactions = missingTransactionPermissions;
     }
 
-    let hasPortfolios;
-    if (currentPortfolios === null) {
-      hasPortfolios = true;
-    } else if (portfolios === null) {
-      hasPortfolios = false;
-    } else if (portfolios) {
-      const { type: portfoliosType, values: portfoliosValues } = currentPortfolios;
+    const missingPortfolioPermissions = getMissingPortfolioPermissions(
+      portfolios,
+      currentPortfolios
+    );
 
-      if (portfolios.length === 0) {
-        hasPortfolios = true;
-      } else {
-        const portfolioComparator = (
-          a: DefaultPortfolio | NumberedPortfolio,
-          b: DefaultPortfolio | NumberedPortfolio
-        ) => {
-          const aId = portfolioToPortfolioId(a);
-          const bId = portfolioToPortfolioId(b);
-
-          return isEqual(aId, bId);
-        };
-        if (portfoliosType === PermissionType.Include) {
-          hasPortfolios = !differenceWith(portfolios, portfoliosValues, portfolioComparator).length;
-        } else {
-          hasPortfolios =
-            differenceWith(portfolios, portfoliosValues, portfolioComparator).length ===
-            portfolios.length;
-        }
-      }
-    } else {
-      hasPortfolios = true;
+    const hasPortfolios = missingPortfolioPermissions === undefined;
+    if (!hasPortfolios) {
+      missingPermissions.portfolios = missingPortfolioPermissions;
     }
 
-    return hasTokens && hasTransactions && hasPortfolios;
+    const result = hasTokens && hasTransactions && hasPortfolios;
+
+    if (result) {
+      return { result };
+    }
+
+    return {
+      result,
+      missingPermissions,
+    };
+  }
+
+  /**
+   * Check if this Account possesses certain Permissions to act on behalf of its corresponding Identity
+   *
+   * @deprecated in favor of `checkPermissions`
+   */
+  public async hasPermissions(permissions: SimplePermissions): Promise<boolean> {
+    const { result } = await this.checkPermissions(permissions);
+
+    return result;
   }
 
   /**
@@ -449,4 +425,177 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public toJson(): string {
     return this.address;
   }
+}
+
+/**
+ * @hidden
+ *
+ * Calculate the difference between the required Token permissions and the current ones
+ */
+function getMissingTokenPermissions(
+  requiredPermissions: SecurityToken[] | null | undefined,
+  currentPermissions: SectionPermissions<SecurityToken> | null
+): SimplePermissions['tokens'] {
+  if (currentPermissions === null) {
+    return undefined;
+  } else if (requiredPermissions === null) {
+    return null;
+  } else if (requiredPermissions) {
+    const { type: tokensType, values: tokensValues } = currentPermissions;
+
+    if (requiredPermissions.length) {
+      let missingPermissions: SecurityToken[];
+
+      if (tokensType === PermissionType.Include) {
+        missingPermissions = differenceBy(requiredPermissions, tokensValues, 'ticker');
+      } else {
+        missingPermissions = intersectionBy(requiredPermissions, tokensValues, 'ticker');
+      }
+
+      if (missingPermissions.length) {
+        return missingPermissions;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * @hidden
+ *
+ * Calculate the difference between the required Transaction permissions and the current ones
+ */
+function getMissingTransactionPermissions(
+  requiredPermissions: TxTag[] | null | undefined,
+  currentPermissions: TransactionPermissions | null
+): SimplePermissions['transactions'] {
+  // these transactions are allowed to any account, independent of permissions
+  const exemptedTransactions: (TxTag | ModuleName)[] = [
+    TxTags.identity.LeaveIdentityAsKey,
+    TxTags.identity.JoinIdentityAsKey,
+    TxTags.multiSig.AcceptMultisigSignerAsKey,
+    ...difference(Object.values(TxTags.balances), [
+      TxTags.balances.DepositBlockRewardReserveBalance,
+      TxTags.balances.BurnAccountBalance,
+    ]),
+    ModuleName.Staking,
+    ModuleName.Sudo,
+    ModuleName.Session,
+    ModuleName.Authorship,
+    ModuleName.Babe,
+    ModuleName.Grandpa,
+    ModuleName.ImOnline,
+    ModuleName.Indices,
+    ModuleName.Scheduler,
+    ModuleName.System,
+    ModuleName.Timestamp,
+  ];
+
+  if (currentPermissions === null) {
+    return undefined;
+  } else if (requiredPermissions === null) {
+    return null;
+  } else if (requiredPermissions) {
+    const {
+      type: transactionsType,
+      values: transactionsValues,
+      exceptions = [],
+    } = currentPermissions;
+    if (requiredPermissions.length) {
+      let missingPermissions: TxTag[];
+
+      const exceptionMatches = intersection(requiredPermissions, exceptions);
+
+      if (transactionsType === PermissionType.Include) {
+        const includedTransactions = union(transactionsValues, exemptedTransactions);
+
+        missingPermissions = union(
+          differenceWith(requiredPermissions, includedTransactions, isModuleOrTagMatch),
+          exceptionMatches
+        );
+      } else {
+        const excludedTransactions = differenceWith(
+          transactionsValues,
+          exemptedTransactions,
+          (tx, exemptedTx) => {
+            /*
+             * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
+             *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
+             *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
+             *   removing the entire Identity module from the result, which doesn't make sense
+             */
+            if (!tx.includes('.')) {
+              return tx === exemptedTx;
+            }
+
+            return isModuleOrTagMatch(tx, exemptedTx);
+          }
+        );
+
+        missingPermissions = difference(
+          intersectionWith(requiredPermissions, excludedTransactions, isModuleOrTagMatch),
+          exceptionMatches
+        );
+      }
+
+      if (missingPermissions.length) {
+        return missingPermissions;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * @hidden
+ *
+ * Calculate the difference between the required Transaction permissions and the current ones
+ */
+function getMissingPortfolioPermissions(
+  requiredPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null | undefined,
+  currentPermissions: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null
+): SimplePermissions['portfolios'] {
+  if (currentPermissions === null) {
+    return undefined;
+  } else if (requiredPermissions === null) {
+    return null;
+  } else if (requiredPermissions) {
+    const { type: portfoliosType, values: portfoliosValues } = currentPermissions;
+
+    if (requiredPermissions.length) {
+      let missingPermissions: (DefaultPortfolio | NumberedPortfolio)[];
+
+      const portfolioComparator = (
+        a: DefaultPortfolio | NumberedPortfolio,
+        b: DefaultPortfolio | NumberedPortfolio
+      ) => {
+        const aId = portfolioToPortfolioId(a);
+        const bId = portfolioToPortfolioId(b);
+
+        return isEqual(aId, bId);
+      };
+
+      if (portfoliosType === PermissionType.Include) {
+        missingPermissions = differenceWith(
+          requiredPermissions,
+          portfoliosValues,
+          portfolioComparator
+        );
+      } else {
+        missingPermissions = intersectionWith(
+          requiredPermissions,
+          portfoliosValues,
+          portfolioComparator
+        );
+      }
+
+      if (missingPermissions.length) {
+        return missingPermissions;
+      }
+    }
+  }
+
+  return undefined;
 }

@@ -99,7 +99,7 @@ export async function getAuthorization(
     storage: { currentAccount, calledByTarget },
   } = this;
 
-  let roles = calledByTarget;
+  let hasRoles = calledByTarget;
 
   /*
    * when accepting a JoinIdentity request, you don't need permissions (and can't have them by definition),
@@ -107,14 +107,12 @@ export async function getAuthorization(
    */
   if (accept) {
     return {
-      roles,
+      roles:
+        hasRoles || '"JoinIdentity" Authorization Requests must be accepted by the target Account',
     };
   }
 
   const identity = await currentAccount.getIdentity();
-
-  // both the issuer and the target can remove the authorization request
-  roles = roles || !!identity?.isEqual(issuer);
 
   /*
    * if the target is removing the auth request and they don't have an Identity,
@@ -122,12 +120,17 @@ export async function getAuthorization(
    */
   if (calledByTarget && !identity) {
     return {
-      roles,
+      roles: true,
     };
   }
 
+  // both the issuer and the target can remove the authorization request
+  hasRoles = hasRoles || !!identity?.isEqual(issuer);
+
   return {
-    roles,
+    roles:
+      hasRoles ||
+      '"JoinIdentity" Authorization Requests can only be removed by the issuer Identity or the target Account',
     permissions: {
       transactions: [TxTags.identity.RemoveAuthorization],
     },
@@ -143,7 +146,7 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  // joinIdentity Authorizations always target an Account
+  // JoinIdentity Authorizations always target an Account
   const targetAccount = target as Account;
   const currentAccount = context.getCurrentAccount();
   const calledByTarget = targetAccount.isEqual(currentAccount);

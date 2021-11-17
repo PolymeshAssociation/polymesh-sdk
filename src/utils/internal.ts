@@ -264,7 +264,7 @@ export function isPrintableAscii(value: string): boolean {
  * @hidden
  *
  * Makes an entries request to the chain. If pagination options are supplied,
- * the request will be paginated. Otherwise, all entries will be requested at once
+ *  the request will be paginated. Otherwise, all entries will be requested at once
  */
 export async function requestPaginated<F extends AnyFunction, T extends AnyTuple>(
   query: AugmentedQuery<'promise', F, T> | AugmentedQueryDoubleMap<'promise', F, T>,

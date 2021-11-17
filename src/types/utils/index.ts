@@ -54,13 +54,13 @@ export type QueryReturnType<T extends unknown> = T extends AugmentedQuery<'promi
   : never;
 
 /**
+ * Override T with the properties of R
+ */
+export type Modify<T, R> = Omit<T, keyof R> & R;
+
+/**
  * Create a literal tuple type from a list of arguments
  *
  * @param args - values to turn into a tuple
  */
 export const tuple = <T extends unknown[]>(...args: T): T => args;
-
-/**
- * Override T with the properties of R
- */
-export type Modify<T, R> = Omit<T, keyof R> & R;

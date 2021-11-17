@@ -11,6 +11,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('CheckpointSchedule class', () => {
   let context: Context;
@@ -66,7 +70,7 @@ describe('CheckpointSchedule class', () => {
         context
       );
 
-      expect(schedule.ticker).toBe(ticker);
+      expect(schedule.token.ticker).toBe(ticker);
       expect(schedule.id).toEqual(id);
       expect(schedule.period).toEqual(period);
       expect(schedule.start).toEqual(start);
@@ -84,7 +88,7 @@ describe('CheckpointSchedule class', () => {
         context
       );
 
-      expect(schedule.ticker).toBe(ticker);
+      expect(schedule.token.ticker).toBe(ticker);
       expect(schedule.id).toEqual(id);
       expect(schedule.period).toEqual(null);
       expect(schedule.start).toEqual(start);

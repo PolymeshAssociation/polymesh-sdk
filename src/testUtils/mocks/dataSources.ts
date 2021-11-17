@@ -11,19 +11,22 @@ import {
   AccountId,
   AccountInfo,
   Balance,
+  Block,
+  Call,
   DispatchError,
   DispatchErrorModule,
   EventRecord,
   ExtrinsicStatus,
   Hash,
+  Header,
   Index,
   Moment,
   Permill,
   RefCount,
   RuntimeVersion,
   Signature,
+  SignedBlock,
 } from '@polkadot/types/interfaces';
-import { Call } from '@polkadot/types/interfaces/runtime';
 import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/types';
 import { hexToU8a, stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
@@ -143,6 +146,8 @@ import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
+  CheckPermissionsResult,
+  CheckRolesResult,
   ClaimData,
   ClaimType,
   CountryCode as CountryCodeEnum,
@@ -151,6 +156,7 @@ import {
   KeyringPair,
   ResultSet,
   SecondaryKey,
+  SignerType,
   Subsidy,
 } from '~/types';
 import { Consts, Extrinsics, MultiGraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
@@ -297,8 +303,11 @@ interface ContextOptions {
   balance?: AccountBalance;
   subsidy?: Omit<Subsidy, 'beneficiary'>;
   hasRoles?: boolean;
+  checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
+  checkPermissions?: CheckPermissionsResult<SignerType.Account>;
   hasTokenPermissions?: boolean;
+  checkTokenPermissions?: CheckPermissionsResult<SignerType.Identity>;
   validCdd?: boolean;
   tokenBalance?: BigNumber;
   invalidDids?: string[];
@@ -523,8 +532,17 @@ const defaultContextOptions: ContextOptions = {
     total: new BigNumber(110),
   },
   hasRoles: true,
+  checkRoles: {
+    result: true,
+  },
   hasPermissions: true,
+  checkPermissions: {
+    result: true,
+  },
   hasTokenPermissions: true,
+  checkTokenPermissions: {
+    result: true,
+  },
   validCdd: true,
   tokenBalance: new BigNumber(1000),
   invalidDids: [],
@@ -637,6 +655,7 @@ function configureContext(opts: ContextOptions): void {
   const identity = {
     did: opts.did,
     hasRoles: sinon.stub().resolves(opts.hasRoles),
+    checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
     getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
@@ -646,6 +665,7 @@ function configureContext(opts: ContextOptions): void {
     },
     tokenPermissions: {
       hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
+      checkPermissions: sinon.stub().resolves(opts.checkTokenPermissions),
     },
     areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
     isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
@@ -664,6 +684,7 @@ function configureContext(opts: ContextOptions): void {
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
+        checkPermissions: sinon.stub().resolves(opts.checkPermissions),
         isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
     : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
@@ -1719,7 +1740,13 @@ export const createMockBytes = (value?: string): Bytes => createMockU8aCodec(val
 /**
  * @hidden
  */
-export const createMockHash = (value?: string): Hash => createMockStringCodec(value) as Hash;
+export const createMockHash = (value?: string | Hash): Hash => {
+  if (isCodec<Hash>(value)) {
+    return value;
+  }
+
+  return createMockStringCodec(value) as Hash;
+};
 
 /**
  * @hidden
@@ -3474,4 +3501,79 @@ export const createMockClassicTickerRegistration = (
     },
     !registration
   ) as ClassicTickerRegistration;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignedBlock = (
+  signedBlock?:
+    | SignedBlock
+    | {
+        block: Block | Parameters<typeof createMockBlock>[0];
+      }
+): SignedBlock => {
+  const { block } = signedBlock || {
+    block: createMockBlock(),
+  };
+
+  return createMockCodec(
+    {
+      block: createMockBlock(block),
+    },
+    !signedBlock
+  ) as SignedBlock;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBlock = (
+  block?:
+    | Block
+    | {
+        header: Header | Parameters<typeof createMockHeader>[0];
+      }
+): Block => {
+  const { header } = block || {
+    header: createMockHeader(),
+  };
+
+  return createMockCodec(
+    {
+      header: createMockHeader(header),
+    },
+    !block
+  ) as Block;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockHeader = (
+  header?:
+    | Header
+    | {
+        parentHash: Hash | Parameters<typeof createMockHash>[0];
+        number: Compact<u32>;
+        stateRoot: Hash | Parameters<typeof createMockHash>[0];
+        extrinsicsRoot: Hash | Parameters<typeof createMockHash>[0];
+      }
+): Header => {
+  const { parentHash, number, stateRoot, extrinsicsRoot } = header || {
+    parentHash: createMockHash(),
+    number: createMockCompact(),
+    stateRoot: createMockHash(),
+    extrinsicsRoot: createMockHash(),
+  };
+
+  return createMockCodec(
+    {
+      parentHash: createMockHash(parentHash),
+      number: createMockCompact(number.unwrap()),
+      stateRoot: createMockHash(stateRoot),
+      extrinsicsRoot: createMockHash(extrinsicsRoot),
+    },
+    !header
+  ) as Header;
 };

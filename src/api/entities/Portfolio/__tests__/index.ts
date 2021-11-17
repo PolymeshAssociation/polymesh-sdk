@@ -404,6 +404,9 @@ describe('Portfolio class', () => {
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
 
+      const blockHash1 = 'someHash';
+      const blockHash2 = 'otherHash';
+
       const token1 = new SecurityToken({ ticker: 'TICKER1' }, context);
       const amount1 = new BigNumber(1000);
       const token2 = new SecurityToken({ ticker: 'TICKER2' }, context);
@@ -476,6 +479,10 @@ describe('Portfolio class', () => {
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
       sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
 
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
+      });
+
       dsMockUtils.createApolloQueryStub(
         settlements({
           identityId: did,
@@ -499,6 +506,8 @@ describe('Portfolio class', () => {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].blockHash).toEqual(blockHash1);
+      expect(result.data[1].blockHash).toEqual(blockHash2);
       expect(result.data[0].legs[0].token.ticker).toEqual(token1.ticker);
       expect(result.data[1].legs[0].token.ticker).toEqual(token2.ticker);
       expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
@@ -523,7 +532,7 @@ describe('Portfolio class', () => {
         {
           settlements: {
             totalCount: 0,
-            items: null,
+            items: [],
           },
         }
       );

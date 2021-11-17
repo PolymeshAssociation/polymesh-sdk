@@ -11,6 +11,7 @@ import {
   InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
+  SecurityToken,
   toggleFreezeSto,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
@@ -58,9 +59,9 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   public id: BigNumber;
 
   /**
-   * ticker of the Security Token being offered
+   * Security Token being offered
    */
-  public ticker: string;
+  public token: SecurityToken;
 
   /**
    * @hidden
@@ -71,7 +72,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.ticker = ticker;
+    this.token = new SecurityToken({ ticker }, context);
 
     this.freeze = createProcedureMethod(
       {
@@ -118,7 +119,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       id,
-      ticker,
+      token: { ticker },
       context,
     } = this;
 
@@ -193,7 +194,11 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
       start?: number;
     } = {}
   ): Promise<ResultSet<Investment>> {
-    const { context, id, ticker } = this;
+    const {
+      context,
+      id,
+      token: { ticker },
+    } = this;
 
     const { size, start } = opts;
 
@@ -210,27 +215,23 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
       data: { investments: investmentsResult },
     } = result;
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     const { items, totalCount: count } = investmentsResult!;
 
     const data: Investment[] = [];
-    let next = null;
 
-    if (items) {
-      items.forEach(item => {
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const { investor: did, offeringTokenAmount, raiseTokenAmount } = item!;
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+    items!.forEach(item => {
+      const { investor: did, offeringTokenAmount, raiseTokenAmount } = item!;
 
-        data.push({
-          investor: new Identity({ did }, context),
-          soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
-          investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
-        });
+      data.push({
+        investor: new Identity({ did }, context),
+        soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
+        investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
       });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-      next = calculateNextKey(count, size, start);
-    }
+    const next = calculateNextKey(count, size, start);
 
     return {
       data,
@@ -243,7 +244,11 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
    * Determine whether this STO exists on chain
    */
   public async exists(): Promise<boolean> {
-    const { ticker, id, context } = this;
+    const {
+      token: { ticker },
+      id,
+      context,
+    } = this;
 
     const fundraiser = await context.polymeshApi.query.sto.fundraisers(
       stringToTicker(ticker, context),
@@ -257,10 +262,10 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
    * Return the Sto's ID and Token ticker
    */
   public toJson(): HumanReadable {
-    const { ticker, id } = this;
+    const { token, id } = this;
 
     return toHumanReadable({
-      ticker,
+      ticker: token,
       id,
     });
   }

@@ -100,7 +100,7 @@ describe('createGroup procedure', () => {
       const result = createCreateGroupResolver(mockContext)({} as ISubmittableResult);
 
       expect(result.id).toEqual(agId);
-      expect(result.ticker).toEqual(ticker);
+      expect(result.token.ticker).toEqual(ticker);
     });
   });
 

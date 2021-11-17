@@ -3,8 +3,6 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
-import { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
-import { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 // NOTE uncomment in Governance v2 upgrade
@@ -13,10 +11,12 @@ import {
   Account,
   Checkpoint,
   CheckpointSchedule,
+  CustomPermissionGroup,
   DefaultPortfolio,
   DividendDistribution,
   Identity,
   Instruction,
+  KnownPermissionGroup,
   NumberedPortfolio,
   /*, Proposal */
   SecurityToken,
@@ -319,6 +319,7 @@ export interface IdentityWithClaims {
 }
 
 export interface ExtrinsicData {
+  blockHash: string;
   blockNumber: BigNumber;
   extrinsicIdx: number;
   address: string | null;
@@ -625,6 +626,7 @@ export interface UiKeyring {
 
 export interface EventIdentifier {
   blockNumber: BigNumber;
+  blockHash: string;
   blockDate: Date;
   eventIndex: number;
 }
@@ -714,6 +716,24 @@ export interface FeesBreakdown {
    * free balance of the current Account
    */
   accountBalance: BigNumber;
+}
+
+export enum SignerType {
+  /* eslint-disable @typescript-eslint/no-shadow */
+  Identity = 'Identity',
+  Account = 'Account',
+  /* eslint-enable @typescript-eslint/no-shadow */
+}
+
+export interface SignerValue {
+  /**
+   * whether the signer is an Account or Identity
+   */
+  type: SignerType;
+  /**
+   * address or DID (depending on whether the signer is an Account or Identity)
+   */
+  value: string;
 }
 
 /**
@@ -866,7 +886,7 @@ export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGr
 /**
  * This represents positive permissions (i.e. only "includes"). It is used
  *   for specifying procedure requirements and querying if an account has certain
- *   permissions
+ *   permissions. Null values represent full permissions in that category
  */
 export interface SimplePermissions {
   /**
@@ -879,6 +899,44 @@ export interface SimplePermissions {
   transactions?: TxTag[] | null;
   /* list of required Portfolio permissions */
   portfolios?: (DefaultPortfolio | NumberedPortfolio)[] | null;
+}
+
+/**
+ * Result of a `checkRoles` call
+ */
+export interface CheckRolesResult {
+  /**
+   * required roles which the Identity *DOESN'T* have. Only present if `result` is `false`
+   */
+  missingRoles?: Role[];
+  /**
+   * whether the signer posseses all the required roles or not
+   */
+  result: boolean;
+  /**
+   * optional message explaining the reason for failure in special cases
+   */
+  message?: string;
+}
+
+/**
+ * Result of a `checkPermissions` call. If `Type` is `Account`, represents whether the Account
+ *   has all the necessary secondary key Permissions. If `Type` is `Identity`, represents whether the
+ *   Identity has all the necessary external agent Permissions
+ */
+export interface CheckPermissionsResult<Type extends SignerType> {
+  /**
+   * required permissions which the signer *DOESN'T* have. Only present if `result` is `false`
+   */
+  missingPermissions?: Type extends SignerType.Account ? SimplePermissions : TxTag[] | null;
+  /**
+   * whether the signer complies with the required permissions or not
+   */
+  result: boolean;
+  /**
+   * optional message explaining the reason for failure in special cases
+   */
+  message?: string;
 }
 
 export enum PermissionGroupType {
@@ -1075,15 +1133,15 @@ export interface ProcedureAuthorizationStatus {
   /**
    * whether the Identity complies with all required Agent permissions
    */
-  agentPermissions: boolean;
+  agentPermissions: CheckPermissionsResult<SignerType.Identity>;
   /**
    * whether the Account complies with all required Signer permissions
    */
-  signerPermissions: boolean;
+  signerPermissions: CheckPermissionsResult<SignerType.Account>;
   /**
    * whether the Identity complies with all required Roles
    */
-  roles: boolean;
+  roles: CheckRolesResult;
   /**
    * whether the Account is frozen (i.e. can't perform any transactions)
    */
@@ -1185,6 +1243,7 @@ export interface DistributionWithDetails {
 
 export interface DistributionPayment {
   blockNumber: BigNumber;
+  blockHash: string;
   date: Date;
   target: Identity;
   amount: BigNumber;
@@ -1215,24 +1274,6 @@ export interface ProcedureMethod<
 export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
   (opts?: ProcedureOpts): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
-}
-
-export enum SignerType {
-  /* eslint-disable @typescript-eslint/no-shadow */
-  Identity = 'Identity',
-  Account = 'Account',
-  /* eslint-enable @typescript-eslint/no-shadow */
-}
-
-export interface SignerValue {
-  /**
-   * whether the signer is an Account or Identity
-   */
-  type: SignerType;
-  /**
-   * address or DID (depending on whether the signer is an Account or Identity)
-   */
-  value: string;
 }
 
 export interface GroupedInstructions {

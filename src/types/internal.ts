@@ -229,23 +229,28 @@ export interface CorporateActionIdentifier {
   localId: BigNumber;
 }
 
+/**
+ * Represents the permissions that a signer must have in order to run a Procedure. In some cases, this must be determined
+ *   in a special way for the specific Procedure. In those cases, the resulting value will either be `true` if the signer can
+ *   run the procedure, or a string message indicating why the signer *CAN'T* run the Procedure
+ */
 export interface ProcedureAuthorization {
   /**
    * general permissions that apply to both Secondary Key Accounts and External
    *   Agent Identities. Overridden by `signerPermissions` and `agentPermissions` respectively
    */
-  permissions?: SimplePermissions | boolean;
+  permissions?: SimplePermissions | true | string;
   /**
    * permissions specific to Secondary Key Accounts. This value takes precedence over `permissions` for
    *   Secondary Keys
    */
-  signerPermissions?: SimplePermissions | boolean;
+  signerPermissions?: SimplePermissions | true | string;
   /**
    * permissions specific to External Agent Identities. This value takes precedence over `permissions` for
    *   External Agents
    */
-  agentPermissions?: Omit<SimplePermissions, 'portfolios'> | boolean;
-  roles?: Role[] | boolean;
+  agentPermissions?: Omit<SimplePermissions, 'portfolios'> | true | string;
+  roles?: Role[] | true | string;
 }
 
 export type Falsyable<T> = T | null | undefined;

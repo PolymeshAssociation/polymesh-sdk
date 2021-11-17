@@ -1,3 +1,4 @@
+import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -17,6 +18,7 @@ import {
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
+  CheckPermissionsResult,
   Ensured,
   ErrorCode,
   EventIdentifier,
@@ -24,15 +26,19 @@ import {
   PermissionType,
   ProcedureMethod,
   ResultSet,
+  SignerType,
   TokenWithGroup,
   TxTag,
   TxTags,
 } from '~/types';
+import { QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
   extrinsicPermissionsToTransactionPermissions,
+  hashToString,
   middlewareEventToEventIdentifier,
+  numberToU32,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -99,10 +105,10 @@ export class TokenPermissions extends Namespace<Identity> {
   /**
    * Check whether this Identity has specific transaction Permissions over a Security Token
    */
-  public async hasPermissions(args: {
+  public async checkPermissions(args: {
     token: SecurityToken | string;
     transactions: TxTag[] | null;
-  }): Promise<boolean> {
+  }): Promise<CheckPermissionsResult<SignerType.Identity>> {
     const {
       context: {
         polymeshApi: {
@@ -114,6 +120,13 @@ export class TokenPermissions extends Namespace<Identity> {
     } = this;
     const { token, transactions } = args;
 
+    if (transactions?.length === 0) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Cannot check Permissions for an empty transaction array',
+      });
+    }
+
     const ticker = getTicker(token);
     const rawTicker = stringToTicker(ticker, context);
 
@@ -123,26 +136,69 @@ export class TokenPermissions extends Namespace<Identity> {
     );
 
     if (groupOption.isNone) {
-      return false;
+      return {
+        missingPermissions: transactions,
+        result: false,
+        message: 'The Identity is not an Agent for the Security Token',
+      };
     }
 
     const group = groupOption.unwrap();
 
     if (group.isFull) {
-      return true;
+      return {
+        result: true,
+      };
+    }
+
+    let missingPermissions: TxTag[];
+
+    if (group.isCustom) {
+      const groupId = group.asCustom;
+
+      const groupPermissionsOption = await externalAgents.groupPermissions(rawTicker, groupId);
+
+      const permissions = extrinsicPermissionsToTransactionPermissions(
+        groupPermissionsOption.unwrap()
+      );
+
+      if (permissions === null) {
+        return {
+          result: true,
+        };
+      }
+
+      if (transactions === null) {
+        return {
+          result: false,
+          missingPermissions: null,
+        };
+      }
+
+      const { type, exceptions, values } = permissions;
+
+      const isInclude = type === PermissionType.Include;
+
+      missingPermissions = transactions.filter(
+        tag => !isPresent(tag, values, exceptions, isInclude)
+      );
     }
 
     if (transactions === null) {
-      return false;
+      return {
+        result: false,
+        missingPermissions: null,
+      };
     }
 
     /*
      * Not authorized:
      *   - externalAgents
-     *   - identity.acceptAuthorization
      */
     if (group.isExceptMeta) {
-      return !transactions.some(tag => tag.split('.')[0] === ModuleName.ExternalAgents);
+      missingPermissions = transactions.filter(
+        tag => tag.split('.')[0] === ModuleName.ExternalAgents
+      );
     }
 
     /*
@@ -153,7 +209,7 @@ export class TokenPermissions extends Namespace<Identity> {
      *   - sto (except for sto.invest)
      */
     if (group.isPolymeshV1Pia) {
-      return transactions.every(tag => {
+      missingPermissions = transactions.filter(tag => {
         const isSto = tag.split('.')[0] === ModuleName.Sto && tag !== TxTags.sto.Invest;
         const isAsset = (<TxTag[]>[
           TxTags.asset.Issue,
@@ -161,7 +217,7 @@ export class TokenPermissions extends Namespace<Identity> {
           TxTags.asset.ControllerTransfer,
         ]).includes(tag);
 
-        return isSto || isAsset;
+        return !isSto && !isAsset;
       });
     }
 
@@ -172,47 +228,42 @@ export class TokenPermissions extends Namespace<Identity> {
      *   - capitalDistribution
      */
     if (group.isPolymeshV1Caa) {
-      return transactions.every(tag =>
-        [
-          ModuleName.CorporateAction,
-          ModuleName.CorporateBallot,
-          ModuleName.CapitalDistribution,
-        ].includes(tag.split('.')[0] as ModuleName)
+      missingPermissions = transactions.filter(
+        tag =>
+          ![
+            ModuleName.CorporateAction,
+            ModuleName.CorporateBallot,
+            ModuleName.CapitalDistribution,
+          ].includes(tag.split('.')[0] as ModuleName)
       );
     }
 
-    const groupId = group.asCustom;
-
-    const groupPermissionsOption = await externalAgents.groupPermissions(rawTicker, groupId);
-
-    const permissions = extrinsicPermissionsToTransactionPermissions(
-      groupPermissionsOption.unwrap()
-    );
-
-    if (permissions === null) {
-      return true;
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    if (missingPermissions!.length) {
+      return {
+        missingPermissions: missingPermissions!,
+        result: false,
+      };
     }
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    const { type, exceptions, values } = permissions;
-
-    /*
-     * if type is include:
-     *  all passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
-     * if type is exclude:
-     *  all passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
-     */
-    const isPresent = (tag: TxTag, flipResult: boolean) => {
-      const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
-      const isInExceptions = !!exceptions?.includes(tag);
-
-      const result = isInValues && !isInExceptions;
-
-      return flipResult ? result : !result;
+    return {
+      result: true,
     };
+  }
 
-    const isInclude = type === PermissionType.Include;
+  /**
+   * Check whether this Identity has specific transaction Permissions over a Security Token
+   *
+   * @deprecated in favor of `checkPermissions`
+   */
+  public async hasPermissions(args: {
+    token: SecurityToken | string;
+    transactions: TxTag[] | null;
+  }): Promise<boolean> {
+    const { result } = await this.checkPermissions(args);
 
-    return transactions.every(tag => isPresent(tag, isInclude));
+    return result;
   }
 
   /**
@@ -311,6 +362,11 @@ export class TokenPermissions extends Namespace<Identity> {
     start?: number;
   }): Promise<ResultSet<EventIdentifier>> {
     const {
+      context: {
+        polymeshApi: {
+          query: { system },
+        },
+      },
       context,
       parent: { did },
     } = this;
@@ -338,22 +394,59 @@ export class TokenPermissions extends Namespace<Identity> {
 
     const { items, totalCount: count } = tickerExternalAgentActionsResult;
 
-    const data = items.map(item => {
+    const multiParams: BlockNumber[] = [];
+    const data: Omit<EventIdentifier, 'blockHash'>[] = [];
+
+    items.forEach(item => {
       const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
-      return {
+      multiParams.push(numberToU32(blockId, context));
+      data.push({
         blockNumber: new BigNumber(blockId),
         blockDate: new Date(`${datetime}Z`),
         eventIndex,
-      };
+      });
     });
+
+    let hashes: Hash[] = [];
+
+    if (multiParams.length) {
+      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+    }
 
     const next = calculateNextKey(count, size, start);
 
     return {
-      data,
+      data: data.map((event, index) => ({
+        ...event,
+        blockHash: hashToString(hashes[index]),
+      })),
       next,
       count,
     };
   }
+}
+
+/**
+ * @hidden
+ *
+ * Check whether a tag is "present" in (represented by) a set of values and exceptions, using the following criteria:
+ *
+ * - if type is include:
+ *   the passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
+ * - if type is exclude:
+ *   the passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
+ */
+function isPresent(
+  tag: TxTag,
+  values: (TxTag | ModuleName)[],
+  exceptions: TxTag[] | undefined,
+  flipResult: boolean
+) {
+  const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
+  const isInExceptions = !!exceptions?.includes(tag);
+
+  const result = isInValues && !isInExceptions;
+
+  return flipResult ? result : !result;
 }

@@ -1,4 +1,4 @@
-import { Context, Identity } from '~/internal';
+import { Context, Identity, SecurityToken } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ClaimType, Ensured, EventIdentifier } from '~/types';
@@ -35,9 +35,9 @@ export class DefaultTrustedClaimIssuer extends Identity {
   public trustedFor?: ClaimType[];
 
   /**
-   * ticker of the Security Token
+   * Security Token for which this Identity is a Default Trusted Claim Issuer
    */
-  public ticker: string;
+  public token: SecurityToken;
 
   /**
    * @hidden
@@ -47,7 +47,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
 
     super(identifiers, context);
 
-    this.ticker = ticker;
+    this.token = new SecurityToken({ ticker }, context);
     this.trustedFor = trustedFor;
   }
 
@@ -58,7 +58,11 @@ export class DefaultTrustedClaimIssuer extends Identity {
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async addedAt(): Promise<EventIdentifier | null> {
-    const { ticker, did, context } = this;
+    const {
+      token: { ticker },
+      did,
+      context,
+    } = this;
 
     const {
       data: { eventByAddedTrustedClaimIssuer: event },
