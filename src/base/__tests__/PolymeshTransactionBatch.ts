@@ -51,6 +51,20 @@ describe('Polymesh Transaction Batch class', () => {
   });
 
   describe('method: run', () => {
+    beforeAll(() => {
+      dsMockUtils.createRpcStub('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(1)),
+              parentHash: 'hash',
+              stateRoot: 'hash',
+              extrinsicsRoot: 'hash',
+            },
+          },
+        }),
+      });
+    });
     test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const batchStub = dsMockUtils.createTxStub('utility', 'batchAtomic', { autoresolve: false });
@@ -78,6 +92,7 @@ describe('Polymesh Transaction Batch class', () => {
       sinon.assert.calledWith(tx, ...args[0]);
       sinon.assert.calledOnce(batchStub);
       expect(transaction.blockHash).toBeDefined();
+      expect(transaction.blockNumber).toBeDefined();
       expect(transaction.txHash).toBeDefined();
       expect(transaction.status).toBe(TransactionStatus.Succeeded);
     });

@@ -179,6 +179,8 @@ describe('Account class', () => {
       const callId = CallIdEnum.CddRegisterDid;
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
+      const blockHash1 = 'someHash';
+      const blockHash2 = 'otherHash';
 
       addressToKeyStub.returns(key);
 
@@ -201,6 +203,11 @@ describe('Account class', () => {
             address,
             success: 0,
             signedby_address: 1,
+            block: {
+              hash: blockHash1,
+              id: blockNumber1.toNumber(),
+              datetime: '',
+            },
           },
           {
             module_id: ModuleIdEnum.Asset,
@@ -211,6 +218,11 @@ describe('Account class', () => {
             block_id: blockNumber2.toNumber(),
             success: 1,
             signedby_address: 1,
+            block: {
+              hash: blockHash2,
+              id: blockNumber2.toNumber(),
+              datetime: '',
+            },
           },
         ],
       };
@@ -219,6 +231,9 @@ describe('Account class', () => {
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
+      });
       dsMockUtils.createApolloQueryStub(
         transactions({
           block_id: blockNumber1.toNumber(),
@@ -244,6 +259,41 @@ describe('Account class', () => {
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].blockHash).toEqual(blockHash1);
+      expect(result.data[1].blockHash).toEqual(blockHash2);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.data[1].success).toBeTruthy();
+      expect(result.count).toEqual(20);
+      expect(result.next).toEqual(3);
+
+      dsMockUtils.createRpcStub('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              parentHash: 'hash',
+              number: dsMockUtils.createMockCompact(
+                dsMockUtils.createMockU32(blockNumber1.toNumber())
+              ),
+              extrinsicsRoot: 'hash',
+              stateRoot: 'hash',
+            },
+          },
+        }),
+      });
+
+      result = await account.getTransactionHistory({
+        blockHash: blockHash1,
+        tag,
+        size: 2,
+        start: 1,
+      });
+
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].blockHash).toEqual(blockHash1);
+      expect(result.data[1].blockHash).toEqual(blockHash2);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
       expect(result.data[0].success).toBeFalsy();
