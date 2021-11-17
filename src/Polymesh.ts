@@ -22,8 +22,6 @@ import {
   PolymeshError,
   registerIdentity,
   RegisterIdentityParams,
-  reserveTicker,
-  ReserveTickerParams,
   SecurityToken,
   TickerReservation,
   transferPolyx,
@@ -55,6 +53,7 @@ import {
 import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
 
 import { Claims } from './Claims';
+import { CurrentIdentity } from './CurrentIdentity';
 // import { Governance } from './Governance';
 import { Middleware } from './Middleware';
 import {
@@ -84,6 +83,7 @@ export class Polymesh {
   public claims: Claims;
   public middleware: Middleware;
   public settlements: Settlements;
+  public currentIdentity: CurrentIdentity;
 
   /**
    * @hidden
@@ -96,16 +96,10 @@ export class Polymesh {
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
     this.settlements = new Settlements(context);
+    this.currentIdentity = new CurrentIdentity(context);
 
     this.transferPolyx = createProcedureMethod(
       { getProcedureAndArgs: args => [transferPolyx, args] },
-      context
-    );
-
-    this.reserveTicker = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [reserveTicker, args],
-      },
       context
     );
 
@@ -332,12 +326,6 @@ export class Polymesh {
 
     return account.getBalance();
   }
-
-  /**
-   * Reserve a ticker symbol to later use in the creation of a Security Token.
-   *   The ticker will expire after a set amount of time, after which other users can reserve it
-   */
-  public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
 
   /**
    * Claim a ticker symbol that was reserved in Polymath Classic (Ethereum). The Ethereum account
