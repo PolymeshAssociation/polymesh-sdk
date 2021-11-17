@@ -41,7 +41,7 @@ describe('setAssetRequirements procedure', () => {
   let rawTicker: Ticker;
   let senderConditions: MeshCondition[][];
   let receiverConditions: MeshCondition[][];
-  let rawComplianceRequirement: ComplianceRequirement[];
+  let rawComplianceRequirements: ComplianceRequirement[];
   let args: Params;
 
   beforeAll(() => {
@@ -73,7 +73,7 @@ describe('setAssetRequirements procedure', () => {
       ('receiverConditions1' as unknown) as MeshCondition[],
       ('receiverConditions2' as unknown) as MeshCondition[],
     ];
-    rawComplianceRequirement = senderConditions.map((sConditions, index) =>
+    rawComplianceRequirements = senderConditions.map((sConditions, index) =>
       dsMockUtils.createMockComplianceRequirement({
         /* eslint-disable @typescript-eslint/naming-convention */
         sender_conditions: sConditions,
@@ -168,7 +168,7 @@ describe('setAssetRequirements procedure', () => {
 
   test('should throw an error if the new list is the same as the current one', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: rawComplianceRequirement,
+      requirements: rawComplianceRequirements,
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -179,7 +179,7 @@ describe('setAssetRequirements procedure', () => {
 
   test('should add a reset asset compliance transaction to the queue if the new requirements are empty', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: rawComplianceRequirement,
+      requirements: rawComplianceRequirements,
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -193,7 +193,7 @@ describe('setAssetRequirements procedure', () => {
 
   test('should add a replace compliance requirement transactions to the queue', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: rawComplianceRequirement.slice(0, -1),
+      requirements: rawComplianceRequirements.slice(0, -1),
     });
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
