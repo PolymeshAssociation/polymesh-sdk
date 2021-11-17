@@ -7,9 +7,11 @@ export type V2Settlement = Modify<
   { legs: V2Leg[]; addresses: string[]; result: SettlementResultEnum }
 >;
 
-type V2Leg = {
-  to: { did: string; number: number };
-  from: { did: string; number: number };
+export type V2Portfolio = { did: string; number: number };
+
+export type V2Leg = {
+  to: V2Portfolio;
+  from: V2Portfolio;
   amount: string;
   ticker: string;
 };

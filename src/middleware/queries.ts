@@ -1,12 +1,9 @@
 import { hexStripPrefix } from '@polkadot/util';
 import gql from 'graphql-tag';
-import { add, trim } from 'lodash';
-import { stringify } from 'querystring';
 
 import { Context } from '~/internal';
-import { V2Settlement } from '~/middleware/type-overrides';
+import { V2Portfolio, V2Settlement } from '~/middleware/type-overrides';
 import {
-  AgentHistory,
   AgentHistoryEvent,
   CallIdEnum,
   Claim as ClaimV1,
@@ -43,18 +40,19 @@ import {
 } from '~/middleware/types';
 import {
   Claim as ClaimV2,
+  ClaimsConnection,
   Event as EventV2,
   Extrinsic as ExtrinsicV2,
   ExtrinsicsOrderBy,
   HeldTokensOrderBy,
+  IdentityWithClaim as IdentityWithClaimsV2,
   ProposalVotesOrderBy,
-  QueryIssuerIdentityWithClaimArgs,
   TickerExternalAgentActionsOrderBy,
 } from '~/middleware/types-v2';
 import { DeepPartial, Order } from '~/types';
 import { MultiGraphqlQuery } from '~/types/internal';
 import { Modify } from '~/types/utils';
-import { addressToKey, keyToAddress, numberToBalance, removeNullChars } from '~/utils/conversion';
+import { addressToKey, keyToAddress, removeNullChars } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -125,8 +123,8 @@ export function proposalVotes(
           orderBy: [mapProposalVotesOrder(variables.orderBy)],
         },
       },
-      mapper: ({ proposalVotes }) => {
-        const { nodes } = proposalVotes!;
+      mapper: ({ proposalVotes: results }) => {
+        const { nodes } = results!;
         return {
           proposalVotes: nodes.map(node => {
             return { __typename: 'ProposalVote', ...node };
@@ -224,17 +222,15 @@ export function didsWithClaims(
   `;
 
   const { args, filter, variablesV2, claimFilter } = createIdentityWithClaimsFilter(variables);
+  const maybeFilter = filter ? `, filter:{${filter}}` : '';
+  const maybeClaimFilter = claimFilter ? `, filter:{${claimFilter}}` : '';
   const queryV2 = gql`
     query DidsWithClaimsQuery($count: Int, $skip: Int ${args}) {
-      identityWithClaims(first: $count, offset: $skip, orderBy: [ID_ASC] ${
-        filter ? `, filter:{${filter}}` : ''
-      }) {
+      identityWithClaims(first: $count, offset: $skip, orderBy: [ID_ASC] ${maybeFilter}) {
         totalCount
         nodes {
           id
-          claims(orderBy: [BLOCK_ID_ASC, EVENT_IDX_ASC] ${
-            claimFilter ? `, filter:{${claimFilter}}` : ''
-          }) {
+          claims(orderBy: [BLOCK_ID_ASC, EVENT_IDX_ASC] ${maybeClaimFilter}) {
            nodes {
               targetDidId
               type
@@ -265,21 +261,25 @@ export function didsWithClaims(
           didsWithClaims: {
             __typename: 'IdentityWithClaimsResult',
             totalCount,
-            items: nodes.map(
-              (node): IdentityWithClaims => {
-                const { id, claims } = node!;
-                const { nodes } = claims!;
-                return {
-                  __typename: 'IdentityWithClaims',
-                  did: id,
-                  claims: nodes.map(n => mapClaim(n!)),
-                };
-              }
-            ),
+            items: nodes.map(identityWithClaimsMapper),
           },
         };
       },
     },
+  };
+}
+/**
+ *  @hidden
+ */
+function identityWithClaimsMapper(
+  node: Maybe<{ id: string; claims: ClaimsConnection }>
+): IdentityWithClaims {
+  const { id, claims } = node!;
+  const { nodes } = claims;
+  return {
+    __typename: 'IdentityWithClaims',
+    did: id,
+    claims: nodes.map(n => mapClaim(n!)),
   };
 }
 
@@ -757,8 +757,8 @@ type QueryTransactionsArgsV2 = Modify<QueryTransactionsArgs, { orderBy: Extrinsi
  * Get transactions
  */
 export function transactions(
-  variables: QueryTransactionsArgs = {},
-  context: Context
+  context: Context,
+  variables: QueryTransactionsArgs = {}
 ): MultiGraphqlQuery<QueryTransactionsArgs, 'extrinsics', 'transactions', QueryTransactionsArgsV2> {
   const query = gql`
     query TransactionsQuery(
@@ -1073,17 +1073,7 @@ export function issuerDidsWithClaimsByTarget(
           issuerDidsWithClaimsByTarget: {
             __typename: 'IdentityWithClaimsResult',
             totalCount,
-            items: nodes.map(
-              (node): IdentityWithClaims => {
-                const { id, claims } = node!;
-                const { nodes } = claims!;
-                return {
-                  __typename: 'IdentityWithClaims',
-                  did: id,
-                  claims: nodes.map(n => mapClaim(n!)),
-                };
-              }
-            ),
+            items: nodes.map(identityWithClaimsMapper),
           },
         };
       },
@@ -1359,12 +1349,12 @@ export function settlements(
           addressFilter: variables.addressFilter ? [variables.addressFilter] : [],
         },
       },
-      mapper: ({ settlements }) => {
+      mapper: ({ settlements: result }) => {
         return {
           settlements: {
             __typename: 'SettlementResult',
-            totalCount: settlements?.totalCount,
-            items: (settlements?.nodes as V2Settlement[]).map(n => ({
+            totalCount: result?.totalCount,
+            items: (result?.nodes as V2Settlement[]).map(n => ({
               __typename: 'Settlement',
               block_id: n.blockId,
               result: n.result,
@@ -1375,12 +1365,12 @@ export function settlements(
                 from: {
                   __typename: 'Portfolio',
                   did: from.did,
-                  kind: from.number === 0 ? 'Default' : from.number.toString(),
+                  kind: portfolioToKind(from),
                 },
                 to: {
                   __typename: 'Portfolio',
                   did: to.did,
-                  kind: to.number === 0 ? 'Default' : to.number.toString(),
+                  kind: portfolioToKind(to),
                 },
                 direction:
                   from.did === variables.identityId &&
@@ -1396,6 +1386,12 @@ export function settlements(
       },
     },
   };
+}
+/**
+ * @hidden
+ */
+function portfolioToKind({ number }: V2Portfolio) {
+  return number === 0 ? 'Default' : number.toString();
 }
 
 /**
@@ -1791,8 +1787,8 @@ export function tickerExternalAgentActions(
     },
     v2: {
       request: { query: queryV2, variables: variablesV2 },
-      mapper: ({ tickerExternalAgentActions }) => {
-        const { nodes, totalCount } = tickerExternalAgentActions!;
+      mapper: ({ tickerExternalAgentActions: result }) => {
+        const { nodes, totalCount } = result!;
         return {
           tickerExternalAgentActions: {
             __typename: 'TickerExternalAgentActionsResult',

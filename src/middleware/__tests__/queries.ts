@@ -138,7 +138,7 @@ describe('tokensHeldByDid', () => {
 
 describe('transactions', () => {
   test('should pass the variables to the grapqhl query', () => {
-    let result = transactions(undefined, dsMockUtils.getContextInstance());
+    let result = transactions(dsMockUtils.getContextInstance());
 
     expect(result.v1.query).toBeDefined();
     expect(result.v1.variables).toEqual({});
@@ -146,7 +146,7 @@ describe('transactions', () => {
     const variables = {
       address: '5Dr6HW25yAgXKPs5re5qXsDi7wWzwSF7xQgGYJvQeFFJoGpV',
     };
-    result = transactions(variables, dsMockUtils.getContextInstance());
+    result = transactions(dsMockUtils.getContextInstance(), variables);
     expect(result.v1.query).toBeDefined();
     expect(result.v1.variables).toEqual(variables);
   });
