@@ -1070,13 +1070,9 @@ export class Context {
         return await resultPromise;
       } else {
         const { v2 } = query;
-        if (!v2) {
-          throw new PolymeshError({
-            code: ErrorCode.MiddlewareError,
-            message: 'You must provide a middleware v1 configuration to use this query',
-          });
-        }
+
         const result = await this.middlewareV2Api.query(v2.request);
+
         const { data } = result;
         return {
           ...result,
@@ -1113,8 +1109,8 @@ export class Context {
       return;
     }
     const { data: v1Data } = await v1ResultPromise;
-    const mapped = semanticCompareTransform(v2.mapper(v2Data));
-    const comparableV1Data = semanticCompareTransform(v1Data);
+    const mapped = removeIncomparableKeys(v2.mapper(v2Data));
+    const comparableV1Data = removeIncomparableKeys(v1Data);
 
     if (!isEqual(mapped, comparableV1Data)) {
       const noColor = (s: string) => s;
@@ -1236,11 +1232,12 @@ const TROUBLESOME_QUERIES = new Set([
   'tickerExternalAgentActions',
 ]);
 const INCOMPARABLE_KEYS = new Set(['last_update_date', 'datetime', 'issuance_date']);
+
 /**
  * @hidden
  * Returns response with incomparable keys removed (like last_updated_date) because of precision issues.
  */
-function semanticCompareTransform(response: DeepPartial<Query>): any {
+export function removeIncomparableKeys(response: DeepPartial<Query>): any {
   /**
    * @hidden
    */
@@ -1263,8 +1260,8 @@ function semanticCompareTransform(response: DeepPartial<Query>): any {
   /**
    * @hidden
    */
-  function isTroublesome(queryName: string): queryName is keyof Query {
-    return TROUBLESOME_QUERIES.has(queryName);
+  function isTroublesome(name: string): name is keyof Query {
+    return TROUBLESOME_QUERIES.has(name);
   }
 
   const name = Object.keys(response).filter(key => key !== '__typename')[0];

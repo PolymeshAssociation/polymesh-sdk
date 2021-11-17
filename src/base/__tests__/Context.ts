@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { removeIncomparableKeys } from '~/base/Context';
 import { Account, Context, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -2015,5 +2016,19 @@ describe('Context class', () => {
 
       expect(cloned).toEqual(context);
     });
+  });
+});
+
+describe('removeIncomparableKeys', () => {
+  expect(
+    removeIncomparableKeys({
+      didsWithClaims: {
+        items: [{ did: 'foo', claims: [{ cdd_id: 'bar', last_update_date: 'some date' as any }] }],
+      },
+    })
+  ).toEqual({
+    didsWithClaims: {
+      items: [{ did: 'foo', claims: [{ cdd_id: 'bar' }] }],
+    },
   });
 });
