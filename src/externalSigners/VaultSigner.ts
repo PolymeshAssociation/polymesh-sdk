@@ -18,6 +18,21 @@ interface SignResponse {
   };
 }
 
+/* eslint-disable @typescript-eslint/naming-convention */
+interface VaultKey {
+  public_key: string;
+}
+
+interface FetchKeyResponse {
+  statusCode: number;
+  data: {
+    keys: VaultKey[];
+    latest_version: number;
+    type: string;
+  };
+}
+/* eslint-enable @typescript-eslint/naming-convention */
+
 /**
  * Implements ExternalSigner using Hashicorp's Vault to generate signatures
  */
@@ -84,6 +99,39 @@ export class VaultSigner implements ExternalSigner {
   }
 
   /**
+   * Enables a key stored in Vault to begin signing requests
+   * @param keyName the name of the key in Vault
+   * @throws if Vault returns a non 200 response, or if key is not ed25519 type
+   * @returns The keyring pair for the added key
+   */
+  public async addKey(keyName: string): Promise<string> {
+    const fetchResponse = await this.fetchKeyAddress(keyName);
+    if (fetchResponse.statusCode !== 200) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: `Could not add key: "${keyName}". Vault returned status code: ${fetchResponse.statusCode}`,
+      });
+    }
+
+    const keyType = fetchResponse.data.type;
+    if (keyType !== 'ed25519') {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: `Only ed25519 type keys can sign extrinsics. Key: "${keyName}" was: ${keyType}`,
+      });
+    }
+    const latestVersion = fetchResponse.data.latest_version;
+    const latestKey = fetchResponse.data.keys[latestVersion];
+
+    // encode key into SS58 format
+    const rawKey = Buffer.from(latestKey.public_key, 'base64');
+    const address = encodeAddress(rawKey, this.ss58Format);
+
+    this.addressToKeyMap[address] = keyName;
+    return address;
+  }
+
+  /**
    * Makes a request to Vault to sign
    * @param body Payload to obtain a signature for
    * @param key The key to sign with
@@ -100,47 +148,15 @@ export class VaultSigner implements ExternalSigner {
   }
 
   /**
-   * Enables a key stored in Vault to begin signing requests
-   * @param keyName the name of the key in Vault
-   * @returns The keyring pair for the added key
-   */
-  public async addKey(keyName: string): Promise<string> {
-    const address = await this.fetchKeyAddress(keyName);
-    this.addressToKeyMap[address] = keyName;
-    return address;
-  }
-
-  /**
    * Given a key name fetches the public key from Vault and returns it in SS58 format
    * @param name the name of the key in vault
-   * @throws if vault returns non 200 status or if key type is not ed25519
-   * @returns the keys associated public key in SS58 format
+   * @returns FetchKeyResponse
    */
-  private async fetchKeyAddress(name: string): Promise<string> {
+  private async fetchKeyAddress(name: string): Promise<FetchKeyResponse> {
     const res = await fetch(`${this.link}/keys/${name}`, {
       headers: { 'X-Vault-Token': this.token },
     });
-
-    if (res.status !== 200) {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: `Could not add key: "${name}". Vault returned status code: ${res.status}`,
-      });
-    }
-
-    const response = await res.json();
-    const keyType = response.data.type;
-    if (keyType !== 'ed25519') {
-      throw new PolymeshError({
-        code: ErrorCode.General,
-        message: `Only ed25519 type keys can sign extrinsics. Key: "${name}" was: ${keyType}`,
-      });
-    }
-    const latestVersion = response.data.latest_version;
-    const latestKey = response.data.keys[latestVersion];
-
-    // now encode it as ss58Format
-    const rawKey = Buffer.from(latestKey.public_key, 'base64');
-    return encodeAddress(rawKey, this.ss58Format);
+    const data = await res.json();
+    return { ...data, statusCode: res.status };
   }
 }

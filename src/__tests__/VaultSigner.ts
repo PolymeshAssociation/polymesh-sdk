@@ -6,7 +6,23 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
 
 const vaultUrl = 'http://example.com';
-const address = '5FUAXfiwa1zKwc8zwwkiJBc1RxHLFLYFeHspcpzEdzGLoJq8';
+const address = '5FJtuUyQv34FwN6TaMDN7KrJ2RToFoTzEfMCWToYrMp3Rw89';
+
+/* eslint-disable @typescript-eslint/naming-convention */
+const fetchKeyResponse = {
+  data: {
+    keys: {
+      '1': {
+        public_key: 'j4dUI2Dbj1+oYW+2kv9KZ0h4j1jPWqErtMY3KoBhVlQ=',
+      },
+    },
+    latest_version: 1,
+    name: 'MyKey',
+    type: 'ed25519',
+  },
+  statusCode: 200,
+};
+/* eslint-enable @typescript-eslint/naming-convention */
 
 describe('Vault Signer', () => {
   let vaultSigner: VaultSigner;
@@ -26,7 +42,7 @@ describe('Vault Signer', () => {
     fetchKeySpy = jest
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .spyOn(vaultSigner as any, 'fetchKeyAddress')
-      .mockResolvedValue(address);
+      .mockResolvedValue(fetchKeyResponse);
   });
 
   afterEach(() => {
@@ -44,6 +60,38 @@ describe('Vault Signer', () => {
     test('should return the KeyringPair', async () => {
       const result = await vaultSigner.addKey('MyKey');
       expect(result).toBe(address);
+    });
+
+    test('should throw if Vault returns non 200 response', async () => {
+      fetchKeySpy.mockResolvedValue({ ...fetchKeyResponse, statusCode: 403 });
+      let error;
+      try {
+        await vaultSigner.addKey('MyKey');
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Could not add key: "MyKey". Vault returned status code: 403',
+      });
+      expect(error).toStrictEqual(expectedError);
+    });
+
+    test('should throw if key is not ed25519', async () => {
+      const badTypeResponse = JSON.parse(JSON.stringify(fetchKeyResponse));
+      badTypeResponse.data.type = 'rsa-4096';
+      fetchKeySpy.mockResolvedValue(badTypeResponse);
+      let error;
+      try {
+        await vaultSigner.addKey('MyKey');
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Only ed25519 type keys can sign extrinsics. Key: "MyKey" was: rsa-4096',
+      });
+      expect(error).toStrictEqual(expectedError);
     });
   });
 
