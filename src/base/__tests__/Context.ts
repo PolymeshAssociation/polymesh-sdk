@@ -7,7 +7,6 @@ import { ExternalSigner } from '~/externalSigners/ExternalSigner';
 import { Account, Context, Identity } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
-import { polymesh } from '~/polkadot/definitions';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import {

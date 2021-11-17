@@ -26,7 +26,7 @@ const fetchKeyResponse = {
 
 describe('Vault Signer', () => {
   let vaultSigner: VaultSigner;
-  let fetchKeySpy: any;
+  let fetchKeySpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
