@@ -1,4 +1,3 @@
-import { Context } from '~/internal';
 import {
   ClaimScopeTypeEnum,
   ClaimTypeEnum,

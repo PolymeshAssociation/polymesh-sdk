@@ -45,7 +45,6 @@ import {
   Extrinsic as ExtrinsicV2,
   ExtrinsicsOrderBy,
   HeldTokensOrderBy,
-  IdentityWithClaim as IdentityWithClaimsV2,
   ProposalVotesOrderBy,
   TickerExternalAgentActionsOrderBy,
 } from '~/middleware/types-v2';

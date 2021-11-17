@@ -1263,8 +1263,8 @@ function semanticCompareTransform(response: DeepPartial<Query>): any {
   /**
    * @hidden
    */
-  function isTroublesome(name: string): name is keyof Query {
-    return TROUBLESOME_QUERIES.has(name);
+  function isTroublesome(queryName: string): queryName is keyof Query {
+    return TROUBLESOME_QUERIES.has(queryName);
   }
 
   const name = Object.keys(response).filter(key => key !== '__typename')[0];
