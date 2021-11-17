@@ -8,20 +8,11 @@ import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
   Context,
-  createVenue,
-  CreateVenueParams,
   Entity,
   Instruction,
-  inviteAccount,
-  InviteAccountParams,
-  modifySignerPermissions,
-  ModifySignerPermissionsParams,
   PolymeshError,
-  removeSecondaryKeys,
-  RemoveSecondaryKeysParams,
   SecurityToken,
   TickerReservation,
-  toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
@@ -37,14 +28,10 @@ import {
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isVenueOwnerRole,
-  NoArgsProcedureMethod,
   Order,
-  PermissionType,
-  ProcedureMethod,
   ResultSet,
   Role,
   SecondaryKey,
-  Signer,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -68,12 +55,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import {
-  calculateNextKey,
-  createProcedureMethod,
-  getTicker,
-  removePadding,
-} from '~/utils/internal';
+import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
 
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
@@ -122,100 +104,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.authorizations = new IdentityAuthorizations(this, context);
     this.portfolios = new Portfolios(this, context);
     this.tokenPermissions = new TokenPermissions(this, context);
-
-    this.removeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: args => [removeSecondaryKeys, { ...args, identity: this }] },
-      context
-    );
-    this.revokePermissions = createProcedureMethod<
-      { secondaryKeys: Signer[] },
-      ModifySignerPermissionsParams & { identity: Identity },
-      void
-    >(
-      {
-        getProcedureAndArgs: args => {
-          const { secondaryKeys } = args;
-          const signers = secondaryKeys.map(signer => {
-            return {
-              signer,
-              permissions: {
-                tokens: { type: PermissionType.Include, values: [] },
-                transactions: { type: PermissionType.Include, values: [] },
-                portfolios: { type: PermissionType.Include, values: [] },
-              },
-            };
-          });
-          return [modifySignerPermissions, { secondaryKeys: signers, identity: this }];
-        },
-      },
-      context
-    );
-    this.modifyPermissions = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifySignerPermissions, { ...args, identity: this }] },
-      context
-    );
-    this.inviteAccount = createProcedureMethod(
-      { getProcedureAndArgs: args => [inviteAccount, { ...args, identity: this }] },
-      context
-    );
-    this.createVenue = createProcedureMethod(
-      { getProcedureAndArgs: args => [createVenue, args] },
-      context
-    );
-    this.freezeSecondaryKeys = createProcedureMethod(
-      {
-        getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true, identity: this }],
-        voidArgs: true,
-      },
-      context
-    );
-    this.unfreezeSecondaryKeys = createProcedureMethod(
-      {
-        getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false, identity: this }],
-        voidArgs: true,
-      },
-      context
-    );
   }
-
-  /**
-   * Remove a list of secondary keys associated with the Identity
-   */
-  public removeSecondaryKeys: ProcedureMethod<RemoveSecondaryKeysParams, void>;
-
-  /**
-   * Revoke all permissions of a list of secondary keys associated with the Identity
-   */
-  public revokePermissions: ProcedureMethod<{ secondaryKeys: Signer[] }, void>;
-
-  /**
-   * Modify all permissions of a list of secondary keys associated with the Identity
-   */
-  public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
-
-  /**
-   * Send an invitation to an Account to join this Identity
-   *
-   * @note this may create AuthorizationRequest which have to be accepted by
-   *   the corresponding Account. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
-   */
-  public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
-
-  /**
-   * Create a Venue
-   */
-  public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
-
-  /**
-   * Freeze all the secondary keys in this Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
-   */
-  public freezeSecondaryKeys: NoArgsProcedureMethod<void>;
-
-  /**
-   * Unfreeze all the secondary keys in this Identity. This will restore their permissions as they were before being frozen
-   */
-  public unfreezeSecondaryKeys: NoArgsProcedureMethod<void>;
 
   /**
    * Check whether this Identity possesses the specified Role

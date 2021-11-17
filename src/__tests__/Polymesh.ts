@@ -430,31 +430,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: reserveTicker', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      const args = {
-        ticker: 'SOMETICKER',
-      };
-
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await polymesh.reserveTicker(args);
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
   describe('method: claimClassicTicker', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
