@@ -37,8 +37,8 @@ export async function prepareRemoveAssetRequirement(
 
   if (requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(id)).length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The supplied id is not valid',
+      code: ErrorCode.DataUnavailable,
+      message: `There is no compliance requirement with id "${id}"`,
     });
   }
 

@@ -1,5 +1,3 @@
-import { u32 } from '@polkadot/types';
-
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -279,10 +277,8 @@ export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGr
 /**
  * @hidden
  */
-export function assertComplianceConditionComplexity(
-  maxConditionComplexity: u32,
-  requirements: Condition[]
-): void {
+export function assertRequirementsNotTooComplex(context: Context, requirements: Condition[]): void {
+  const { maxConditionComplexity: maxComplexity } = context.polymeshApi.consts.complianceManager;
   let complexitySum = 0;
 
   requirements.forEach(conditions => {
@@ -300,15 +296,16 @@ export function assertComplianceConditionComplexity(
     if (conditions.target === ConditionTarget.Both) {
       complexitySum = complexitySum * 2;
     }
+    if (conditions.trustedClaimIssuers && conditions.trustedClaimIssuers.length) {
+      complexitySum = complexitySum * conditions.trustedClaimIssuers.length;
+    }
   });
 
-  const maxComplexity = u32ToBigNumber(maxConditionComplexity).toNumber();
-
-  if (complexitySum >= maxComplexity) {
+  if (complexitySum >= u32ToBigNumber(maxComplexity).toNumber()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Condition limit reached',
-      data: { limit: maxConditionComplexity },
+      code: ErrorCode.LimitExceeded,
+      message: 'Compliance Requirement complexity limit reached',
+      data: { limit: maxComplexity },
     });
   }
 }

@@ -108,10 +108,11 @@ describe('removeAssetRequirement procedure', () => {
 
   test('should throw an error if the supplied id is not present in the current requirements', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const complianceRequirementId = new BigNumber(1);
 
     return expect(
-      prepareRemoveAssetRequirement.call(proc, { ...args, id: new BigNumber(1) })
-    ).rejects.toThrow('The supplied id is not valid');
+      prepareRemoveAssetRequirement.call(proc, { ...args, id: complianceRequirementId })
+    ).rejects.toThrow(`There is no compliance requirement with id "${complianceRequirementId}"`);
   });
 
   test('should add a remove asset compliance transaction to the queue', async () => {

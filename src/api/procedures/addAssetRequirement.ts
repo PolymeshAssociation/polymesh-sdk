@@ -1,6 +1,6 @@
 import { differenceWith, flattenDeep, isEqual } from 'lodash';
 
-import { assertComplianceConditionComplexity } from '~/api/procedures/utils';
+import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -15,7 +15,7 @@ export interface AddAssetRequirementParams {
    * array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
    * while conditions inside each array are *AND* between them
    */
-  requirements: Condition[];
+  conditions: Condition[];
 }
 
 /**
@@ -34,18 +34,15 @@ export async function prepareAddAssetRequirement(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx, consts },
+      polymeshApi: { query, tx },
     },
     context,
   } = this;
-  const { ticker, requirements } = args;
+  const { ticker, conditions } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
-  assertComplianceConditionComplexity(
-    consts.complianceManager.maxConditionComplexity,
-    flattenDeep<Condition>(requirements)
-  );
+  assertRequirementsNotTooComplex(context, conditions);
 
   const currentRequirements = (
     await query.complianceManager.assetCompliances(rawTicker)
@@ -53,17 +50,18 @@ export async function prepareAddAssetRequirement(
     requirement => complianceRequirementToRequirement(requirement, context).conditions
   );
 
-  if (!differenceWith(flattenDeep<Condition>(currentRequirements), requirements, isEqual).length) {
+  if (!differenceWith(flattenDeep<Condition>(currentRequirements), conditions, isEqual).length) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: 'The supplied condition list is already in the current one',
+      message:
+        'There already exists a Requirement with the same conditions for this Security Token',
     });
   }
 
   const {
     sender_conditions: senderConditions,
     receiver_conditions: receiverConditions,
-  } = requirementToComplianceRequirement({ conditions: requirements, id: 1 }, context);
+  } = requirementToComplianceRequirement({ conditions, id: 1 }, context);
 
   this.addTransaction(
     tx.complianceManager.addComplianceRequirement,

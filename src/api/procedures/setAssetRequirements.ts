@@ -1,6 +1,6 @@
 import { differenceWith, flattenDeep, isEqual } from 'lodash';
 
-import { assertComplianceConditionComplexity } from '~/api/procedures/utils';
+import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -35,7 +35,7 @@ export async function prepareSetAssetRequirements(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx, consts },
+      polymeshApi: { query, tx },
     },
     context,
   } = this;
@@ -43,9 +43,7 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const { maxConditionComplexity } = consts.complianceManager;
-
-  assertComplianceConditionComplexity(maxConditionComplexity, flattenDeep<Condition>(requirements));
+  assertRequirementsNotTooComplex(context, flattenDeep<Condition>(requirements));
 
   const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
 

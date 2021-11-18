@@ -5,10 +5,10 @@ import {
   assertCaCheckpointValid,
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
-  assertComplianceConditionComplexity,
   assertDistributionDatesValid,
   assertInstructionValid,
   assertPortfolioExists,
+  assertRequirementsNotTooComplex,
   assertSecondaryKeys,
 } from '~/api/procedures/utils';
 import { CheckpointSchedule, Context, Instruction } from '~/internal';
@@ -570,7 +570,13 @@ describe('assertCaCheckpointValid', () => {
   });
 });
 
-describe('assertComplianceConditionComplexity', () => {
+describe('assertRequirementsNotTooComplex', () => {
+  let mockContext: Mocked<Context>;
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -584,8 +590,11 @@ describe('assertComplianceConditionComplexity', () => {
   });
 
   test('should throw an error if the complexity sumatory is greater than max condition complexity', async () => {
+    dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
+      returnValue: dsMockUtils.createMockU32(2),
+    });
     expect(() =>
-      assertComplianceConditionComplexity(dsMockUtils.createMockU32(2), [
+      assertRequirementsNotTooComplex(mockContext, [
         { type: ConditionType.IsPresent, target: ConditionTarget.Both },
         {
           type: ConditionType.IsAnyOf,
@@ -593,12 +602,15 @@ describe('assertComplianceConditionComplexity', () => {
           target: ConditionTarget.Sender,
         },
       ] as Condition[])
-    ).toThrow('Condition limit reached');
+    ).toThrow('Compliance Requirement complexity limit reached');
   });
 
   test('should not throw an error if the complexity is less than the max condition complexity', async () => {
+    dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
+      returnValue: dsMockUtils.createMockU32(10),
+    });
     expect(() =>
-      assertComplianceConditionComplexity(dsMockUtils.createMockU32(10), [
+      assertRequirementsNotTooComplex(mockContext, [
         { type: ConditionType.IsPresent, target: ConditionTarget.Receiver },
       ] as Condition[])
     ).not.toThrow();
