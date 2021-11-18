@@ -1,16 +1,14 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { Account, Identity, PolymeshError, Procedure } from '~/internal';
+import { Account, PolymeshError, Procedure } from '~/internal';
 import {
   AuthorizationType,
   ErrorCode,
   Permissions,
   PermissionsLike,
   PermissionType,
-  RoleType,
   SignerType,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -25,16 +23,12 @@ export interface InviteAccountParams {
   expiry?: Date;
 }
 
-export type Params = InviteAccountParams & {
-  identity: Identity;
-};
-
 /**
  * @hidden
  */
 export async function prepareInviteAccount(
-  this: Procedure<Params, void>,
-  args: Params
+  this: Procedure<InviteAccountParams>,
+  args: InviteAccountParams
 ): Promise<void> {
   const {
     context: {
@@ -43,7 +37,9 @@ export async function prepareInviteAccount(
     context,
   } = this;
 
-  const { targetAccount, permissions: permissionsLike, expiry, identity } = args;
+  const { targetAccount, permissions: permissionsLike, expiry } = args;
+
+  const identity = await context.getCurrentIdentity();
 
   const address = signerToString(targetAccount);
 
@@ -123,22 +119,11 @@ export async function prepareInviteAccount(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params>,
-  { identity: { did } }: Params
-): ProcedureAuthorization {
-  return {
-    roles: [{ type: RoleType.Identity, did }],
+export const inviteAccount = (): Procedure<InviteAccountParams> =>
+  new Procedure(prepareInviteAccount, {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       tokens: [],
       portfolios: [],
     },
-  };
-}
-
-/**
- * @hidden
- */
-export const inviteAccount = (): Procedure<Params, void> =>
-  new Procedure(prepareInviteAccount, getAuthorization);
+  });
