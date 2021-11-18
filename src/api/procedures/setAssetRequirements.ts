@@ -74,31 +74,20 @@ export async function prepareSetAssetRequirements(
     });
   }
 
-  const rawConditions = requirements.map(requirement => {
-    const {
-      sender_conditions: senderConditions,
-      receiver_conditions: receiverConditions,
-    } = requirementToComplianceRequirement({ conditions: requirement, id: 1 }, context);
-
-    return {
-      senderConditions,
-      receiverConditions,
-    };
-  });
-
-  if (currentRequirements.length) {
+  if (!requirements.length) {
     this.addTransaction(tx.complianceManager.resetAssetCompliance, {}, rawTicker);
-  }
+  } else {
+    const rawAssetCompliance = requirements.map((requirement, index) =>
+      requirementToComplianceRequirement({ conditions: requirement, id: index }, context)
+    );
 
-  rawConditions.forEach(({ senderConditions, receiverConditions }) => {
     this.addTransaction(
-      tx.complianceManager.addComplianceRequirement,
+      tx.complianceManager.replaceAssetCompliance,
       {},
       rawTicker,
-      senderConditions,
-      receiverConditions
+      rawAssetCompliance
     );
-  });
+  }
 
   return new SecurityToken({ ticker }, context);
 }

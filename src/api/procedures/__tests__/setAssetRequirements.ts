@@ -41,7 +41,7 @@ describe('setAssetRequirements procedure', () => {
   let rawTicker: Ticker;
   let senderConditions: MeshCondition[][];
   let receiverConditions: MeshCondition[][];
-  let rawComplianceRequirement: ComplianceRequirement[];
+  let rawComplianceRequirements: ComplianceRequirement[];
   let args: Params;
 
   beforeAll(() => {
@@ -73,14 +73,14 @@ describe('setAssetRequirements procedure', () => {
       ('receiverConditions1' as unknown) as MeshCondition[],
       ('receiverConditions2' as unknown) as MeshCondition[],
     ];
-    rawComplianceRequirement = senderConditions.map(
-      (sConditions, index) =>
-        ({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          sender_conditions: sConditions,
-          receiver_conditions: receiverConditions[index],
-          /* eslint-enable @typescript-eslint/naming-convention */
-        } as ComplianceRequirement)
+    rawComplianceRequirements = senderConditions.map((sConditions, index) =>
+      dsMockUtils.createMockComplianceRequirement({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        sender_conditions: sConditions,
+        receiver_conditions: receiverConditions[index],
+        id: dsMockUtils.createMockU32(index),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      })
     );
     rawTicker = dsMockUtils.createMockTicker(ticker);
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -93,9 +93,7 @@ describe('setAssetRequirements procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   let resetAssetComplianceTransaction: PolymeshTx<[Ticker]>;
-  let addComplianceRequirementTransaction: PolymeshTx<
-    [Ticker, Vec<MeshCondition>, Vec<MeshCondition>]
-  >;
+  let replaceComplianceRequirementTransaction: PolymeshTx<Vec<ComplianceRequirement>>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
@@ -112,9 +110,9 @@ describe('setAssetRequirements procedure', () => {
       'complianceManager',
       'resetAssetCompliance'
     );
-    addComplianceRequirementTransaction = dsMockUtils.createTxStub(
+    replaceComplianceRequirementTransaction = dsMockUtils.createTxStub(
       'complianceManager',
-      'addComplianceRequirement'
+      'replaceAssetCompliance'
     );
 
     mockContext = dsMockUtils.getContextInstance();
@@ -125,11 +123,11 @@ describe('setAssetRequirements procedure', () => {
         /* eslint-disable @typescript-eslint/naming-convention */
         sender_conditions: senderConditions[index],
         receiver_conditions: receiverConditions[index],
-        id: dsMockUtils.createMockU32(1),
+        id: dsMockUtils.createMockU32(index),
         /* eslint-enable @typescript-eslint/naming-convention */
       });
       requirementToComplianceRequirementStub
-        .withArgs({ conditions: condition, id: 1 }, mockContext)
+        .withArgs({ conditions: condition, id: index }, mockContext)
         .returns(complianceRequirement);
       complianceRequirementToRequirementStub
         .withArgs(
@@ -141,7 +139,7 @@ describe('setAssetRequirements procedure', () => {
           }),
           mockContext
         )
-        .returns({ conditions: condition, id: 1 });
+        .returns({ conditions: condition, id: index });
     });
   });
 
@@ -170,7 +168,7 @@ describe('setAssetRequirements procedure', () => {
 
   test('should throw an error if the new list is the same as the current one', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: rawComplianceRequirement,
+      requirements: rawComplianceRequirements,
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -179,73 +177,36 @@ describe('setAssetRequirements procedure', () => {
     );
   });
 
-  test('should add a reset asset compliance transaction and add compliance requirement transactions to the queue', async () => {
-    const currentComplianceRequirement = rawComplianceRequirement.slice(0, -1);
+  test('should add a reset asset compliance transaction to the queue if the new requirements are empty', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: currentComplianceRequirement,
-    });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
-
-    const result = await prepareSetAssetRequirements.call(proc, args);
-
-    sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      resetAssetComplianceTransaction,
-      {},
-      rawTicker
-    );
-    senderConditions.forEach((sConditions, index) => {
-      sinon.assert.calledWith(
-        addTransactionStub.getCall(index + 1),
-        addComplianceRequirementTransaction,
-        {},
-        rawTicker,
-        sConditions,
-        receiverConditions[index]
-      );
-    });
-
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
-  });
-
-  test('should not add a remove claim issuers transaction if there are no default claim issuers set on the token', async () => {
-    assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: [],
-    });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
-
-    const result = await prepareSetAssetRequirements.call(proc, args);
-
-    senderConditions.forEach((sConditions, index) => {
-      sinon.assert.calledWith(
-        addTransactionStub.getCall(index),
-        addComplianceRequirementTransaction,
-        {},
-        rawTicker,
-        sConditions,
-        receiverConditions[index]
-      );
-    });
-    sinon.assert.callCount(addTransactionStub, senderConditions.length);
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
-  });
-
-  test('should not add an asset compliance transactions if there are no claim issuers passed as arguments', async () => {
-    const currentComplianceRequirement = rawComplianceRequirement;
-    assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: currentComplianceRequirement,
+      requirements: rawComplianceRequirements,
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
     const result = await prepareSetAssetRequirements.call(proc, { ...args, requirements: [] });
 
+    sinon.assert.calledWith(addTransactionStub, resetAssetComplianceTransaction, {}, rawTicker);
+
+    sinon.assert.calledOnce(addTransactionStub);
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+  });
+
+  test('should add a replace compliance requirement transactions to the queue', async () => {
+    assetCompliancesStub.withArgs(rawTicker).returns({
+      requirements: rawComplianceRequirements.slice(0, -1),
+    });
+
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+
+    const result = await prepareSetAssetRequirements.call(proc, args);
+
     sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      resetAssetComplianceTransaction,
+      addTransactionStub,
+      replaceComplianceRequirementTransaction,
       {},
       rawTicker
     );
-    sinon.assert.calledOnce(addTransactionStub);
+
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
