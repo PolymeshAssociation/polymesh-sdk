@@ -114,7 +114,7 @@ describe('removeAssetRequirement procedure', () => {
     ).rejects.toThrow('The supplied id is not valid');
   });
 
-  test('should add a remove asset compliance transaction to the queue', async () => {
+  test('should add a remove compliance requirement transaction to the queue', async () => {
     const rawId = dsMockUtils.createMockU32(id.toNumber());
     sinon.stub(utilsConversionModule, 'numberToU32').returns(rawId);
 
