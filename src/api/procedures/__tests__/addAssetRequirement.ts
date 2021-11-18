@@ -134,7 +134,7 @@ describe('addAssetRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied condition list is already in the current one', () => {
+  test('should throw an error if the supplied requirement is already a part of the Security Token', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
       requirements: rawComplianceRequirement,
     });
@@ -145,7 +145,7 @@ describe('addAssetRequirement procedure', () => {
     );
   });
 
-  test('should add an add asset compliance transaction to the queue', async () => {
+  test('should add an add compliance requirement transaction to the queue', async () => {
     const fakeConditions = (['condition'] as unknown) as Condition[];
     const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
     const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
