@@ -134,7 +134,7 @@ describe('addAssetRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied condition list is already in the current one', () => {
+  test('should throw an error if the supplied requirement is already a part of the Security Token', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
       requirements: rawComplianceRequirement,
     });
