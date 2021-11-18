@@ -145,7 +145,7 @@ describe('addAssetRequirement procedure', () => {
     );
   });
 
-  test('should add an add asset compliance transaction to the queue', async () => {
+  test('should add an add compliance requirement transaction to the queue', async () => {
     const conditionX = (['conditionX'] as unknown) as Condition[];
     const senderConditionsX = ('senderConditionsX' as unknown) as MeshCondition[];
     const receiverConditionsX = ('receiverConditionsX' as unknown) as MeshCondition[];
