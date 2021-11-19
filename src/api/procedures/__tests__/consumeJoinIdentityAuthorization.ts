@@ -327,9 +327,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       let result = await boundFunc(args);
       expect(result).toEqual({
         roles: true,
-        permissions: {
-          transactions: [TxTags.identity.JoinIdentityAsKey],
-        },
       });
 
       args.accept = false;
@@ -364,7 +361,8 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
       result = await boundFunc(args);
       expect(result).toEqual({
-        roles: false,
+        roles:
+          '"JoinIdentity" Authorization Requests can only be removed by the issuer Identity or the target Account',
         permissions: {
           transactions: [TxTags.identity.RemoveAuthorization],
         },
@@ -385,9 +383,15 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       );
       boundFunc = getAuthorization.bind(proc);
 
+      result = await boundFunc({ ...args, accept: true });
+      expect(result).toEqual({
+        roles: '"JoinIdentity" Authorization Requests must be accepted by the target Account',
+      });
+
       result = await boundFunc(args);
       expect(result).toEqual({
-        roles: false,
+        roles:
+          '"JoinIdentity" Authorization Requests can only be removed by the issuer Identity or the target Account',
         permissions: {
           transactions: [TxTags.identity.RemoveAuthorization],
         },

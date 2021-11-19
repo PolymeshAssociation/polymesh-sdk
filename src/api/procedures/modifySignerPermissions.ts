@@ -1,7 +1,6 @@
 import { assertSecondaryKeys } from '~/api/procedures/utils';
-import { Identity, Procedure } from '~/internal';
-import { PermissionsLike, RoleType, Signer, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { Procedure } from '~/internal';
+import { PermissionsLike, Signer, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
@@ -23,16 +22,12 @@ export interface ModifySignerPermissionsParams {
   }[];
 }
 
-export type Params = ModifySignerPermissionsParams & {
-  identity: Identity;
-};
-
 /**
  * @hidden
  */
 export async function prepareModifySignerPermissions(
-  this: Procedure<Params>,
-  args: Params
+  this: Procedure<ModifySignerPermissionsParams>,
+  args: ModifySignerPermissionsParams
 ): Promise<void> {
   const {
     context: {
@@ -41,7 +36,9 @@ export async function prepareModifySignerPermissions(
     context,
   } = this;
 
-  const { secondaryKeys: signers, identity } = args;
+  const { secondaryKeys: signers } = args;
+
+  const identity = await context.getCurrentIdentity();
 
   const secondaryKeys = await identity.getSecondaryKeys();
   const signerValues = signers.map(({ signer, permissions }) => {
@@ -70,22 +67,11 @@ export async function prepareModifySignerPermissions(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params>,
-  { identity: { did } }: Params
-): ProcedureAuthorization {
-  return {
-    roles: [{ type: RoleType.Identity, did }],
+export const modifySignerPermissions = (): Procedure<ModifySignerPermissionsParams> =>
+  new Procedure(prepareModifySignerPermissions, {
     permissions: {
       transactions: [TxTags.identity.SetPermissionToSigner],
       tokens: [],
       portfolios: [],
     },
-  };
-}
-
-/**
- * @hidden
- */
-export const modifySignerPermissions = (): Procedure<Params> =>
-  new Procedure(prepareModifySignerPermissions, getAuthorization);
+  });

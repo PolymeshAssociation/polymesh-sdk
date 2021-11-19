@@ -25,7 +25,12 @@ export async function prepareClaimDividends(
   } = this;
   const {
     distribution,
-    distribution: { id: localId, ticker, paymentDate, expiryDate },
+    distribution: {
+      id: localId,
+      token: { ticker },
+      paymentDate,
+      expiryDate,
+    },
   } = args;
 
   assertDistributionOpen(paymentDate, expiryDate);

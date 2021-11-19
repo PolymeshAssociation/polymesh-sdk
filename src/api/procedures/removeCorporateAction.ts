@@ -30,15 +30,7 @@ export type Params = RemoveCorporateActionParams & {
   ticker: string;
 };
 
-/**
- * @hidden
- */
-const throwCorporateActionError = (): void => {
-  throw new PolymeshError({
-    code: ErrorCode.DataUnavailable,
-    message: "The Corporate Action doesn't exist",
-  });
-};
+const caNotExistsMessage = "The Corporate Action doesn't exist";
 
 /**
  * @hidden
@@ -77,7 +69,10 @@ const assertCaIsRemovable = async (
     );
 
     if (CA.isEmpty) {
-      throwCorporateActionError();
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: caNotExistsMessage,
+      });
     }
   }
 };
@@ -107,7 +102,10 @@ export async function prepareRemoveCorporateAction(
     const exists = await corporateAction.exists();
 
     if (!exists) {
-      throwCorporateActionError();
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: caNotExistsMessage,
+      });
     }
   }
 

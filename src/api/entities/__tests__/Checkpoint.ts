@@ -12,6 +12,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
 
 describe('Checkpoint class', () => {
   let context: Context;
@@ -53,7 +57,7 @@ describe('Checkpoint class', () => {
     test('should assign ticker and id to instance', () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
-      expect(checkpoint.ticker).toBe(ticker);
+      expect(checkpoint.token.ticker).toBe(ticker);
       expect(checkpoint.id).toEqual(id);
     });
   });

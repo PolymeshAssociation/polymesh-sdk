@@ -589,7 +589,7 @@ describe('configureDividendDistribution procedure', () => {
         {} as ISubmittableResult
       );
 
-      expect(result.ticker).toBe(ticker);
+      expect(result.token.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
       expect(result.declarationDate).toEqual(declarationDate);
       expect(result.description).toEqual(description);

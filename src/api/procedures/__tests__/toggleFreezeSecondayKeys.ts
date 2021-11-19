@@ -9,7 +9,6 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
 
 describe('toggleFreezeSecondaryKeys procedure', () => {
   let mockContext: Mocked<Context>;
@@ -55,43 +54,52 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   });
 
   test('should throw an error if freeze is set to false and the secondary keys are already unfrozen', () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        areScondaryKeysFrozen: false,
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(mockContext);
 
     return expect(
       prepareToggleFreezeSecondaryKeys.call(proc, {
         freeze: false,
-        identity: entityMockUtils.getIdentityInstance({
-          areScondaryKeysFrozen: false,
-        }),
       })
     ).rejects.toThrow('The secondary keys are already unfrozen');
   });
 
   test('should add a freeze secondary keys transaction to the queue', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        areScondaryKeysFrozen: false,
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'freezeSecondaryKeys');
 
     await prepareToggleFreezeSecondaryKeys.call(proc, {
       freeze: true,
-      identity: entityMockUtils.getIdentityInstance({
-        areScondaryKeysFrozen: false,
-      }),
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {});
   });
 
   test('should add a unfreeze secondary keys transaction to the queue', async () => {
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        areScondaryKeysFrozen: true,
+      },
+    });
+
     const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'unfreezeSecondaryKeys');
 
     await prepareToggleFreezeSecondaryKeys.call(proc, {
       freeze: false,
-      identity: entityMockUtils.getIdentityInstance({
-        areScondaryKeysFrozen: true,
-      }),
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {});
@@ -104,8 +112,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
       );
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ freeze: true, identity: entityMockUtils.getIdentityInstance() })).toEqual({
-        roles: [{ type: RoleType.Identity, did: 'someDid' }],
+      expect(boundFunc({ freeze: true })).toEqual({
         permissions: {
           transactions: [TxTags.identity.FreezeSecondaryKeys],
           tokens: [],
@@ -113,16 +120,13 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
         },
       });
 
-      expect(boundFunc({ freeze: false, identity: entityMockUtils.getIdentityInstance() })).toEqual(
-        {
-          roles: [{ type: RoleType.Identity, did: 'someDid' }],
-          permissions: {
-            transactions: [TxTags.identity.UnfreezeSecondaryKeys],
-            tokens: [],
-            portfolios: [],
-          },
-        }
-      );
+      expect(boundFunc({ freeze: false })).toEqual({
+        permissions: {
+          transactions: [TxTags.identity.UnfreezeSecondaryKeys],
+          tokens: [],
+          portfolios: [],
+        },
+      });
     });
   });
 });

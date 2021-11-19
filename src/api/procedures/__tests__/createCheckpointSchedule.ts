@@ -183,7 +183,7 @@ describe('createCheckpointSchedule procedure', () => {
         mockContext
       )({} as ISubmittableResult);
 
-      expect(result.ticker).toBe(ticker);
+      expect(result.token.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
       expect(result.start).toEqual(start);
       expect(result.period).toEqual(period);

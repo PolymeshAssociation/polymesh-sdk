@@ -14,10 +14,10 @@ import {
   transactionPermissionsToTxGroups,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface HumanReadable {
-  id: BigNumber;
+  id: string;
   ticker: string;
 }
 
@@ -59,17 +59,6 @@ export class CustomPermissionGroup extends PermissionGroup {
   }
 
   /**
-   * Return the Group's ID
-   */
-  public toJson(): HumanReadable {
-    const { id, ticker } = this;
-    return {
-      id,
-      ticker,
-    };
-  }
-
-  /**
    * Modify the group's permissions
    */
   public setPermissions: ProcedureMethod<SetGroupPermissionsParams, void>;
@@ -85,7 +74,7 @@ export class CustomPermissionGroup extends PermissionGroup {
         },
       },
       context,
-      ticker,
+      token: { ticker },
       id,
     } = this;
 
@@ -108,7 +97,11 @@ export class CustomPermissionGroup extends PermissionGroup {
    * Determine whether this Custom Permission Group exists on chain
    */
   public async exists(): Promise<boolean> {
-    const { ticker, id, context } = this;
+    const {
+      token: { ticker },
+      id,
+      context,
+    } = this;
 
     const nextId = await context.polymeshApi.query.externalAgents.agIdSequence(
       stringToTicker(ticker, context)
@@ -116,5 +109,17 @@ export class CustomPermissionGroup extends PermissionGroup {
 
     // 1 < id < next
     return u32ToBigNumber(nextId).gt(id) && id.gte(1);
+  }
+
+  /**
+   * Return the Group's static data
+   */
+  public toJson(): HumanReadable {
+    const { id, token } = this;
+
+    return toHumanReadable({
+      id,
+      ticker: token,
+    });
   }
 }

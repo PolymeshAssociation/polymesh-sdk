@@ -1,4 +1,5 @@
 import { Option } from '@polkadot/types';
+import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -8,12 +9,12 @@ import {
   Params as CorporateActionParams,
   UniqueIdentifiers,
 } from '~/api/entities/CorporateAction';
-import { CorporateActionBase } from '~/api/entities/CorporateActionBase';
 import {
   Checkpoint,
   CheckpointSchedule,
   claimDividends,
   Context,
+  CorporateActionBase,
   DefaultPortfolio,
   Identity,
   ModifyCaCheckpointParams,
@@ -45,6 +46,8 @@ import {
   balanceToBigNumber,
   boolToBoolean,
   corporateActionIdentifierToCaId,
+  hashToString,
+  numberToU32,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
@@ -332,7 +335,7 @@ export class DividendDistribution extends CorporateActionBase {
   }): Promise<DistributionParticipant | null> {
     const {
       id: localId,
-      ticker,
+      token: { ticker },
       targets: { identities: targetIdentities, treatment },
       paymentDate,
       perShare,
@@ -388,7 +391,11 @@ export class DividendDistribution extends CorporateActionBase {
    * @hidden
    */
   private fetchDistribution(): Promise<Option<Distribution>> {
-    const { ticker, id, context } = this;
+    const {
+      token: { ticker },
+      id,
+      context,
+    } = this;
 
     return context.polymeshApi.query.capitalDistribution.distributions(
       corporateActionIdentifierToCaId({ ticker, localId: id }, context)
@@ -401,7 +408,11 @@ export class DividendDistribution extends CorporateActionBase {
    * @note uses the middleware
    */
   public async getWithheldTax(): Promise<BigNumber> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      token: { ticker },
+      context,
+    } = this;
 
     const taxPromise = context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
@@ -434,7 +445,16 @@ export class DividendDistribution extends CorporateActionBase {
   public async getPaymentHistory(
     opts: { size?: number; start?: number } = {}
   ): Promise<ResultSet<DistributionPayment>> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      token: { ticker },
+      context,
+      context: {
+        polymeshApi: {
+          query: { system },
+        },
+      },
+    } = this;
     const { size, start } = opts;
 
     const paymentsPromise = context.queryMiddleware<
@@ -464,28 +484,37 @@ export class DividendDistribution extends CorporateActionBase {
 
     const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult;
 
-    const data: DistributionPayment[] = [];
-    let next = null;
+    const data: Omit<DistributionPayment, 'blockHash'>[] = [];
+    const multiParams: BlockNumber[] = [];
 
-    if (items) {
-      items.forEach(item => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { blockId, datetime, eventDid: did, balance, tax } = item!;
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    items!.forEach(item => {
+      const { blockId, datetime, eventDid: did, balance, tax } = item!;
 
-        data.push({
-          blockNumber: new BigNumber(blockId),
-          date: new Date(datetime),
-          target: new Identity({ did }, context),
-          amount: new BigNumber(balance),
-          withheldTax: new BigNumber(tax),
-        });
+      multiParams.push(numberToU32(blockId, context));
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        date: new Date(datetime),
+        target: new Identity({ did }, context),
+        amount: new BigNumber(balance),
+        withheldTax: new BigNumber(tax),
       });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-      next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, size, start);
+
+    let hashes: Hash[] = [];
+
+    if (multiParams.length) {
+      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
     }
 
     return {
-      data,
+      data: data.map((payment, index) => ({
+        ...payment,
+        blockHash: hashToString(hashes[index]),
+      })),
       next,
       count,
     };
@@ -498,7 +527,7 @@ export class DividendDistribution extends CorporateActionBase {
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
     const {
-      ticker,
+      token: { ticker },
       id: localId,
       context: {
         polymeshApi: {

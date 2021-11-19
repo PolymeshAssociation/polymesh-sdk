@@ -41,10 +41,8 @@ describe('setAssetRequirements procedure', () => {
   let rawTicker: Ticker;
   let senderConditions: MeshCondition[][];
   let receiverConditions: MeshCondition[][];
-  let rawComplianceRequirement: ComplianceRequirement[];
+  let rawComplianceRequirements: ComplianceRequirement[];
   let args: Params;
-
-  const mockId = dsMockUtils.createMockU32();
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -75,14 +73,14 @@ describe('setAssetRequirements procedure', () => {
       ('receiverConditions1' as unknown) as MeshCondition[],
       ('receiverConditions2' as unknown) as MeshCondition[],
     ];
-    rawComplianceRequirement = senderConditions.map(
-      (sConditions, index) =>
-        ({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          sender_conditions: sConditions,
-          receiver_conditions: receiverConditions[index],
-          /* eslint-enable @typescript-eslint/naming-convention */
-        } as ComplianceRequirement)
+    rawComplianceRequirements = senderConditions.map((sConditions, index) =>
+      dsMockUtils.createMockComplianceRequirement({
+        /* eslint-disable @typescript-eslint/naming-convention */
+        sender_conditions: sConditions,
+        receiver_conditions: receiverConditions[index],
+        id: dsMockUtils.createMockU32(index),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      })
     );
     rawTicker = dsMockUtils.createMockTicker(ticker);
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -90,8 +88,6 @@ describe('setAssetRequirements procedure', () => {
       ticker,
       requirements,
     };
-
-    sinon.stub(utilsConversionModule, 'numberToU32').returns(mockId);
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -127,11 +123,11 @@ describe('setAssetRequirements procedure', () => {
         /* eslint-disable @typescript-eslint/naming-convention */
         sender_conditions: senderConditions[index],
         receiver_conditions: receiverConditions[index],
-        id: dsMockUtils.createMockU32(1),
+        id: dsMockUtils.createMockU32(index),
         /* eslint-enable @typescript-eslint/naming-convention */
       });
       requirementToComplianceRequirementStub
-        .withArgs({ conditions: condition, id: 1 }, mockContext)
+        .withArgs({ conditions: condition, id: index }, mockContext)
         .returns(complianceRequirement);
       complianceRequirementToRequirementStub
         .withArgs(
@@ -143,7 +139,7 @@ describe('setAssetRequirements procedure', () => {
           }),
           mockContext
         )
-        .returns({ conditions: condition, id: 1 });
+        .returns({ conditions: condition, id: index });
     });
   });
 
@@ -161,7 +157,7 @@ describe('setAssetRequirements procedure', () => {
 
   test('should throw an error if the new list is the same as the current one', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: rawComplianceRequirement,
+      requirements: rawComplianceRequirements,
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -170,10 +166,9 @@ describe('setAssetRequirements procedure', () => {
     );
   });
 
-  test('should add a reset asset compliance transaction to the queue', async () => {
-    const currentComplianceRequirement = rawComplianceRequirement;
+  test('should add a reset asset compliance transaction to the queue if the new requirements are empty', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: currentComplianceRequirement,
+      requirements: rawComplianceRequirements,
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -186,20 +181,9 @@ describe('setAssetRequirements procedure', () => {
   });
 
   test('should add a replace compliance requirement transactions to the queue', async () => {
-    const currentComplianceRequirement = rawComplianceRequirement.slice(0, -1);
     assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: currentComplianceRequirement,
+      requirements: rawComplianceRequirements.slice(0, -1),
     });
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const assetCompliance = rawComplianceRequirement.map(
-      ({ sender_conditions, receiver_conditions }) => ({
-        sender_conditions,
-        receiver_conditions,
-        id: mockId,
-      })
-    );
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -209,8 +193,7 @@ describe('setAssetRequirements procedure', () => {
       addTransactionStub,
       replaceComplianceRequirementTransaction,
       {},
-      rawTicker,
-      assetCompliance
+      rawTicker
     );
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));

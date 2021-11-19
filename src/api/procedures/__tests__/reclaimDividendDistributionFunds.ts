@@ -124,7 +124,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       const params = ({
         distribution: {
           origin,
-          ticker,
+          token: { ticker },
         },
       } as unknown) as Params;
 

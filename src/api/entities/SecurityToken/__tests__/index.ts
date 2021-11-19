@@ -668,9 +668,13 @@ describe('SecurityToken class', () => {
 
       const did = 'someDid';
       const blockId = new BigNumber(1);
+      const blockHash = 'someHash';
       const eventIndex = 'eventId';
       const datetime = '2020-10-10';
 
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        multi: [dsMockUtils.createMockHash(blockHash)],
+      });
       dsMockUtils.createApolloQueryStub(
         tickerExternalAgentHistory({
           ticker,
@@ -693,16 +697,37 @@ describe('SecurityToken class', () => {
         }
       );
 
-      const result = await securityToken.getOperationHistory();
+      let result = await securityToken.getOperationHistory();
 
       expect(result.length).toEqual(1);
       expect(result[0].identity.did).toEqual(did);
       expect(result[0].history.length).toEqual(1);
       expect(result[0].history[0]).toEqual({
         blockNumber: blockId,
+        blockHash,
         blockDate: new Date(`${datetime}Z`),
         eventIndex,
       });
+
+      dsMockUtils.createApolloQueryStub(
+        tickerExternalAgentHistory({
+          ticker,
+        }),
+        {
+          tickerExternalAgentHistory: [
+            {
+              did,
+              history: [],
+            },
+          ],
+        }
+      );
+
+      result = await securityToken.getOperationHistory();
+
+      expect(result.length).toEqual(1);
+      expect(result[0].identity.did).toEqual(did);
+      expect(result[0].history.length).toEqual(0);
     });
   });
 

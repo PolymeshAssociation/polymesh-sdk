@@ -141,13 +141,15 @@ export class Middleware {
         success: txSuccess,
         spec_version_id: specVersionId,
         extrinsic_hash: extrinsicHash,
+        block,
       } = transaction;
 
       return {
         blockNumber: new BigNumber(blockNumber),
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
+        blockHash: block!.hash!,
         extrinsicIdx,
         address: rawAddress ?? null,
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
         nonce: nonce!,
         txTag: extrinsicIdentifierToTxTag({ moduleId, callId }),
         params,
