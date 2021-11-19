@@ -26,6 +26,7 @@ import {
   SignerType,
   SignerValue,
   TargetTreatment,
+  TrustedClaimIssuer,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -595,7 +596,11 @@ describe('assertRequirementsNotTooComplex', () => {
     });
     expect(() =>
       assertRequirementsNotTooComplex(mockContext, [
-        { type: ConditionType.IsPresent, target: ConditionTarget.Both },
+        {
+          type: ConditionType.IsPresent,
+          target: ConditionTarget.Both,
+          trustedClaimIssuers: [('issuer' as unknown) as TrustedClaimIssuer],
+        },
         {
           type: ConditionType.IsAnyOf,
           claims: [dsMockUtils.createMockClaim(), dsMockUtils.createMockClaim()],
