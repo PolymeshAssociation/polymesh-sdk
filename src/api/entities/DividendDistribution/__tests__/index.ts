@@ -11,7 +11,12 @@ import {
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { CorporateActionTargets, TargetTreatment, TaxWithholding } from '~/types';
+import {
+  CorporateActionKind,
+  CorporateActionTargets,
+  TargetTreatment,
+  TaxWithholding,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -85,6 +90,7 @@ describe('DividendDistribution class', () => {
         maxAmount,
         expiryDate,
         paymentDate,
+        kind: CorporateActionKind.UnpredictableBenefit,
       },
       context
     );
