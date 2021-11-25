@@ -101,6 +101,9 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    */
   public taxWithholdings: TaxWithholding[];
 
+  /**
+   * type of corporate action being represented
+   */
   protected kind: CorporateActionKind;
 
   /**

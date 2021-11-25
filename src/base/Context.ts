@@ -719,12 +719,14 @@ export class Context {
           corporateActionQuery.corporateActions.entries(stringToTicker(ticker, this))
         )
       );
-      const unpredictableCas = flatten(corporateActions).filter(
-        ([, action]) => action.unwrap().kind.isUnpredictableBenefit
-      );
+      const eligibleCas = flatten(corporateActions).filter(([, action]) => {
+        const kind = action.unwrap().kind;
+
+        return kind.isUnpredictableBenefit || kind.isPredictableBenefit;
+      });
 
       const corporateActionData = await P.map(
-        unpredictableCas,
+        eligibleCas,
         async ([
           {
             args: [rawTicker, rawId],
