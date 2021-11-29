@@ -7,12 +7,13 @@ import {
   Params,
   prepareModifyTokenTrustedClaimIssuers,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
-import { Context, SecurityToken } from '~/internal';
+import { Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TrustedClaimIssuer } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import { signerToString } from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -103,9 +104,11 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
         .returns(rawClaimIssuers[index]);
     });
     claimIssuers.forEach((issuer, index) => {
-      identityIdToStringStub.withArgs(rawClaimIssuers[index].issuer).returns(issuer.identity.did);
+      identityIdToStringStub
+        .withArgs(rawClaimIssuers[index].issuer)
+        .returns((issuer.identity as Identity).did);
       stringToIdentityIdStub
-        .withArgs(issuer.identity.did, mockContext)
+        .withArgs(signerToString(issuer.identity), mockContext)
         .returns(rawClaimIssuers[index].issuer);
     });
   });
@@ -199,8 +202,8 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
       ...args,
-      claimIssuers: claimIssuers.map(({ identity: { did }, trustedFor }) => ({
-        identity: did,
+      claimIssuers: claimIssuers.map(({ identity, trustedFor }) => ({
+        identity: signerToString(identity),
         trustedFor,
       })),
       operation: TrustedClaimIssuerOperation.Set,

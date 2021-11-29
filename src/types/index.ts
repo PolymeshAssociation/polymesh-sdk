@@ -337,7 +337,7 @@ export interface ClaimScope {
 }
 
 export interface TrustedClaimIssuer {
-  identity: Identity;
+  identity: string | Identity;
   /**
    * an undefined value means that the issuer is trusted for all claim types.
    */
@@ -367,7 +367,7 @@ export type MultiClaimCondition = ConditionBase & {
 
 export type IdentityCondition = ConditionBase & {
   type: ConditionType.IsIdentity;
-  identity: Identity;
+  identity: string | Identity;
 };
 
 export type ExternalAgentCondition = ConditionBase & {

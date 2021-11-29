@@ -2127,10 +2127,8 @@ export function trustedClaimIssuerToTrustedIssuer(
   issuer: TrustedClaimIssuer,
   context: Context
 ): TrustedIssuer {
-  const {
-    identity: { did },
-    trustedFor: claimTypes,
-  } = issuer;
+  const { trustedFor: claimTypes, identity } = issuer;
+  const did = signerToString(identity);
 
   let trustedFor;
 
@@ -2169,9 +2167,7 @@ export function requirementToComplianceRequirement(
       const { claims } = condition;
       conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
     } else if (condition.type === ConditionType.IsIdentity) {
-      const {
-        identity: { did },
-      } = condition;
+      const did = signerToString(condition.identity);
       conditionContent = stringToTargetIdentity(did, context);
     } else {
       // IsExternalAgent does not exist as a condition type in Polymesh, it's SDK sugar
