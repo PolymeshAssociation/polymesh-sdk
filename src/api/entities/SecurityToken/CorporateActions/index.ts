@@ -3,8 +3,8 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import {
   Context,
   Identity,
-  modifyCaDefaults,
-  ModifyCaDefaultsParams,
+  modifyCaDefaultConfig,
+  ModifyCaDefaultConfigParams,
   modifyCorporateActionsAgent,
   ModifyCorporateActionsAgentParams,
   Namespace,
@@ -24,7 +24,7 @@ import {
 import { createProcedureMethod } from '~/utils/internal';
 
 import { Distributions } from './Distributions';
-import { CorporateActionDefaults } from './types';
+import { CorporateActionDefaultConfig } from './types';
 
 /**
  * Handles all Security Token Corporate Actions related functionality
@@ -42,8 +42,8 @@ export class CorporateActions extends Namespace<SecurityToken> {
 
     this.distributions = new Distributions(parent, context);
 
-    this.setDefaults = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyCaDefaults, { ticker, ...args }] },
+    this.setDefaultConfig = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyCaDefaultConfig, { ticker, ...args }] },
       context
     );
 
@@ -64,13 +64,13 @@ export class CorporateActions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Assign default values for targets, global tax withholding percentage and per-identity tax withholding perecentages.
+   * Assign default config values(targets, global tax withholding percentage and per-identity tax withholding perecentages).
    *
-   * @note These values are applied to every Corporate Action that is created until they are modified. Modifying these values
+   * @note These config values are applied to every Corporate Action that is created until they are modified. Modifying these values
    *   does not impact existing Corporate Actions.
-   *   When creating a Corporate Action, values passed explicitly will override these defaults
+   *   When creating a Corporate Action, values passed explicitly will override these default config values
    */
-  public setDefaults: ProcedureMethod<ModifyCaDefaultsParams, void>;
+  public setDefaultConfig: ProcedureMethod<ModifyCaDefaultConfigParams, void>;
 
   /**
    * Assign a new Corporate Actions Agent for the Security Token
@@ -128,14 +128,14 @@ export class CorporateActions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Retrieve default values for targets, global tax withholding percentage and per-identity tax withholding percentages.
+   * Retrieve default config comprising of targets, global tax withholding percentage and per-identity tax withholding percentages.
    *
    *
-   * @note These values are applied to every Corporate Action that is created until they are modified. Modifying these values
+   * @note This config is applied to every Corporate Action that is created until they are modified. Modifying the default config
    *   does not impact existing Corporate Actions.
-   *   When creating a Corporate Action, values passed explicitly will override these defaults
+   *   When creating a Corporate Action, values passed explicitly will override this default config
    */
-  public async getDefaults(): Promise<CorporateActionDefaults> {
+  public async getDefaultConfig(): Promise<CorporateActionDefaultConfig> {
     const {
       parent: { ticker },
       context: {
