@@ -147,6 +147,7 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
+  InputTrustedClaimIssuer,
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
@@ -2124,7 +2125,7 @@ export function trustedIssuerToTrustedClaimIssuer(
  * @hidden
  */
 export function trustedClaimIssuerToTrustedIssuer(
-  issuer: TrustedClaimIssuer,
+  issuer: InputTrustedClaimIssuer,
   context: Context
 ): TrustedIssuer {
   const { trustedFor: claimTypes, identity } = issuer;

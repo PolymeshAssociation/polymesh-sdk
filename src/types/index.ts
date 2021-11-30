@@ -24,6 +24,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
+import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
 
@@ -337,12 +338,20 @@ export interface ClaimScope {
 }
 
 export interface TrustedClaimIssuer {
-  identity: string | Identity;
+  identity: Identity;
   /**
    * an undefined value means that the issuer is trusted for all claim types.
    */
   trustedFor?: ClaimType[];
 }
+
+export type InputTrustedClaimIssuer = Modify<
+  TrustedClaimIssuer,
+  {
+    identity: string | Identity;
+    trustedFor?: ClaimType[];
+  }
+>;
 
 export enum ConditionType {
   IsPresent = 'IsPresent',
@@ -353,7 +362,10 @@ export enum ConditionType {
   IsIdentity = 'IsIdentity',
 }
 
-export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: TrustedClaimIssuer[] };
+export type ConditionBase = {
+  target: ConditionTarget;
+  trustedClaimIssuers?: InputTrustedClaimIssuer[];
+};
 
 export type SingleClaimCondition = ConditionBase & {
   type: ConditionType.IsPresent | ConditionType.IsAbsent;

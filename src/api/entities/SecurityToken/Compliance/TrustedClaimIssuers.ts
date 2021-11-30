@@ -12,11 +12,7 @@ import {
 } from '~/internal';
 import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import {
-  signerToString,
-  stringToTicker,
-  trustedIssuerToTrustedClaimIssuer,
-} from '~/utils/conversion';
+import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -115,11 +111,11 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
 
     const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
       issuers.map(issuer => {
-        const { identity, trustedFor } = trustedIssuerToTrustedClaimIssuer(issuer, context);
-        return new DefaultTrustedClaimIssuer(
-          { did: signerToString(identity), ticker, trustedFor },
-          context
-        );
+        const {
+          identity: { did },
+          trustedFor,
+        } = trustedIssuerToTrustedClaimIssuer(issuer, context);
+        return new DefaultTrustedClaimIssuer({ did, ticker, trustedFor }, context);
       });
 
     if (callback) {

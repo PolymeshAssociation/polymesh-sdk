@@ -3,7 +3,7 @@ import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'poly
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
-import { Context, Identity, Namespace, SecurityToken, TransactionQueue } from '~/internal';
+import { Context, Namespace, SecurityToken, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -200,9 +200,7 @@ describe('Requirements class', () => {
                   }),
                   issuers: [
                     dsMockUtils.createMockTrustedIssuer({
-                      issuer: dsMockUtils.createMockIdentityId(
-                        (notDefaultClaimIssuer.identity as Identity).did
-                      ),
+                      issuer: dsMockUtils.createMockIdentityId(notDefaultClaimIssuer.identity.did),
                       trusted_for: dsMockUtils.createMockTrustedFor('Any'),
                     }),
                   ],
