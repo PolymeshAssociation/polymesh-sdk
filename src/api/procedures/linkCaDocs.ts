@@ -5,7 +5,11 @@ import { DocumentId, TxTags } from 'polymesh-types/types';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, TokenDocument } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
+import {
+  corporateActionIdentifierToCaId,
+  documentToTokenDocument,
+  stringToTicker,
+} from '~/utils/conversion';
 
 export interface LinkCaDocsParams {
   /**
@@ -68,7 +72,7 @@ export async function prepareLinkCaDocs(
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCAId = { ticker, local_id: caId };
+  const rawCAId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
 
   this.addTransaction(corporateAction.linkCaDoc, {}, rawCAId, docIdsToLink);
 }
