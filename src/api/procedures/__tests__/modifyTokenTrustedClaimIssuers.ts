@@ -7,7 +7,7 @@ import {
   Params,
   prepareModifyTokenTrustedClaimIssuers,
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
-import { Context, Identity, SecurityToken } from '~/internal';
+import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
