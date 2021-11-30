@@ -14,7 +14,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Condition, Requirement } from '~/types';
+import { Condition, ConditionTarget, ConditionType, InputRequirement } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -27,20 +27,12 @@ describe('addAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let requirementToComplianceRequirementStub: sinon.SinonStub<
-    [Requirement, Context],
+    [InputRequirement, Context],
     ComplianceRequirement
   >;
-  let complianceRequirementToRequirementStub: sinon.SinonStub<
-    [ComplianceRequirement, Context],
-    Requirement
-  >;
-  let assetCompliancesStub: sinon.SinonStub;
   let ticker: string;
   let conditions: Condition[];
   let rawTicker: Ticker;
-  let senderConditions: MeshCondition[][];
-  let receiverConditions: MeshCondition[][];
-  let rawComplianceRequirement: ComplianceRequirement[];
   let args: Params;
 
   beforeAll(() => {
@@ -52,12 +44,18 @@ describe('addAssetRequirement procedure', () => {
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
-    complianceRequirementToRequirementStub = sinon.stub(
-      utilsConversionModule,
-      'complianceRequirementToRequirement'
-    );
     ticker = 'someTicker';
-    conditions = (['condition0', 'condition1'] as unknown) as Condition[];
+    conditions = [
+      {
+        type: ConditionType.IsIdentity,
+        identity: entityMockUtils.getIdentityInstance(),
+        target: ConditionTarget.Both,
+      },
+      {
+        type: ConditionType.IsExternalAgent,
+        target: ConditionTarget.Both,
+      },
+    ];
 
     args = {
       ticker,
@@ -76,10 +74,6 @@ describe('addAssetRequirement procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    assetCompliancesStub = dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
-      returnValue: [],
-    });
-
     addComplianceRequirementTransaction = dsMockUtils.createTxStub(
       'complianceManager',
       'addComplianceRequirement'
@@ -88,38 +82,6 @@ describe('addAssetRequirement procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-
-    senderConditions = [
-      ('senderConditions0' as unknown) as MeshCondition[],
-      ('senderConditions1' as unknown) as MeshCondition[],
-    ];
-    receiverConditions = [
-      ('receiverConditions0' as unknown) as MeshCondition[],
-      ('receiverConditions1' as unknown) as MeshCondition[],
-    ];
-    rawComplianceRequirement = senderConditions.map(
-      (sConditions, index) =>
-        ({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          sender_conditions: sConditions,
-          receiver_conditions: receiverConditions[index],
-          /* eslint-enable @typescript-eslint/naming-convention */
-        } as ComplianceRequirement)
-    );
-
-    conditions.forEach((condition, index) => {
-      complianceRequirementToRequirementStub
-        .withArgs(
-          sinon.match({
-            /* eslint-disable @typescript-eslint/naming-convention */
-            sender_conditions: senderConditions[index],
-            receiver_conditions: receiverConditions[index],
-            /* eslint-enable @typescript-eslint/naming-convention */
-          }),
-          mockContext
-        )
-        .returns({ conditions: [condition], id: 1 });
-    });
   });
 
   afterEach(() => {
@@ -135,8 +97,18 @@ describe('addAssetRequirement procedure', () => {
   });
 
   test('should throw an error if the supplied requirement is already a part of the Security Token', () => {
-    assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: rawComplianceRequirement,
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        complianceRequirementsGet: {
+          requirements: [
+            {
+              conditions,
+              id: 1,
+            },
+          ],
+          defaultTrustedClaimIssuers: [],
+        },
+      },
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
@@ -149,10 +121,6 @@ describe('addAssetRequirement procedure', () => {
     const fakeConditions = (['condition'] as unknown) as Condition[];
     const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
     const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
-
-    assetCompliancesStub.withArgs(rawTicker).returns({
-      requirements: rawComplianceRequirement,
-    });
 
     requirementToComplianceRequirementStub
       .withArgs({ conditions: fakeConditions, id: 1 }, mockContext)

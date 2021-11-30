@@ -9,7 +9,8 @@ import {
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { EventIdentifier, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   middlewareEventToEventIdentifier,
   numberToU64,

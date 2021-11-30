@@ -13,6 +13,7 @@ import {
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  InputCondition,
   InputTargets,
   InputTaxWithholding,
   InstructionStatus,
@@ -276,35 +277,47 @@ export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGr
 
 /**
  * @hidden
+ *
+ * @note based on the complexity calculation done by the chain
+ * @note conditions have already been "injected" with the default trusted claim issuers when they reach this point
  */
-export function assertRequirementsNotTooComplex(context: Context, requirements: Condition[]): void {
+export function assertRequirementsNotTooComplex(
+  context: Context,
+  conditions: (Condition | InputCondition)[],
+  defaultClaimIssuerLength: number
+): void {
   const { maxConditionComplexity: maxComplexity } = context.polymeshApi.consts.complianceManager;
   let complexitySum = 0;
 
-  requirements.forEach(conditions => {
-    switch (conditions.type) {
+  conditions.forEach(condition => {
+    const { target, trustedClaimIssuers = [] } = condition;
+    switch (condition.type) {
       case ConditionType.IsPresent:
       case ConditionType.IsIdentity:
       case ConditionType.IsAbsent:
+        // single claim conditions add one to the complexity
         complexitySum += 1;
         break;
       case ConditionType.IsAnyOf:
       case ConditionType.IsNoneOf:
-        complexitySum += conditions.claims.length;
+        // multi claim conditions add one to the complexity per each claim
+        complexitySum += condition.claims.length;
         break;
     }
-    if (conditions.target === ConditionTarget.Both) {
+
+    // if the condition affects both, it actually represents two conditions on chain
+    if (target === ConditionTarget.Both) {
       complexitySum = complexitySum * 2;
     }
-    if (conditions.trustedClaimIssuers && conditions.trustedClaimIssuers.length) {
-      complexitySum = complexitySum * conditions.trustedClaimIssuers.length;
-    }
+
+    const claimIssuerLength = trustedClaimIssuers.length || defaultClaimIssuerLength;
+    complexitySum = complexitySum * claimIssuerLength;
   });
 
-  if (complexitySum >= u32ToBigNumber(maxComplexity).toNumber()) {
+  if (u32ToBigNumber(maxComplexity).lt(complexitySum)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
-      message: 'Compliance Requirement complexity limit reached',
+      message: 'Compliance Requirement complexity limit exceeded',
       data: { limit: maxComplexity },
     });
   }

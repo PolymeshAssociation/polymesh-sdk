@@ -17,9 +17,9 @@ import {
 } from '~/internal';
 import {
   Compliance,
+  ComplianceRequirements,
   NoArgsProcedureMethod,
   ProcedureMethod,
-  Requirement,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -101,15 +101,17 @@ export class Requirements extends Namespace<SecurityToken> {
   public set: ProcedureMethod<SetAssetRequirementsParams, SecurityToken>;
 
   /**
-   * Retrieve all of the Security Token's requirements
+   * Retrieve all of the Security Token's compliance requirements, together with the Default Trusted Claim Issuers
    *
    * @note can be subscribed to
    */
-  public get(): Promise<Requirement[]>;
-  public get(callback: SubCallback<Requirement[]>): Promise<UnsubCallback>;
+  public get(): Promise<ComplianceRequirements>;
+  public get(callback: SubCallback<ComplianceRequirements>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async get(callback?: SubCallback<Requirement[]>): Promise<Requirement[] | UnsubCallback> {
+  public async get(
+    callback?: SubCallback<ComplianceRequirements>
+  ): Promise<ComplianceRequirements | UnsubCallback> {
     const {
       parent: { ticker },
       context: {
@@ -126,22 +128,16 @@ export class Requirements extends Namespace<SecurityToken> {
     const assembleResult = ([assetCompliance, claimIssuers]: [
       AssetCompliance,
       Vec<TrustedIssuer>
-    ]): Requirement[] => {
-      const defaultTrustedClaimIssuers = claimIssuers.map(claimIssuer => {
-        return trustedIssuerToTrustedClaimIssuer(claimIssuer, context);
-      });
+    ]): ComplianceRequirements => {
+      const requirements = assetCompliance.requirements.map(complianceRequirement =>
+        complianceRequirementToRequirement(complianceRequirement, context)
+      );
 
-      return assetCompliance.requirements.map(complianceRequirement => {
-        const requirement = complianceRequirementToRequirement(complianceRequirement, context);
+      const defaultTrustedClaimIssuers = claimIssuers.map(issuer =>
+        trustedIssuerToTrustedClaimIssuer(issuer, context)
+      );
 
-        requirement.conditions.forEach(condition => {
-          if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
-            condition.trustedClaimIssuers = defaultTrustedClaimIssuers;
-          }
-        });
-
-        return requirement;
-      });
+      return { requirements, defaultTrustedClaimIssuers };
     };
 
     if (callback) {

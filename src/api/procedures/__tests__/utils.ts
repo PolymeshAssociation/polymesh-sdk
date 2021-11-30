@@ -595,19 +595,23 @@ describe('assertRequirementsNotTooComplex', () => {
       returnValue: dsMockUtils.createMockU32(2),
     });
     expect(() =>
-      assertRequirementsNotTooComplex(mockContext, [
-        {
-          type: ConditionType.IsPresent,
-          target: ConditionTarget.Both,
-          trustedClaimIssuers: [('issuer' as unknown) as TrustedClaimIssuer],
-        },
-        {
-          type: ConditionType.IsAnyOf,
-          claims: [dsMockUtils.createMockClaim(), dsMockUtils.createMockClaim()],
-          target: ConditionTarget.Sender,
-        },
-      ] as Condition[])
-    ).toThrow('Compliance Requirement complexity limit reached');
+      assertRequirementsNotTooComplex(
+        mockContext,
+        [
+          {
+            type: ConditionType.IsPresent,
+            target: ConditionTarget.Both,
+            trustedClaimIssuers: [('issuer' as unknown) as TrustedClaimIssuer],
+          },
+          {
+            type: ConditionType.IsAnyOf,
+            claims: [dsMockUtils.createMockClaim(), dsMockUtils.createMockClaim()],
+            target: ConditionTarget.Sender,
+          },
+        ] as Condition[],
+        1
+      )
+    ).toThrow('Compliance Requirement complexity limit exceeded');
   });
 
   test('should not throw an error if the complexity is less than the max condition complexity', async () => {
@@ -615,9 +619,11 @@ describe('assertRequirementsNotTooComplex', () => {
       returnValue: dsMockUtils.createMockU32(10),
     });
     expect(() =>
-      assertRequirementsNotTooComplex(mockContext, [
-        { type: ConditionType.IsPresent, target: ConditionTarget.Receiver },
-      ] as Condition[])
+      assertRequirementsNotTooComplex(
+        mockContext,
+        [{ type: ConditionType.IsPresent, target: ConditionTarget.Receiver }] as Condition[],
+        1
+      )
     ).not.toThrow();
   });
 });

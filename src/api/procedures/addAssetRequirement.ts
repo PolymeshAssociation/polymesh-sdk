@@ -1,21 +1,19 @@
-import { differenceWith, flattenDeep, isEqual } from 'lodash';
+import { differenceWith, flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { Condition, ErrorCode, TxTags } from '~/types';
+import { ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import {
-  complianceRequirementToRequirement,
-  requirementToComplianceRequirement,
-  stringToTicker,
-} from '~/utils/conversion';
+import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
+import { conditionsAreEqual } from '~/utils/internal';
 
 export interface AddAssetRequirementParams {
   /**
-   * array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
-   * while conditions inside each array are *AND* between them
+   * array of conditions that form the requirement that must be added.
+   *   Conditions within a requirement are *AND* between them. This means that in order
+   *   for a transfer to comply with this requirement, it must fulfill *ALL* conditions
    */
-  conditions: Condition[];
+  conditions: InputCondition[];
 }
 
 /**
@@ -34,7 +32,7 @@ export async function prepareAddAssetRequirement(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -42,21 +40,38 @@ export async function prepareAddAssetRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  assertRequirementsNotTooComplex(context, conditions);
+  const token = new SecurityToken({ ticker }, context);
 
-  const currentRequirements = (
-    await query.complianceManager.assetCompliances(rawTicker)
-  ).requirements.map(
-    requirement => complianceRequirementToRequirement(requirement, context).conditions
-  );
+  const {
+    requirements: currentRequirements,
+    defaultTrustedClaimIssuers,
+  } = await token.compliance.requirements.get();
 
-  if (!differenceWith(flattenDeep<Condition>(currentRequirements), conditions, isEqual).length) {
+  const currentConditions = map(currentRequirements, 'conditions');
+
+  const { length: conditionsLength } = conditions;
+
+  // if the new requirement has the same conditions as any existing one, we throw an error
+  if (
+    currentConditions.some(
+      requirementConditions =>
+        !differenceWith(requirementConditions, conditions, conditionsAreEqual).length &&
+        requirementConditions.length === conditionsLength
+    )
+  ) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message:
         'There already exists a Requirement with the same conditions for this Security Token',
     });
   }
+
+  // check that the new requirement won't cause the current ones to exceed the max complexity
+  assertRequirementsNotTooComplex(
+    context,
+    [...flatten(currentConditions), ...conditions],
+    defaultTrustedClaimIssuers.length
+  );
 
   const {
     sender_conditions: senderConditions,
@@ -71,7 +86,7 @@ export async function prepareAddAssetRequirement(
     receiverConditions
   );
 
-  return new SecurityToken({ ticker }, context);
+  return token;
 }
 
 /**

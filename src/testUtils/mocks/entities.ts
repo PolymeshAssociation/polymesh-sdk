@@ -38,6 +38,7 @@ import {
   CalendarUnit,
   CheckPermissionsResult,
   CheckRolesResult,
+  ComplianceRequirements,
   CorporateActionDefaults,
   CorporateActionKind,
   CorporateActionTargets,
@@ -161,6 +162,7 @@ interface SecurityTokenOptions {
   corporateActionsGetDefaults?: Partial<CorporateActionDefaults>;
   permissionsGetAgents?: AgentWithGroup[];
   permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
+  complianceRequirementsGet?: ComplianceRequirements;
   isEqual?: boolean;
   exists?: boolean;
   toJson?: string;
@@ -358,6 +360,7 @@ let securityTokenCorporateActionsGetAgentsStub: SinonStub;
 let securityTokenCorporateActionsGetDefaultsStub: SinonStub;
 let securityTokenPermissionsGetGroupsStub: SinonStub;
 let securityTokenPermissionsGetAgentsStub: SinonStub;
+let securityTokenComplianceRequirementsGetStub: SinonStub;
 let securityTokenIsEqualStub: SinonStub;
 let securityTokenExistsStub: SinonStub;
 let securityTokenToJsonStub: SinonStub;
@@ -774,6 +777,10 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   permissionsGetGroups: {
     known: [],
     custom: [],
+  },
+  complianceRequirementsGet: {
+    requirements: [],
+    defaultTrustedClaimIssuers: [],
   },
   isEqual: false,
   exists: true,
@@ -1309,6 +1316,11 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
       getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
       getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
     },
+    compliance: {
+      requirements: {
+        get: securityTokenComplianceRequirementsGetStub.resolves(opts.complianceRequirementsGet),
+      },
+    },
     isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
     exists: securityTokenExistsStub.resolves(opts.exists),
     toJson: securityTokenToJsonStub.returns(opts.toJson),
@@ -1342,6 +1354,7 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenCorporateActionsGetDefaultsStub = sinon.stub();
   securityTokenPermissionsGetGroupsStub = sinon.stub();
   securityTokenPermissionsGetAgentsStub = sinon.stub();
+  securityTokenComplianceRequirementsGetStub = sinon.stub();
   securityTokenIsEqualStub = sinon.stub();
   securityTokenExistsStub = sinon.stub();
   securityTokenToJsonStub = sinon.stub();

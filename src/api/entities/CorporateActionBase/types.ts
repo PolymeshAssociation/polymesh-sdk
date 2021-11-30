@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/internal';
+import { Modify } from '~/types/utils';
 
 export enum TargetTreatment {
   Include = 'Include',
@@ -17,13 +18,19 @@ export interface TaxWithholding {
   percentage: BigNumber;
 }
 
-export type InputTargets = Omit<CorporateActionTargets, 'identities'> & {
-  identities: (string | Identity)[];
-};
+export type InputTargets = Modify<
+  CorporateActionTargets,
+  {
+    identities: (string | Identity)[];
+  }
+>;
 
-export type InputTaxWithholding = Omit<TaxWithholding, 'identity'> & {
-  identity: string | Identity;
-};
+export type InputTaxWithholding = Modify<
+  TaxWithholding,
+  {
+    identity: string | Identity;
+  }
+>;
 
 export enum CorporateActionKind {
   PredictableBenefit = 'PredictableBenefit',
