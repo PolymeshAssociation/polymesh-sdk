@@ -349,7 +349,6 @@ export type InputTrustedClaimIssuer = Modify<
   TrustedClaimIssuer,
   {
     identity: string | Identity;
-    trustedFor?: ClaimType[];
   }
 >;
 
@@ -364,7 +363,7 @@ export enum ConditionType {
 
 export type ConditionBase = {
   target: ConditionTarget;
-  trustedClaimIssuers?: InputTrustedClaimIssuer[];
+  trustedClaimIssuers?: TrustedClaimIssuer[];
 };
 
 export type SingleClaimCondition = ConditionBase & {
