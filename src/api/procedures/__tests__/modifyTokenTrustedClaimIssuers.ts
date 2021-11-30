@@ -13,7 +13,6 @@ import { Mocked } from '~/testUtils/types';
 import { TrustedClaimIssuer } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import { signerToString } from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -108,7 +107,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
         .withArgs(rawClaimIssuers[index].issuer)
         .returns((issuer.identity as Identity).did);
       stringToIdentityIdStub
-        .withArgs(signerToString(issuer.identity), mockContext)
+        .withArgs(utilsConversionModule.signerToString(issuer.identity), mockContext)
         .returns(rawClaimIssuers[index].issuer);
     });
   });
