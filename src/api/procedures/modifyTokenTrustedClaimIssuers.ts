@@ -76,14 +76,14 @@ const areSameClaimIssuers = (
     currentClaimIssuers,
     claimIssuers,
     (
-      { identity: { did: aDid }, trustedFor: aTrustedFor },
+      { identity: aIdentity, trustedFor: aTrustedFor },
       { identity: bIdentity, trustedFor: bTrustedFor }
     ) => {
       const sameClaimTypes =
         (aTrustedFor === undefined && bTrustedFor === undefined) ||
         (aTrustedFor && bTrustedFor && isEqual(sortBy(aTrustedFor), sortBy(bTrustedFor)));
 
-      return aDid === signerToString(bIdentity) && !!sameClaimTypes;
+      return signerToString(aIdentity) === signerToString(bIdentity) && !!sameClaimTypes;
     }
   ).length && currentClaimIssuers.length === claimIssuers.length;
 
@@ -114,7 +114,9 @@ export async function prepareModifyTokenTrustedClaimIssuers(
   const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer =>
     trustedIssuerToTrustedClaimIssuer(issuer, context)
   );
-  const currentClaimIssuerDids = currentClaimIssuers.map(({ identity: { did } }) => did);
+  const currentClaimIssuerDids = currentClaimIssuers.map(({ identity }) =>
+    signerToString(identity)
+  );
 
   if (args.operation === TrustedClaimIssuerOperation.Remove) {
     inputDids = args.claimIssuers.map(signerToString);
@@ -132,8 +134,10 @@ export async function prepareModifyTokenTrustedClaimIssuers(
     }
 
     claimIssuersToDelete = currentClaimIssuers
-      .filter(({ identity: { did } }) => inputDids.includes(did))
-      .map(({ identity: { did } }) => tuple(rawTicker, stringToIdentityId(did, context)));
+      .filter(({ identity }) => inputDids.includes(signerToString(identity)))
+      .map(({ identity }) =>
+        tuple(rawTicker, stringToIdentityId(signerToString(identity), context))
+      );
   } else {
     ({ claimIssuersToAdd, inputDids } = convertArgsToRaw(args.claimIssuers, rawTicker, context));
   }
