@@ -148,6 +148,7 @@ import {
   IdentityCondition,
   IdentityWithClaims,
   InputRequirement,
+  InputTrustedClaimIssuer,
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
@@ -2126,13 +2127,11 @@ export function trustedIssuerToTrustedClaimIssuer(
  * @hidden
  */
 export function trustedClaimIssuerToTrustedIssuer(
-  issuer: TrustedClaimIssuer,
+  issuer: InputTrustedClaimIssuer,
   context: Context
 ): TrustedIssuer {
-  const {
-    identity: { did },
-    trustedFor: claimTypes,
-  } = issuer;
+  const { trustedFor: claimTypes, identity } = issuer;
+  const did = signerToString(identity);
 
   let trustedFor;
 

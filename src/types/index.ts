@@ -345,6 +345,13 @@ export interface TrustedClaimIssuer {
   trustedFor?: ClaimType[];
 }
 
+export type InputTrustedClaimIssuer = Modify<
+  TrustedClaimIssuer,
+  {
+    identity: string | Identity;
+  }
+>;
+
 export enum ConditionType {
   IsPresent = 'IsPresent',
   IsAbsent = 'IsAbsent',
@@ -361,6 +368,16 @@ export interface ConditionBase {
    */
   trustedClaimIssuers?: TrustedClaimIssuer[];
 }
+
+export type InputConditionBase = Modify<
+  ConditionBase,
+  {
+    /**
+     * if undefined, the default trusted claim issuers for the Token are used
+     */
+    trustedClaimIssuers?: InputTrustedClaimIssuer[];
+  }
+>;
 
 export interface SingleClaimCondition {
   type: ConditionType.IsPresent | ConditionType.IsAbsent;
@@ -389,22 +406,25 @@ export type Condition = (
 ) &
   ConditionBase;
 
-export type InputCondition =
-  | Exclude<Condition, IdentityCondition>
-  | (Modify<
+export type InputCondition = (
+  | SingleClaimCondition
+  | MultiClaimCondition
+  | Modify<
       IdentityCondition,
       {
         identity: string | Identity;
       }
-    > &
-      ConditionBase);
+    >
+  | ExternalAgentCondition
+) &
+  InputConditionBase;
 
 /**
  * @hidden
  */
 export function isSingleClaimCondition(
   condition: InputCondition
-): condition is ConditionBase & SingleClaimCondition {
+): condition is InputConditionBase & SingleClaimCondition {
   return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
 }
 
@@ -413,7 +433,7 @@ export function isSingleClaimCondition(
  */
 export function isMultiClaimCondition(
   condition: InputCondition
-): condition is ConditionBase & MultiClaimCondition {
+): condition is InputConditionBase & MultiClaimCondition {
   return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
 }
 

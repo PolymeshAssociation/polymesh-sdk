@@ -10,7 +10,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TrustedClaimIssuer } from '~/types';
+import { InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -27,7 +27,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let trustedClaimIssuerToTrustedIssuerStub: sinon.SinonStub<
-    [TrustedClaimIssuer, Context],
+    [InputTrustedClaimIssuer, Context],
     TrustedIssuer
   >;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
@@ -105,7 +105,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
     claimIssuers.forEach((issuer, index) => {
       identityIdToStringStub.withArgs(rawClaimIssuers[index].issuer).returns(issuer.identity.did);
       stringToIdentityIdStub
-        .withArgs(issuer.identity.did, mockContext)
+        .withArgs(utilsConversionModule.signerToString(issuer.identity), mockContext)
         .returns(rawClaimIssuers[index].issuer);
     });
   });
@@ -199,8 +199,8 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
 
     const result = await prepareModifyTokenTrustedClaimIssuers.call(proc, {
       ...args,
-      claimIssuers: claimIssuers.map(({ identity: { did }, trustedFor }) => ({
-        identity: did,
+      claimIssuers: claimIssuers.map(({ identity, trustedFor }) => ({
+        identity: utilsConversionModule.signerToString(identity),
         trustedFor,
       })),
       operation: TrustedClaimIssuerOperation.Set,
