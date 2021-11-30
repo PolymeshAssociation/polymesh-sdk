@@ -103,9 +103,7 @@ describe('modifyTokenTrustedClaimIssuers procedure', () => {
         .returns(rawClaimIssuers[index]);
     });
     claimIssuers.forEach((issuer, index) => {
-      identityIdToStringStub
-        .withArgs(rawClaimIssuers[index].issuer)
-        .returns((issuer.identity as Identity).did);
+      identityIdToStringStub.withArgs(rawClaimIssuers[index].issuer).returns(issuer.identity.did);
       stringToIdentityIdStub
         .withArgs(utilsConversionModule.signerToString(issuer.identity), mockContext)
         .returns(rawClaimIssuers[index].issuer);
