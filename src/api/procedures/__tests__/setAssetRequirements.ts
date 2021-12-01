@@ -20,6 +20,7 @@ import {
   Condition,
   ConditionTarget,
   ConditionType,
+  InputCondition,
   InputRequirement,
   Requirement,
 } from '~/types';
@@ -226,14 +227,22 @@ describe('setAssetRequirements procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,
-      } as Params;
+        requirements: [],
+      };
 
       expect(boundFunc(params)).toEqual({
         permissions: {
-          transactions: [
-            TxTags.complianceManager.ResetAssetCompliance,
-            TxTags.complianceManager.ReplaceAssetCompliance,
-          ],
+          transactions: [TxTags.complianceManager.ResetAssetCompliance],
+          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          portfolios: [],
+        },
+      });
+
+      expect(
+        boundFunc({ ...params, requirements: ([1] as unknown) as InputCondition[][] })
+      ).toEqual({
+        permissions: {
+          transactions: [TxTags.complianceManager.ReplaceAssetCompliance],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
           portfolios: [],
         },

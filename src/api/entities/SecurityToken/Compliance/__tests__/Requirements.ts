@@ -1,5 +1,4 @@
 import { Vec } from '@polkadot/types/codec';
-import BigNumber from 'bignumber.js';
 import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -153,7 +152,7 @@ describe('Requirements class', () => {
       const requirements = new Requirements(token, context);
 
       const args = {
-        id: new BigNumber(10),
+        requirement: 10,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;

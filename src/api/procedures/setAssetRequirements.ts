@@ -94,14 +94,13 @@ export async function prepareSetAssetRequirements(
  */
 export function getAuthorization(
   this: Procedure<Params, SecurityToken>,
-  { ticker }: Params
+  { ticker, requirements }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
-      transactions: [
-        TxTags.complianceManager.ResetAssetCompliance,
-        TxTags.complianceManager.ReplaceAssetCompliance,
-      ],
+      transactions: requirements.length
+        ? [TxTags.complianceManager.ReplaceAssetCompliance]
+        : [TxTags.complianceManager.ResetAssetCompliance],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],
     },

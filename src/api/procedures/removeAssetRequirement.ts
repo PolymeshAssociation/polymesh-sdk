@@ -1,12 +1,10 @@
-import BigNumber from 'bignumber.js';
-
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, Requirement, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
 
 export interface RemoveAssetRequirementParams {
-  id: BigNumber;
+  requirement: number | Requirement;
 }
 
 /**
@@ -29,16 +27,18 @@ export async function prepareRemoveAssetRequirement(
     },
     context,
   } = this;
-  const { ticker, id } = args;
+  const { ticker, requirement } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
+  const reqId = typeof requirement === 'number' ? requirement : requirement.id;
+
   const { requirements } = await query.complianceManager.assetCompliances(rawTicker);
 
-  if (requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(id)).length) {
+  if (requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(reqId)).length) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
-      message: `There is no compliance requirement with id "${id}"`,
+      message: `There is no compliance requirement with id "${reqId}"`,
     });
   }
 
@@ -46,7 +46,7 @@ export async function prepareRemoveAssetRequirement(
     tx.complianceManager.removeComplianceRequirement,
     {},
     rawTicker,
-    numberToU32(id, context)
+    numberToU32(reqId, context)
   );
 
   return new SecurityToken({ ticker }, context);
