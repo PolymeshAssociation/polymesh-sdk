@@ -20,7 +20,7 @@ import {
   targetsToTargetIdentities,
 } from '~/utils/conversion';
 
-export type ModifyCaDefaultsParams =
+export type ModifyCaDefaultConfigParams =
   | {
       targets?: InputTargets;
       defaultTaxWithholding: BigNumber;
@@ -40,7 +40,7 @@ export type ModifyCaDefaultsParams =
 /**
  * @hidden
  */
-export type Params = { ticker: string } & ModifyCaDefaultsParams;
+export type Params = { ticker: string } & ModifyCaDefaultConfigParams;
 
 const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTargets): boolean => {
   const { identities: newIdentities, treatment: newTreatment } = newTargets;
@@ -60,7 +60,7 @@ const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTarget
 /**
  * @hidden
  */
-export async function prepareModifyCaDefaults(
+export async function prepareModifyCaDefaultConfig(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
@@ -104,7 +104,7 @@ export async function prepareModifyCaDefaults(
     targets,
     defaultTaxWithholding,
     taxWithholdings,
-  } = await securityToken.corporateActions.getDefaults();
+  } = await securityToken.corporateActions.getDefaultConfig();
 
   if (newTargets) {
     if (areSameTargets(targets, newTargets)) {
@@ -199,5 +199,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyCaDefaults = (): Procedure<Params, void> =>
-  new Procedure(prepareModifyCaDefaults, getAuthorization);
+export const modifyCaDefaultConfig = (): Procedure<Params, void> =>
+  new Procedure(prepareModifyCaDefaultConfig, getAuthorization);
