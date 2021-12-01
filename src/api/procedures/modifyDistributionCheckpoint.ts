@@ -1,3 +1,6 @@
+import BigNumber from 'bignumber.js';
+
+import { DistributionCheckpointType } from '~/api/procedures/modifyCaCheckpoint';
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
@@ -15,7 +18,12 @@ import { ProcedureAuthorization } from '~/types/internal';
  * @hidden
  */
 export interface ModifyDistributionCheckpointParams {
-  checkpoint: Checkpoint | CheckpointSchedule | Date;
+  checkpoint:
+    | Checkpoint
+    | CheckpointSchedule
+    | Date
+    | { type: DistributionCheckpointType.Existing; id: BigNumber }
+    | { type: DistributionCheckpointType.Schedule; id: BigNumber };
 }
 
 export type Params = ModifyDistributionCheckpointParams & {
@@ -44,7 +52,8 @@ export async function prepareModifyDistributionCheckpoint(
     });
   }
 
-  if (!(checkpoint instanceof Checkpoint)) {
+  // TODO probably have to perform a checkpoint lookup if its ID type
+  if (checkpoint instanceof CheckpointSchedule || checkpoint instanceof Date) {
     await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
   }
 

@@ -9,6 +9,7 @@ import {
   Params as CorporateActionParams,
   UniqueIdentifiers,
 } from '~/api/entities/CorporateAction';
+import { DistributionCheckpointType } from '~/api/procedures/modifyCaCheckpoint';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -194,7 +195,12 @@ export class DividendDistribution extends CorporateActionBase {
    */
   public modifyCheckpoint: ProcedureMethod<
     Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
-      checkpoint: Checkpoint | CheckpointSchedule | Date;
+      checkpoint:
+        | Checkpoint
+        | CheckpointSchedule
+        | Date
+        | { type: DistributionCheckpointType.Schedule; id: BigNumber }
+        | { type: DistributionCheckpointType.Existing; id: BigNumber };
     },
     void
   >;

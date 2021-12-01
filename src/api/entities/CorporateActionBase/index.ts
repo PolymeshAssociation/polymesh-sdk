@@ -2,6 +2,7 @@ import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
+import { DistributionCheckpointType } from '~/api/procedures/modifyCaCheckpoint';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -151,7 +152,12 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    */
   public abstract modifyCheckpoint: ProcedureMethod<
     Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
-      checkpoint: Checkpoint | CheckpointSchedule | Date;
+      checkpoint:
+        | Checkpoint
+        | CheckpointSchedule
+        | Date
+        | { type: DistributionCheckpointType.Existing; id: BigNumber }
+        | { type: DistributionCheckpointType.Schedule; id: BigNumber };
     },
     void
   >;
