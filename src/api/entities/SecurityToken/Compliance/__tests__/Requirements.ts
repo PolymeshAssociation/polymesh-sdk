@@ -8,9 +8,10 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
+  ComplianceRequirements,
   ConditionTarget,
   ConditionType,
-  Requirement,
+  InputCondition,
   ScopeType,
   TrustedClaimIssuer,
 } from '~/types';
@@ -96,6 +97,77 @@ describe('Requirements class', () => {
     });
   });
 
+  describe('method: add', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const requirements = new Requirements(token, context);
+
+      const args = {
+        conditions: [
+          {
+            type: ConditionType.IsPresent,
+            claim: {
+              type: ClaimType.Exempted,
+              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+            },
+            target: ConditionTarget.Both,
+          },
+          {
+            type: ConditionType.IsAbsent,
+            claim: {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+            },
+            target: ConditionTarget.Both,
+          },
+        ] as InputCondition[],
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await requirements.add(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: remove', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const requirements = new Requirements(token, context);
+
+      const args = {
+        requirement: 10,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await requirements.remove(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: reset', () => {
     afterAll(() => {
       sinon.restore();
@@ -133,7 +205,7 @@ describe('Requirements class', () => {
     let cddId: string;
     let trustedIssuerToTrustedClaimIssuerStub: sinon.SinonStub;
 
-    let expected: Requirement[];
+    let expected: ComplianceRequirements;
 
     let queryMultiStub: sinon.SinonStub;
     let queryMultiResult: [AssetCompliance, Vec<IdentityId>];
@@ -230,48 +302,49 @@ describe('Requirements class', () => {
         (defaultClaimIssuers as unknown) as Vec<IdentityId>,
       ];
 
-      expected = [
-        {
-          id: 1,
-          conditions: [
-            {
-              target: ConditionTarget.Sender,
-              type: ConditionType.IsPresent,
-              claim: {
-                type: ClaimType.Exempted,
-                scope: { type: ScopeType.Identity, value: tokenDid },
-              },
-              trustedClaimIssuers: [notDefaultClaimIssuer],
-            },
-          ],
-        },
-        {
-          id: 2,
-          conditions: [
-            {
-              target: ConditionTarget.Both,
-              type: ConditionType.IsAnyOf,
-              claims: [
-                {
-                  type: ClaimType.KnowYourCustomer,
+      expected = {
+        requirements: [
+          {
+            id: 1,
+            conditions: [
+              {
+                target: ConditionTarget.Sender,
+                type: ConditionType.IsPresent,
+                claim: {
+                  type: ClaimType.Exempted,
                   scope: { type: ScopeType.Identity, value: tokenDid },
                 },
-                { type: ClaimType.CustomerDueDiligence, id: cddId },
-              ],
-              trustedClaimIssuers: defaultClaimIssuers,
-            },
-            {
-              target: ConditionTarget.Receiver,
-              type: ConditionType.IsAbsent,
-              claim: {
-                type: ClaimType.Blocked,
-                scope: { type: ScopeType.Identity, value: tokenDid },
+                trustedClaimIssuers: [notDefaultClaimIssuer],
               },
-              trustedClaimIssuers: defaultClaimIssuers,
-            },
-          ],
-        },
-      ];
+            ],
+          },
+          {
+            id: 2,
+            conditions: [
+              {
+                target: ConditionTarget.Both,
+                type: ConditionType.IsAnyOf,
+                claims: [
+                  {
+                    type: ClaimType.KnowYourCustomer,
+                    scope: { type: ScopeType.Identity, value: tokenDid },
+                  },
+                  { type: ClaimType.CustomerDueDiligence, id: cddId },
+                ],
+              },
+              {
+                target: ConditionTarget.Receiver,
+                type: ConditionType.IsAbsent,
+                claim: {
+                  type: ClaimType.Blocked,
+                  scope: { type: ScopeType.Identity, value: tokenDid },
+                },
+              },
+            ],
+          },
+        ],
+        defaultTrustedClaimIssuers: defaultClaimIssuers,
+      };
     });
 
     afterAll(() => {

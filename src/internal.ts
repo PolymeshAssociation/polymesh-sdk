@@ -69,6 +69,14 @@ export {
   SetAssetRequirementsParams,
 } from '~/api/procedures/setAssetRequirements';
 export {
+  addAssetRequirement,
+  AddAssetRequirementParams,
+} from '~/api/procedures/addAssetRequirement';
+export {
+  removeAssetRequirement,
+  RemoveAssetRequirementParams,
+} from '~/api/procedures/removeAssetRequirement';
+export {
   toggleFreezeTransfers,
   ToggleFreezeTransfersParams,
 } from '~/api/procedures/toggleFreezeTransfers';

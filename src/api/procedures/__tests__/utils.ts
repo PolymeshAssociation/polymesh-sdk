@@ -8,6 +8,7 @@ import {
   assertDistributionDatesValid,
   assertInstructionValid,
   assertPortfolioExists,
+  assertRequirementsNotTooComplex,
   assertSecondaryKeys,
 } from '~/api/procedures/utils';
 import { CheckpointSchedule, Context, Instruction } from '~/internal';
@@ -15,6 +16,9 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
+  Condition,
+  ConditionTarget,
+  ConditionType,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
@@ -22,6 +26,7 @@ import {
   SignerType,
   SignerValue,
   TargetTreatment,
+  TrustedClaimIssuer,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -563,5 +568,62 @@ describe('assertCaCheckpointValid', () => {
     return expect(
       assertDistributionDatesValid(checkpoint, paymentDate, expiryDate)
     ).resolves.not.toThrow();
+  });
+});
+
+describe('assertRequirementsNotTooComplex', () => {
+  let mockContext: Mocked<Context>;
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should throw an error if the complexity sumatory is greater than max condition complexity', async () => {
+    dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
+      returnValue: dsMockUtils.createMockU32(2),
+    });
+    expect(() =>
+      assertRequirementsNotTooComplex(
+        mockContext,
+        [
+          {
+            type: ConditionType.IsPresent,
+            target: ConditionTarget.Both,
+            trustedClaimIssuers: [('issuer' as unknown) as TrustedClaimIssuer],
+          },
+          {
+            type: ConditionType.IsAnyOf,
+            claims: [dsMockUtils.createMockClaim(), dsMockUtils.createMockClaim()],
+            target: ConditionTarget.Sender,
+          },
+        ] as Condition[],
+        1
+      )
+    ).toThrow('Compliance Requirement complexity limit exceeded');
+  });
+
+  test('should not throw an error if the complexity is less than the max condition complexity', async () => {
+    dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
+      returnValue: dsMockUtils.createMockU32(10),
+    });
+    expect(() =>
+      assertRequirementsNotTooComplex(
+        mockContext,
+        [{ type: ConditionType.IsPresent, target: ConditionTarget.Receiver }] as Condition[],
+        1
+      )
+    ).not.toThrow();
   });
 });

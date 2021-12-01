@@ -20,7 +20,6 @@ import { Query } from '~/middleware/types';
 import {
   CheckRolesResult,
   DistributionWithDetails,
-  Ensured,
   ErrorCode,
   GroupedInstructions,
   isCddProviderRole,
@@ -35,7 +34,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,

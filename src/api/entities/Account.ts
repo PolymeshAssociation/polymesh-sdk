@@ -24,7 +24,6 @@ import {
   AccountBalance,
   CheckPermissionsResult,
   DefaultPortfolio,
-  Ensured,
   ExtrinsicData,
   ModuleName,
   NoArgsProcedureMethod,
@@ -42,6 +41,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,

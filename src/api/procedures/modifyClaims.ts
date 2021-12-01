@@ -11,7 +11,6 @@ import {
   Claim,
   ClaimTarget,
   ClaimType,
-  Ensured,
   ErrorCode,
   isInvestorUniquenessClaim,
   isScopedClaim,
@@ -23,7 +22,7 @@ import {
   MapMaybePostTransactionValue,
   ProcedureAuthorization,
 } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   claimToMeshClaim,

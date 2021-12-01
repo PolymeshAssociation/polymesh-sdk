@@ -32,7 +32,6 @@ import {
   CorporateActionKind,
   DistributionPayment,
   DividendDistributionDetails,
-  Ensured,
   ErrorCode,
   IdentityBalance,
   NoArgsProcedureMethod,
@@ -40,7 +39,7 @@ import {
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { HumanReadableType, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -193,9 +192,12 @@ export class DividendDistribution extends CorporateActionBase {
    * Modify the Distribution's Checkpoint
    */
   public modifyCheckpoint: ProcedureMethod<
-    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
-      checkpoint: Checkpoint | CheckpointSchedule | Date;
-    },
+    Modify<
+      ModifyCaCheckpointParams,
+      {
+        checkpoint: Checkpoint | CheckpointSchedule | Date;
+      }
+    >,
     void
   >;
 

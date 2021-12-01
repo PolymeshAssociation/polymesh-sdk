@@ -30,7 +30,6 @@ import {
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
-  Ensured,
   EventIdentifier,
   HistoricAgentOperation,
   NoArgsProcedureMethod,
@@ -39,7 +38,7 @@ import {
   TokenIdentifier,
   UnsubCallback,
 } from '~/types';
-import { Modify, QueryReturnType } from '~/types/utils';
+import { Ensured, Modify, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToTokenIdentifier,

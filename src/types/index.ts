@@ -361,47 +361,79 @@ export enum ConditionType {
   IsIdentity = 'IsIdentity',
 }
 
-export type ConditionBase = {
+export interface ConditionBase {
   target: ConditionTarget;
+  /**
+   * if undefined, the default trusted claim issuers for the Token are used
+   */
   trustedClaimIssuers?: TrustedClaimIssuer[];
-};
+}
 
-export type SingleClaimCondition = ConditionBase & {
+export type InputConditionBase = Modify<
+  ConditionBase,
+  {
+    /**
+     * if undefined, the default trusted claim issuers for the Token are used
+     */
+    trustedClaimIssuers?: InputTrustedClaimIssuer[];
+  }
+>;
+
+export interface SingleClaimCondition {
   type: ConditionType.IsPresent | ConditionType.IsAbsent;
   claim: Claim;
-};
+}
 
-export type MultiClaimCondition = ConditionBase & {
+export interface MultiClaimCondition {
   type: ConditionType.IsAnyOf | ConditionType.IsNoneOf;
   claims: Claim[];
-};
+}
 
-export type IdentityCondition = ConditionBase & {
+export interface IdentityCondition {
   type: ConditionType.IsIdentity;
-  identity: string | Identity;
-};
+  identity: Identity;
+}
 
-export type ExternalAgentCondition = ConditionBase & {
+export interface ExternalAgentCondition {
   type: ConditionType.IsExternalAgent;
-};
+}
 
-export type Condition =
+export type Condition = (
   | SingleClaimCondition
   | MultiClaimCondition
   | IdentityCondition
-  | ExternalAgentCondition;
+  | ExternalAgentCondition
+) &
+  ConditionBase;
+
+export type InputCondition = (
+  | SingleClaimCondition
+  | MultiClaimCondition
+  | Modify<
+      IdentityCondition,
+      {
+        identity: string | Identity;
+      }
+    >
+  | ExternalAgentCondition
+) &
+  InputConditionBase;
 
 /**
  * @hidden
  */
-export function isSingleClaimCondition(condition: Condition): condition is SingleClaimCondition {
+export function isSingleClaimCondition(
+  condition: InputCondition
+): condition is InputConditionBase & SingleClaimCondition {
   return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
 }
 
 /**
  * @hidden
  */
-export function isMultiClaimCondition(condition: Condition): condition is MultiClaimCondition {
+export function isMultiClaimCondition(
+  condition: InputCondition
+): condition is InputConditionBase & MultiClaimCondition {
   return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
 }
 
@@ -409,6 +441,16 @@ export interface Requirement {
   id: number;
   conditions: Condition[];
 }
+
+export interface ComplianceRequirements {
+  requirements: Requirement[];
+  /**
+   * used for conditions where no trusted claim issuers were specified
+   */
+  defaultTrustedClaimIssuers: TrustedClaimIssuer[];
+}
+
+export type InputRequirement = Modify<Requirement, { conditions: InputCondition[] }>;
 
 export interface ConditionCompliance {
   condition: Condition;
@@ -608,8 +650,6 @@ export interface ClaimTarget {
 export type SubCallback<T> = (result: T) => void | Promise<void>;
 
 export type UnsubCallback = () => void;
-
-export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
 export interface MiddlewareConfig {
   link: string;
