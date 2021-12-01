@@ -5,8 +5,8 @@ import sinon from 'sinon';
 import {
   getAuthorization,
   Params,
-  prepareModifyCaDefaults,
-} from '~/api/procedures/modifyCaDefaults';
+  prepareModifyCaDefaultConfig,
+} from '~/api/procedures/modifyCaDefaultConfig';
 import * as utilsProcedureModule from '~/api/procedures/utils';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -19,7 +19,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
 );
 
-describe('modifyCaDefaults procedure', () => {
+describe('modifyCaDefaultConfig procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub;
   let targetsToTargetIdentitiesStub: sinon.SinonStub;
@@ -73,9 +73,9 @@ describe('modifyCaDefaults procedure', () => {
   test('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareModifyCaDefaults.call(proc, ({} as unknown) as Params)).rejects.toThrow(
-      'Nothing to modify'
-    );
+    return expect(
+      prepareModifyCaDefaultConfig.call(proc, ({} as unknown) as Params)
+    ).rejects.toThrow('Nothing to modify');
   });
 
   test('should throw an error if the new targets are the same as the current ones', () => {
@@ -86,11 +86,11 @@ describe('modifyCaDefaults procedure', () => {
       treatment: TargetTreatment.Exclude,
     };
     entityMockUtils.configureMocks({
-      securityTokenOptions: { corporateActionsGetDefaults: { targets } },
+      securityTokenOptions: { corporateActionsGetDefaultConfig: { targets } },
     });
 
     return expect(
-      prepareModifyCaDefaults.call(proc, {
+      prepareModifyCaDefaultConfig.call(proc, {
         ticker,
         targets,
       })
@@ -102,11 +102,11 @@ describe('modifyCaDefaults procedure', () => {
 
     const defaultTaxWithholding = new BigNumber(10);
     entityMockUtils.configureMocks({
-      securityTokenOptions: { corporateActionsGetDefaults: { defaultTaxWithholding } },
+      securityTokenOptions: { corporateActionsGetDefaultConfig: { defaultTaxWithholding } },
     });
 
     return expect(
-      prepareModifyCaDefaults.call(proc, {
+      prepareModifyCaDefaultConfig.call(proc, {
         ticker,
         defaultTaxWithholding,
       })
@@ -123,11 +123,11 @@ describe('modifyCaDefaults procedure', () => {
       },
     ];
     entityMockUtils.configureMocks({
-      securityTokenOptions: { corporateActionsGetDefaults: { taxWithholdings } },
+      securityTokenOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
     });
 
     return expect(
-      prepareModifyCaDefaults.call(proc, {
+      prepareModifyCaDefaultConfig.call(proc, {
         ticker,
         taxWithholdings,
       })
@@ -146,7 +146,7 @@ describe('modifyCaDefaults procedure', () => {
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetDefaults: {
+        corporateActionsGetDefaultConfig: {
           targets: {
             identities: [entityMockUtils.getIdentityInstance({ did: 'someDid' })],
             treatment: TargetTreatment.Include,
@@ -161,7 +161,7 @@ describe('modifyCaDefaults procedure', () => {
     });
     targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
 
-    await prepareModifyCaDefaults.call(proc, {
+    await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       targets,
     });
@@ -186,7 +186,7 @@ describe('modifyCaDefaults procedure', () => {
     };
     targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
 
-    await prepareModifyCaDefaults.call(proc, {
+    await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       targets,
     });
@@ -208,7 +208,7 @@ describe('modifyCaDefaults procedure', () => {
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetDefaults: {
+        corporateActionsGetDefaultConfig: {
           defaultTaxWithholding: new BigNumber(10),
         },
       },
@@ -217,7 +217,7 @@ describe('modifyCaDefaults procedure', () => {
     const rawPercentage = dsMockUtils.createMockPermill(150000);
     percentageToPermillStub.withArgs(new BigNumber(15), mockContext).returns(rawPercentage);
 
-    await prepareModifyCaDefaults.call(proc, {
+    await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       defaultTaxWithholding: new BigNumber(15),
     });
@@ -238,7 +238,7 @@ describe('modifyCaDefaults procedure', () => {
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
-        corporateActionsGetDefaults: {
+        corporateActionsGetDefaultConfig: {
           taxWithholdings: [],
         },
       },
@@ -256,7 +256,7 @@ describe('modifyCaDefaults procedure', () => {
         percentage: new BigNumber(25),
       },
     ];
-    await prepareModifyCaDefaults.call(proc, {
+    await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       taxWithholdings,
     });
