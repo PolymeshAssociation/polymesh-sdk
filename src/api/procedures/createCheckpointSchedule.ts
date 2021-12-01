@@ -18,8 +18,17 @@ import {
 import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateCheckpointScheduleParams {
+  /**
+   * The date for when to begin creating snapshots. A null value indicates immediately
+   */
   start: Date | null;
+  /**
+   * The cadence in which to make Checkpoints. A null value indicates to create only one Checkpoint, regardless of repetitions specified
+   */
   period: CalendarPeriod | null;
+  /**
+   * The number of snapshots to take. A null value indicates snapshots should be made indefinitely
+   */
   repetitions: number | null;
 }
 
