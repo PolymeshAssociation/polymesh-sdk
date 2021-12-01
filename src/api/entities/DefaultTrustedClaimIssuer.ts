@@ -1,7 +1,8 @@
 import { Context, Identity, SecurityToken } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { ClaimType, Ensured, EventIdentifier } from '~/types';
+import { ClaimType, EventIdentifier } from '~/types';
+import { Ensured } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import { middlewareEventToEventIdentifier } from '~/utils/conversion';
 import { optionize, padString } from '~/utils/internal';

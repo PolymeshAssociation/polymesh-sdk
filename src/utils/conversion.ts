@@ -147,6 +147,7 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
+  InputRequirement,
   InputTrustedClaimIssuer,
   InstructionType,
   isMultiClaimCondition,
@@ -214,6 +215,7 @@ import {
 import {
   assertIsInteger,
   assertIsPositive,
+  conditionsAreEqual,
   createClaim,
   getTicker,
   isModuleOrTagMatch,
@@ -2151,7 +2153,7 @@ export function trustedClaimIssuerToTrustedIssuer(
  * @hidden
  */
 export function requirementToComplianceRequirement(
-  requirement: Requirement,
+  requirement: InputRequirement,
   context: Context
 ): ComplianceRequirement {
   const { polymeshApi } = context;
@@ -2168,8 +2170,8 @@ export function requirementToComplianceRequirement(
       const { claims } = condition;
       conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
     } else if (condition.type === ConditionType.IsIdentity) {
-      const did = signerToString(condition.identity);
-      conditionContent = stringToTargetIdentity(did, context);
+      const { identity } = condition;
+      conditionContent = stringToTargetIdentity(signerToString(identity), context);
     } else {
       // IsExternalAgent does not exist as a condition type in Polymesh, it's SDK sugar
       type = ConditionType.IsIdentity;
@@ -2353,28 +2355,18 @@ export function complianceRequirementToRequirement(
 ): Requirement {
   const conditions: Condition[] = [];
 
-  const conditionsAreEqual = (a: Condition, b: Condition): boolean => {
-    let equalClaims = false;
-
-    if (isSingleClaimCondition(a) && isSingleClaimCondition(b)) {
-      equalClaims = isEqual(a.claim, b.claim);
-    }
-
-    if (isMultiClaimCondition(a) && isMultiClaimCondition(b)) {
-      equalClaims = isEqual(a.claims, b.claims);
-    }
-
-    return equalClaims && isEqual(a.trustedClaimIssuers, b.trustedClaimIssuers);
-  };
-
   complianceRequirement.sender_conditions.forEach(({ condition_type: conditionType, issuers }) => {
-    const newCondition = {
+    const newCondition: Condition = {
       ...meshConditionTypeToCondition(conditionType, context),
       target: ConditionTarget.Sender,
-      trustedClaimIssuers: issuers.map(trustedIssuer =>
-        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
-      ),
     };
+
+    if (issuers.length) {
+      newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
+        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+      );
+    }
+
     const existingCondition = conditions.find(condition =>
       conditionsAreEqual(condition, newCondition)
     );
@@ -2386,13 +2378,16 @@ export function complianceRequirementToRequirement(
 
   complianceRequirement.receiver_conditions.forEach(
     ({ condition_type: conditionType, issuers }) => {
-      const newCondition = {
+      const newCondition: Condition = {
         ...meshConditionTypeToCondition(conditionType, context),
         target: ConditionTarget.Receiver,
-        trustedClaimIssuers: issuers.map(trustedIssuer =>
-          trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
-        ),
       };
+
+      if (issuers.length) {
+        newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
+          trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+        );
+      }
 
       const existingCondition = conditions.find(condition =>
         conditionsAreEqual(condition, newCondition)

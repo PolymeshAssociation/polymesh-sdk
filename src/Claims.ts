@@ -15,7 +15,6 @@ import {
   ClaimData,
   ClaimScope,
   ClaimType,
-  Ensured,
   IdentityWithClaims,
   InvestorUniquenessClaim,
   ProcedureMethod,
@@ -25,6 +24,7 @@ import {
   ScopeType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
+import { Ensured } from '~/types/utils';
 import {
   scopeToMiddlewareScope,
   signerToString,

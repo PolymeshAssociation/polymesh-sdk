@@ -12,7 +12,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, groupBy, map, mapValues, padEnd } from 'lodash';
+import { chunk, differenceWith, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
 import { ModuleName, TxTag } from 'polymesh-types/types';
 
 import {
@@ -30,8 +30,13 @@ import {
   Claim,
   ClaimType,
   CommonKeyring,
+  Condition,
+  ConditionType,
   CountryCode,
   ErrorCode,
+  InputCondition,
+  isMultiClaimCondition,
+  isSingleClaimCondition,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
@@ -742,6 +747,8 @@ export function isModuleOrTagMatch(a: TxTag | ModuleName, b: TxTag | ModuleName)
 }
 
 /**
+ * @hidden
+ *
  * Recursively convert a value into a human readable (JSON compliant) version:
  *   - Entities are converted via their `.toJson` method
  *   - Dates are converted to ISO strings
@@ -770,4 +777,39 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
   }
 
   return obj as HumanReadableType<T>;
+}
+
+/**
+ * @hidden
+ *
+ * Perform a deep comparison between two compliance conditions
+ */
+export function conditionsAreEqual(
+  a: Condition | InputCondition,
+  b: Condition | InputCondition
+): boolean {
+  let equalClaims = false;
+
+  if (isSingleClaimCondition(a) && isSingleClaimCondition(b)) {
+    equalClaims = isEqual(a.claim, b.claim);
+  } else if (isMultiClaimCondition(a) && isMultiClaimCondition(b)) {
+    const { claims: aClaims } = a;
+    const { claims: bClaims } = b;
+
+    equalClaims =
+      !differenceWith(aClaims, bClaims, isEqual).length && aClaims.length === bClaims.length;
+  } else if (a.type === ConditionType.IsIdentity && b.type === ConditionType.IsIdentity) {
+    equalClaims = signerToString(a.identity) === signerToString(b.identity);
+  } else if (a.type === ConditionType.IsExternalAgent && b.type === ConditionType.IsExternalAgent) {
+    equalClaims = true;
+  }
+
+  const { trustedClaimIssuers: aClaimIssuers = [] } = a;
+  const { trustedClaimIssuers: bClaimIssuers = [] } = b;
+
+  const equalClaimIssuers =
+    !differenceWith(aClaimIssuers, bClaimIssuers, isEqual).length &&
+    aClaimIssuers.length === bClaimIssuers.length;
+
+  return equalClaims && equalClaimIssuers;
 }

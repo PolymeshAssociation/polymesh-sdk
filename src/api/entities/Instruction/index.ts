@@ -13,7 +13,6 @@ import {
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
-  Ensured,
   ErrorCode,
   EventIdentifier,
   NoArgsProcedureMethod,
@@ -24,6 +23,7 @@ import {
   InstructionAffirmationOperation,
   InstructionStatus as InternalInstructionStatus,
 } from '~/types/internal';
+import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
   identityIdToString,
