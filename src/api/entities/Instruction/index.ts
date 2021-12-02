@@ -404,7 +404,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Reschedules a failed Instruction to be tried again
-   * @throws if the Instruction status is not Failed
+   *
+   * @throws if the Instruction status is not `InstructionStatus.Failed`
    */
   public reschedule: NoArgsProcedureMethod<Instruction>;
 
