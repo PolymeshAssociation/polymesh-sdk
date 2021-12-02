@@ -71,10 +71,9 @@ export async function prepareLinkCaDocs(
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCAId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
+  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
 
-  this.addTransaction(corporateAction.linkCaDoc, {}, rawCAId, docIdsToLink);
+  this.addTransaction(corporateAction.linkCaDoc, {}, rawCaId, docIdsToLink);
 }
 
 /**
