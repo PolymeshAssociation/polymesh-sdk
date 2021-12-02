@@ -1,21 +1,18 @@
-import { differenceWith, isEqual } from 'lodash';
+import { differenceWith, flatten, map } from 'lodash';
 
+import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { Condition, ErrorCode, TxTags } from '~/types';
+import { Condition, ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import {
-  complianceRequirementToRequirement,
-  requirementToComplianceRequirement,
-  stringToTicker,
-  u32ToBigNumber,
-} from '~/utils/conversion';
+import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
+import { conditionsAreEqual } from '~/utils/internal';
 
 export interface SetAssetRequirementsParams {
   /**
-   * array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
-   * while conditions inside each array are *AND* between them
+   * array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays.
+   *   In other words, higher level arrays are *OR* between them, while conditions inside each array are *AND* between them
    */
-  requirements: Condition[][];
+  requirements: InputCondition[][];
 }
 
 /**
@@ -34,7 +31,7 @@ export async function prepareSetAssetRequirements(
 ): Promise<SecurityToken> {
   const {
     context: {
-      polymeshApi: { query, tx, consts },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -42,31 +39,31 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxConditionComplexity = u32ToBigNumber(
-    consts.complianceManager.maxConditionComplexity
-  ).toNumber();
+  const token = new SecurityToken({ ticker }, context);
 
-  if (requirements.length >= maxConditionComplexity) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Condition limit reached',
-      data: { limit: maxConditionComplexity },
-    });
-  }
+  const {
+    requirements: currentRequirements,
+    defaultTrustedClaimIssuers,
+  } = await token.compliance.requirements.get();
 
-  const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
+  const currentConditions = map(currentRequirements, 'conditions');
 
-  const currentRequirements = rawCurrentAssetCompliance.requirements.map(
-    requirement => complianceRequirementToRequirement(requirement, context).conditions
+  assertRequirementsNotTooComplex(
+    context,
+    flatten(requirements),
+    defaultTrustedClaimIssuers.length
   );
 
-  const comparator = (a: Condition[], b: Condition[]): boolean => {
-    return !differenceWith(a, b, isEqual).length && a.length === b.length;
+  const comparator = (
+    a: (Condition | InputCondition)[],
+    b: (Condition | InputCondition)[]
+  ): boolean => {
+    return !differenceWith(a, b, conditionsAreEqual).length && a.length === b.length;
   };
 
   if (
-    !differenceWith(requirements, currentRequirements, comparator).length &&
-    requirements.length === currentRequirements.length
+    !differenceWith(requirements, currentConditions, comparator).length &&
+    requirements.length === currentConditions.length
   ) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
@@ -89,7 +86,7 @@ export async function prepareSetAssetRequirements(
     );
   }
 
-  return new SecurityToken({ ticker }, context);
+  return token;
 }
 
 /**
@@ -97,14 +94,13 @@ export async function prepareSetAssetRequirements(
  */
 export function getAuthorization(
   this: Procedure<Params, SecurityToken>,
-  { ticker }: Params
+  { ticker, requirements }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
-      transactions: [
-        TxTags.complianceManager.ResetAssetCompliance,
-        TxTags.complianceManager.AddComplianceRequirement,
-      ],
+      transactions: requirements.length
+        ? [TxTags.complianceManager.ReplaceAssetCompliance]
+        : [TxTags.complianceManager.ResetAssetCompliance],
       tokens: [new SecurityToken({ ticker }, this.context)],
       portfolios: [],
     },

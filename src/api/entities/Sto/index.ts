@@ -17,13 +17,13 @@ import {
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
-  Ensured,
   NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
   SubCallback,
   UnsubCallback,
 } from '~/types';
+import { Ensured } from '~/types/utils';
 import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 

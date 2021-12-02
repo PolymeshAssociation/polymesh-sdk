@@ -24,7 +24,7 @@ import {
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { Modify, tuple } from '~/types/utils';
 import {
   checkpointToRecordDateSpec,
   corporateActionKindToCaKind,
@@ -67,9 +67,12 @@ export interface InitiateCorporateActionParams {
    * tokenholder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
    *   property. When the value is `Include`, all tokenholders not present in the array are excluded, and vice-versa
    */
-  targets?: Omit<CorporateActionTargets, 'identities'> & {
-    identities: (string | Identity)[];
-  };
+  targets?: Modify<
+    CorporateActionTargets,
+    {
+      identities: (string | Identity)[];
+    }
+  >;
   /**
    * default percentage of the Benefits to be held for tax purposes
    */
@@ -78,9 +81,12 @@ export interface InitiateCorporateActionParams {
    * percentage of the Benefits to be held for tax purposes from individual tokenholder Identities.
    *   This overrides the value of `defaultTaxWithholding`
    */
-  taxWithholdings?: (Omit<TaxWithholding, 'identity'> & {
-    identity: string | Identity;
-  })[];
+  taxWithholdings?: Modify<
+    TaxWithholding,
+    {
+      identity: string | Identity;
+    }
+  >[];
 }
 
 export type Params = InitiateCorporateActionParams & {

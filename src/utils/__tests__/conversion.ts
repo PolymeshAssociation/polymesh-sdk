@@ -86,6 +86,7 @@ import {
   CorporateActionParams,
   CountryCode,
   DividendDistributionParams,
+  InputCondition,
   InstructionType,
   KnownTokenType,
   PermissionGroupType,
@@ -3563,7 +3564,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
   test('requirementToComplianceRequirement should convert a Requirement to a polkadot ComplianceRequirement object', () => {
     const did = 'someDid';
     const context = dsMockUtils.getContextInstance();
-    const conditions: Condition[] = [
+    const conditions: InputCondition[] = [
       {
         type: ConditionType.IsPresent,
         target: ConditionTarget.Both,
@@ -3594,7 +3595,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         type: ConditionType.IsAbsent,
         target: ConditionTarget.Receiver,
         claim: {
-          type: ClaimType.Jurisdiction,
+          type: ClaimType.Jurisdiction as const,
           scope: { type: ScopeType.Identity, value: 'someTickerDid' },
           code: CountryCode.Cl,
         },

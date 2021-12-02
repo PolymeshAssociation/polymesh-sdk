@@ -17,8 +17,8 @@ import {
 } from '~/internal';
 import { settlements } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Ensured, ErrorCode, NoArgsProcedureMethod, ProcedureMethod, ResultSet } from '~/types';
-import { QueryReturnType } from '~/types/utils';
+import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, ResultSet } from '~/types';
+import { Ensured, QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,

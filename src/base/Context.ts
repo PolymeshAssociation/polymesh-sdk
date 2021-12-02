@@ -30,7 +30,6 @@ import {
   ComplexTransactionArgument,
   CorporateActionParams,
   DistributionWithDetails,
-  Ensured,
   ErrorCode,
   KeyringPair,
   PlainTransactionArgument,
@@ -44,7 +43,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { QueryReturnType } from '~/types/utils';
+import { Ensured, QueryReturnType } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
   accountIdToString,

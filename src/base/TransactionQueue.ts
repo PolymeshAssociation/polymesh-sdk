@@ -6,15 +6,9 @@ import { range, values } from 'lodash';
 import { Context, PolymeshError, PolymeshTransactionBase, PostTransactionValue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import {
-  Ensured,
-  ErrorCode,
-  Fees,
-  FeesBreakdown,
-  ThirdPartyFees,
-  TransactionQueueStatus,
-} from '~/types';
+import { ErrorCode, Fees, FeesBreakdown, ThirdPartyFees, TransactionQueueStatus } from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
+import { Ensured } from '~/types/utils';
 import { delay } from '~/utils/internal';
 
 /**

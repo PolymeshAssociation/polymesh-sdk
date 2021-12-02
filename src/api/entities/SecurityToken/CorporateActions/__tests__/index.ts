@@ -64,7 +64,7 @@ describe('CorporateActions class', () => {
     expect(CorporateActions.prototype instanceof Namespace).toBe(true);
   });
 
-  describe('method: setDefaults', () => {
+  describe('method: setDefaultConfig', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets = {
         identities: ['someDid'],
@@ -90,7 +90,7 @@ describe('CorporateActions class', () => {
         )
         .resolves(expectedQueue);
 
-      const queue = await corporateActions.setDefaults({
+      const queue = await corporateActions.setDefaultConfig({
         targets,
         taxWithholdings,
         defaultTaxWithholding,
@@ -178,8 +178,8 @@ describe('CorporateActions class', () => {
     });
   });
 
-  describe('method: getDefaults', () => {
-    test("should retrieve the Security Token's Corporate Actions defaults", async () => {
+  describe('method: getDefaultConfig', () => {
+    test("should retrieve the Security Token's Corporate Actions Default Config", async () => {
       const dids = ['someDid', 'otherDid'];
       const targets = {
         identities: [
@@ -204,7 +204,7 @@ describe('CorporateActions class', () => {
         [[dsMockUtils.createMockIdentityId(dids[0]), dsMockUtils.createMockPermill(15 * 10000)]],
       ]);
 
-      const result = await corporateActions.getDefaults();
+      const result = await corporateActions.getDefaultConfig();
 
       expect(result).toEqual({
         targets,

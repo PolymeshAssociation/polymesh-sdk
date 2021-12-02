@@ -3,6 +3,7 @@ import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
 import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
+import { Modify } from '~/types/utils';
 import {
   identityIdToString,
   permissionsLikeToPermissions,
@@ -14,7 +15,7 @@ import { filterEventRecords } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  secondaryKeys?: (Omit<SecondaryKey, 'permissions'> & { permissions: PermissionsLike })[];
+  secondaryKeys?: Modify<SecondaryKey, { permissions: PermissionsLike }>[];
 }
 
 /**

@@ -69,6 +69,14 @@ export {
   SetAssetRequirementsParams,
 } from '~/api/procedures/setAssetRequirements';
 export {
+  addAssetRequirement,
+  AddAssetRequirementParams,
+} from '~/api/procedures/addAssetRequirement';
+export {
+  removeAssetRequirement,
+  RemoveAssetRequirementParams,
+} from '~/api/procedures/removeAssetRequirement';
+export {
   toggleFreezeTransfers,
   ToggleFreezeTransfersParams,
 } from '~/api/procedures/toggleFreezeTransfers';
@@ -160,7 +168,10 @@ export { claimDividends } from '~/api/procedures/claimDividends';
 export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
 export { modifyCaCheckpoint, ModifyCaCheckpointParams } from '~/api/procedures/modifyCaCheckpoint';
 export { payDividends, PayDividendsParams } from '~/api/procedures/payDividends';
-export { modifyCaDefaults, ModifyCaDefaultsParams } from '~/api/procedures/modifyCaDefaults';
+export {
+  modifyCaDefaultConfig,
+  ModifyCaDefaultConfigParams,
+} from '~/api/procedures/modifyCaDefaultConfig';
 export {
   removeCorporateAction,
   RemoveCorporateActionParams,
