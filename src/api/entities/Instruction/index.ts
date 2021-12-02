@@ -403,7 +403,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public withdraw: NoArgsProcedureMethod<Instruction>;
 
   /**
-   * Schedule a failed Instructi oto rwaa
+   * Reschedules a failed Instruction to be tried again
+   *
+   * @throws if the Instruction status is not `InstructionStatus.Failed`
    */
   public reschedule: NoArgsProcedureMethod<Instruction>;
 
