@@ -13,7 +13,7 @@
     "fetch-definitions": "cross-env node scripts/fetchDefinitions.js",
     "update-readme": "cross-env node scripts/updateReadme.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package polymesh-types --input ./src/polkadot",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint wss://dev.polymesh.live --output ./src/polkadot --strict",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package polymesh-types --endpoint ws://localhost:9944 --output ./src/polkadot --strict",
     "generate:tags": "cross-env node scripts/generateTxTags.js",
     "test": "jest --detectOpenHandles --coverage",
     "build:ts": "ttsc -b",
