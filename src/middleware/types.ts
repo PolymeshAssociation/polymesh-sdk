@@ -111,16 +111,17 @@ export enum AuthStatusEnum {
 export enum AuthTypeEnum {
   AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
   RotatePrimaryKey = 'RotatePrimaryKey',
+  RotatePrimaryKeyToSecondary = 'RotatePrimaryKeyToSecondary',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
-  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
-  Custom = 'Custom',
   BecomeAgent = 'BecomeAgent',
-  NoData = 'NoData',
   AddRelayerPayingKey = 'AddRelayerPayingKey',
+  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
+  Custom = 'Custom',
+  NoData = 'NoData',
 }
 
 export type Block = {
@@ -243,6 +244,7 @@ export enum CallIdEnum {
   ChangeAllSignersAndSigsRequired = 'change_all_signers_and_sigs_required',
   MakeMultisigSigner = 'make_multisig_signer',
   MakeMultisigPrimary = 'make_multisig_primary',
+  ExecuteScheduledProposal = 'execute_scheduled_proposal',
   UpdateSchedule = 'update_schedule',
   SetPutCodeFlag = 'set_put_code_flag',
   PutCode = 'put_code',
@@ -332,14 +334,12 @@ export enum CallIdEnum {
   RemoveSecondaryKeys = 'remove_secondary_keys',
   SetPrimaryKey = 'set_primary_key',
   AcceptPrimaryKey = 'accept_primary_key',
+  RotatePrimaryKeyToSecondary = 'rotate_primary_key_to_secondary',
   ChangeCddRequirementForMkRotation = 'change_cdd_requirement_for_mk_rotation',
   JoinIdentityAsKey = 'join_identity_as_key',
-  JoinIdentityAsIdentity = 'join_identity_as_identity',
   LeaveIdentityAsKey = 'leave_identity_as_key',
-  LeaveIdentityAsIdentity = 'leave_identity_as_identity',
   AddClaim = 'add_claim',
   BatchAddClaim = 'batch_add_claim',
-  ForwardedCall = 'forwarded_call',
   RevokeClaim = 'revoke_claim',
   RevokeClaimByIndex = 'revoke_claim_by_index',
   BatchRevokeClaim = 'batch_revoke_claim',
@@ -355,11 +355,14 @@ export enum CallIdEnum {
   BatchAcceptAuthorization = 'batch_accept_authorization',
   BatchAddSecondaryKeyWithAuthorization = 'batch_add_secondary_key_with_authorization',
   AddSecondaryKeysWithAuthorization = 'add_secondary_keys_with_authorization',
-  RevokeOffchainAuthorization = 'revoke_offchain_authorization',
   AddInvestorUniquenessClaim = 'add_investor_uniqueness_claim',
   GcAddCddClaim = 'gc_add_cdd_claim',
   GcRevokeCddClaim = 'gc_revoke_cdd_claim',
   AddInvestorUniquenessClaimV2 = 'add_investor_uniqueness_claim_v2',
+  JoinIdentityAsIdentity = 'join_identity_as_identity',
+  LeaveIdentityAsIdentity = 'leave_identity_as_identity',
+  RevokeOffchainAuthorization = 'revoke_offchain_authorization',
+  ForwardedCall = 'forwarded_call',
   ChangeController = 'change_controller',
   ChangeAdmin = 'change_admin',
   ChangeTimelock = 'change_timelock',
@@ -378,6 +381,7 @@ export enum CallIdEnum {
   HandleScheduledBridgeTx = 'handle_scheduled_bridge_tx',
   AddFreezeAdmin = 'add_freeze_admin',
   RemoveFreezeAdmin = 'remove_freeze_admin',
+  RemoveTxs = 'remove_txs',
   AddComplianceRequirement = 'add_compliance_requirement',
   RemoveComplianceRequirement = 'remove_compliance_requirement',
   ReplaceAssetCompliance = 'replace_asset_compliance',
@@ -792,6 +796,7 @@ export enum EventIdEnum {
   ClassicTickerClaimed = 'ClassicTickerClaimed',
   CustomAssetTypeExists = 'CustomAssetTypeExists',
   CustomAssetTypeRegistered = 'CustomAssetTypeRegistered',
+  InvestorUniquenessClaimNotAllowed = 'InvestorUniquenessClaimNotAllowed',
   DividendCreated = 'DividendCreated',
   DividendCanceled = 'DividendCanceled',
   DividendPaidOutToUser = 'DividendPaidOutToUser',
@@ -833,6 +838,7 @@ export enum EventIdEnum {
   FreezeAdminAdded = 'FreezeAdminAdded',
   FreezeAdminRemoved = 'FreezeAdminRemoved',
   BridgeTxScheduleFailed = 'BridgeTxScheduleFailed',
+  TxRemoved = 'TxRemoved',
   ComplianceRequirementCreated = 'ComplianceRequirementCreated',
   ComplianceRequirementRemoved = 'ComplianceRequirementRemoved',
   AssetComplianceReplaced = 'AssetComplianceReplaced',
@@ -1219,8 +1225,8 @@ export type Proposal = {
   state: ProposalStateEnum;
   identityId: Scalars['String'];
   balance: Scalars['BigInt'];
-  url: Scalars['String'];
-  description: Scalars['String'];
+  url?: Maybe<Scalars['String']>;
+  description?: Maybe<Scalars['String']>;
   votesCount: Scalars['Int'];
 };
 
@@ -1321,6 +1327,8 @@ export type Query = {
   proposalVotes: Array<ProposalVote>;
   /** Get investments related to sto id */
   investments?: Maybe<InvestmentResult>;
+  /** Get Bridged event by Ethereum transaction hash */
+  bridgedEventByTxHash?: Maybe<Event>;
   getWithholdingTaxesOfCA?: Maybe<WithholdingTaxesOfCa>;
   getHistoryOfPaymentEventsForCA: HistoryOfPaymentEventsForCaResults;
   getFundings?: Maybe<FundingResults>;
@@ -1344,10 +1352,11 @@ export type QueryEventsArgs = {
 export type QueryStakingEventsArgs = {
   stashAccount?: Maybe<Scalars['String']>;
   stakingEventIds?: Maybe<Array<Maybe<StakingEventIdEnum>>>;
-  fromDate?: Maybe<Scalars['DateTime']>;
-  toDate?: Maybe<Scalars['DateTime']>;
+  fromDate: Scalars['DateTime'];
+  toDate: Scalars['DateTime'];
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;
+  order?: Maybe<Order>;
 };
 
 export type QuerySettlementsArgs = {
@@ -1500,6 +1509,10 @@ export type QueryInvestmentsArgs = {
   skip?: Maybe<Scalars['Int']>;
 };
 
+export type QueryBridgedEventByTxHashArgs = {
+  ethTransactionHash: Scalars['String'];
+};
+
 export type QueryGetWithholdingTaxesOfCaArgs = {
   CAId: CaId;
   fromDate?: Maybe<Scalars['DateTime']>;
@@ -1622,6 +1635,7 @@ export type StakingEvent = {
   __typename?: 'StakingEvent';
   date?: Maybe<Scalars['DateTime']>;
   blockId?: Maybe<Scalars['BigInt']>;
+  transactionId?: Maybe<Scalars['String']>;
   eventId?: Maybe<StakingEventIdEnum>;
   identityId?: Maybe<Scalars['String']>;
   stashAccount?: Maybe<Scalars['String']>;
@@ -1632,6 +1646,8 @@ export type StakingEvent = {
 export enum StakingEventIdEnum {
   Bonded = 'Bonded',
   Unbonded = 'Unbonded',
+  Rebond = 'Rebond',
+  WithdrawUnbonded = 'WithdrawUnbonded',
   Nominated = 'Nominated',
   Reward = 'Reward',
   Slash = 'Slash',
