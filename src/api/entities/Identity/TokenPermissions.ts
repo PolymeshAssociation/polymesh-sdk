@@ -19,7 +19,6 @@ import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/que
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
   CheckPermissionsResult,
-  Ensured,
   ErrorCode,
   EventIdentifier,
   ModuleName,
@@ -31,7 +30,7 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
-import { QueryReturnType } from '~/types/utils';
+import { Ensured, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,

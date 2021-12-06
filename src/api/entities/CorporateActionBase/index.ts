@@ -15,7 +15,7 @@ import {
   SecurityToken,
 } from '~/internal';
 import { ErrorCode, ProcedureMethod } from '~/types';
-import { HumanReadableType } from '~/types/utils';
+import { HumanReadableType, Modify } from '~/types/utils';
 import {
   numberToU32,
   storedScheduleToCheckpointScheduleParams,
@@ -151,14 +151,12 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    * Modify the Corporate Action's Checkpoint
    */
   public abstract modifyCheckpoint: ProcedureMethod<
-    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
-      checkpoint:
-        | Checkpoint
-        | CheckpointSchedule
-        | Date
-        | { type: DistributionCheckpointType.Existing; id: BigNumber }
-        | { type: DistributionCheckpointType.Schedule; id: BigNumber };
-    },
+    Modify<
+      ModifyCaCheckpointParams,
+      {
+        checkpoint: Checkpoint | CheckpointSchedule | Date;
+      }
+    >,
     void
   >;
 

@@ -3,7 +3,8 @@ import BigNumber from 'bignumber.js';
 import { Context } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier, ExtrinsicData } from '~/types';
+import { EventIdentifier, ExtrinsicData } from '~/types';
+import { Ensured } from '~/types/utils';
 import { extrinsicIdentifierToTxTag, middlewareEventToEventIdentifier } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
 

@@ -3,9 +3,13 @@ import { Vec } from '@polkadot/types/codec';
 import { AssetCompliance, AssetComplianceResult, TrustedIssuer } from 'polymesh-types/types';
 
 import {
+  addAssetRequirement,
+  AddAssetRequirementParams,
   Context,
   Identity,
   Namespace,
+  removeAssetRequirement,
+  RemoveAssetRequirementParams,
   SecurityToken,
   setAssetRequirements,
   SetAssetRequirementsParams,
@@ -13,9 +17,9 @@ import {
 } from '~/internal';
 import {
   Compliance,
+  ComplianceRequirements,
   NoArgsProcedureMethod,
   ProcedureMethod,
-  Requirement,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -43,6 +47,14 @@ export class Requirements extends Namespace<SecurityToken> {
 
     const { ticker } = parent;
 
+    this.add = createProcedureMethod(
+      { getProcedureAndArgs: args => [addAssetRequirement, { ticker, ...args }] },
+      context
+    );
+    this.remove = createProcedureMethod(
+      { getProcedureAndArgs: args => [removeAssetRequirement, { ticker, ...args }] },
+      context
+    );
     this.set = createProcedureMethod(
       { getProcedureAndArgs: args => [setAssetRequirements, { ticker, ...args }] },
       context
@@ -69,25 +81,37 @@ export class Requirements extends Namespace<SecurityToken> {
       context
     );
   }
+
+  /**
+   * Add a new compliance requirement to the the Security Token. This doesn't modify existing requirements
+   */
+  public add: ProcedureMethod<AddAssetRequirementParams, SecurityToken>;
+
+  /**
+   * Remove an existing compliance requirement from the Security Token
+   */
+  public remove: ProcedureMethod<RemoveAssetRequirementParams, SecurityToken>;
+
   /**
    * Configure asset compliance requirements for the Security Token. This operation will replace all existing requirements with a new requirement set
    *
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.
    */
-
   public set: ProcedureMethod<SetAssetRequirementsParams, SecurityToken>;
 
   /**
-   * Retrieve all of the Security Token's requirements
+   * Retrieve all of the Security Token's compliance requirements, together with the Default Trusted Claim Issuers
    *
    * @note can be subscribed to
    */
-  public get(): Promise<Requirement[]>;
-  public get(callback: SubCallback<Requirement[]>): Promise<UnsubCallback>;
+  public get(): Promise<ComplianceRequirements>;
+  public get(callback: SubCallback<ComplianceRequirements>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async get(callback?: SubCallback<Requirement[]>): Promise<Requirement[] | UnsubCallback> {
+  public async get(
+    callback?: SubCallback<ComplianceRequirements>
+  ): Promise<ComplianceRequirements | UnsubCallback> {
     const {
       parent: { ticker },
       context: {
@@ -104,22 +128,16 @@ export class Requirements extends Namespace<SecurityToken> {
     const assembleResult = ([assetCompliance, claimIssuers]: [
       AssetCompliance,
       Vec<TrustedIssuer>
-    ]): Requirement[] => {
-      const defaultTrustedClaimIssuers = claimIssuers.map(claimIssuer => {
-        return trustedIssuerToTrustedClaimIssuer(claimIssuer, context);
-      });
+    ]): ComplianceRequirements => {
+      const requirements = assetCompliance.requirements.map(complianceRequirement =>
+        complianceRequirementToRequirement(complianceRequirement, context)
+      );
 
-      return assetCompliance.requirements.map(complianceRequirement => {
-        const requirement = complianceRequirementToRequirement(complianceRequirement, context);
+      const defaultTrustedClaimIssuers = claimIssuers.map(issuer =>
+        trustedIssuerToTrustedClaimIssuer(issuer, context)
+      );
 
-        requirement.conditions.forEach(condition => {
-          if (!condition.trustedClaimIssuers || !condition.trustedClaimIssuers.length) {
-            condition.trustedClaimIssuers = defaultTrustedClaimIssuers;
-          }
-        });
-
-        return requirement;
-      });
+      return { requirements, defaultTrustedClaimIssuers };
     };
 
     if (callback) {

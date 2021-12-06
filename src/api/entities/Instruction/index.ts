@@ -13,7 +13,6 @@ import {
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
-  Ensured,
   ErrorCode,
   EventIdentifier,
   NoArgsProcedureMethod,
@@ -24,6 +23,7 @@ import {
   InstructionAffirmationOperation,
   InstructionStatus as InternalInstructionStatus,
 } from '~/types/internal';
+import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
   identityIdToString,
@@ -403,7 +403,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public withdraw: NoArgsProcedureMethod<Instruction>;
 
   /**
-   * Schedule a failed Instructi oto rwaa
+   * Reschedules a failed Instruction to be tried again
+   *
+   * @throws if the Instruction status is not `InstructionStatus.Failed`
    */
   public reschedule: NoArgsProcedureMethod<Instruction>;
 

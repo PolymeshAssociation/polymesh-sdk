@@ -59,6 +59,16 @@ export type QueryReturnType<T extends unknown> = T extends AugmentedQuery<'promi
 export type Modify<T, R> = Omit<T, keyof R> & R;
 
 /**
+ * Ensure a specific property of T is defined
+ */
+export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+
+/**
+ * Pick a single property sfrom T and ensure it is defined
+ */
+export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
+
+/**
  * Create a literal tuple type from a list of arguments
  *
  * @param args - values to turn into a tuple

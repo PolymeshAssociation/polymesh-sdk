@@ -7,9 +7,9 @@ const { forEach } = require('lodash');
 const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
-const { NODE_URL } = require('./consts');
+const { NODE_URL, WS_PORT } = require('./consts');
 
-const websocket = new w3cwebsocket(`wss://${NODE_URL}`);
+const websocket = new w3cwebsocket(`ws://${NODE_URL}:${WS_PORT}`);
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };
