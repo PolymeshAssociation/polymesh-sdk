@@ -1,11 +1,11 @@
 /* eslint-disable */
-const https = require('https');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
 const { upperFirst, toLower, forEach } = require('lodash');
-const { NODE_URL } = require('./consts');
+const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
@@ -124,7 +124,7 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
   fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
 }
 
-https.get(`https://${NODE_URL}/code/polymesh_schema.json`, res => {
+http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   const chunks = [];
   res.on('data', chunk => {
     chunks.push(chunk);
