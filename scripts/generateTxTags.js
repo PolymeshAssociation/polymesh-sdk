@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
 
-const websocket = new w3cwebsocket('wss://dev.polymesh.live');
+const websocket = new w3cwebsocket('ws://localhost:9944');
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
 };
