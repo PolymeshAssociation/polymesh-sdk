@@ -1,6 +1,3 @@
-import BigNumber from 'bignumber.js';
-
-import { DistributionCheckpointType } from '~/api/procedures/modifyCaCheckpoint';
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
@@ -11,19 +8,15 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { CaCheckpointTypeParams, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { getCheckpointValue } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export interface ModifyDistributionCheckpointParams {
-  checkpoint:
-    | Checkpoint
-    | CheckpointSchedule
-    | Date
-    | { type: DistributionCheckpointType.Existing; id: BigNumber }
-    | { type: DistributionCheckpointType.Schedule; id: BigNumber };
+  checkpoint: CaCheckpointTypeParams;
 }
 
 export type Params = ModifyDistributionCheckpointParams & {
@@ -40,7 +33,7 @@ export async function prepareModifyDistributionCheckpoint(
   const {
     checkpoint,
     distribution,
-    distribution: { paymentDate, expiryDate },
+    distribution: { paymentDate, expiryDate, token },
   } = args;
 
   const now = new Date();
@@ -52,9 +45,10 @@ export async function prepareModifyDistributionCheckpoint(
     });
   }
 
-  // TODO probably have to perform a checkpoint lookup if its ID type
-  if (checkpoint instanceof CheckpointSchedule || checkpoint instanceof Date) {
-    await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+  const point = await getCheckpointValue(checkpoint, token, this.context);
+
+  if (!(point instanceof Checkpoint)) {
+    await assertDistributionDatesValid(point, paymentDate, expiryDate);
   }
 
   if (expiryDate && expiryDate < now) {

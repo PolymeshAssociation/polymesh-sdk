@@ -1,37 +1,16 @@
-import BigNumber from 'bignumber.js';
-
+// import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import { assertCaCheckpointValid } from '~/api/procedures/utils';
-import {
-  Checkpoint,
-  CheckpointSchedule,
-  CorporateActionBase,
-  Procedure,
-  SecurityToken,
-} from '~/internal';
-import { TxTags } from '~/types';
+import { CorporateActionBase, Procedure, SecurityToken } from '~/internal';
+import { CaCheckpointTypeParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { checkpointToRecordDateSpec, corporateActionIdentifierToCaId } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { getCheckpointValue, optionize } from '~/utils/internal';
 
-export enum DistributionCheckpointType {
-  Existing = 'Existing',
-  Schedule = 'Schedule',
-}
-
-export type CheckpointId = {
-  type: DistributionCheckpointType.Existing;
-  id: BigNumber;
-};
-
-export type CheckpointScheduleId = {
-  type: DistributionCheckpointType.Schedule;
-  id: BigNumber;
-};
 /**
  * @hidden
  */
 export interface ModifyCaCheckpointParams {
-  checkpoint: Checkpoint | CheckpointSchedule | Date | null | CheckpointId | CheckpointScheduleId;
+  checkpoint: CaCheckpointTypeParams | null;
 }
 
 export type Params = ModifyCaCheckpointParams & {
@@ -60,20 +39,8 @@ export async function prepareModifyCaCheckpoint(
   } = args;
   let point;
   if (checkpoint) {
-    if (checkpoint instanceof Checkpoint || checkpoint instanceof CheckpointSchedule) {
-      await assertCaCheckpointValid(checkpoint);
-      point = checkpoint;
-    } else if (checkpoint instanceof Date) {
-      point = checkpoint;
-    } else {
-      // point = checkpoint;
-      const token = new SecurityToken({ ticker }, context);
-      if (checkpoint.type === DistributionCheckpointType.Existing) {
-        point = await token.checkpoints.getOne({ id: checkpoint.id });
-      } else {
-        point = (await token.checkpoints.schedules.getOne({ id: checkpoint.id })).schedule;
-      }
-    }
+    point = await getCheckpointValue(checkpoint, ticker, context);
+    await assertCaCheckpointValid(point);
   }
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);

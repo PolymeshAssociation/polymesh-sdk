@@ -9,7 +9,6 @@ import {
   Params as CorporateActionParams,
   UniqueIdentifiers,
 } from '~/api/entities/CorporateAction';
-import { DistributionCheckpointType } from '~/api/procedures/modifyCaCheckpoint';
 import {
   Checkpoint,
   CheckpointSchedule,

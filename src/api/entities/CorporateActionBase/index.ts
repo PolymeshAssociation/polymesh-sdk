@@ -2,7 +2,6 @@ import { Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
-import { DistributionCheckpointType } from '~/api/procedures/modifyCaCheckpoint';
 import {
   Checkpoint,
   CheckpointSchedule,

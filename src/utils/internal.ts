@@ -834,7 +834,6 @@ export async function getCheckpointValue(
     checkpoint instanceof CheckpointSchedule ||
     checkpoint instanceof Date
   ) {
-    assertCaCheckpointValid(checkpoint);
     return checkpoint;
   }
   const securityToken = getToken(token, context);
