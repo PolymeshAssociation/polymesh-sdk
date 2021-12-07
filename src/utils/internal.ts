@@ -28,7 +28,6 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
-  CaCheckpointType,
   CaCheckpointTypeParams,
   CalendarPeriod,
   CalendarUnit,
@@ -39,6 +38,7 @@ import {
   ConditionType,
   CountryCode,
   ErrorCode,
+  InputCaCheckpoint,
   InputCondition,
   isMultiClaimCondition,
   isSingleClaimCondition,
@@ -822,7 +822,7 @@ export function conditionsAreEqual(
 /**
  * @hidden
  *
- * Transforms CaCheckpointTypeParams values to instance either Checkpoint or CheckpointSchedule
+ * Transforms input CA Checkpoint values to `Checkpoint | CheckpointSchedule | Date` for easier processing
  */
 export async function getCheckpointValue(
   checkpoint: CaCheckpointTypeParams,
@@ -834,12 +834,12 @@ export async function getCheckpointValue(
     checkpoint instanceof CheckpointSchedule ||
     checkpoint instanceof Date
   ) {
-    assertCaCheckpointValid(checkpoint);
+    await assertCaCheckpointValid(checkpoint);
     return checkpoint;
   }
   const securityToken = getToken(token, context);
   const { type, id } = checkpoint;
-  if (type === CaCheckpointType.Existing) {
+  if (type === InputCaCheckpoint.Existing) {
     return securityToken.checkpoints.getOne({ id });
   } else {
     return (

@@ -9,12 +9,12 @@ import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/inter
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
-  CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
   ClaimType,
   CommonKeyring,
   CountryCode,
+  InputCaCheckpoint,
   ProcedureMethod,
 } from '~/types';
 import { tuple } from '~/types/utils';
@@ -731,7 +731,7 @@ describe('getCheckpointValue', () => {
     const mockCheckpoint = entityMockUtils.getCheckpointInstance();
     const mockCaCheckpointTypeParams = {
       id: new BigNumber(1),
-      type: CaCheckpointType.Existing,
+      type: InputCaCheckpoint.Existing,
     };
     const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
       checkpointsGetOne: mockCheckpoint,
@@ -745,7 +745,7 @@ describe('getCheckpointValue', () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
     const mockCaCheckpointTypeParams = {
       id: new BigNumber(1),
-      type: CaCheckpointType.Schedule,
+      type: InputCaCheckpoint.Schedule,
     };
     const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
       checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
