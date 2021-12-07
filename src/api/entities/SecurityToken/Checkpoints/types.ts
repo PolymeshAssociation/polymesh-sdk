@@ -2,24 +2,24 @@ import { BigNumber } from 'bignumber.js';
 
 import { Checkpoint, CheckpointSchedule } from '~/types';
 
-export enum InputCaCheckpoint {
+export enum CaCheckpointType {
   Existing = 'Existing',
   Schedule = 'Schedule',
 }
 
-export type CaCheckpointTypeParams =
+export type InputCaCheckpoint =
   | Checkpoint
   | CheckpointSchedule
   | Date
   | {
-      type: InputCaCheckpoint.Existing;
+      type: CaCheckpointType.Existing;
       /**
        * identifier for an existing Checkpoint
        */
       id: BigNumber;
     }
   | {
-      type: InputCaCheckpoint.Schedule;
+      type: CaCheckpointType.Schedule;
       /**
        * identifier for a Checkpoint Schedule
        */

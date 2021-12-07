@@ -15,7 +15,6 @@ import stringify from 'json-stable-stringify';
 import { chunk, differenceWith, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
 import { ModuleName, TxTag } from 'polymesh-types/types';
 
-import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -28,7 +27,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
-  CaCheckpointTypeParams,
+  CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
   Claim,
@@ -822,10 +821,10 @@ export function conditionsAreEqual(
 /**
  * @hidden
  *
- * Transforms input CA Checkpoint values to `Checkpoint | CheckpointSchedule | Date` for easier processing
+ * Transforms `InputCACheckpoint` values to `Checkpoint | CheckpointSchedule | Date` for easier processing
  */
 export async function getCheckpointValue(
-  checkpoint: CaCheckpointTypeParams,
+  checkpoint: InputCaCheckpoint,
   token: string | SecurityToken,
   context: Context
 ): Promise<Checkpoint | CheckpointSchedule | Date> {
@@ -834,12 +833,11 @@ export async function getCheckpointValue(
     checkpoint instanceof CheckpointSchedule ||
     checkpoint instanceof Date
   ) {
-    await assertCaCheckpointValid(checkpoint);
     return checkpoint;
   }
   const securityToken = getToken(token, context);
   const { type, id } = checkpoint;
-  if (type === InputCaCheckpoint.Existing) {
+  if (type === CaCheckpointType.Existing) {
     return securityToken.checkpoints.getOne({ id });
   } else {
     return (

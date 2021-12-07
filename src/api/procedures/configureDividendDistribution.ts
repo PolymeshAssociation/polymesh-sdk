@@ -15,7 +15,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { CaCheckpointTypeParams, CorporateActionKind, ErrorCode, RoleType, TxTags } from '~/types';
+import { CorporateActionKind, ErrorCode, InputCaCheckpoint, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   dateToMoment,
@@ -66,7 +66,7 @@ export type ConfigureDividendDistributionParams = Omit<
    * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
    *   If a Date is passed, a Checkpoint will be created at that date and used
    */
-  checkpoint: CaCheckpointTypeParams;
+  checkpoint: InputCaCheckpoint;
   /**
    * portfolio from which the Dividends will be distributed. Optional, defaults to the Corporate Actions Agent's Default Portfolio
    */
