@@ -48,12 +48,12 @@ export const createCaIdResolver = () => (receipt: ISubmittableResult): CAId => {
 export interface InitiateCorporateActionParams {
   kind: CorporateActionKind;
   /**
-   * date at which the issuer publicly declared the Distribution. Optional, defaults to the current date
+   * date at which the issuer publicly declared the Corporate Action. Optional, defaults to the current date
    */
   declarationDate?: Date;
   /**
-   * checkpoint to be used for share-related calculations. If a Schedule is passed, the next Checkpoint it creates will be used.
-   *   checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
+   * checkpoint to be used for share-related calculations. If a Schedule is passed, the next Checkpoint it creates will be used
+   *
    */
   checkpoint?: InputCaCheckpoint;
   description: string;
