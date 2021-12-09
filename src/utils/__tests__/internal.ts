@@ -9,6 +9,7 @@ import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/inter
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
   ClaimType,
@@ -30,6 +31,7 @@ import {
   createProcedureMethod,
   delay,
   filterEventRecords,
+  getCheckpointValue,
   getCommonKeyring,
   getDid,
   getTicker,
@@ -688,5 +690,68 @@ describe('isModuleOrTagMatch', () => {
       TxTags.identity.AddClaim
     );
     expect(result).toEqual(false);
+  });
+});
+
+describe('getCheckpointValue', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
+    const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
+    const mockToken = entityMockUtils.getSecurityTokenInstance();
+    let result = await getCheckpointValue(mockCheckpointSchedule, mockToken, context);
+    expect(result).toEqual(mockCheckpointSchedule);
+
+    const mockCheckpoint = entityMockUtils.getCheckpointInstance();
+    result = await getCheckpointValue(mockCheckpoint, mockToken, context);
+    expect(result).toEqual(mockCheckpoint);
+
+    const mockCheckpointDate = new Date();
+    result = await getCheckpointValue(mockCheckpointDate, mockToken, context);
+    expect(result).toEqual(mockCheckpointDate);
+  });
+
+  test('should return Checkpoint instance for params with type `Existing`', async () => {
+    const mockCheckpoint = entityMockUtils.getCheckpointInstance();
+    const mockCaCheckpointTypeParams = {
+      id: new BigNumber(1),
+      type: CaCheckpointType.Existing,
+    };
+    const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
+      checkpointsGetOne: mockCheckpoint,
+    });
+
+    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockSecurityToken, context);
+    expect(result).toEqual(mockCheckpoint);
+  });
+
+  test('should return Checkpoint instance for params with type `Scheduled`', async () => {
+    const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
+    const mockCaCheckpointTypeParams = {
+      id: new BigNumber(1),
+      type: CaCheckpointType.Schedule,
+    };
+    const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
+      checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
+    });
+
+    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockSecurityToken, context);
+    expect(result).toEqual(mockCheckpointSchedule);
   });
 });

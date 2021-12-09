@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
-  CheckpointSchedule,
   Context,
   DefaultPortfolio,
   DividendDistribution,
@@ -16,7 +15,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { CorporateActionKind, ErrorCode, RoleType, TxTags } from '~/types';
+import { CorporateActionKind, ErrorCode, InputCaCheckpoint, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   dateToMoment,
@@ -29,7 +28,7 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize } from '~/utils/internal';
+import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -67,7 +66,7 @@ export type ConfigureDividendDistributionParams = Omit<
    * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
    *   If a Date is passed, a Checkpoint will be created at that date and used
    */
-  checkpoint: Checkpoint | Date | CheckpointSchedule;
+  checkpoint: InputCaCheckpoint;
   /**
    * portfolio from which the Dividends will be distributed. Optional, defaults to the Corporate Actions Agent's Default Portfolio
    */
@@ -155,8 +154,10 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  if (!(checkpoint instanceof Checkpoint)) {
-    await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+  const checkpointValue = await getCheckpointValue(checkpoint, ticker, context);
+
+  if (!(checkpointValue instanceof Checkpoint)) {
+    await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
   }
 
   if (portfolio instanceof NumberedPortfolio) {
@@ -185,7 +186,7 @@ export async function prepareConfigureDividendDistribution(
   const caId = await this.addProcedure(initiateCorporateAction(), {
     ticker,
     kind: CorporateActionKind.UnpredictableBenefit,
-    checkpoint,
+    checkpoint: checkpointValue,
     ...corporateActionArgs,
   });
 

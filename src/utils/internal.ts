@@ -16,6 +16,8 @@ import { chunk, differenceWith, groupBy, isEqual, map, mapValues, padEnd } from 
 import { ModuleName, TxTag } from 'polymesh-types/types';
 
 import {
+  Checkpoint,
+  CheckpointSchedule,
   Context,
   Identity,
   PolymeshError,
@@ -25,6 +27,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
   Claim,
@@ -34,6 +37,7 @@ import {
   ConditionType,
   CountryCode,
   ErrorCode,
+  InputCaCheckpoint,
   InputCondition,
   isMultiClaimCondition,
   isSingleClaimCondition,
@@ -812,4 +816,34 @@ export function conditionsAreEqual(
     aClaimIssuers.length === bClaimIssuers.length;
 
   return equalClaims && equalClaimIssuers;
+}
+
+/**
+ * @hidden
+ *
+ * Transforms `InputCACheckpoint` values to `Checkpoint | CheckpointSchedule | Date` for easier processing
+ */
+export async function getCheckpointValue(
+  checkpoint: InputCaCheckpoint,
+  token: string | SecurityToken,
+  context: Context
+): Promise<Checkpoint | CheckpointSchedule | Date> {
+  if (
+    checkpoint instanceof Checkpoint ||
+    checkpoint instanceof CheckpointSchedule ||
+    checkpoint instanceof Date
+  ) {
+    return checkpoint;
+  }
+  const securityToken = getToken(token, context);
+  const { type, id } = checkpoint;
+  if (type === CaCheckpointType.Existing) {
+    return securityToken.checkpoints.getOne({ id });
+  } else {
+    return (
+      await securityToken.checkpoints.schedules.getOne({
+        id,
+      })
+    ).schedule;
+  }
 }

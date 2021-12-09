@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 /* eslint-disable @typescript-eslint/naming-convention */
-
 import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
@@ -57,6 +56,7 @@ import {
   PortfolioBalance,
   ResultSet,
   ScheduleDetails,
+  ScheduleWithDetails,
   SecondaryKey,
   SecurityTokenDetails,
   SignerType,
@@ -73,8 +73,6 @@ import {
   TransferStatus,
   VenueDetails,
   VenueType,
-  // NOTE uncomment in Governance v2 upgrade
-  // TxTags,
 } from '~/types';
 
 type MockIdentity = Mocked<Identity>;
@@ -163,6 +161,8 @@ interface SecurityTokenOptions {
   permissionsGetAgents?: AgentWithGroup[];
   permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
   complianceRequirementsGet?: ComplianceRequirements;
+  checkpointsGetOne?: Partial<Checkpoint>;
+  checkpointsSchedulesGetOne?: Partial<ScheduleWithDetails>;
   isEqual?: boolean;
   exists?: boolean;
   toJson?: string;
@@ -361,6 +361,8 @@ let securityTokenCorporateActionsGetDefaultConfigStub: SinonStub;
 let securityTokenPermissionsGetGroupsStub: SinonStub;
 let securityTokenPermissionsGetAgentsStub: SinonStub;
 let securityTokenComplianceRequirementsGetStub: SinonStub;
+let securityTokenCheckpointsGetOneStub: SinonStub;
+let securityTokenCheckpointsSchedulesGetOneStub: SinonStub;
 let securityTokenIsEqualStub: SinonStub;
 let securityTokenExistsStub: SinonStub;
 let securityTokenToJsonStub: SinonStub;
@@ -782,6 +784,8 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
     requirements: [],
     defaultTrustedClaimIssuers: [],
   },
+  checkpointsGetOne: {},
+  checkpointsSchedulesGetOne: {},
   isEqual: false,
   exists: true,
   toJson: 'SOME_TICKER',
@@ -1321,6 +1325,14 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
         get: securityTokenComplianceRequirementsGetStub.resolves(opts.complianceRequirementsGet),
       },
     },
+    checkpoints: {
+      schedules: {
+        getOne: securityTokenCheckpointsSchedulesGetOneStub.resolves(
+          opts.checkpointsSchedulesGetOne
+        ),
+      },
+      getOne: securityTokenCheckpointsGetOneStub.resolves(opts.checkpointsGetOne),
+    },
     isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
     exists: securityTokenExistsStub.resolves(opts.exists),
     toJson: securityTokenToJsonStub.returns(opts.toJson),
@@ -1355,6 +1367,8 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
   securityTokenPermissionsGetGroupsStub = sinon.stub();
   securityTokenPermissionsGetAgentsStub = sinon.stub();
   securityTokenComplianceRequirementsGetStub = sinon.stub();
+  securityTokenCheckpointsGetOneStub = sinon.stub();
+  securityTokenCheckpointsSchedulesGetOneStub = sinon.stub();
   securityTokenIsEqualStub = sinon.stub();
   securityTokenExistsStub = sinon.stub();
   securityTokenToJsonStub = sinon.stub();

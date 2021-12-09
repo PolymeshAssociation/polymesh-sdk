@@ -58,3 +58,4 @@ export interface AgentWithGroup {
 }
 
 export * from './CorporateActions/types';
+export * from './Checkpoints/types';
