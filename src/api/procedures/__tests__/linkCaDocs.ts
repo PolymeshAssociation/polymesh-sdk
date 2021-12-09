@@ -1,6 +1,6 @@
 import { Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker, TxTags } from 'polymesh-types/types';
+import { CAId, Document, DocumentId, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/linkCaDocs';
@@ -28,6 +28,7 @@ describe('linkCaDocs procedure', () => {
   let rawDocumentIds: DocumentId[];
   let documentEntries: [[Ticker, DocumentId], Document][];
   let args: Params;
+  let rawCaId: CAId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -78,6 +79,9 @@ describe('linkCaDocs procedure', () => {
       ticker,
       documents,
     };
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -144,13 +148,7 @@ describe('linkCaDocs procedure', () => {
 
     await prepareLinkCaDocs.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      linkCaDocTransaction,
-      {},
-      { ticker, local_id: id },
-      rawDocumentIds
-    );
+    sinon.assert.calledWith(addTransactionStub, linkCaDocTransaction, {}, rawCaId, rawDocumentIds);
   });
 
   describe('getAuthorization', () => {

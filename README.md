@@ -8,7 +8,7 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v4.0.0
+This release is compatible with Polymesh v4.1.0
 
 <!--- End of section --->
 
