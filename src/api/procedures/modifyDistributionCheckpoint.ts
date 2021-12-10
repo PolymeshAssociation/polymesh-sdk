@@ -1,21 +1,21 @@
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
-  CheckpointSchedule,
   DividendDistribution,
   modifyCaCheckpoint,
   PolymeshError,
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, InputCaCheckpoint, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { getCheckpointValue } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export interface ModifyDistributionCheckpointParams {
-  checkpoint: Checkpoint | CheckpointSchedule | Date;
+  checkpoint: InputCaCheckpoint;
 }
 
 export type Params = ModifyDistributionCheckpointParams & {
@@ -32,7 +32,7 @@ export async function prepareModifyDistributionCheckpoint(
   const {
     checkpoint,
     distribution,
-    distribution: { paymentDate, expiryDate },
+    distribution: { paymentDate, expiryDate, token },
   } = args;
 
   const now = new Date();
@@ -44,8 +44,10 @@ export async function prepareModifyDistributionCheckpoint(
     });
   }
 
-  if (!(checkpoint instanceof Checkpoint)) {
-    await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+  const checkpointValue = await getCheckpointValue(checkpoint, token, this.context);
+
+  if (!(checkpointValue instanceof Checkpoint)) {
+    await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
   }
 
   if (expiryDate && expiryDate < now) {

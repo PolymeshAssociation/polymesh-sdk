@@ -1,21 +1,15 @@
 import { assertCaCheckpointValid } from '~/api/procedures/utils';
-import {
-  Checkpoint,
-  CheckpointSchedule,
-  CorporateActionBase,
-  Procedure,
-  SecurityToken,
-} from '~/internal';
-import { TxTags } from '~/types';
+import { CorporateActionBase, Procedure, SecurityToken } from '~/internal';
+import { InputCaCheckpoint, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { checkpointToRecordDateSpec, corporateActionIdentifierToCaId } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { getCheckpointValue, optionize } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export interface ModifyCaCheckpointParams {
-  checkpoint: Checkpoint | CheckpointSchedule | Date | null;
+  checkpoint: InputCaCheckpoint | null;
 }
 
 export type Params = ModifyCaCheckpointParams & {
@@ -42,13 +36,14 @@ export async function prepareModifyCaCheckpoint(
       token: { ticker },
     },
   } = args;
-
+  let checkpointValue;
   if (checkpoint) {
-    await assertCaCheckpointValid(checkpoint);
+    checkpointValue = await getCheckpointValue(checkpoint, ticker, context);
+    await assertCaCheckpointValid(checkpointValue);
   }
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
-  const rawRecordDateSpec = optionize(checkpointToRecordDateSpec)(checkpoint, context);
+  const rawRecordDateSpec = optionize(checkpointToRecordDateSpec)(checkpointValue, context);
 
   this.addTransaction(tx.corporateAction.changeRecordDate, {}, rawCaId, rawRecordDateSpec);
 }
