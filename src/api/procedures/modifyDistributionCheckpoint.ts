@@ -44,10 +44,10 @@ export async function prepareModifyDistributionCheckpoint(
     });
   }
 
-  const point = await getCheckpointValue(checkpoint, token, this.context);
+  const checkpointValue = await getCheckpointValue(checkpoint, token, this.context);
 
-  if (!(point instanceof Checkpoint)) {
-    await assertDistributionDatesValid(point, paymentDate, expiryDate);
+  if (!(checkpointValue instanceof Checkpoint)) {
+    await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
   }
 
   if (expiryDate && expiryDate < now) {

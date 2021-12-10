@@ -1,4 +1,3 @@
-// import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import { CorporateActionBase, Procedure, SecurityToken } from '~/internal';
 import { InputCaCheckpoint, TxTags } from '~/types';
