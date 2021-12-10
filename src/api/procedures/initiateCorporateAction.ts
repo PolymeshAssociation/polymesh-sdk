@@ -53,7 +53,6 @@ export interface InitiateCorporateActionParams {
   declarationDate?: Date;
   /**
    * checkpoint to be used for share-related calculations. If a Schedule is passed, the next Checkpoint it creates will be used
-   *
    */
   checkpoint?: InputCaCheckpoint;
   description: string;
