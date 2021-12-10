@@ -1145,9 +1145,26 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
+
+    const ticker = 'SOME_TICKER';
+    const type = PermissionGroupType.Full;
+    fakeResult = {
+      type: AuthorizationType.BecomeAgent,
+      value: entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type,
+      }),
+    };
+
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
+    });
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
   });
 
-  test('shoould throw an error if the authorization has an unsupported type', () => {
+  test('should throw an error if the authorization has an unsupported type', () => {
     const context = dsMockUtils.getContextInstance();
     const authorizationData = dsMockUtils.createMockAuthorizationData(
       'Whatever' as 'RotatePrimaryKey'
