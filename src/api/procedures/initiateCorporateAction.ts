@@ -7,19 +7,13 @@ import {
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
 } from '~/api/procedures/utils';
-import {
-  Checkpoint,
-  CheckpointSchedule,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-  SecurityToken,
-} from '~/internal';
+import { PolymeshError, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
 import {
   CorporateActionKind,
   CorporateActionTargets,
   ErrorCode,
   Identity,
+  InputCaCheckpoint,
   TaxWithholding,
   TxTags,
 } from '~/types';
@@ -37,7 +31,7 @@ import {
   targetsToTargetIdentities,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize } from '~/utils/internal';
+import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -54,14 +48,14 @@ export const createCaIdResolver = () => (receipt: ISubmittableResult): CAId => {
 export interface InitiateCorporateActionParams {
   kind: CorporateActionKind;
   /**
-   * date at which the issuer publicly declared the Distribution. Optional, defaults to the current date
+   * date at which the issuer publicly declared the Corporate Action. Optional, defaults to the current date
    */
   declarationDate?: Date;
   /**
-   * checkpoint to be used for share-related calculations. If a Schedule is passed, the next Checkpoint it creates will be used.
-   *   checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
+   * checkpoint to be used for share-related calculations. If a Schedule is passed, the next Checkpoint it creates will be used
+   *
    */
-  checkpoint?: Checkpoint | CheckpointSchedule | Date;
+  checkpoint?: InputCaCheckpoint;
   description: string;
   /**
    * tokenholder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
@@ -144,14 +138,16 @@ export async function prepareInitiateCorporateAction(
     });
   }
 
+  let checkpointValue;
   if (checkpoint) {
-    await assertCaCheckpointValid(checkpoint);
+    checkpointValue = await getCheckpointValue(checkpoint, ticker, context);
+    await assertCaCheckpointValid(checkpointValue);
   }
 
   const rawTicker = stringToTicker(ticker, context);
   const rawKind = corporateActionKindToCaKind(kind, context);
   const rawDeclDate = dateToMoment(declarationDate, context);
-  const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpoint, context);
+  const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpointValue, context);
   const rawDetails = stringToText(description, context);
   const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
   const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);

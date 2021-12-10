@@ -127,7 +127,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_VERSION_RANGE = '>=4.0.0';
+export const SUPPORTED_VERSION_RANGE = '4.1.x';
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',

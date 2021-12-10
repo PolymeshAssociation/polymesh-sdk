@@ -7,15 +7,21 @@ export enum CaCheckpointType {
   Schedule = 'Schedule',
 }
 
-export type CaCheckpointTypeParams =
+export type InputCaCheckpoint =
   | Checkpoint
   | CheckpointSchedule
   | Date
   | {
       type: CaCheckpointType.Existing;
+      /**
+       * identifier for an existing Checkpoint
+       */
       id: BigNumber;
     }
   | {
       type: CaCheckpointType.Schedule;
+      /**
+       * identifier for a Checkpoint Schedule
+       */
       id: BigNumber;
     };

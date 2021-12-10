@@ -15,7 +15,6 @@ import stringify from 'json-stable-stringify';
 import { chunk, differenceWith, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
 import { ModuleName, TxTag } from 'polymesh-types/types';
 
-import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
   CheckpointSchedule,
@@ -29,7 +28,6 @@ import {
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
   CaCheckpointType,
-  CaCheckpointTypeParams,
   CalendarPeriod,
   CalendarUnit,
   Claim,
@@ -39,6 +37,7 @@ import {
   ConditionType,
   CountryCode,
   ErrorCode,
+  InputCaCheckpoint,
   InputCondition,
   isMultiClaimCondition,
   isSingleClaimCondition,
@@ -822,10 +821,10 @@ export function conditionsAreEqual(
 /**
  * @hidden
  *
- * Transforms CaCheckpointTypeParams values to instance either Checkpoint or CheckpointSchedule
+ * Transforms `InputCACheckpoint` values to `Checkpoint | CheckpointSchedule | Date` for easier processing
  */
 export async function getCheckpointValue(
-  checkpoint: CaCheckpointTypeParams,
+  checkpoint: InputCaCheckpoint,
   token: string | SecurityToken,
   context: Context
 ): Promise<Checkpoint | CheckpointSchedule | Date> {
