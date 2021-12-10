@@ -6,7 +6,7 @@ export default {
       params: [
         {
           name: 'index',
-          type: 'PipId',
+          type: 'u32',
           isOptional: false,
         },
         {
@@ -31,7 +31,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'Vec<PipId>',
+      type: 'Vec<u32>',
     },
     votedOn: {
       description: 'Retrieves proposal address indices voted on',
@@ -47,7 +47,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'Vec<PipId>',
+      type: 'Vec<u32>',
     },
   },
   types: {},

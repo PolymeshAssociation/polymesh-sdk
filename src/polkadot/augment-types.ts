@@ -981,7 +981,6 @@ import type {
   ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
-  FundraiserId,
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
@@ -992,14 +991,12 @@ import type {
   IdentityRole,
   InactiveMember,
   Instruction,
-  InstructionId,
   InstructionStatus,
   InvestorUid,
   InvestorZKProofData,
   ItnRewardStatus,
   KeyIdentityData,
   Leg,
-  LegId,
   LegStatus,
   LegacyPalletPermissions,
   LegacyPermissions,
@@ -1086,7 +1083,6 @@ import type {
   Url,
   Venue,
   VenueDetails,
-  VenueId,
   VenueType,
   Version,
   VoteByPip,
@@ -1133,16 +1129,13 @@ declare module '@polkadot/types/types/registry' {
     'Compact<FixedU128>': Compact<FixedU128>;
     'Compact<FixedU64>': Compact<FixedU64>;
     'Compact<FundIndex>': Compact<FundIndex>;
-    'Compact<FundraiserId>': Compact<FundraiserId>;
     'Compact<Gas>': Compact<Gas>;
     'Compact<GroupIndex>': Compact<GroupIndex>;
     'Compact<Index>': Compact<Index>;
     'Compact<InstanceId>': Compact<InstanceId>;
-    'Compact<InstructionId>': Compact<InstructionId>;
     'Compact<KeyTypeId>': Compact<KeyTypeId>;
     'Compact<LeasePeriod>': Compact<LeasePeriod>;
     'Compact<LeasePeriodOf>': Compact<LeasePeriodOf>;
-    'Compact<LegId>': Compact<LegId>;
     'Compact<LocalCAId>': Compact<LocalCAId>;
     'Compact<MemberCount>': Compact<MemberCount>;
     'Compact<MetaVersion>': Compact<MetaVersion>;
@@ -1201,7 +1194,6 @@ declare module '@polkadot/types/types/registry' {
     'Compact<USize>': Compact<USize>;
     'Compact<ValidatorCount>': Compact<ValidatorCount>;
     'Compact<ValidatorSetId>': Compact<ValidatorSetId>;
-    'Compact<VenueId>': Compact<VenueId>;
     'Compact<Version>': Compact<Version>;
     'Compact<VoteIndex>': Compact<VoteIndex>;
     'Compact<Weight>': Compact<Weight>;
@@ -1593,7 +1585,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<FundInfo>': Option<FundInfo>;
     'Option<FundingRoundName>': Option<FundingRoundName>;
     'Option<Fundraiser>': Option<Fundraiser>;
-    'Option<FundraiserId>': Option<FundraiserId>;
     'Option<FundraiserName>': Option<FundraiserName>;
     'Option<FundraiserStatus>': Option<FundraiserStatus>;
     'Option<FundraiserTier>': Option<FundraiserTier>;
@@ -1671,7 +1662,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<InstantiateRequest>': Option<InstantiateRequest>;
     'Option<InstantiateReturnValue>': Option<InstantiateReturnValue>;
     'Option<Instruction>': Option<Instruction>;
-    'Option<InstructionId>': Option<InstructionId>;
     'Option<InstructionStatus>': Option<InstructionStatus>;
     'Option<InstructionWeights>': Option<InstructionWeights>;
     'Option<InvalidDisputeStatementKind>': Option<InvalidDisputeStatementKind>;
@@ -1699,7 +1689,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<Leg>': Option<Leg>;
     'Option<LegacyPalletPermissions>': Option<LegacyPalletPermissions>;
     'Option<LegacyPermissions>': Option<LegacyPermissions>;
-    'Option<LegId>': Option<LegId>;
     'Option<LegStatus>': Option<LegStatus>;
     'Option<Limits>': Option<Limits>;
     'Option<LimitsTo264>': Option<LimitsTo264>;
@@ -2168,7 +2157,6 @@ declare module '@polkadot/types/types/registry' {
     'Option<VecInboundHrmpMessage>': Option<VecInboundHrmpMessage>;
     'Option<Venue>': Option<Venue>;
     'Option<VenueDetails>': Option<VenueDetails>;
-    'Option<VenueId>': Option<VenueId>;
     'Option<VenueType>': Option<VenueType>;
     'Option<Version>': Option<Version>;
     'Option<VersionedMultiAsset>': Option<VersionedMultiAsset>;
@@ -2618,7 +2606,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<FundInfo>': Vec<FundInfo>;
     'Vec<FundingRoundName>': Vec<FundingRoundName>;
     'Vec<Fundraiser>': Vec<Fundraiser>;
-    'Vec<FundraiserId>': Vec<FundraiserId>;
     'Vec<FundraiserName>': Vec<FundraiserName>;
     'Vec<FundraiserStatus>': Vec<FundraiserStatus>;
     'Vec<FundraiserTier>': Vec<FundraiserTier>;
@@ -2696,7 +2683,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<InstantiateRequest>': Vec<InstantiateRequest>;
     'Vec<InstantiateReturnValue>': Vec<InstantiateReturnValue>;
     'Vec<Instruction>': Vec<Instruction>;
-    'Vec<InstructionId>': Vec<InstructionId>;
     'Vec<InstructionStatus>': Vec<InstructionStatus>;
     'Vec<InstructionWeights>': Vec<InstructionWeights>;
     'Vec<InvalidDisputeStatementKind>': Vec<InvalidDisputeStatementKind>;
@@ -2724,7 +2710,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<Leg>': Vec<Leg>;
     'Vec<LegacyPalletPermissions>': Vec<LegacyPalletPermissions>;
     'Vec<LegacyPermissions>': Vec<LegacyPermissions>;
-    'Vec<LegId>': Vec<LegId>;
     'Vec<LegStatus>': Vec<LegStatus>;
     'Vec<Limits>': Vec<Limits>;
     'Vec<LimitsTo264>': Vec<LimitsTo264>;
@@ -3193,7 +3178,6 @@ declare module '@polkadot/types/types/registry' {
     'Vec<VecInboundHrmpMessage>': Vec<VecInboundHrmpMessage>;
     'Vec<Venue>': Vec<Venue>;
     'Vec<VenueDetails>': Vec<VenueDetails>;
-    'Vec<VenueId>': Vec<VenueId>;
     'Vec<VenueType>': Vec<VenueType>;
     'Vec<Version>': Vec<Version>;
     'Vec<VersionedMultiAsset>': Vec<VersionedMultiAsset>;
@@ -3643,7 +3627,6 @@ declare module '@polkadot/types/types/registry' {
     FundInfo: FundInfo;
     FundingRoundName: FundingRoundName;
     Fundraiser: Fundraiser;
-    FundraiserId: FundraiserId;
     FundraiserName: FundraiserName;
     FundraiserStatus: FundraiserStatus;
     FundraiserTier: FundraiserTier;
@@ -3721,7 +3704,6 @@ declare module '@polkadot/types/types/registry' {
     InstantiateRequest: InstantiateRequest;
     InstantiateReturnValue: InstantiateReturnValue;
     Instruction: Instruction;
-    InstructionId: InstructionId;
     InstructionStatus: InstructionStatus;
     InstructionWeights: InstructionWeights;
     InvalidDisputeStatementKind: InvalidDisputeStatementKind;
@@ -3749,7 +3731,6 @@ declare module '@polkadot/types/types/registry' {
     Leg: Leg;
     LegacyPalletPermissions: LegacyPalletPermissions;
     LegacyPermissions: LegacyPermissions;
-    LegId: LegId;
     LegStatus: LegStatus;
     Limits: Limits;
     LimitsTo264: LimitsTo264;
@@ -4218,7 +4199,6 @@ declare module '@polkadot/types/types/registry' {
     VecInboundHrmpMessage: VecInboundHrmpMessage;
     Venue: Venue;
     VenueDetails: VenueDetails;
-    VenueId: VenueId;
     VenueType: VenueType;
     Version: Version;
     VersionedMultiAsset: VersionedMultiAsset;

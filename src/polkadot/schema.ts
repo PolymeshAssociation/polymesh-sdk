@@ -624,8 +624,8 @@ export default {
     },
     PolymeshVotes: {
       index: 'u32',
-      ayes: 'Vec<IdentityId>',
-      nays: 'Vec<IdentityId>',
+      ayes: 'Vec<(IdentityId, Balance)>',
+      nays: 'Vec<(IdentityId, Balance)>',
       expiry: 'MaybeBlock',
     },
     PipId: 'u32',
@@ -668,7 +668,6 @@ export default {
         PortfolioCustody: 'PortfolioId',
         BecomeAgent: '(Ticker, AgentGroup)',
         AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
-        RotatePrimaryKeyToSecondary: 'Permissions',
       },
     },
     SmartExtensionType: {
@@ -842,7 +841,6 @@ export default {
         PortfolioCustody: '',
         BecomeAgent: '',
         AddRelayerPayingKey: '',
-        RotatePrimaryKeyToSecondary: '',
       },
     },
     ProposalDetails: {
@@ -932,11 +930,9 @@ export default {
         SettleOnBlock: 'BlockNumber',
       },
     },
-    LegId: 'u64',
-    InstructionId: 'u64',
     Instruction: {
-      instruction_id: 'InstructionId',
-      venue_id: 'VenueId',
+      instruction_id: 'u64',
+      venue_id: 'u64',
       status: 'InstructionStatus',
       settlement_type: 'SettlementType',
       created_at: 'Option<Moment>',
@@ -963,7 +959,7 @@ export default {
     ReceiptMetadata: 'Text',
     ReceiptDetails: {
       receipt_uid: 'u64',
-      leg_id: 'LegId',
+      leg_id: 'u64',
       signer: 'AccountId',
       signature: 'OffChainSignature',
       metadata: 'ReceiptMetadata',
@@ -989,7 +985,6 @@ export default {
         Specific: 'IdentityId',
       },
     },
-    FundraiserId: 'u64',
     FundraiserName: 'Text',
     FundraiserStatus: {
       _enum: ['Live', 'Frozen', 'Closed', 'ClosedEarly'],
@@ -1006,13 +1001,12 @@ export default {
       raising_portfolio: 'PortfolioId',
       raising_asset: 'Ticker',
       tiers: 'Vec<FundraiserTier>',
-      venue_id: 'VenueId',
+      venue_id: 'u64',
       start: 'Moment',
       end: 'Option<Moment>',
       status: 'FundraiserStatus',
       minimum_investment: 'Balance',
     },
-    VenueId: 'u64',
     VenueType: {
       _enum: ['Other', 'Distribution', 'Sto', 'Exchange'],
     },
@@ -1282,7 +1276,7 @@ export default {
         params: [
           {
             name: 'index',
-            type: 'PipId',
+            type: 'u32',
             isOptional: false,
           },
           {
@@ -1307,7 +1301,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Vec<PipId>',
+        type: 'Vec<u32>',
       },
       votedOn: {
         description: 'Retrieves proposal address indices voted on',
@@ -1323,7 +1317,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Vec<PipId>',
+        type: 'Vec<u32>',
       },
     },
     protocolFee: {
