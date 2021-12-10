@@ -1184,6 +1184,15 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  if (auth.isBecomeAgent) {
+    const [ticker, agentGroup] = auth.asBecomeAgent;
+
+    return {
+      type: AuthorizationType.BecomeAgent,
+      value: agentGroupToPermissionGroup(agentGroup, tickerToString(ticker), context),
+    };
+  }
+
   throw new PolymeshError({
     code: ErrorCode.UnexpectedError,
     message: 'Unsupported Authorization Type. Please contact the Polymath team',
