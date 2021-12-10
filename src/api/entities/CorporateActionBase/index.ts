@@ -13,7 +13,7 @@ import {
   PolymeshError,
   SecurityToken,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod } from '~/types';
+import { ErrorCode, InputCaCheckpoint, ProcedureMethod } from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
 import {
   numberToU32,
@@ -153,7 +153,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     Modify<
       ModifyCaCheckpointParams,
       {
-        checkpoint: Checkpoint | CheckpointSchedule | Date;
+        checkpoint: InputCaCheckpoint;
       }
     >,
     void

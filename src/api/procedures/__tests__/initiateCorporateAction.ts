@@ -20,16 +20,10 @@ import {
   prepareInitiateCorporateAction,
 } from '~/api/procedures/initiateCorporateAction';
 import * as utilsProcedureModule from '~/api/procedures/utils';
-import {
-  Checkpoint,
-  CheckpointSchedule,
-  Context,
-  Identity,
-  PostTransactionValue,
-} from '~/internal';
+import { Context, Identity, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CorporateActionKind, TargetTreatment, TxTags } from '~/types';
+import { CorporateActionKind, InputCaCheckpoint, TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -44,7 +38,7 @@ describe('initiateCorporateAction procedure', () => {
   let ticker: string;
   let kind: CorporateActionKind;
   let declarationDate: Date;
-  let checkpoint: Checkpoint | CheckpointSchedule | Date;
+  let checkpoint: InputCaCheckpoint;
   let description: string;
   let targets: { identities: (string | Identity)[]; treatment: TargetTreatment };
   let defaultTaxWithholding: BigNumber;

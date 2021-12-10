@@ -19,17 +19,10 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/configureDividendDistribution';
-import {
-  Checkpoint,
-  CheckpointSchedule,
-  Context,
-  DividendDistribution,
-  NumberedPortfolio,
-  PostTransactionValue,
-} from '~/internal';
+import { Context, DividendDistribution, NumberedPortfolio, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TargetTreatment, TxTags } from '~/types';
+import { InputCaCheckpoint, RoleType, TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -65,7 +58,7 @@ jest.mock(
 describe('configureDividendDistribution procedure', () => {
   let ticker: string;
   let declarationDate: Date;
-  let checkpoint: Checkpoint | CheckpointSchedule | Date;
+  let checkpoint: InputCaCheckpoint;
   let description: string;
   let targets: { identities: string[]; treatment: TargetTreatment };
   let defaultTaxWithholding: BigNumber;

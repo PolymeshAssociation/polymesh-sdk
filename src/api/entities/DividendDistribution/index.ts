@@ -34,6 +34,7 @@ import {
   DividendDistributionDetails,
   ErrorCode,
   IdentityBalance,
+  InputCaCheckpoint,
   NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
@@ -92,7 +93,7 @@ export class DividendDistribution extends CorporateActionBase {
   public origin: DefaultPortfolio | NumberedPortfolio;
 
   /**
-   * ticker of the currency in which dividends are being distibuted
+   * ticker of the currency in which dividends are being distributed
    */
   public currency: string;
 
@@ -195,7 +196,7 @@ export class DividendDistribution extends CorporateActionBase {
     Modify<
       ModifyCaCheckpointParams,
       {
-        checkpoint: Checkpoint | CheckpointSchedule | Date;
+        checkpoint: InputCaCheckpoint;
       }
     >,
     void

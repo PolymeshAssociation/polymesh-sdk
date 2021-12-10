@@ -1,14 +1,13 @@
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
   Checkpoint,
-  CheckpointSchedule,
   DividendDistribution,
   modifyCaCheckpoint,
   PolymeshError,
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { CaCheckpointTypeParams, ErrorCode, TxTags } from '~/types';
+import { ErrorCode, InputCaCheckpoint, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { getCheckpointValue } from '~/utils/internal';
 
@@ -16,7 +15,7 @@ import { getCheckpointValue } from '~/utils/internal';
  * @hidden
  */
 export interface ModifyDistributionCheckpointParams {
-  checkpoint: CaCheckpointTypeParams;
+  checkpoint: InputCaCheckpoint;
 }
 
 export type Params = ModifyDistributionCheckpointParams & {
