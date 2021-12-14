@@ -569,8 +569,17 @@ export interface KeyringPair extends IKeyringPair {
 }
 
 export interface Balance {
+  /**
+   * balance available for transferring and paying fees
+   */
   free: BigNumber;
+  /**
+   * unavailable balance, either bonded for staking or locked for some other purpose
+   */
   locked: BigNumber;
+  /**
+   * free + locked
+   */
   total: BigNumber;
 }
 
