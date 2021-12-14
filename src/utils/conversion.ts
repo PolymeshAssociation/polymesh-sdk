@@ -289,7 +289,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
   if (!isPrintableAscii(ticker)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Only printable ASCII is alowed as ticker name',
+      message: 'Only printable ASCII is allowed as ticker name',
     });
   }
 
@@ -1071,6 +1071,8 @@ export function authorizationToAuthorizationData(
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (auth.type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
+  } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
+    value = stringToTicker(auth.value, context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
     const ticker = stringToTicker(auth.value.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {
