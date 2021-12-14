@@ -576,7 +576,7 @@ describe('stringToTicker and tickerToString', () => {
     const context = dsMockUtils.getContextInstance();
 
     expect(() => stringToTicker(value, context)).toThrow(
-      'Only printable ASCII is alowed as ticker name'
+      'Only printable ASCII is allowed as ticker name'
     );
   });
 
@@ -1055,6 +1055,24 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.TransferAssetOwnership,
+      value: 'TICKER',
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH))
+      .returns(fakeTicker);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: fakeTicker })
       .returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
