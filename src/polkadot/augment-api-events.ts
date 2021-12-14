@@ -53,12 +53,15 @@ import type {
   ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
+  FundraiserId,
   FundraiserName,
   HandledTxStatus,
   IdentityClaim,
   IdentityId,
+  InstructionId,
   InvestorUid,
   Leg,
+  LegId,
   MaybeBlock,
   Memo,
   Permissions,
@@ -88,6 +91,7 @@ import type {
   TrustedIssuer,
   Url,
   VenueDetails,
+  VenueId,
   VenueType,
 } from 'polymesh-types/polymesh';
 import type { ApiTypes } from '@polkadot/api/types';
@@ -304,6 +308,10 @@ declare module '@polkadot/api/types/events' {
        **/
       TimelockChanged: AugmentedEvent<ApiType, [IdentityId, BlockNumber]>;
       /**
+       * Notification of removing a transaction.
+       **/
+      TxRemoved: AugmentedEvent<ApiType, [IdentityId, BridgeTx]>;
+      /**
        * An event emitted after a vector of transactions is handled. The parameter is a vector of
        * tuples of recipient account, its nonce, and the status of the processed transaction.
        **/
@@ -329,21 +337,21 @@ declare module '@polkadot/api/types/events' {
       >;
       /**
        * A capital distribution, with details included,
-       * was created by the DID (the CAA) for the CA specified by the `CAId`.
+       * was created by the DID (permissioned agent) for the CA identified by `CAId`.
        *
-       * (CAA of CAId's ticker, CA's ID, distribution details)
+       * (Agent DID, CA's ID, distribution details)
        **/
       Created: AugmentedEvent<ApiType, [EventDid, CAId, Distribution]>;
       /**
        * Stats from `push_benefit` was emitted.
        *
-       * (CAA/owner of CA's ticker, CA's ID, max requested DIDs, processed DIDs, failed DIDs)
+       * (Agent DID, CA's ID, max requested DIDs, processed DIDs, failed DIDs)
        **/
       Reclaimed: AugmentedEvent<ApiType, [EventDid, CAId, Balance]>;
       /**
        * A capital distribution was removed.
        *
-       * (Ticker's CAA, CA's ID)
+       * (Agent DID, CA's ID)
        **/
       Removed: AugmentedEvent<ApiType, [EventDid, CAId]>;
     };
@@ -510,22 +518,22 @@ declare module '@polkadot/api/types/events' {
       CAATransferred: AugmentedEvent<ApiType, [IdentityId, Ticker, IdentityId]>;
       /**
        * A CA was initiated.
-       * (CAA DID, CA id, the CA, the CA details)
+       * (Agent DID, CA id, the CA, the CA details)
        **/
       CAInitiated: AugmentedEvent<ApiType, [EventDid, CAId, CorporateAction, CADetails]>;
       /**
        * A CA was linked to a set of docs.
-       * (CAA, CA Id, List of doc identifiers)
+       * (Agent DID, CA Id, List of doc identifiers)
        **/
       CALinkedToDoc: AugmentedEvent<ApiType, [IdentityId, CAId, Vec<DocumentId>]>;
       /**
        * A CA was removed.
-       * (CAA, CA Id)
+       * (Agent DID, CA Id)
        **/
       CARemoved: AugmentedEvent<ApiType, [EventDid, CAId]>;
       /**
        * The set of default `TargetIdentities` for a ticker changed.
-       * (CAA DID, Ticker, New TargetIdentities)
+       * (Agent DID, Ticker, New TargetIdentities)
        **/
       DefaultTargetIdentitiesChanged: AugmentedEvent<
         ApiType,
@@ -533,12 +541,12 @@ declare module '@polkadot/api/types/events' {
       >;
       /**
        * The default withholding tax for a ticker changed.
-       * (CAA DID, Ticker, New Tax).
+       * (Agent DID, Ticker, New Tax).
        **/
       DefaultWithholdingTaxChanged: AugmentedEvent<ApiType, [IdentityId, Ticker, Tax]>;
       /**
        * The withholding tax specific to a DID for a ticker changed.
-       * (CAA DID, Ticker, Taxed DID, New Tax).
+       * (Agent DID, Ticker, Taxed DID, New Tax).
        **/
       DidWithholdingTaxChanged: AugmentedEvent<
         ApiType,
@@ -558,31 +566,31 @@ declare module '@polkadot/api/types/events' {
       /**
        * A corporate ballot was created.
        *
-       * (Ticker's CAA, CA's ID, Voting start/end, Ballot metadata, RCV enabled?)
+       * (Agent DID, CA's ID, Voting start/end, Ballot metadata, RCV enabled?)
        **/
       Created: AugmentedEvent<ApiType, [IdentityId, CAId, BallotTimeRange, BallotMeta, bool]>;
       /**
        * A corporate ballot changed its metadata.
        *
-       * (Ticker's CAA, CA's ID, New metadata)
+       * (Agent DID, CA's ID, New metadata)
        **/
       MetaChanged: AugmentedEvent<ApiType, [IdentityId, CAId, BallotMeta]>;
       /**
        * A corporate ballot changed its start/end date range.
        *
-       * (Ticker's CAA, CA's ID, Voting start/end)
+       * (Agent DID, CA's ID, Voting start/end)
        **/
       RangeChanged: AugmentedEvent<ApiType, [IdentityId, CAId, BallotTimeRange]>;
       /**
        * A corporate ballot changed its RCV support.
        *
-       * (Ticker's CAA, CA's ID, New support)
+       * (Agent DID, CA's ID, New support)
        **/
       RCVChanged: AugmentedEvent<ApiType, [IdentityId, CAId, bool]>;
       /**
        * A corporate ballot was removed.
        *
-       * (Ticker's CAA, CA's ID)
+       * (Agent DID, CA's ID)
        **/
       Removed: AugmentedEvent<ApiType, [EventDid, CAId]>;
       /**
@@ -1140,51 +1148,59 @@ declare module '@polkadot/api/types/events' {
       /**
        * An affirmation has been withdrawn (did, portfolio, instruction_id)
        **/
-      AffirmationWithdrawn: AugmentedEvent<ApiType, [IdentityId, PortfolioId, u64]>;
+      AffirmationWithdrawn: AugmentedEvent<ApiType, [IdentityId, PortfolioId, InstructionId]>;
       /**
        * An instruction has been affirmed (did, portfolio, instruction_id)
        **/
-      InstructionAffirmed: AugmentedEvent<ApiType, [IdentityId, PortfolioId, u64]>;
+      InstructionAffirmed: AugmentedEvent<ApiType, [IdentityId, PortfolioId, InstructionId]>;
       /**
        * A new instruction has been created
        * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs)
        **/
       InstructionCreated: AugmentedEvent<
         ApiType,
-        [IdentityId, u64, u64, SettlementType, Option<Moment>, Option<Moment>, Vec<Leg>]
+        [
+          IdentityId,
+          VenueId,
+          InstructionId,
+          SettlementType,
+          Option<Moment>,
+          Option<Moment>,
+          Vec<Leg>
+        ]
       >;
       /**
        * Instruction executed successfully(did, instruction_id)
        **/
-      InstructionExecuted: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      InstructionExecuted: AugmentedEvent<ApiType, [IdentityId, InstructionId]>;
       /**
        * Instruction failed execution (did, instruction_id)
        **/
-      InstructionFailed: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      InstructionFailed: AugmentedEvent<ApiType, [IdentityId, InstructionId]>;
       /**
        * An instruction has been rejected (did, instruction_id)
        **/
-      InstructionRejected: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      InstructionRejected: AugmentedEvent<ApiType, [IdentityId, InstructionId]>;
       /**
        * Instruction is rescheduled.
        * (caller DID, instruction_id)
        **/
-      InstructionRescheduled: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      InstructionRescheduled: AugmentedEvent<ApiType, [IdentityId, InstructionId]>;
       /**
        * Execution of a leg failed (did, instruction_id, leg_id)
        **/
-      LegFailedExecution: AugmentedEvent<ApiType, [IdentityId, u64, u64]>;
+      LegFailedExecution: AugmentedEvent<ApiType, [IdentityId, InstructionId, LegId]>;
       /**
        * A receipt has been claimed (did, instruction_id, leg_id, receipt_uid, signer, receipt metadata)
        **/
       ReceiptClaimed: AugmentedEvent<
         ApiType,
-        [IdentityId, u64, u64, u64, AccountId, ReceiptMetadata]
+        [IdentityId, InstructionId, LegId, u64, AccountId, ReceiptMetadata]
       >;
       /**
        * A receipt has been unclaimed (did, instruction_id, leg_id, receipt_uid, signer)
        **/
-      ReceiptUnclaimed: AugmentedEvent<ApiType, [IdentityId, u64, u64, u64, AccountId]>;
+      ReceiptUnclaimed: AugmentedEvent<ApiType, [IdentityId, InstructionId, LegId, u64, AccountId]>;
       /**
        * A receipt has been invalidated (did, signer, receipt_uid, validity)
        **/
@@ -1196,11 +1212,11 @@ declare module '@polkadot/api/types/events' {
       /**
        * A new venue has been created (did, venue_id, details, type)
        **/
-      VenueCreated: AugmentedEvent<ApiType, [IdentityId, u64, VenueDetails, VenueType]>;
+      VenueCreated: AugmentedEvent<ApiType, [IdentityId, VenueId, VenueDetails, VenueType]>;
       /**
        * An existing venue's details has been updated (did, venue_id, details)
        **/
-      VenueDetailsUpdated: AugmentedEvent<ApiType, [IdentityId, u64, VenueDetails]>;
+      VenueDetailsUpdated: AugmentedEvent<ApiType, [IdentityId, VenueId, VenueDetails]>;
       /**
        * Venue filtering has been enabled or disabled for a ticker (did, ticker, filtering_enabled)
        **/
@@ -1208,19 +1224,19 @@ declare module '@polkadot/api/types/events' {
       /**
        * Venues added to allow list (did, ticker, vec<venue_id>)
        **/
-      VenuesAllowed: AugmentedEvent<ApiType, [IdentityId, Ticker, Vec<u64>]>;
+      VenuesAllowed: AugmentedEvent<ApiType, [IdentityId, Ticker, Vec<VenueId>]>;
       /**
        * Venues added to block list (did, ticker, vec<venue_id>)
        **/
-      VenuesBlocked: AugmentedEvent<ApiType, [IdentityId, Ticker, Vec<u64>]>;
+      VenuesBlocked: AugmentedEvent<ApiType, [IdentityId, Ticker, Vec<VenueId>]>;
       /**
        * An existing venue's type has been updated (did, venue_id, type)
        **/
-      VenueTypeUpdated: AugmentedEvent<ApiType, [IdentityId, u64, VenueType]>;
+      VenueTypeUpdated: AugmentedEvent<ApiType, [IdentityId, VenueId, VenueType]>;
       /**
-       * Venue unauthorized by ticker owner (did, Ticker, venue_id)
+       * Venue not part of the token's allow list (did, Ticker, venue_id)
        **/
-      VenueUnauthorized: AugmentedEvent<ApiType, [IdentityId, Ticker, u64]>;
+      VenueUnauthorized: AugmentedEvent<ApiType, [IdentityId, Ticker, VenueId]>;
     };
     staking: {
       /**
@@ -1331,37 +1347,43 @@ declare module '@polkadot/api/types/events' {
     sto: {
       /**
        * A fundraiser has been stopped.
-       * (primary issuance agent, fundraiser id)
+       * (Agent DID, fundraiser id)
        **/
-      FundraiserClosed: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      FundraiserClosed: AugmentedEvent<ApiType, [IdentityId, FundraiserId]>;
       /**
        * A new fundraiser has been created.
-       * (primary issuance agent, fundraiser id, fundraiser name, fundraiser details)
+       * (Agent DID, fundraiser id, fundraiser name, fundraiser details)
        **/
-      FundraiserCreated: AugmentedEvent<ApiType, [IdentityId, u64, FundraiserName, Fundraiser]>;
+      FundraiserCreated: AugmentedEvent<
+        ApiType,
+        [IdentityId, FundraiserId, FundraiserName, Fundraiser]
+      >;
       /**
        * A fundraiser has been frozen.
-       * (primary issuance agent, fundraiser id)
+       * (Agent DID, fundraiser id)
        **/
-      FundraiserFrozen: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      FundraiserFrozen: AugmentedEvent<ApiType, [IdentityId, FundraiserId]>;
       /**
        * A fundraiser has been unfrozen.
-       * (primary issuance agent, fundraiser id)
+       * (Agent DID, fundraiser id)
        **/
-      FundraiserUnfrozen: AugmentedEvent<ApiType, [IdentityId, u64]>;
+      FundraiserUnfrozen: AugmentedEvent<ApiType, [IdentityId, FundraiserId]>;
       /**
        * A fundraiser window has been modified.
-       * (primary issuance agent, fundraiser id, old_start, old_end, new_start, new_end)
+       * (Agent DID, fundraiser id, old_start, old_end, new_start, new_end)
        **/
       FundraiserWindowModified: AugmentedEvent<
         ApiType,
-        [EventDid, u64, Moment, Option<Moment>, Moment, Option<Moment>]
+        [EventDid, FundraiserId, Moment, Option<Moment>, Moment, Option<Moment>]
       >;
       /**
        * An investor invested in the fundraiser.
        * (Investor, fundraiser_id, offering token, raise token, offering_token_amount, raise_token_amount)
        **/
-      Invested: AugmentedEvent<ApiType, [IdentityId, u64, Ticker, Ticker, Balance, Balance]>;
+      Invested: AugmentedEvent<
+        ApiType,
+        [IdentityId, FundraiserId, Ticker, Ticker, Balance, Balance]
+      >;
     };
     sudo: {
       /**
@@ -1494,6 +1516,24 @@ declare module '@polkadot/api/types/events' {
        * caller DID, Removed DID, New add DID.
        **/
       MembersSwapped: AugmentedEvent<ApiType, [IdentityId, IdentityId, IdentityId]>;
+    };
+    testUtils: {
+      /**
+       * Shows the `DID` associated to the `AccountId`, and a flag indicates if that DID has a
+       * valid CDD claim.
+       * (Target DID, Target Account, a valid CDD claim exists)
+       **/
+      CddStatus: AugmentedEvent<ApiType, [Option<IdentityId>, AccountId, bool]>;
+      /**
+       * Emits the `IdentityId` and the `AccountId` of the caller.
+       * (Caller DID, Caller account)
+       **/
+      DidStatus: AugmentedEvent<ApiType, [IdentityId, AccountId]>;
+      /**
+       * A new mocked `InvestorUid` has been created for the given Identity.
+       * (Target DID, New InvestorUid)
+       **/
+      MockInvestorUIDCreated: AugmentedEvent<ApiType, [IdentityId, InvestorUid]>;
     };
     treasury: {
       /**
