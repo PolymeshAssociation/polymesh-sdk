@@ -1895,13 +1895,35 @@ export const createMockDocument = (document?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockPalletPermissions = (permissions?: {
+  pallet_name: PalletName | Parameters<typeof createMockPalletName>[0];
+  dispatchable_names: DispatchableNames | Parameters<typeof createMockDispatchableNames>[0];
+}): PalletPermissions => {
+  const { pallet_name, dispatchable_names } = permissions || {
+    pallet_name: createMockPalletName(),
+    dispatchable_names: createMockDispatchableNames(),
+  };
+
+  return createMockCodec(
+    {
+      pallet_name: createMockPalletName(pallet_name),
+      dispatchable_names: createMockDispatchableNames(dispatchable_names),
+    },
+    !permissions
+  ) as PalletPermissions;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAccountData = (accountData?: {
-  free: Balance;
-  reserved: Balance;
-  miscFrozen: Balance;
-  feeFrozen: Balance;
+  free: Balance | Parameters<typeof createMockBalance>[0];
+  reserved: Balance | Parameters<typeof createMockBalance>[0];
+  miscFrozen: Balance | Parameters<typeof createMockBalance>[0];
+  feeFrozen: Balance | Parameters<typeof createMockBalance>[0];
 }): AccountData => {
-  const data = accountData || {
+  const { free, reserved, miscFrozen, feeFrozen } = accountData || {
     free: createMockBalance(),
     reserved: createMockBalance(),
     miscFrozen: createMockBalance(),
@@ -1910,7 +1932,10 @@ export const createMockAccountData = (accountData?: {
 
   return createMockCodec(
     {
-      ...data,
+      free: createMockBalance(free),
+      reserved: createMockBalance(reserved),
+      miscFrozen: createMockBalance(miscFrozen),
+      feeFrozen: createMockBalance(feeFrozen),
     },
     !accountData
   ) as AccountData;
@@ -2053,28 +2078,6 @@ export const createMockDispatchableName = (name?: string | DispatchableName): Di
  */
 export const createMockFundraiserName = (name?: string): FundraiserName =>
   createMockStringCodec(name) as FundraiserName;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPalletPermissions = (permissions?: {
-  pallet_name: PalletName | Parameters<typeof createMockPalletName>[0];
-  dispatchable_names: DispatchableNames | Parameters<typeof createMockDispatchableNames>[0];
-}): PalletPermissions => {
-  const { pallet_name, dispatchable_names } = permissions || {
-    pallet_name: createMockPalletName(),
-    dispatchable_names: createMockDispatchableNames(),
-  };
-
-  return createMockCodec(
-    {
-      pallet_name: createMockPalletName(pallet_name),
-      dispatchable_names: createMockDispatchableNames(dispatchable_names),
-    },
-    !permissions
-  ) as PalletPermissions;
-};
 
 /**
  * @hidden
