@@ -297,6 +297,7 @@ describe('tickerExternalAgentActions', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       ticker: 'SOMETICKER',
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       caller_did: 'someDid',
     };
 
