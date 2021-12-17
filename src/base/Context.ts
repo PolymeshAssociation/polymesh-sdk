@@ -361,7 +361,7 @@ export class Context {
       const total = balanceToBigNumber(rawFree).plus(reserved);
       const locked = BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen));
       return {
-        total: total,
+        total,
         reserved,
         locked,
         free: total.minus(locked).minus(reserved),
