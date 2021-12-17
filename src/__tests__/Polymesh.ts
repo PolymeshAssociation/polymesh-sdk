@@ -349,12 +349,13 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getAccountBalance', () => {
+    const fakeBalance = {
+      free: new BigNumber(100),
+      reserved: new BigNumber(100),
+      locked: new BigNumber(0),
+      total: new BigNumber(100),
+    };
     test('should return the free and locked POLYX balance of the current account', async () => {
-      const fakeBalance = {
-        free: new BigNumber(100),
-        locked: new BigNumber(0),
-        total: new BigNumber(100),
-      };
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
@@ -366,11 +367,6 @@ describe('Polymesh Class', () => {
     });
 
     test('should return the free and locked POLYX balance of the supplied account', async () => {
-      const fakeBalance = {
-        free: new BigNumber(100),
-        locked: new BigNumber(0),
-        total: new BigNumber(100),
-      };
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
@@ -387,11 +383,6 @@ describe('Polymesh Class', () => {
     });
 
     test('should allow subscription (with and without a supplied account id)', async () => {
-      const fakeBalance = {
-        free: new BigNumber(100),
-        locked: new BigNumber(0),
-        total: new BigNumber(100),
-      };
       const unsubCallback = 'unsubCallback';
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
@@ -1004,6 +995,7 @@ describe('Polymesh Class', () => {
     beforeAll(() => {
       fakeBalance = {
         free: new BigNumber(500000),
+        reserved: new BigNumber(0),
         locked: new BigNumber(0),
         total: new BigNumber(500000),
       };

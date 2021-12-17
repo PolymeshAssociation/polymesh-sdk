@@ -37,7 +37,12 @@ describe('setTokenDocuments procedure', () => {
   beforeAll(() => {
     dsMockUtils.initMocks({
       contextOptions: {
-        balance: { free: new BigNumber(500), locked: new BigNumber(0), total: new BigNumber(500) },
+        balance: {
+          free: new BigNumber(500),
+          reserved: new BigNumber(0),
+          locked: new BigNumber(0),
+          total: new BigNumber(500),
+        },
       },
     });
     procedureMockUtils.initMocks();

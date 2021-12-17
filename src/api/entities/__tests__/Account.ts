@@ -82,6 +82,7 @@ describe('Account class', () => {
     beforeAll(() => {
       fakeResult = {
         free: new BigNumber(100),
+        reserved: new BigNumber(0),
         locked: new BigNumber(10),
         total: new BigNumber(110),
       };

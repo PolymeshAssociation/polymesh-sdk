@@ -393,7 +393,7 @@ describe('Context class', () => {
 
   describe('method: accountBalance', () => {
     const free = 100;
-    const reserved = 0;
+    const reserved = 40;
     const miscFrozen = 50;
     const feeFrozen = 25;
 
@@ -436,8 +436,9 @@ describe('Context class', () => {
       const result = await context.accountBalance();
       expect(result).toEqual({
         free: new BigNumber(free - miscFrozen).shiftedBy(-6),
+        reserved: new BigNumber(reserved).shiftedBy(-6),
         locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free).shiftedBy(-6),
+        total: new BigNumber(free + reserved).shiftedBy(-6),
       });
     });
 
@@ -465,7 +466,8 @@ describe('Context class', () => {
       expect(result).toEqual({
         free: new BigNumber(free - miscFrozen).shiftedBy(-6),
         locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free).shiftedBy(-6),
+        reserved: new BigNumber(reserved).shiftedBy(-6),
+        total: new BigNumber(free + reserved).shiftedBy(-6),
       });
     });
 
@@ -501,7 +503,8 @@ describe('Context class', () => {
       sinon.assert.calledWithExactly(callback, {
         free: new BigNumber(free - miscFrozen).shiftedBy(-6),
         locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free).shiftedBy(-6),
+        reserved: new BigNumber(reserved).shiftedBy(-6),
+        total: new BigNumber(free + reserved).shiftedBy(-6),
       });
     });
   });
