@@ -31,6 +31,7 @@ import {
   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
+  AllPermissionGroups,
   Authorization,
   AuthorizationType,
   CalendarPeriod,
@@ -159,7 +160,7 @@ interface SecurityTokenOptions {
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaultConfig?: Partial<CorporateActionDefaultConfig>;
   permissionsGetAgents?: AgentWithGroup[];
-  permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
+  permissionsGetGroups?: AllPermissionGroups;
   complianceRequirementsGet?: ComplianceRequirements;
   checkpointsGetOne?: Partial<Checkpoint>;
   checkpointsSchedulesGetOne?: Partial<ScheduleWithDetails>;
