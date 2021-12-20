@@ -1,3 +1,4 @@
+import { createToken, CreateTokenParams } from '~/api/procedures/createToken';
 import {
   Context,
   createVenue,
@@ -10,6 +11,7 @@ import {
   RemoveSecondaryKeysParams,
   reserveTicker,
   ReserveTickerParams,
+  SecurityToken,
   TickerReservation,
   toggleFreezeSecondaryKeys,
   Venue,
@@ -85,6 +87,10 @@ export class CurrentIdentity {
       },
       context
     );
+    this.createSecurityToken = createProcedureMethod(
+      { getProcedureAndArgs: args => [createToken, args] },
+      context
+    );
   }
 
   /**
@@ -131,4 +137,12 @@ export class CurrentIdentity {
    *   The ticker will expire after a set amount of time, after which other users can reserve it
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
+
+  /**
+   * Create a Security Token using the reserved ticker
+   *
+   * @note required role:
+   *   - Ticker Owner
+   */
+  public createSecurityToken: ProcedureMethod<CreateTokenParams, SecurityToken>;
 }
