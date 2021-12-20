@@ -64,7 +64,7 @@ export class CorporateActions extends Namespace<SecurityToken> {
   }
 
   /**
-   * Assign default config values(targets, global tax withholding percentage and per-identity tax withholding perecentages).
+   * Assign default config values(targets, global tax withholding percentage and per-identity tax withholding percentages)
    *
    * @note These config values are applied to every Corporate Action that is created until they are modified. Modifying these values
    *   does not impact existing Corporate Actions.
