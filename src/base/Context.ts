@@ -354,8 +354,8 @@ export class Context {
       data: { free: rawFree, miscFrozen, feeFrozen, reserved: rawReserved },
     }: AccountInfo): AccountBalance => {
       /*
-       * This might seem counterintuitive, but that's how the chain
-       * stores balances
+       * The chain's "free" balance is the balance that isn't locked. Here we calculate it so
+       * the free balance is what the Account is able to spend
        */
       const reserved = balanceToBigNumber(rawReserved);
       const total = balanceToBigNumber(rawFree).plus(reserved);
