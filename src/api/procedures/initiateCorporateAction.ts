@@ -67,11 +67,11 @@ export interface InitiateCorporateActionParams {
     }
   >;
   /**
-   * default percentage of the Benefits to be held for tax purposes
+   * default percentage (0-100) of the Benefits to be held for tax purposes
    */
   defaultTaxWithholding?: BigNumber;
   /**
-   * percentage of the Benefits to be held for tax purposes from individual tokenholder Identities.
+   * percentage (0-100) of the Benefits to be held for tax purposes from individual tokenholder Identities.
    *   This overrides the value of `defaultTaxWithholding`
    */
   taxWithholdings?: Modify<
