@@ -85,5 +85,5 @@
     "project": "./tsconfig.json"
   },
   "extends": ["standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"],
-  "ignorePatterns": ["src/polkadot/", "src/middleware/", "docs/*"]
+  "ignorePatterns": ["src/polkadot/", "src/middleware/types.ts", "docs/*"]
 }
