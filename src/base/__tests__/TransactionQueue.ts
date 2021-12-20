@@ -200,7 +200,6 @@ describe('Transaction Queue class', () => {
       dsMockUtils.setContextAccountBalance({
         free: new BigNumber(100),
         locked: new BigNumber(0),
-        reserved: new BigNumber(0),
         total: new BigNumber(100),
       });
 
@@ -220,7 +219,6 @@ describe('Transaction Queue class', () => {
         getBalance: {
           free: new BigNumber(100),
           locked: new BigNumber(0),
-          reserved: new BigNumber(0),
           total: new BigNumber(100),
         },
       });
@@ -229,7 +227,6 @@ describe('Transaction Queue class', () => {
         getBalance: {
           free: new BigNumber(100),
           locked: new BigNumber(0),
-          reserved: new BigNumber(0),
           total: new BigNumber(100),
         },
       });
@@ -279,7 +276,6 @@ describe('Transaction Queue class', () => {
         getBalance: {
           free: new BigNumber(1000),
           locked: new BigNumber(0),
-          reserved: new BigNumber(0),
           total: new BigNumber(1000),
         },
       });
@@ -643,7 +639,6 @@ describe('Transaction Queue class', () => {
         getBalance: {
           free: new BigNumber(1000),
           locked: new BigNumber(0),
-          reserved: new BigNumber(0),
           total: new BigNumber(1000),
         },
       });
@@ -702,7 +697,6 @@ describe('Transaction Queue class', () => {
       dsMockUtils.setContextAccountBalance({
         free: balance,
         locked: new BigNumber(0),
-        reserved: new BigNumber(0),
         total: balance,
       });
 

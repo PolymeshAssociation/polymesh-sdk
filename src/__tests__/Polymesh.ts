@@ -351,7 +351,6 @@ describe('Polymesh Class', () => {
   describe('method: getAccountBalance', () => {
     const fakeBalance = {
       free: new BigNumber(100),
-      reserved: new BigNumber(100),
       locked: new BigNumber(0),
       total: new BigNumber(100),
     };
@@ -995,7 +994,6 @@ describe('Polymesh Class', () => {
     beforeAll(() => {
       fakeBalance = {
         free: new BigNumber(500000),
-        reserved: new BigNumber(0),
         locked: new BigNumber(0),
         total: new BigNumber(500000),
       };

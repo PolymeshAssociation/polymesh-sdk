@@ -697,9 +697,7 @@ export interface Balance {
   total: BigNumber;
 }
 
-export interface AccountBalance extends Balance {
-  reserved: BigNumber;
-}
+export type AccountBalance = Balance;
 
 export interface PaginationOptions {
   size: number;

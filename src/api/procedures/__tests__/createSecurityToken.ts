@@ -85,7 +85,6 @@ describe('createSecurityToken procedure', () => {
       contextOptions: {
         balance: {
           free: new BigNumber(1000),
-          reserved: new BigNumber(0),
           locked: new BigNumber(0),
           total: new BigNumber(1000),
         },
