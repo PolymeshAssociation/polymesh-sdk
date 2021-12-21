@@ -1,11 +1,11 @@
-import { differenceWith, flatten, map } from 'lodash';
+import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
-import { conditionsAreEqual } from '~/utils/internal';
+import { conditionsAreEqual, isSameSet } from '~/utils/internal';
 
 export interface SetAssetRequirementsParams {
   /**
@@ -58,13 +58,10 @@ export async function prepareSetAssetRequirements(
     a: (Condition | InputCondition)[],
     b: (Condition | InputCondition)[]
   ): boolean => {
-    return !differenceWith(a, b, conditionsAreEqual).length && a.length === b.length;
+    return isSameSet(a, b, conditionsAreEqual);
   };
 
-  if (
-    !differenceWith(requirements, currentConditions, comparator).length &&
-    requirements.length === currentConditions.length
-  ) {
+  if (isSameSet(requirements, currentConditions, comparator)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is equal to the current one',

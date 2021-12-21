@@ -1,5 +1,3 @@
-import { differenceWith, isEqual } from 'lodash';
-
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, TokenIdentifier, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -9,6 +7,7 @@ import {
   stringToTicker,
   tokenIdentifierToAssetIdentifier,
 } from '~/utils/conversion';
+import { isSameSet } from '~/utils/internal';
 
 export type ModifyTokenParams =
   | {
@@ -112,9 +111,7 @@ export async function prepareModifyToken(
   }
 
   if (newIdentifiers) {
-    const identifiersAreEqual =
-      !differenceWith(identifiers, newIdentifiers, isEqual).length &&
-      identifiers.length === newIdentifiers.length;
+    const identifiersAreEqual = isSameSet(identifiers, newIdentifiers);
 
     if (identifiersAreEqual) {
       throw new PolymeshError({

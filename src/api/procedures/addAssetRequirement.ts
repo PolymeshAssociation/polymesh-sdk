@@ -1,11 +1,11 @@
-import { differenceWith, flatten, map } from 'lodash';
+import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
-import { conditionsAreEqual } from '~/utils/internal';
+import { conditionsAreEqual, isSameSet } from '~/utils/internal';
 
 export interface AddAssetRequirementParams {
   /**
@@ -53,10 +53,8 @@ export async function prepareAddAssetRequirement(
 
   // if the new requirement has the same conditions as any existing one, we throw an error
   if (
-    currentConditions.some(
-      requirementConditions =>
-        !differenceWith(requirementConditions, conditions, conditionsAreEqual).length &&
-        requirementConditions.length === conditionsLength
+    currentConditions.some(requirementConditions =>
+      isSameSet(requirementConditions, conditions, conditionsAreEqual)
     )
   ) {
     throw new PolymeshError({

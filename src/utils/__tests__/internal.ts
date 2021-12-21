@@ -37,6 +37,7 @@ import {
   getTicker,
   isModuleOrTagMatch,
   isPrintableAscii,
+  isSameSet,
   optionize,
   padString,
   periodComplexity,
@@ -753,5 +754,43 @@ describe('getCheckpointValue', () => {
 
     const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockSecurityToken, context);
     expect(result).toEqual(mockCheckpointSchedule);
+  });
+});
+
+describe('isSameSet', () => {
+  it('should use provided comparator for matching the elements ', () => {
+    let result = isSameSet(
+      [
+        { id: 1, name: 'X' },
+        { id: 2, name: 'Y' },
+      ],
+      [
+        { id: 1, name: 'X' },
+        { id: 2, name: 'Z' },
+      ],
+      (a, b) => a.id === b.id
+    );
+    expect(result).toEqual(true);
+
+    result = isSameSet(
+      [
+        { id: 1, name: 'X' },
+        { id: 2, name: 'Y' },
+      ],
+      [
+        { id: 1, name: 'X' },
+        { id: 3, name: 'Z' },
+      ],
+      (a, b) => a.id === b.id
+    );
+    expect(result).toEqual(false);
+  });
+
+  it('should use the lodash `isEqual` if no comparator is provided', () => {
+    let result = isSameSet([1, 2], [2, 1]);
+    expect(result).toEqual(true);
+
+    result = isSameSet([1, 2], [2, 3]);
+    expect(result).toEqual(false);
   });
 });

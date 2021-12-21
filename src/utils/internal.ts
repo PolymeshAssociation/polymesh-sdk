@@ -800,8 +800,7 @@ export function conditionsAreEqual(
     const { claims: aClaims } = a;
     const { claims: bClaims } = b;
 
-    equalClaims =
-      !differenceWith(aClaims, bClaims, isEqual).length && aClaims.length === bClaims.length;
+    equalClaims = isSameSet(aClaims, bClaims);
   } else if (a.type === ConditionType.IsIdentity && b.type === ConditionType.IsIdentity) {
     equalClaims = signerToString(a.identity) === signerToString(b.identity);
   } else if (a.type === ConditionType.IsExternalAgent && b.type === ConditionType.IsExternalAgent) {
@@ -811,9 +810,7 @@ export function conditionsAreEqual(
   const { trustedClaimIssuers: aClaimIssuers = [] } = a;
   const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
-  const equalClaimIssuers =
-    !differenceWith(aClaimIssuers, bClaimIssuers, isEqual).length &&
-    aClaimIssuers.length === bClaimIssuers.length;
+  const equalClaimIssuers = isSameSet(aClaimIssuers, bClaimIssuers);
 
   return equalClaims && equalClaimIssuers;
 }
@@ -846,4 +843,12 @@ export async function getCheckpointValue(
       })
     ).schedule;
   }
+}
+
+export function isSameSet<T>(
+  first: T[],
+  second: T[],
+  comparator: (a: T, b: T) => boolean = isEqual
+): boolean {
+  return !differenceWith(first, second, comparator).length && first.length === second.length;
 }
