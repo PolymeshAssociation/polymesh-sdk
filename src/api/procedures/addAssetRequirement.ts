@@ -49,8 +49,6 @@ export async function prepareAddAssetRequirement(
 
   const currentConditions = map(currentRequirements, 'conditions');
 
-  const { length: conditionsLength } = conditions;
-
   // if the new requirement has the same conditions as any existing one, we throw an error
   if (
     currentConditions.some(requirementConditions =>
