@@ -1,5 +1,6 @@
 import { TxTags } from 'polymesh-types/types';
 
+import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -41,18 +42,9 @@ export async function prepareConsumeJoinIdentityAuthorization(
     context,
   } = this;
   const { authRequest, accept } = args;
+  assertAuthorizationRequestValid(context, authRequest);
 
-  const { target, authId, expiry, issuer } = authRequest;
-
-  if (authRequest.isExpired()) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Authorization Request has expired',
-      data: {
-        expiry,
-      },
-    });
-  }
+  const { target, authId, issuer } = authRequest;
 
   const rawAuthId = numberToU64(authId, context);
 

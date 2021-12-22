@@ -58,7 +58,13 @@ export async function prepareConsumeAuthorizationRequests(
 
     const idsPerType: Record<AllowedAuthType, [u64][]> = mapValues(typesToExtrinsics, () => []);
 
-    liveRequests.forEach(({ authId, data: { type } }) => {
+    liveRequests.forEach(authRequest => {
+      assertAuthorizationRequestValid(context, authRequest);
+
+      const {
+        authId,
+        data: { type },
+      } = authRequest;
       const id = tuple(numberToU64(authId, context));
 
       idsPerType[type as AllowedAuthType].push(id);

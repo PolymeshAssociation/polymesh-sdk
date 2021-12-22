@@ -332,6 +332,7 @@ interface ContextOptions {
   getAccounts?: Account[];
   currentIdentityIsEqual?: boolean;
   networkVersion?: string;
+  polymeshApi?: ApiPromise;
 }
 
 interface KeyringOptions {

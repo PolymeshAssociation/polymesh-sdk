@@ -12,6 +12,7 @@ import {
   NumberedPortfolio,
   PolymeshError,
   SecurityToken,
+  TickerReservation,
 } from '~/internal';
 import {
   AddRelayerPayingKeyAuthorizationData,
@@ -32,6 +33,7 @@ import {
   PortfolioCustodyAuthorizationData,
   SecondaryKey,
   SignerValue,
+  TickerReservationStatus,
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import {
@@ -346,35 +348,52 @@ export async function assertAuthorizationRequestValid(
   context: Context,
   authRequest: AuthorizationRequest
 ): Promise<void> {
+  if (authRequest.isExpired()) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Authorization Request has expired',
+      data: {
+        expiry: authRequest.expiry,
+      },
+    });
+  }
   switch (authRequest.data.type) {
     case AuthorizationType.RotatePrimaryKey:
-      return assertValidPrimaryKeyRotationAuthorization(authRequest, context);
+      return assertPrimaryKeyRotationAuthorizationValid(authRequest, context);
     case AuthorizationType.AttestPrimaryKeyRotation:
-      return assertValidAttestPrimaryKeyAuthorization(authRequest, authRequest.data, context);
+      return assertAttestPrimaryKeyAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.TransferTicker:
-      return assertTransferTickerAuthorizationValid(authRequest.data, context);
+      const reservation = new TickerReservation({ ticker: authRequest.data.value }, context);
+      return assertTransferTickerAuthorizationValid(reservation, context);
     case AuthorizationType.TransferAssetOwnership:
-      return assertValidTransferAssetOwnershipAuthorization(authRequest, authRequest.data, context);
+      const token = new SecurityToken({ ticker: authRequest.data.value }, context);
+      return assertTransferAssetOwnershipAuthorizationValid(authRequest, token, context);
     case AuthorizationType.BecomeAgent:
-      return assertValidBecomeAgentAuthorization(authRequest, authRequest.data, context);
+      // no additional checks
+      return;
+    // return assertBecomeAgentAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.AddMultiSigSigner:
-      return assertMultisigAuthorizationValid(authRequest, authRequest.data, context);
+      // no additional checks
+      return;
+    // return assertAddMultisigAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.PortfolioCustody:
-      return assertValidPortfolioCustodyAuthorization(authRequest, authRequest.data, context);
+      // no additional checks
+      return;
+    // return assertPortfolioCustodyAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.JoinIdentity:
-      return assertValidJoinIdentityAuthorization(authRequest, authRequest.data, context);
+      return assertJoinIdentityAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.AddRelayerPayingKey:
-      return assertValidAddRelayerPayingKeyAuthorization(authRequest, authRequest.data, context);
+      return assertAddRelayerPayingKeyAuthorizationValid(authRequest, authRequest.data, context);
     default:
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const assertExhaustiveSwitch: never = authRequest.data;
+      const err = new UnreachableCaseError(authRequest.data);
   }
 }
 
 /**
  * Asserts the PrimaryKeyRotationAuthorization is valid
  */
-export async function assertValidPrimaryKeyRotationAuthorization(
+export async function assertPrimaryKeyRotationAuthorizationValid(
   authRequest: AuthorizationRequest,
   context: Context
 ): Promise<void> {
@@ -405,7 +424,7 @@ export async function assertValidPrimaryKeyRotationAuthorization(
 /**
  * asserts valid attest primary key authorization
  */
-export async function assertValidAttestPrimaryKeyAuthorization(
+export async function assertAttestPrimaryKeyAuthorizationValid(
   authRequest: AuthorizationRequest,
   data: GenericAuthorizationData,
   context: Context
@@ -421,93 +440,85 @@ export async function assertValidAttestPrimaryKeyAuthorization(
 
 /** asserts transfer ticker authorization is valid */
 export async function assertTransferTickerAuthorizationValid(
-  authRequest: GenericAuthorizationData,
+  reservation: TickerReservation,
   context: Context
 ): Promise<void> {
-  const ticker = authRequest.value;
-  const {
-    polymeshApi: {
-      query: { asset },
-    },
-  } = context;
-  // eslint-disable-next-line no-case-declarations
-  const { owner, expiry } = await asset.tickers(stringToTicker(authRequest.value, context));
-
-  if (!owner.isEmpty && expiry.isNone) {
+  const { status } = await reservation.details();
+  if (status === TickerReservationStatus.Free) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: `${ticker} token has been created`,
+      message: 'The Ticker is not reserved',
     });
   }
-
-  throw new PolymeshError({
-    code: ErrorCode.UnmetPrerequisite,
-    message: `There is no reservation for ${ticker} ticker`,
-  });
+  if (status === TickerReservationStatus.TokenCreated) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The ticker has already been used to create an Asset',
+    });
+  }
 }
 
 /** asserts valid transfer asset ownership authorization */
-export async function assertValidTransferAssetOwnershipAuthorization(
+export async function assertTransferAssetOwnershipAuthorizationValid(
   authRequest: AuthorizationRequest,
-  data: GenericAuthorizationData,
+  token: SecurityToken,
   context: Context
 ): Promise<void> {
-  const token = new SecurityToken({ ticker: data.value }, context);
   if (!(await token.exists())) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The asset does not exist',
+      message: 'The Asset does not exist',
     });
   }
-  const { owner, fullAgents } = await token.details();
-  const hasPermission = authRequest.issuer === owner || fullAgents.includes(authRequest.issuer);
-  if (!hasPermission) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Only the owner or full agents of the asset can transfer ownership',
-    });
-  }
+  // const { owner, fullAgents } = await token.details();
+  // const hasPermission = authRequest.issuer === owner || fullAgents.includes(authRequest.issuer);
+  // if (!hasPermission) {
+  //   throw new PolymeshError({
+  //     code: ErrorCode.UnmetPrerequisite,
+  //     message: 'Only the owner or full agents of the asset can transfer ownership',
+  //   });
+  // }
 }
 
 /** asserts valid become agent authorization */
-export async function assertValidBecomeAgentAuthorization(
-  authRequest: AuthorizationRequest,
-  data: BecomeAgentAuthorizationData,
-  context: Context
-): Promise<void> {
-  // no checks currently
-}
+// export async function assertBecomeAgentAuthorizationValid(
+//   authRequest: AuthorizationRequest,
+//   data: BecomeAgentAuthorizationData,
+//   context: Context
+// ): Promise<void> {
+// no checks currently
+// }
 
 /** asserts multisig authorization is valid */
-export async function assertMultisigAuthorizationValid(
-  authRequest: AuthorizationRequest,
-  data: GenericAuthorizationData,
-  context: Context
-): Promise<void> {
-  const target = authRequest.target;
-  if (!(target instanceof Identity)) {
-    if (await target.getIdentity()) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Account is already associated with an Identity',
-      });
-    }
-  }
-}
+// export async function assertAddMultisigAuthorizationValid(
+//   authRequest: AuthorizationRequest,
+//   data: GenericAuthorizationData,
+//   context: Context
+// ): Promise<void> {
+// const target = authRequest.target;
+// if (!(target instanceof Identity)) {
+//   if (await target.getIdentity()) {
+//     throw new PolymeshError({
+//       code: ErrorCode.UnmetPrerequisite,
+//       message: 'Account is already associated with an Identity',
+//     });
+//   }
+// }
+// }
 
 /** asserts valid portfolio custody authorization */
-export async function assertValidPortfolioCustodyAuthorization(
-  authRequest: AuthorizationRequest,
-  data: PortfolioCustodyAuthorizationData,
-  context: Context
-): Promise<void> {
-  // no checks currently
-}
+// export async function assertPortfolioCustodyAuthorizationValid(
+//   authRequest: AuthorizationRequest,
+//   data: PortfolioCustodyAuthorizationData,
+//   context: Context
+// ): Promise<void> {
+//   // no checks currently
+// }
 
 /**
  * asserts valid join identity authorization request
  */
-export async function assertValidJoinIdentityAuthorization(
+export async function assertJoinIdentityAuthorizationValid(
   authRequest: AuthorizationRequest,
   data: JoinIdentityAuthorizationData,
   context: Context
@@ -520,25 +531,10 @@ export async function assertValidJoinIdentityAuthorization(
       message: 'Issuing Identity does not have a valid CDD claim',
     });
   }
-
-  const target = authRequest.target;
-  if (target instanceof Identity) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only an Account can join an Identity',
-    });
-  }
-
-  if (await target.getIdentity()) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Target account is already associated with an Identity',
-    });
-  }
 }
 
 /** asserts valid add relayer paying key authorization */
-export async function assertValidAddRelayerPayingKeyAuthorization(
+export async function assertAddRelayerPayingKeyAuthorizationValid(
   authRequest: AuthorizationRequest,
   data: AddRelayerPayingKeyAuthorizationData,
   context: Context
@@ -558,5 +554,13 @@ export async function assertValidAddRelayerPayingKeyAuthorization(
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have a Valid CDD Claim',
     });
+  }
+}
+
+/** This function ensures a code path is not reached. This is useful for ensuring switch statements are exhaustive */
+export class UnreachableCaseError extends Error {
+  /** This should never be called */
+  constructor(val: never) {
+    super(`Unreachable case: ${JSON.stringify(val)}`);
   }
 }
