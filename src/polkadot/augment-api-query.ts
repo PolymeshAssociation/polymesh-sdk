@@ -955,7 +955,7 @@ declare module '@polkadot/api/types/storage' {
        * The full ID is defined as a combination of `Ticker` and a number in this sequence,
        * which starts from 1, rather than 0.
        **/
-      agIdSequence: AugmentedQuery<
+      aGIdSequence: AugmentedQuery<
         ApiType,
         (arg: Ticker | string | Uint8Array) => Observable<AGId>,
         [Ticker]
