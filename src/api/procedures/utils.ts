@@ -373,8 +373,7 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.AddRelayerPayingKey:
       return assertAddRelayerPayingKeyAuthorizationValid(authRequest.data);
     default:
-      // eslint-disable-next-line no-new
-      new UnreachableCaseError(authRequest.data); // ensures switch statement covers all values
+      throw new UnreachableCaseError(authRequest.data); // ensures switch statement covers all values
   }
 }
 
