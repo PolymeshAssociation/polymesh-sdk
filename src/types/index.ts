@@ -9,7 +9,6 @@ import { CountryCode } from '~/generated/types';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
-  AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
   CustomPermissionGroup,

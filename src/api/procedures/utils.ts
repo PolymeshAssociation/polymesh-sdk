@@ -17,31 +17,22 @@ import {
 import {
   AddRelayerPayingKeyAuthorizationData,
   AuthorizationType,
-  BecomeAgentAuthorizationData,
   Condition,
   ConditionTarget,
   ConditionType,
   ErrorCode,
-  GenericAuthorizationData,
   InputCondition,
   InputTargets,
   InputTaxWithholding,
   InstructionStatus,
   InstructionType,
-  JoinIdentityAuthorizationData,
   PermissionGroupType,
-  PortfolioCustodyAuthorizationData,
   SecondaryKey,
   SignerValue,
   TickerReservationStatus,
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
-import {
-  signerToSignerValue,
-  stringToTicker,
-  u32ToBigNumber,
-  u64ToBigNumber,
-} from '~/utils/conversion';
+import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 // import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
@@ -359,34 +350,31 @@ export async function assertAuthorizationRequestValid(
   }
   switch (authRequest.data.type) {
     case AuthorizationType.RotatePrimaryKey:
-      return assertPrimaryKeyRotationAuthorizationValid(authRequest, context);
+      return assertPrimaryKeyRotationAuthorizationValid(authRequest);
     case AuthorizationType.AttestPrimaryKeyRotation:
-      return assertAttestPrimaryKeyAuthorizationValid(authRequest, authRequest.data, context);
+      return assertAttestPrimaryKeyAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
       const reservation = new TickerReservation({ ticker: authRequest.data.value }, context);
-      return assertTransferTickerAuthorizationValid(reservation, context);
+      return assertTransferTickerAuthorizationValid(reservation);
     case AuthorizationType.TransferAssetOwnership:
       const token = new SecurityToken({ ticker: authRequest.data.value }, context);
-      return assertTransferAssetOwnershipAuthorizationValid(authRequest, token, context);
+      return assertTransferAssetOwnershipAuthorizationValid(token);
     case AuthorizationType.BecomeAgent:
       // no additional checks
       return;
-    // return assertBecomeAgentAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.AddMultiSigSigner:
       // no additional checks
       return;
-    // return assertAddMultisigAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.PortfolioCustody:
       // no additional checks
       return;
-    // return assertPortfolioCustodyAuthorizationValid(authRequest, authRequest.data, context);
     case AuthorizationType.JoinIdentity:
-      return assertJoinIdentityAuthorizationValid(authRequest, authRequest.data, context);
+      return assertJoinIdentityAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
-      return assertAddRelayerPayingKeyAuthorizationValid(authRequest, authRequest.data, context);
+      return assertAddRelayerPayingKeyAuthorizationValid(authRequest.data);
     default:
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const err = new UnreachableCaseError(authRequest.data);
+      const err = new UnreachableCaseError(authRequest.data); // ensures switch statement covers all values
   }
 }
 
@@ -394,10 +382,8 @@ export async function assertAuthorizationRequestValid(
  * Asserts the PrimaryKeyRotationAuthorization is valid
  */
 export async function assertPrimaryKeyRotationAuthorizationValid(
-  authRequest: AuthorizationRequest,
-  context: Context
+  authRequest: AuthorizationRequest
 ): Promise<void> {
-  // https://github.com/PolymathNetwork/Polymesh/blob/01793d1094a2f76b95db42d390b0296cbe75826b/pallets/identity/src/lib.rs#L1425
   const account = authRequest.issuer;
   if (!(await account.exists())) {
     throw new PolymeshError({
@@ -411,25 +397,14 @@ export async function assertPrimaryKeyRotationAuthorizationValid(
       message: 'An Identity can not join another Identity',
     });
   }
-
-  const identity = await authRequest.target.getIdentity();
-  if (identity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Account already has an associated Identity',
-    });
-  }
 }
 
 /**
  * asserts valid attest primary key authorization
  */
 export async function assertAttestPrimaryKeyAuthorizationValid(
-  authRequest: AuthorizationRequest,
-  data: GenericAuthorizationData,
-  context: Context
+  authRequest: AuthorizationRequest
 ): Promise<void> {
-  // Should double check about this....
   if (!(await authRequest.issuer.isCddProvider())) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -440,8 +415,7 @@ export async function assertAttestPrimaryKeyAuthorizationValid(
 
 /** asserts transfer ticker authorization is valid */
 export async function assertTransferTickerAuthorizationValid(
-  reservation: TickerReservation,
-  context: Context
+  reservation: TickerReservation
 ): Promise<void> {
   const { status } = await reservation.details();
   if (status === TickerReservationStatus.Free) {
@@ -460,68 +434,20 @@ export async function assertTransferTickerAuthorizationValid(
 
 /** asserts valid transfer asset ownership authorization */
 export async function assertTransferAssetOwnershipAuthorizationValid(
-  authRequest: AuthorizationRequest,
-  token: SecurityToken,
-  context: Context
+  token: SecurityToken
 ): Promise<void> {
-  if (!(await token.exists())) {
+  if (!(await token.exists()))
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The Asset does not exist',
     });
-  }
-  // const { owner, fullAgents } = await token.details();
-  // const hasPermission = authRequest.issuer === owner || fullAgents.includes(authRequest.issuer);
-  // if (!hasPermission) {
-  //   throw new PolymeshError({
-  //     code: ErrorCode.UnmetPrerequisite,
-  //     message: 'Only the owner or full agents of the asset can transfer ownership',
-  //   });
-  // }
 }
-
-/** asserts valid become agent authorization */
-// export async function assertBecomeAgentAuthorizationValid(
-//   authRequest: AuthorizationRequest,
-//   data: BecomeAgentAuthorizationData,
-//   context: Context
-// ): Promise<void> {
-// no checks currently
-// }
-
-/** asserts multisig authorization is valid */
-// export async function assertAddMultisigAuthorizationValid(
-//   authRequest: AuthorizationRequest,
-//   data: GenericAuthorizationData,
-//   context: Context
-// ): Promise<void> {
-// const target = authRequest.target;
-// if (!(target instanceof Identity)) {
-//   if (await target.getIdentity()) {
-//     throw new PolymeshError({
-//       code: ErrorCode.UnmetPrerequisite,
-//       message: 'Account is already associated with an Identity',
-//     });
-//   }
-// }
-// }
-
-/** asserts valid portfolio custody authorization */
-// export async function assertPortfolioCustodyAuthorizationValid(
-//   authRequest: AuthorizationRequest,
-//   data: PortfolioCustodyAuthorizationData,
-//   context: Context
-// ): Promise<void> {
-//   // no checks currently
-// }
 
 /**
  * asserts valid join identity authorization request
  */
 export async function assertJoinIdentityAuthorizationValid(
-  authRequest: AuthorizationRequest,
-  data: JoinIdentityAuthorizationData,
-  context: Context
+  authRequest: AuthorizationRequest
 ): Promise<void> {
   // https://github.com/PolymathNetwork/Polymesh/blob/5fec16fdfb05dc9022508880503e835ae9c1776c/pallets/identity/src/keys.rs#L470
   const identity = authRequest.issuer;
@@ -535,9 +461,7 @@ export async function assertJoinIdentityAuthorizationValid(
 
 /** asserts valid add relayer paying key authorization */
 export async function assertAddRelayerPayingKeyAuthorizationValid(
-  authRequest: AuthorizationRequest,
-  data: AddRelayerPayingKeyAuthorizationData,
-  context: Context
+  data: AddRelayerPayingKeyAuthorizationData
 ): Promise<void> {
   const subsidy = data.value;
   const beneficiaryIdentity = await subsidy.beneficiary.getIdentity();
@@ -557,7 +481,7 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
   }
 }
 
-/** This function ensures a code path is not reached. This is useful for ensuring switch statements are exhaustive */
+/** A helper class to ensure a code path is unreachable. For example this can be used for ensuring switch statements are exhaustive */
 export class UnreachableCaseError extends Error {
   /** This should never be called */
   constructor(val: never) {

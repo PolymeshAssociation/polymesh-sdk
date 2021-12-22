@@ -226,6 +226,7 @@ describe('consumeAuthorizationRequests procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
+      // entityMockUtils.configureMocks({ securityTokenOptions: { exists: true } });
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );

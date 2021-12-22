@@ -42,7 +42,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
     context,
   } = this;
   const { authRequest, accept } = args;
-  assertAuthorizationRequestValid(context, authRequest);
+  await assertAuthorizationRequestValid(context, authRequest);
 
   const { target, authId, issuer } = authRequest;
 

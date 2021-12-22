@@ -108,7 +108,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     ).rejects.toThrow('The Authorization Request has expired');
   });
 
-  test('should throw an error if the target Account is alreeady part of an Identity', () => {
+  test('should throw an error if the target Account is already part of an Identity', () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinIdentityAuthorizationParams,
       void,

@@ -2,18 +2,15 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  // assertAddMultisigAuthorizationValid,
   assertAddRelayerPayingKeyAuthorizationValid,
   assertAttestPrimaryKeyAuthorizationValid,
   assertAuthorizationRequestValid,
-  // assertBecomeAgentAuthorizationValid,
   assertCaCheckpointValid,
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
   assertDistributionDatesValid,
   assertInstructionValid,
   assertJoinIdentityAuthorizationValid,
-  // assertPortfolioCustodyAuthorizationValid,
   assertPortfolioExists,
   assertPrimaryKeyRotationAuthorizationValid,
   assertRequirementsNotTooComplex,
@@ -29,10 +26,7 @@ import {
   Instruction,
   PolymeshError,
 } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getContextInstance } from '~/testUtils/mocks/dataSources';
 import {
   getAccountInstance,
   getIdentityInstance,
@@ -48,11 +42,9 @@ import {
   ConditionTarget,
   ConditionType,
   ErrorCode,
-  GenericAuthorizationData,
   InstructionDetails,
   InstructionStatus,
   InstructionType,
-  PermissionGroupType,
   Signer,
   SignerType,
   SignerValue,
@@ -693,8 +685,13 @@ describe('authorization request validations', () => {
     target = entityMockUtils.getIdentityInstance();
   });
 
+  afterEach(() => {
+    dsMockUtils.cleanup();
+  });
+
   afterAll(() => {
     sinon.restore();
+    dsMockUtils.cleanup();
   });
 
   describe('assertAuthorizationRequestValid', () => {
@@ -739,7 +736,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertPrimaryKeyRotationAuthorizationValid(auth, mockContext);
+        await assertPrimaryKeyRotationAuthorizationValid(auth);
       } catch (err) {
         error = err;
       }
@@ -755,32 +752,13 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertPrimaryKeyRotationAuthorizationValid(auth, mockContext);
+        await assertPrimaryKeyRotationAuthorizationValid(auth);
       } catch (err) {
         error = err;
       }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'An Identity can not join another Identity',
-      });
-      expect(error).toEqual(expectedError);
-    });
-
-    test('with target already being associated to an Identity', async () => {
-      const badTarget = getAccountInstance({ getIdentity: getIdentityInstance() });
-      const auth = new AuthorizationRequest(
-        { authId: new BigNumber(1), target: badTarget, issuer, expiry, data },
-        mockContext
-      );
-      let error;
-      try {
-        await assertPrimaryKeyRotationAuthorizationValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      const expectedError = new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Account already has an associated Identity',
       });
       expect(error).toEqual(expectedError);
     });
@@ -807,7 +785,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAttestPrimaryKeyAuthorizationValid(auth, rawData, mockContext);
+        await assertAttestPrimaryKeyAuthorizationValid(auth);
       } catch (err) {
         error = err;
       }
@@ -829,7 +807,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAttestPrimaryKeyAuthorizationValid(auth, rawData, mockContext);
+        await assertAttestPrimaryKeyAuthorizationValid(auth);
       } catch (err) {
         error = err;
       }
@@ -847,7 +825,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertTransferTickerAuthorizationValid(mockTicker, mockContext);
+        await assertTransferTickerAuthorizationValid(mockTicker);
       } catch (err) {
         error = err;
       }
@@ -860,7 +838,7 @@ describe('authorization request validations', () => {
       });
       let error;
       try {
-        await assertTransferTickerAuthorizationValid(mockTicker, mockContext);
+        await assertTransferTickerAuthorizationValid(mockTicker);
       } catch (err) {
         error = err;
       }
@@ -877,7 +855,7 @@ describe('authorization request validations', () => {
       });
       let error;
       try {
-        await assertTransferTickerAuthorizationValid(mockTicker, mockContext);
+        await assertTransferTickerAuthorizationValid(mockTicker);
       } catch (err) {
         error = err;
       }
@@ -890,27 +868,12 @@ describe('authorization request validations', () => {
   });
 
   describe('assertTransferAssetOwnershipAuthorizationValid', () => {
-    const rawData = {
-      type: AuthorizationType.TransferAssetOwnership,
-      value: 'TICKER',
-    } as GenericAuthorizationData;
-    const data = rawData as Authorization;
     test('with a valid request', async () => {
       const mockToken = getSecurityTokenInstance();
-      const auth = new AuthorizationRequest(
-        {
-          authId: new BigNumber(1),
-          target,
-          issuer,
-          expiry,
-          data,
-        },
-        mockContext
-      );
 
       let error;
       try {
-        await assertTransferAssetOwnershipAuthorizationValid(auth, mockToken, mockContext);
+        await assertTransferAssetOwnershipAuthorizationValid(mockToken);
       } catch (err) {
         error = err;
       }
@@ -919,20 +882,10 @@ describe('authorization request validations', () => {
 
     test('with a Asset that does not exist', async () => {
       const mockToken = getSecurityTokenInstance({ exists: false });
-      const auth = new AuthorizationRequest(
-        {
-          authId: new BigNumber(1),
-          target,
-          issuer,
-          expiry,
-          data,
-        },
-        mockContext
-      );
 
       let error;
       try {
-        await assertTransferAssetOwnershipAuthorizationValid(auth, mockToken, mockContext);
+        await assertTransferAssetOwnershipAuthorizationValid(mockToken);
       } catch (err) {
         error = err;
       }
@@ -943,84 +896,6 @@ describe('authorization request validations', () => {
       expect(error).toEqual(expectedError);
     });
   });
-
-  // describe('assertBecomeAgentAuthorizationValid', () => {
-  //   test('with a valid request', async () => {
-  //     const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
-  //       ticker: 'TICKER',
-  //       type: PermissionGroupType.Full,
-  //     });
-  //     const rawData = {
-  //       type: AuthorizationType.BecomeAgent as AuthorizationType.BecomeAgent,
-  //       value: knownPermissionGroup,
-  //     };
-  //     const data = rawData as Authorization;
-  //     const auth = new AuthorizationRequest(
-  //       { authId: new BigNumber(1), target, issuer, expiry, data },
-  //       mockContext
-  //     );
-
-  //     let error;
-  //     try {
-  //       await assertBecomeAgentAuthorizationValid(auth, rawData, mockContext);
-  //     } catch (err) {
-  //       error = err;
-  //     }
-  //     expect(error).toBe(undefined);
-  //   });
-  // });
-
-  // describe('assertAddMultisigAuthorizationValid', () => {
-  //   const rawData = {
-  //     type: AuthorizationType.AddMultiSigSigner,
-  //     value: '',
-  //   } as GenericAuthorizationData;
-  //   const data = rawData as Authorization;
-  //   test('with a valid request', async () => {
-  //     const auth = new AuthorizationRequest(
-  //       {
-  //         authId: new BigNumber(0),
-  //         target,
-  //         issuer,
-  //         expiry,
-  //         data,
-  //       },
-  //       mockContext
-  //     );
-  //     let error;
-  //     try {
-  //       await assertAddMultisigAuthorizationValid(auth, rawData, mockContext);
-  //     } catch (err) {
-  //       error = err;
-  //     }
-  //     expect(error).toBe(undefined);
-  //   });
-
-  //   test('with a target that is already associated with an Identity', async () => {
-  //     const mockTarget = getAccountInstance({ getIdentity: target });
-  //     const auth = new AuthorizationRequest(
-  //       {
-  //         authId: new BigNumber(0),
-  //         target: mockTarget,
-  //         issuer,
-  //         expiry,
-  //         data,
-  //       },
-  //       mockContext
-  //     );
-  //     let error;
-  //     try {
-  //       await assertAddMultisigAuthorizationValid(auth, rawData, mockContext);
-  //     } catch (err) {
-  //       error = err;
-  //     }
-  //     const expectedError = new PolymeshError({
-  //       code: ErrorCode.UnmetPrerequisite,
-  //       message: 'Account is already associated with an Identity',
-  //     });
-  //     expect(error).toEqual(expectedError);
-  //   });
-  // });
 
   describe('assertJoinIdentityAuthorizationValid', () => {
     const permissions = {
@@ -1049,44 +924,13 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertJoinIdentityAuthorizationValid(auth, rawData, mockContext);
+        await assertJoinIdentityAuthorizationValid(auth);
       } catch (err) {
         error = err;
       }
       expect(error).toBe(undefined);
     });
   });
-
-  // describe('assertPortfolioCustodyAuthroizationValid', () => {
-  //   test('with a valid request', async () => {
-  //     entityMockUtils.configureMocks({ numberedPortfolioOptions: { exists: true } });
-  //     const mockPortfolio = entityMockUtils.getNumberedPortfolioInstance();
-  //     const rawData = {
-  //       type: AuthorizationType.PortfolioCustody as AuthorizationType.PortfolioCustody,
-  //       value: mockPortfolio,
-  //     };
-
-  //     const data = rawData as Authorization;
-  //     const auth = new AuthorizationRequest(
-  //       {
-  //         authId: new BigNumber(1),
-  //         target,
-  //         issuer,
-  //         expiry,
-  //         data,
-  //       },
-  //       mockContext
-  //     );
-
-  //     let error;
-  //     try {
-  //       await assertPortfolioCustodyAuthorizationValid(auth, rawData, mockContext);
-  //     } catch (err) {
-  //       error = err;
-  //     }
-  //     expect(error).toBe(undefined);
-  //   });
-  // });
 
   describe('assertAddRelayerPayingKeyAuthroizationValid', () => {
     const allowance = new BigNumber(100);
@@ -1105,21 +949,9 @@ describe('authorization request validations', () => {
         value: subsidy,
       };
 
-      const data = rawData as Authorization;
-      const auth = new AuthorizationRequest(
-        {
-          authId: new BigNumber(1),
-          target,
-          issuer,
-          expiry,
-          data,
-        },
-        mockContext
-      );
-
       let error;
       try {
-        await assertAddRelayerPayingKeyAuthorizationValid(auth, rawData, mockContext);
+        await assertAddRelayerPayingKeyAuthorizationValid(rawData);
       } catch (err) {
         error = err;
       }
@@ -1142,20 +974,9 @@ describe('authorization request validations', () => {
         type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
         value: subsidy,
       };
-      const data = rawData as Authorization;
-      const auth = new AuthorizationRequest(
-        {
-          authId: new BigNumber(1),
-          target,
-          issuer,
-          expiry,
-          data,
-        },
-        mockContext
-      );
       let error;
       try {
-        await assertAddRelayerPayingKeyAuthorizationValid(auth, rawData, mockContext);
+        await assertAddRelayerPayingKeyAuthorizationValid(rawData);
       } catch (err) {
         error = err;
       }
