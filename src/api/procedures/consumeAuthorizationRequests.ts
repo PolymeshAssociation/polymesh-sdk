@@ -2,6 +2,7 @@ import { u64 } from '@polkadot/types';
 import P from 'bluebird';
 import { forEach, mapValues } from 'lodash';
 
+import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Procedure } from '~/internal';
 import { AuthorizationType, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -105,7 +106,9 @@ export async function getAuthorization(
 
   const fetchDid = async (): Promise<string> => getDid(did, context);
 
-  const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
+  const authorized = await P.mapSeries(unexpiredRequests, async authRequest => {
+    assertAuthorizationRequestValid(context, authRequest);
+    const { target, issuer } = authRequest;
     let condition;
 
     if (target instanceof Account) {

@@ -9,6 +9,7 @@ import { CountryCode } from '~/generated/types';
 // import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
+  AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
   CustomPermissionGroup,
@@ -1037,26 +1038,49 @@ export interface Subsidy {
   allowance: BigNumber;
 }
 
+export type RotatePrimaryKeyAuthorizationData = { type: AuthorizationType.RotatePrimaryKey };
+export type JoinIdentityAuthorizationData = {
+  type: AuthorizationType.JoinIdentity;
+  value: Permissions;
+};
+export type PortfolioCustodyAuthorizationData = {
+  type: AuthorizationType.PortfolioCustody;
+  value: NumberedPortfolio | DefaultPortfolio;
+};
+export type BecomeAgentAuthorizationData = {
+  type: AuthorizationType.BecomeAgent;
+  value: KnownPermissionGroup | CustomPermissionGroup;
+};
+
+export type AddRelayerPayingKeyAuthorizationData = {
+  type: AuthorizationType.AddRelayerPayingKey;
+  value: Subsidy;
+};
+
+// I don't think MultiSigSigner uses value and could get its own type
+// export type AddMultiSigSignerData = { type: AuthorizationType.AddMultiSigSigner };
+
+export type GenericAuthorizationData = {
+  type: Exclude<
+    AuthorizationType,
+    | AuthorizationType.RotatePrimaryKey
+    | AuthorizationType.JoinIdentity
+    | AuthorizationType.PortfolioCustody
+    | AuthorizationType.BecomeAgent
+    | AuthorizationType.AddRelayerPayingKey
+  >;
+  value: string;
+};
 /**
  * Authorization request data corresponding to type
  */
 export type Authorization =
-  | { type: AuthorizationType.RotatePrimaryKey }
-  | { type: AuthorizationType.JoinIdentity; value: Permissions }
-  | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
-  | { type: AuthorizationType.BecomeAgent; value: KnownPermissionGroup | CustomPermissionGroup }
-  | { type: AuthorizationType.AddRelayerPayingKey; value: Subsidy }
-  | {
-      type: Exclude<
-        AuthorizationType,
-        | AuthorizationType.RotatePrimaryKey
-        | AuthorizationType.JoinIdentity
-        | AuthorizationType.PortfolioCustody
-        | AuthorizationType.BecomeAgent
-        | AuthorizationType.AddRelayerPayingKey
-      >;
-      value: string;
-    };
+  | RotatePrimaryKeyAuthorizationData
+  | JoinIdentityAuthorizationData
+  | PortfolioCustodyAuthorizationData
+  | BecomeAgentAuthorizationData
+  | AddRelayerPayingKeyAuthorizationData
+  | GenericAuthorizationData;
 
 export enum TransactionArgumentType {
   Did = 'Did',
