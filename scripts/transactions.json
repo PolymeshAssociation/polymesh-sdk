@@ -369,5 +369,11 @@
   "Rewards": {
     "claim_itn_reward": "claim_itn_reward",
     "set_itn_reward_status": "set_itn_reward_status"
+  },
+  "TestUtils": {
+    "register_did": "register_did",
+    "mock_cdd_register_did": "mock_cdd_register_did",
+    "get_my_did": "get_my_did",
+    "get_cdd_of": "get_cdd_of"
   }
 }
