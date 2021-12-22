@@ -1056,9 +1056,6 @@ export type AddRelayerPayingKeyAuthorizationData = {
   value: Subsidy;
 };
 
-// I don't think MultiSigSigner uses value and could get its own type
-// export type AddMultiSigSignerData = { type: AuthorizationType.AddMultiSigSigner };
-
 export type GenericAuthorizationData = {
   type: Exclude<
     AuthorizationType,

@@ -1,5 +1,3 @@
-/* eslint-disable no-case-declarations */
-
 import {
   AuthorizationRequest,
   Checkpoint,
@@ -354,11 +352,13 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.AttestPrimaryKeyRotation:
       return assertAttestPrimaryKeyAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
-      const reservation = new TickerReservation({ ticker: authRequest.data.value }, context);
-      return assertTransferTickerAuthorizationValid(reservation);
+      return assertTransferTickerAuthorizationValid(
+        new TickerReservation({ ticker: authRequest.data.value }, context)
+      );
     case AuthorizationType.TransferAssetOwnership:
-      const token = new SecurityToken({ ticker: authRequest.data.value }, context);
-      return assertTransferAssetOwnershipAuthorizationValid(token);
+      return assertTransferAssetOwnershipAuthorizationValid(
+        new SecurityToken({ ticker: authRequest.data.value }, context)
+      );
     case AuthorizationType.BecomeAgent:
       // no additional checks
       return;
@@ -373,8 +373,8 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.AddRelayerPayingKey:
       return assertAddRelayerPayingKeyAuthorizationValid(authRequest.data);
     default:
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const err = new UnreachableCaseError(authRequest.data); // ensures switch statement covers all values
+      // eslint-disable-next-line no-new
+      new UnreachableCaseError(authRequest.data); // ensures switch statement covers all values
   }
 }
 

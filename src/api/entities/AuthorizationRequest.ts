@@ -184,6 +184,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
    */
   public isExpired(): boolean {
     const { expiry } = this;
+
     return expiry !== null && expiry < new Date();
   }
 

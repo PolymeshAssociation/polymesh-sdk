@@ -106,7 +106,6 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         } = auth;
 
         const target = signerValueToSigner(rawTarget, context);
-        // assert valid request here?
         return {
           authId: u64ToBigNumber(authId),
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,

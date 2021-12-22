@@ -296,15 +296,6 @@ interface Pair {
   isLocked?: boolean;
 }
 
-interface ApiPromiseOptions {
-  query?: {
-    asset?: {
-      tokens?: {
-        size?: number;
-      };
-    };
-  };
-}
 interface ContextOptions {
   did?: string;
   withSeed?: boolean;
@@ -341,7 +332,6 @@ interface ContextOptions {
   getAccounts?: Account[];
   currentIdentityIsEqual?: boolean;
   networkVersion?: string;
-  polymeshApi?: ApiPromiseOptions;
 }
 
 interface KeyringOptions {
