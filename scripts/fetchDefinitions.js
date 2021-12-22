@@ -45,7 +45,8 @@ function writeDefinitions(schemaObj) {
     )}`
   );
 
-  let defExports = "export { default as polymesh } from './polymesh/definitions'\n";
+  let defExports =
+    "/* istanbul ignore file */\n\nexport { default as polymesh } from './polymesh/definitions';\n";
 
   forEach(rpcModules, (rpc, moduleName) => {
     const moduleDir = path.resolve(definitionsDir, moduleName);
@@ -65,7 +66,7 @@ function writeDefinitions(schemaObj) {
       )}`
     );
 
-    defExports = `${defExports}export { default as ${moduleName} } from './${moduleName}/definitions'\n`;
+    defExports = `${defExports}export { default as ${moduleName} } from './${moduleName}/definitions';\n`;
   });
 
   fs.writeFileSync(path.resolve(definitionsDir, 'definitions.ts'), defExports);

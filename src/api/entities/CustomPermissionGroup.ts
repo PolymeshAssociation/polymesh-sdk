@@ -110,7 +110,7 @@ export class CustomPermissionGroup extends PermissionGroup {
   public async exists(): Promise<boolean> {
     const { ticker, id, context } = this;
 
-    const nextId = await context.polymeshApi.query.externalAgents.agIdSequence(
+    const nextId = await context.polymeshApi.query.externalAgents.aGIdSequence(
       stringToTicker(ticker, context)
     );
 
