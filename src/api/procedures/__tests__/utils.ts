@@ -17,6 +17,7 @@ import {
   assertSecondaryKeys,
   assertTransferAssetOwnershipAuthorizationValid,
   assertTransferTickerAuthorizationValid,
+  UnreachableCaseError,
 } from '~/api/procedures/utils';
 import {
   AuthorizationRequest,
@@ -36,6 +37,7 @@ import {
 } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
+  Account,
   Authorization,
   AuthorizationType,
   Condition,
@@ -690,7 +692,6 @@ describe('authorization request validations', () => {
   });
 
   afterAll(() => {
-    sinon.restore();
     dsMockUtils.cleanup();
   });
 
@@ -743,7 +744,7 @@ describe('authorization request validations', () => {
       expect(error).toBe(undefined);
     });
 
-    test('with target has another Identity', async () => {
+    test('with target that is an Identity', async () => {
       const badTarget = getIdentityInstance();
       const auth = new AuthorizationRequest(
         { authId: new BigNumber(1), target: badTarget, issuer, expiry, data },
@@ -930,12 +931,40 @@ describe('authorization request validations', () => {
       }
       expect(error).toBe(undefined);
     });
+
+    test('without a valid CDD', async () => {
+      const mockIssuer = getIdentityInstance({ hasValidCdd: false });
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer: mockIssuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertJoinIdentityAuthorizationValid(auth);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Issuing Identity does not have a valid CDD claim',
+      });
+      expect(error).toEqual(expectedError);
+    });
   });
 
   describe('assertAddRelayerPayingKeyAuthroizationValid', () => {
     const allowance = new BigNumber(100);
     test('with a valid request', async () => {
-      const subsidizer = getAccountInstance({ getIdentity: issuer });
+      const subsidizer = getAccountInstance({
+        getIdentity: getIdentityInstance({ hasValidCdd: true }),
+      });
       const beneficiary = getAccountInstance({ getIdentity: target });
 
       const subsidy = {
@@ -985,7 +1014,48 @@ describe('authorization request validations', () => {
         message: 'Beneficiary Account does not have a valid CDD Claim',
       });
       expect(error).toEqual(expectedError);
-      sinon.restore();
     });
+
+    test('with a Subsidizer that does not have a CDD Claim', async () => {
+      const beneficiary = getAccountInstance({
+        getIdentity: getIdentityInstance({ hasValidCdd: true }),
+      });
+      // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
+      const subsidizer = ({
+        getIdentity: () => {
+          return { hasValidCdd: () => false };
+        },
+      } as unknown) as Account;
+
+      const subsidy = {
+        beneficiary,
+        subsidizer,
+        allowance,
+        remaining: allowance,
+      };
+      const rawData = {
+        type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
+        value: subsidy,
+      };
+      let error;
+      try {
+        await assertAddRelayerPayingKeyAuthorizationValid(rawData);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Subsidizer Account does not have a valid CDD Claim',
+      });
+      expect(error).toEqual(expectedError);
+    });
+  });
+});
+
+describe('Unreachable error case', () => {
+  test('should throw error if called via type assertion', async () => {
+    const message = 'Should never happen' as never;
+    const error = new UnreachableCaseError(message);
+    expect(error.message).toEqual(`Unreachable case: "${message}"`);
   });
 });

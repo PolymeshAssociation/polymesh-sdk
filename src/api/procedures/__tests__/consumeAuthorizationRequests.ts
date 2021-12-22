@@ -8,10 +8,16 @@ import {
   getAuthorization,
   prepareConsumeAuthorizationRequests,
 } from '~/api/procedures/consumeAuthorizationRequests';
-import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
+import { Account, AuthorizationRequest, Context, Identity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, SignerValue, TickerReservationStatus } from '~/types';
+import {
+  Authorization,
+  AuthorizationType,
+  ErrorCode,
+  SignerValue,
+  TickerReservationStatus,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -316,5 +322,35 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       });
     });
+
+    // test('should throw an error if an Authorization fails validation', async () => {
+    //   const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
+    //     mockContext
+    //   );
+    //   const params = {
+    //     authId: new BigNumber(1),
+    //     expiry: new Date('10/14/1987'),
+    //     target: entityMockUtils.getIdentityInstance(),
+    //     issuer: entityMockUtils.getIdentityInstance(),
+    //     data: { type: AuthorizationType.RotatePrimaryKey as AuthorizationType.RotatePrimaryKey },
+    //   };
+    //   const request = new AuthorizationRequest(params, mockContext);
+    //   const boundFunc = getAuthorization.bind(proc);
+    //   const args = {
+    //     accept: true,
+    //     authRequests: [request],
+    //   } as ConsumeAuthorizationRequestsParams;
+    //   let error;
+    //   try {
+    //     boundFunc(args);
+    //   } catch (err) {
+    //     error = err;
+    //   }
+    //   const expectedError = new PolymeshError({
+    //     code: ErrorCode.UnmetPrerequisite,
+    //     message: 'Authorization has expired',
+    //   });
+    //   expect(error).toEqual(expectedError);
+    // });
   });
 });

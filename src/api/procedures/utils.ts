@@ -378,18 +378,11 @@ export async function assertAuthorizationRequestValid(
 }
 
 /**
- * Asserts the PrimaryKeyRotationAuthorization is valid
+ * asserts valid  primary key rotation authorization
  */
 export async function assertPrimaryKeyRotationAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
-  const account = authRequest.issuer;
-  if (!(await account.exists())) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Account does not exist',
-    });
-  }
   if (authRequest.target instanceof Identity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -450,7 +443,7 @@ export async function assertJoinIdentityAuthorizationValid(
 ): Promise<void> {
   // https://github.com/PolymathNetwork/Polymesh/blob/5fec16fdfb05dc9022508880503e835ae9c1776c/pallets/identity/src/keys.rs#L470
   const identity = authRequest.issuer;
-  if (!identity.hasValidCdd()) {
+  if (!(await identity.hasValidCdd())) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Issuing Identity does not have a valid CDD claim',
@@ -475,7 +468,7 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
   if (!(await subsidizerIdentity?.hasValidCdd())) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Subsidizer Account does not have a Valid CDD Claim',
+      message: 'Subsidizer Account does not have a valid CDD Claim',
     });
   }
 }
