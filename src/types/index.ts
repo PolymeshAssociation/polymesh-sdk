@@ -940,9 +940,9 @@ export interface Permissions {
 export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
- * This represents all Permission Groups of a Security Token
+ * This represents all Permission Groups of a specific Security Token, separated by category
  */
-export interface AllPermissionGroups {
+export interface CategorizedPermissionGroups {
   known: KnownPermissionGroup[];
   custom: CustomPermissionGroup[];
 }

@@ -17,7 +17,7 @@ import {
 } from '~/internal';
 import {
   AgentWithGroup,
-  AllPermissionGroups,
+  CategorizedPermissionGroups,
   ErrorCode,
   PermissionGroupType,
   ProcedureMethod,
@@ -112,7 +112,7 @@ export class Permissions extends Namespace<SecurityToken> {
   /**
    * Retrieve all Permission Groups of this Security Token
    */
-  public async getGroups(): Promise<AllPermissionGroups> {
+  public async getGroups(): Promise<CategorizedPermissionGroups> {
     const {
       context: {
         polymeshApi: {
