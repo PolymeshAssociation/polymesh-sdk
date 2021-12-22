@@ -35,9 +35,9 @@ import {
   getCommonKeyring,
   getDid,
   getTicker,
+  hasSameElements,
   isModuleOrTagMatch,
   isPrintableAscii,
-  isSameSet,
   optionize,
   padString,
   periodComplexity,
@@ -757,9 +757,9 @@ describe('getCheckpointValue', () => {
   });
 });
 
-describe('isSameSet', () => {
+describe('hasSameElements', () => {
   it('should use provided comparator for matching the elements ', () => {
-    let result = isSameSet(
+    let result = hasSameElements(
       [
         { id: 1, name: 'X' },
         { id: 2, name: 'Y' },
@@ -772,7 +772,7 @@ describe('isSameSet', () => {
     );
     expect(result).toEqual(true);
 
-    result = isSameSet(
+    result = hasSameElements(
       [
         { id: 1, name: 'X' },
         { id: 2, name: 'Y' },
@@ -787,10 +787,10 @@ describe('isSameSet', () => {
   });
 
   it('should use the lodash `isEqual` if no comparator is provided', () => {
-    let result = isSameSet([1, 2], [2, 1]);
+    let result = hasSameElements([1, 2], [2, 1]);
     expect(result).toEqual(true);
 
-    result = isSameSet([1, 2], [2, 3]);
+    result = hasSameElements([1, 2], [2, 3]);
     expect(result).toEqual(false);
   });
 });

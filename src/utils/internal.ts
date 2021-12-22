@@ -800,7 +800,7 @@ export function conditionsAreEqual(
     const { claims: aClaims } = a;
     const { claims: bClaims } = b;
 
-    equalClaims = isSameSet(aClaims, bClaims);
+    equalClaims = hasSameElements(aClaims, bClaims);
   } else if (a.type === ConditionType.IsIdentity && b.type === ConditionType.IsIdentity) {
     equalClaims = signerToString(a.identity) === signerToString(b.identity);
   } else if (a.type === ConditionType.IsExternalAgent && b.type === ConditionType.IsExternalAgent) {
@@ -810,7 +810,7 @@ export function conditionsAreEqual(
   const { trustedClaimIssuers: aClaimIssuers = [] } = a;
   const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
-  const equalClaimIssuers = isSameSet(aClaimIssuers, bClaimIssuers);
+  const equalClaimIssuers = hasSameElements(aClaimIssuers, bClaimIssuers);
 
   return equalClaims && equalClaimIssuers;
 }
@@ -845,7 +845,14 @@ export async function getCheckpointValue(
   }
 }
 
-export function isSameSet<T>(
+/**
+ * @hidden
+ *
+ * Return whether the two arrays have same elements.
+ * It uses a `comparator` function to check if elements are equal.
+ * If no comparator function is provided, it uses `isEqual` function of `lodash`
+ */
+export function hasSameElements<T>(
   first: T[],
   second: T[],
   comparator: (a: T, b: T) => boolean = isEqual

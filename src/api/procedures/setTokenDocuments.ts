@@ -8,7 +8,7 @@ import {
   stringToTicker,
   tokenDocumentToDocument,
 } from '~/utils/conversion';
-import { batchArguments, isSameSet } from '~/utils/internal';
+import { batchArguments, hasSameElements } from '~/utils/internal';
 
 export interface SetTokenDocumentsParams {
   /**
@@ -45,7 +45,7 @@ export async function prepareSetTokenDocuments(
   } = this;
   const { ticker, documents } = args;
 
-  if (isSameSet(currentDocs, documents)) {
+  if (hasSameElements(currentDocs, documents)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied document list is equal to the current one',

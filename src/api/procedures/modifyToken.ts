@@ -7,7 +7,7 @@ import {
   stringToTicker,
   tokenIdentifierToAssetIdentifier,
 } from '~/utils/conversion';
-import { isSameSet } from '~/utils/internal';
+import { hasSameElements } from '~/utils/internal';
 
 export type ModifyTokenParams =
   | {
@@ -111,7 +111,7 @@ export async function prepareModifyToken(
   }
 
   if (newIdentifiers) {
-    const identifiersAreEqual = isSameSet(identifiers, newIdentifiers);
+    const identifiersAreEqual = hasSameElements(identifiers, newIdentifiers);
 
     if (identifiersAreEqual) {
       throw new PolymeshError({

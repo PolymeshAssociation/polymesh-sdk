@@ -18,7 +18,7 @@ import {
   stringToTicker,
   targetsToTargetIdentities,
 } from '~/utils/conversion';
-import { isSameSet } from '~/utils/internal';
+import { hasSameElements } from '~/utils/internal';
 
 export type ModifyCaDefaultConfigParams =
   | {
@@ -47,7 +47,7 @@ const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTarget
   const { identities, treatment } = targets;
 
   return (
-    isSameSet(
+    hasSameElements(
       identities,
       newIdentities,
       (identity, newIdentity) => signerToString(identity) === signerToString(newIdentity)
@@ -137,7 +137,7 @@ export async function prepareModifyCaDefaultConfig(
   }
 
   if (newTaxWithholdings) {
-    const areSameWithholdings = isSameSet(
+    const areSameWithholdings = hasSameElements(
       taxWithholdings,
       newTaxWithholdings,
       ({ identity, percentage }, { identity: newIdentity, percentage: newPercentage }) =>

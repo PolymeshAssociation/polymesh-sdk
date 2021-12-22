@@ -12,7 +12,7 @@ import {
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { isSameSet } from '~/utils/internal';
+import { hasSameElements } from '~/utils/internal';
 
 export interface ModifyTokenTrustedClaimIssuersAddSetParams {
   /**
@@ -73,7 +73,7 @@ const areSameClaimIssuers = (
   currentClaimIssuers: TrustedClaimIssuer[],
   claimIssuers: ModifyTokenTrustedClaimIssuersAddSetParams['claimIssuers']
 ): boolean =>
-  isSameSet(
+  hasSameElements(
     currentClaimIssuers,
     claimIssuers,
     (

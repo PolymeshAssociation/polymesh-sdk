@@ -5,7 +5,7 @@ import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { Condition, ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
-import { conditionsAreEqual, isSameSet } from '~/utils/internal';
+import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
 export interface SetAssetRequirementsParams {
   /**
@@ -58,10 +58,10 @@ export async function prepareSetAssetRequirements(
     a: (Condition | InputCondition)[],
     b: (Condition | InputCondition)[]
   ): boolean => {
-    return isSameSet(a, b, conditionsAreEqual);
+    return hasSameElements(a, b, conditionsAreEqual);
   };
 
-  if (isSameSet(requirements, currentConditions, comparator)) {
+  if (hasSameElements(requirements, currentConditions, comparator)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is equal to the current one',
