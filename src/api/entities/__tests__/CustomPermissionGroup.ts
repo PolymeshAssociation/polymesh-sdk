@@ -141,13 +141,13 @@ describe('CustomPermissionGroup class', () => {
     test('should return whether the Custom Permission Group exists', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
+      dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
         returnValue: dsMockUtils.createMockU32(0),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(false);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
+      dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
         returnValue: dsMockUtils.createMockU32(10),
       });
 
