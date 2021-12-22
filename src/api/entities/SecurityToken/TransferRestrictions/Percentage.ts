@@ -47,7 +47,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
   /**
    * Retrieve all active Percentage Transfer Restrictions
    *
-   * @note there is a maximum number of restrictions allowed accross all types.
+   * @note there is a maximum number of restrictions allowed across all types.
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
