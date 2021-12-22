@@ -11,8 +11,20 @@ import {
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, SignerValue } from '~/types';
+import { Authorization, AuthorizationType, SignerValue, TickerReservationStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
+jest.mock(
+  '~/api/entities/TickerReservation',
+  require('~/testUtils/mocks/entities').mockTickerReservationModule(
+    '~/api/entities/TickerReservation'
+  )
+);
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
@@ -226,7 +238,10 @@ describe('consumeAuthorizationRequests procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
-      // entityMockUtils.configureMocks({ securityTokenOptions: { exists: true } });
+      entityMockUtils.configureMocks({
+        securityTokenOptions: { exists: true },
+        tickerReservationOptions: { details: { status: TickerReservationStatus.Free } },
+      });
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );
