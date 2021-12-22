@@ -62,7 +62,7 @@ describe('createSecurityToken procedure', () => {
   let tokenDocumentToDocumentStub: sinon.SinonStub<[TokenDocument, Context], Document>;
   let ticker: string;
   let name: string;
-  let totalSupply: BigNumber;
+  let initialSupply: BigNumber;
   let isDivisible: boolean;
   let tokenType: string;
   let tokenIdentifiers: TokenIdentifier[];
@@ -71,7 +71,7 @@ describe('createSecurityToken procedure', () => {
   let documents: TokenDocument[];
   let rawTicker: Ticker;
   let rawName: AssetName;
-  let rawTotalSupply: Balance;
+  let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
   let rawIdentifiers: AssetIdentifier[];
@@ -108,7 +108,7 @@ describe('createSecurityToken procedure', () => {
     tokenDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'tokenDocumentToDocument');
     ticker = 'someTicker';
     name = 'someName';
-    totalSupply = new BigNumber(100);
+    initialSupply = new BigNumber(100);
     isDivisible = true;
     tokenType = KnownTokenType.EquityCommon;
     tokenIdentifiers = [
@@ -128,7 +128,7 @@ describe('createSecurityToken procedure', () => {
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawName = dsMockUtils.createMockAssetName(name);
-    rawTotalSupply = dsMockUtils.createMockBalance(totalSupply.toNumber());
+    rawInitialSupply = dsMockUtils.createMockBalance(initialSupply.toNumber());
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
     rawType = dsMockUtils.createMockAssetType(tokenType as KnownTokenType);
     rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
@@ -187,7 +187,7 @@ describe('createSecurityToken procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(totalSupply, mockContext, isDivisible).returns(rawTotalSupply);
+    numberToBalanceStub.withArgs(initialSupply, mockContext, isDivisible).returns(rawInitialSupply);
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
@@ -271,7 +271,7 @@ describe('createSecurityToken procedure', () => {
 
     await prepareCreateSecurityToken.call(proc, {
       ...args,
-      totalSupply: new BigNumber(0),
+      initialSupply: new BigNumber(0),
       tokenIdentifiers: undefined,
       fundingRound: undefined,
       requireInvestorUniqueness: false,
@@ -292,9 +292,9 @@ describe('createSecurityToken procedure', () => {
 
     const issueTransaction = dsMockUtils.createTxStub('asset', 'issue');
 
-    await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
+    await prepareCreateSecurityToken.call(proc, { ...args, initialSupply });
 
-    sinon.assert.calledWith(addTransactionStub, issueTransaction, {}, rawTicker, rawTotalSupply);
+    sinon.assert.calledWith(addTransactionStub, issueTransaction, {}, rawTicker, rawInitialSupply);
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {

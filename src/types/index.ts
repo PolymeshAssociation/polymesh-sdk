@@ -1240,6 +1240,9 @@ export interface CountTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface PercentageTransferRestriction extends TransferRestrictionBase {
+  /**
+   * maximum percentage (0-100) of the total supply of the Security Token that can be held by a single investor at once
+   */
   percentage: BigNumber;
 }
 
@@ -1252,7 +1255,7 @@ export interface CountTransferRestrictionInput extends TransferRestrictionInputB
 
 export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
-   * limit on the proportion of the total supply of the Security Token that can be held by a single investor at once
+   * maximum percentage (0-100) of the total supply of the Security Token that can be held by a single investor at once
    */
   percentage: BigNumber;
 }
