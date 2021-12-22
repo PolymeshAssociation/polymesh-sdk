@@ -64,6 +64,7 @@ import type {
   FundingRoundName,
   FundraiserName,
   IdentityId,
+  InvestorUid,
   InvestorZKProofData,
   ItnRewardStatus,
   Leg,
@@ -1551,6 +1552,9 @@ declare module '@polkadot/api/types/submittable' {
       >;
       /**
        * Replaces an asset's compliance by ticker with a new compliance.
+       *
+       * Compliance requirements will be sorted (ascending by id) before
+       * replacing the current requirements.
        *
        * # Arguments
        * * `ticker` - the asset ticker,
@@ -3873,7 +3877,7 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `instruction_id` - Instruction id to affirm.
        * * `portfolios` - Portfolios that the sender controls and wants to affirm this instruction.
-       * * `legs` - List of legs needs to affirmed.
+       * * `max_legs_count` - Number of legs that need to be  affirmed.
        *
        * # Permissions
        * * Portfolio
@@ -4116,6 +4120,7 @@ declare module '@polkadot/api/types/submittable' {
        * # Arguments
        * * `instruction_id` - Instruction id for that affirmation get withdrawn.
        * * `portfolios` - Portfolios that the sender controls and wants to withdraw affirmation.
+       * * `max_legs_count` - Number of legs that need to be un-affirmed.
        *
        * # Permissions
        * * Portfolio
@@ -4608,7 +4613,7 @@ declare module '@polkadot/api/types/submittable' {
         [Vec<AccountId>]
       >;
       /**
-       * Changes min bond value to be used in bond(). Only Governance
+       * Changes min bond value to be used in validate(). Only Governance
        * committee is allowed to change this value.
        *
        * # Arguments
@@ -5598,6 +5603,58 @@ declare module '@polkadot/api/types/submittable' {
           add: IdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [IdentityId, IdentityId]
+      >;
+    };
+    testUtils: {
+      /**
+       * Emits an event with caller's identity and CDD status.
+       **/
+      getCddOf: AugmentedSubmittable<
+        (of: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId]
+      >;
+      /**
+       * Emits an event with caller's identity.
+       **/
+      getMyDid: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Registers a new Identity for the `target_account` and issues a CDD claim to it.
+       * The Investor UID is generated deterministically by the hash of the generated DID and
+       * then we fix it to be compliant with UUID v4.
+       *
+       * # See
+       * - [RFC 4122: UUID](https://tools.ietf.org/html/rfc4122)
+       *
+       * # Failure
+       * - `origin` has to be an active CDD provider. Inactive CDD providers cannot add new
+       * claims.
+       * - `target_account` (primary key of the new Identity) can be linked to just one and only
+       * one identity.
+       **/
+      mockCddRegisterDid: AugmentedSubmittable<
+        (targetAccount: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId]
+      >;
+      /**
+       * Generates a new `IdentityID` for the caller, and issues a self-generated CDD claim.
+       *
+       * The caller account will be the primary key of that identity.
+       * For each account of `secondary_keys`, a new `JoinIdentity` authorization is created, so
+       * each of them will need to accept it before become part of this new `IdentityID`.
+       *
+       * # Errors
+       * - `AlreadyLinked` if the caller account or if any of the given `secondary_keys` has already linked to an `IdentityID`
+       * - `SecondaryKeysContainPrimaryKey` if `secondary_keys` contains the caller account.
+       * - `DidAlreadyExists` if auto-generated DID already exists.
+       **/
+      registerDid: AugmentedSubmittable<
+        (
+          uid: InvestorUid | string | Uint8Array,
+          secondaryKeys:
+            | Vec<SecondaryKey>
+            | (SecondaryKey | { signer?: any; permissions?: any } | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [InvestorUid, Vec<SecondaryKey>]
       >;
     };
     timestamp: {
