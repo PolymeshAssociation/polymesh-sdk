@@ -10,6 +10,7 @@ import {
 } from '~/api/procedures/transferTokenOwnership';
 import { AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { getIdentityInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, SignerType, SignerValue } from '~/types';
 import { PolymeshTx } from '~/types/internal';
@@ -98,6 +99,22 @@ describe('transferTokenOwnership procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     await prepareTransferTokenOwnership.call(proc, args);
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      sinon.match({ resolvers: sinon.match.array }),
+      rawSignatory,
+      rawAuthorizationData,
+      null
+    );
+  });
+
+  test('should add an add authorization transaction to the queue if the target is an Identity', async () => {
+    const identityArgs = Object.assign({}, args, { target: getIdentityInstance({ did }) });
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
+
+    await prepareTransferTokenOwnership.call(proc, identityArgs);
 
     sinon.assert.calledWith(
       addTransactionStub,
