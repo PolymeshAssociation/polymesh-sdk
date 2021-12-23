@@ -11,7 +11,7 @@ import {
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, SignerValue, TickerReservationStatus } from '~/types';
+import { Authorization, AuthorizationType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -238,10 +238,6 @@ describe('consumeAuthorizationRequests procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
-      entityMockUtils.configureMocks({
-        securityTokenOptions: { exists: true },
-        tickerReservationOptions: { details: { status: TickerReservationStatus.Free } },
-      });
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );
@@ -316,35 +312,5 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       });
     });
-
-    // test('should throw an error if an Authorization fails validation', async () => {
-    //   const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
-    //     mockContext
-    //   );
-    //   const params = {
-    //     authId: new BigNumber(1),
-    //     expiry: new Date('10/14/1987'),
-    //     target: entityMockUtils.getIdentityInstance(),
-    //     issuer: entityMockUtils.getIdentityInstance(),
-    //     data: { type: AuthorizationType.RotatePrimaryKey as AuthorizationType.RotatePrimaryKey },
-    //   };
-    //   const request = new AuthorizationRequest(params, mockContext);
-    //   const boundFunc = getAuthorization.bind(proc);
-    //   const args = {
-    //     accept: true,
-    //     authRequests: [request],
-    //   } as ConsumeAuthorizationRequestsParams;
-    //   let error;
-    //   try {
-    //     boundFunc(args);
-    //   } catch (err) {
-    //     error = err;
-    //   }
-    //   const expectedError = new PolymeshError({
-    //     code: ErrorCode.UnmetPrerequisite,
-    //     message: 'Authorization has expired',
-    //   });
-    //   expect(error).toEqual(expectedError);
-    // });
   });
 });
