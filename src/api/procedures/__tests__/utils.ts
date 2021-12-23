@@ -1176,6 +1176,87 @@ describe('authorization request validations', () => {
       });
       expect(error).toEqual(expectedError);
     });
+
+    test('with a beneficiary that does not have an Identity', async () => {
+      const subsidizer = getAccountInstance({
+        getIdentity: getIdentityInstance({ hasValidCdd: false }),
+      });
+      const beneficiary = getAccountInstance({ getIdentity: null });
+
+      const subsidy = {
+        beneficiary,
+        subsidizer,
+        allowance,
+        remaining: allowance,
+      };
+      const data = {
+        type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
+        value: subsidy,
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+      let error;
+      try {
+        await assertAuthorizationRequestValid(mockContext, auth);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Beneficiary Account does not have an Identity',
+      });
+      expect(error).toEqual(expectedError);
+    });
+
+    test('with a Subsidizer that does not have an Identity', async () => {
+      const beneficiary = getAccountInstance({
+        getIdentity: getIdentityInstance({ hasValidCdd: true }),
+      });
+      // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
+      const subsidizer = ({
+        getIdentity: () => null,
+      } as unknown) as Account;
+
+      const subsidy = {
+        beneficiary,
+        subsidizer,
+        allowance,
+        remaining: allowance,
+      };
+      const data = {
+        type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
+        value: subsidy,
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+      let error;
+      try {
+        await assertAuthorizationRequestValid(mockContext, auth);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Subsidizer Account does not have an Identity',
+      });
+      expect(error).toEqual(expectedError);
+    });
   });
 
   describe('unreachable code', () => {

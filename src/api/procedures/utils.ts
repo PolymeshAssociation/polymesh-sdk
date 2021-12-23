@@ -458,7 +458,13 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
 ): Promise<void> {
   const subsidy = data.value;
   const beneficiaryIdentity = await subsidy.beneficiary.getIdentity();
-  if (!(await beneficiaryIdentity?.hasValidCdd())) {
+  if (!beneficiaryIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Beneficiary Account does not have an Identity',
+    });
+  }
+  if (!(await beneficiaryIdentity.hasValidCdd())) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Beneficiary Account does not have a valid CDD Claim',
@@ -466,7 +472,13 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
   }
 
   const subsidizerIdentity = await subsidy.subsidizer.getIdentity();
-  if (!(await subsidizerIdentity?.hasValidCdd())) {
+  if (!subsidizerIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Subsidizer Account does not have an Identity',
+    });
+  }
+  if (!(await subsidizerIdentity.hasValidCdd())) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have a valid CDD Claim',
