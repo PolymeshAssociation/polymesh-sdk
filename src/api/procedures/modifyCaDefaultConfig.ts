@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { differenceWith } from 'lodash';
 
 import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -19,6 +18,7 @@ import {
   stringToTicker,
   targetsToTargetIdentities,
 } from '~/utils/conversion';
+import { hasSameElements } from '~/utils/internal';
 
 export type ModifyCaDefaultConfigParams =
   | {
@@ -47,13 +47,11 @@ const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTarget
   const { identities, treatment } = targets;
 
   return (
-    !differenceWith(
+    hasSameElements(
       identities,
       newIdentities,
-      ({ did }, newIdentity) => did === signerToString(newIdentity)
-    ).length &&
-    identities.length === newIdentities.length &&
-    treatment === newTreatment
+      (identity, newIdentity) => signerToString(identity) === signerToString(newIdentity)
+    ) && treatment === newTreatment
   );
 };
 
@@ -139,13 +137,12 @@ export async function prepareModifyCaDefaultConfig(
   }
 
   if (newTaxWithholdings) {
-    const areSameWithholdings =
-      !differenceWith(
-        taxWithholdings,
-        newTaxWithholdings,
-        ({ identity: { did }, percentage }, { identity: newIdentity, percentage: newPercentage }) =>
-          did === signerToString(newIdentity) && percentage.eq(newPercentage)
-      ).length && taxWithholdings.length === newTaxWithholdings.length;
+    const areSameWithholdings = hasSameElements(
+      taxWithholdings,
+      newTaxWithholdings,
+      ({ identity, percentage }, { identity: newIdentity, percentage: newPercentage }) =>
+        signerToString(identity) === signerToString(newIdentity) && percentage.eq(newPercentage)
+    );
 
     if (areSameWithholdings) {
       throw new PolymeshError({
