@@ -1,4 +1,3 @@
-import { differenceWith, isEqual } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -9,7 +8,7 @@ import {
   stringToTicker,
   tokenDocumentToDocument,
 } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
+import { batchArguments, hasSameElements } from '~/utils/internal';
 
 export interface SetTokenDocumentsParams {
   /**
@@ -46,10 +45,7 @@ export async function prepareSetTokenDocuments(
   } = this;
   const { ticker, documents } = args;
 
-  if (
-    !differenceWith(currentDocs, documents, isEqual).length &&
-    currentDocs.length === documents.length
-  ) {
+  if (hasSameElements(currentDocs, documents)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied document list is equal to the current one',
