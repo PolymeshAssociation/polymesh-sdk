@@ -1177,6 +1177,22 @@ describe('authorization request validations', () => {
       expect(error).toEqual(expectedError);
     });
   });
+
+  describe('unreachable code', () => {
+    test('with an any assertion', async () => {
+      let error;
+      try {
+        await assertAuthorizationRequestValid(mockContext, {
+          data: { type: 'FAKE_TYPE' },
+          isExpired: () => false,
+        } as never);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new UnreachableCaseError({ type: 'FAKE_TYPE' } as never);
+      expect(error).toEqual(expectedError);
+    });
+  });
 });
 
 describe('Unreachable error case', () => {

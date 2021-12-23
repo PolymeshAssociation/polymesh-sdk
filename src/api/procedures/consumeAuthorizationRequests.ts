@@ -58,12 +58,6 @@ export async function prepareConsumeAuthorizationRequests(
 
     const idsPerType: Record<AllowedAuthType, [u64][]> = mapValues(typesToExtrinsics, () => []);
 
-    // await Promise.all([
-    //   liveRequests.map(req => assertAuthorizationRequestValid(context, req)),
-    // ]).catch(error => {
-    //   throw error;
-    // });
-
     liveRequests.forEach(authRequest => {
       const {
         authId,
