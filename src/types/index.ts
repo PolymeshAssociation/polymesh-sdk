@@ -942,7 +942,7 @@ export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGr
 /**
  * This represents all Permission Groups of a specific Security Token, separated by category
  */
-export interface CategorizedPermissionGroups {
+export interface PermissionGroups {
   known: KnownPermissionGroup[];
   custom: CustomPermissionGroup[];
 }
