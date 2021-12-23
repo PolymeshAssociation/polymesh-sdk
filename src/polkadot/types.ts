@@ -419,6 +419,13 @@ export enum RewardsTx {
   SetItnRewardStatus = 'rewards.setItnRewardStatus',
 }
 
+export enum TestUtilsTx {
+  RegisterDid = 'testUtils.registerDid',
+  MockCddRegisterDid = 'testUtils.mockCddRegisterDid',
+  GetMyDid = 'testUtils.getMyDid',
+  GetCddOf = 'testUtils.getCddOf',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -459,6 +466,7 @@ export enum ModuleName {
   ExternalAgents = 'externalAgents',
   Relayer = 'relayer',
   Rewards = 'rewards',
+  TestUtils = 'testUtils',
 }
 
 export type TxTag =
@@ -500,7 +508,8 @@ export type TxTag =
   | UtilityTx
   | ExternalAgentsTx
   | RelayerTx
-  | RewardsTx;
+  | RewardsTx
+  | TestUtilsTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -542,4 +551,5 @@ export const TxTags = {
   externalAgents: ExternalAgentsTx,
   relayer: RelayerTx,
   rewards: RewardsTx,
+  testUtils: TestUtilsTx,
 };
