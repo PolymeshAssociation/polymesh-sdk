@@ -1,6 +1,8 @@
+import { ISubmittableResult } from '@polkadot/types/types';
 import { AuthorizationData, TxTags } from 'polymesh-types/types';
 
 import {
+  AuthorizationRequest,
   Context,
   createGroup,
   CustomPermissionGroup,
@@ -11,15 +13,23 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { AuthorizationType, ErrorCode, SignerType, TransactionPermissions, TxGroup } from '~/types';
+import {
+  Authorization,
+  AuthorizationType,
+  ErrorCode,
+  SignerType,
+  TransactionPermissions,
+  TxGroup,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
   signerToString,
   signerValueToSignatory,
+  u64ToBigNumber,
 } from '~/utils/conversion';
-import { getDid, optionize } from '~/utils/internal';
+import { filterEventRecords, getDid, optionize } from '~/utils/internal';
 
 export interface InviteExternalAgentParams {
   target: string | Identity;
@@ -72,10 +82,24 @@ const authorizationDataResolver = (
 /**
  * @hidden
  */
+export const createAuthorizationResolver = (
+  authData: Authorization,
+  issuer: Identity,
+  target: Identity,
+  expiry: Date | null,
+  context: Context
+) => (receipt: ISubmittableResult): AuthorizationRequest => {
+  const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+  const id = u64ToBigNumber(data[3]);
+  return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: authData }, context);
+};
+/**
+ * @hidden
+ */
 export async function prepareInviteExternalAgent(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, AuthorizationRequest, Storage>,
   args: Params
-): Promise<void> {
+): Promise<PostTransactionValue<AuthorizationRequest>> {
   const {
     context: {
       polymeshApi: {
@@ -87,6 +111,14 @@ export async function prepareInviteExternalAgent(
   } = this;
 
   const { ticker, target, permissions, expiry } = args;
+
+  const issuer = await context.getCurrentIdentity();
+  let targetIdentity: Identity;
+  if (typeof target === 'string') {
+    targetIdentity = new Identity({ did: target }, context);
+  } else {
+    targetIdentity = target;
+  }
 
   const [currentAgents, did] = await Promise.all([
     token.permissions.getAgents(),
@@ -124,13 +156,33 @@ export async function prepareInviteExternalAgent(
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+  const [auth] = this.addTransaction(
+    identity.addAuthorization,
+    {
+      resolvers: [
+        createAuthorizationResolver(
+          rawAuthorizationData as Authorization,
+          issuer,
+          targetIdentity,
+          expiry || null,
+          context
+        ),
+      ],
+    },
+    rawSignatory,
+    rawAuthorizationData,
+    rawExpiry
+  );
+
+  return auth;
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
+export function getAuthorization(
+  this: Procedure<Params, AuthorizationRequest, Storage>
+): ProcedureAuthorization {
   const {
     storage: { token },
   } = this;
@@ -147,7 +199,7 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<Params, void, Storage>,
+  this: Procedure<Params, AuthorizationRequest, Storage>,
   { ticker }: Params
 ): Storage {
   const { context } = this;
@@ -160,5 +212,5 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const inviteExternalAgent = (): Procedure<Params, void, Storage> =>
+export const inviteExternalAgent = (): Procedure<Params, AuthorizationRequest, Storage> =>
   new Procedure(prepareInviteExternalAgent, getAuthorization, prepareStorage);

@@ -1,4 +1,8 @@
+import { ISubmittableResult } from '@polkadot/types/types';
+
 import {
+  Account,
+  AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
   Context,
@@ -9,10 +13,12 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
+  Authorization,
   Condition,
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  Identity,
   InputCondition,
   InputTargets,
   InputTaxWithholding,
@@ -24,6 +30,7 @@ import {
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { filterEventRecords } from '~/utils/internal';
 
 // import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
@@ -322,3 +329,18 @@ export function assertRequirementsNotTooComplex(
     });
   }
 }
+
+/**
+ * @hidden
+ */
+export const createAuthorizationResolver = (
+  authData: Authorization,
+  issuer: Identity,
+  target: Identity | Account,
+  expiry: Date | null,
+  context: Context
+) => (receipt: ISubmittableResult): AuthorizationRequest => {
+  const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+  const id = u64ToBigNumber(data[3]);
+  return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: authData }, context);
+};

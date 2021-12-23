@@ -8,7 +8,7 @@ import {
   Params,
   prepareTransferTokenOwnership,
 } from '~/api/procedures/transferTokenOwnership';
-import { Context, SecurityToken } from '~/internal';
+import { AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, SignerType, SignerValue } from '~/types';
@@ -95,40 +95,38 @@ describe('transferTokenOwnership procedure', () => {
   });
 
   test('should add an add authorization transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    const result = await prepareTransferTokenOwnership.call(proc, args);
+    await prepareTransferTokenOwnership.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       null
     );
-    expect(result).toEqual(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    const result = await prepareTransferTokenOwnership.call(proc, { ...args, expiry });
+    await prepareTransferTokenOwnership.call(proc, { ...args, expiry });
 
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       rawMoment
     );
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({

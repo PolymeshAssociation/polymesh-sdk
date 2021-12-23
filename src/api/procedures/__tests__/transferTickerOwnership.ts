@@ -8,7 +8,7 @@ import {
   Params,
   prepareTransferTickerOwnership,
 } from '~/api/procedures/transferTickerOwnership';
-import { Context, TickerReservation } from '~/internal';
+import { AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -109,7 +109,7 @@ describe('transferTickerOwnership procedure', () => {
       expiryDate: null,
       status: TickerReservationStatus.TokenCreated,
     });
-    const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     return expect(prepareTransferTickerOwnership.call(proc, args)).rejects.toThrow(
       'A Security Token with this ticker has already been created'
@@ -117,40 +117,38 @@ describe('transferTickerOwnership procedure', () => {
   });
 
   test('should add an add authorization transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    const result = await prepareTransferTickerOwnership.call(proc, args);
+    await prepareTransferTickerOwnership.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       null
     );
-    expect(result).toEqual(entityMockUtils.getTickerReservationInstance({ ticker }));
   });
 
   test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
-    const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    const result = await prepareTransferTickerOwnership.call(proc, { ...args, expiry });
+    await prepareTransferTickerOwnership.call(proc, { ...args, expiry });
 
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       rawMoment
     );
-    expect(result).toEqual(entityMockUtils.getTickerReservationInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({

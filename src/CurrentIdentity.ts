@@ -1,4 +1,5 @@
 import {
+  AuthorizationRequest,
   Context,
   createVenue,
   CreateVenueParams,
@@ -109,7 +110,7 @@ export class CurrentIdentity {
    *   the corresponding Account. An Account can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
+  public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
   /**
    * Create a Venue under the ownership of the Current Identity

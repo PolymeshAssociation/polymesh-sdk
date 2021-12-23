@@ -1,4 +1,12 @@
-import { Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import { createAuthorizationResolver } from '~/api/procedures/utils';
+import {
+  AuthorizationRequest,
+  Identity,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+  TickerReservation,
+} from '~/internal';
 import {
   AuthorizationType,
   ErrorCode,
@@ -32,9 +40,9 @@ export type Params = { ticker: string } & TransferTickerOwnershipParams;
  * @hidden
  */
 export async function prepareTransferTickerOwnership(
-  this: Procedure<Params, TickerReservation>,
+  this: Procedure<Params, AuthorizationRequest>,
   args: Params
-): Promise<TickerReservation> {
+): Promise<PostTransactionValue<AuthorizationRequest>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -42,6 +50,13 @@ export async function prepareTransferTickerOwnership(
     context,
   } = this;
   const { ticker, target, expiry } = args;
+  const issuer = await context.getCurrentIdentity();
+  let targetIdentity;
+  if (typeof target === 'string') {
+    targetIdentity = new Identity({ did: target }, context);
+  } else {
+    targetIdentity = target;
+  }
 
   const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -58,28 +73,33 @@ export async function prepareTransferTickerOwnership(
     { type: SignerType.Identity, value: signerToString(target) },
     context
   );
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.TransferTicker, value: ticker },
-    context
-  );
+  const authData = {
+    type: AuthorizationType.TransferTicker as AuthorizationType.TransferTicker,
+    value: ticker,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authData, context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  this.addTransaction(
+  const [auth] = this.addTransaction(
     tx.identity.addAuthorization,
-    {},
+    {
+      resolvers: [
+        createAuthorizationResolver(authData, issuer, targetIdentity, expiry || null, context),
+      ],
+    },
     rawSignatory,
     rawAuthorizationData,
     rawExpiry
   );
 
-  return tickerReservation;
+  return auth;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, TickerReservation>,
+  this: Procedure<Params, AuthorizationRequest>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
@@ -95,5 +115,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const transferTickerOwnership = (): Procedure<Params, TickerReservation> =>
+export const transferTickerOwnership = (): Procedure<Params, AuthorizationRequest> =>
   new Procedure(prepareTransferTickerOwnership, getAuthorization);

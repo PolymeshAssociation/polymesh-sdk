@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  AuthorizationRequest,
   Context,
   createGroup,
   CreateGroupParams,
@@ -60,7 +61,7 @@ export class Permissions extends Namespace<SecurityToken> {
   /**
    * Invite an Identity to be an Agent with permissions over this Security Token
    */
-  public inviteAgent: ProcedureMethod<InviteExternalAgentParams, void>;
+  public inviteAgent: ProcedureMethod<InviteExternalAgentParams, AuthorizationRequest>;
 
   /**
    * Revoke an Agent's permissions for this Security Token

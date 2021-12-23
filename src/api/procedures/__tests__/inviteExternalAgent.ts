@@ -8,7 +8,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/inviteExternalAgent';
-import { Account, Context, Identity, SecurityToken } from '~/internal';
+import { Account, AuthorizationRequest, Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, PermissionType, SignerValue } from '~/types';
@@ -98,7 +98,9 @@ describe('inviteExternalAgent procedure', () => {
 
   describe('prepareStorage', () => {
     test('should return the security token', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext
+      );
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
@@ -115,9 +117,12 @@ describe('inviteExternalAgent procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        token,
-      });
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext,
+        {
+          token,
+        }
+      );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
@@ -137,16 +142,19 @@ describe('inviteExternalAgent procedure', () => {
       permissions: entityMockUtils.getKnownPermissionGroupInstance(),
     };
 
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        permissionsGetAgents: [
-          {
-            agent: entityMockUtils.getIdentityInstance({ did: target }),
-            group: entityMockUtils.getKnownPermissionGroupInstance(),
-          },
-        ],
-      }),
-    });
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        token: entityMockUtils.getSecurityTokenInstance({
+          permissionsGetAgents: [
+            {
+              agent: entityMockUtils.getIdentityInstance({ did: target }),
+              group: entityMockUtils.getKnownPermissionGroupInstance(),
+            },
+          ],
+        }),
+      }
+    );
 
     return expect(prepareInviteExternalAgent.call(proc, args)).rejects.toThrow(
       'The target Identity is already an External Agent'
@@ -155,16 +163,19 @@ describe('inviteExternalAgent procedure', () => {
 
   test('should add an add authorization transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        permissionsGetAgents: [
-          {
-            agent: { did: 'otherDid' } as Identity,
-            group: entityMockUtils.getCustomPermissionGroupInstance(),
-          },
-        ],
-      }),
-    });
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        token: entityMockUtils.getSecurityTokenInstance({
+          permissionsGetAgents: [
+            {
+              agent: { did: 'otherDid' } as Identity,
+              group: entityMockUtils.getCustomPermissionGroupInstance(),
+            },
+          ],
+        }),
+      }
+    );
 
     procedureMockUtils.getAddProcedureStub().resolves({
       transform: (cb: () => AuthorizationData) => cb(),
@@ -179,7 +190,7 @@ describe('inviteExternalAgent procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       null
@@ -199,7 +210,7 @@ describe('inviteExternalAgent procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       null
