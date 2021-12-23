@@ -1,6 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import { AuthorizationData, TxTags } from 'polymesh-types/types';
 
+import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   AuthorizationRequest,
   Context,
@@ -79,20 +80,6 @@ const authorizationDataResolver = (
     context
   );
 
-/**
- * @hidden
- */
-export const createAuthorizationResolver = (
-  authData: Authorization,
-  issuer: Identity,
-  target: Identity,
-  expiry: Date | null,
-  context: Context
-) => (receipt: ISubmittableResult): AuthorizationRequest => {
-  const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
-  const id = u64ToBigNumber(data[3]);
-  return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: authData }, context);
-};
 /**
  * @hidden
  */

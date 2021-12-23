@@ -341,6 +341,7 @@ export const createAuthorizationResolver = (
   context: Context
 ) => (receipt: ISubmittableResult): AuthorizationRequest => {
   const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+
   const id = u64ToBigNumber(data[3]);
   return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: authData }, context);
 };

@@ -1,3 +1,4 @@
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -10,12 +11,14 @@ import {
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryKeys,
+  createAuthorizationResolver,
 } from '~/api/procedures/utils';
-import { CheckpointSchedule, Context, Instruction } from '~/internal';
+import { AuthorizationRequest, CheckpointSchedule, Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getInstructionInstance } from '~/testUtils/mocks/entities';
+import { getIdentityInstance, getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
+  AuthorizationType,
   Condition,
   ConditionTarget,
   ConditionType,
@@ -625,5 +628,28 @@ describe('assertRequirementsNotTooComplex', () => {
         1
       )
     ).not.toThrow();
+  });
+});
+
+describe('createAuthorizationResolver', () => {
+  test('it returns a function that creates an AuthorizationRequest', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const authData = {
+      type: AuthorizationType.RotatePrimaryKey as AuthorizationType.RotatePrimaryKey,
+    };
+    const resolver = createAuthorizationResolver(
+      authData,
+      getIdentityInstance(),
+      getIdentityInstance(),
+      null,
+      mockContext
+    );
+    const filterRecords = (event: string, mod: string) => [
+      { event: { data: [undefined, undefined, undefined, '3', undefined] } },
+    ];
+    const authRequest = resolver(({
+      filterRecords: filterRecords,
+    } as unknown) as ISubmittableResult);
+    expect(authRequest.authId).toEqual(new BigNumber(3));
   });
 });
