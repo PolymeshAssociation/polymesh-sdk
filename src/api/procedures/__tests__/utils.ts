@@ -2,21 +2,15 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  assertAddRelayerPayingKeyAuthorizationValid,
-  assertAttestPrimaryKeyAuthorizationValid,
   assertAuthorizationRequestValid,
   assertCaCheckpointValid,
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
   assertDistributionDatesValid,
   assertInstructionValid,
-  assertJoinIdentityAuthorizationValid,
   assertPortfolioExists,
-  assertPrimaryKeyRotationAuthorizationValid,
   assertRequirementsNotTooComplex,
   assertSecondaryKeys,
-  assertTransferAssetOwnershipAuthorizationValid,
-  assertTransferTickerAuthorizationValid,
   UnreachableCaseError,
 } from '~/api/procedures/utils';
 import {
@@ -32,8 +26,7 @@ import {
   getAccountInstance,
   getIdentityInstance,
   getInstructionInstance,
-  getSecurityTokenInstance,
-  getTickerReservationInstance,
+  getNumberedPortfolioInstance,
 } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -83,6 +76,13 @@ jest.mock(
 jest.mock(
   '~/api/entities/SecurityToken',
   require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
+jest.mock(
+  '~/api/entities/TickerReservation',
+  require('~/testUtils/mocks/entities').mockTickerReservationModule(
+    '~/api/entities/TickerReservation'
+  )
 );
 
 // NOTE uncomment in Governance v2 upgrade
@@ -737,7 +737,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertPrimaryKeyRotationAuthorizationValid(auth);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -753,7 +753,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertPrimaryKeyRotationAuthorizationValid(auth);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -786,7 +786,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAttestPrimaryKeyAuthorizationValid(auth);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -808,7 +808,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAttestPrimaryKeyAuthorizationValid(auth);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -822,11 +822,26 @@ describe('authorization request validations', () => {
 
   describe('assertTransferTickerAuthorizationValid', () => {
     test('with a valid request', async () => {
-      const mockTicker = getTickerReservationInstance();
-
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: { details: { status: TickerReservationStatus.Reserved } },
+      });
+      const data = {
+        type: AuthorizationType.TransferTicker as AuthorizationType.TransferTicker,
+        value: 'TICKER',
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
       let error;
       try {
-        await assertTransferTickerAuthorizationValid(mockTicker);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -834,12 +849,26 @@ describe('authorization request validations', () => {
     });
 
     test('with an unreserved ticker', async () => {
-      const mockTicker = getTickerReservationInstance({
-        details: { status: TickerReservationStatus.Free },
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: { details: { status: TickerReservationStatus.Free } },
       });
+      const data = {
+        type: AuthorizationType.TransferTicker as AuthorizationType.TransferTicker,
+        value: 'TICKER',
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
       let error;
       try {
-        await assertTransferTickerAuthorizationValid(mockTicker);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -851,12 +880,26 @@ describe('authorization request validations', () => {
     });
 
     test('with an already used ticker', async () => {
-      const mockTicker = getTickerReservationInstance({
-        details: { status: TickerReservationStatus.TokenCreated },
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: { details: { status: TickerReservationStatus.TokenCreated } },
       });
+      const data = {
+        type: AuthorizationType.TransferTicker as AuthorizationType.TransferTicker,
+        value: 'TICKER',
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
       let error;
       try {
-        await assertTransferTickerAuthorizationValid(mockTicker);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -870,11 +913,24 @@ describe('authorization request validations', () => {
 
   describe('assertTransferAssetOwnershipAuthorizationValid', () => {
     test('with a valid request', async () => {
-      const mockToken = getSecurityTokenInstance();
-
+      entityMockUtils.configureMocks({ securityTokenOptions: { exists: true } });
+      const data = {
+        type: AuthorizationType.TransferAssetOwnership as AuthorizationType.TransferAssetOwnership,
+        value: 'TICKER',
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          issuer,
+          target,
+          expiry,
+          data,
+        },
+        mockContext
+      );
       let error;
       try {
-        await assertTransferAssetOwnershipAuthorizationValid(mockToken);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -882,11 +938,25 @@ describe('authorization request validations', () => {
     });
 
     test('with a Asset that does not exist', async () => {
-      const mockToken = getSecurityTokenInstance({ exists: false });
+      entityMockUtils.configureMocks({ securityTokenOptions: { exists: false } });
+      const data = {
+        type: AuthorizationType.TransferAssetOwnership as AuthorizationType.TransferAssetOwnership,
+        value: 'TICKER',
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          issuer,
+          target,
+          expiry,
+          data,
+        },
+        mockContext
+      );
 
       let error;
       try {
-        await assertTransferAssetOwnershipAuthorizationValid(mockToken);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -895,6 +965,32 @@ describe('authorization request validations', () => {
         message: 'The Asset does not exist',
       });
       expect(error).toEqual(expectedError);
+    });
+  });
+
+  describe('PortfolioCustody', () => {
+    test('with a valid request', async () => {
+      const data = {
+        type: AuthorizationType.PortfolioCustody as AuthorizationType.PortfolioCustody,
+        value: getNumberedPortfolioInstance(),
+      };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+      let error;
+      try {
+        await assertAuthorizationRequestValid(mockContext, auth);
+      } catch (err) {
+        error = err;
+      }
+      expect(error).toBe(undefined);
     });
   });
 
@@ -925,7 +1021,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertJoinIdentityAuthorizationValid(auth);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -947,7 +1043,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertJoinIdentityAuthorizationValid(auth);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -973,14 +1069,25 @@ describe('authorization request validations', () => {
         allowance,
         remaining: allowance,
       };
-      const rawData = {
+      const data = {
         type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
         value: subsidy,
       };
 
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
       let error;
       try {
-        await assertAddRelayerPayingKeyAuthorizationValid(rawData);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -999,13 +1106,23 @@ describe('authorization request validations', () => {
         allowance,
         remaining: allowance,
       };
-      const rawData = {
+      const data = {
         type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
         value: subsidy,
       };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
       let error;
       try {
-        await assertAddRelayerPayingKeyAuthorizationValid(rawData);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }
@@ -1033,13 +1150,23 @@ describe('authorization request validations', () => {
         allowance,
         remaining: allowance,
       };
-      const rawData = {
+      const data = {
         type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
         value: subsidy,
       };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
       let error;
       try {
-        await assertAddRelayerPayingKeyAuthorizationValid(rawData);
+        await assertAuthorizationRequestValid(mockContext, auth);
       } catch (err) {
         error = err;
       }

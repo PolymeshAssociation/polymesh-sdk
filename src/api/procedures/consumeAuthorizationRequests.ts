@@ -117,7 +117,6 @@ export async function getAuthorization(
   const fetchDid = async (): Promise<string> => getDid(did, context);
 
   const authorized = await P.mapSeries(unexpiredRequests, async authRequest => {
-    assertAuthorizationRequestValid(context, authRequest);
     const { target, issuer } = authRequest;
     let condition;
 
@@ -132,6 +131,8 @@ export async function getAuthorization(
     if (!accept) {
       did = await fetchDid();
       condition = condition || did === issuer.did;
+    } else {
+      await assertAuthorizationRequestValid(context, authRequest);
     }
 
     return condition;

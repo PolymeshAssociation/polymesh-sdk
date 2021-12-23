@@ -19,6 +19,7 @@ import {
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  GenericAuthorizationData,
   InputCondition,
   InputTargets,
   InputTaxWithholding,
@@ -352,13 +353,9 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.AttestPrimaryKeyRotation:
       return assertAttestPrimaryKeyAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
-      return assertTransferTickerAuthorizationValid(
-        new TickerReservation({ ticker: authRequest.data.value }, context)
-      );
+      return assertTransferTickerAuthorizationValid(context, authRequest.data);
     case AuthorizationType.TransferAssetOwnership:
-      return assertTransferAssetOwnershipAuthorizationValid(
-        new SecurityToken({ ticker: authRequest.data.value }, context)
-      );
+      return assertTransferAssetOwnershipAuthorizationValid(context, authRequest.data);
     case AuthorizationType.BecomeAgent:
       // no additional checks
       return;
@@ -407,8 +404,10 @@ export async function assertAttestPrimaryKeyAuthorizationValid(
 
 /** asserts transfer ticker authorization is valid */
 export async function assertTransferTickerAuthorizationValid(
-  reservation: TickerReservation
+  context: Context,
+  data: GenericAuthorizationData
 ): Promise<void> {
+  const reservation = new TickerReservation({ ticker: data.value }, context);
   const { status } = await reservation.details();
   if (status === TickerReservationStatus.Free) {
     throw new PolymeshError({
@@ -426,8 +425,10 @@ export async function assertTransferTickerAuthorizationValid(
 
 /** asserts valid transfer asset ownership authorization */
 export async function assertTransferAssetOwnershipAuthorizationValid(
-  token: SecurityToken
+  context: Context,
+  data: GenericAuthorizationData
 ): Promise<void> {
+  const token = new SecurityToken({ ticker: data.value }, context);
   if (!(await token.exists()))
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,

@@ -8,16 +8,10 @@ import {
   getAuthorization,
   prepareConsumeAuthorizationRequests,
 } from '~/api/procedures/consumeAuthorizationRequests';
-import { Account, AuthorizationRequest, Context, Identity, PolymeshError } from '~/internal';
+import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import {
-  Authorization,
-  AuthorizationType,
-  ErrorCode,
-  SignerValue,
-  TickerReservationStatus,
-} from '~/types';
+import { Authorization, AuthorizationType, SignerValue, TickerReservationStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
