@@ -13,7 +13,7 @@ import {
   assertSecondaryKeys,
   createAuthorizationResolver,
 } from '~/api/procedures/utils';
-import { AuthorizationRequest, CheckpointSchedule, Context, Instruction } from '~/internal';
+import { CheckpointSchedule, Context, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getIdentityInstance, getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
@@ -644,7 +644,7 @@ describe('createAuthorizationResolver', () => {
       null,
       mockContext
     );
-    const filterRecords = (event: string, mod: string) => [
+    const filterRecords = () => [
       { event: { data: [undefined, undefined, undefined, '3', undefined] } },
     ];
     const authRequest = resolver(({

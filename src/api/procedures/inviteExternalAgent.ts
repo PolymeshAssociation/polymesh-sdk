@@ -1,4 +1,3 @@
-import { ISubmittableResult } from '@polkadot/types/types';
 import { AuthorizationData, TxTags } from 'polymesh-types/types';
 
 import { createAuthorizationResolver } from '~/api/procedures/utils';
@@ -28,9 +27,8 @@ import {
   dateToMoment,
   signerToString,
   signerValueToSignatory,
-  u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, getDid, optionize } from '~/utils/internal';
+import { getDid, optionize } from '~/utils/internal';
 
 export interface InviteExternalAgentParams {
   target: string | Identity;
