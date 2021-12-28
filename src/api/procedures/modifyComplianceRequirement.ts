@@ -1,11 +1,9 @@
-import { differenceWith } from 'lodash';
-
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
-import { conditionsAreEqual } from '~/utils/internal';
+import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
 export type ModifyComplianceRequirementParams = {
   /**
@@ -64,11 +62,7 @@ export async function prepareModifyComplianceRequirement(
 
   const { conditions: existingConditions } = existingRequirement;
 
-  // TODO @prashantasdeveloper to be replaced with `hasSameElements`
-  if (
-    !differenceWith(conditions, existingConditions, conditionsAreEqual).length &&
-    conditions.length === existingConditions.length
-  ) {
+  if (hasSameElements(conditions, existingConditions, conditionsAreEqual)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is equal to the current one',
