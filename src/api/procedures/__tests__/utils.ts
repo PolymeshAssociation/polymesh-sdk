@@ -647,6 +647,10 @@ describe('createAuthorizationResolver', () => {
     entityMockUtils.cleanup();
   });
 
+  const filterRecords = () => [
+    { event: { data: [undefined, undefined, undefined, '3', undefined] } },
+  ];
+
   test('it returns a function that creates an AuthorizationRequest', async () => {
     const mockContext = dsMockUtils.getContextInstance();
 
@@ -662,9 +666,6 @@ describe('createAuthorizationResolver', () => {
       null,
       mockContext
     );
-    const filterRecords = () => [
-      { event: { data: [undefined, undefined, undefined, '3', undefined] } },
-    ];
     const authRequest = resolver(({
       filterRecords: filterRecords,
     } as unknown) as ISubmittableResult);
@@ -689,9 +690,7 @@ describe('createAuthorizationResolver', () => {
       null,
       mockContext
     );
-    const filterRecords = () => [
-      { event: { data: [undefined, undefined, undefined, '3', undefined] } },
-    ];
+
     const authRequest = resolver(({
       filterRecords: filterRecords,
     } as unknown) as ISubmittableResult);
