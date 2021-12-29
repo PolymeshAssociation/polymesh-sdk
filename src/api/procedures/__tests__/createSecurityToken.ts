@@ -249,21 +249,6 @@ describe('createSecurityToken procedure', () => {
     );
   });
 
-  test('should throw an error if that ticker is reserved by some other identity', () => {
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
-      expiryDate: null,
-      status: TickerReservationStatus.Reserved,
-    });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
-      customTypeData: null,
-    });
-
-    return expect(
-      prepareCreateSecurityToken.call(proc, { ...args, reservationRequired: false })
-    ).rejects.toThrow(`Ticker "${ticker}" is reserved by some other identity`);
-  });
-
   test('should add a token creation transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: null,
@@ -492,14 +477,20 @@ describe('createSecurityToken procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    test('should return the appropriate roles and permissions', async () => {
+      entityMockUtils.getTickerReservationDetailsStub().resolves({
+        owner: entityMockUtils.getIdentityInstance(),
+        expiryDate: null,
+        status: TickerReservationStatus.Reserved,
+      });
+
       let proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
         customTypeData: null,
       });
 
       let boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc(args)).toEqual({
+      expect(await boundFunc(args)).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           tokens: [],
@@ -517,7 +508,9 @@ describe('createSecurityToken procedure', () => {
 
       boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ ...args, documents: [{ uri: 'www.doc.com', name: 'myDoc' }] })).toEqual({
+      expect(
+        await boundFunc({ ...args, documents: [{ uri: 'www.doc.com', name: 'myDoc' }] })
+      ).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           tokens: [],
@@ -539,13 +532,19 @@ describe('createSecurityToken procedure', () => {
 
       boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ ...args, documents: [] })).toEqual({
+      expect(await boundFunc({ ...args, documents: [] })).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           tokens: [],
           portfolios: [],
           transactions: [TxTags.asset.CreateAsset],
         },
+      });
+
+      entityMockUtils.getTickerReservationDetailsStub().resolves({
+        owner: entityMockUtils.getIdentityInstance(),
+        expiryDate: null,
+        status: TickerReservationStatus.Free,
       });
 
       proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
@@ -557,7 +556,7 @@ describe('createSecurityToken procedure', () => {
 
       boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ ...args, documents: [], reservationRequired: false })).toEqual({
+      expect(await boundFunc({ ...args, documents: [], reservationRequired: false })).toEqual({
         permissions: {
           tokens: [],
           portfolios: [],

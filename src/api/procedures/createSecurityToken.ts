@@ -134,7 +134,7 @@ export async function prepareCreateSecurityToken(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const [{ owner, status }, classicTicker] = await Promise.all([
+  const [{ status }, classicTicker] = await Promise.all([
     reservation.details(),
     asset.classicTickers(rawTicker),
   ]);
@@ -151,17 +151,6 @@ export async function prepareCreateSecurityToken(
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
-      });
-    }
-  } else {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { did } = owner!;
-    const { did: currentDid } = await context.getCurrentIdentity();
-
-    if (currentDid !== did) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: `Ticker "${ticker}" is reserved by some other identity`,
       });
     }
   }
@@ -240,12 +229,13 @@ export async function prepareCreateSecurityToken(
 /**
  * @hidden
  */
-export function getAuthorization(
+export async function getAuthorization(
   this: Procedure<Params, SecurityToken, Storage>,
-  { ticker, documents, reservationRequired }: Params
-): ProcedureAuthorization {
+  { ticker, documents }: Params
+): Promise<ProcedureAuthorization> {
   const {
     storage: { customTypeData },
+    context,
   } = this;
 
   const transactions = [TxTags.asset.CreateAsset];
@@ -259,7 +249,12 @@ export function getAuthorization(
   }
 
   let roles: Role[] = [];
-  if (reservationRequired) {
+
+  const reservation = new TickerReservation({ ticker }, context);
+
+  const { status } = await reservation.details();
+
+  if (status !== TickerReservationStatus.Free) {
     roles = [{ type: RoleType.TickerOwner, ticker }];
   }
 
