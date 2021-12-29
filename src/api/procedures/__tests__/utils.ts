@@ -16,7 +16,7 @@ import {
 import { CheckpointSchedule, Context, Instruction } from '~/internal';
 import { AuthorizationData } from '~/polkadot/polymesh/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getIdentityInstance, getInstructionInstance } from '~/testUtils/mocks/entities';
+import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
   AuthorizationType,

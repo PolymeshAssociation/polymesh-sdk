@@ -13,14 +13,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import {
-  Authorization,
-  AuthorizationType,
-  ErrorCode,
-  SignerType,
-  TransactionPermissions,
-  TxGroup,
-} from '~/types';
+import { AuthorizationType, ErrorCode, SignerType, TransactionPermissions, TxGroup } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
