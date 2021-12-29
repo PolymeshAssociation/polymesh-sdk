@@ -347,13 +347,13 @@ export const createAuthorizationResolver = (
   context: Context
 ) => (receipt: ISubmittableResult): AuthorizationRequest => {
   const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
-  let typedAuth;
+  let rawAuth;
   if (authData instanceof PostTransactionValue) {
-    typedAuth = authData.value;
+    rawAuth = authData.value;
   } else {
-    typedAuth = authData;
+    rawAuth = authData;
   }
-  const auth = authorizationDataToAuthorization(typedAuth, context);
+  const auth = authorizationDataToAuthorization(rawAuth, context);
 
   const id = u64ToBigNumber(data[3]);
   return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: auth }, context);

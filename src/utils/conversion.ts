@@ -1195,6 +1195,9 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  console.log('uncaught auth');
+  console.log(auth);
+
   throw new PolymeshError({
     code: ErrorCode.UnexpectedError,
     message: 'Unsupported Authorization Type. Please contact the Polymath team',

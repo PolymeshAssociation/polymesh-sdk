@@ -13,7 +13,7 @@ import {
   assertSecondaryKeys,
   createAuthorizationResolver,
 } from '~/api/procedures/utils';
-import { CheckpointSchedule, Context, Instruction } from '~/internal';
+import { CheckpointSchedule, Context, Instruction, PostTransactionValue } from '~/internal';
 import { AuthorizationData } from '~/polkadot/polymesh/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
@@ -657,6 +657,33 @@ describe('createAuthorizationResolver', () => {
 
     const resolver = createAuthorizationResolver(
       authData,
+      entityMockUtils.getIdentityInstance(),
+      entityMockUtils.getIdentityInstance(),
+      null,
+      mockContext
+    );
+    const filterRecords = () => [
+      { event: { data: [undefined, undefined, undefined, '3', undefined] } },
+    ];
+    const authRequest = resolver(({
+      filterRecords: filterRecords,
+    } as unknown) as ISubmittableResult);
+    expect(authRequest.authId).toEqual(new BigNumber(3));
+  });
+
+  test('it returns a function that creates an AuthorizationRequest with a PostTransaction Authorization', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const authData = {
+      type: AuthorizationType.RotatePrimaryKey as AuthorizationType.RotatePrimaryKey,
+      isRotatePrimaryKey: true,
+    } as AuthorizationData;
+
+    const postTransaction = new PostTransactionValue(() => authData);
+    await postTransaction.run({} as ISubmittableResult);
+
+    const resolver = createAuthorizationResolver(
+      postTransaction,
       entityMockUtils.getIdentityInstance(),
       entityMockUtils.getIdentityInstance(),
       null,
