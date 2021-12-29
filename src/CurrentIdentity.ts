@@ -1,6 +1,7 @@
-import { createToken, CreateTokenParams } from '~/api/procedures/createToken';
 import {
   Context,
+  createSecurityToken,
+  CreateSecurityTokenParamsWithTicker,
   createVenue,
   CreateVenueParams,
   inviteAccount,
@@ -87,8 +88,10 @@ export class CurrentIdentity {
       },
       context
     );
-    this.createSecurityToken = createProcedureMethod(
-      { getProcedureAndArgs: args => [createToken, args] },
+    this.createToken = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [createSecurityToken, { reservationRequired: false, ...args }],
+      },
       context
     );
   }
@@ -139,10 +142,10 @@ export class CurrentIdentity {
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
 
   /**
-   * Create a Security Token using the reserved ticker
+   * Create a Security Token
    *
-   * @note required role:
+   * @note if ticker is already reserved, then required role:
    *   - Ticker Owner
    */
-  public createSecurityToken: ProcedureMethod<CreateTokenParams, SecurityToken>;
+  public createToken: ProcedureMethod<CreateSecurityTokenParamsWithTicker, SecurityToken>;
 }

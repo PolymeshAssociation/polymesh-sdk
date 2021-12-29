@@ -163,6 +163,7 @@ describe('createSecurityToken procedure', () => {
       tokenIdentifiers,
       fundingRound,
       requireInvestorUniqueness,
+      reservationRequired: true,
     };
   });
 
@@ -233,7 +234,7 @@ describe('createSecurityToken procedure', () => {
     );
   });
 
-  test("should throw an error if that ticker hasn't been reserved", () => {
+  test("should throw an error if that ticker hasn't been reserved and reservation is required", () => {
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
@@ -246,6 +247,21 @@ describe('createSecurityToken procedure', () => {
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
       `You must first reserve ticker "${ticker}" in order to create a Security Token with it`
     );
+  });
+
+  test('should throw an error if that ticker is reserved by some other identity', () => {
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+      expiryDate: null,
+      status: TickerReservationStatus.Reserved,
+    });
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: null,
+    });
+
+    return expect(
+      prepareCreateSecurityToken.call(proc, { ...args, reservationRequired: false })
+    ).rejects.toThrow(`Ticker "${ticker}" is reserved by some other identity`);
   });
 
   test('should add a token creation transaction to the queue', async () => {
@@ -295,6 +311,62 @@ describe('createSecurityToken procedure', () => {
     await prepareCreateSecurityToken.call(proc, { ...args, totalSupply });
 
     sinon.assert.calledWith(addTransactionStub, issueTransaction, {}, rawTicker, rawTotalSupply);
+  });
+
+  test('should add a token creation transaction to the queue when reservationRequired is false', async () => {
+    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: null,
+    });
+
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
+      expiryDate: null,
+      status: TickerReservationStatus.Reserved,
+    });
+
+    let result = await prepareCreateSecurityToken.call(proc, {
+      ...args,
+      reservationRequired: false,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub.firstCall,
+      createAssetTransaction,
+      { fee: undefined },
+      rawName,
+      rawTicker,
+      rawIsDivisible,
+      rawType,
+      rawIdentifiers,
+      rawFundingRound,
+      rawDisableIu
+    );
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+
+    entityMockUtils.getTickerReservationDetailsStub().resolves({
+      owner: entityMockUtils.getIdentityInstance(),
+      expiryDate: null,
+      status: TickerReservationStatus.Free,
+    });
+
+    result = await prepareCreateSecurityToken.call(proc, {
+      ...args,
+      reservationRequired: false,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub.firstCall,
+      createAssetTransaction,
+      { fee: undefined },
+      rawName,
+      rawTicker,
+      rawIsDivisible,
+      rawType,
+      rawIdentifiers,
+      rawFundingRound,
+      rawDisableIu
+    );
+    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {
@@ -469,6 +541,23 @@ describe('createSecurityToken procedure', () => {
 
       expect(boundFunc({ ...args, documents: [] })).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
+        permissions: {
+          tokens: [],
+          portfolios: [],
+          transactions: [TxTags.asset.CreateAsset],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+        customTypeData: {
+          id: dsMockUtils.createMockU32(10),
+          rawValue: dsMockUtils.createMockBytes('something'),
+        },
+      });
+
+      boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc({ ...args, documents: [], reservationRequired: false })).toEqual({
         permissions: {
           tokens: [],
           portfolios: [],

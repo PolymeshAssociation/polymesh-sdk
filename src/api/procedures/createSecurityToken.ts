@@ -8,6 +8,7 @@ import { Context, PolymeshError, Procedure, SecurityToken, TickerReservation } f
 import {
   ErrorCode,
   KnownTokenType,
+  Role,
   RoleType,
   TickerReservationStatus,
   TokenDocument,
@@ -71,11 +72,18 @@ export interface CreateSecurityTokenParams {
   requireInvestorUniqueness: boolean;
 }
 
+export interface CreateSecurityTokenParamsWithTicker extends CreateSecurityTokenParams {
+  /**
+   * Name of the ticker
+   */
+  ticker: string;
+}
+
 /**
  * @hidden
  */
-export type Params = CreateSecurityTokenParams & {
-  ticker: string;
+export type Params = CreateSecurityTokenParamsWithTicker & {
+  reservationRequired: boolean;
 };
 
 /**
@@ -119,13 +127,14 @@ export async function prepareCreateSecurityToken(
     fundingRound,
     documents,
     requireInvestorUniqueness,
+    reservationRequired,
   } = args;
 
   const reservation = new TickerReservation({ ticker }, context);
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const [{ status }, classicTicker] = await Promise.all([
+  const [{ owner, status }, classicTicker] = await Promise.all([
     reservation.details(),
     asset.classicTickers(rawTicker),
   ]);
@@ -138,10 +147,23 @@ export async function prepareCreateSecurityToken(
   }
 
   if (status === TickerReservationStatus.Free) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
-    });
+    if (reservationRequired) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
+      });
+    }
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { did } = owner!;
+    const { did: currentDid } = await context.getCurrentIdentity();
+
+    if (currentDid !== did) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: `Ticker "${ticker}" is reserved by some other identity`,
+      });
+    }
   }
 
   let rawType: MaybePostTransactionValue<AssetType>;
@@ -220,7 +242,7 @@ export async function prepareCreateSecurityToken(
  */
 export function getAuthorization(
   this: Procedure<Params, SecurityToken, Storage>,
-  { ticker, documents }: Params
+  { ticker, documents, reservationRequired }: Params
 ): ProcedureAuthorization {
   const {
     storage: { customTypeData },
@@ -236,14 +258,24 @@ export function getAuthorization(
     transactions.push(TxTags.asset.RegisterCustomAssetType);
   }
 
-  return {
-    roles: [{ type: RoleType.TickerOwner, ticker }],
+  let roles: Role[] = [];
+  if (reservationRequired) {
+    roles = [{ type: RoleType.TickerOwner, ticker }];
+  }
+
+  const auth: ProcedureAuthorization = {
     permissions: {
       transactions,
       tokens: [],
       portfolios: [],
     },
   };
+
+  if (roles.length) {
+    return { ...auth, roles };
+  }
+
+  return auth;
 }
 
 /**

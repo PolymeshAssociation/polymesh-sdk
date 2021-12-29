@@ -235,6 +235,7 @@ describe('TickerReservation class', () => {
         tokenIdentifiers: [{ type: TokenIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
         requireInvestorUniqueness: false,
+        reservationRequired: true,
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
