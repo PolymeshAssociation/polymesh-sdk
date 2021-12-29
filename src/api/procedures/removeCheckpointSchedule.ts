@@ -43,7 +43,7 @@ export async function prepareRemoveCheckpointSchedule(
   if (!exists) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
-      message: 'Schedule no longer exists. It was either removed or it expired',
+      message: 'Schedule was not found. It may have been removed or expired',
     });
   }
 

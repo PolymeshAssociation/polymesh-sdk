@@ -45,7 +45,7 @@ export interface CreateSecurityTokenParams {
   /**
    * amount of tokens that will be minted on creation (optional, default doesn't mint)
    */
-  totalSupply?: BigNumber;
+  initialSupply?: BigNumber;
   /**
    * whether a single token can be divided into decimal parts
    */
@@ -120,7 +120,7 @@ export async function prepareCreateSecurityToken(
   const {
     ticker,
     name,
-    totalSupply,
+    initialSupply,
     isDivisible,
     tokenType,
     tokenIdentifiers = [],
@@ -216,10 +216,10 @@ export async function prepareCreateSecurityToken(
     rawDisableIu
   );
 
-  if (totalSupply && totalSupply.gt(0)) {
-    const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
+  if (initialSupply && initialSupply.gt(0)) {
+    const rawInitialSupply = numberToBalance(initialSupply, context, isDivisible);
 
-    this.addTransaction(tx.asset.issue, {}, rawTicker, rawTotalSupply);
+    this.addTransaction(tx.asset.issue, {}, rawTicker, rawInitialSupply);
   }
 
   if (documents?.length) {

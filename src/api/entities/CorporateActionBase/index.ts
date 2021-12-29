@@ -91,12 +91,12 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   public targets: CorporateActionTargets;
 
   /**
-   * default percentage of tax withholding for this Corporate Action
+   * default percentage (0-100) of tax withholding for this Corporate Action
    */
   public defaultTaxWithholding: BigNumber;
 
   /**
-   * percentage of tax withholding per Identity. Any Identity not present
+   * percentage (0-100) of tax withholding per Identity. Any Identity not present
    *   in this array uses the default tax withholding percentage
    */
   public taxWithholdings: TaxWithholding[];

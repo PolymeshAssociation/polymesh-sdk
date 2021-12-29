@@ -351,18 +351,19 @@ export class Context {
     const rawAddress = stringToAccountId(address, this);
 
     const assembleResult = ({
-      data: { free: rawFree, miscFrozen, feeFrozen },
+      data: { free: rawFree, miscFrozen, feeFrozen, reserved: rawReserved },
     }: AccountInfo): AccountBalance => {
       /*
-       * This might seem counterintuitive, but that's how the chain
-       * stores balances
+       * The chain's "free" balance is the balance that isn't locked. Here we calculate it so
+       * the free balance is what the Account is able to spend
        */
-      const total = balanceToBigNumber(rawFree);
+      const reserved = balanceToBigNumber(rawReserved);
+      const total = balanceToBigNumber(rawFree).plus(reserved);
       const locked = BigNumber.max(balanceToBigNumber(miscFrozen), balanceToBigNumber(feeFrozen));
       return {
         total,
         locked,
-        free: total.minus(locked),
+        free: total.minus(locked).minus(reserved),
       };
     };
 
