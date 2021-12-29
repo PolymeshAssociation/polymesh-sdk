@@ -655,7 +655,6 @@ describe('createAuthorizationResolver', () => {
       isRotatePrimaryKey: true,
     } as AuthorizationData;
 
-    // const authData = utilsConversionModule.authorizationToAuthorizationData(value, mockContext);
     const resolver = createAuthorizationResolver(
       authData,
       entityMockUtils.getIdentityInstance(),

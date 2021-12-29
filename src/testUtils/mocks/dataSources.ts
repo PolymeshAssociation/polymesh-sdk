@@ -2193,7 +2193,6 @@ export const createMockAuthorizationData = (
   if (isCodec<AuthorizationData>(authorizationData)) {
     return authorizationData;
   }
-  console.log('was not codec');
 
   return createMockEnum(authorizationData) as AuthorizationData;
 };

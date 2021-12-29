@@ -11,6 +11,7 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
+  PostTransactionValue,
 } from '~/internal';
 import { AuthorizationData } from '~/polkadot/polymesh/types';
 import {
@@ -339,14 +340,20 @@ export function assertRequirementsNotTooComplex(
  * @hidden
  */
 export const createAuthorizationResolver = (
-  authData: AuthorizationData,
+  authData: AuthorizationData | PostTransactionValue<AuthorizationData>,
   issuer: Identity,
   target: Identity | Account,
   expiry: Date | null,
   context: Context
 ) => (receipt: ISubmittableResult): AuthorizationRequest => {
   const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
-  const auth = authorizationDataToAuthorization(authData, context);
+  let typedAuth;
+  if (authData instanceof PostTransactionValue) {
+    typedAuth = authData.value;
+  } else {
+    typedAuth = authData;
+  }
+  const auth = authorizationDataToAuthorization(typedAuth, context);
 
   const id = u64ToBigNumber(data[3]);
   return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: auth }, context);
