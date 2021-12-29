@@ -12,8 +12,8 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
+import { AuthorizationData } from '~/polkadot/polymesh/types';
 import {
-  Authorization,
   Condition,
   ConditionTarget,
   ConditionType,
@@ -29,7 +29,12 @@ import {
   SignerValue,
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
-import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import {
+  authorizationDataToAuthorization,
+  signerToSignerValue,
+  u32ToBigNumber,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 // import { Proposal } from '~/internal';
@@ -334,14 +339,15 @@ export function assertRequirementsNotTooComplex(
  * @hidden
  */
 export const createAuthorizationResolver = (
-  authData: Authorization,
+  authData: AuthorizationData,
   issuer: Identity,
   target: Identity | Account,
   expiry: Date | null,
   context: Context
 ) => (receipt: ISubmittableResult): AuthorizationRequest => {
   const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+  const auth = authorizationDataToAuthorization(authData, context);
 
   const id = u64ToBigNumber(data[3]);
-  return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: authData }, context);
+  return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: auth }, context);
 };

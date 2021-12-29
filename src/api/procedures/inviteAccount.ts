@@ -105,18 +105,26 @@ export async function prepareInviteAccount(
     authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
-  const authData = {
-    type: AuthorizationType.JoinIdentity as AuthorizationType.JoinIdentity,
-    value: authorizationValue,
-  };
-  const rawAuthorizationData = authorizationToAuthorizationData(authData, context);
+  const rawAuthorizationData = authorizationToAuthorizationData(
+    {
+      type: AuthorizationType.JoinIdentity as AuthorizationType.JoinIdentity,
+      value: authorizationValue,
+    },
+    context
+  );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
   const [authRequest] = this.addTransaction(
     tx.identity.addAuthorization,
     {
       resolvers: [
-        createAuthorizationResolver(authData, identity, account, expiry || null, context),
+        createAuthorizationResolver(
+          rawAuthorizationData,
+          identity,
+          account,
+          expiry || null,
+          context
+        ),
       ],
     },
     rawSignatory,

@@ -78,12 +78,13 @@ export async function prepareSetCustodian(
 
   const rawSignatory = signerValueToSignatory(signerToSignerValue(target), context);
 
-  const authData = {
-    type: AuthorizationType.PortfolioCustody as AuthorizationType.PortfolioCustody,
-    value: portfolio,
-  };
-
-  const rawAuthorizationData = authorizationToAuthorizationData(authData, context);
+  const rawAuthorizationData = authorizationToAuthorizationData(
+    {
+      type: AuthorizationType.PortfolioCustody as AuthorizationType.PortfolioCustody,
+      value: portfolio,
+    },
+    context
+  );
 
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
@@ -91,7 +92,13 @@ export async function prepareSetCustodian(
     identity.addAuthorization,
     {
       resolvers: [
-        createAuthorizationResolver(authData, issuerIdentity, target, expiry || null, context),
+        createAuthorizationResolver(
+          rawAuthorizationData,
+          issuerIdentity,
+          target,
+          expiry || null,
+          context
+        ),
       ],
     },
     rawSignatory,

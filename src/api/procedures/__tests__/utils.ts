@@ -14,6 +14,7 @@ import {
   createAuthorizationResolver,
 } from '~/api/procedures/utils';
 import { CheckpointSchedule, Context, Instruction } from '~/internal';
+import { AuthorizationData } from '~/polkadot/polymesh/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getIdentityInstance, getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
@@ -632,15 +633,33 @@ describe('assertRequirementsNotTooComplex', () => {
 });
 
 describe('createAuthorizationResolver', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
   test('it returns a function that creates an AuthorizationRequest', async () => {
     const mockContext = dsMockUtils.getContextInstance();
+
     const authData = {
       type: AuthorizationType.RotatePrimaryKey as AuthorizationType.RotatePrimaryKey,
-    };
+      isRotatePrimaryKey: true,
+    } as AuthorizationData;
+
+    // const authData = utilsConversionModule.authorizationToAuthorizationData(value, mockContext);
     const resolver = createAuthorizationResolver(
       authData,
-      getIdentityInstance(),
-      getIdentityInstance(),
+      entityMockUtils.getIdentityInstance(),
+      entityMockUtils.getIdentityInstance(),
       null,
       mockContext
     );

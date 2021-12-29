@@ -1194,6 +1194,8 @@ export function authorizationDataToAuthorization(
       value: agentGroupToPermissionGroup(agentGroup, tickerToString(ticker), context),
     };
   }
+  console.log('unsupported type: ');
+  console.log(auth);
 
   throw new PolymeshError({
     code: ErrorCode.UnexpectedError,

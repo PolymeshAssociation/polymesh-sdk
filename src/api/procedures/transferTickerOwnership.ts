@@ -73,18 +73,26 @@ export async function prepareTransferTickerOwnership(
     { type: SignerType.Identity, value: signerToString(target) },
     context
   );
-  const authData = {
-    type: AuthorizationType.TransferTicker as AuthorizationType.TransferTicker,
-    value: ticker,
-  };
-  const rawAuthorizationData = authorizationToAuthorizationData(authData, context);
+  const rawAuthorizationData = authorizationToAuthorizationData(
+    {
+      type: AuthorizationType.TransferTicker,
+      value: ticker,
+    },
+    context
+  );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
   const [auth] = this.addTransaction(
     tx.identity.addAuthorization,
     {
       resolvers: [
-        createAuthorizationResolver(authData, issuer, targetIdentity, expiry || null, context),
+        createAuthorizationResolver(
+          rawAuthorizationData,
+          issuer,
+          targetIdentity,
+          expiry || null,
+          context
+        ),
       ],
     },
     rawSignatory,

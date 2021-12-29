@@ -139,19 +139,19 @@ export async function prepareInviteExternalAgent(
     );
   }
 
+  let data;
+  if (rawAuthorizationData instanceof PostTransactionValue) {
+    data = rawAuthorizationData.value;
+  } else {
+    data = rawAuthorizationData;
+  }
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
   const [auth] = this.addTransaction(
     identity.addAuthorization,
     {
       resolvers: [
-        createAuthorizationResolver(
-          rawAuthorizationData as Authorization,
-          issuer,
-          targetIdentity,
-          expiry || null,
-          context
-        ),
+        createAuthorizationResolver(data, issuer, targetIdentity, expiry || null, context),
       ],
     },
     rawSignatory,
