@@ -999,7 +999,7 @@ describe('authorization request validations', () => {
       type: AuthorizationType.JoinIdentity,
       value: permissions,
     };
-    test('with a valid request', async () => {
+    test('should not throw with a valid request', async () => {
       const mockTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(
         {
@@ -1157,8 +1157,8 @@ describe('authorization request validations', () => {
         allowance,
         remaining: allowance,
       };
-      const data = {
-        type: AuthorizationType.AddRelayerPayingKey as AuthorizationType.AddRelayerPayingKey,
+      const data: Authorization = {
+        type: AuthorizationType.AddRelayerPayingKey,
         value: subsidy,
       };
       const auth = new AuthorizationRequest(

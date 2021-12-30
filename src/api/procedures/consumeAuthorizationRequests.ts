@@ -111,8 +111,7 @@ export async function getAuthorization(
 
   const fetchDid = async (): Promise<string> => getDid(did, context);
 
-  const authorized = await P.mapSeries(unexpiredRequests, async authRequest => {
-    const { target, issuer } = authRequest;
+  const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
     let condition;
 
     if (target instanceof Account) {
