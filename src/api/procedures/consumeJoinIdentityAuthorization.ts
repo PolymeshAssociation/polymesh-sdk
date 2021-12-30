@@ -1,8 +1,7 @@
 import { TxTags } from 'polymesh-types/types';
 
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
@@ -22,7 +21,6 @@ export interface ConsumeJoinIdentityAuthorizationParams {
 export interface Storage {
   currentAccount: Account;
   calledByTarget: boolean;
-  existingIdentity: Identity | null;
 }
 
 /**
@@ -38,11 +36,10 @@ export async function prepareConsumeJoinIdentityAuthorization(
         tx: { identity },
       },
     },
-    storage: { calledByTarget, existingIdentity },
+    storage: { calledByTarget },
     context,
   } = this;
   const { authRequest, accept } = args;
-  await assertAuthorizationRequestValid(context, authRequest);
 
   const { target, authId, issuer } = authRequest;
 
@@ -66,12 +63,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
     return;
   }
 
-  if (existingIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'This Account is already part of an Identity',
-    });
-  }
+  await assertAuthorizationRequestValid(context, authRequest);
 
   this.addTransaction(identity.joinIdentityAsKey, { paidForBy: issuer }, rawAuthId);
 }
@@ -142,12 +134,10 @@ export async function prepareStorage(
   const targetAccount = target as Account;
   const currentAccount = context.getCurrentAccount();
   const calledByTarget = targetAccount.isEqual(currentAccount);
-  const existingIdentity = await targetAccount.getIdentity();
 
   return {
     currentAccount,
     calledByTarget,
-    existingIdentity,
   };
 }
 

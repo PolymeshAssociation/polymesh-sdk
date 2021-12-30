@@ -1038,14 +1038,17 @@ export interface Subsidy {
 }
 
 export type RotatePrimaryKeyAuthorizationData = { type: AuthorizationType.RotatePrimaryKey };
+
 export type JoinIdentityAuthorizationData = {
   type: AuthorizationType.JoinIdentity;
   value: Permissions;
 };
+
 export type PortfolioCustodyAuthorizationData = {
   type: AuthorizationType.PortfolioCustody;
   value: NumberedPortfolio | DefaultPortfolio;
 };
+
 export type BecomeAgentAuthorizationData = {
   type: AuthorizationType.BecomeAgent;
   value: KnownPermissionGroup | CustomPermissionGroup;

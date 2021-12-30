@@ -347,15 +347,16 @@ export async function assertAuthorizationRequestValid(
       },
     });
   }
-  switch (authRequest.data.type) {
+  const { data } = authRequest;
+  switch (data.type) {
     case AuthorizationType.RotatePrimaryKey:
       return assertPrimaryKeyRotationAuthorizationValid(authRequest);
     case AuthorizationType.AttestPrimaryKeyRotation:
       return assertAttestPrimaryKeyAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
-      return assertTransferTickerAuthorizationValid(context, authRequest.data);
+      return assertTransferTickerAuthorizationValid(context, data);
     case AuthorizationType.TransferAssetOwnership:
-      return assertTransferAssetOwnershipAuthorizationValid(context, authRequest.data);
+      return assertTransferAssetOwnershipAuthorizationValid(context, data);
     case AuthorizationType.BecomeAgent:
       // no additional checks
       return;
@@ -368,14 +369,16 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.JoinIdentity:
       return assertJoinIdentityAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
-      return assertAddRelayerPayingKeyAuthorizationValid(authRequest.data);
+      return assertAddRelayerPayingKeyAuthorizationValid(data);
     default:
-      throw new UnreachableCaseError(authRequest.data); // ensures switch statement covers all values
+      throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
 }
 
 /**
- * asserts valid  primary key rotation authorization
+ * @hidden
+ *
+ * Asserts valid  primary key rotation authorization
  */
 export async function assertPrimaryKeyRotationAuthorizationValid(
   authRequest: AuthorizationRequest
@@ -383,18 +386,21 @@ export async function assertPrimaryKeyRotationAuthorizationValid(
   if (authRequest.target instanceof Identity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'An Identity can not join another Identity',
+      message: 'An Identity can not become the primary key of another Identity',
     });
   }
 }
 
 /**
- * asserts valid attest primary key authorization
+ * @hidden
+ *
+ * Asserts valid attest primary key authorization
  */
 export async function assertAttestPrimaryKeyAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
-  if (!(await authRequest.issuer.isCddProvider())) {
+  const isCddProvider = await authRequest.issuer.isCddProvider();
+  if (!isCddProvider) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Issuer must be a CDD provider',
@@ -402,7 +408,11 @@ export async function assertAttestPrimaryKeyAuthorizationValid(
   }
 }
 
-/** asserts transfer ticker authorization is valid */
+/**
+ * @hidden
+ *
+ * Asserts transfer ticker authorization is valid
+ */
 export async function assertTransferTickerAuthorizationValid(
   context: Context,
   data: GenericAuthorizationData
@@ -418,18 +428,23 @@ export async function assertTransferTickerAuthorizationValid(
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The ticker has already been used to create an Asset',
+      message: 'The Ticker has already been used to create an Asset',
     });
   }
 }
 
-/** asserts valid transfer asset ownership authorization */
+/**
+ * @hidden
+ *
+ * Asserts valid transfer asset ownership authorization
+ */
 export async function assertTransferAssetOwnershipAuthorizationValid(
   context: Context,
   data: GenericAuthorizationData
 ): Promise<void> {
   const token = new SecurityToken({ ticker: data.value }, context);
-  if (!(await token.exists()))
+  const exists = await token.exists();
+  if (!exists)
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The Asset does not exist',
@@ -437,48 +452,80 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
 }
 
 /**
- * asserts valid join identity authorization request
+ * @hidden
+ *
+ * Asserts valid join identity authorization request
  */
 export async function assertJoinIdentityAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
-  // https://github.com/PolymathNetwork/Polymesh/blob/5fec16fdfb05dc9022508880503e835ae9c1776c/pallets/identity/src/keys.rs#L470
-  const identity = authRequest.issuer;
-  if (!(await identity.hasValidCdd())) {
+  const issuer = authRequest.issuer;
+  const target = authRequest.target;
+  const hasValidCdd = await issuer.hasValidCdd();
+  if (!hasValidCdd) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Issuing Identity does not have a valid CDD claim',
     });
   }
+
+  if (target instanceof Identity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target cannot be an Identity',
+    });
+  }
+
+  const targetIdentity = await target.getIdentity();
+  if (targetIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target Account already has an associated Identity',
+    });
+  }
 }
 
-/** asserts valid add relayer paying key authorization */
+/**
+ * @hidden
+ *
+ * Asserts valid add relayer paying key authorization
+ */
 export async function assertAddRelayerPayingKeyAuthorizationValid(
   data: AddRelayerPayingKeyAuthorizationData
 ): Promise<void> {
   const subsidy = data.value;
-  const beneficiaryIdentity = await subsidy.beneficiary.getIdentity();
+
+  const [beneficiaryIdentity, subsidizerIdentity] = await Promise.all([
+    subsidy.beneficiary.getIdentity(),
+    subsidy.subsidizer.getIdentity(),
+  ]);
+
   if (!beneficiaryIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Beneficiary Account does not have an Identity',
     });
   }
-  if (!(await beneficiaryIdentity.hasValidCdd())) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Beneficiary Account does not have a valid CDD Claim',
-    });
-  }
 
-  const subsidizerIdentity = await subsidy.subsidizer.getIdentity();
   if (!subsidizerIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have an Identity',
     });
   }
-  if (!(await subsidizerIdentity.hasValidCdd())) {
+  const [isBeneficiaryCddValid, isSubsidizerCddValid] = await Promise.all([
+    beneficiaryIdentity.hasValidCdd(),
+    subsidizerIdentity.hasValidCdd(),
+  ]);
+
+  if (!isBeneficiaryCddValid) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Beneficiary Account does not have a valid CDD Claim',
+    });
+  }
+
+  if (!isSubsidizerCddValid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have a valid CDD Claim',
@@ -486,7 +533,11 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
   }
 }
 
-/** A helper class to ensure a code path is unreachable. For example this can be used for ensuring switch statements are exhaustive */
+/**
+ * @hidden
+ *
+ * Helper class to ensure a code path is unreachable. For example this can be used for ensuring switch statements are exhaustive
+ */
 export class UnreachableCaseError extends Error {
   /** This should never be called */
   constructor(val: never) {
