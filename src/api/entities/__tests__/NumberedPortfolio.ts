@@ -69,24 +69,6 @@ describe('NumberedPortfolio class', () => {
     });
   });
 
-  describe('method: delete', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const id = new BigNumber(1);
-      const did = 'someDid';
-      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id, did }, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await numberedPortfolio.delete();
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
   describe('method: modifyName', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const id = new BigNumber(1);
