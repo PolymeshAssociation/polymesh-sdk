@@ -674,9 +674,8 @@ describe('createAuthorizationResolver', () => {
   test('should return a function that creates an AuthorizationRequest with a PostTransaction Authorization', async () => {
     const mockContext = dsMockUtils.getContextInstance();
 
-    const authData = {
-      type: AuthorizationType.RotatePrimaryKey as AuthorizationType.RotatePrimaryKey,
-      isRotatePrimaryKey: true,
+    const authData: Authorization = {
+      type: AuthorizationType.RotatePrimaryKey,
     };
 
     const postTransaction = new PostTransactionValue(() => authData);

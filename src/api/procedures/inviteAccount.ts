@@ -9,6 +9,7 @@ import {
   Procedure,
 } from '~/internal';
 import {
+  Authorization,
   AuthorizationType,
   ErrorCode,
   Permissions,
@@ -105,8 +106,8 @@ export async function prepareInviteAccount(
     authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
-  const authRequest = {
-    type: AuthorizationType.JoinIdentity as AuthorizationType.JoinIdentity,
+  const authRequest: Authorization = {
+    type: AuthorizationType.JoinIdentity,
     value: authorizationValue,
   };
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
