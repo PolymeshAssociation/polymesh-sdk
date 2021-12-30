@@ -52,6 +52,7 @@ import {
   InstructionType,
   Leg,
   PercentageTransferRestriction,
+  PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
   ResultSet,
@@ -160,7 +161,7 @@ interface SecurityTokenOptions {
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaultConfig?: Partial<CorporateActionDefaultConfig>;
   permissionsGetAgents?: AgentWithGroup[];
-  permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
+  permissionsGetGroups?: PermissionGroups;
   complianceRequirementsGet?: ComplianceRequirements;
   checkpointsGetOne?: Partial<Checkpoint>;
   checkpointsSchedulesGetOne?: Partial<ScheduleWithDetails>;

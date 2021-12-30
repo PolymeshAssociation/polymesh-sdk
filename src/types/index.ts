@@ -940,6 +940,14 @@ export interface Permissions {
 export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
+ * This represents all Permission Groups of a specific Security Token, separated by `known` and `custom`
+ */
+export interface PermissionGroups {
+  known: KnownPermissionGroup[];
+  custom: CustomPermissionGroup[];
+}
+
+/**
  * This represents positive permissions (i.e. only "includes"). It is used
  *   for specifying procedure requirements and querying if an account has certain
  *   permissions. Null values represent full permissions in that category
@@ -966,7 +974,7 @@ export interface CheckRolesResult {
    */
   missingRoles?: Role[];
   /**
-   * whether the signer posseses all the required roles or not
+   * whether the signer possesses all the required roles or not
    */
   result: boolean;
   /**
@@ -1369,7 +1377,7 @@ export interface GroupedInstructions {
   pending: Instruction[];
   /**
    * Instructions that failed in their execution (can be rescheduled).
-   *   This group supercedes the other three, so for example, a failed Instruction
+   *   This group supersedes the other three, so for example, a failed Instruction
    *   might also belong in the `affirmed` group, but it will only be included in this one
    */
   failed: Instruction[];

@@ -15,7 +15,13 @@ import {
   RemoveExternalAgentParams,
   SecurityToken,
 } from '~/internal';
-import { AgentWithGroup, ErrorCode, PermissionGroupType, ProcedureMethod } from '~/types';
+import {
+  AgentWithGroup,
+  ErrorCode,
+  PermissionGroups,
+  PermissionGroupType,
+  ProcedureMethod,
+} from '~/types';
 import {
   agentGroupToPermissionGroup,
   identityIdToString,
@@ -106,10 +112,7 @@ export class Permissions extends Namespace<SecurityToken> {
   /**
    * Retrieve all Permission Groups of this Security Token
    */
-  public async getGroups(): Promise<{
-    known: KnownPermissionGroup[];
-    custom: CustomPermissionGroup[];
-  }> {
+  public async getGroups(): Promise<PermissionGroups> {
     const {
       context: {
         polymeshApi: {
