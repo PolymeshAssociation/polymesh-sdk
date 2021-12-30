@@ -49,6 +49,18 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
+    dsMockUtils.createQueryStub('identity', 'authorizations', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockAuthorization({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          auth_id: 1,
+          authorized_by: 'someDid',
+          expiry: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      ),
+    });
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);

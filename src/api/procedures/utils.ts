@@ -13,6 +13,7 @@ import {
   TickerReservation,
 } from '~/internal';
 import {
+  Account,
   AddRelayerPayingKeyAuthorizationData,
   AuthorizationType,
   Condition,
@@ -338,6 +339,13 @@ export async function assertAuthorizationRequestValid(
   context: Context,
   authRequest: AuthorizationRequest
 ): Promise<void> {
+  const exists = await authRequest.exists();
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Authorization Request no longer exists',
+    });
+  }
   if (authRequest.isExpired()) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -469,12 +477,7 @@ export async function assertJoinIdentityAuthorizationValid(
     });
   }
 
-  if (target instanceof Identity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The target cannot be an Identity',
-    });
-  }
+  assertIsSigner(target);
 
   const targetIdentity = await target.getIdentity();
   if (targetIdentity) {
@@ -529,6 +532,20 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have a valid CDD Claim',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts a target is a Account
+ */
+function assertIsSigner(target: Identity | Account): asserts target is Account {
+  if (target instanceof Identity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target cannot be an Identity',
     });
   }
 }

@@ -58,8 +58,9 @@ export async function prepareConsumeAuthorizationRequests(
 
     const idsPerType: Record<AllowedAuthType, [u64][]> = mapValues(typesToExtrinsics, () => []);
 
-    for (const authRequest of liveRequests) {
-      await assertAuthorizationRequestValid(context, authRequest);
+    const validations: Promise<void>[] = [];
+    liveRequests.forEach(authRequest => {
+      validations.push(assertAuthorizationRequestValid(context, authRequest));
       const {
         authId,
         data: { type },
@@ -67,7 +68,8 @@ export async function prepareConsumeAuthorizationRequests(
       const id = tuple(numberToU64(authId, context));
 
       idsPerType[type as AllowedAuthType].push(id);
-    }
+    });
+    await Promise.all(validations);
 
     forEach(idsPerType, (ids, key) => {
       const type = key as AllowedAuthType;

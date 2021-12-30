@@ -679,21 +679,34 @@ describe('authorization request validations', () => {
     mockContext = dsMockUtils.getContextInstance();
     issuer = entityMockUtils.getIdentityInstance();
     target = entityMockUtils.getIdentityInstance();
+    dsMockUtils.createQueryStub('identity', 'authorizations', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockAuthorization({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          auth_id: 1,
+          authorized_by: 'someDid',
+          expiry: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      ),
+    });
   });
 
   afterEach(() => {
-    dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
+    dsMockUtils.reset();
+    entityMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
   });
 
   describe('assertAuthorizationRequestValid', () => {
     test('should throw with an expired request', async () => {
       const oldDate = new Date('1987-01-01');
-      const data = { type: AuthorizationType.RotatePrimaryKey } as Authorization;
+      const data: Authorization = { type: AuthorizationType.RotatePrimaryKey };
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -704,6 +717,9 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
+
+      const fakeExists = (): Promise<boolean> => Promise.resolve(true);
+      auth.exists = fakeExists;
       let error;
       try {
         await assertAuthorizationRequestValid(mockContext, auth);
@@ -717,6 +733,34 @@ describe('authorization request validations', () => {
         data: {
           expiry: oldDate,
         },
+      });
+      expect(error).toEqual(expectedError);
+    });
+
+    test('should throw with an Authorization that does not exist', async () => {
+      const data: Authorization = { type: AuthorizationType.RotatePrimaryKey };
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry: null,
+          data,
+        },
+        mockContext
+      );
+      const fakeExists = (): Promise<boolean> => Promise.resolve(false);
+      auth.exists = fakeExists;
+      let error;
+      try {
+        await assertAuthorizationRequestValid(mockContext, auth);
+      } catch (err) {
+        error = err;
+      }
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The Authorization Request no longer exists',
       });
       expect(error).toEqual(expectedError);
     });
@@ -1317,6 +1361,7 @@ describe('authorization request validations', () => {
         await assertAuthorizationRequestValid(mockContext, {
           data: { type: 'FAKE_TYPE' },
           isExpired: () => false,
+          exists: () => true,
         } as never);
       } catch (err) {
         error = err;
