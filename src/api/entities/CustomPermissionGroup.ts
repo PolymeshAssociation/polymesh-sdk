@@ -103,7 +103,7 @@ export class CustomPermissionGroup extends PermissionGroup {
       context,
     } = this;
 
-    const nextId = await context.polymeshApi.query.externalAgents.agIdSequence(
+    const nextId = await context.polymeshApi.query.externalAgents.aGIdSequence(
       stringToTicker(ticker, context)
     );
 
