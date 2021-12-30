@@ -11,7 +11,7 @@ import {
   Params,
   prepareModifyComplianceRequirement,
 } from '~/api/procedures/modifyComplianceRequirement';
-import { Context, SecurityToken } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Condition, ConditionTarget, ConditionType, InputRequirement, RoleType } from '~/types';
