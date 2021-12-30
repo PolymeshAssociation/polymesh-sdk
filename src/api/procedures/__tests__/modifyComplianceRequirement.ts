@@ -14,7 +14,7 @@ import {
 import { Context, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Condition, ConditionTarget, ConditionType, InputRequirement } from '~/types';
+import { Condition, ConditionTarget, ConditionType, InputRequirement, RoleType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -112,7 +112,7 @@ describe('modifyComplianceRequirement procedure', () => {
       id: 2,
       conditions: fakeConditions,
     };
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyComplianceRequirement.call(proc, args)).rejects.toThrow(
       'The Compliance Requirement does not exist'
@@ -125,7 +125,7 @@ describe('modifyComplianceRequirement procedure', () => {
       id: 1,
       conditions,
     };
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyComplianceRequirement.call(proc, args)).rejects.toThrow(
       'The supplied condition list is equal to the current one'
@@ -155,9 +155,9 @@ describe('modifyComplianceRequirement procedure', () => {
       conditions: fakeConditions,
     };
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const result = await prepareModifyComplianceRequirement.call(proc, args);
+    await prepareModifyComplianceRequirement.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -166,19 +166,18 @@ describe('modifyComplianceRequirement procedure', () => {
       rawTicker,
       rawComplianceRequirement
     );
-
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,
       } as Params;
 
       expect(boundFunc(params)).toEqual({
+        roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],

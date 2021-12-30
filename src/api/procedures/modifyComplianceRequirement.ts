@@ -1,6 +1,6 @@
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, InputCondition, TxTags } from '~/types';
+import { ErrorCode, InputCondition, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
@@ -29,9 +29,9 @@ export type Params = ModifyComplianceRequirementParams & {
  * @hidden
  */
 export async function prepareModifyComplianceRequirement(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, void>,
   args: Params
-): Promise<SecurityToken> {
+): Promise<void> {
   const {
     context: {
       polymeshApi: { tx },
@@ -79,18 +79,17 @@ export async function prepareModifyComplianceRequirement(
     rawTicker,
     rawComplianceRequirement
   );
-
-  return token;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, void>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
+    roles: [{ type: RoleType.TickerOwner, ticker }],
     permissions: {
       transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
       tokens: [new SecurityToken({ ticker }, this.context)],
@@ -102,5 +101,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyComplianceRequirement = (): Procedure<Params, SecurityToken> =>
+export const modifyComplianceRequirement = (): Procedure<Params, void> =>
   new Procedure(prepareModifyComplianceRequirement, getAuthorization);
