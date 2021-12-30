@@ -1,15 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import {
-  Context,
-  deletePortfolio,
-  Portfolio,
-  renamePortfolio,
-  RenamePortfolioParams,
-} from '~/internal';
+import { Context, Portfolio, renamePortfolio, RenamePortfolioParams } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdentifier, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { EventIdentifier, ProcedureMethod } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   middlewareEventToEventIdentifier,
@@ -53,23 +47,11 @@ export class NumberedPortfolio extends Portfolio {
 
     this.id = id;
 
-    this.delete = createProcedureMethod(
-      { getProcedureAndArgs: () => [deletePortfolio, { did, id }], voidArgs: true },
-      context
-    );
     this.modifyName = createProcedureMethod(
       { getProcedureAndArgs: args => [renamePortfolio, { ...args, did, id }] },
       context
     );
   }
-
-  /**
-   * Delete this Portfolio
-   *
-   * @note required role:
-   *   - Portfolio Custodian
-   */
-  public delete: NoArgsProcedureMethod<void>;
 
   /**
    * Rename portfolio
