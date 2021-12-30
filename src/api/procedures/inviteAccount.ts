@@ -105,26 +105,18 @@ export async function prepareInviteAccount(
     authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.JoinIdentity as AuthorizationType.JoinIdentity,
-      value: authorizationValue,
-    },
-    context
-  );
+  const authRequest = {
+    type: AuthorizationType.JoinIdentity as AuthorizationType.JoinIdentity,
+    value: authorizationValue,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  const [authRequest] = this.addTransaction(
+  const [auth] = this.addTransaction(
     tx.identity.addAuthorization,
     {
       resolvers: [
-        createAuthorizationResolver(
-          rawAuthorizationData,
-          identity,
-          account,
-          expiry || null,
-          context
-        ),
+        createAuthorizationResolver(authRequest, identity, account, expiry || null, context),
       ],
     },
     rawSignatory,
@@ -132,7 +124,7 @@ export async function prepareInviteAccount(
     rawExpiry
   );
 
-  return authRequest;
+  return auth;
 }
 
 /**

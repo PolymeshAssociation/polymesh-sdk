@@ -8,6 +8,7 @@ import {
   TickerReservation,
 } from '~/internal';
 import {
+  Authorization,
   AuthorizationType,
   ErrorCode,
   RoleType,
@@ -73,26 +74,18 @@ export async function prepareTransferTickerOwnership(
     { type: SignerType.Identity, value: signerToString(target) },
     context
   );
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.TransferTicker,
-      value: ticker,
-    },
-    context
-  );
+  const authReq: Authorization = {
+    type: AuthorizationType.TransferTicker,
+    value: ticker,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authReq, context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
   const [auth] = this.addTransaction(
     tx.identity.addAuthorization,
     {
       resolvers: [
-        createAuthorizationResolver(
-          rawAuthorizationData,
-          issuer,
-          targetIdentity,
-          expiry || null,
-          context
-        ),
+        createAuthorizationResolver(authReq, issuer, targetIdentity, expiry || null, context),
       ],
     },
     rawSignatory,

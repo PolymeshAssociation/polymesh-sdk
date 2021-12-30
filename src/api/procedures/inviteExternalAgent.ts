@@ -13,8 +13,15 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { AuthorizationType, ErrorCode, SignerType, TransactionPermissions, TxGroup } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import {
+  Authorization,
+  AuthorizationType,
+  ErrorCode,
+  SignerType,
+  TransactionPermissions,
+  TxGroup,
+} from '~/types';
+import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -91,12 +98,7 @@ export async function prepareInviteExternalAgent(
   const { ticker, target, permissions, expiry } = args;
 
   const issuer = await context.getCurrentIdentity();
-  let targetIdentity: Identity;
-  if (typeof target === 'string') {
-    targetIdentity = new Identity({ did: target }, context);
-  } else {
-    targetIdentity = target;
-  }
+  const targetIdentity = await context.getIdentity(target);
 
   const [currentAgents, did] = await Promise.all([
     token.permissions.getAgents(),
@@ -117,9 +119,14 @@ export async function prepareInviteExternalAgent(
     context
   );
 
+  let postTransactionAuthorization: MaybePostTransactionValue<Authorization>;
   let rawAuthorizationData;
 
   if (permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup) {
+    postTransactionAuthorization = {
+      type: AuthorizationType.BecomeAgent,
+      value: permissions,
+    };
     rawAuthorizationData = authorizationDataResolver(permissions, context);
   } else {
     // We know this procedure returns a PostTransactionValue, so this assertion is necessary
@@ -127,6 +134,12 @@ export async function prepareInviteExternalAgent(
       ticker,
       permissions,
     })) as PostTransactionValue<CustomPermissionGroup>;
+    postTransactionAuthorization = createGroupResult.transform(customPermissionGroup => {
+      return {
+        type: AuthorizationType.BecomeAgent,
+        value: customPermissionGroup,
+      };
+    });
     rawAuthorizationData = createGroupResult.transform(customPermissionGroup =>
       authorizationDataResolver(customPermissionGroup, context)
     );
@@ -138,7 +151,7 @@ export async function prepareInviteExternalAgent(
     {
       resolvers: [
         createAuthorizationResolver(
-          rawAuthorizationData,
+          postTransactionAuthorization,
           issuer,
           targetIdentity,
           expiry || null,

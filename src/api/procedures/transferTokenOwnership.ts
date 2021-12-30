@@ -55,26 +55,18 @@ export async function prepareTransferTokenOwnership(
     context
   );
 
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.TransferAssetOwnership as AuthorizationType.TransferAssetOwnership,
-      value: ticker,
-    },
-    context
-  );
+  const authRequest = {
+    type: AuthorizationType.TransferAssetOwnership as AuthorizationType.TransferAssetOwnership,
+    value: ticker,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
   const [auth] = this.addTransaction(
     tx.identity.addAuthorization,
     {
       resolvers: [
-        createAuthorizationResolver(
-          rawAuthorizationData,
-          issuer,
-          targetIdentity,
-          expiry || null,
-          context
-        ),
+        createAuthorizationResolver(authRequest, issuer, targetIdentity, expiry || null, context),
       ],
     },
     rawSignatory,

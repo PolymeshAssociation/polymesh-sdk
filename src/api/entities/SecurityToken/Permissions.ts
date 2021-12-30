@@ -66,6 +66,8 @@ export class Permissions extends Namespace<SecurityToken> {
 
   /**
    * Invite an Identity to be an Agent with permissions over this Security Token
+   *
+   * @note this will create an AuthorizationRequest that will need to be accepted by the target
    */
   public inviteAgent: ProcedureMethod<InviteExternalAgentParams, AuthorizationRequest>;
 

@@ -13,8 +13,8 @@ import {
   PolymeshError,
   PostTransactionValue,
 } from '~/internal';
-import { AuthorizationData } from '~/polkadot/polymesh/types';
 import {
+  Authorization,
   Condition,
   ConditionTarget,
   ConditionType,
@@ -29,13 +29,8 @@ import {
   SecondaryKey,
   SignerValue,
 } from '~/types';
-import { PortfolioId } from '~/types/internal';
-import {
-  authorizationDataToAuthorization,
-  signerToSignerValue,
-  u32ToBigNumber,
-  u64ToBigNumber,
-} from '~/utils/conversion';
+import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
+import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 // import { Proposal } from '~/internal';
@@ -340,7 +335,7 @@ export function assertRequirementsNotTooComplex(
  * @hidden
  */
 export const createAuthorizationResolver = (
-  authData: AuthorizationData | PostTransactionValue<AuthorizationData>,
+  auth: MaybePostTransactionValue<Authorization>,
   issuer: Identity,
   target: Identity | Account,
   expiry: Date | null,
@@ -348,13 +343,12 @@ export const createAuthorizationResolver = (
 ) => (receipt: ISubmittableResult): AuthorizationRequest => {
   const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
   let rawAuth;
-  if (authData instanceof PostTransactionValue) {
-    rawAuth = authData.value;
+  if (auth instanceof PostTransactionValue) {
+    rawAuth = auth.value;
   } else {
-    rawAuth = authData;
+    rawAuth = auth;
   }
-  const auth = authorizationDataToAuthorization(rawAuth, context);
 
-  const id = u64ToBigNumber(data[3]);
-  return new AuthorizationRequest({ authId: id, expiry, issuer, target, data: auth }, context);
+  const authId = u64ToBigNumber(data[3]);
+  return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
 };

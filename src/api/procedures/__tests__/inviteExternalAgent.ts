@@ -10,7 +10,6 @@ import {
 } from '~/api/procedures/inviteExternalAgent';
 import { Account, AuthorizationRequest, Context, Identity, SecurityToken } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { getIdentityInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, PermissionType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -198,7 +197,7 @@ describe('inviteExternalAgent procedure', () => {
     );
 
     await prepareInviteExternalAgent.call(proc, {
-      target: getIdentityInstance({ did: target }),
+      target: entityMockUtils.getIdentityInstance({ did: target }),
       ticker,
       permissions: {
         transactions: {
