@@ -146,13 +146,11 @@ export async function prepareCreateSecurityToken(
     });
   }
 
-  if (status === TickerReservationStatus.Free) {
-    if (reservationRequired) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
-      });
-    }
+  if (status === TickerReservationStatus.Free && reservationRequired) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
+    });
   }
 
   let rawType: MaybePostTransactionValue<AssetType>;
