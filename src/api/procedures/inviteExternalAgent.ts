@@ -1,9 +1,8 @@
-import { AuthorizationData, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   AuthorizationRequest,
-  Context,
   createGroup,
   CustomPermissionGroup,
   Identity,
@@ -66,21 +65,6 @@ export interface Storage {
 /**
  * @hidden
  */
-const authorizationDataResolver = (
-  value: KnownPermissionGroup | CustomPermissionGroup,
-  context: Context
-): AuthorizationData =>
-  authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.BecomeAgent,
-      value,
-    },
-    context
-  );
-
-/**
- * @hidden
- */
 export async function prepareInviteExternalAgent(
   this: Procedure<Params, AuthorizationRequest, Storage>,
   args: Params
@@ -127,7 +111,7 @@ export async function prepareInviteExternalAgent(
       type: AuthorizationType.BecomeAgent,
       value: permissions,
     };
-    rawAuthorizationData = authorizationDataResolver(permissions, context);
+    rawAuthorizationData = authorizationToAuthorizationData(postTransactionAuthorization, context);
   } else {
     // We know this procedure returns a PostTransactionValue, so this assertion is necessary
     const createGroupResult = (await this.addProcedure(createGroup(), {
@@ -140,8 +124,9 @@ export async function prepareInviteExternalAgent(
         value: customPermissionGroup,
       };
     });
-    rawAuthorizationData = createGroupResult.transform(customPermissionGroup =>
-      authorizationDataResolver(customPermissionGroup, context)
+
+    rawAuthorizationData = postTransactionAuthorization.transform(authorization =>
+      authorizationToAuthorizationData(authorization, context)
     );
   }
 

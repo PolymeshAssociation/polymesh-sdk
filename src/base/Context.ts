@@ -529,17 +529,15 @@ export class Context {
    * @throws if the Identity does not exist
    */
   public async getIdentity(identity: Identity | string): Promise<Identity> {
-    let id;
-    if (typeof identity === 'string') {
-      id = new Identity({ did: identity }, this);
-    } else {
-      id = identity;
+    if (identity instanceof Identity) {
+      return identity;
     }
+    const id = new Identity({ did: identity }, this);
     const exists = await id.exists();
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
+        code: ErrorCode.DataUnavailable,
         message: 'The Identity does not exist',
       });
     }

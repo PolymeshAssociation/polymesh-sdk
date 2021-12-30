@@ -673,22 +673,13 @@ describe('Polymesh Class', () => {
 
       const params = { did: 'testDid' };
 
-      const result = await polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
+      const identity = new Identity(params, context);
+      context.getIdentity.onFirstCall().resolves(identity);
 
-      expect(result).toMatchObject(new Identity(params, context));
-    });
+      const result = await polymesh.getIdentity(params);
 
-    test('should throw an error if the Identity does not exist', async () => {
-      entityMockUtils.configureMocks({ identityOptions: { exists: false } });
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      return expect(polymesh.getIdentity({ did: 'nonExistent' })).rejects.toThrow(
-        'The Identity does not exist'
-      );
+      expect(result).toMatchObject(identity);
     });
   });
 

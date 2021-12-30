@@ -10,7 +10,7 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
+import { Authorization, AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -20,6 +20,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface SetCustodianParams {
   targetIdentity: string | Identity;
@@ -78,14 +79,13 @@ export async function prepareSetCustodian(
 
   const rawSignatory = signerValueToSignatory(signerToSignerValue(target), context);
 
-  const authRequest = {
-    type: AuthorizationType.PortfolioCustody as AuthorizationType.PortfolioCustody,
+  const authRequest: Authorization = {
+    type: AuthorizationType.PortfolioCustody,
     value: portfolio,
   };
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
 
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
-
+  const rawExpiry = optionize(dateToMoment)(expiry, context);
   const [auth] = this.addTransaction(
     identity.addAuthorization,
     {

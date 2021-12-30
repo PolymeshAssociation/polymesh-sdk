@@ -23,6 +23,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface TransferTickerOwnershipParams {
   target: string | Identity;
@@ -52,12 +53,7 @@ export async function prepareTransferTickerOwnership(
   } = this;
   const { ticker, target, expiry } = args;
   const issuer = await context.getCurrentIdentity();
-  let targetIdentity;
-  if (typeof target === 'string') {
-    targetIdentity = new Identity({ did: target }, context);
-  } else {
-    targetIdentity = target;
-  }
+  const targetIdentity = await context.getIdentity(target);
 
   const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -79,7 +75,7 @@ export async function prepareTransferTickerOwnership(
     value: ticker,
   };
   const rawAuthorizationData = authorizationToAuthorizationData(authReq, context);
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
+  const rawExpiry = optionize(dateToMoment)(expiry, context);
 
   const [auth] = this.addTransaction(
     tx.identity.addAuthorization,

@@ -177,8 +177,15 @@ describe('inviteExternalAgent procedure', () => {
       }
     );
 
+    type AuthCallback = () => AuthorizationData;
     procedureMockUtils.getAddProcedureStub().resolves({
-      transform: (cb: () => AuthorizationData) => cb(),
+      transform: (cb: AuthCallback & { transform: { cb: AuthCallback } }) => {
+        const res = cb();
+        return {
+          ...res,
+          transform: (ocb: AuthCallback) => ocb(),
+        };
+      },
     });
 
     await prepareInviteExternalAgent.call(proc, {

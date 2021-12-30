@@ -6,7 +6,7 @@ import {
   Procedure,
   SecurityToken,
 } from '~/internal';
-import { AuthorizationType, SignerType, TxTags } from '~/types';
+import { Authorization, AuthorizationType, SignerType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -43,20 +43,15 @@ export async function prepareTransferTokenOwnership(
   } = this;
   const { ticker, target, expiry } = args;
   const issuer = await context.getCurrentIdentity();
-  let targetIdentity;
-  if (typeof target === 'string') {
-    targetIdentity = new Identity({ did: target }, context);
-  } else {
-    targetIdentity = target;
-  }
+  const targetIdentity = await context.getIdentity(target);
 
   const rawSignatory = signerValueToSignatory(
     { type: SignerType.Identity, value: signerToString(target) },
     context
   );
 
-  const authRequest = {
-    type: AuthorizationType.TransferAssetOwnership as AuthorizationType.TransferAssetOwnership,
+  const authRequest: Authorization = {
+    type: AuthorizationType.TransferAssetOwnership,
     value: ticker,
   };
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
