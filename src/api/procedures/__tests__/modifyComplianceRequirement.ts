@@ -14,7 +14,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Condition, ConditionTarget, ConditionType, InputRequirement, RoleType } from '~/types';
+import { Condition, ConditionTarget, ConditionType, InputRequirement } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -119,7 +119,7 @@ describe('modifyComplianceRequirement procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied requirement conditions has no change', () => {
+  test('should throw an error if the supplied requirement conditions have no change', () => {
     args = {
       ticker,
       id: 1,
@@ -132,7 +132,7 @@ describe('modifyComplianceRequirement procedure', () => {
     );
   });
 
-  test('should add an modify compliance requirement transaction to the queue', async () => {
+  test('should add a modify compliance requirement transaction to the queue', async () => {
     const fakeConditions = (['condition'] as unknown) as Condition[];
     const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
     const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
@@ -177,7 +177,6 @@ describe('modifyComplianceRequirement procedure', () => {
       } as Params;
 
       expect(boundFunc(params)).toEqual({
-        roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],

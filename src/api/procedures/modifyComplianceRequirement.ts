@@ -1,6 +1,8 @@
+import { flatten, map } from 'lodash';
+
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, InputCondition, RoleType, TxTags } from '~/types';
+import { ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
@@ -11,7 +13,7 @@ export type ModifyComplianceRequirementParams = {
    */
   id: number;
   /**
-   * array of conditions to replace the existing array of conditions for the requirement(identified by `id`).
+   * array of conditions to replace the existing array of conditions for the requirement (identified by `id`).
    *   Conditions within a requirement are *AND* between them. This means that in order
    *   for a transfer to comply with this requirement, it must fulfill *ALL* conditions
    */
@@ -38,7 +40,7 @@ export async function prepareModifyComplianceRequirement(
     },
     context,
   } = this;
-  const { ticker, id, conditions } = args;
+  const { ticker, id, conditions: newConditions } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -62,16 +64,29 @@ export async function prepareModifyComplianceRequirement(
 
   const { conditions: existingConditions } = existingRequirement;
 
-  if (hasSameElements(conditions, existingConditions, conditionsAreEqual)) {
+  if (hasSameElements(newConditions, existingConditions, conditionsAreEqual)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is equal to the current one',
     });
   }
 
-  assertRequirementsNotTooComplex(context, conditions, defaultTrustedClaimIssuers.length);
+  const unchangedRequirements = currentRequirements.filter(
+    ({ id: currentRequirementId }) => id !== currentRequirementId
+  );
 
-  const rawComplianceRequirement = requirementToComplianceRequirement({ conditions, id }, context);
+  const unchangedConditions = map(unchangedRequirements, 'conditions');
+
+  assertRequirementsNotTooComplex(
+    context,
+    [...flatten(unchangedConditions), ...newConditions],
+    defaultTrustedClaimIssuers.length
+  );
+
+  const rawComplianceRequirement = requirementToComplianceRequirement(
+    { conditions: newConditions, id },
+    context
+  );
 
   this.addTransaction(
     tx.complianceManager.changeComplianceRequirement,
@@ -89,7 +104,6 @@ export function getAuthorization(
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
-    roles: [{ type: RoleType.TickerOwner, ticker }],
     permissions: {
       transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
       tokens: [new SecurityToken({ ticker }, this.context)],
