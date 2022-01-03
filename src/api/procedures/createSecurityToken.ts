@@ -187,6 +187,12 @@ export async function prepareCreateSecurityToken(
     classicTicker.isSome && boolToBoolean(classicTicker.unwrap().is_created);
   if (tokenCreatedInEthereum) {
     fee = new BigNumber(0);
+  } else if (status === TickerReservationStatus.Free) {
+    const [registerTickerFee, createAssetFee] = await Promise.all([
+      context.getTransactionFees(TxTags.asset.RegisterTicker),
+      context.getTransactionFees(TxTags.asset.CreateAsset),
+    ]);
+    fee = registerTickerFee.plus(createAssetFee);
   }
 
   // TODO @shuffledex: refactoring with batching mechanism

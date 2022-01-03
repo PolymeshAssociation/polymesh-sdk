@@ -79,6 +79,7 @@ describe('createSecurityToken procedure', () => {
   let rawDisableIu: bool;
   let rawDocuments: Document[];
   let args: Params;
+  let protocolFees: BigNumber[];
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -165,6 +166,7 @@ describe('createSecurityToken procedure', () => {
       requireInvestorUniqueness,
       reservationRequired: true,
     };
+    protocolFees = [new BigNumber(250), new BigNumber(150)];
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -205,6 +207,9 @@ describe('createSecurityToken procedure', () => {
         mockContext
       )
       .returns(rawDocuments[0]);
+
+    mockContext.getTransactionFees.withArgs(TxTags.asset.RegisterTicker).resolves(protocolFees[0]);
+    mockContext.getTransactionFees.withArgs(TxTags.asset.CreateAsset).resolves(protocolFees[1]);
   });
 
   afterEach(() => {
@@ -340,9 +345,9 @@ describe('createSecurityToken procedure', () => {
     });
 
     sinon.assert.calledWith(
-      addTransactionStub.firstCall,
+      addTransactionStub.secondCall,
       createAssetTransaction,
-      { fee: undefined },
+      { fee: protocolFees[0].plus(protocolFees[1]) },
       rawName,
       rawTicker,
       rawIsDivisible,
