@@ -1601,8 +1601,8 @@ export function stringToFundingRoundName(roundName: string, context: Context): F
 /**
  * @hidden
  */
-export function fundingRoundNameToString(roundName: FundingRoundName): string {
-  return roundName.toString();
+export function fundingRoundNameToString(roundName: FundingRoundName): string | null {
+  return roundName.isEmpty ? null : roundName.toString();
 }
 
 /**

@@ -299,13 +299,13 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public currentFundingRound(): Promise<string>;
-  public currentFundingRound(callback: SubCallback<string>): Promise<UnsubCallback>;
+  public currentFundingRound(): Promise<string | null>;
+  public currentFundingRound(callback: SubCallback<string | null>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async currentFundingRound(
-    callback?: SubCallback<string>
-  ): Promise<string | UnsubCallback> {
+    callback?: SubCallback<string | null>
+  ): Promise<string | null | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
