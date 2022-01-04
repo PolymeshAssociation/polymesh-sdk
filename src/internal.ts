@@ -32,7 +32,7 @@ export { createPortfolio } from '~/api/procedures/createPortfolio';
 export {
   createSecurityToken,
   CreateSecurityTokenParams,
-  CreateSecurityTokenParamsWithTicker,
+  CreateSecurityTokenWithTickerParams,
 } from '~/api/procedures/createSecurityToken';
 export { createVenue, CreateVenueParams } from '~/api/procedures/createVenue';
 // export { editProposal, EditProposalParams } from '~/api/procedures/editProposal';

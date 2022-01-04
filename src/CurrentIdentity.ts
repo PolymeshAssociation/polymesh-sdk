@@ -1,7 +1,7 @@
 import {
   Context,
   createSecurityToken,
-  CreateSecurityTokenParamsWithTicker,
+  CreateSecurityTokenWithTickerParams,
   createVenue,
   CreateVenueParams,
   inviteAccount,
@@ -147,5 +147,5 @@ export class CurrentIdentity {
    * @note if ticker is already reserved, then required role:
    *   - Ticker Owner
    */
-  public createToken: ProcedureMethod<CreateSecurityTokenParamsWithTicker, SecurityToken>;
+  public createToken: ProcedureMethod<CreateSecurityTokenWithTickerParams, SecurityToken>;
 }

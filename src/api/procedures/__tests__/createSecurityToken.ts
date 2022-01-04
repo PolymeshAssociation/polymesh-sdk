@@ -225,13 +225,9 @@ describe('createSecurityToken procedure', () => {
   });
 
   test('should throw an error if a token with that ticker has already been launched', () => {
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.TokenCreated,
-    });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: null,
+      status: TickerReservationStatus.TokenCreated,
     });
 
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
@@ -240,13 +236,9 @@ describe('createSecurityToken procedure', () => {
   });
 
   test("should throw an error if that ticker hasn't been reserved and reservation is required", () => {
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.Free,
-    });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: null,
+      status: TickerReservationStatus.Free,
     });
 
     return expect(prepareCreateSecurityToken.call(proc, args)).rejects.toThrow(
@@ -257,6 +249,7 @@ describe('createSecurityToken procedure', () => {
   test('should add a token creation transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: null,
+      status: TickerReservationStatus.Reserved,
     });
 
     const result = await prepareCreateSecurityToken.call(proc, args);
@@ -304,13 +297,8 @@ describe('createSecurityToken procedure', () => {
   });
 
   test('should add a token creation transaction to the queue when reservationRequired is false', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+    let proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: null,
-    });
-
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
       status: TickerReservationStatus.Reserved,
     });
 
@@ -333,9 +321,8 @@ describe('createSecurityToken procedure', () => {
     );
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
+    proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
+      customTypeData: null,
       status: TickerReservationStatus.Free,
     });
 
@@ -372,6 +359,7 @@ describe('createSecurityToken procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: null,
+      status: TickerReservationStatus.Reserved,
     });
 
     const result = await prepareCreateSecurityToken.call(proc, args);
@@ -398,6 +386,7 @@ describe('createSecurityToken procedure', () => {
         rawValue,
         id: dsMockUtils.createMockU32(10),
       },
+      status: TickerReservationStatus.Reserved,
     });
     const tx = dsMockUtils.createTxStub('asset', 'addDocuments');
 
@@ -421,6 +410,7 @@ describe('createSecurityToken procedure', () => {
         id: dsMockUtils.createMockU32(),
         rawValue,
       },
+      status: TickerReservationStatus.Reserved,
     });
     const registerAssetTypeTx = dsMockUtils.createTxStub('asset', 'registerCustomAssetType');
     const createTokenTx = dsMockUtils.createTxStub('asset', 'createAsset');
@@ -483,19 +473,16 @@ describe('createSecurityToken procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: null,
-        status: TickerReservationStatus.Reserved,
-      });
-
       let proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
         customTypeData: null,
+        status: TickerReservationStatus.Reserved,
       });
 
       let boundFunc = getAuthorization.bind(proc);
 
-      expect(await boundFunc(args)).toEqual({
+      let result = await boundFunc(args);
+
+      expect(result).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           tokens: [],
@@ -509,13 +496,14 @@ describe('createSecurityToken procedure', () => {
           id: dsMockUtils.createMockU32(),
           rawValue: dsMockUtils.createMockBytes('something'),
         },
+        status: TickerReservationStatus.Reserved,
       });
 
       boundFunc = getAuthorization.bind(proc);
 
-      expect(
-        await boundFunc({ ...args, documents: [{ uri: 'www.doc.com', name: 'myDoc' }] })
-      ).toEqual({
+      result = await boundFunc({ ...args, documents: [{ uri: 'www.doc.com', name: 'myDoc' }] });
+
+      expect(result).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           tokens: [],
@@ -533,11 +521,14 @@ describe('createSecurityToken procedure', () => {
           id: dsMockUtils.createMockU32(10),
           rawValue: dsMockUtils.createMockBytes('something'),
         },
+        status: TickerReservationStatus.Reserved,
       });
 
       boundFunc = getAuthorization.bind(proc);
 
-      expect(await boundFunc({ ...args, documents: [] })).toEqual({
+      result = await boundFunc({ ...args, documents: [] });
+
+      expect(result).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
           tokens: [],
@@ -546,22 +537,19 @@ describe('createSecurityToken procedure', () => {
         },
       });
 
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: null,
-        status: TickerReservationStatus.Free,
-      });
-
       proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
         customTypeData: {
           id: dsMockUtils.createMockU32(10),
           rawValue: dsMockUtils.createMockBytes('something'),
         },
+        status: TickerReservationStatus.Free,
       });
 
       boundFunc = getAuthorization.bind(proc);
 
-      expect(await boundFunc({ ...args, documents: [], reservationRequired: false })).toEqual({
+      result = await boundFunc({ ...args, documents: [], reservationRequired: false });
+
+      expect(result).toEqual({
         permissions: {
           tokens: [],
           portfolios: [],
@@ -572,14 +560,21 @@ describe('createSecurityToken procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the custom asset type ID and bytes representation', async () => {
+    test('should return the custom asset type ID and bytes representation along with ticker reservation status', async () => {
       const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
+
+      entityMockUtils.getTickerReservationDetailsStub().resolves({
+        owner: entityMockUtils.getIdentityInstance(),
+        expiryDate: null,
+        status: TickerReservationStatus.Reserved,
+      });
 
       let result = await boundFunc({ tokenType: KnownTokenType.EquityCommon } as Params);
 
       expect(result).toEqual({
         customTypeData: null,
+        status: TickerReservationStatus.Reserved,
       });
 
       const rawValue = dsMockUtils.createMockBytes('something');
@@ -600,6 +595,7 @@ describe('createSecurityToken procedure', () => {
           rawValue,
           id,
         },
+        status: TickerReservationStatus.Reserved,
       });
 
       id = dsMockUtils.createMockU32(10);
@@ -612,6 +608,7 @@ describe('createSecurityToken procedure', () => {
           rawValue,
           id,
         },
+        status: TickerReservationStatus.Reserved,
       });
     });
   });
