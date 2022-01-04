@@ -39,7 +39,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   const { target, authId, issuer } = authRequest;
 
-  await assertAuthorizationRequestValid(context, authRequest);
+  await assertAuthorizationRequestValid(authRequest, context);
 
   const rawAuthId = numberToU64(authId, context);
 

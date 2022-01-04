@@ -28,6 +28,7 @@ import {
   InstructionType,
   PermissionGroupType,
   SecondaryKey,
+  Signer,
   SignerValue,
   TickerReservationStatus,
 } from '~/types';
@@ -291,9 +292,9 @@ export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGr
  * @note conditions have already been "injected" with the default trusted claim issuers when they reach this point
  */
 export function assertRequirementsNotTooComplex(
-  context: Context,
   conditions: (Condition | InputCondition)[],
-  defaultClaimIssuerLength: number
+  defaultClaimIssuerLength: number,
+  context: Context
 ): void {
   const { maxConditionComplexity: maxComplexity } = context.polymeshApi.consts.complianceManager;
   let complexitySum = 0;
@@ -336,8 +337,8 @@ export function assertRequirementsNotTooComplex(
  * @hidden
  */
 export async function assertAuthorizationRequestValid(
-  context: Context,
-  authRequest: AuthorizationRequest
+  authRequest: AuthorizationRequest,
+  context: Context
 ): Promise<void> {
   const exists = await authRequest.exists();
   if (!exists) {
@@ -362,9 +363,9 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.AttestPrimaryKeyRotation:
       return assertAttestPrimaryKeyAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
-      return assertTransferTickerAuthorizationValid(context, data);
+      return assertTransferTickerAuthorizationValid(data, context);
     case AuthorizationType.TransferAssetOwnership:
-      return assertTransferAssetOwnershipAuthorizationValid(context, data);
+      return assertTransferAssetOwnershipAuthorizationValid(data, context);
     case AuthorizationType.BecomeAgent:
       // no additional checks
       return;
@@ -422,8 +423,8 @@ export async function assertAttestPrimaryKeyAuthorizationValid(
  * Asserts transfer ticker authorization is valid
  */
 export async function assertTransferTickerAuthorizationValid(
-  context: Context,
-  data: GenericAuthorizationData
+  data: GenericAuthorizationData,
+  context: Context
 ): Promise<void> {
   const reservation = new TickerReservation({ ticker: data.value }, context);
   const { status } = await reservation.details();
@@ -447,8 +448,8 @@ export async function assertTransferTickerAuthorizationValid(
  * Asserts valid transfer asset ownership authorization
  */
 export async function assertTransferAssetOwnershipAuthorizationValid(
-  context: Context,
-  data: GenericAuthorizationData
+  data: GenericAuthorizationData,
+  context: Context
 ): Promise<void> {
   const token = new SecurityToken({ ticker: data.value }, context);
   const exists = await token.exists();
@@ -477,7 +478,7 @@ export async function assertJoinIdentityAuthorizationValid(
     });
   }
 
-  assertIsSigner(target);
+  assertIsAccount(target);
 
   const targetIdentity = await target.getIdentity();
   if (targetIdentity) {
@@ -539,9 +540,9 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts a target is a Account
+ * Assert the target is an Account
  */
-function assertIsSigner(target: Identity | Account): asserts target is Account {
+function assertIsAccount(target: Signer): asserts target is Account {
   if (target instanceof Identity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,

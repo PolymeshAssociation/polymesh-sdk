@@ -177,6 +177,7 @@ interface AuthorizationRequestOptions {
   expiry?: Date | null;
   data?: Authorization;
   exists?: boolean;
+  isExpired?: boolean;
 }
 
 interface ProposalOptions {
@@ -1258,6 +1259,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
     expiry: opts.expiry,
     data: opts.data,
     exists: authorizationRequestExistsStub.resolves(opts.data),
+    isExpired: authorizationRequestExistsStub.resolves(opts.isExpired),
   } as unknown) as MockAuthorizationRequest;
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);

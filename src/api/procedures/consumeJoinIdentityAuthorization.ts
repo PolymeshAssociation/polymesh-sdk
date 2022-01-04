@@ -63,7 +63,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
     return;
   }
 
-  await assertAuthorizationRequestValid(context, authRequest);
+  await assertAuthorizationRequestValid(authRequest, context);
 
   this.addTransaction(identity.joinIdentityAsKey, { paidForBy: issuer }, rawAuthId);
 }

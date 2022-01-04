@@ -22,6 +22,7 @@ import {
   PolymeshError,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { getAuthorizationRequestInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
   Account,
@@ -638,7 +639,6 @@ describe('assertRequirementsNotTooComplex', () => {
     });
     expect(() =>
       assertRequirementsNotTooComplex(
-        mockContext,
         [
           {
             type: ConditionType.IsPresent,
@@ -651,7 +651,8 @@ describe('assertRequirementsNotTooComplex', () => {
             target: ConditionTarget.Sender,
           },
         ] as Condition[],
-        1
+        1,
+        mockContext
       )
     ).toThrow('Compliance Requirement complexity limit exceeded');
   });
@@ -662,9 +663,9 @@ describe('assertRequirementsNotTooComplex', () => {
     });
     expect(() =>
       assertRequirementsNotTooComplex(
-        mockContext,
         [{ type: ConditionType.IsPresent, target: ConditionTarget.Receiver }] as Condition[],
-        1
+        1,
+        mockContext
       )
     ).not.toThrow();
   });
@@ -705,24 +706,11 @@ describe('authorization request validations', () => {
 
   describe('assertAuthorizationRequestValid', () => {
     test('should throw with an expired request', async () => {
-      const oldDate = new Date('1987-01-01');
-      const data: Authorization = { type: AuthorizationType.RotatePrimaryKey };
-      const auth = new AuthorizationRequest(
-        {
-          authId: new BigNumber(1),
-          target,
-          issuer,
-          expiry: oldDate,
-          data,
-        },
-        mockContext
-      );
+      const auth = getAuthorizationRequestInstance({ isExpired: true });
 
-      const fakeExists = (): Promise<boolean> => Promise.resolve(true);
-      auth.exists = fakeExists;
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -730,30 +718,15 @@ describe('authorization request validations', () => {
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Authorization Request has expired',
-        data: {
-          expiry: oldDate,
-        },
       });
       expect(error).toEqual(expectedError);
     });
 
     test('should throw with an Authorization that does not exist', async () => {
-      const data: Authorization = { type: AuthorizationType.RotatePrimaryKey };
-      const auth = new AuthorizationRequest(
-        {
-          authId: new BigNumber(1),
-          target,
-          issuer,
-          expiry: null,
-          data,
-        },
-        mockContext
-      );
-      const fakeExists = (): Promise<boolean> => Promise.resolve(false);
-      auth.exists = fakeExists;
+      const auth = getAuthorizationRequestInstance({ exists: false });
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -776,7 +749,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -792,7 +765,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -824,7 +797,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -846,7 +819,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -879,7 +852,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -906,7 +879,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -937,7 +910,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -968,7 +941,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -994,7 +967,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1024,7 +997,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1058,7 +1031,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1080,7 +1053,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1107,7 +1080,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1136,7 +1109,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1180,7 +1153,7 @@ describe('authorization request validations', () => {
 
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1217,7 +1190,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1261,7 +1234,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1300,7 +1273,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1342,7 +1315,7 @@ describe('authorization request validations', () => {
       );
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, auth);
+        await assertAuthorizationRequestValid(auth, mockContext);
       } catch (err) {
         error = err;
       }
@@ -1358,11 +1331,14 @@ describe('authorization request validations', () => {
     test('with an any assertion', async () => {
       let error;
       try {
-        await assertAuthorizationRequestValid(mockContext, {
-          data: { type: 'FAKE_TYPE' },
-          isExpired: () => false,
-          exists: () => true,
-        } as never);
+        await assertAuthorizationRequestValid(
+          {
+            data: { type: 'FAKE_TYPE' },
+            isExpired: () => false,
+            exists: () => true,
+          } as never,
+          mockContext
+        );
       } catch (err) {
         error = err;
       }

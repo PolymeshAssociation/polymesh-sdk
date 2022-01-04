@@ -60,7 +60,7 @@ export async function prepareConsumeAuthorizationRequests(
 
     const validations: Promise<void>[] = [];
     liveRequests.forEach(authRequest => {
-      validations.push(assertAuthorizationRequestValid(context, authRequest));
+      validations.push(assertAuthorizationRequestValid(authRequest, context));
       const {
         authId,
         data: { type },
