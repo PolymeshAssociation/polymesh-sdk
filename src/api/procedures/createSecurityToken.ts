@@ -171,8 +171,9 @@ export async function prepareCreateSecurityToken(
 
   let fee: undefined | BigNumber;
 
-  // we waive any protocol fees
   const rawTicker = stringToTicker(ticker, context);
+
+  // we waive any protocol fees if token is created in Ethereum. If not created and ticker is not yet reserved, set fee to the sum of protocol fees for ticker registration and asset creation.
 
   const classicTicker = await asset.classicTickers(rawTicker);
   const tokenCreatedInEthereum =
