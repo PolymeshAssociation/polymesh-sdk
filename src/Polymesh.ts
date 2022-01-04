@@ -80,6 +80,10 @@ export class Polymesh {
   // public governance: Governance;
   public claims: Claims;
   public middleware: Middleware;
+
+  /**
+   * A set of methods for exchanging Assets
+   */
   public settlements: Settlements;
   public currentIdentity: CurrentIdentity;
 

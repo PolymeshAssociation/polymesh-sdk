@@ -135,28 +135,6 @@ describe('CurrentIdentity class', () => {
     });
   });
 
-  describe('method: createVenue', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const currentIdentity = new CurrentIdentity(context);
-
-      const args = {
-        description: 'description',
-        type: VenueType.Distribution,
-      };
-
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await currentIdentity.createVenue(args);
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
   describe('method: freezeSecondaryKeys', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const currentIdentity = new CurrentIdentity(context);
