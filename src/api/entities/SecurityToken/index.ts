@@ -11,6 +11,7 @@ import {
 } from 'polymesh-types/types';
 
 import {
+  AuthorizationRequest,
   Context,
   controllerTransfer,
   ControllerTransferParams,
@@ -186,7 +187,7 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public transferOwnership: ProcedureMethod<TransferTokenOwnershipParams, SecurityToken>;
+  public transferOwnership: ProcedureMethod<TransferTokenOwnershipParams, AuthorizationRequest>;
 
   /**
    * Modify some properties of the Security Token

@@ -1,3 +1,4 @@
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -10,12 +11,15 @@ import {
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryKeys,
+  createAuthorizationResolver,
 } from '~/api/procedures/utils';
-import { CheckpointSchedule, Context, Instruction } from '~/internal';
+import { CheckpointSchedule, Context, Instruction, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getInstructionInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
+  Authorization,
+  AuthorizationType,
   Condition,
   ConditionTarget,
   ConditionType,
@@ -625,5 +629,69 @@ describe('assertRequirementsNotTooComplex', () => {
         1
       )
     ).not.toThrow();
+  });
+});
+
+describe('createAuthorizationResolver', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  const filterRecords = () => [
+    { event: { data: [undefined, undefined, undefined, '3', undefined] } },
+  ];
+
+  test('should return a function that creates an AuthorizationRequest', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const authData: Authorization = {
+      type: AuthorizationType.RotatePrimaryKey,
+    };
+
+    const resolver = createAuthorizationResolver(
+      authData,
+      entityMockUtils.getIdentityInstance(),
+      entityMockUtils.getIdentityInstance(),
+      null,
+      mockContext
+    );
+    const authRequest = resolver(({
+      filterRecords: filterRecords,
+    } as unknown) as ISubmittableResult);
+    expect(authRequest.authId).toEqual(new BigNumber(3));
+  });
+
+  test('should return a function that creates an AuthorizationRequest with a PostTransaction Authorization', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const authData: Authorization = {
+      type: AuthorizationType.RotatePrimaryKey,
+    };
+
+    const postTransaction = new PostTransactionValue(() => authData);
+    await postTransaction.run({} as ISubmittableResult);
+
+    const resolver = createAuthorizationResolver(
+      postTransaction,
+      entityMockUtils.getIdentityInstance(),
+      entityMockUtils.getIdentityInstance(),
+      null,
+      mockContext
+    );
+
+    const authRequest = resolver(({
+      filterRecords: filterRecords,
+    } as unknown) as ISubmittableResult);
+    expect(authRequest.authId).toEqual(new BigNumber(3));
   });
 });

@@ -1,4 +1,5 @@
 import {
+  AuthorizationRequest,
   Context,
   createSecurityToken,
   CreateSecurityTokenWithTickerParams,
@@ -111,7 +112,7 @@ export class CurrentIdentity {
    *   the corresponding Account. An Account can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public inviteAccount: ProcedureMethod<InviteAccountParams, void>;
+  public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
   /**
    * Freeze all the secondary keys in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
