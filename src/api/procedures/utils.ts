@@ -1,4 +1,8 @@
+import { ISubmittableResult } from '@polkadot/types/types';
+
 import {
+  Account,
+  AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
   Context,
@@ -7,12 +11,15 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
+  PostTransactionValue,
 } from '~/internal';
 import {
+  Authorization,
   Condition,
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  Identity,
   InputCondition,
   InputTargets,
   InputTaxWithholding,
@@ -22,8 +29,9 @@ import {
   SecondaryKey,
   SignerValue,
 } from '~/types';
-import { PortfolioId } from '~/types/internal';
+import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
 import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { filterEventRecords } from '~/utils/internal';
 
 // import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
@@ -322,3 +330,25 @@ export function assertRequirementsNotTooComplex(
     });
   }
 }
+
+/**
+ * @hidden
+ */
+export const createAuthorizationResolver = (
+  auth: MaybePostTransactionValue<Authorization>,
+  issuer: Identity,
+  target: Identity | Account,
+  expiry: Date | null,
+  context: Context
+) => (receipt: ISubmittableResult): AuthorizationRequest => {
+  const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+  let rawAuth;
+  if (auth instanceof PostTransactionValue) {
+    rawAuth = auth.value;
+  } else {
+    rawAuth = auth;
+  }
+
+  const authId = u64ToBigNumber(data[3]);
+  return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+};

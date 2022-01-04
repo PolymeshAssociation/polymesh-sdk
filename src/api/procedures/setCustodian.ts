@@ -1,13 +1,16 @@
 import BigNumber from 'bignumber.js';
 
+import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
+  AuthorizationRequest,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
   PolymeshError,
+  PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
+import { Authorization, AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -17,6 +20,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface SetCustodianParams {
   targetIdentity: string | Identity;
@@ -32,9 +36,9 @@ export type Params = { did: string; id?: BigNumber } & SetCustodianParams;
  * @hidden
  */
 export async function prepareSetCustodian(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, AuthorizationRequest>,
   args: Params
-): Promise<void> {
+): Promise<PostTransactionValue<AuthorizationRequest>> {
   const {
     context: {
       polymeshApi: {
@@ -46,6 +50,7 @@ export async function prepareSetCustodian(
 
   const { targetIdentity, expiry, did, id } = args;
   const portfolio = portfolioIdToPortfolio({ did, number: id }, context);
+  const issuerIdentity = await context.getCurrentIdentity();
 
   const targetDid = signerToString(targetIdentity);
   const target = new Identity({ did: targetDid }, context);
@@ -74,21 +79,33 @@ export async function prepareSetCustodian(
 
   const rawSignatory = signerValueToSignatory(signerToSignerValue(target), context);
 
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.PortfolioCustody, value: portfolio },
-    context
+  const authRequest: Authorization = {
+    type: AuthorizationType.PortfolioCustody,
+    value: portfolio,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
+
+  const rawExpiry = optionize(dateToMoment)(expiry, context);
+  const [auth] = this.addTransaction(
+    identity.addAuthorization,
+    {
+      resolvers: [
+        createAuthorizationResolver(authRequest, issuerIdentity, target, expiry || null, context),
+      ],
+    },
+    rawSignatory,
+    rawAuthorizationData,
+    rawExpiry
   );
 
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
-
-  this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+  return auth;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params>,
+  this: Procedure<Params, AuthorizationRequest>,
   { did, id }: Params
 ): ProcedureAuthorization {
   const { context } = this;
@@ -106,5 +123,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setCustodian = (): Procedure<Params, void> =>
+export const setCustodian = (): Procedure<Params, AuthorizationRequest> =>
   new Procedure(prepareSetCustodian, getAuthorization);
