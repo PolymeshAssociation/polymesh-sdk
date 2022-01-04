@@ -1,16 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { CurrentIdentity } from '~/CurrentIdentity';
-import { TickerReservation, TransactionQueue, Venue } from '~/internal';
+import { TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import {
-  KnownTokenType,
-  PermissionType,
-  SecurityToken,
-  TokenIdentifierType,
-  VenueType,
-} from '~/types';
+import { KnownTokenType, PermissionType, SecurityToken, TokenIdentifierType } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
