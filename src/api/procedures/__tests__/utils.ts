@@ -22,7 +22,6 @@ import {
   PolymeshError,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getAuthorizationRequestInstance } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
 import {
   Account,
@@ -706,7 +705,7 @@ describe('authorization request validations', () => {
 
   describe('assertAuthorizationRequestValid', () => {
     test('should throw with an expired request', async () => {
-      const auth = getAuthorizationRequestInstance({ isExpired: true });
+      const auth = entityMockUtils.getAuthorizationRequestInstance({ isExpired: true });
 
       let error;
       try {
@@ -723,7 +722,7 @@ describe('authorization request validations', () => {
     });
 
     test('should throw with an Authorization that does not exist', async () => {
-      const auth = getAuthorizationRequestInstance({ exists: false });
+      const auth = entityMockUtils.getAuthorizationRequestInstance({ exists: false });
       let error;
       try {
         await assertAuthorizationRequestValid(auth, mockContext);
