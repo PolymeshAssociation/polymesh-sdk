@@ -106,11 +106,16 @@ export async function prepareInviteExternalAgent(
   let postTransactionAuthorization: MaybePostTransactionValue<Authorization>;
   let rawAuthorizationData;
 
+  // helper to transform permissions into the relevant Authorization
+  const createBecomeAgentData = (
+    value: KnownPermissionGroup | CustomPermissionGroup
+  ): Authorization => ({
+    type: AuthorizationType.BecomeAgent,
+    value,
+  });
+
   if (permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup) {
-    postTransactionAuthorization = {
-      type: AuthorizationType.BecomeAgent,
-      value: permissions,
-    };
+    postTransactionAuthorization = createBecomeAgentData(permissions);
     rawAuthorizationData = authorizationToAuthorizationData(postTransactionAuthorization, context);
   } else {
     // We know this procedure returns a PostTransactionValue, so this assertion is necessary
@@ -118,12 +123,7 @@ export async function prepareInviteExternalAgent(
       ticker,
       permissions,
     })) as PostTransactionValue<CustomPermissionGroup>;
-    postTransactionAuthorization = createGroupResult.transform(customPermissionGroup => {
-      return {
-        type: AuthorizationType.BecomeAgent,
-        value: customPermissionGroup,
-      };
-    });
+    postTransactionAuthorization = createGroupResult.transform(createBecomeAgentData);
 
     rawAuthorizationData = postTransactionAuthorization.transform(authorization =>
       authorizationToAuthorizationData(authorization, context)
