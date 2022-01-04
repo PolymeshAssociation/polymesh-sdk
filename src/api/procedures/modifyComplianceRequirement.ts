@@ -1,4 +1,4 @@
-import { flatten, map } from 'lodash';
+import { flatMap } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -75,11 +75,11 @@ export async function prepareModifyComplianceRequirement(
     ({ id: currentRequirementId }) => id !== currentRequirementId
   );
 
-  const unchangedConditions = map(unchangedRequirements, 'conditions');
+  const unchangedConditions = flatMap(unchangedRequirements, 'conditions');
 
   assertRequirementsNotTooComplex(
     context,
-    [...flatten(unchangedConditions), ...newConditions],
+    [...unchangedConditions, ...newConditions],
     defaultTrustedClaimIssuers.length
   );
 
