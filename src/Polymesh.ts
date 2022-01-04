@@ -67,6 +67,9 @@ export class Polymesh {
   // NOTE uncomment in Governance v2 upgrade
   // public governance: Governance;
   public claims: Claims;
+  /**
+   * A set of methods to interact with the Polymesh network. This includes transferring POLYX, reading network properties and querying for historical events
+   */
   public network: Network;
   public settlements: Settlements;
   public currentIdentity: CurrentIdentity;
