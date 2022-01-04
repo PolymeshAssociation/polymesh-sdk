@@ -16,42 +16,12 @@ import { Mocked } from '~/testUtils/types';
 import { AccountBalance } from '~/types';
 
 jest.mock(
-  '@polkadot/api',
-  require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
-);
-jest.mock(
-  '~/base/Context',
-  require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
-);
-jest.mock(
-  'apollo-client',
-  require('~/testUtils/mocks/dataSources').mockApolloModule('apollo-client')
-);
-jest.mock(
-  '~/api/entities/TickerReservation',
-  require('~/testUtils/mocks/entities').mockTickerReservationModule(
-    '~/api/entities/TickerReservation'
-  )
-);
-jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
-);
-jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
-);
-jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
-);
-jest.mock(
-  'websocket-as-promised',
-  require('~/testUtils/mocks/dataSources').mockWebSocketAsPromisedModule()
 );
 
 describe('Network Class', () => {
