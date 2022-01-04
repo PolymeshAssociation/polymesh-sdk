@@ -1,7 +1,5 @@
 import {
   Context,
-  createSecurityToken,
-  CreateSecurityTokenWithTickerParams,
   createVenue,
   CreateVenueParams,
   inviteAccount,
@@ -10,10 +8,6 @@ import {
   ModifySignerPermissionsParams,
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
-  reserveTicker,
-  ReserveTickerParams,
-  SecurityToken,
-  TickerReservation,
   toggleFreezeSecondaryKeys,
   Venue,
 } from '~/internal';
@@ -82,18 +76,6 @@ export class CurrentIdentity {
       { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false }], voidArgs: true },
       context
     );
-    this.reserveTicker = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [reserveTicker, args],
-      },
-      context
-    );
-    this.createToken = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [createSecurityToken, { reservationRequired: false, ...args }],
-      },
-      context
-    );
   }
 
   /**
@@ -134,18 +116,4 @@ export class CurrentIdentity {
    * Unfreeze all the secondary keys in the Current Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryKeys: NoArgsProcedureMethod<void>;
-
-  /**
-   * Reserve a ticker symbol under the ownership of the Current Identity to later use in the creation of a Security Token.
-   *   The ticker will expire after a set amount of time, after which other users can reserve it
-   */
-  public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
-
-  /**
-   * Create a Security Token
-   *
-   * @note if ticker is already reserved, then required role:
-   *   - Ticker Owner
-   */
-  public createToken: ProcedureMethod<CreateSecurityTokenWithTickerParams, SecurityToken>;
 }
