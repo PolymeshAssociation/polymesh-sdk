@@ -75,9 +75,9 @@ export async function prepareModifyComplianceRequirement(
   const unchangedConditions = flatMap(currentRequirements, 'conditions');
 
   assertRequirementsNotTooComplex(
-    context,
     [...unchangedConditions, ...newConditions],
-    defaultTrustedClaimIssuers.length
+    defaultTrustedClaimIssuers.length,
+    context
   );
 
   const rawComplianceRequirement = requirementToComplianceRequirement(
