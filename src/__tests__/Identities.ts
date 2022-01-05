@@ -12,7 +12,7 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
-describe('Settlements Class', () => {
+describe('Identities Class', () => {
   let context: Mocked<Context>;
   let identities: Identities;
 
