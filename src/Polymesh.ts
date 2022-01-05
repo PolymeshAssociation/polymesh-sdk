@@ -13,6 +13,7 @@ import { satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import WebSocketAsPromised from 'websocket-as-promised';
 
+import { AccountManagement } from '~/AccountManagement';
 import {
   Account,
   claimClassicTicker,
@@ -30,7 +31,6 @@ import {
 import { heartbeat } from '~/middleware/queries';
 import { Settlements } from '~/Settlements';
 import {
-  AccountBalance,
   CommonKeyring,
   ErrorCode,
   MiddlewareConfig,
@@ -82,6 +82,10 @@ export class Polymesh {
   public middleware: Middleware;
   public settlements: Settlements;
   public currentIdentity: CurrentIdentity;
+  /**
+   * A set of methods for managing a Polymesh Identity's Accounts and their permissions
+   */
+  public accountManagement: AccountManagement;
 
   /**
    * @hidden
@@ -95,6 +99,7 @@ export class Polymesh {
     this.middleware = new Middleware(context);
     this.settlements = new Settlements(context);
     this.currentIdentity = new CurrentIdentity(context);
+    this.accountManagement = new AccountManagement(context);
 
     this.transferPolyx = createProcedureMethod(
       { getProcedureAndArgs: args => [transferPolyx, args] },
@@ -300,56 +305,6 @@ export class Polymesh {
   public transferPolyx: ProcedureMethod<TransferPolyxParams, void>;
 
   /**
-   * Get the free/locked POLYX balance of an Account
-   *
-   * @param args.account - defaults to the current Account
-   *
-   * @note can be subscribed to
-   */
-  public getAccountBalance(args?: { account: string | Account }): Promise<AccountBalance>;
-  public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
-  public getAccountBalance(
-    args: { account: string | Account },
-    callback: SubCallback<AccountBalance>
-  ): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public getAccountBalance(
-    args?: { account: string | Account } | SubCallback<AccountBalance>,
-    callback?: SubCallback<AccountBalance>
-  ): Promise<AccountBalance | UnsubCallback> {
-    const { context } = this;
-    let account: string | Account | undefined;
-    let cb: SubCallback<AccountBalance> | undefined = callback;
-
-    switch (typeof args) {
-      case 'undefined': {
-        break;
-      }
-      case 'function': {
-        cb = args;
-        break;
-      }
-      default: {
-        ({ account } = args);
-        break;
-      }
-    }
-
-    if (!account) {
-      account = context.getCurrentAccount();
-    } else if (typeof account === 'string') {
-      account = new Account({ address: account }, context);
-    }
-
-    if (cb) {
-      return account.getBalance(cb);
-    }
-
-    return account.getBalance();
-  }
-
-  /**
    * Claim a ticker symbol that was reserved in Polymath Classic (Ethereum). The Ethereum account
    *   that owns the ticker must sign a special message that contains the DID of the Identity that will own the ticker
    *   in Polymesh, and provide the signed data to this call
@@ -471,28 +426,6 @@ export class Polymesh {
    */
   public getCurrentIdentity(): Promise<Identity | null> {
     return this.context.getCurrentAccount().getIdentity();
-  }
-
-  /**
-   * Create an Account instance from an address. If no address is passed, the current Account is returned
-   */
-  public getAccount(args?: { address: string }): Account {
-    const { context } = this;
-
-    if (args) {
-      return new Account(args, context);
-    }
-
-    return context.getCurrentAccount();
-  }
-
-  /**
-   * Return a list that contains all the signing Accounts associated to the SDK instance
-   *
-   * @throws — if there is no current Account associated to the SDK instance
-   */
-  public getAccounts(): Account[] {
-    return this.context.getAccounts();
   }
 
   /**
