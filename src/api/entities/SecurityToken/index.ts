@@ -5,6 +5,7 @@ import {
   AgentGroup,
   AssetName,
   Counter,
+  FundingRoundName,
   IdentityId,
   SecurityToken as MeshSecurityToken,
   Ticker,
@@ -319,14 +320,17 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
+    const assembleResult = (roundName: FundingRoundName): string | null =>
+      fundingRoundNameToString(roundName) || null;
+
     if (callback) {
       return asset.fundingRound(rawTicker, round => {
-        callback(fundingRoundNameToString(round) || null);
+        callback(assembleResult(round));
       });
     }
 
     const fundingRound = await asset.fundingRound(rawTicker);
-    return fundingRoundNameToString(fundingRound) || null;
+    return assembleResult(fundingRound);
   }
 
   /**
