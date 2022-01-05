@@ -2433,13 +2433,6 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
     const result = fundingRoundNameToString(roundName);
     expect(result).toEqual(fakeResult);
   });
-
-  test('fundingRoundNameToString should return null for an empty polkadot FundingRoundName object', () => {
-    const roundName = dsMockUtils.createMockFundingRoundName();
-
-    const result = fundingRoundNameToString(roundName);
-    expect(result).toBeNull();
-  });
 });
 
 describe('stringToDocumentName and documentNameToString', () => {
