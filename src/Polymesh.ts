@@ -78,6 +78,10 @@ export class Polymesh {
 
   // NOTE uncomment in Governance v2 upgrade
   // public governance: Governance;
+
+  /**
+   * A set of methods to deal with Claims
+   */
   public claims: Claims;
   public middleware: Middleware;
   public settlements: Settlements;
