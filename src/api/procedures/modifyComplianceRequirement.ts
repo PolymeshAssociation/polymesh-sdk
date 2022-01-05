@@ -1,4 +1,4 @@
-import { flatMap } from 'lodash';
+import { flatMap, remove } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -51,18 +51,19 @@ export async function prepareModifyComplianceRequirement(
     defaultTrustedClaimIssuers,
   } = await token.compliance.requirements.get();
 
-  const existingRequirement = currentRequirements.find(
+  const existingRequirements = remove(
+    currentRequirements,
     ({ id: currentRequirementId }) => id === currentRequirementId
   );
 
-  if (!existingRequirement) {
+  if (!existingRequirements.length) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: 'The Compliance Requirement does not exist',
     });
   }
 
-  const { conditions: existingConditions } = existingRequirement;
+  const [{ conditions: existingConditions }] = existingRequirements;
 
   if (hasSameElements(newConditions, existingConditions, conditionsAreEqual)) {
     throw new PolymeshError({
@@ -71,11 +72,7 @@ export async function prepareModifyComplianceRequirement(
     });
   }
 
-  const unchangedRequirements = currentRequirements.filter(
-    ({ id: currentRequirementId }) => id !== currentRequirementId
-  );
-
-  const unchangedConditions = flatMap(unchangedRequirements, 'conditions');
+  const unchangedConditions = flatMap(currentRequirements, 'conditions');
 
   assertRequirementsNotTooComplex(
     context,
