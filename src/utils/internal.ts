@@ -230,11 +230,10 @@ export function filterEventRecords<
   eventName: EventName
 ): IEvent<EventData<Events[ModuleName][EventName]>>[] {
   const eventRecords = receipt.filterRecords(mod, eventName as string);
-
   if (!eventRecords.length) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message: `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
+      message: `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
     });
   }
 
