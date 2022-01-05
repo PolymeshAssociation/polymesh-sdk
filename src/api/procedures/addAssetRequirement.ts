@@ -64,9 +64,9 @@ export async function prepareAddAssetRequirement(
 
   // check that the new requirement won't cause the current ones to exceed the max complexity
   assertRequirementsNotTooComplex(
-    context,
     [...flatten(currentConditions), ...conditions],
-    defaultTrustedClaimIssuers.length
+    defaultTrustedClaimIssuers.length,
+    context
   );
 
   const {
