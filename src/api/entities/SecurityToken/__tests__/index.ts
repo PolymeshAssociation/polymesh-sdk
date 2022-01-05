@@ -323,6 +323,22 @@ describe('SecurityToken class', () => {
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fundingRound);
     });
+
+    test('should allow subscription when funding round is empty', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      dsMockUtils.createQueryStub('asset', 'fundingRound').callsFake(async (_, cbFunc) => {
+        cbFunc(dsMockUtils.createMockFundingRoundName());
+
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await securityToken.currentFundingRound(callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, null);
+    });
   });
 
   describe('method: getIdentifiers', () => {
