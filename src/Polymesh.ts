@@ -444,18 +444,7 @@ export class Polymesh {
    * @throws if there is no Identity with the passed DID
    */
   public async getIdentity(args: { did: string }): Promise<Identity> {
-    const identity = new Identity(args, this.context);
-
-    const exists = await identity.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'The Identity does not exist',
-      });
-    }
-
-    return identity;
+    return this.context.getIdentity(args.did);
   }
 
   /**

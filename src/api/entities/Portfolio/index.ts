@@ -4,6 +4,7 @@ import { values } from 'lodash';
 
 import {
   Account,
+  AuthorizationRequest,
   Context,
   Entity,
   Identity,
@@ -218,7 +219,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    * @note required role:
    *   - Portfolio Custodian
    */
-  public setCustodian: ProcedureMethod<SetCustodianParams, void>;
+  public setCustodian: ProcedureMethod<SetCustodianParams, AuthorizationRequest>;
 
   /**
    * Moves funds from this Portfolio to another one owned by the same Identity
