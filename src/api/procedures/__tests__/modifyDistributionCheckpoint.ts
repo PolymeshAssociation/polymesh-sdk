@@ -72,7 +72,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Distribution is already in its payment period');
+    expect(err.message).toBe('Cannot modify a Distribution checkpoint after the payment date');
   });
 
   test('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
@@ -123,35 +123,6 @@ describe('modifyDistributionCheckpoint procedure', () => {
     }
 
     expect(err.message).toBe('Expiry date must be after the Checkpoint date');
-  });
-
-  test('should throw an error if the distribution has already expired', async () => {
-    const checkpoint = new Date(new Date().getTime() - 100000);
-    const expiryDate = new Date(checkpoint.getTime() + 10000);
-    const paymentDate = new Date(new Date().getTime() + 20000);
-
-    const args = {
-      distribution: entityMockUtils.getDividendDistributionInstance({
-        expiryDate,
-        paymentDate,
-      }),
-      checkpoint,
-    };
-
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-    let err;
-
-    try {
-      await prepareModifyDistributionCheckpoint.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Distribution has already expired');
-    expect(err.data).toEqual({
-      expiryDate,
-    });
   });
 
   test('should add a modifyCaCheckpoint procedure transaction to the queue', async () => {
