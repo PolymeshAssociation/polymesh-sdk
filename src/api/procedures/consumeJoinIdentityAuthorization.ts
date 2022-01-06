@@ -1,7 +1,7 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
+import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
@@ -21,7 +21,6 @@ export interface ConsumeJoinIdentityAuthorizationParams {
 export interface Storage {
   currentAccount: Account;
   calledByTarget: boolean;
-  existingIdentity: Identity | null;
 }
 
 /**
@@ -37,22 +36,12 @@ export async function prepareConsumeJoinIdentityAuthorization(
         tx: { identity },
       },
     },
-    storage: { calledByTarget, existingIdentity },
+    storage: { calledByTarget },
     context,
   } = this;
   const { authRequest, accept } = args;
 
-  const { target, authId, expiry, issuer } = authRequest;
-
-  if (authRequest.isExpired()) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Authorization Request has expired',
-      data: {
-        expiry,
-      },
-    });
-  }
+  const { target, authId, issuer } = authRequest;
 
   const rawAuthId = numberToU64(authId, context);
 
@@ -74,12 +63,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
     return;
   }
 
-  if (existingIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'This Account is already part of an Identity',
-    });
-  }
+  await assertAuthorizationRequestValid(authRequest, context);
 
   this.addTransaction(identity.joinIdentityAsKey, { paidForBy: issuer }, rawAuthId);
 }
@@ -150,12 +134,10 @@ export async function prepareStorage(
   const targetAccount = target as Account;
   const currentAccount = context.getCurrentAccount();
   const calledByTarget = targetAccount.isEqual(currentAccount);
-  const existingIdentity = await targetAccount.getIdentity();
 
   return {
     currentAccount,
     calledByTarget,
-    existingIdentity,
   };
 }
 
