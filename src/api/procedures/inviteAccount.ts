@@ -1,7 +1,15 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { Account, PolymeshError, Procedure } from '~/internal';
+import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
+  Account,
+  AuthorizationRequest,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
+import {
+  Authorization,
   AuthorizationType,
   ErrorCode,
   Permissions,
@@ -27,9 +35,9 @@ export interface InviteAccountParams {
  * @hidden
  */
 export async function prepareInviteAccount(
-  this: Procedure<InviteAccountParams>,
+  this: Procedure<InviteAccountParams, AuthorizationRequest>,
   args: InviteAccountParams
-): Promise<void> {
+): Promise<PostTransactionValue<AuthorizationRequest>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -98,28 +106,32 @@ export async function prepareInviteAccount(
     authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.JoinIdentity,
-      value: authorizationValue,
-    },
-    context
-  );
+  const authRequest: Authorization = {
+    type: AuthorizationType.JoinIdentity,
+    value: authorizationValue,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  this.addTransaction(
+  const [auth] = this.addTransaction(
     tx.identity.addAuthorization,
-    {},
+    {
+      resolvers: [
+        createAuthorizationResolver(authRequest, identity, account, expiry || null, context),
+      ],
+    },
     rawSignatory,
     rawAuthorizationData,
     rawExpiry
   );
+
+  return auth;
 }
 
 /**
  * @hidden
  */
-export const inviteAccount = (): Procedure<InviteAccountParams> =>
+export const inviteAccount = (): Procedure<InviteAccountParams, AuthorizationRequest> =>
   new Procedure(prepareInviteAccount, {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],

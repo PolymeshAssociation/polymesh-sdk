@@ -14,6 +14,18 @@ import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/SecurityToken',
+  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+);
+
+jest.mock(
+  '~/api/entities/TickerReservation',
+  require('~/testUtils/mocks/entities').mockTickerReservationModule(
+    '~/api/entities/TickerReservation'
+  )
+);
+
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
@@ -46,6 +58,18 @@ describe('consumeAuthorizationRequests procedure', () => {
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     sinon.stub(utilsConversionModule, 'addressToKey');
+    dsMockUtils.createQueryStub('identity', 'authorizations', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockAuthorization({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          auth_id: 1,
+          authorized_by: 'someDid',
+          expiry: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      ),
+    });
   });
 
   let addBatchTransactionStub: sinon.SinonStub;

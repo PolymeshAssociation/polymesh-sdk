@@ -2,6 +2,7 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
 
 import {
+  AuthorizationRequest,
   Context,
   createSecurityToken,
   CreateSecurityTokenParams,
@@ -195,7 +196,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * @note required role:
    *   - Ticker Owner
    */
-  public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, TickerReservation>;
+  public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, AuthorizationRequest>;
 
   /**
    * Determine whether this Ticker Reservation exists on chain
