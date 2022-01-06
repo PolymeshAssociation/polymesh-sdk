@@ -40,7 +40,7 @@ export async function prepareModifyDistributionCheckpoint(
   if (paymentDate <= now) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Distribution is already in its payment period',
+      message: 'Cannot modify a Distribution checkpoint after the payment date',
     });
   }
 
@@ -48,16 +48,6 @@ export async function prepareModifyDistributionCheckpoint(
 
   if (!(checkpointValue instanceof Checkpoint)) {
     await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
-  }
-
-  if (expiryDate && expiryDate < now) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Distribution has already expired',
-      data: {
-        expiryDate,
-      },
-    });
   }
 
   await this.addProcedure(modifyCaCheckpoint(), {
