@@ -69,6 +69,14 @@ export class Assets {
   public claimClassicTicker: ProcedureMethod<ClaimClassicTickerParams, TickerReservation>;
 
   /**
+   * Create a Security Token
+   *
+   * @note if ticker is already reserved, then required role:
+   *   - Ticker Owner
+   */
+  public createToken: ProcedureMethod<CreateSecurityTokenWithTickerParams, SecurityToken>;
+
+  /**
    * Check if a ticker hasn't been reserved
    *
    * @note can be subscribed to
@@ -223,12 +231,4 @@ export class Assets {
 
     return token;
   }
-
-  /**
-   * Create a Security Token
-   *
-   * @note if ticker is already reserved, then required role:
-   *   - Ticker Owner
-   */
-  public createToken: ProcedureMethod<CreateSecurityTokenWithTickerParams, SecurityToken>;
 }
