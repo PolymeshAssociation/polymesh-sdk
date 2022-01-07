@@ -94,7 +94,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -132,7 +132,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -172,7 +172,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -219,7 +219,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -253,7 +253,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,

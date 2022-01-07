@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Context, DefaultPortfolio, NumberedPortfolio, SecurityToken } from '~/internal';
+import { Asset, Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';
@@ -119,22 +119,22 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
-  test('should throw an error if some of the amount token to move exceed its balance', async () => {
+  test('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const fromDid = 'someDid';
     const toDid = 'otherDid';
     const from = new NumberedPortfolio({ id: fromId, did: fromDid }, mockContext);
     const to = new NumberedPortfolio({ id: toId, did: toDid }, mockContext);
-    const securityToken01 = new SecurityToken({ ticker: 'TICKER001' }, mockContext);
-    const securityToken02 = new SecurityToken({ ticker: 'TICKER002' }, mockContext);
+    const asset01 = new Asset({ ticker: 'TICKER001' }, mockContext);
+    const asset02 = new Asset({ ticker: 'TICKER002' }, mockContext);
     const items: PortfolioMovement[] = [
       {
-        token: securityToken01.ticker,
+        asset: asset01.ticker,
         amount: new BigNumber(100),
       },
       {
-        token: securityToken02,
+        asset: asset02,
         amount: new BigNumber(20),
       },
     ];
@@ -144,9 +144,9 @@ describe('moveFunds procedure', () => {
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        tokenBalances: [
-          { token: securityToken01, free: new BigNumber(50) },
-          { token: securityToken02, free: new BigNumber(10) },
+        assetBalances: [
+          { asset: asset01, free: new BigNumber(50) },
+          { asset: asset02, free: new BigNumber(10) },
         ] as PortfolioBalance[],
       },
     });
@@ -177,10 +177,10 @@ describe('moveFunds procedure', () => {
     const did = 'someDid';
     const from = new NumberedPortfolio({ id: fromId, did }, mockContext);
     const to = new NumberedPortfolio({ id: toId, did }, mockContext);
-    const securityToken = new SecurityToken({ ticker: 'TICKER001' }, mockContext);
+    const asset = new Asset({ ticker: 'TICKER001' }, mockContext);
     const items = [
       {
-        token: securityToken.ticker,
+        asset: asset.ticker,
         amount: new BigNumber(100),
       },
     ];
@@ -188,11 +188,11 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         did,
-        tokenBalances: [{ token: securityToken, total: new BigNumber(150) }] as PortfolioBalance[],
+        assetBalances: [{ asset, total: new BigNumber(150) }] as PortfolioBalance[],
       },
       defaultPortfolioOptions: {
         did,
-        tokenBalances: [{ token: securityToken, total: new BigNumber(150) }] as PortfolioBalance[],
+        assetBalances: [{ asset, total: new BigNumber(150) }] as PortfolioBalance[],
       },
     });
 
@@ -223,7 +223,7 @@ describe('moveFunds procedure', () => {
       .returns(rawToMeshPortfolioId);
 
     const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
-      ticker: dsMockUtils.createMockTicker(items[0].token),
+      ticker: dsMockUtils.createMockTicker(items[0].asset),
       amount: dsMockUtils.createMockBalance(items[0].amount.toNumber()),
     });
     portfolioMovementToMovePortfolioItemStub
@@ -349,7 +349,7 @@ describe('moveFunds procedure', () => {
         permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
           portfolios: [from, new DefaultPortfolio({ did }, mockContext)],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -367,7 +367,7 @@ describe('moveFunds procedure', () => {
         permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
           portfolios: [from, toPortfolio],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -383,7 +383,7 @@ describe('moveFunds procedure', () => {
         permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
           portfolios: [from, toPortfolio],
-          tokens: [],
+          assets: [],
         },
       });
     });

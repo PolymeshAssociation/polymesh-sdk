@@ -64,7 +64,7 @@ describe('addInstruction procedure', () => {
   let toDid: string;
   let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
-  let token: string;
+  let asset: string;
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
@@ -75,7 +75,7 @@ describe('addInstruction procedure', () => {
   let rawAmount: Balance;
   let rawFrom: PortfolioId;
   let rawTo: PortfolioId;
-  let rawToken: Ticker;
+  let rawTicker: Ticker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
@@ -130,7 +130,7 @@ describe('addInstruction procedure', () => {
       did: toDid,
       id: new BigNumber(2),
     });
-    token = 'SOME_TOKEN';
+    asset = 'SOME_ASSET';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
@@ -145,7 +145,7 @@ describe('addInstruction procedure', () => {
       did: dsMockUtils.createMockIdentityId(to),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    rawToken = dsMockUtils.createMockTicker(token);
+    rawTicker = dsMockUtils.createMockTicker(asset);
     rawTradeDate = dsMockUtils.createMockMoment(tradeDate.getTime());
     rawValueDate = dsMockUtils.createMockMoment(valueDate.getTime());
     rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
@@ -155,7 +155,7 @@ describe('addInstruction procedure', () => {
       from: rawFrom,
       to: rawTo,
       amount: rawAmount,
-      asset: rawToken,
+      asset: rawTicker,
     };
 
     instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
@@ -208,7 +208,7 @@ describe('addInstruction procedure', () => {
     portfolioIdToMeshPortfolioIdStub.withArgs({ did: toDid }, mockContext).returns(rawTo);
     getCustodianStub.onCall(0).returns({ did: fromDid });
     getCustodianStub.onCall(1).returns({ did: toDid });
-    stringToTickerStub.withArgs(token, mockContext).returns(rawToken);
+    stringToTickerStub.withArgs(asset, mockContext).returns(rawTicker);
     numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     endConditionToSettlementTypeStub
@@ -229,7 +229,7 @@ describe('addInstruction procedure', () => {
             {
               from,
               to,
-              token,
+              asset: asset,
               amount,
             },
           ],
@@ -285,7 +285,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount,
-      token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+      asset: entityMockUtils.getMockAssetInstance({ ticker: asset }),
     });
 
     try {
@@ -322,7 +322,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+                asset: entityMockUtils.getMockAssetInstance({ ticker: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -359,7 +359,7 @@ describe('addInstruction procedure', () => {
               {
                 from,
                 to,
-                token,
+                asset: asset,
                 amount,
               },
             ],
@@ -422,7 +422,7 @@ describe('addInstruction procedure', () => {
               from,
               to,
               amount,
-              token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+              asset: entityMockUtils.getMockAssetInstance({ ticker: asset }),
             },
           ],
           tradeDate,
@@ -453,14 +453,14 @@ describe('addInstruction procedure', () => {
       let result = await boundFunc({
         venue,
         instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
       });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [fromPortfolio, toPortfolio],
           transactions: [TxTags.settlement.AddAndAffirmInstruction],
         },
@@ -474,14 +474,14 @@ describe('addInstruction procedure', () => {
       result = await boundFunc({
         venue,
         instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
       });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.AddInstruction],
         },

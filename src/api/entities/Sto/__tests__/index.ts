@@ -13,8 +13,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -72,7 +72,7 @@ describe('Sto class', () => {
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
-      expect(sto.token.ticker).toBe(ticker);
+      expect(sto.asset.ticker).toBe(ticker);
       expect(sto.id).toEqual(id);
     });
   });
@@ -138,7 +138,7 @@ describe('Sto class', () => {
       sto = new Sto({ ticker, id }, context);
     });
 
-    test('should return details for a security token offering', async () => {
+    test('should return details for an asset offering', async () => {
       const fakeResult = {
         creator: entityMockUtils.getIdentityInstance({ did: someDid }),
         name,
@@ -265,18 +265,18 @@ describe('Sto class', () => {
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
       const did = 'someDid';
-      const offeringToken = 'TICKER';
-      const raiseToken = 'USD';
-      const offeringTokenAmount = new BigNumber(10000);
-      const raiseTokenAmount = new BigNumber(1000);
+      const offeringAsset = 'TICKER';
+      const raiseAsset = 'USD';
+      const offeringAssetAmount = new BigNumber(10000);
+      const raiseAssetAmount = new BigNumber(1000);
 
       const items = [
         {
           investor: did,
-          offeringToken,
-          raiseToken,
-          offeringTokenAmount: offeringTokenAmount.toNumber(),
-          raiseTokenAmount: raiseTokenAmount.toNumber(),
+          offeringToken: offeringAsset,
+          raiseToken: raiseAsset,
+          offeringTokenAmount: offeringAssetAmount.toNumber(),
+          raiseTokenAmount: raiseAssetAmount.toNumber(),
           datetime: '2020-10-10',
         },
       ];
@@ -310,8 +310,8 @@ describe('Sto class', () => {
       const { data } = result;
 
       expect(data[0].investor.did).toBe(did);
-      expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
-      expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
+      expect(data[0].soldAmount).toEqual(offeringAssetAmount.div(Math.pow(10, 6)));
+      expect(data[0].investedAmount).toEqual(raiseAssetAmount.div(Math.pow(10, 6)));
 
       dsMockUtils.createApolloQueryStub(
         investments({

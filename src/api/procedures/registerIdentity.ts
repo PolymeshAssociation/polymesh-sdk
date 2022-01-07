@@ -74,7 +74,7 @@ export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> 
   new Procedure(prepareRegisterIdentity, {
     roles: [{ type: RoleType.CddProvider }],
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios: [],
       transactions: [TxTags.identity.CddRegisterDid],
     },

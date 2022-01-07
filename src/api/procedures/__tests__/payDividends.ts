@@ -225,7 +225,7 @@ describe('payDividends procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.capitalDistribution.PushBenefit],
         },

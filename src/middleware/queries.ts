@@ -1,6 +1,8 @@
 import gql from 'graphql-tag';
 
 import {
+  QueryAssetsByTrustedClaimIssuerArgs,
+  QueryAssetsHeldByDidArgs,
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
@@ -15,8 +17,6 @@ import {
   QuerySettlementsArgs,
   QueryTickerExternalAgentActionsArgs,
   QueryTickerExternalAgentHistoryArgs,
-  QueryTokensByTrustedClaimIssuerArgs,
-  QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
@@ -273,11 +273,11 @@ export function proposals(
 /**
  * @hidden
  *
- * Get the tickers of all the tokens for which the passed DID is a trusted claim issuer
+ * Get the tickers of all the Assets for which the passed DID is a trusted claim issuer
  */
-export function tokensByTrustedClaimIssuer(
-  variables: QueryTokensByTrustedClaimIssuerArgs
-): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
+export function assetsByTrustedClaimIssuer(
+  variables: QueryAssetsByTrustedClaimIssuerArgs
+): GraphqlQuery<QueryAssetsByTrustedClaimIssuerArgs> {
   const query = gql`
     query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!) {
       tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid)
@@ -293,11 +293,11 @@ export function tokensByTrustedClaimIssuer(
 /**
  * @hidden
  *
- * Get all tickers of tokens that were held at some point by the given did
+ * Get all tickers of Assets that were held at some point by the given did
  */
-export function tokensHeldByDid(
-  variables: QueryTokensHeldByDidArgs
-): GraphqlQuery<QueryTokensHeldByDidArgs> {
+export function assetsHeldByDid(
+  variables: QueryAssetsHeldByDidArgs
+): GraphqlQuery<QueryAssetsHeldByDidArgs> {
   const query = gql`
     query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
       tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
@@ -687,7 +687,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
- * Get the transaction history of each external agent of a token
+ * Get the transaction history of each external agent of a asset
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
@@ -714,7 +714,7 @@ export function tickerExternalAgentHistory(
 /**
  * @hidden
  *
- * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Security Token
+ * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
  */
 export function tickerExternalAgentActions(
   variables: QueryTickerExternalAgentActionsArgs

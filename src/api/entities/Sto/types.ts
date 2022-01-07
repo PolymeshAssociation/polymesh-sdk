@@ -19,15 +19,15 @@ export enum StoTimingStatus {
 
 export enum StoBalanceStatus {
   /**
-   * There still are Security Tokens available for purchase
+   * There still are Assets available for purchase
    */
   Available = 'Available',
   /**
-   * All Security Tokens in the offering have been sold
+   * All Assets in the offering have been sold
    */
   SoldOut = 'SoldOut',
   /**
-   * There are remaining tokens, but their added value is lower than the Offering's
+   * There are remaining Assets, but their added value is lower than the Offering's
    *   minimum investment, so they cannot be purchased. The offering should be manually closed
    *   to retrieve them
    */

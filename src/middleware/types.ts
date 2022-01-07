@@ -1096,7 +1096,7 @@ export enum ItnRewardActionType {
   PolyxTransfer = 'PolyxTransfer',
   SecondaryKey = 'SecondaryKey',
   ReserveTokenTicker = 'ReserveTokenTicker',
-  SecurityToken = 'SecurityToken',
+  Asset = 'SecurityToken',
   ComplianceRequirement = 'ComplianceRequirement',
   TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
   ClaimAdded = 'ClaimAdded',
@@ -1437,12 +1437,12 @@ export type QueryScopesByIdentityArgs = {
   did: Scalars['String'];
 };
 
-export type QueryTokensByTrustedClaimIssuerArgs = {
+export type QueryAssetsByTrustedClaimIssuerArgs = {
   claimIssuerDid: Scalars['String'];
   order?: Maybe<Order>;
 };
 
-export type QueryTokensHeldByDidArgs = {
+export type QueryAssetsHeldByDidArgs = {
   did: Scalars['String'];
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;

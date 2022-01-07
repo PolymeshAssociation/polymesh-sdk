@@ -54,7 +54,7 @@ export async function prepareSetGroupPermissions(
   }
 
   const {
-    token: { ticker },
+    asset: { ticker },
     id,
   } = group;
   const rawTicker = stringToTicker(ticker, context);
@@ -78,13 +78,13 @@ export async function prepareSetGroupPermissions(
  */
 export function getAuthorization(
   this: Procedure<Params>,
-  { group: { token } }: Params
+  { group: { asset } }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.externalAgents.SetGroupPermissions],
       portfolios: [],
-      tokens: [token],
+      assets: [asset],
     },
   };
 }

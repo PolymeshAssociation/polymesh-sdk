@@ -28,8 +28,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/Identity',
@@ -207,7 +207,7 @@ describe('launchSto procedure', () => {
         getVenues: [entityMockUtils.getVenueInstance({ details: { type: VenueType.Exchange } })],
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
@@ -239,10 +239,10 @@ describe('launchSto procedure', () => {
     expect(err?.message).toBe('A valid Venue for the Offering was neither supplied nor found');
   });
 
-  test("should throw an error if tokens offered exceed the Portfolio's balance", async () => {
+  test("should throw an error if assets offered exceed the Portfolio's balance", async () => {
     entityMockUtils.configureMocks({
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
       },
     });
 
@@ -265,7 +265,7 @@ describe('launchSto procedure', () => {
   test('should add a create fundraiser transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
       },
     });
 
@@ -306,7 +306,7 @@ describe('launchSto procedure', () => {
         getVenues: [venue],
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
       },
     });
 
@@ -377,7 +377,7 @@ describe('launchSto procedure', () => {
       portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(raisingPortfolioId, mockContext).returns(portfolios[1]);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const asset = entityMockUtils.getMockAssetInstance({ ticker });
       const roles = [
         { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },
@@ -387,7 +387,7 @@ describe('launchSto procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.sto.CreateFundraiser],
-          tokens: [token],
+          assets: [asset],
           portfolios,
         },
       });

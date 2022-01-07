@@ -62,7 +62,7 @@ describe('removeSecondaryKeys procedure', () => {
         secondaryKeys: signers.map(signer => ({
           signer,
           permissions: {
-            tokens: null,
+            assets: null,
             transactions: null,
             transactionGroups: [],
             portfolios: null,

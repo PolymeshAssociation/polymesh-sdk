@@ -167,7 +167,7 @@ export async function getAuthorization(
     permissions: {
       portfolios,
       transactions,
-      tokens: [],
+      assets: [],
     },
   };
 }

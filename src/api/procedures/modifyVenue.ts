@@ -95,7 +95,7 @@ export function getAuthorization(
   return {
     roles: [{ type: RoleType.VenueOwner, venueId }],
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios: [],
       transactions,
     },

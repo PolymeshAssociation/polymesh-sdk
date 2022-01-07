@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Fundraiser, FundraiserName } from 'polymesh-types/types';
 
 import {
+  Asset,
   closeSto,
   Context,
   Entity,
@@ -11,7 +12,6 @@ import {
   InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
-  SecurityToken,
   toggleFreezeSto,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
@@ -40,7 +40,7 @@ interface HumanReadable {
 }
 
 /**
- * Represents a Security Token Offering in the Polymesh blockchain
+ * Represents an Asset Offering in the Polymesh blockchain
  */
 export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
@@ -59,9 +59,9 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   public id: BigNumber;
 
   /**
-   * Security Token being offered
+   * Asset being offered
    */
-  public token: SecurityToken;
+  public asset: Asset;
 
   /**
    * @hidden
@@ -72,7 +72,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.token = new SecurityToken({ ticker }, context);
+    this.asset = new Asset({ ticker }, context);
 
     this.freeze = createProcedureMethod(
       {
@@ -119,7 +119,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       id,
-      token: { ticker },
+      asset: { ticker },
       context,
     } = this;
 
@@ -197,7 +197,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     const {
       context,
       id,
-      token: { ticker },
+      asset: { ticker },
     } = this;
 
     const { size, start } = opts;
@@ -245,7 +245,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
    */
   public async exists(): Promise<boolean> {
     const {
-      token: { ticker },
+      asset: { ticker },
       id,
       context,
     } = this;
@@ -259,13 +259,13 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Return the Sto's ID and Token ticker
+   * Return the Sto's ID and Asset ticker
    */
   public toJson(): HumanReadable {
-    const { token, id } = this;
+    const { asset, id } = this;
 
     return toHumanReadable({
-      ticker: token,
+      ticker: asset,
       id,
     });
   }

@@ -62,7 +62,7 @@ describe('CurrentIdentity class', () => {
         {
           signer: signers[0],
           permissions: {
-            tokens: { type: PermissionType.Include, values: [] },
+            assets: { type: PermissionType.Include, values: [] },
             transactions: { type: PermissionType.Include, values: [] },
             portfolios: { type: PermissionType.Include, values: [] },
           },
@@ -89,7 +89,7 @@ describe('CurrentIdentity class', () => {
       const secondaryKeys = [
         {
           signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
-          permissions: { tokens: null, transactions: null, portfolios: null },
+          permissions: { assets: null, transactions: null, portfolios: null },
         },
       ];
 

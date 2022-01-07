@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
+import { Asset, PolymeshError, Procedure, Sto } from '~/internal';
 import { ErrorCode, StoSaleStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
@@ -57,7 +57,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.sto.Stop],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [],
     },
   };

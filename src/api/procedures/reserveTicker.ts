@@ -55,10 +55,10 @@ export async function prepareReserveTicker(
 
   const { expiryDate, status } = await reservation.details();
 
-  if (status === TickerReservationStatus.TokenCreated) {
+  if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: `A Security Token with ticker "${ticker}" already exists`,
+      message: `An Asset with ticker "${ticker}" already exists`,
     });
   } else if (status === TickerReservationStatus.Reserved) {
     if (!extendPeriod) {
@@ -101,7 +101,7 @@ export function getAuthorization({
   const auth: ProcedureAuthorization = {
     permissions: {
       transactions: [TxTags.asset.RegisterTicker],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };

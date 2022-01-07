@@ -103,16 +103,16 @@ describe('transferTickerOwnership procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if a token with that ticker has already been launched', () => {
+  test('should throw an error if an asset with that ticker has already been launched', () => {
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
-      status: TickerReservationStatus.TokenCreated,
+      status: TickerReservationStatus.AssetCreated,
     });
     const proc = procedureMockUtils.getInstance<Params, TickerReservation>(mockContext);
 
     return expect(prepareTransferTickerOwnership.call(proc, args)).rejects.toThrow(
-      'A Security Token with this ticker has already been created'
+      'An Asset with this ticker has already been created'
     );
   });
 
@@ -156,7 +156,7 @@ describe('transferTickerOwnership procedure', () => {
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },

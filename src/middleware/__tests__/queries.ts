@@ -10,6 +10,8 @@ import {
 } from '~/middleware/types';
 
 import {
+  assetsByTrustedClaimIssuer,
+  assetsHeldByDid,
   didsWithClaims,
   eventByAddedTrustedClaimIssuer,
   eventByIndexedArgs,
@@ -25,8 +27,6 @@ import {
   settlements,
   tickerExternalAgentActions,
   tickerExternalAgentHistory,
-  tokensByTrustedClaimIssuer,
-  tokensHeldByDid,
   transactionByHash,
   transactions,
 } from '../queries';
@@ -130,26 +130,26 @@ describe('proposals', () => {
   });
 });
 
-describe('tokensByTrustedClaimIssuer', () => {
+describe('assetsByTrustedClaimIssuer', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       claimIssuerDid: 'someDid',
     };
 
-    const result = tokensByTrustedClaimIssuer(variables);
+    const result = assetsByTrustedClaimIssuer(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
   });
 });
 
-describe('tokensHeldByDid', () => {
+describe('assetsHeldByDid', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       did: 'someDid',
     };
 
-    const result = tokensHeldByDid(variables);
+    const result = assetsHeldByDid(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

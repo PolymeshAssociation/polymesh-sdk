@@ -1668,12 +1668,12 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: getDividendDistributionsForTokens', () => {
+  describe('method: getDividendDistributionsForAssets', () => {
     afterAll(() => {
       sinon.restore();
     });
 
-    test('should return all distributions associated to the passed tokens', async () => {
+    test('should return all distributions associated to the passed assets', async () => {
       const tickers = ['TICKER_0', 'TICKER_1', 'TICKER_2'];
       const rawTickers = tickers.map(dsMockUtils.createMockTicker);
 
@@ -1809,8 +1809,8 @@ describe('Context class', () => {
         stringToTickerStub.withArgs(ticker, context).returns(rawTickers[index])
       );
 
-      const result = await context.getDividendDistributionsForTokens({
-        tokens: tickers.map(ticker => entityMockUtils.getSecurityTokenInstance({ ticker })),
+      const result = await context.getDividendDistributionsForAssets({
+        assets: tickers.map(ticker => entityMockUtils.getMockAssetInstance({ ticker })),
       });
 
       expect(result.length).toBe(2);

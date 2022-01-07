@@ -166,7 +166,7 @@ describe('transferPolyx procedure', () => {
       expect(getAuthorization(args)).toEqual({
         permissions: {
           transactions: [TxTags.balances.TransferWithMemo],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });
@@ -176,7 +176,7 @@ describe('transferPolyx procedure', () => {
       expect(getAuthorization(args)).toEqual({
         permissions: {
           transactions: [TxTags.balances.Transfer],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });

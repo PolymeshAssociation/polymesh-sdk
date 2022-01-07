@@ -13,8 +13,8 @@ import { DefaultPortfolio, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('reclaimDividendDistributionFunds procedure', () => {
@@ -124,7 +124,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       const params = ({
         distribution: {
           origin,
-          token: { ticker },
+          asset: { ticker },
         },
       } as unknown) as Params;
 
@@ -137,7 +137,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           portfolios: [origin],
         },
       });

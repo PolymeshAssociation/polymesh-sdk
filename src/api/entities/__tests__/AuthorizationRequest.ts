@@ -108,7 +108,7 @@ describe('AuthorizationRequest class', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -212,7 +212,7 @@ describe('AuthorizationRequest class', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,

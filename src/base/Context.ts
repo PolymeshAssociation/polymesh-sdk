@@ -18,7 +18,7 @@ import {
   TxTag,
 } from 'polymesh-types/types';
 
-import { Account, DividendDistribution, Identity, PolymeshError, SecurityToken } from '~/internal';
+import { Account, Asset, DividendDistribution, Identity, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -701,25 +701,25 @@ export class Context {
   /**
    * @hidden
    */
-  public async getDividendDistributionsForTokens(args: {
-    tokens: SecurityToken[];
+  public async getDividendDistributionsForAssets(args: {
+    assets: Asset[];
   }): Promise<DistributionWithDetails[]> {
     const {
       polymeshApi: {
         query: { corporateAction: corporateActionQuery, capitalDistribution },
       },
     } = this;
-    const { tokens } = args;
+    const { assets } = args;
     const distributionsMultiParams: CAId[] = [];
     const corporateActionParams: CorporateActionParams[] = [];
     const corporateActionIds: BigNumber[] = [];
     const tickers: string[] = [];
 
-    const tokenChunks = chunk(tokens, MAX_CONCURRENT_REQUESTS);
+    const assetChunks = chunk(assets, MAX_CONCURRENT_REQUESTS);
 
-    await P.each(tokenChunks, async tokenChunk => {
+    await P.each(assetChunks, async assetChunk => {
       const corporateActions = await Promise.all(
-        tokenChunk.map(({ ticker }) =>
+        assetChunk.map(({ ticker }) =>
           corporateActionQuery.corporateActions.entries(stringToTicker(ticker, this))
         )
       );

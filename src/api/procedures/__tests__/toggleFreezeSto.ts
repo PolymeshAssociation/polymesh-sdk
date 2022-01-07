@@ -15,8 +15,8 @@ import { StoBalanceStatus, StoSaleStatus, StoTimingStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/Sto',
@@ -171,8 +171,7 @@ describe('toggleFreezeSto procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawId);
-
-    expect(sto.token.ticker).toBe(result.token.ticker);
+    expect(sto.asset.ticker).toBe(result.asset.ticker);
   });
 
   test('should add a unfreeze transaction to the queue', async () => {
@@ -200,7 +199,7 @@ describe('toggleFreezeSto procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawId);
 
-    expect(sto.token.ticker).toBe(result.token.ticker);
+    expect(sto.asset.ticker).toBe(result.asset.ticker);
   });
 
   describe('getAuthorization', () => {
@@ -208,12 +207,12 @@ describe('toggleFreezeSto procedure', () => {
       const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const asset = entityMockUtils.getMockAssetInstance({ ticker });
 
       expect(boundFunc({ ticker, id, freeze: true })).toEqual({
         permissions: {
           transactions: [TxTags.sto.FreezeFundraiser],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
       });
@@ -221,7 +220,7 @@ describe('toggleFreezeSto procedure', () => {
       expect(boundFunc({ ticker, id, freeze: false })).toEqual({
         permissions: {
           transactions: [TxTags.sto.UnfreezeFundraiser],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
       });

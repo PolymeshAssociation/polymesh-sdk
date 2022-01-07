@@ -16,7 +16,7 @@ export interface MoveFundsParams {
    */
   to?: BigNumber | DefaultPortfolio | NumberedPortfolio;
   /**
-   * list of tokens (and their corresponding amounts) that will be moved
+   * list of Assets (and their corresponding amounts) that will be moved
    */
   items: PortfolioMovement[];
 }
@@ -82,15 +82,15 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
-  const portfolioBalances = await fromPortfolio.getTokenBalances({
-    tokens: items.map(({ token }) => token),
+  const portfolioBalances = await fromPortfolio.getAssetBalances({
+    assets: items.map(({ asset }) => asset),
   });
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
-  portfolioBalances.forEach(({ token: { ticker }, free }) => {
+  portfolioBalances.forEach(({ asset: { ticker }, free }) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const transferItem = items.find(
-      ({ token: t }) => (typeof t === 'string' ? t : t.ticker) === ticker
+      ({ asset: t }) => (typeof t === 'string' ? t : t.ticker) === ticker
     )!;
 
     if (transferItem.amount.gt(free)) {
@@ -147,7 +147,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.portfolio.MovePortfolioFunds],
-      tokens: [],
+      assets: [],
       portfolios: [from, toPortfolio],
     },
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],

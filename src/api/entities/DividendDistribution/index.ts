@@ -83,8 +83,8 @@ export type Params = CorporateActionParams & DividendDistributionParams;
 const notExistsMessage = 'The Dividend Distribution no longer exists';
 
 /**
- * Represents a Corporate Action via which a Security Token issuer wishes to distribute dividends
- *   between a subset of the Tokenholders (targets)
+ * Represents a Corporate Action via which an Asset issuer wishes to distribute dividends
+ *   between a subset of the Asset holders (targets)
  */
 export class DividendDistribution extends CorporateActionBase {
   /**
@@ -98,13 +98,13 @@ export class DividendDistribution extends CorporateActionBase {
   public currency: string;
 
   /**
-   * amount of `currency` to pay for each share the Tokenholder holds
+   * amount of `currency` to pay for each share held by the Asset holders
    */
   public perShare: BigNumber;
 
   /**
    * maximum amount of `currency` to be distributed. Distributions are "first come, first served", so funds can be depleted before
-   *   every Tokenholder receives their corresponding amount
+   *   every Asset holder receives their corresponding amount
    */
   public maxAmount: BigNumber;
 
@@ -274,7 +274,7 @@ export class DividendDistribution extends CorporateActionBase {
    * Retrieve a comprehensive list of all Identities that are entitled to dividends in this Distribution (participants),
    *   the amount they are entitled to and whether they have been paid or not
    *
-   * @note this request can take a lot of time with large amounts of Tokenholders
+   * @note this request can take a lot of time with large amounts of Asset holders
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be an empty array.
    *   This is because the Distribution participants cannot be determined without a Checkpoint
    */
@@ -343,7 +343,7 @@ export class DividendDistribution extends CorporateActionBase {
   }): Promise<DistributionParticipant | null> {
     const {
       id: localId,
-      token: { ticker },
+      asset: { ticker },
       targets: { identities: targetIdentities, treatment },
       paymentDate,
       perShare,
@@ -400,7 +400,7 @@ export class DividendDistribution extends CorporateActionBase {
    */
   private fetchDistribution(): Promise<Option<Distribution>> {
     const {
-      token: { ticker },
+      asset: { ticker },
       id,
       context,
     } = this;
@@ -418,7 +418,7 @@ export class DividendDistribution extends CorporateActionBase {
   public async getWithheldTax(): Promise<BigNumber> {
     const {
       id,
-      token: { ticker },
+      asset: { ticker },
       context,
     } = this;
 
@@ -455,7 +455,7 @@ export class DividendDistribution extends CorporateActionBase {
   ): Promise<ResultSet<DistributionPayment>> {
     const {
       id,
-      token: { ticker },
+      asset: { ticker },
       context,
       context: {
         polymeshApi: {
@@ -535,7 +535,7 @@ export class DividendDistribution extends CorporateActionBase {
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
     const {
-      token: { ticker },
+      asset: { ticker },
       id: localId,
       context: {
         polymeshApi: {

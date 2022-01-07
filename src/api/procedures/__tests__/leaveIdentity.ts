@@ -12,8 +12,8 @@ import { Mocked } from '~/testUtils/types';
 import { SecondaryKey } from '~/types';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyCaCheckpoint procedure', () => {
@@ -108,7 +108,7 @@ describe('modifyCaCheckpoint procedure', () => {
       expect(boundFunc({ account })).toEqual({
         roles: 'Only the current Account can leave its Identity',
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],
           portfolios: [],
         },
@@ -119,7 +119,7 @@ describe('modifyCaCheckpoint procedure', () => {
       expect(boundFunc({ account })).toEqual({
         roles: true,
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],
           portfolios: [],
         },

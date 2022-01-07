@@ -2,6 +2,7 @@
 
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -16,7 +17,6 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
-  SecurityToken,
   Sto,
   TickerReservation,
   Venue,
@@ -123,10 +123,10 @@ export function isNumberedPortfolio(value: unknown): value is NumberedPortfolio 
 }
 
 /**
- * Return whether value is a SecurityToken
+ * Return whether value is an Asset
  */
-export function isSecurityToken(value: unknown): value is SecurityToken {
-  return value instanceof SecurityToken;
+export function isAsset(value: unknown): value is Asset {
+  return value instanceof Asset;
 }
 
 /**

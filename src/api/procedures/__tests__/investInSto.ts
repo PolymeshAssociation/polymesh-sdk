@@ -178,7 +178,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
 
@@ -199,7 +199,7 @@ describe('investInSto procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(0));
   });
 
-  test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the tokens", async () => {
+  test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the assets", async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
@@ -220,7 +220,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
       },
     });
 
@@ -244,7 +244,7 @@ describe('investInSto procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(50));
   });
 
-  test('should throw an error if the STO does not have enough remaining tokens', async () => {
+  test('should throw an error if the STO does not have enough remaining assets', async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
@@ -270,7 +270,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
@@ -319,7 +319,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        assetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
@@ -392,7 +392,7 @@ describe('investInSto procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.sto.Invest],
-          tokens: [],
+          assets: [],
           portfolios,
         },
       });

@@ -33,7 +33,7 @@ export async function prepareDeletePortfolio(
 
   const [exists, portfolioBalances] = await Promise.all([
     numberedPortfolio.exists(),
-    numberedPortfolio.getTokenBalances(),
+    numberedPortfolio.getAssetBalances(),
   ]);
 
   if (!exists) {
@@ -67,7 +67,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.portfolio.DeletePortfolio],
       portfolios: [portfolioLikeToPortfolio({ identity: did, id }, context)],
-      tokens: [],
+      assets: [],
     },
   };
 }

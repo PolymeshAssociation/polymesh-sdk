@@ -11,7 +11,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       AlreadyArchived: AugmentedError<ApiType>;
       /**
-       * The token is already frozen.
+       * The asset is already frozen.
        **/
       AlreadyFrozen: AugmentedError<ApiType>;
       /**
@@ -19,11 +19,11 @@ declare module '@polkadot/api/types/errors' {
        **/
       AlreadyUnArchived: AugmentedError<ApiType>;
       /**
-       * The token has already been created.
+       * The asset has already been created.
        **/
       AssetAlreadyCreated: AugmentedError<ApiType>;
       /**
-       * The token is already divisible.
+       * The asset is already divisible.
        **/
       AssetAlreadyDivisible: AugmentedError<ApiType>;
       /**
@@ -79,7 +79,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
       /**
-       * No such token.
+       * No such asset.
        **/
       NoSuchAsset: AugmentedError<ApiType>;
       /**
@@ -91,7 +91,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       NoSuchDoc: AugmentedError<ApiType>;
       /**
-       * Not an owner of the token on Ethereum.
+       * Not an owner of the asset on Ethereum.
        **/
       NotAnOwner: AugmentedError<ApiType>;
       /**
@@ -293,7 +293,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       ExpiryBeforePayment: AugmentedError<ApiType>;
       /**
-       * The token holder has already been paid their benefit.
+       * The asset holder has already been paid their benefit.
        **/
       HolderAlreadyPaid: AugmentedError<ApiType>;
       /**
@@ -970,7 +970,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       InsufficientPortfolioBalance: AugmentedError<ApiType>;
       /**
-       * Can not unlock more tokens than what are locked
+       * Can not unlock more assets than what are locked
        **/
       InsufficientTokensLocked: AugmentedError<ApiType>;
       /**

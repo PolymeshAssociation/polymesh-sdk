@@ -63,7 +63,7 @@ export const createVenue = (): Procedure<CreateVenueParams, Venue> =>
   new Procedure(prepareCreateVenue, {
     permissions: {
       transactions: [TxTags.settlement.CreateVenue],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

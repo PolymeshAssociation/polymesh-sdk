@@ -98,7 +98,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [portfolioIdToPortfolio({ did, number: id }, context)],
-      tokens: [],
+      assets: [],
     },
   };
 }

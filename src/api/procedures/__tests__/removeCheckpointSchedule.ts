@@ -14,8 +14,8 @@ import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('removeCheckpointSchedule procedure', () => {
@@ -154,7 +154,7 @@ describe('removeCheckpointSchedule procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.RemoveSchedule],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           portfolios: [],
         },
       });

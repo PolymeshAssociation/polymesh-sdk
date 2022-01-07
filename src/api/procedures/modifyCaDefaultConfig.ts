@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   CorporateActionTargets,
   ErrorCode,
@@ -96,13 +96,13 @@ export async function prepareModifyCaDefaultConfig(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const securityToken = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
   const {
     targets,
     defaultTaxWithholding,
     taxWithholdings,
-  } = await securityToken.corporateActions.getDefaultConfig();
+  } = await asset.corporateActions.getDefaultConfig();
 
   if (newTargets) {
     if (areSameTargets(targets, newTargets)) {
@@ -188,7 +188,7 @@ export function getAuthorization(
     permissions: {
       transactions,
       portfolios: [],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
     },
   };
 }

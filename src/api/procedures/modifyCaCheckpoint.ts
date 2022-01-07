@@ -1,5 +1,5 @@
 import { assertCaCheckpointValid } from '~/api/procedures/utils';
-import { CorporateActionBase, Procedure, SecurityToken } from '~/internal';
+import { Asset, CorporateActionBase, Procedure } from '~/internal';
 import { InputCaCheckpoint, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { checkpointToRecordDateSpec, corporateActionIdentifierToCaId } from '~/utils/conversion';
@@ -33,7 +33,7 @@ export async function prepareModifyCaCheckpoint(
     checkpoint,
     corporateAction: {
       id: localId,
-      token: { ticker },
+      asset: { ticker },
     },
   } = args;
   let checkpointValue;
@@ -55,7 +55,7 @@ export function getAuthorization(
   this: Procedure<Params, void>,
   {
     corporateAction: {
-      token: { ticker },
+      asset: { ticker },
     },
   }: Params
 ): ProcedureAuthorization {
@@ -64,7 +64,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [],
     },
   };

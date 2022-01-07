@@ -89,7 +89,7 @@ export const createPortfolio = (): Procedure<Params, NumberedPortfolio> =>
   new Procedure(prepareCreatePortfolio, {
     permissions: {
       transactions: [TxTags.portfolio.CreatePortfolio],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

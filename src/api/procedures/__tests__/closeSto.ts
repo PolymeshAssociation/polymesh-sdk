@@ -14,8 +14,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('closeSto procedure', () => {
@@ -105,7 +105,7 @@ describe('closeSto procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.sto.Stop],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           portfolios: [],
         },
       });

@@ -7,14 +7,14 @@ import {
   Params,
   prepareTogglePauseRequirements,
 } from '~/api/procedures/togglePauseRequirements';
-import { Context, SecurityToken } from '~/internal';
+import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('togglePauseRequirements procedure', () => {
@@ -63,7 +63,7 @@ describe('togglePauseRequirements procedure', () => {
   });
 
   test('should throw an error if pause is set to true and the asset compliance requirements are already paused', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareTogglePauseRequirements.call(proc, {
@@ -80,7 +80,7 @@ describe('togglePauseRequirements procedure', () => {
 
     boolToBooleanStub.returns(false);
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareTogglePauseRequirements.call(proc, {
@@ -97,7 +97,7 @@ describe('togglePauseRequirements procedure', () => {
 
     boolToBooleanStub.returns(false);
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('complianceManager', 'pauseAssetCompliance');
 
@@ -112,7 +112,7 @@ describe('togglePauseRequirements procedure', () => {
   });
 
   test('should add a resume asset compliance transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetCompliance');
 
@@ -128,7 +128,7 @@ describe('togglePauseRequirements procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
         ticker,
@@ -138,7 +138,7 @@ describe('togglePauseRequirements procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.PauseAssetCompliance],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           portfolios: [],
         },
       });
@@ -148,7 +148,7 @@ describe('togglePauseRequirements procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ResumeAssetCompliance],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           portfolios: [],
         },
       });

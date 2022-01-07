@@ -27,7 +27,7 @@ export async function prepareClaimDividends(
     distribution,
     distribution: {
       id: localId,
-      token: { ticker },
+      asset: { ticker },
       paymentDate,
       expiryDate,
     },
@@ -65,7 +65,7 @@ export const claimDividends = (): Procedure<Params, void> =>
   new Procedure(prepareClaimDividends, {
     permissions: {
       transactions: [TxTags.capitalDistribution.Claim],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

@@ -134,18 +134,18 @@ describe('reserveTicker procedure', () => {
     expect(error.data).toMatchObject({ expiryDate: null });
   });
 
-  test('should throw an error if a token with that ticker has already been launched', () => {
+  test('should throw an error if an asset with that ticker has already been launched', () => {
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
-      status: TickerReservationStatus.TokenCreated,
+      status: TickerReservationStatus.AssetCreated,
     });
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
     );
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `A Security Token with ticker "${ticker}" already exists`
+      `An Asset with ticker "${ticker}" already exists`
     );
   });
 
@@ -238,7 +238,7 @@ describe('getAuthorization', () => {
 
     const permissions = {
       transactions: [TxTags.asset.RegisterTicker],
-      tokens: [],
+      assets: [],
       portfolios: [],
     };
 

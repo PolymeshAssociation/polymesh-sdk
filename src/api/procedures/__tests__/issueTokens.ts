@@ -3,22 +3,18 @@ import BigNumber from 'bignumber.js';
 import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  getAuthorization,
-  IssueTokensParams,
-  prepareIssueTokens,
-} from '~/api/procedures/issueTokens';
-import { Context, SecurityToken } from '~/internal';
+import { getAuthorization, IssueAssetParams, prepareIssueAsset } from '~/api/procedures/issueAsset';
+import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
-describe('issueTokens procedure', () => {
+describe('issueAssets procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToBalance: sinon.SinonStub;
@@ -58,7 +54,7 @@ describe('issueTokens procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if token supply is bigger than the limit total supply', async () => {
+  test('should throw an error if Asset supply is bigger than the limit total supply', async () => {
     const args = {
       amount,
       ticker,
@@ -67,19 +63,19 @@ describe('issueTokens procedure', () => {
     const limitTotalSupply = new BigNumber(Math.pow(10, 12));
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           totalSupply: limitTotalSupply,
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset>(mockContext);
 
     let error;
 
     try {
-      await prepareIssueTokens.call(proc, args);
+      await prepareIssueAsset.call(proc, args);
     } catch (err) {
       error = err;
     }
@@ -101,7 +97,7 @@ describe('issueTokens procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           isDivisible,
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance()],
@@ -112,9 +108,9 @@ describe('issueTokens procedure', () => {
     numberToBalance.withArgs(amount, mockContext, isDivisible).returns(rawAmount);
 
     const transaction = dsMockUtils.createTxStub('asset', 'issue');
-    const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset>(mockContext);
 
-    const result = await prepareIssueTokens.call(proc, args);
+    const result = await prepareIssueAsset.call(proc, args);
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
     expect(result.ticker).toBe(ticker);
@@ -122,16 +118,16 @@ describe('issueTokens procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         ticker,
-      } as IssueTokensParams;
+      } as IssueAssetParams;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.asset.Issue],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           portfolios: [],
         },
       });

@@ -209,7 +209,7 @@ describe('setCustodian procedure', () => {
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [entityMockUtils.getNumberedPortfolioInstance({ did, id })],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -224,7 +224,7 @@ describe('setCustodian procedure', () => {
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
-          tokens: [],
+          assets: [],
         },
       });
     });

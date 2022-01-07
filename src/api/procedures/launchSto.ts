@@ -4,12 +4,12 @@ import P from 'bluebird';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
+  Asset,
   Context,
   Identity,
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
   Sto,
   Venue,
 } from '~/internal';
@@ -34,7 +34,7 @@ import { filterEventRecords } from '~/utils/internal';
  */
 export interface LaunchStoParams {
   /**
-   * portfolio in which the Tokens to be sold are stored
+   * portfolio in which the Assets to be sold are stored
    */
   offeringPortfolio: PortfolioLike;
   /**
@@ -43,7 +43,7 @@ export interface LaunchStoParams {
   raisingPortfolio: PortfolioLike;
   /**
    * ticker symbol of the currency in which the funds are being raised (i.e. 'USD' or 'CAD').
-   *   Other Security Tokens can be used as currency as well
+   *   Other Assets can be used as currency as well
    */
   raisingCurrency: string;
   /**
@@ -62,8 +62,8 @@ export interface LaunchStoParams {
    */
   end?: Date;
   /**
-   * array of sale tiers. Each tier consists of an amount of Tokens to be sold at a certain price.
-   *   Tokens in a tier can only be bought when all Tokens in previous tiers have been bought
+   * array of sale tiers. Each tier consists of an amount of Assets to be sold at a certain price.
+   *   Assets in a tier can only be bought when all Assets in previous tiers have been bought
    */
   tiers: StoTier[];
   /**
@@ -120,8 +120,8 @@ export async function prepareLaunchSto(
   const [, , [{ free }]] = await Promise.all([
     assertPortfolioExists(offeringPortfolioId, context),
     assertPortfolioExists(raisingPortfolioId, context),
-    portfolio.getTokenBalances({
-      tokens: [ticker],
+    portfolio.getAssetBalances({
+      assets: [ticker],
     }),
   ]);
 
@@ -209,7 +209,7 @@ export function getAuthorization(
     ],
     permissions: {
       transactions: [TxTags.sto.CreateFundraiser],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [
         portfolioIdToPortfolio(offeringPortfolioId, context),
         portfolioIdToPortfolio(raisingPortfolioId, context),

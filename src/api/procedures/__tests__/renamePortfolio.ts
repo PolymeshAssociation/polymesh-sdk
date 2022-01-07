@@ -147,7 +147,7 @@ describe('renamePortfolio procedure', () => {
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [portfolio],
           transactions: [TxTags.portfolio.RenamePortfolio],
         },

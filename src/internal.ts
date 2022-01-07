@@ -30,30 +30,30 @@ export {
 export { createPortfolio } from '~/api/procedures/createPortfolio';
 // export { createProposal, CreateProposalParams } from '~/api/procedures/createProposal';
 export {
-  createSecurityToken,
-  CreateSecurityTokenParams,
-  CreateSecurityTokenWithTickerParams,
-} from '~/api/procedures/createSecurityToken';
+  createAsset,
+  CreateAssetParams,
+  CreateAssetWithTickerParams,
+} from '~/api/procedures/createAsset';
 export { createVenue, CreateVenueParams } from '~/api/procedures/createVenue';
 // export { editProposal, EditProposalParams } from '~/api/procedures/editProposal';
 export { inviteAccount, InviteAccountParams } from '~/api/procedures/inviteAccount';
-export { issueTokens, IssueTokensParams } from '~/api/procedures/issueTokens';
+export { issueAsset, IssueAssetParams } from '~/api/procedures/issueAsset';
 export { modifyClaims, ModifyClaimsParams } from '~/api/procedures/modifyClaims';
 export {
   modifyInstructionAffirmation,
   ModifyInstructionAffirmationParams,
 } from '~/api/procedures/modifyInstructionAffirmation';
-export { modifyToken, ModifyTokenParams } from '~/api/procedures/modifyToken';
+export { modifyAsset, ModifyAssetParams } from '~/api/procedures/modifyAsset';
 export {
   modifyPrimaryIssuanceAgent,
   ModifyPrimaryIssuanceAgentParams,
 } from '~/api/procedures/modifyPrimaryIssuanceAgent';
 export {
-  modifyTokenTrustedClaimIssuers,
-  ModifyTokenTrustedClaimIssuersAddSetParams,
-  ModifyTokenTrustedClaimIssuersRemoveParams,
-  Params as ModifyTokenTrustedClaimIssuersParams,
-} from '~/api/procedures/modifyTokenTrustedClaimIssuers';
+  modifyAssetTrustedClaimIssuers,
+  ModifyAssetTrustedClaimIssuersAddSetParams,
+  ModifyAssetTrustedClaimIssuersRemoveParams,
+  Params as ModifyAssetTrustedClaimIssuersParams,
+} from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity, RegisterIdentityParams } from '~/api/procedures/registerIdentity';
 export {
   removeSecondaryKeys,
@@ -64,7 +64,7 @@ export {
   ModifySignerPermissionsParams,
 } from '~/api/procedures/modifySignerPermissions';
 export { reserveTicker, ReserveTickerParams } from '~/api/procedures/reserveTicker';
-export { setTokenDocuments, SetTokenDocumentsParams } from '~/api/procedures/setTokenDocuments';
+export { setAssetDocuments, SetAssetDocumentsParams } from '~/api/procedures/setAssetDocuments';
 export {
   setAssetRequirements,
   SetAssetRequirementsParams,
@@ -87,9 +87,9 @@ export {
 } from '~/api/procedures/togglePauseRequirements';
 export { transferPolyx, TransferPolyxParams } from '~/api/procedures/transferPolyx';
 export {
-  transferTokenOwnership,
-  TransferTokenOwnershipParams,
-} from '~/api/procedures/transferTokenOwnership';
+  transferAssetOwnership,
+  TransferAssetOwnershipParams,
+} from '~/api/procedures/transferAssetOwnership';
 // export { voteOnProposal, VoteOnProposalParams } from '~/api/procedures/voteOnProposal';
 export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
@@ -100,7 +100,7 @@ export {
   addInvestorUniquenessClaim,
   AddInvestorUniquenessClaimParams,
 } from '~/api/procedures/addInvestorUniquenessClaim';
-export { redeemToken, RedeemTokenParams } from '~/api/procedures/redeemToken';
+export { redeemAsset, RedeemAssetParams } from '~/api/procedures/redeemAsset';
 export {
   addTransferRestriction,
   AddTransferRestrictionParams,
@@ -125,7 +125,7 @@ export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { Account } from '~/api/entities/Account';
 export { TickerReservation } from '~/api/entities/TickerReservation';
-export { SecurityToken } from '~/api/entities/SecurityToken';
+export { Asset } from '~/api/entities/Asset';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 // NOTE uncomment in Governance v2 upgrade
 // export { Proposal } from '~/api/entities/Proposal';

@@ -482,7 +482,7 @@ describe('getAuthorization', () => {
     expect(getAuthorization(args)).toEqual({
       roles: [{ type: RoleType.CddProvider }],
       permissions: {
-        tokens: [],
+        assets: [],
         portfolios: [],
         transactions: [TxTags.identity.AddClaim],
       },
@@ -503,7 +503,7 @@ describe('getAuthorization', () => {
 
     expect(getAuthorization(args)).toEqual({
       permissions: {
-        tokens: [],
+        assets: [],
         portfolios: [],
         transactions: [TxTags.identity.RevokeClaim],
       },

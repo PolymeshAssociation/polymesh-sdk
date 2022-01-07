@@ -8,15 +8,15 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/inviteExternalAgent';
-import { Account, Context, Identity, SecurityToken } from '~/internal';
+import { Account, Asset, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, PermissionType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/CustomPermissionGroup',
@@ -40,7 +40,7 @@ describe('inviteExternalAgent procedure', () => {
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let ticker: string;
-  let token: SecurityToken;
+  let asset: Asset;
   let rawTicker: Ticker;
   let rawAgentGroup: AgentGroup;
   let target: string;
@@ -61,7 +61,7 @@ describe('inviteExternalAgent procedure', () => {
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
-    token = entityMockUtils.getSecurityTokenInstance({ ticker });
+    asset = entityMockUtils.getMockAssetInstance({ ticker });
     target = 'someDid';
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target),
@@ -73,7 +73,7 @@ describe('inviteExternalAgent procedure', () => {
 
   beforeEach(() => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetAgents: [],
       },
     });
@@ -97,7 +97,7 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the security token', () => {
+    test('should return the asset', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
@@ -108,7 +108,7 @@ describe('inviteExternalAgent procedure', () => {
       });
 
       expect(result).toEqual({
-        token,
+        asset,
       });
     });
   });
@@ -116,14 +116,14 @@ describe('inviteExternalAgent procedure', () => {
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        token,
+        asset: asset,
       });
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
       });
@@ -138,7 +138,7 @@ describe('inviteExternalAgent procedure', () => {
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getMockAssetInstance({
         permissionsGetAgents: [
           {
             agent: entityMockUtils.getIdentityInstance({ did: target }),
@@ -156,7 +156,7 @@ describe('inviteExternalAgent procedure', () => {
   test('should add an add authorization transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getMockAssetInstance({
         permissionsGetAgents: [
           {
             agent: { did: 'otherDid' } as Identity,

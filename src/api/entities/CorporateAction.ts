@@ -40,8 +40,8 @@ export interface Params {
 }
 
 /**
- * Represents an action initiated by the issuer of a Security Token which may affect the positions of
- *   the Tokenholders
+ * Represents an action initiated by the issuer of an Asset which may affect the positions of
+ *   the Asset holders
  */
 export class CorporateAction extends CorporateActionBase {
   /**

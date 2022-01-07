@@ -11,7 +11,7 @@ import {
   Params,
   prepareAddAssetRequirement,
 } from '~/api/procedures/addAssetRequirement';
-import { Context, SecurityToken } from '~/internal';
+import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Condition, ConditionTarget, ConditionType, InputRequirement } from '~/types';
@@ -19,8 +19,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('addAssetRequirement procedure', () => {
@@ -96,9 +96,9 @@ describe('addAssetRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied requirement is already a part of the Security Token', () => {
+  test('should throw an error if the supplied requirement is already a part of the Asset', () => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         complianceRequirementsGet: {
           requirements: [
             {
@@ -110,10 +110,10 @@ describe('addAssetRequirement procedure', () => {
         },
       },
     });
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(prepareAddAssetRequirement.call(proc, args)).rejects.toThrow(
-      'There already exists a Requirement with the same conditions for this Security Token'
+      'There already exists a Requirement with the same conditions for this Asset'
     );
   });
 
@@ -134,7 +134,7 @@ describe('addAssetRequirement procedure', () => {
         })
       );
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const result = await prepareAddAssetRequirement.call(proc, {
       ...args,
@@ -150,12 +150,12 @@ describe('addAssetRequirement procedure', () => {
       fakeReceiverConditions
     );
 
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,
@@ -164,7 +164,7 @@ describe('addAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.AddComplianceRequirement],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           portfolios: [],
         },
       });

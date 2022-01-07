@@ -289,7 +289,7 @@ describe('assertSecondaryKeys', () => {
       {
         signer: entityMockUtils.getAccountInstance({ address }),
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,
@@ -310,7 +310,7 @@ describe('assertSecondaryKeys', () => {
       {
         signer: entityMockUtils.getAccountInstance({ address }),
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,

@@ -58,7 +58,7 @@ export const removeSecondaryKeys = (): Procedure<RemoveSecondaryKeysParams> =>
   new Procedure(prepareRemoveSecondaryKeys, {
     permissions: {
       transactions: [TxTags.identity.RemoveSecondaryKeys],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

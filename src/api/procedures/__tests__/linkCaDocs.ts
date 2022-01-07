@@ -7,14 +7,14 @@ import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/li
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TokenDocument } from '~/types';
+import { AssetDocument } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('linkCaDocs procedure', () => {
@@ -22,7 +22,7 @@ describe('linkCaDocs procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let ticker: string;
   let id: BigNumber;
-  let documents: TokenDocument[];
+  let documents: AssetDocument[];
   let rawTicker: Ticker;
   let rawDocuments: Document[];
   let rawDocumentIds: DocumentId[];
@@ -113,7 +113,7 @@ describe('linkCaDocs procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if some of the provided documents are not associated to the Security Token', async () => {
+  test('should throw an error if some of the provided documents are not associated to the Asset', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const name = 'customName';
 
@@ -136,9 +136,7 @@ describe('linkCaDocs procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe(
-      'Some of the provided documents are not associated with the Security Token'
-    );
+    expect(error.message).toBe('Some of the provided documents are not associated with the Asset');
     expect(error.data.documents.length).toEqual(1);
     expect(error.data.documents[0].name).toEqual(name);
   });
@@ -158,7 +156,7 @@ describe('linkCaDocs procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           transactions: [TxTags.corporateAction.LinkCaDoc],
           portfolios: [],
         },

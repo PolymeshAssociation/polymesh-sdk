@@ -1,11 +1,11 @@
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
+  Asset,
   Checkpoint,
   DividendDistribution,
   modifyCaCheckpoint,
   PolymeshError,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import { ErrorCode, InputCaCheckpoint, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -32,7 +32,7 @@ export async function prepareModifyDistributionCheckpoint(
   const {
     checkpoint,
     distribution,
-    distribution: { paymentDate, expiryDate, token },
+    distribution: { paymentDate, expiryDate, asset },
   } = args;
 
   const now = new Date();
@@ -44,7 +44,7 @@ export async function prepareModifyDistributionCheckpoint(
     });
   }
 
-  const checkpointValue = await getCheckpointValue(checkpoint, token, this.context);
+  const checkpointValue = await getCheckpointValue(checkpoint, asset, this.context);
 
   if (!(checkpointValue instanceof Checkpoint)) {
     await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
@@ -73,7 +73,7 @@ export function getAuthorization(
   this: Procedure<Params, void>,
   {
     distribution: {
-      token: { ticker },
+      asset: { ticker },
     },
   }: Params
 ): ProcedureAuthorization {
@@ -82,7 +82,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [],
     },
   };

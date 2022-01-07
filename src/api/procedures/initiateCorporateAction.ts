@@ -7,7 +7,7 @@ import {
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
 } from '~/api/procedures/utils';
-import { PolymeshError, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import {
   CorporateActionKind,
   CorporateActionTargets,
@@ -57,8 +57,8 @@ export interface InitiateCorporateActionParams {
   checkpoint?: InputCaCheckpoint;
   description: string;
   /**
-   * tokenholder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
-   *   property. When the value is `Include`, all tokenholders not present in the array are excluded, and vice-versa
+   * Asset holder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all Asset holders not present in the array are excluded, and vice-versa
    */
   targets?: Modify<
     CorporateActionTargets,
@@ -71,7 +71,7 @@ export interface InitiateCorporateActionParams {
    */
   defaultTaxWithholding?: BigNumber;
   /**
-   * percentage (0-100) of the Benefits to be held for tax purposes from individual tokenholder Identities.
+   * percentage (0-100) of the Benefits to be held for tax purposes from individual Asset holder Identities.
    *   This overrides the value of `defaultTaxWithholding`
    */
   taxWithholdings?: Modify<
@@ -187,7 +187,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.InitiateCorporateAction],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };

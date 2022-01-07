@@ -80,7 +80,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.portfolio.RenamePortfolio],
       portfolios: [new NumberedPortfolio({ did, id }, this.context)],
-      tokens: [],
+      assets: [],
     },
   };
 }

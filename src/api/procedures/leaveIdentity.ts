@@ -58,7 +58,7 @@ export function getAuthorization(
   const hasRoles = account.isEqual(currentAccount);
 
   const permissions = {
-    tokens: [],
+    assets: [],
     portfolios: [],
     transactions: [TxTags.identity.LeaveIdentityAsKey],
   };

@@ -14,8 +14,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyCaCheckpoint procedure', () => {
@@ -190,13 +190,13 @@ describe('modifyCaCheckpoint procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         corporateAction: {
-          token: { ticker },
+          asset: { ticker },
         },
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },

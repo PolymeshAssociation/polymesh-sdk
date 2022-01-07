@@ -17,8 +17,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/Identity',
@@ -292,14 +292,14 @@ describe('addTransferRestriction procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
         },
       });
       expect(boundFunc({ ...args, exemptedScopeIds: ['someScopeId'] })).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
           transactions: [
             TxTags.statistics.AddTransferManager,
             TxTags.statistics.AddExemptedEntities,

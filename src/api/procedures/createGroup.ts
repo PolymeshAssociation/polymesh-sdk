@@ -3,12 +3,12 @@ import P from 'bluebird';
 import { isEqual } from 'lodash';
 
 import {
+  Asset,
   Context,
   CustomPermissionGroup,
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -42,7 +42,7 @@ export type Params = CreateGroupParams & {
  * @hidden
  */
 export interface Storage {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 /**
@@ -73,14 +73,14 @@ export async function prepareCreateGroup(
       },
     },
     context,
-    storage: { token },
+    storage: { asset },
   } = this;
   const { ticker, permissions } = args;
 
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const { custom, known } = await token.permissions.getGroups();
+  const { custom, known } = await asset.permissions.getGroups();
   const allGroups = [...custom, ...known];
 
   const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
@@ -123,12 +123,12 @@ export function getAuthorization(
   this: Procedure<Params, CustomPermissionGroup, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { token },
+    storage: { asset },
   } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.CreateGroup],
-      tokens: [token],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -144,7 +144,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    token: new SecurityToken({ ticker }, context),
+    asset: new Asset({ ticker }, context),
   };
 }
 

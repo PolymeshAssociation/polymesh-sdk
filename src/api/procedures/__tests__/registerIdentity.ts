@@ -62,7 +62,7 @@ describe('registerIdentity procedure', () => {
       {
         signer: new Identity({ did: 'someValue' }, mockContext),
         permissions: {
-          tokens: null,
+          assets: null,
           portfolios: null,
           transactions: null,
           transactionGroups: [],

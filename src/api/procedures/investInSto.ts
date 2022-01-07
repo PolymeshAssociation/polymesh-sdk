@@ -22,19 +22,19 @@ import {
 
 export interface InvestInStoParams {
   /**
-   * portfolio in which the purchased Tokens will be stored
+   * portfolio in which the purchased Assets will be stored
    */
   purchasePortfolio: PortfolioLike;
   /**
-   * portfolio from which funds will be withdrawn to pay for the Tokens
+   * portfolio from which funds will be withdrawn to pay for the Assets
    */
   fundingPortfolio: PortfolioLike;
   /**
-   * amount of tokens to purchase
+   * amount of assets to purchase
    */
   purchaseAmount: BigNumber;
   /**
-   * maximum average price to pay per Token (optional)
+   * maximum average price to pay per Asset (optional)
    */
   maxPrice?: BigNumber;
 }
@@ -145,8 +145,8 @@ export async function prepareInvestInSto(
     raisingCurrency,
   } = await sto.details();
 
-  const [{ free: freeTokenBalance }] = await portfolio.getTokenBalances({
-    tokens: [raisingCurrency],
+  const [{ free: freeAssetBalance }] = await portfolio.getAssetBalances({
+    assets: [raisingCurrency],
   });
 
   if (sale !== StoSaleStatus.Live || timing !== StoTimingStatus.Started) {
@@ -166,11 +166,11 @@ export async function prepareInvestInSto(
     });
   }
 
-  if (freeTokenBalance.lt(priceTotal)) {
+  if (freeAssetBalance.lt(priceTotal)) {
     throw new PolymeshError({
       code: ErrorCode.InsufficientBalance,
       message: 'The Portfolio does not have enough free balance for this investment',
-      data: { free: freeTokenBalance, priceTotal },
+      data: { free: freeAssetBalance, priceTotal },
     });
   }
 
@@ -212,7 +212,7 @@ export function getAuthorization(this: Procedure<Params, void, Storage>): Proced
     ],
     permissions: {
       transactions: [TxTags.sto.Invest],
-      tokens: [],
+      assets: [],
       portfolios: [
         portfolioIdToPortfolio(purchasePortfolioId, context),
         portfolioIdToPortfolio(fundingPortfolioId, context),

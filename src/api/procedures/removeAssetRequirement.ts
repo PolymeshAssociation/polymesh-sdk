@@ -1,4 +1,4 @@
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, Requirement, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
@@ -18,9 +18,9 @@ export type Params = RemoveAssetRequirementParams & {
  * @hidden
  */
 export async function prepareRemoveAssetRequirement(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   args: Params
-): Promise<SecurityToken> {
+): Promise<Asset> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -49,20 +49,20 @@ export async function prepareRemoveAssetRequirement(
     numberToU32(reqId, context)
   );
 
-  return new SecurityToken({ ticker }, context);
+  return new Asset({ ticker }, context);
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.complianceManager.RemoveComplianceRequirement],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -71,5 +71,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const removeAssetRequirement = (): Procedure<Params, SecurityToken> =>
+export const removeAssetRequirement = (): Procedure<Params, Asset> =>
   new Procedure(prepareRemoveAssetRequirement, getAuthorization);

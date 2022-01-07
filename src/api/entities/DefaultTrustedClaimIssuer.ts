@@ -1,4 +1,4 @@
-import { Context, Identity, SecurityToken } from '~/internal';
+import { Asset, Context, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import { ClaimType, EventIdentifier } from '~/types';
@@ -17,7 +17,7 @@ export interface Params {
 }
 
 /**
- * Represents a default trusted claim issuer for a specific token in the Polymesh blockchain
+ * Represents a default trusted claim issuer for a specific Asset in the Polymesh blockchain
  */
 export class DefaultTrustedClaimIssuer extends Identity {
   /**
@@ -36,9 +36,9 @@ export class DefaultTrustedClaimIssuer extends Identity {
   public trustedFor?: ClaimType[];
 
   /**
-   * Security Token for which this Identity is a Default Trusted Claim Issuer
+   * Asset for which this Identity is a Default Trusted Claim Issuer
    */
-  public token: SecurityToken;
+  public asset: Asset;
 
   /**
    * @hidden
@@ -48,7 +48,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
 
     super(identifiers, context);
 
-    this.token = new SecurityToken({ ticker }, context);
+    this.asset = new Asset({ ticker }, context);
     this.trustedFor = trustedFor;
   }
 
@@ -60,7 +60,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
    */
   public async addedAt(): Promise<EventIdentifier | null> {
     const {
-      token: { ticker },
+      asset: { ticker },
       did,
       context,
     } = this;

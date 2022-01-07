@@ -15,6 +15,7 @@ import {
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
+  Asset,
   Context,
   DefaultPortfolio,
   Instruction,
@@ -22,7 +23,6 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
   Venue,
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
@@ -43,13 +43,13 @@ import { filterEventRecords, getTicker, optionize } from '~/utils/internal';
 
 export interface AddInstructionParams {
   /**
-   * array of token movements (amount, from, to, token)
+   * array of asset movements (amount, from, to, asset)
    */
   legs: {
     amount: BigNumber;
     from: PortfolioLike;
     to: PortfolioLike;
-    token: string | SecurityToken;
+    asset: string | Asset;
   }[];
   /**
    * date at which the trade was agreed upon (optional, for offchain trades)
@@ -212,7 +212,7 @@ async function getTxArgsAndErrors(
       }[] = [];
 
       await Promise.all(
-        legs.map(async ({ from, to, amount, token }) => {
+        legs.map(async ({ from, to, amount, asset }) => {
           const fromId = portfolioLikeToPortfolioId(from);
           const toId = portfolioLikeToPortfolioId(to);
 
@@ -227,7 +227,7 @@ async function getTxArgsAndErrors(
           rawLegs.push({
             from: rawFromPortfolio,
             to: rawToPortfolio,
-            asset: stringToTicker(getTicker(token), context),
+            asset: stringToTicker(getTicker(asset), context),
             amount: numberToBalance(amount, context),
           });
         })
@@ -390,7 +390,7 @@ export async function getAuthorization(
   return {
     roles: [{ type: RoleType.VenueOwner, venueId }],
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios,
       transactions,
     },

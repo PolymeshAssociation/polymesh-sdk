@@ -40,7 +40,7 @@ export async function preparePayDividends(
     distribution: {
       targets: { identities, treatment },
       id: localId,
-      token: { ticker },
+      asset: { ticker },
       paymentDate,
       expiryDate,
     },
@@ -108,7 +108,7 @@ export async function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.capitalDistribution.PushBenefit],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };
