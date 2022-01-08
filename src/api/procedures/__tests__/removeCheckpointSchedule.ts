@@ -80,7 +80,7 @@ describe('removeCheckpointSchedule procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareRemoveCheckpointSchedule.call(proc, args)).rejects.toThrow(
-      'Schedule no longer exists. It was either removed or it expired'
+      'Schedule was not found. It may have been removed or expired'
     );
   });
 

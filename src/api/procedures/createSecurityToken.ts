@@ -44,7 +44,7 @@ export interface CreateSecurityTokenParams {
   /**
    * amount of tokens that will be minted on creation (optional, default doesn't mint)
    */
-  totalSupply?: BigNumber;
+  initialSupply?: BigNumber;
   /**
    * whether a single token can be divided into decimal parts
    */
@@ -71,11 +71,15 @@ export interface CreateSecurityTokenParams {
   requireInvestorUniqueness: boolean;
 }
 
+export interface CreateSecurityTokenWithTickerParams extends CreateSecurityTokenParams {
+  ticker: string;
+}
+
 /**
  * @hidden
  */
-export type Params = CreateSecurityTokenParams & {
-  ticker: string;
+export type Params = CreateSecurityTokenWithTickerParams & {
+  reservationRequired: boolean;
 };
 
 /**
@@ -90,6 +94,8 @@ export interface Storage {
     id: CustomAssetTypeId;
     rawValue: Bytes;
   } | null;
+
+  status: TickerReservationStatus;
 }
 
 /**
@@ -107,28 +113,20 @@ export async function prepareCreateSecurityToken(
       },
     },
     context,
-    storage: { customTypeData },
+    storage: { customTypeData, status },
   } = this;
   const {
     ticker,
     name,
-    totalSupply,
+    initialSupply,
     isDivisible,
     tokenType,
     tokenIdentifiers = [],
     fundingRound,
     documents,
     requireInvestorUniqueness,
+    reservationRequired,
   } = args;
-
-  const reservation = new TickerReservation({ ticker }, context);
-
-  const rawTicker = stringToTicker(ticker, context);
-
-  const [{ status }, classicTicker] = await Promise.all([
-    reservation.details(),
-    asset.classicTickers(rawTicker),
-  ]);
 
   if (status === TickerReservationStatus.TokenCreated) {
     throw new PolymeshError({
@@ -137,7 +135,7 @@ export async function prepareCreateSecurityToken(
     });
   }
 
-  if (status === TickerReservationStatus.Free) {
+  if (status === TickerReservationStatus.Free && reservationRequired) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: `You must first reserve ticker "${ticker}" in order to create a Security Token with it`,
@@ -173,11 +171,22 @@ export async function prepareCreateSecurityToken(
 
   let fee: undefined | BigNumber;
 
-  // we waive any protocol fees
+  const rawTicker = stringToTicker(ticker, context);
+
+  // we waive any protocol fees if token is created in Ethereum. If not created and ticker is not yet reserved, set fee to the sum of protocol fees for ticker registration and asset creation.
+
+  const classicTicker = await asset.classicTickers(rawTicker);
   const tokenCreatedInEthereum =
     classicTicker.isSome && boolToBoolean(classicTicker.unwrap().is_created);
+
   if (tokenCreatedInEthereum) {
     fee = new BigNumber(0);
+  } else if (status === TickerReservationStatus.Free) {
+    const [registerTickerFee, createAssetFee] = await Promise.all([
+      context.getTransactionFees({ tag: TxTags.asset.RegisterTicker }),
+      context.getTransactionFees({ tag: TxTags.asset.CreateAsset }),
+    ]);
+    fee = registerTickerFee.plus(createAssetFee);
   }
 
   this.addTransaction({
@@ -194,12 +203,12 @@ export async function prepareCreateSecurityToken(
     ],
   });
 
-  if (totalSupply && totalSupply.gt(0)) {
-    const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
+  if (initialSupply && initialSupply.gt(0)) {
+    const rawInitialSupply = numberToBalance(initialSupply, context, isDivisible);
 
     this.addTransaction({
       transaction: tx.asset.issue,
-      args: [rawTicker, rawTotalSupply],
+      args: [rawTicker, rawInitialSupply],
     });
   }
 
@@ -221,12 +230,12 @@ export async function prepareCreateSecurityToken(
 /**
  * @hidden
  */
-export function getAuthorization(
+export async function getAuthorization(
   this: Procedure<Params, SecurityToken, Storage>,
   { ticker, documents }: Params
-): ProcedureAuthorization {
+): Promise<ProcedureAuthorization> {
   const {
-    storage: { customTypeData },
+    storage: { customTypeData, status },
   } = this;
 
   const transactions = [TxTags.asset.CreateAsset];
@@ -239,14 +248,21 @@ export function getAuthorization(
     transactions.push(TxTags.asset.RegisterCustomAssetType);
   }
 
-  return {
-    roles: [{ type: RoleType.TickerOwner, ticker }],
+  const auth: ProcedureAuthorization = {
     permissions: {
       transactions,
       tokens: [],
       portfolios: [],
     },
   };
+
+  if (status !== TickerReservationStatus.Free) {
+    return {
+      ...auth,
+      roles: [{ type: RoleType.TickerOwner, ticker }],
+    };
+  }
+  return auth;
 }
 
 /**
@@ -254,9 +270,12 @@ export function getAuthorization(
  */
 export async function prepareStorage(
   this: Procedure<Params, SecurityToken, Storage>,
-  { tokenType }: Params
+  { ticker, tokenType }: Params
 ): Promise<Storage> {
   const { context } = this;
+
+  const reservation = new TickerReservation({ ticker }, context);
+  const { status } = await reservation.details();
 
   const isCustomType = !values<string>(KnownTokenType).includes(tokenType);
 
@@ -269,11 +288,13 @@ export async function prepareStorage(
         id,
         rawValue,
       },
+      status,
     };
   }
 
   return {
     customTypeData: null,
+    status,
   };
 }
 

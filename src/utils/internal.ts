@@ -232,7 +232,6 @@ export function filterEventRecords<
   eventName: EventName
 ): IEvent<EventData<Events[ModuleName][EventName]>>[] {
   const eventRecords = receipt.filterRecords(mod, eventName as string);
-
   if (!eventRecords.length) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
@@ -802,8 +801,7 @@ export function conditionsAreEqual(
     const { claims: aClaims } = a;
     const { claims: bClaims } = b;
 
-    equalClaims =
-      !differenceWith(aClaims, bClaims, isEqual).length && aClaims.length === bClaims.length;
+    equalClaims = hasSameElements(aClaims, bClaims);
   } else if (a.type === ConditionType.IsIdentity && b.type === ConditionType.IsIdentity) {
     equalClaims = signerToString(a.identity) === signerToString(b.identity);
   } else if (a.type === ConditionType.IsExternalAgent && b.type === ConditionType.IsExternalAgent) {
@@ -813,9 +811,7 @@ export function conditionsAreEqual(
   const { trustedClaimIssuers: aClaimIssuers = [] } = a;
   const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
-  const equalClaimIssuers =
-    !differenceWith(aClaimIssuers, bClaimIssuers, isEqual).length &&
-    aClaimIssuers.length === bClaimIssuers.length;
+  const equalClaimIssuers = hasSameElements(aClaimIssuers, bClaimIssuers);
 
   return equalClaims && equalClaimIssuers;
 }
@@ -882,4 +878,19 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
   txsAndArgs: MapTxAndArgsArray<ArgsArray>
 ): MapTxWithArgs<unknown[][]> {
   return (flatMap(txsAndArgs, mapArgs) as unknown) as MapTxWithArgs<unknown[][]>;
+}
+
+/**
+ * @hidden
+ *
+ * Return whether the two arrays have same elements.
+ * It uses a `comparator` function to check if elements are equal.
+ * If no comparator function is provided, it uses `isEqual` function of `lodash`
+ */
+export function hasSameElements<T>(
+  first: T[],
+  second: T[],
+  comparator: (a: T, b: T) => boolean = isEqual
+): boolean {
+  return !differenceWith(first, second, comparator).length && first.length === second.length;
 }

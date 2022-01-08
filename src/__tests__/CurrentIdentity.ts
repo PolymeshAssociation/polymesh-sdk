@@ -1,8 +1,16 @@
+import BigNumber from 'bignumber.js';
+
 import { CurrentIdentity } from '~/CurrentIdentity';
 import { TickerReservation, TransactionQueue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import { PermissionType, VenueType } from '~/types';
+import {
+  KnownTokenType,
+  PermissionType,
+  SecurityToken,
+  TokenIdentifierType,
+  VenueType,
+} from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -207,6 +215,36 @@ describe('CurrentIdentity class', () => {
         .resolves(expectedQueue);
 
       const queue = await currentIdentity.reserveTicker(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: createToken', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'FAKETICKER';
+      const currentIdentity = new CurrentIdentity(context);
+
+      const args = {
+        ticker,
+        name: 'TEST',
+        totalSupply: new BigNumber(100),
+        isDivisible: true,
+        tokenType: KnownTokenType.EquityCommon,
+        tokenIdentifiers: [{ type: TokenIdentifierType.Isin, value: '12345' }],
+        fundingRound: 'Series A',
+        requireInvestorUniqueness: false,
+        reservationRequired: false,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await currentIdentity.createToken(args);
 
       expect(queue).toBe(expectedQueue);
     });

@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  AuthorizationRequest,
   Context,
   createGroup,
   CreateGroupParams,
@@ -15,7 +16,13 @@ import {
   RemoveExternalAgentParams,
   SecurityToken,
 } from '~/internal';
-import { AgentWithGroup, ErrorCode, PermissionGroupType, ProcedureMethod } from '~/types';
+import {
+  AgentWithGroup,
+  ErrorCode,
+  PermissionGroups,
+  PermissionGroupType,
+  ProcedureMethod,
+} from '~/types';
 import {
   agentGroupToPermissionGroup,
   identityIdToString,
@@ -59,8 +66,10 @@ export class Permissions extends Namespace<SecurityToken> {
 
   /**
    * Invite an Identity to be an Agent with permissions over this Security Token
+   *
+   * @note this will create an AuthorizationRequest that will need to be accepted by the target
    */
-  public inviteAgent: ProcedureMethod<InviteExternalAgentParams, void>;
+  public inviteAgent: ProcedureMethod<InviteExternalAgentParams, AuthorizationRequest>;
 
   /**
    * Revoke an Agent's permissions for this Security Token
@@ -106,10 +115,7 @@ export class Permissions extends Namespace<SecurityToken> {
   /**
    * Retrieve all Permission Groups of this Security Token
    */
-  public async getGroups(): Promise<{
-    known: KnownPermissionGroup[];
-    custom: CustomPermissionGroup[];
-  }> {
+  public async getGroups(): Promise<PermissionGroups> {
     const {
       context: {
         polymeshApi: {

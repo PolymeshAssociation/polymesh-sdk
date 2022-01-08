@@ -1,7 +1,15 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { Account, PolymeshError, Procedure } from '~/internal';
+import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
+  Account,
+  AuthorizationRequest,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
+import {
+  Authorization,
   AuthorizationType,
   ErrorCode,
   Permissions,
@@ -16,6 +24,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface InviteAccountParams {
   targetAccount: string | Account;
@@ -27,9 +36,9 @@ export interface InviteAccountParams {
  * @hidden
  */
 export async function prepareInviteAccount(
-  this: Procedure<InviteAccountParams>,
+  this: Procedure<InviteAccountParams, AuthorizationRequest>,
   args: InviteAccountParams
-): Promise<void> {
+): Promise<PostTransactionValue<AuthorizationRequest>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -37,7 +46,7 @@ export async function prepareInviteAccount(
     context,
   } = this;
 
-  const { targetAccount, permissions: permissionsLike, expiry } = args;
+  const { targetAccount, permissions: permissionsLike, expiry = null } = args;
 
   const identity = await context.getCurrentIdentity();
 
@@ -98,25 +107,26 @@ export async function prepareInviteAccount(
     authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.JoinIdentity,
-      value: authorizationValue,
-    },
-    context
-  );
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
+  const authRequest: Authorization = {
+    type: AuthorizationType.JoinIdentity,
+    value: authorizationValue,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
+  const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  this.addTransaction({
+  const [auth] = this.addTransaction({
     transaction: tx.identity.addAuthorization,
+    resolvers: [createAuthorizationResolver(authRequest, identity, account, expiry, context)],
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
   });
+
+  return auth;
 }
 
 /**
  * @hidden
  */
-export const inviteAccount = (): Procedure<InviteAccountParams> =>
+export const inviteAccount = (): Procedure<InviteAccountParams, AuthorizationRequest> =>
   new Procedure(prepareInviteAccount, {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],

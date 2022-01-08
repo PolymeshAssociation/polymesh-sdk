@@ -49,6 +49,18 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
+    dsMockUtils.createQueryStub('identity', 'authorizations', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockAuthorization({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          auth_id: 1,
+          authorized_by: 'someDid',
+          expiry: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      ),
+    });
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
@@ -78,7 +90,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     >(mockContext, {
       currentAccount: targetAccount,
       calledByTarget: true,
-      existingIdentity: null,
     });
 
     const target = targetAccount;
@@ -116,7 +127,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     >(mockContext, {
       currentAccount: targetAccount,
       calledByTarget: true,
-      existingIdentity: entityMockUtils.getIdentityInstance(),
     });
 
     const target = targetAccount;
@@ -143,7 +153,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         ),
         accept: true,
       })
-    ).rejects.toThrow('This Account is already part of an Identity');
+    ).rejects.toThrow('The target Account already has an associated Identity');
   });
 
   test('should add a joinIdentityAsKey transaction to the queue if the target is an Account', async () => {
@@ -154,13 +164,15 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     >(mockContext, {
       currentAccount: targetAccount,
       calledByTarget: true,
-      existingIdentity: null,
     });
 
     const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey');
 
     const issuer = entityMockUtils.getIdentityInstance();
-    const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
 
     await prepareConsumeJoinIdentityAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -199,7 +211,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     >(mockContext, {
       currentAccount: targetAccount,
       calledByTarget: false,
-      existingIdentity: null,
     });
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
@@ -246,7 +257,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       {
         currentAccount: targetAccount,
         calledByTarget: true,
-        existingIdentity: null,
       }
     );
 
@@ -296,7 +306,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       expect(result).toEqual({
         currentAccount: mockContext.getCurrentAccount(),
         calledByTarget: true,
-        existingIdentity: null,
       });
     });
   });
@@ -310,7 +319,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       >(mockContext, {
         currentAccount: targetAccount,
         calledByTarget: true,
-        existingIdentity: null,
       });
       const { address } = mockContext.getCurrentAccount();
       const constructorParams = {
@@ -358,7 +366,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         {
           currentAccount: targetAccount,
           calledByTarget: false,
-          existingIdentity: null,
         }
       );
       boundFunc = getAuthorization.bind(proc);
@@ -382,7 +389,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         {
           currentAccount: targetAccount,
           calledByTarget: false,
-          existingIdentity: null,
         }
       );
       boundFunc = getAuthorization.bind(proc);
@@ -408,7 +414,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         {
           currentAccount: targetAccount,
           calledByTarget: true,
-          existingIdentity: null,
         }
       );
       boundFunc = getAuthorization.bind(proc);

@@ -2,12 +2,18 @@ import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Context, Identity } from '~/internal';
+import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
-import { ClaimType, CorporateActionKind, TargetTreatment, TransactionArgumentType } from '~/types';
+import {
+  ClaimType,
+  CorporateActionKind,
+  ErrorCode,
+  TargetTreatment,
+  TransactionArgumentType,
+} from '~/types';
 import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
@@ -392,7 +398,7 @@ describe('Context class', () => {
 
   describe('method: accountBalance', () => {
     const free = 100;
-    const reserved = 0;
+    const reserved = 40;
     const miscFrozen = 50;
     const feeFrozen = 25;
 
@@ -436,7 +442,7 @@ describe('Context class', () => {
       expect(result).toEqual({
         free: new BigNumber(free - miscFrozen).shiftedBy(-6),
         locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free).shiftedBy(-6),
+        total: new BigNumber(free + reserved).shiftedBy(-6),
       });
     });
 
@@ -464,7 +470,7 @@ describe('Context class', () => {
       expect(result).toEqual({
         free: new BigNumber(free - miscFrozen).shiftedBy(-6),
         locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free).shiftedBy(-6),
+        total: new BigNumber(free + reserved).shiftedBy(-6),
       });
     });
 
@@ -500,7 +506,7 @@ describe('Context class', () => {
       sinon.assert.calledWithExactly(callback, {
         free: new BigNumber(free - miscFrozen).shiftedBy(-6),
         locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free).shiftedBy(-6),
+        total: new BigNumber(free + reserved).shiftedBy(-6),
       });
     });
   });
@@ -738,6 +744,50 @@ describe('Context class', () => {
       expect(() => context.getCurrentPair()).toThrow(
         'There is no Account associated with the current SDK instance'
       );
+    });
+  });
+
+  describe('method: getIdentity', () => {
+    test('should return an Identity if given an Identity', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const identity = entityMockUtils.getIdentityInstance();
+      const result = await context.getIdentity(identity);
+      expect(result).toBe(identity);
+    });
+    test('should return an Identity if given a valid DID', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const identity = entityMockUtils.getIdentityInstance({ exists: true });
+      const result = await context.getIdentity(identity.did);
+      expect(result).toEqual(identity);
+    });
+
+    test('should throw if the Identity does not exist', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      const identity = entityMockUtils.getIdentityInstance({ exists: false });
+
+      let error;
+      try {
+        await context.getIdentity(identity.did);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The Identity does not exist',
+      });
+      expect(error).toEqual(expectedError);
     });
   });
 

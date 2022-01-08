@@ -314,6 +314,7 @@ interface ContextOptions {
   currentPairAddress?: string;
   currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
+  getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryKey?: string;
@@ -724,6 +725,7 @@ function configureContext(opts: ContextOptions): void {
     getTransactionArguments: sinon.stub().returns([]),
     getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
+    getIdentity: sinon.stub().resolves(opts.getIdentity),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
     getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),

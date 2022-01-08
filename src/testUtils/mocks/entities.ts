@@ -52,6 +52,7 @@ import {
   InstructionType,
   Leg,
   PercentageTransferRestriction,
+  PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
   ResultSet,
@@ -125,6 +126,7 @@ interface IdentityOptions {
   tokenPermissionsHasPermissions?: boolean;
   tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
+  isCddProvider?: boolean;
   getPrimaryKey?: Account;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
@@ -159,7 +161,7 @@ interface SecurityTokenOptions {
   corporateActionsGetAgents?: Identity[];
   corporateActionsGetDefaultConfig?: Partial<CorporateActionDefaultConfig>;
   permissionsGetAgents?: AgentWithGroup[];
-  permissionsGetGroups?: { known: KnownPermissionGroup[]; custom: CustomPermissionGroup[] };
+  permissionsGetGroups?: PermissionGroups;
   complianceRequirementsGet?: ComplianceRequirements;
   checkpointsGetOne?: Partial<Checkpoint>;
   checkpointsSchedulesGetOne?: Partial<ScheduleWithDetails>;
@@ -175,6 +177,7 @@ interface AuthorizationRequestOptions {
   expiry?: Date | null;
   data?: Authorization;
   exists?: boolean;
+  isExpired?: boolean;
 }
 
 interface ProposalOptions {
@@ -385,6 +388,7 @@ let identityTokenPermissionsCheckPermissionsStub: SinonStub;
 let identityTokenPermissionsGetStub: SinonStub;
 let identityTokenPermissionsGetGroupStub: SinonStub;
 let identityExistsStub: SinonStub;
+let identityIsCddProviderStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -703,6 +707,7 @@ export const mockAgentModule = (path: string) => (): Record<string, unknown> => 
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
+  isCddProvider: false,
   authorizations: {
     getReceived: [],
     getSent: { data: [], next: null },
@@ -1254,6 +1259,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
     expiry: opts.expiry,
     data: opts.data,
     exists: authorizationRequestExistsStub.resolves(opts.data),
+    isExpired: authorizationRequestExistsStub.resolves(opts.isExpired),
   } as unknown) as MockAuthorizationRequest;
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
@@ -1456,6 +1462,7 @@ function configureIdentity(opts: IdentityOptions): void {
     ),
     isEqual: identityIsEqualStub.returns(opts.isEqual),
     exists: identityExistsStub.resolves(opts.exists),
+    isCddProvider: identityIsCddProviderStub.resolves(opts.isCddProvider),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1493,6 +1500,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityTokenPermissionsHasPermissionsStub = sinon.stub();
   identityTokenPermissionsCheckPermissionsStub = sinon.stub();
   identityExistsStub = sinon.stub();
+  identityIsCddProviderStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 

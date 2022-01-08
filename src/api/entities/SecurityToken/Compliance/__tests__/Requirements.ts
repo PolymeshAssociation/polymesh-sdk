@@ -421,6 +421,40 @@ describe('Requirements class', () => {
     });
   });
 
+  describe('method: modify', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const context = dsMockUtils.getContextInstance();
+      const token = entityMockUtils.getSecurityTokenInstance();
+      const requirements = new Requirements(token, context);
+
+      const args = {
+        id: 1,
+        conditions: [
+          {
+            type: ConditionType.IsIdentity,
+            identity: entityMockUtils.getIdentityInstance(),
+            target: ConditionTarget.Both,
+          },
+        ] as InputCondition[],
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker: token.ticker, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await requirements.modify(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: arePaused', () => {
     afterAll(() => {
       sinon.restore();

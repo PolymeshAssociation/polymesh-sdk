@@ -1,4 +1,4 @@
-import { difference, differenceWith, intersection, isEqual, sortBy } from 'lodash';
+import { difference, intersection, isEqual, sortBy } from 'lodash';
 import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -12,7 +12,7 @@ import {
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { assembleBatchTransactions } from '~/utils/internal';
+import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
 
 export interface ModifyTokenTrustedClaimIssuersAddSetParams {
   /**
@@ -73,7 +73,7 @@ const areSameClaimIssuers = (
   currentClaimIssuers: TrustedClaimIssuer[],
   claimIssuers: ModifyTokenTrustedClaimIssuersAddSetParams['claimIssuers']
 ): boolean =>
-  !differenceWith(
+  hasSameElements(
     currentClaimIssuers,
     claimIssuers,
     (
@@ -86,7 +86,7 @@ const areSameClaimIssuers = (
 
       return signerToString(aIdentity) === signerToString(bIdentity) && !!sameClaimTypes;
     }
-  ).length && currentClaimIssuers.length === claimIssuers.length;
+  );
 
 /**
  * @hidden

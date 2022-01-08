@@ -349,12 +349,12 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getAccountBalance', () => {
+    const fakeBalance = {
+      free: new BigNumber(100),
+      locked: new BigNumber(0),
+      total: new BigNumber(100),
+    };
     test('should return the free and locked POLYX balance of the current account', async () => {
-      const fakeBalance = {
-        free: new BigNumber(100),
-        locked: new BigNumber(0),
-        total: new BigNumber(100),
-      };
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
@@ -366,11 +366,6 @@ describe('Polymesh Class', () => {
     });
 
     test('should return the free and locked POLYX balance of the supplied account', async () => {
-      const fakeBalance = {
-        free: new BigNumber(100),
-        locked: new BigNumber(0),
-        total: new BigNumber(100),
-      };
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
       const polymesh = await Polymesh.connect({
@@ -387,11 +382,6 @@ describe('Polymesh Class', () => {
     });
 
     test('should allow subscription (with and without a supplied account id)', async () => {
-      const fakeBalance = {
-        free: new BigNumber(100),
-        locked: new BigNumber(0),
-        total: new BigNumber(100),
-      };
       const unsubCallback = 'unsubCallback';
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
@@ -683,22 +673,13 @@ describe('Polymesh Class', () => {
 
       const params = { did: 'testDid' };
 
-      const result = await polymesh.getIdentity(params);
       const context = dsMockUtils.getContextInstance();
+      const identity = new Identity(params, context);
+      context.getIdentity.onFirstCall().resolves(identity);
 
-      expect(result).toMatchObject(new Identity(params, context));
-    });
+      const result = await polymesh.getIdentity(params);
 
-    test('should throw an error if the Identity does not exist', async () => {
-      entityMockUtils.configureMocks({ identityOptions: { exists: false } });
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      return expect(polymesh.getIdentity({ did: 'nonExistent' })).rejects.toThrow(
-        'The Identity does not exist'
-      );
+      expect(result).toMatchObject(identity);
     });
   });
 

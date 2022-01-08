@@ -32,6 +32,7 @@ export { createPortfolio } from '~/api/procedures/createPortfolio';
 export {
   createSecurityToken,
   CreateSecurityTokenParams,
+  CreateSecurityTokenWithTickerParams,
 } from '~/api/procedures/createSecurityToken';
 export { createVenue, CreateVenueParams } from '~/api/procedures/createVenue';
 // export { editProposal, EditProposalParams } from '~/api/procedures/editProposal';
@@ -68,6 +69,10 @@ export {
   setAssetRequirements,
   SetAssetRequirementsParams,
 } from '~/api/procedures/setAssetRequirements';
+export {
+  modifyComplianceRequirement,
+  ModifyComplianceRequirementParams,
+} from '~/api/procedures/modifyComplianceRequirement';
 export {
   addAssetRequirement,
   AddAssetRequirementParams,

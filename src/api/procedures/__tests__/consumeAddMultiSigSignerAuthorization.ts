@@ -55,6 +55,18 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
     booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
     booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
+    dsMockUtils.createQueryStub('identity', 'authorizations', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockAuthorization({
+          /* eslint-disable @typescript-eslint/naming-convention */
+          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          auth_id: 1,
+          authorized_by: 'someDid',
+          expiry: dsMockUtils.createMockOption(),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+      ),
+    });
   });
 
   afterEach(() => {

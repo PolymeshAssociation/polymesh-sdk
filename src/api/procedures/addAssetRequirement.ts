@@ -1,11 +1,11 @@
-import { differenceWith, flatten, map } from 'lodash';
+import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
 import { ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
-import { conditionsAreEqual } from '~/utils/internal';
+import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
 export interface AddAssetRequirementParams {
   /**
@@ -49,14 +49,10 @@ export async function prepareAddAssetRequirement(
 
   const currentConditions = map(currentRequirements, 'conditions');
 
-  const { length: conditionsLength } = conditions;
-
   // if the new requirement has the same conditions as any existing one, we throw an error
   if (
-    currentConditions.some(
-      requirementConditions =>
-        !differenceWith(requirementConditions, conditions, conditionsAreEqual).length &&
-        requirementConditions.length === conditionsLength
+    currentConditions.some(requirementConditions =>
+      hasSameElements(requirementConditions, conditions, conditionsAreEqual)
     )
   ) {
     throw new PolymeshError({
@@ -68,9 +64,9 @@ export async function prepareAddAssetRequirement(
 
   // check that the new requirement won't cause the current ones to exceed the max complexity
   assertRequirementsNotTooComplex(
-    context,
     [...flatten(currentConditions), ...conditions],
-    defaultTrustedClaimIssuers.length
+    defaultTrustedClaimIssuers.length,
+    context
   );
 
   const {

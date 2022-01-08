@@ -288,6 +288,16 @@ describe('SecurityToken class', () => {
       securityToken = new SecurityToken({ ticker }, context);
     });
 
+    test('should return null if there is no funding round for a security token', async () => {
+      dsMockUtils.createQueryStub('asset', 'fundingRound', {
+        returnValue: dsMockUtils.createMockFundingRoundName(),
+      });
+
+      const result = await securityToken.currentFundingRound();
+
+      expect(result).toBeNull();
+    });
+
     test('should return the funding round for a security token', async () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
         returnValue: rawFundingRound,
