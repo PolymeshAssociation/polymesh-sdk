@@ -299,14 +299,14 @@ export async function prepareModifyClaims(
     }
   }
 
-  const transactions = assembleBatchTransactions(
+  const txs = assembleBatchTransactions(
     tuple({
       transaction: identity.addClaim,
       argsArray: modifyClaimArgs,
     })
   );
 
-  this.addBatchTransaction({ transactions });
+  this.addBatchTransaction({ transactions: txs });
 }
 
 /**
