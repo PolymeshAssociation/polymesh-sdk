@@ -71,13 +71,11 @@ export async function prepareCreatePortfolio(
 
   const rawName = stringToText(portfolioName, context);
 
-  const [newNumberedPortfolio] = this.addTransaction(
-    tx.portfolio.createPortfolio,
-    {
-      resolvers: [createPortfolioResolver(context)],
-    },
-    rawName
-  );
+  const [newNumberedPortfolio] = this.addTransaction({
+    transaction: tx.portfolio.createPortfolio,
+    resolvers: [createPortfolioResolver(context)],
+    args: [rawName],
+  });
 
   return newNumberedPortfolio;
 }

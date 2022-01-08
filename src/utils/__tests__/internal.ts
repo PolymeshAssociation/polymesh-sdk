@@ -152,7 +152,7 @@ describe('getDid', () => {
 });
 
 describe('unwrapValue', () => {
-  test('should unwrap a Post Transactin Value', async () => {
+  test('should unwrap a Post Transaction Value', async () => {
     const wrapped = new PostTransactionValue(async () => 1);
     await wrapped.run({} as ISubmittableResult);
 
@@ -205,7 +205,7 @@ describe('filterEventRecords', () => {
     filterRecordsStub.withArgs(mod, eventName).returns([]);
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
-      `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
+      `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
     );
   });
 });

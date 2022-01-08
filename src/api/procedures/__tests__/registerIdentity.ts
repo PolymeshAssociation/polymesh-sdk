@@ -92,12 +92,11 @@ describe('registerIdentity procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      registerIdentityTransaction,
       sinon.match({
+        transaction: registerIdentityTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawAccountId,
-      [rawSecondaryKey]
+        args: [rawAccountId, [rawSecondaryKey]],
+      })
     );
     expect(result).toBe(identity);
 
@@ -105,12 +104,11 @@ describe('registerIdentity procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      registerIdentityTransaction,
       sinon.match({
+        transaction: registerIdentityTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawAccountId,
-      []
+        args: [rawAccountId, []],
+      })
     );
     expect(result).toBe(identity);
   });

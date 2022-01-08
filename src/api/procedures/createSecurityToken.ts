@@ -151,11 +151,11 @@ export async function prepareCreateSecurityToken(
 
     if (id.isEmpty) {
       // if the custom asset type doesn't exist, we create it
-      [rawType] = this.addTransaction(
-        tx.asset.registerCustomAssetType,
-        { resolvers: [createRegisterCustomAssetTypeResolver(context)] },
-        rawValue
-      );
+      [rawType] = this.addTransaction({
+        transaction: tx.asset.registerCustomAssetType,
+        resolvers: [createRegisterCustomAssetTypeResolver(context)],
+        args: [rawValue],
+      });
     } else {
       rawType = internalTokenTypeToAssetType({ Custom: id }, context);
     }
@@ -180,35 +180,38 @@ export async function prepareCreateSecurityToken(
     fee = new BigNumber(0);
   }
 
-  // TODO @shuffledex: refactoring with batching mechanism
-
-  this.addTransaction(
-    tx.asset.createAsset,
-    { fee },
-    rawName,
-    rawTicker,
-    rawIsDivisible,
-    rawType,
-    rawIdentifiers,
-    rawFundingRound,
-    rawDisableIu
-  );
+  this.addTransaction({
+    transaction: tx.asset.createAsset,
+    fee,
+    args: [
+      rawName,
+      rawTicker,
+      rawIsDivisible,
+      rawType,
+      rawIdentifiers,
+      rawFundingRound,
+      rawDisableIu,
+    ],
+  });
 
   if (totalSupply && totalSupply.gt(0)) {
     const rawTotalSupply = numberToBalance(totalSupply, context, isDivisible);
 
-    this.addTransaction(tx.asset.issue, {}, rawTicker, rawTotalSupply);
+    this.addTransaction({
+      transaction: tx.asset.issue,
+      args: [rawTicker, rawTotalSupply],
+    });
   }
 
   if (documents?.length) {
     const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
     batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
-      this.addTransaction(
-        tx.asset.addDocuments,
-        { isCritical: false, batchSize: rawDocumentBatch.length },
-        rawDocumentBatch,
-        rawTicker
-      );
+      this.addTransaction({
+        transaction: tx.asset.addDocuments,
+        isCritical: false,
+        feeMultiplier: rawDocumentBatch.length,
+        args: [rawDocumentBatch, rawTicker],
+      });
     });
   }
 

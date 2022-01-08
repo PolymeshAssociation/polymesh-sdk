@@ -232,18 +232,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      rawRecordDate,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          rawRecordDate,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     expect(result).toEqual(rawCaId);
@@ -260,18 +262,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          null,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     await prepareInitiateCorporateAction.call(proc, {
@@ -285,18 +289,11 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      null
+        args: [rawTicker, rawKind, rawDeclDate, null, rawDetails, rawTargets, rawTax, null],
+      })
     );
   });
 

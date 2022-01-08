@@ -57,12 +57,10 @@ export async function prepareRenamePortfolio(
     });
   }
 
-  this.addTransaction(
-    portfolio.renamePortfolio,
-    {},
-    rawPortfolioNumber,
-    stringToText(newName, context)
-  );
+  this.addTransaction({
+    transaction: portfolio.renamePortfolio,
+    args: [rawPortfolioNumber, stringToText(newName, context)],
+  });
 
   return new NumberedPortfolio({ did, id }, context);
 }

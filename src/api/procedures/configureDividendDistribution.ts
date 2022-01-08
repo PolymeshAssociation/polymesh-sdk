@@ -84,7 +84,7 @@ export type ConfigureDividendDistributionParams = Omit<
    */
   maxAmount: BigNumber;
   /**
-   * date from which Tokenholders can claim their Dividends
+   * date from which Token holders can claim their Dividends
    */
   paymentDate: Date;
   /**
@@ -202,19 +202,19 @@ export async function prepareConfigureDividendDistribution(
   const rawPaymentAt = dateToMoment(paymentDate, context);
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
-  const [dividendDistribution] = this.addTransaction(
-    tx.capitalDistribution.distribute,
-    {
-      resolvers: [createDividendDistributionResolver(context)],
-    },
-    caId,
-    rawPortfolioNumber,
-    rawCurrency,
-    rawPerShare,
-    rawAmount,
-    rawPaymentAt,
-    rawExpiresAt
-  );
+  const [dividendDistribution] = this.addTransaction({
+    transaction: tx.capitalDistribution.distribute,
+    resolvers: [createDividendDistributionResolver(context)],
+    args: [
+      caId,
+      rawPortfolioNumber,
+      rawCurrency,
+      rawPerShare,
+      rawAmount,
+      rawPaymentAt,
+      rawExpiresAt,
+    ],
+  });
 
   return dividendDistribution;
 }

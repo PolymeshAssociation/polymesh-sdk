@@ -124,7 +124,10 @@ export async function prepareInviteExternalAgent(
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+  this.addTransaction({
+    transaction: identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 }
 
 /**

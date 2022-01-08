@@ -64,13 +64,10 @@ export async function prepareTransferTickerOwnership(
   );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  this.addTransaction(
-    tx.identity.addAuthorization,
-    {},
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+  this.addTransaction({
+    transaction: tx.identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 
   return tickerReservation;
 }

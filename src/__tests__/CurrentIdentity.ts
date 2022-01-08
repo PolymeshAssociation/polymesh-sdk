@@ -196,7 +196,7 @@ describe('CurrentIdentity class', () => {
       const currentIdentity = new CurrentIdentity(context);
 
       const args = {
-        ticker: 'SOMETICKER',
+        ticker: 'SOME_TICKER',
       };
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;

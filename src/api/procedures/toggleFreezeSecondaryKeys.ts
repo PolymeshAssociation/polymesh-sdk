@@ -35,7 +35,7 @@ export async function prepareToggleFreezeSecondaryKeys(
       });
     }
 
-    this.addTransaction(identityTx.freezeSecondaryKeys, {});
+    this.addTransaction({ transaction: identityTx.freezeSecondaryKeys });
   } else {
     if (!areSecondaryKeysFrozen) {
       throw new PolymeshError({
@@ -44,7 +44,7 @@ export async function prepareToggleFreezeSecondaryKeys(
       });
     }
 
-    this.addTransaction(identityTx.unfreezeSecondaryKeys, {});
+    this.addTransaction({ transaction: identityTx.unfreezeSecondaryKeys });
   }
 }
 

@@ -45,7 +45,7 @@ describe('reserveTicker procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOMETICKER';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       ticker,
@@ -174,17 +174,17 @@ describe('reserveTicker procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
       sinon.match({
+        transaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker
+        args: [rawTicker],
+      })
     );
     expect(result).toBe(reservation);
 
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
-      expriy: new Date(3000, 12, 12),
+      expiry: new Date(3000, 12, 12),
       status: TickerReservationStatus.Reserved,
     });
 
@@ -192,11 +192,7 @@ describe('reserveTicker procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({
-        resolvers: sinon.match.array,
-      }),
-      rawTicker
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
     );
     expect(result).toBe(reservation);
   });

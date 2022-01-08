@@ -123,7 +123,9 @@ describe('modifySignerPermissions procedure', () => {
 
     await prepareModifySignerPermissions.call(proc, { secondaryKeys });
 
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: signersList.map(signers => ({ transaction, args: signers })),
+    });
 
     secondaryKeys = [
       {
@@ -150,7 +152,9 @@ describe('modifySignerPermissions procedure', () => {
 
     await prepareModifySignerPermissions.call(proc, { secondaryKeys, identity });
 
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: signersList.map(signers => ({ transaction, args: signers })),
+    });
   });
 
   test('should throw an error if at least one of the Signers for which to modify permissions is not a Secondary Key for the Identity', () => {

@@ -169,10 +169,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({}),
-      rawTicker,
-      rawTargets
+      sinon.match({ transaction, args: [rawTicker, rawTargets] })
     );
 
     rawTargets = dsMockUtils.createMockTargetIdentities({
@@ -194,10 +191,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({}),
-      rawTicker,
-      rawTargets
+      sinon.match({ transaction, args: [rawTicker, rawTargets] })
     );
   });
 
@@ -224,10 +218,7 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({}),
-      rawTicker,
-      rawPercentage
+      sinon.match({ transaction, args: [rawTicker, rawPercentage] })
     );
   });
 
@@ -262,12 +253,14 @@ describe('modifyCaDefaultConfig procedure', () => {
     });
 
     sinon.assert.calledWith(assertCaTaxWithholdingsValidStub, taxWithholdings, mockContext);
-    sinon.assert.calledWith(
-      procedureMockUtils.getAddBatchTransactionStub(),
-      transaction,
-      sinon.match({}),
-      [[rawTicker, rawDid, rawPercentage]]
-    );
+    sinon.assert.calledWith(procedureMockUtils.getAddBatchTransactionStub(), {
+      transactions: [
+        {
+          transaction,
+          args: [rawTicker, rawDid, rawPercentage],
+        },
+      ],
+    });
   });
 
   describe('getAuthorization', () => {

@@ -425,7 +425,7 @@ describe('Polymesh Class', () => {
       });
 
       const args = {
-        ticker: 'SOMETICKER',
+        ticker: 'SOME_TICKER',
         ethereumSignature: 'someSig',
       };
 

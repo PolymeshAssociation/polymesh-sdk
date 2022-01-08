@@ -522,7 +522,7 @@ export class Polymesh {
    * @param args.tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
    */
   public getTransactionFees(args: { tag: TxTag }): Promise<BigNumber> {
-    return this.context.getTransactionFees(args.tag);
+    return this.context.getTransactionFees(args);
   }
 
   /**

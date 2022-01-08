@@ -81,7 +81,10 @@ export async function prepareSetCustodian(
 
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+  this.addTransaction({
+    transaction: identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 }
 
 /**

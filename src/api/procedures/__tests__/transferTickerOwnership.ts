@@ -121,14 +121,10 @@ describe('transferTickerOwnership procedure', () => {
 
     const result = await prepareTransferTickerOwnership.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
     expect(result).toEqual(entityMockUtils.getTickerReservationInstance({ ticker }));
   });
 
@@ -137,14 +133,10 @@ describe('transferTickerOwnership procedure', () => {
 
     const result = await prepareTransferTickerOwnership.call(proc, { ...args, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawMoment
-    );
+      args: [rawSignatory, rawAuthorizationData, rawMoment],
+    });
     expect(result).toEqual(entityMockUtils.getTickerReservationInstance({ ticker }));
   });
 

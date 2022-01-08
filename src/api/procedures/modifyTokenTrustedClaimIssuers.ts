@@ -12,6 +12,7 @@ import {
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
+import { assembleBatchTransactions } from '~/utils/internal';
 
 export interface ModifyTokenTrustedClaimIssuersAddSetParams {
   /**
@@ -179,21 +180,20 @@ export async function prepareModifyTokenTrustedClaimIssuers(
     });
   }
 
-  if (claimIssuersToDelete.length) {
-    this.addBatchTransaction(
-      tx.complianceManager.removeDefaultTrustedClaimIssuer,
-      {},
-      claimIssuersToDelete
-    );
-  }
+  const transactions = assembleBatchTransactions(
+    tuple(
+      {
+        transaction: tx.complianceManager.removeDefaultTrustedClaimIssuer,
+        argsArray: claimIssuersToDelete,
+      },
+      {
+        transaction: tx.complianceManager.addDefaultTrustedClaimIssuer,
+        argsArray: claimIssuersToAdd,
+      }
+    )
+  );
 
-  if (claimIssuersToAdd.length) {
-    this.addBatchTransaction(
-      tx.complianceManager.addDefaultTrustedClaimIssuer,
-      {},
-      claimIssuersToAdd
-    );
-  }
+  this.addBatchTransaction({ transactions });
 
   return new SecurityToken({ ticker }, context);
 }

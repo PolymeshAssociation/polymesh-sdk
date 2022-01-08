@@ -99,14 +99,10 @@ describe('transferTokenOwnership procedure', () => {
 
     const result = await prepareTransferTokenOwnership.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
     expect(result).toEqual(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
@@ -115,14 +111,10 @@ describe('transferTokenOwnership procedure', () => {
 
     const result = await prepareTransferTokenOwnership.call(proc, { ...args, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawMoment
-    );
+      args: [rawSignatory, rawAuthorizationData, rawMoment],
+    });
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 

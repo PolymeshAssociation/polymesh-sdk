@@ -148,25 +148,17 @@ describe('inviteAccount procedure', () => {
 
     await prepareInviteAccount.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     await prepareInviteAccount.call(proc, { ...args, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawExpiry
-    );
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+    });
 
     permissionsLikeToPermissionsStub.resolves({
       tokens: null,
@@ -183,14 +175,10 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
   });
 
   test('should throw an error if the passed account is already part of an Identity', () => {

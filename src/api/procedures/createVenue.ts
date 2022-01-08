@@ -43,15 +43,12 @@ export async function prepareCreateVenue(
   const rawType = venueTypeToMeshVenueType(type, context);
 
   // NOTE @monitz87: we're sending an empty signer array for the moment
-  const [newVenue] = this.addTransaction(
-    settlement.createVenue,
-    {
-      resolvers: [createCreateVenueResolver(context)],
-    },
-    rawDetails,
-    [],
-    rawType
-  );
+  const [newVenue] = this.addTransaction({
+    transaction: settlement.createVenue,
+
+    resolvers: [createCreateVenueResolver(context)],
+    args: [rawDetails, [], rawType],
+  });
 
   return newVenue;
 }

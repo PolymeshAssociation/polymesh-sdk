@@ -62,7 +62,10 @@ export async function prepareRemoveCheckpointSchedule(
     });
   }
 
-  this.addTransaction(tx.checkpoint.removeSchedule, {}, rawTicker, rawScheduleId);
+  this.addTransaction({
+    transaction: tx.checkpoint.removeSchedule,
+    args: [rawTicker, rawScheduleId],
+  });
 }
 
 /**

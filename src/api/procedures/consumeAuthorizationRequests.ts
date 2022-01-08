@@ -12,7 +12,7 @@ import {
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { getDid } from '~/utils/internal';
+import { assembleBatchTransactions, getDid } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -68,13 +68,23 @@ export async function prepareConsumeAuthorizationRequests(
 
       // TODO @monitz87: include the attestation auth in the mix (should probably be a different procedure)
       if (type === AuthorizationType.RotatePrimaryKey) {
-        this.addBatchTransaction(
-          typesToExtrinsics[type],
-          {},
-          ids.map(([id]) => tuple(id, null))
+        const transactions = assembleBatchTransactions(
+          tuple({
+            transaction: typesToExtrinsics[type],
+            argsArray: ids.map(([id]) => tuple(id, null)),
+          })
         );
+
+        this.addBatchTransaction({ transactions });
       } else {
-        this.addBatchTransaction(typesToExtrinsics[type], {}, ids);
+        const transactions = assembleBatchTransactions(
+          tuple({
+            transaction: typesToExtrinsics[type],
+            argsArray: ids,
+          })
+        );
+
+        this.addBatchTransaction({ transactions });
       }
     });
   } else {
@@ -86,7 +96,14 @@ export async function prepareConsumeAuthorizationRequests(
         falseBool
       )
     );
-    this.addBatchTransaction(tx.identity.removeAuthorization, {}, authIdentifiers);
+    const transactions = assembleBatchTransactions(
+      tuple({
+        transaction: tx.identity.removeAuthorization,
+        argsArray: authIdentifiers,
+      })
+    );
+
+    this.addBatchTransaction({ transactions });
   }
 }
 

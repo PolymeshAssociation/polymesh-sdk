@@ -462,7 +462,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
   test('portfolioMovementToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
     const context = dsMockUtils.getContextInstance();
-    const ticker = 'SOMETOKEN';
+    const ticker = 'SOME_TOKEN';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
     const token = entityMockUtils.getSecurityTokenInstance({ ticker });
@@ -542,7 +542,7 @@ describe('stringToTicker and tickerToString', () => {
   });
 
   test('stringToTicker should convert a string to a polkadot Ticker object', () => {
-    const value = 'SOMETICKER';
+    const value = 'SOME_TICKER';
     const fakeResult = ('convertedTicker' as unknown) as Ticker;
     const context = dsMockUtils.getContextInstance();
 
@@ -563,7 +563,7 @@ describe('stringToTicker and tickerToString', () => {
   });
 
   test('stringToTicker should throw an error if the string length exceeds the max ticker length', () => {
-    const value = 'veryLongTickr';
+    const value = 'veryLongTicker';
     const context = dsMockUtils.getContextInstance();
 
     expect(() => stringToTicker(value, context)).toThrow(
@@ -896,7 +896,7 @@ describe('signerToString', () => {
     entityMockUtils.reset();
   });
 
-  test('signerToString should return the Indentity DID string', () => {
+  test('signerToString should return the Identity DID string', () => {
     const did = 'someDid';
     const context = dsMockUtils.getContextInstance();
     const identity = new Identity({ did }, context);
@@ -939,7 +939,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 
   test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
-    const ticker = 'TICKERNAME';
+    const ticker = 'TICKER_NAME';
     const context = dsMockUtils.getContextInstance();
 
     let value: Authorization = {
@@ -1396,7 +1396,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeExtrinsicPermissionsResult);
 
-    const ticker = 'SOMETICKER';
+    const ticker = 'SOME_TICKER';
     const did = 'someDid';
     value = {
       tokens: {
@@ -1539,7 +1539,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeExtrinsicPermissionsResult);
 
-    const tickers = ['BTICKER', 'ATICKER', 'CTICKER'];
+    const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
 
     value = {
       tokens: {
@@ -2029,6 +2029,7 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
   });
 
   test('isLeiValid should return if the Lei value identifier is valid or not', () => {
+    /* cSpell: disable */
     const correct = isLeiValid('724500VKKSH9QOLTFR81');
     let incorrect = isLeiValid('969500T3MBS4SQAMHJ45');
 
@@ -2037,6 +2038,7 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
 
     incorrect = isLeiValid('969500T3MS4SQAMHJ4');
     expect(incorrect).toBeFalsy();
+    /* cSpell: enable */
   });
 });
 
@@ -2305,6 +2307,7 @@ describe('tokenIdentifierToAssetIdentifier and assetIdentifierToTokenIdentifier'
 
   test('tokenIdentifierToAssetIdentifier should convert a TokenIdentifier to a polkadot AssetIdentifier object', () => {
     const isinValue = 'US0378331005';
+    // cSpell: disable-next-line
     const leiValue = '724500VKKSH9QOLTFR81';
     const cusipValue = '037833100';
 
@@ -2353,6 +2356,7 @@ describe('tokenIdentifierToAssetIdentifier and assetIdentifierToTokenIdentifier'
       `Invalid token identifier ${identifier.value} of type Isin`
     );
 
+    // cSpell: disable-next-line
     identifier = { type: TokenIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
 
     expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
@@ -3041,10 +3045,10 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     const context = dsMockUtils.getContextInstance();
     const value: Scope = {
       type: ScopeType.Ticker,
-      value: 'SOMETICKER',
+      value: 'SOME_TICKER',
     };
     const fakeResult = ('ScopeEnum' as unknown) as MeshScope;
-    const fakeTicker = ('SOMETICKER' as unknown) as Ticker;
+    const fakeTicker = ('SOME_TICKER' as unknown) as Ticker;
 
     dsMockUtils
       .getCreateTypeStub()
@@ -3169,7 +3173,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
     value = {
       type: ClaimType.InvestorUniqueness,
-      scope: { type: ScopeType.Ticker, value: 'SOMETICKER' },
+      scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
       cddId: 'someCddId',
       scopeId: 'someScopeId',
     };
@@ -3475,9 +3479,9 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
 
     expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
 
-    result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHINGELSE' });
+    result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
 
-    expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHINGELSE' });
+    expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
   });
 
   test('scopeToMiddlewareScope should convert a Scope to a MiddlewareScope object', () => {
@@ -5262,7 +5266,7 @@ describe('permissionsLikeToPermissions', () => {
     });
 
     const firstToken = new SecurityToken({ ticker: 'TICKER' }, context);
-    const ticker = 'OTHERTICKER';
+    const ticker = 'OTHER_TICKER';
     const secondToken = new SecurityToken({ ticker: ticker }, context);
     const portfolio = new DefaultPortfolio({ did: 'someDid' }, context);
 
@@ -5774,8 +5778,8 @@ describe('fundraiserToStoDetails', () => {
         sale: StoSaleStatus.Live,
       },
       minInvestment: minInvestmentValue.shiftedBy(-6),
-      totalAmount: amount.times(2).shiftedBy(-6),
-      totalRemaining: remaining.times(2).shiftedBy(-6),
+      totalAmount: amount.multipliedBy(2).shiftedBy(-6),
+      totalRemaining: remaining.multipliedBy(2).shiftedBy(-6),
     };
 
     const creator = dsMockUtils.createMockIdentityId(someDid);
@@ -6544,7 +6548,7 @@ describe('corporateActionIdentifierToCaId', () => {
   test('corporateActionIdentifierToCaId should convert a CorporateActionIdentifier object to a polkadot CAId object', () => {
     const context = dsMockUtils.getContextInstance();
     const args = {
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
       localId: new BigNumber(1),
     };
     const ticker = dsMockUtils.createMockTicker(args.ticker);
@@ -6661,21 +6665,21 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
   test('scopeClaimProofToMeshScopeClaimProof should convert a proof and a scopeId to a polkadot ScopeClaimProof object', () => {
     const [
       scopeId,
-      proofScopeIdWellformed,
+      proofScopeIdWellFormed,
       firstChallengeResponse,
       secondChallengeResponse,
       subtractExpressionsRes,
       blindedScopeDidHash,
     ] = [
       'someScopeId',
-      'someProofScopeIdWellformed',
+      'someProofScopeIdWellFormed',
       'someFirstChallengeResponse',
       'someSecondChallengeResponse',
       'someSubtractExpressionsRes',
       'someBlindedScopeDidHash',
     ];
     const proof: ScopeClaimProof = {
-      proofScopeIdWellformed,
+      proofScopeIdWellFormed,
       proofScopeIdCddIdMatch: {
         challengeResponses: [firstChallengeResponse, secondChallengeResponse],
         subtractExpressionsRes,
@@ -6691,10 +6695,10 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       challenge_responses: [firstChallengeResponse, secondChallengeResponse],
       blinded_scope_did_hash: blindedScopeDidHash,
     });
-    const rawProofScopeIdWellformed = dsMockUtils.createMockSignature(proofScopeIdWellformed);
+    const rawProofScopeIdWellFormed = dsMockUtils.createMockSignature(proofScopeIdWellFormed);
     const rawScopeId = dsMockUtils.createMockRistrettoPoint(scopeId);
     const fakeResult = dsMockUtils.createMockScopeClaimProof({
-      proof_scope_id_wellformed: proofScopeIdWellformed,
+      proof_scope_id_wellformed: proofScopeIdWellFormed,
       proof_scope_id_cdd_id_match: {
         subtract_expressions_res: subtractExpressionsRes,
         challenge_responses: [firstChallengeResponse, secondChallengeResponse],
@@ -6709,7 +6713,7 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       blinded_scope_did_hash: rawBlindedScopeDidHash,
     };
     const scopeClaimProof = {
-      proof_scope_id_wellformed: rawProofScopeIdWellformed,
+      proof_scope_id_wellformed: rawProofScopeIdWellFormed,
       proof_scope_id_cdd_id_match: rawZkProofData,
       scope_id: rawScopeId,
     };
@@ -6735,8 +6739,8 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('Signature', proofScopeIdWellformed)
-      .returns(rawProofScopeIdWellformed);
+      .withArgs('Signature', proofScopeIdWellFormed)
+      .returns(rawProofScopeIdWellFormed);
     dsMockUtils.getCreateTypeStub().withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
 
     dsMockUtils

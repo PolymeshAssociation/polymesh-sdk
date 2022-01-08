@@ -46,13 +46,10 @@ export async function prepareTransferTokenOwnership(
   );
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  this.addTransaction(
-    tx.identity.addAuthorization,
-    {},
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+  this.addTransaction({
+    transaction: tx.identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 
   return new SecurityToken({ ticker }, context);
 }

@@ -176,14 +176,10 @@ describe('inviteExternalAgent procedure', () => {
       permissions: entityMockUtils.getKnownPermissionGroupInstance(),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     await prepareInviteExternalAgent.call(proc, {
       target,
@@ -196,13 +192,9 @@ describe('inviteExternalAgent procedure', () => {
       },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
   });
 });

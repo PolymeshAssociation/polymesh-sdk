@@ -27,6 +27,7 @@ import {
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   dateToMoment,
@@ -39,7 +40,12 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, getTicker, optionize } from '~/utils/internal';
+import {
+  assembleBatchTransactions,
+  filterEventRecords,
+  getTicker,
+  optionize,
+} from '~/utils/internal';
 
 export interface AddInstructionParams {
   /**
@@ -89,7 +95,7 @@ export interface Storage {
 /**
  * @hidden
  */
-export type AddAndAffirmInstructionParams = [
+type InternalAddAndAffirmInstructionParams = [
   u64,
   SettlementType,
   Moment | null,
@@ -106,7 +112,7 @@ export type AddAndAffirmInstructionParams = [
 /**
  * @hidden
  */
-export type InternalAddInstructionParams = [
+type InternalAddInstructionParams = [
   u64,
   SettlementType,
   Moment | null,
@@ -155,10 +161,10 @@ async function getTxArgsAndErrors(
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
   };
-  addAndAffirmInstructionParams: AddAndAffirmInstructionParams;
+  addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams;
   addInstructionParams: InternalAddInstructionParams;
 }> {
-  const addAndAffirmInstructionParams: AddAndAffirmInstructionParams = [];
+  const addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams = [];
   const addInstructionParams: InternalAddInstructionParams = [];
 
   const legEmptyErrIndexes: number[] = [];
@@ -291,6 +297,13 @@ export async function prepareAddInstruction(
 
   const latestBlock = await context.getLatestBlock();
 
+  if (!instructions.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The Instructions array cannot be empty',
+    });
+  }
+
   const {
     errIndexes: { legEmptyErrIndexes, legLengthErrIndexes, endBlockErrIndexes, datesErrIndexes },
     addAndAffirmInstructionParams,
@@ -338,30 +351,28 @@ export async function prepareAddInstruction(
     });
   }
 
-  let resultInstructions: PostTransactionValue<Instruction[]> | undefined;
+  const addAndAffirmTx = settlement.addAndAffirmInstruction;
+  const addTx = settlement.addInstruction;
 
-  if (addAndAffirmInstructionParams.length) {
-    [resultInstructions] = this.addBatchTransaction(
-      settlement.addAndAffirmInstruction,
+  const transactions = assembleBatchTransactions(
+    tuple(
       {
-        resolvers: [createAddInstructionResolver(context)],
+        transaction: addTx,
+        argsArray: addInstructionParams,
       },
-      addAndAffirmInstructionParams
-    );
-  }
-
-  if (addInstructionParams.length) {
-    [resultInstructions] = this.addBatchTransaction(
-      settlement.addInstruction,
       {
-        resolvers: [createAddInstructionResolver(context, resultInstructions)],
-      },
-      addInstructionParams
-    );
-  }
+        transaction: addAndAffirmTx,
+        argsArray: addAndAffirmInstructionParams,
+      }
+    )
+  );
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return resultInstructions!;
+  const [resultInstructions] = this.addBatchTransaction({
+    transactions,
+    resolvers: [createAddInstructionResolver(context)],
+  });
+
+  return resultInstructions;
 }
 
 /**

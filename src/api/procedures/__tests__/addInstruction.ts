@@ -247,6 +247,22 @@ describe('addInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if the instructions array is empty', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, { venue, instructions: [] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The Instructions array cannot be empty');
+  });
+
   test('should throw an error if the legs array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
@@ -388,11 +404,15 @@ describe('addInstruction procedure', () => {
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
-      addAndAuthorizeInstructionTransaction,
       sinon.match({
+        transactions: [
+          {
+            transaction: addAndAuthorizeInstructionTransaction,
+            args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]],
+          },
+        ],
         resolvers: sinon.match.array,
-      }),
-      [[rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]]]
+      })
     );
     expect(result).toBe(instruction);
   });
@@ -430,11 +450,15 @@ describe('addInstruction procedure', () => {
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
-      addInstructionTransaction,
       sinon.match({
+        transactions: [
+          {
+            transaction: addInstructionTransaction,
+            args: [rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]],
+          },
+        ],
         resolvers: sinon.match.array,
-      }),
-      [[rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]]]
+      })
     );
     expect(result).toBe(instruction);
   });

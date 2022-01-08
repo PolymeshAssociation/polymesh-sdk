@@ -57,8 +57,8 @@ export interface InitiateCorporateActionParams {
   checkpoint?: InputCaCheckpoint;
   description: string;
   /**
-   * tokenholder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
-   *   property. When the value is `Include`, all tokenholders not present in the array are excluded, and vice-versa
+   * Token holder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all Token holders not present in the array are excluded, and vice-versa
    */
   targets?: Modify<
     CorporateActionTargets,
@@ -71,7 +71,7 @@ export interface InitiateCorporateActionParams {
    */
   defaultTaxWithholding?: BigNumber;
   /**
-   * percentage of the Benefits to be held for tax purposes from individual tokenholder Identities.
+   * percentage of the Benefits to be held for tax purposes from individual Token holder Identities.
    *   This overrides the value of `defaultTaxWithholding`
    */
   taxWithholdings?: Modify<
@@ -159,20 +159,20 @@ export async function prepareInitiateCorporateAction(
       )
     );
 
-  const [caId] = this.addTransaction(
-    tx.corporateAction.initiateCorporateAction,
-    {
-      resolvers: [createCaIdResolver()],
-    },
-    rawTicker,
-    rawKind,
-    rawDeclDate,
-    rawRecordDate,
-    rawDetails,
-    rawTargets,
-    rawTax,
-    rawWithholdings
-  );
+  const [caId] = this.addTransaction({
+    transaction: tx.corporateAction.initiateCorporateAction,
+    resolvers: [createCaIdResolver()],
+    args: [
+      rawTicker,
+      rawKind,
+      rawDeclDate,
+      rawRecordDate,
+      rawDetails,
+      rawTargets,
+      rawTax,
+      rawWithholdings,
+    ],
+  });
 
   return caId;
 }

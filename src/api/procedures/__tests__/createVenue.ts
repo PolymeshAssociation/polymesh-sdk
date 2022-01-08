@@ -66,13 +66,11 @@ describe('createVenue procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      createVenueTransaction,
       sinon.match({
+        transaction: createVenueTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawDetails,
-      [],
-      rawType
+        args: [rawDetails, [], rawType],
+      })
     );
     expect(result).toBe(venue);
   });

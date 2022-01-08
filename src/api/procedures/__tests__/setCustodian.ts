@@ -170,25 +170,17 @@ describe('setCustodian procedure', () => {
 
     await prepareSetCustodian.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     await prepareSetCustodian.call(proc, { ...args, id, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawExpiry
-    );
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+    });
   });
 
   describe('getAuthorization', () => {

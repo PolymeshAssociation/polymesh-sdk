@@ -57,19 +57,21 @@ export async function prepareConsumeJoinIdentityAuthorization(
   const rawAuthId = numberToU64(authId, context);
 
   if (!accept) {
-    const opts: { paidForBy?: Identity } = {};
+    const baseArgs: { paidForBy?: Identity } = {};
 
     if (calledByTarget) {
-      opts.paidForBy = issuer;
+      baseArgs.paidForBy = issuer;
     }
 
-    this.addTransaction(
-      identity.removeAuthorization,
-      opts,
-      signerValueToSignatory(signerToSignerValue(target), context),
-      rawAuthId,
-      booleanToBool(calledByTarget, context)
-    );
+    this.addTransaction({
+      transaction: identity.removeAuthorization,
+      ...baseArgs,
+      args: [
+        signerValueToSignatory(signerToSignerValue(target), context),
+        rawAuthId,
+        booleanToBool(calledByTarget, context),
+      ],
+    });
 
     return;
   }
@@ -81,7 +83,11 @@ export async function prepareConsumeJoinIdentityAuthorization(
     });
   }
 
-  this.addTransaction(identity.joinIdentityAsKey, { paidForBy: issuer }, rawAuthId);
+  this.addTransaction({
+    transaction: identity.joinIdentityAsKey,
+    paidForBy: issuer,
+    args: [rawAuthId],
+  });
 }
 
 /**

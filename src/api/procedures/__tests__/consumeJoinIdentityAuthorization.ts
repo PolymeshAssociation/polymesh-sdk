@@ -108,7 +108,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     ).rejects.toThrow('The Authorization Request has expired');
   });
 
-  test('should throw an error if the target Account is alreeady part of an Identity', () => {
+  test('should throw an error if the target Account is already part of an Identity', () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinIdentityAuthorizationParams,
       void,
@@ -184,7 +184,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId],
+    });
   });
 
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
@@ -231,7 +235,10 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawSignatory, rawAuthId, rawFalse);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawSignatory, rawAuthId, rawFalse],
+    });
 
     target = targetAccount;
     proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
@@ -265,14 +272,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { paidForBy: issuer },
-      rawSignatory,
-      rawAuthId,
-      rawTrue
-    );
+      paidForBy: issuer,
+      args: [rawSignatory, rawAuthId, rawTrue],
+    });
   });
 
   describe('prepareStorage', () => {
