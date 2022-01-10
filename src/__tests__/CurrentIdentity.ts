@@ -1,16 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { CurrentIdentity } from '~/CurrentIdentity';
-import { TickerReservation, TransactionQueue, Venue } from '~/internal';
+import { TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import {
-  KnownTokenType,
-  PermissionType,
-  SecurityToken,
-  TokenIdentifierType,
-  VenueType,
-} from '~/types';
+import { KnownTokenType, PermissionType, SecurityToken, TokenIdentifierType } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -130,28 +124,6 @@ describe('CurrentIdentity class', () => {
         .resolves(expectedQueue);
 
       const queue = await currentIdentity.inviteAccount(args);
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: createVenue', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const currentIdentity = new CurrentIdentity(context);
-
-      const args = {
-        description: 'description',
-        type: VenueType.Distribution,
-      };
-
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await currentIdentity.createVenue(args);
 
       expect(queue).toBe(expectedQueue);
     });
