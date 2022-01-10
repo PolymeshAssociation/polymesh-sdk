@@ -13,7 +13,6 @@ import {
   identityIdToString,
   stringToIdentityId,
   stringToText,
-  textToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
@@ -58,18 +57,19 @@ export async function prepareCreatePortfolio(
 
   const { did } = await context.getCurrentIdentity();
 
-  const rawPortfolios = await portfolio.portfolios.entries(stringToIdentityId(did, context));
+  const rawName = stringToText(portfolioName, context);
 
-  const portfolioNames = rawPortfolios.map(([, name]) => textToString(name));
+  const rawPortfolioNumber = await portfolio.nameToNumber(
+    stringToIdentityId(did, context),
+    rawName
+  );
 
-  if (portfolioNames.includes(portfolioName)) {
+  if (u64ToBigNumber(rawPortfolioNumber).gt(0)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'A portfolio with that name already exists',
     });
   }
-
-  const rawName = stringToText(portfolioName, context);
 
   const [newNumberedPortfolio] = this.addTransaction(
     tx.portfolio.createPortfolio,

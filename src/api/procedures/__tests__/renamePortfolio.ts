@@ -8,7 +8,6 @@ import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType } from '~/types';
-import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -23,12 +22,13 @@ describe('renamePortfolio procedure', () => {
   const did = 'someDid';
   const identityId = dsMockUtils.createMockIdentityId(did);
   const rawPortfolioNumber = dsMockUtils.createMockU64(id.toNumber());
+  const newName = 'newName';
+  const rawNewName = dsMockUtils.createMockText(newName);
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let textToStringStub: sinon.SinonStub<[Text], string>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
-  let portfoliosStub: sinon.SinonStub;
+  let nameToNumberStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -36,7 +36,6 @@ describe('renamePortfolio procedure', () => {
     entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
-    textToStringStub = sinon.stub(utilsConversionModule, 'textToString');
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
   });
 
@@ -50,7 +49,7 @@ describe('renamePortfolio procedure', () => {
       },
     });
 
-    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
+    nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
   });
 
   afterEach(() => {
@@ -66,11 +65,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   test('should throw an error if the new name is the same as the current one', () => {
-    const newName = 'newName';
-    const rawNewName = dsMockUtils.createMockText(newName);
-
-    textToStringStub.withArgs(rawNewName).returns(newName);
-    portfoliosStub.resolves(rawNewName);
+    nameToNumberStub.resolves(rawPortfolioNumber);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -84,18 +79,10 @@ describe('renamePortfolio procedure', () => {
   });
 
   test('should throw an error if there already is a portfolio with the new name', () => {
-    const portfolioName = 'portfolioName';
-    const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
-    const entryPortfolioName = 'someName';
-    const rawEntryPortfolioName = dsMockUtils.createMockText(entryPortfolioName);
+    const existingPortfolioId = new BigNumber(2);
+    const rawExistingPortfolioNumber = dsMockUtils.createMockU64(existingPortfolioId.toNumber());
 
-    textToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
-    textToStringStub.withArgs(rawEntryPortfolioName).returns(entryPortfolioName);
-
-    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-      entries: [tuple([], rawEntryPortfolioName)],
-    });
-    portfoliosStub.resolves(rawPortfolioName);
+    nameToNumberStub.resolves(rawExistingPortfolioNumber);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -103,21 +90,14 @@ describe('renamePortfolio procedure', () => {
       prepareRenamePortfolio.call(proc, {
         id,
         did,
-        name: entryPortfolioName,
+        name: newName,
       })
     ).rejects.toThrow('A portfolio with that name already exists');
   });
 
   test('should add a rename portfolio transaction to the queue', async () => {
-    const portfolioName = 'portfolioName';
-    const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
-    const newName = 'newName';
-    const rawNewName = dsMockUtils.createMockText(newName);
-
-    textToStringStub.withArgs(rawPortfolioName).returns(portfolioName);
+    nameToNumberStub.resolves(dsMockUtils.createMockU64(0));
     stringToTextStub.returns(rawNewName);
-
-    portfoliosStub.resolves(rawPortfolioName);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);

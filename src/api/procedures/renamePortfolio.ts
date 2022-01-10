@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToIdentityId, stringToText, textToString } from '~/utils/conversion';
+import { numberToU64, stringToIdentityId, stringToText, u64ToBigNumber } from '~/utils/conversion';
 
 export interface RenamePortfolioParams {
   name: string;
@@ -34,35 +34,27 @@ export async function prepareRenamePortfolio(
   const { did, id, name: newName } = args;
 
   const identityId = stringToIdentityId(did, context);
-  const rawPortfolioNumber = numberToU64(id, context);
+  const rawNewName = stringToText(newName, context);
 
-  const [rawPortfolioName, rawPortfolios] = await Promise.all([
-    queryPortfolio.portfolios(identityId, rawPortfolioNumber),
-    queryPortfolio.portfolios.entries(identityId),
-  ]);
+  const rawExistingPortfolioNumber = await queryPortfolio.nameToNumber(identityId, rawNewName);
 
-  if (textToString(rawPortfolioName) === newName) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: 'New name is the same as current name',
-    });
+  const existingPortfolioNumber = u64ToBigNumber(rawExistingPortfolioNumber);
+
+  if (u64ToBigNumber(rawExistingPortfolioNumber).gt(0)) {
+    if (id.eq(existingPortfolioNumber)) {
+      throw new PolymeshError({
+        code: ErrorCode.NoDataChange,
+        message: 'New name is the same as current name',
+      });
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'A portfolio with that name already exists',
+      });
+    }
   }
 
-  const portfolioNames = rawPortfolios.map(([, name]) => textToString(name));
-
-  if (portfolioNames.includes(newName)) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'A portfolio with that name already exists',
-    });
-  }
-
-  this.addTransaction(
-    portfolio.renamePortfolio,
-    {},
-    rawPortfolioNumber,
-    stringToText(newName, context)
-  );
+  this.addTransaction(portfolio.renamePortfolio, {}, numberToU64(id, context), rawNewName);
 
   return new NumberedPortfolio({ did, id }, context);
 }
