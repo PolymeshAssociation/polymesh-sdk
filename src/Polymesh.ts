@@ -54,7 +54,6 @@ import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/interna
 
 import { Claims } from './Claims';
 import { CurrentIdentity } from './CurrentIdentity';
-// import { Governance } from './Governance';
 import { Middleware } from './Middleware';
 import {
   SUPPORTED_VERSION_RANGE,
@@ -76,8 +75,6 @@ export class Polymesh {
 
   // Namespaces
 
-  // NOTE uncomment in Governance v2 upgrade
-  // public governance: Governance;
   public claims: Claims;
   public middleware: Middleware;
   public settlements: Settlements;
@@ -93,8 +90,6 @@ export class Polymesh {
   private constructor(context: Context) {
     this.context = context;
 
-    // NOTE uncomment in Governance v2 upgrade
-    // this.governance = new Governance(context);
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
     this.settlements = new Settlements(context);
