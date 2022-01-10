@@ -1,9 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { Context } from '~/internal';
+import { Context, TransactionQueue, Venue } from '~/internal';
 import { Settlements } from '~/Settlements';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { VenueType } from '~/types';
 
 jest.mock(
   '~/api/entities/Venue',
@@ -15,6 +16,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockInstructionModule('~/api/entities/Instruction')
 );
 
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+
 describe('Settlements Class', () => {
   let context: Mocked<Context>;
   let settlements: Settlements;
@@ -22,6 +28,7 @@ describe('Settlements Class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
+    procedureMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -32,11 +39,13 @@ describe('Settlements Class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
   });
 
   describe('method: getVenue', () => {
@@ -88,6 +97,26 @@ describe('Settlements Class', () => {
       return expect(settlements.getInstruction({ id: instructionId })).rejects.toThrow(
         "The Instruction doesn't exist"
       );
+    });
+  });
+
+  describe('method: createVenue', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        description: 'description',
+        type: VenueType.Distribution,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await settlements.createVenue(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
