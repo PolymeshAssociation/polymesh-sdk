@@ -1159,7 +1159,7 @@ export interface CheckpointWithData {
   totalSupply: BigNumber;
 }
 
-export interface SecondaryKey {
+export interface SecondaryAccount {
   signer: Signer;
   permissions: Permissions;
 }

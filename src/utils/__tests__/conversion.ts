@@ -3901,9 +3901,9 @@ describe('txTagToProtocolOp', () => {
     createTypeStub
       .withArgs('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
       .returns(fakeResult);
-    expect(txTagToProtocolOp(TxTags.identity.AddSecondaryKeysWithAuthorization, context)).toEqual(
-      fakeResult
-    );
+    expect(
+      txTagToProtocolOp(TxTags.identity.AddSecondaryAccountsWithAuthorization, context)
+    ).toEqual(fakeResult);
 
     createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);

@@ -43,7 +43,7 @@ describe('AccountManagement class', () => {
     procedureMockUtils.cleanup();
   });
 
-  describe('method: removeSecondaryKeys', () => {
+  describe('method: removeSecondaryAccounts', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
 
@@ -54,7 +54,7 @@ describe('AccountManagement class', () => {
         .withArgs({ args: { signers }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await accountManagement.removeSecondaryKeys({ signers });
+      const queue = await accountManagement.removeSecondaryAccounts({ signers });
 
       expect(queue).toBe(expectedQueue);
     });
@@ -63,7 +63,7 @@ describe('AccountManagement class', () => {
   describe('method: revokePermissions', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
-      const secondaryKeys = [
+      const secondaryAccounts = [
         {
           signer: signers[0],
           permissions: {
@@ -78,10 +78,10 @@ describe('AccountManagement class', () => {
 
       procedureMockUtils
         .getPrepareStub()
-        .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
+        .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await accountManagement.revokePermissions({ secondaryKeys: signers });
+      const queue = await accountManagement.revokePermissions({ secondaryAccounts: signers });
 
       expect(queue).toBe(expectedQueue);
     });
@@ -89,7 +89,7 @@ describe('AccountManagement class', () => {
 
   describe('method: modifyPermissions', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const secondaryKeys = [
+      const secondaryAccounts = [
         {
           signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
           permissions: { tokens: null, transactions: null, portfolios: null },
@@ -100,10 +100,10 @@ describe('AccountManagement class', () => {
 
       procedureMockUtils
         .getPrepareStub()
-        .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
+        .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await accountManagement.modifyPermissions({ secondaryKeys });
+      const queue = await accountManagement.modifyPermissions({ secondaryAccounts });
 
       expect(queue).toBe(expectedQueue);
     });
@@ -128,7 +128,7 @@ describe('AccountManagement class', () => {
     });
   });
 
-  describe('method: freezeSecondaryKeys', () => {
+  describe('method: freezeSecondaryAccounts', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         freeze: true,
@@ -141,13 +141,13 @@ describe('AccountManagement class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await accountManagement.freezeSecondaryKeys();
+      const queue = await accountManagement.freezeSecondaryAccounts();
 
       expect(queue).toBe(expectedQueue);
     });
   });
 
-  describe('method: unfreezeSecondaryKeys', () => {
+  describe('method: unfreezeSecondaryAccounts', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         freeze: false,
@@ -160,7 +160,7 @@ describe('AccountManagement class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await accountManagement.unfreezeSecondaryKeys();
+      const queue = await accountManagement.unfreezeSecondaryAccounts();
 
       expect(queue).toBe(expectedQueue);
     });

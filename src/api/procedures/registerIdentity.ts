@@ -2,7 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
+import { PermissionsLike, RoleType, SecondaryAccount } from '~/types';
 import { Modify } from '~/types/utils';
 import {
   identityIdToString,
@@ -15,7 +15,7 @@ import { filterEventRecords } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  secondaryKeys?: Modify<SecondaryKey, { permissions: PermissionsLike }>[];
+  secondaryAccounts?: Modify<SecondaryAccount, { permissions: PermissionsLike }>[];
 }
 
 /**
@@ -45,10 +45,10 @@ export async function prepareRegisterIdentity(
     },
     context,
   } = this;
-  const { targetAccount, secondaryKeys = [] } = args;
+  const { targetAccount, secondaryAccounts = [] } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
-  const rawSecondaryKeys = secondaryKeys.map(({ permissions, ...rest }) =>
+  const rawSecondaryAccounts = secondaryAccounts.map(({ permissions, ...rest }) =>
     secondaryKeyToMeshSecondaryKey(
       { ...rest, permissions: permissionsLikeToPermissions(permissions, context) },
       context
@@ -61,7 +61,7 @@ export async function prepareRegisterIdentity(
       resolvers: [createRegisterIdentityResolver(context)],
     },
     rawTargetAccount,
-    rawSecondaryKeys
+    rawSecondaryAccounts
   );
 
   return newIdentity;

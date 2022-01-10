@@ -31,7 +31,7 @@ import {
   InstructionStatus,
   InstructionType,
   PermissionGroupType,
-  SecondaryKey,
+  SecondaryAccount,
   Signer,
   SignerValue,
   TickerReservationStatus,
@@ -133,13 +133,13 @@ export async function assertPortfolioExists(
 /**
  * @hidden
  */
-export function assertSecondaryKeys(
+export function assertSecondaryAccounts(
   signerValues: SignerValue[],
-  secondaryKeys: SecondaryKey[]
+  secondaryAccounts: SecondaryAccount[]
 ): void {
   const notInTheList: string[] = [];
   signerValues.forEach(({ value: itemValue }) => {
-    const isPresent = secondaryKeys
+    const isPresent = secondaryAccounts
       .map(({ signer }) => signerToSignerValue(signer))
       .find(({ value }) => value === itemValue);
     if (!isPresent) {

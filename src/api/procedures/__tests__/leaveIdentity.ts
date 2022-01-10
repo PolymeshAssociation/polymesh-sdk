@@ -9,7 +9,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryKey } from '~/types';
+import { SecondaryAccount } from '~/types';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -70,7 +70,7 @@ describe('modifyCaCheckpoint procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Only Secondary Keys are allowed to leave an Identity');
+    expect(error.message).toBe('Only Secondary Accounts are allowed to leave an Identity');
   });
 
   test('should add a leave identity as key transaction to the queue', async () => {
@@ -83,10 +83,10 @@ describe('modifyCaCheckpoint procedure', () => {
     const account = entityMockUtils.getAccountInstance({
       address,
       getIdentity: entityMockUtils.getIdentityInstance({
-        getSecondaryKeys: [
+        getSecondaryAccounts: [
           ({
             signer: entityMockUtils.getAccountInstance({ address }),
-          } as unknown) as SecondaryKey,
+          } as unknown) as SecondaryAccount,
         ],
       }),
     });
@@ -109,7 +109,7 @@ describe('modifyCaCheckpoint procedure', () => {
         roles: 'Only the current Account can leave its Identity',
         permissions: {
           tokens: [],
-          transactions: [TxTags.identity.LeaveIdentityAsKey],
+          transactions: [TxTags.identity.LeaveIdentityAsAccount],
           portfolios: [],
         },
       });
@@ -120,7 +120,7 @@ describe('modifyCaCheckpoint procedure', () => {
         roles: true,
         permissions: {
           tokens: [],
-          transactions: [TxTags.identity.LeaveIdentityAsKey],
+          transactions: [TxTags.identity.LeaveIdentityAsAccount],
           portfolios: [],
         },
       });

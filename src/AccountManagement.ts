@@ -6,9 +6,9 @@ import {
   InviteAccountParams,
   modifySignerPermissions,
   ModifySignerPermissionsParams,
-  removeSecondaryKeys,
-  RemoveSecondaryKeysParams,
-  toggleFreezeSecondaryKeys,
+  removeSecondaryAccounts,
+  RemoveSecondaryAccountsParams,
+  toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
   AccountBalance,
@@ -33,22 +33,22 @@ export class AccountManagement {
   constructor(context: Context) {
     this.context = context;
 
-    this.removeSecondaryKeys = createProcedureMethod(
+    this.removeSecondaryAccounts = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [removeSecondaryKeys, { ...args }],
+        getProcedureAndArgs: args => [removeSecondaryAccounts, { ...args }],
       },
       context
     );
 
     this.revokePermissions = createProcedureMethod<
-      { secondaryKeys: Signer[] },
+      { secondaryAccounts: Signer[] },
       ModifySignerPermissionsParams,
       void
     >(
       {
         getProcedureAndArgs: args => {
-          const { secondaryKeys } = args;
-          const signers = secondaryKeys.map(signer => {
+          const { secondaryAccounts } = args;
+          const signers = secondaryAccounts.map(signer => {
             return {
               signer,
               permissions: {
@@ -58,7 +58,7 @@ export class AccountManagement {
               },
             };
           });
-          return [modifySignerPermissions, { secondaryKeys: signers }];
+          return [modifySignerPermissions, { secondaryAccounts: signers }];
         },
       },
       context
@@ -71,28 +71,34 @@ export class AccountManagement {
       { getProcedureAndArgs: args => [inviteAccount, { ...args }] },
       context
     );
-    this.freezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true }], voidArgs: true },
+    this.freezeSecondaryAccounts = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [toggleFreezeSecondaryAccounts, { freeze: true }],
+        voidArgs: true,
+      },
       context
     );
-    this.unfreezeSecondaryKeys = createProcedureMethod(
-      { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false }], voidArgs: true },
+    this.unfreezeSecondaryAccounts = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [toggleFreezeSecondaryAccounts, { freeze: false }],
+        voidArgs: true,
+      },
       context
     );
   }
 
   /**
-   * Remove a list of secondary keys associated with the Current Identity
+   * Remove a list of secondary accounts associated with the Current Identity
    */
-  public removeSecondaryKeys: ProcedureMethod<RemoveSecondaryKeysParams, void>;
+  public removeSecondaryAccounts: ProcedureMethod<RemoveSecondaryAccountsParams, void>;
 
   /**
-   * Revoke all permissions of a list of secondary keys associated with the Current Identity
+   * Revoke all permissions of a list of secondary accounts associated with the Current Identity
    */
-  public revokePermissions: ProcedureMethod<{ secondaryKeys: Signer[] }, void>;
+  public revokePermissions: ProcedureMethod<{ secondaryAccounts: Signer[] }, void>;
 
   /**
-   * Modify all permissions of a list of secondary keys associated with the Current Identity
+   * Modify all permissions of a list of secondary accounts associated with the Current Identity
    */
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
@@ -106,14 +112,14 @@ export class AccountManagement {
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
   /**
-   * Freeze all the secondary keys in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
+   * Freeze all of the secondary accounts in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the accounts are unfrozen via [[unfreezeSecondaryAccounts]]
    */
-  public freezeSecondaryKeys: NoArgsProcedureMethod<void>;
+  public freezeSecondaryAccounts: NoArgsProcedureMethod<void>;
 
   /**
-   * Unfreeze all the secondary keys in the Current Identity. This will restore their permissions as they were before being frozen
+   * Unfreeze all of the secondary accounts in the Current Identity. This will restore their permissions as they were before being frozen
    */
-  public unfreezeSecondaryKeys: NoArgsProcedureMethod<void>;
+  public unfreezeSecondaryAccounts: NoArgsProcedureMethod<void>;
 
   /**
    * Get the free/locked POLYX balance of an Account

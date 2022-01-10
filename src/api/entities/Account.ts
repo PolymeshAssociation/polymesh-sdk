@@ -293,7 +293,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary key of the Identity unfreezes all secondary keys
+   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary key of the Identity unfreezes all secondary accounts
    */
   public async isFrozen(): Promise<boolean> {
     const { address } = this;
@@ -304,13 +304,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       return false;
     }
 
-    const primaryKey = await identity.getPrimaryKey();
+    const primaryKey = await identity.getPrimaryAccount();
 
     if (address === primaryKey.address) {
       return false;
     }
 
-    return identity.areSecondaryKeysFrozen();
+    return identity.areSecondaryAccountsFrozen();
   }
 
   /**
@@ -321,12 +321,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const currentIdentity = await context.getCurrentIdentity();
 
-    const [primaryKey, secondaryKeys] = await Promise.all([
-      currentIdentity.getPrimaryKey(),
-      currentIdentity.getSecondaryKeys(),
+    const [primaryAccount, secondaryAccount] = await Promise.all([
+      currentIdentity.getPrimaryAccount(),
+      currentIdentity.getSecondaryAccount(),
     ]);
 
-    if (address === primaryKey.address) {
+    if (address === primaryAccount.address) {
       return {
         tokens: null,
         transactions: null,
@@ -336,7 +336,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const key = secondaryKeys.find(({ signer }) => address === signerToString(signer))!;
+    const key = secondaryAccount.find(({ signer }) => address === signerToString(signer))!;
 
     return key.permissions;
   }
@@ -469,8 +469,8 @@ function getMissingTransactionPermissions(
 ): SimplePermissions['transactions'] {
   // these transactions are allowed to any account, independent of permissions
   const exemptedTransactions: (TxTag | ModuleName)[] = [
-    TxTags.identity.LeaveIdentityAsKey,
-    TxTags.identity.JoinIdentityAsKey,
+    TxTags.identity.LeaveIdentityAsAccount,
+    TxTags.identity.JoinIdentityAsAccount,
     TxTags.multiSig.AcceptMultisigSignerAsKey,
     ...difference(Object.values(TxTags.balances), [
       TxTags.balances.DepositBlockRewardReserveBalance,

@@ -155,7 +155,7 @@ import {
   ExtrinsicData,
   KeyringPair,
   ResultSet,
-  SecondaryKey,
+  SecondaryAccount,
   SignerType,
   Subsidy,
 } from '~/types';
@@ -318,7 +318,7 @@ interface ContextOptions {
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryKey?: string;
-  secondaryKeys?: SecondaryKey[];
+  secondaryAccounts?: SecondaryAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -326,7 +326,7 @@ interface ContextOptions {
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
   ss58Format?: number;
-  areScondaryKeysFrozen?: boolean;
+  areSecondaryAccountsFrozen?: boolean;
   getDividendDistributionsForTokens?: DistributionWithDetails[];
   isFrozen?: boolean;
   addPair?: Pair;
@@ -585,7 +585,7 @@ const defaultContextOptions: ContextOptions = {
     count: 1,
   },
   primaryKey: 'primaryKey',
-  secondaryKeys: [],
+  secondaryAccounts: [],
   transactionHistory: {
     data: [],
     next: null,
@@ -601,7 +601,7 @@ const defaultContextOptions: ContextOptions = {
   },
   isArchiveNode: true,
   ss58Format: 42,
-  areScondaryKeysFrozen: false,
+  areSecondaryAccountsFrozen: false,
   getDividendDistributionsForTokens: [],
   isFrozen: false,
   addPair: {
@@ -659,7 +659,7 @@ function configureContext(opts: ContextOptions): void {
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
     getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
-    getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
+    getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
@@ -667,7 +667,7 @@ function configureContext(opts: ContextOptions): void {
       hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
       checkPermissions: sinon.stub().resolves(opts.checkTokenPermissions),
     },
-    areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
+    areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
     isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
   };
   opts.withSeed
@@ -721,7 +721,7 @@ function configureContext(opts: ContextOptions): void {
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getTransactionFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
-    getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
+    getSecondaryAccounts: sinon.stub().returns(opts.secondaryAccounts),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getIdentity: sinon.stub().resolves(opts.getIdentity),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),

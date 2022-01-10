@@ -3,14 +3,14 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  prepareToggleFreezeSecondaryKeys,
-  ToggleFreezeSecondaryKeysParams,
-} from '~/api/procedures/toggleFreezeSecondaryKeys';
+  prepareToggleFreezeSecondaryAccounts,
+  ToggleFreezeSecondaryAccountsParams,
+} from '~/api/procedures/toggleFreezeSecondaryAccounts';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 
-describe('toggleFreezeSecondaryKeys procedure', () => {
+describe('toggleFreezeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
 
   beforeAll(() => {
@@ -24,7 +24,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance({
-      areScondaryKeysFrozen: true,
+      areSecondaryAccountsFrozen: true,
     });
   });
 
@@ -40,65 +40,73 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if freeze is set to true and the secondary keys are already frozen', () => {
-    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(mockContext);
+  test('should throw an error if freeze is set to true and the secondary accounts are already frozen', () => {
+    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
+      mockContext
+    );
 
     return expect(
-      prepareToggleFreezeSecondaryKeys.call(proc, {
+      prepareToggleFreezeSecondaryAccounts.call(proc, {
         freeze: true,
         identity: entityMockUtils.getIdentityInstance({
-          areScondaryKeysFrozen: true,
+          areSecondaryAccountsFrozen: true,
         }),
       })
-    ).rejects.toThrow('The secondary keys are already frozen');
+    ).rejects.toThrow('The secondary accounts are already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the secondary keys are already unfrozen', () => {
+  test('should throw an error if freeze is set to false and the secondary accounts are already unfrozen', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        areScondaryKeysFrozen: false,
+        areSecondaryAccountsFrozen: false,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
+      mockContext
+    );
 
     return expect(
-      prepareToggleFreezeSecondaryKeys.call(proc, {
+      prepareToggleFreezeSecondaryAccounts.call(proc, {
         freeze: false,
       })
-    ).rejects.toThrow('The secondary keys are already unfrozen');
+    ).rejects.toThrow('The secondary accounts are already unfrozen');
   });
 
-  test('should add a freeze secondary keys transaction to the queue', async () => {
+  test('should add a freeze secondary accounts transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        areScondaryKeysFrozen: false,
+        areSecondaryAccountsFrozen: false,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('identity', 'freezeSecondaryKeys');
 
-    await prepareToggleFreezeSecondaryKeys.call(proc, {
+    await prepareToggleFreezeSecondaryAccounts.call(proc, {
       freeze: true,
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, {});
   });
 
-  test('should add a unfreeze secondary keys transaction to the queue', async () => {
+  test('should add a unfreeze secondary accounts transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        areScondaryKeysFrozen: true,
+        areSecondaryAccountsFrozen: true,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('identity', 'unfreezeSecondaryKeys');
 
-    await prepareToggleFreezeSecondaryKeys.call(proc, {
+    await prepareToggleFreezeSecondaryAccounts.call(proc, {
       freeze: false,
     });
 
@@ -107,14 +115,14 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryKeysParams, void>(
+      const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
         mockContext
       );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc({ freeze: true })).toEqual({
         permissions: {
-          transactions: [TxTags.identity.FreezeSecondaryKeys],
+          transactions: [TxTags.identity.FreezeSecondaryAccounts],
           tokens: [],
           portfolios: [],
         },
@@ -122,7 +130,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
 
       expect(boundFunc({ freeze: false })).toEqual({
         permissions: {
-          transactions: [TxTags.identity.UnfreezeSecondaryKeys],
+          transactions: [TxTags.identity.UnfreezeSecondaryAccounts],
           tokens: [],
           portfolios: [],
         },

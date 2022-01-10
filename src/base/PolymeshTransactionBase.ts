@@ -304,7 +304,7 @@ export abstract class PolymeshTransactionBase<
     const { paidForBy, context, tag } = this;
 
     if (paidForBy) {
-      const primaryKey = await paidForBy.getPrimaryKey();
+      const primaryKey = await paidForBy.getPrimaryAccount();
 
       return {
         account: primaryKey,

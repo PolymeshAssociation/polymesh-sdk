@@ -117,7 +117,7 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
-        secondaryKeys: [
+        secondaryAccounts: [
           {
             signer,
             permissions: {
@@ -248,7 +248,7 @@ describe('inviteAccount procedure', () => {
       contextOptions: {
         withSeed: true,
         sentAuthorizations: sentAuthorizations,
-        secondaryKeys: [
+        secondaryAccounts: [
           {
             signer,
             permissions: {

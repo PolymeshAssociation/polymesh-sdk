@@ -164,7 +164,7 @@ import {
   RequirementCompliance,
   Scope,
   ScopeType,
-  SecondaryKey,
+  SecondaryAccount,
   SectionPermissions,
   Signer,
   SignerType,
@@ -2432,7 +2432,7 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     TxTags.complianceManager.AddComplianceRequirement,
     TxTags.identity.CddRegisterDid,
     TxTags.identity.AddClaim,
-    TxTags.identity.AddSecondaryKeysWithAuthorization,
+    TxTags.identity.AddSecondaryAccountsWithAuthorization,
     TxTags.pips.Propose,
     TxTags.corporateBallot.AttachBallot,
     TxTags.capitalDistribution.Distribute,
@@ -2551,7 +2551,7 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
  * @hidden
  */
 export function secondaryKeyToMeshSecondaryKey(
-  secondaryKey: SecondaryKey,
+  secondaryKey: SecondaryAccount,
   context: Context
 ): MeshSecondaryKey {
   const { polymeshApi } = context;

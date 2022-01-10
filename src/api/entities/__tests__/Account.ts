@@ -22,14 +22,14 @@ describe('Account class', () => {
   let key: string;
   let account: Account;
   let assertFormatValidStub: sinon.SinonStub;
-  let addressToKeyStub: sinon.SinonStub;
+  let addressToAccountStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     assertFormatValidStub = sinon.stub(utilsInternalModule, 'assertFormatValid');
-    addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
+    addressToAccountStub = sinon.stub(utilsConversionModule, 'addressToKey');
 
     address = 'someAddress';
     key = 'someKey';
@@ -182,7 +182,7 @@ describe('Account class', () => {
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
 
-      addressToKeyStub.returns(key);
+      addressToAccountStub.returns(key);
 
       sinon.stub(utilsConversionModule, 'txTagToExtrinsicIdentifier').withArgs(tag).returns({
         moduleId,
@@ -401,14 +401,14 @@ describe('Account class', () => {
         portfolios: null,
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [
+        secondaryAccounts: [
           { signer: entityMockUtils.getAccountInstance({ address }), permissions },
           {
             signer: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
             permissions: {
               tokens: null,
               transactions: {
-                values: [TxTags.identity.AcceptPrimaryKey],
+                values: [TxTags.identity.AcceptPrimaryAccount],
                 type: PermissionType.Include,
               },
               transactionGroups: [],
@@ -445,7 +445,9 @@ describe('Account class', () => {
         portfolios: null,
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -470,7 +472,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -498,7 +502,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -551,7 +557,7 @@ describe('Account class', () => {
       permissions = {
         tokens: { values: [token], type: PermissionType.Exclude },
         transactions: {
-          values: [ModuleName.Identity, TxTags.identity.LeaveIdentityAsKey],
+          values: [ModuleName.Identity, TxTags.identity.LeaveIdentityAsAccount],
           type: PermissionType.Exclude,
           exceptions: [TxTags.identity.AddClaim],
         },
@@ -562,7 +568,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -570,14 +578,17 @@ describe('Account class', () => {
       result = await account.checkPermissions({
         tokens: [],
         portfolios: null,
-        transactions: [TxTags.identity.AcceptPrimaryKey, TxTags.identity.LeaveIdentityAsKey],
+        transactions: [
+          TxTags.identity.AcceptPrimaryAccount,
+          TxTags.identity.LeaveIdentityAsAccount,
+        ],
       });
 
       expect(result).toEqual({
         result: false,
         missingPermissions: {
           portfolios: null,
-          transactions: [TxTags.identity.AcceptPrimaryKey],
+          transactions: [TxTags.identity.AcceptPrimaryAccount],
         },
       });
 
@@ -595,7 +606,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
