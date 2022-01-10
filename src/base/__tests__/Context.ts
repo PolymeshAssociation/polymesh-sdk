@@ -1860,7 +1860,7 @@ describe('Context class', () => {
       );
 
       const result = await context.getDividendDistributionsForAssets({
-        assets: tickers.map(ticker => entityMockUtils.getMockAssetInstance({ ticker })),
+        assets: tickers.map(ticker => entityMockUtils.getAssetInstance({ ticker })),
       });
 
       expect(result.length).toBe(2);

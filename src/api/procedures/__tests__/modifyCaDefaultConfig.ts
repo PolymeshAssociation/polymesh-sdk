@@ -282,7 +282,7 @@ describe('modifyCaDefaultConfig procedure', () => {
         permissions: {
           transactions: [],
           portfolios: [],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
 
@@ -301,7 +301,7 @@ describe('modifyCaDefaultConfig procedure', () => {
             TxTags.corporateAction.SetDidWithholdingTax,
           ],
           portfolios: [],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
     });

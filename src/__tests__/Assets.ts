@@ -333,7 +333,7 @@ describe('Assets Class', () => {
       sinon.restore();
     });
 
-    test('should return a list of assets owned by the supplied did', async () => {
+    test('should return a list of Assets owned by the supplied did', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
@@ -354,7 +354,7 @@ describe('Assets Class', () => {
       expect(asset[0].ticker).toBe(fakeTicker);
     });
 
-    test('should return a list of assets owned by the current Identity if no did is supplied', async () => {
+    test('should return a list of Assets owned by the current Identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 

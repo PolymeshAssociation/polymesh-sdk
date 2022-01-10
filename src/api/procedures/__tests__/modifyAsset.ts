@@ -69,7 +69,7 @@ describe('modifyAsset procedure', () => {
     );
   });
 
-  test('should throw an error if makeDivisible is set to true and the asset is already divisible', () => {
+  test('should throw an error if makeDivisible is set to true and the Asset is already divisible', () => {
     entityMockUtils.getAssetDetailsStub({
       isDivisible: true,
     });
@@ -205,7 +205,7 @@ describe('modifyAsset procedure', () => {
         permissions: {
           transactions: [],
           portfolios: [],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
 
@@ -218,7 +218,7 @@ describe('modifyAsset procedure', () => {
             TxTags.asset.UpdateIdentifiers,
           ],
           portfolios: [],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
     });

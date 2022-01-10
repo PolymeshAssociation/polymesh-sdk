@@ -196,7 +196,7 @@ describe('modifyCaCheckpoint procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },

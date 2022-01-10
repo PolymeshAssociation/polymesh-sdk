@@ -212,7 +212,7 @@ declare module '@polkadot/api/types/submittable' {
         [Ticker, Balance, PortfolioId]
       >;
       /**
-       * Initializes a new asset, with the initiating account as its owner.
+       * Initializes a new token, with the initiating account as its owner.
        * The total supply will initially be zero. To mint tokens, use `issue`.
        *
        * # Arguments

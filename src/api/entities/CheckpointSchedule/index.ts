@@ -36,8 +36,7 @@ export interface Params {
 const notExistsMessage = 'Schedule no longer exists. It was either removed or it expired';
 
 /**
- * Represents a Schedule in which Checkpoints are created for a specific
- *  Asset. Schedules can be set up to create checkpoints
+ * Represents a Checkpoint Schedule for an Asset. Schedules can be set up to create Checkpoints at regular intervals
  */
 export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable> {
   /**

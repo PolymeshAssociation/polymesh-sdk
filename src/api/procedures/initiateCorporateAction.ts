@@ -57,8 +57,8 @@ export interface InitiateCorporateActionParams {
   checkpoint?: InputCaCheckpoint;
   description: string;
   /**
-   * Asset holder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
-   *   property. When the value is `Include`, all Asset holders not present in the array are excluded, and vice-versa
+   * Asset Holder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa
    */
   targets?: Modify<
     CorporateActionTargets,
@@ -71,7 +71,7 @@ export interface InitiateCorporateActionParams {
    */
   defaultTaxWithholding?: BigNumber;
   /**
-   * percentage (0-100) of the Benefits to be held for tax purposes from individual Asset holder Identities.
+   * percentage (0-100) of the Benefits to be held for tax purposes from individual Asset Holder Identities.
    *   This overrides the value of `defaultTaxWithholding`
    */
   taxWithholdings?: Modify<

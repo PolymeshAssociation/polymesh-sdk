@@ -158,10 +158,10 @@ describe('setAssetDocuments procedure', () => {
       rawDocuments,
       rawTicker
     );
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
-  test('should not add a remove documents transaction if there are no documents linked to the asset', async () => {
+  test('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocIds: [],
       currentDocs: [],
@@ -177,7 +177,7 @@ describe('setAssetDocuments procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
@@ -197,7 +197,7 @@ describe('setAssetDocuments procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -210,7 +210,7 @@ describe('setAssetDocuments procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
           portfolios: [],
         },
@@ -224,7 +224,7 @@ describe('setAssetDocuments procedure', () => {
 
       expect(boundFunc({ ...args, documents: [] })).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [],
           portfolios: [],
         },

@@ -355,7 +355,7 @@ describe('Identity class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    test('should return the balance of a given asset', async () => {
+    test('should return the balance of a given Asset', async () => {
       balanceOfStub.withArgs(rawTicker, rawIdentityId).resolves(fakeBalance);
 
       const result = await identity.getAssetBalance({ ticker });
@@ -520,7 +520,7 @@ describe('Identity class', () => {
     const did = 'someDid';
     const tickers = ['ASSET1\0\0', 'ASSET2\0\0'];
 
-    test('should return a list of assets', async () => {
+    test('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryStub(assetsByTrustedClaimIssuer({ claimIssuerDid: did }), {
@@ -672,7 +672,7 @@ describe('Identity class', () => {
       expect(result).toEqual(scopeId);
 
       result = await identity.getScopeId({
-        asset: entityMockUtils.getMockAssetInstance({ ticker }),
+        asset: entityMockUtils.getAssetInstance({ ticker }),
       });
       expect(result).toEqual(scopeId);
     });
@@ -1041,8 +1041,8 @@ describe('Identity class', () => {
 
     beforeAll(() => {
       assets = [
-        entityMockUtils.getMockAssetInstance({ ticker: 'TICKER_1' }),
-        entityMockUtils.getMockAssetInstance({ ticker: 'TICKER_2' }),
+        entityMockUtils.getAssetInstance({ ticker: 'TICKER_1' }),
+        entityMockUtils.getAssetInstance({ ticker: 'TICKER_2' }),
       ];
       const distributionTemplate = {
         expiryDate: null,
@@ -1088,9 +1088,7 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      context.getDividendDistributionsForAssets
-        .withArgs({ assets: assets })
-        .resolves(distributions);
+      context.getDividendDistributionsForAssets.withArgs({ assets }).resolves(distributions);
     });
 
     afterAll(() => {

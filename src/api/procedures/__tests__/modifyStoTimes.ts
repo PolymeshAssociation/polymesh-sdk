@@ -330,7 +330,7 @@ describe('modifyStoTimes procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.sto.ModifyFundraiserWindow],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

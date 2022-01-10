@@ -137,7 +137,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [origin],
         },
       });

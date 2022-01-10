@@ -715,7 +715,7 @@ describe('getCheckpointValue', () => {
 
   test('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
-    const mockAsset = entityMockUtils.getMockAssetInstance();
+    const mockAsset = entityMockUtils.getAssetInstance();
     let result = await getCheckpointValue(mockCheckpointSchedule, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
 
@@ -734,7 +734,7 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Existing,
     };
-    const mockAsset = entityMockUtils.getMockAssetInstance({
+    const mockAsset = entityMockUtils.getAssetInstance({
       checkpointsGetOne: mockCheckpoint,
     });
 
@@ -748,7 +748,7 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Schedule,
     };
-    const mockAsset = entityMockUtils.getMockAssetInstance({
+    const mockAsset = entityMockUtils.getAssetInstance({
       checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
     });
 

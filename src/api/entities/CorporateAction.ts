@@ -41,7 +41,7 @@ export interface Params {
 
 /**
  * Represents an action initiated by the issuer of an Asset which may affect the positions of
- *   the Asset holders
+ *   the Asset Holders
  */
 export class CorporateAction extends CorporateActionBase {
   /**

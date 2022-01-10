@@ -65,7 +65,7 @@ describe('Distributions class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const distributions = new Distributions(asset, context);
 
       const args = ({ foo: 'bar' } as unknown) as ConfigureDividendDistributionParams;
@@ -134,7 +134,7 @@ describe('Distributions class', () => {
       });
 
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       const target = new Distributions(asset, context);
 
@@ -176,7 +176,7 @@ describe('Distributions class', () => {
       });
 
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       const target = new Distributions(asset, context);
 
@@ -215,11 +215,11 @@ describe('Distributions class', () => {
       sinon.restore();
     });
 
-    test('should return all distributions associated to the asset', async () => {
+    test('should return all distributions associated to the Asset', async () => {
       const ticker = 'SOME_TICKER';
 
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       context.getDividendDistributionsForAssets
         .withArgs({ assets: [asset] })

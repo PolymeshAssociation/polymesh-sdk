@@ -61,7 +61,7 @@ describe('inviteExternalAgent procedure', () => {
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
-    asset = entityMockUtils.getMockAssetInstance({ ticker });
+    asset = entityMockUtils.getAssetInstance({ ticker });
     target = 'someDid';
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target),
@@ -145,7 +145,7 @@ describe('inviteExternalAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getMockAssetInstance({
+        asset: entityMockUtils.getAssetInstance({
           permissionsGetAgents: [
             {
               agent: entityMockUtils.getIdentityInstance({ did: target }),
@@ -166,7 +166,7 @@ describe('inviteExternalAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getMockAssetInstance({
+        asset: entityMockUtils.getAssetInstance({
           permissionsGetAgents: [
             {
               agent: { did: 'otherDid' } as Identity,

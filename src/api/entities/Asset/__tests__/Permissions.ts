@@ -51,7 +51,7 @@ describe('Permissions class', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    asset = entityMockUtils.getMockAssetInstance({ ticker });
+    asset = entityMockUtils.getAssetInstance({ ticker });
     permissions = new Permissions(asset, context);
   });
 

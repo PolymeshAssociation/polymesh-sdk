@@ -45,7 +45,7 @@ describe('removeExternalAgent procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     ticker = 'SOMETICKER';
-    asset = entityMockUtils.getMockAssetInstance({ ticker });
+    asset = entityMockUtils.getAssetInstance({ ticker });
     target = 'someDid';
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
@@ -70,7 +70,7 @@ describe('removeExternalAgent procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the asset', () => {
+    test('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
@@ -109,7 +109,7 @@ describe('removeExternalAgent procedure', () => {
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [],
       }),
     });
@@ -126,7 +126,7 @@ describe('removeExternalAgent procedure', () => {
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
             agent: { did: 'someDid' } as Identity,
@@ -147,7 +147,7 @@ describe('removeExternalAgent procedure', () => {
   test('should add a remove agent transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
             agent: { did: 'someDid' } as Identity,
@@ -181,7 +181,7 @@ describe('removeExternalAgent procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAgent);
 
     proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
             agent: { did: 'someDid' } as Identity,

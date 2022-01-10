@@ -113,8 +113,8 @@ declare module '@polkadot/api/types/events' {
        **/
       AssetFrozen: AugmentedEvent<ApiType, [IdentityId, Ticker]>;
       /**
-       * Emit when asset ownership is transferred.
-       * caller DID / asset ownership transferred to DID, ticker, from
+       * Emit when token ownership is transferred.
+       * caller DID / token ownership transferred to DID, ticker, from
        **/
       AssetOwnershipTransferred: AugmentedEvent<ApiType, [IdentityId, Ticker, IdentityId]>;
       /**
@@ -327,7 +327,7 @@ declare module '@polkadot/api/types/events' {
     };
     capitalDistribution: {
       /**
-       * A asset holder's benefit of a capital distribution for the given `CAId` was claimed.
+       * A token holder's benefit of a capital distribution for the given `CAId` was claimed.
        *
        * (Caller DID, Holder/Claimant DID, CA's ID, updated distribution details, DID's benefit, DID's tax %)
        **/
@@ -1014,7 +1014,7 @@ declare module '@polkadot/api/types/events' {
     };
     portfolio: {
       /**
-       * A asset amount has been moved from one portfolio to another.
+       * A token amount has been moved from one portfolio to another.
        *
        * # Parameters
        * * origin DID
@@ -1234,7 +1234,7 @@ declare module '@polkadot/api/types/events' {
        **/
       VenueTypeUpdated: AugmentedEvent<ApiType, [IdentityId, VenueId, VenueType]>;
       /**
-       * Venue not part of the asset's allow list (did, Ticker, venue_id)
+       * Venue not part of the token's allow list (did, Ticker, venue_id)
        **/
       VenueUnauthorized: AugmentedEvent<ApiType, [IdentityId, Ticker, VenueId]>;
     };
@@ -1378,7 +1378,7 @@ declare module '@polkadot/api/types/events' {
       >;
       /**
        * An investor invested in the fundraiser.
-       * (Investor, fundraiser_id, offering asset, raise asset, offering_token_amount, raise_token_amount)
+       * (Investor, fundraiser_id, offering token, raise token, offering_token_amount, raise_token_amount)
        **/
       Invested: AugmentedEvent<
         ApiType,

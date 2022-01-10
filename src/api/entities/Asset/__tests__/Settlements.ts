@@ -74,7 +74,7 @@ describe('Settlements class', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    mockAsset = entityMockUtils.getMockAssetInstance();
+    mockAsset = entityMockUtils.getAssetInstance();
     numberToBalanceStub.withArgs(amount, mockContext, false).returns(rawAmount);
     settlements = new Settlements(mockAsset, mockContext);
     ticker = mockAsset.ticker;

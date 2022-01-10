@@ -43,7 +43,7 @@ import { filterEventRecords, getTicker, optionize } from '~/utils/internal';
 
 export interface AddInstructionParams {
   /**
-   * array of asset movements (amount, from, to, asset)
+   * array of Asset movements (amount, from, to, asset)
    */
   legs: {
     amount: BigNumber;
@@ -52,11 +52,11 @@ export interface AddInstructionParams {
     asset: string | Asset;
   }[];
   /**
-   * date at which the trade was agreed upon (optional, for offchain trades)
+   * date at which the trade was agreed upon (optional, for off chain trades)
    */
   tradeDate?: Date;
   /**
-   * date at which the trade was executed (optional, for offchain trades)
+   * date at which the trade was executed (optional, for off chain trades)
    */
   valueDate?: Date;
   /**

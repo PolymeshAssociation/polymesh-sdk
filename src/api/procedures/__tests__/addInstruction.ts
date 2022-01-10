@@ -229,7 +229,7 @@ describe('addInstruction procedure', () => {
             {
               from,
               to,
-              asset: asset,
+              asset,
               amount,
             },
           ],
@@ -285,7 +285,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount,
-      asset: entityMockUtils.getMockAssetInstance({ ticker: asset }),
+      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
     });
 
     try {
@@ -322,7 +322,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                asset: entityMockUtils.getMockAssetInstance({ ticker: asset }),
+                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -422,7 +422,7 @@ describe('addInstruction procedure', () => {
               from,
               to,
               amount,
-              asset: entityMockUtils.getMockAssetInstance({ ticker: asset }),
+              asset: entityMockUtils.getAssetInstance({ ticker: asset }),
             },
           ],
           tradeDate,

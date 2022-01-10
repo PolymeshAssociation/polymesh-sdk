@@ -1,6 +1,6 @@
 import { Namespace } from '~/internal';
 
-import { Compliance } from '..';
+import { Compliance } from '../';
 
 describe('Compliance class', () => {
   test('should extend namespace', () => {

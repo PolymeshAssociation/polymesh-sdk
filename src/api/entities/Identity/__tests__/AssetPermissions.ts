@@ -38,7 +38,7 @@ describe('AssetPermissions class', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     identity = entityMockUtils.getIdentityInstance({ did });
-    asset = entityMockUtils.getMockAssetInstance({ ticker });
+    asset = entityMockUtils.getAssetInstance({ ticker });
     assetPermissions = new AssetPermissions(identity, context);
   });
 
@@ -67,7 +67,7 @@ describe('AssetPermissions class', () => {
       let error;
 
       try {
-        await assetPermissions.getGroup({ asset: asset });
+        await assetPermissions.getGroup({ asset });
       } catch (err) {
         error = err;
       }
@@ -80,7 +80,7 @@ describe('AssetPermissions class', () => {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
       });
 
-      const result = await assetPermissions.getGroup({ asset: asset });
+      const result = await assetPermissions.getGroup({ asset });
 
       expect(result instanceof KnownPermissionGroup).toEqual(true);
       expect((result as KnownPermissionGroup).type).toEqual(PermissionGroupType.Full);
@@ -109,7 +109,7 @@ describe('AssetPermissions class', () => {
         /* eslint-enable @typescript-eslint/naming-convention */
       });
 
-      const result = await assetPermissions.enabledAt({ asset: asset });
+      const result = await assetPermissions.enabledAt({ asset });
 
       expect(result).toEqual(fakeResult);
     });
@@ -122,7 +122,7 @@ describe('AssetPermissions class', () => {
       };
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
-      const result = await assetPermissions.enabledAt({ asset: asset });
+      const result = await assetPermissions.enabledAt({ asset });
       expect(result).toBeNull();
     });
   });
@@ -162,12 +162,12 @@ describe('AssetPermissions class', () => {
       entityMockUtils.cleanup();
     });
 
-    test('should check whether the Identity has the appropriate permissions for the asset', async () => {
+    test('should check whether the Identity has the appropriate permissions for the Asset', async () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      let result = await assetPermissions.checkPermissions({ asset: asset, transactions: null });
+      let result = await assetPermissions.checkPermissions({ asset, transactions: null });
 
       expect(result).toEqual({
         result: false,
@@ -178,7 +178,7 @@ describe('AssetPermissions class', () => {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
       });
 
-      result = await assetPermissions.checkPermissions({ asset: asset, transactions: null });
+      result = await assetPermissions.checkPermissions({ asset, transactions: null });
 
       expect(result).toEqual({ result: true });
 
@@ -186,12 +186,12 @@ describe('AssetPermissions class', () => {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
       });
 
-      result = await assetPermissions.checkPermissions({ asset: asset, transactions: null });
+      result = await assetPermissions.checkPermissions({ asset, transactions: null });
 
       expect(result).toEqual({ result: false, missingPermissions: null });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.externalAgents.RemoveAgent],
       });
 
@@ -201,7 +201,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.asset.ControllerTransfer],
       });
 
@@ -214,7 +214,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.asset.CreateAsset],
       });
 
@@ -224,7 +224,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.Invest],
       });
 
@@ -234,7 +234,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.asset.ControllerTransfer, TxTags.sto.FreezeFundraiser],
       });
 
@@ -249,7 +249,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.asset.CreateAsset],
       });
 
@@ -259,7 +259,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.corporateAction.ChangeRecordDate],
       });
 
@@ -279,7 +279,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.corporateAction.ChangeRecordDate],
       });
 
@@ -304,7 +304,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: null,
       });
 
@@ -314,7 +314,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.asset.CreateAsset],
       });
 
@@ -337,7 +337,7 @@ describe('AssetPermissions class', () => {
       });
 
       result = await assetPermissions.checkPermissions({
-        asset: asset,
+        asset,
         transactions: [TxTags.identity.AddClaim],
       });
 
@@ -348,7 +348,7 @@ describe('AssetPermissions class', () => {
     });
 
     test('should throw an error if the transaction array is empty', async () => {
-      expect(assetPermissions.checkPermissions({ asset: asset, transactions: [] })).rejects.toThrow(
+      expect(assetPermissions.checkPermissions({ asset, transactions: [] })).rejects.toThrow(
         'Cannot check Permissions for an empty transaction array'
       );
     });
@@ -367,12 +367,12 @@ describe('AssetPermissions class', () => {
       entityMockUtils.cleanup();
     });
 
-    test('should check whether the Identity has the appropriate permissions for the asset', async () => {
+    test('should check whether the Identity has the appropriate permissions for the Asset', async () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      const result = await assetPermissions.hasPermissions({ asset: asset, transactions: null });
+      const result = await assetPermissions.hasPermissions({ asset, transactions: null });
 
       expect(result).toBe(false);
     });

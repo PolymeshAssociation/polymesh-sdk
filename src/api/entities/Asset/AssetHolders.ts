@@ -10,7 +10,7 @@ import { requestPaginated } from '~/utils/internal';
  */
 export class AssetHolders extends Namespace<Asset> {
   /**
-   * Retrieve all the Asset holders with their respective balance
+   * Retrieve all the Asset Holders with their respective balance
    *
    * @note supports pagination
    */

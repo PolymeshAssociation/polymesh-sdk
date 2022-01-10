@@ -99,7 +99,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Retrieve all Asset holder balances at this Checkpoint
+   * Retrieve all Asset Holder balances at this Checkpoint
    *
    * @note supports pagination
    */
@@ -183,7 +183,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Retrieve the balance of a specific Asset holder Identity at this Checkpoint
+   * Retrieve the balance of a specific Asset Holder Identity at this Checkpoint
    *
    * @param args.identity - defaults to the current Identity
    */

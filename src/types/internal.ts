@@ -265,4 +265,4 @@ export enum InstructionStatus {
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
-export type InternalAssetType = KnownSecurityType | { Custom: CustomAssetTypeId };
+export type InternalSecurityType = KnownSecurityType | { Custom: CustomAssetTypeId };

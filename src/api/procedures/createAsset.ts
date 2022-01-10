@@ -18,7 +18,7 @@ import {
   assetDocumentToDocument,
   booleanToBool,
   boolToBoolean,
-  internalAssetTypeToAssetType,
+  internalSecurityTypeToAssetType,
   numberToBalance,
   securityIdentifierToAssetIdentifier,
   stringToAssetName,
@@ -36,7 +36,7 @@ export const createRegisterCustomAssetTypeResolver = (context: Context) => (
 ): AssetType => {
   const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
 
-  return internalAssetTypeToAssetType({ Custom: data[1] }, context);
+  return internalSecurityTypeToAssetType({ Custom: data[1] }, context);
 };
 
 export interface CreateAssetParams {
@@ -51,12 +51,12 @@ export interface CreateAssetParams {
   isDivisible: boolean;
   /**
    * type of security that the Asset represents (i.e. Equity, Debt, Commodity, etc). Common values are included in the
-   *   [[KnownTokenType]] enum, but custom values can be used as well. Custom values must be registered on-chain the first time
+   *   [[KnownSecurityType]] enum, but custom values can be used as well. Custom values must be registered on-chain the first time
    *   they're used, requiring an additional transaction. They aren't tied to a specific Asset
    */
   assetType: string;
   /**
-   * array of domestic or international alphanumeric security identifiers for the asset (ISIN, CUSIP, etc)
+   * array of domestic or international alphanumeric security identifiers for the Asset (ISIN, CUSIP, etc)
    */
   securityIdentifiers?: SecurityIdentifier[];
   /**
@@ -155,10 +155,10 @@ export async function prepareCreateAsset(
         rawValue
       );
     } else {
-      rawType = internalAssetTypeToAssetType({ Custom: id }, context);
+      rawType = internalSecurityTypeToAssetType({ Custom: id }, context);
     }
   } else {
-    rawType = internalAssetTypeToAssetType(assetType as KnownSecurityType, context);
+    rawType = internalSecurityTypeToAssetType(assetType as KnownSecurityType, context);
   }
 
   const rawName = stringToAssetName(name, context);

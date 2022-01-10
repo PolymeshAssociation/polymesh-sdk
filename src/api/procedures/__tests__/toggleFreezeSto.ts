@@ -207,7 +207,7 @@ describe('toggleFreezeSto procedure', () => {
       const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = entityMockUtils.getMockAssetInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       expect(boundFunc({ ticker, id, freeze: true })).toEqual({
         permissions: {

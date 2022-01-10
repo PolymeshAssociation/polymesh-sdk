@@ -58,7 +58,7 @@ describe('Requirements class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
       const args: Omit<Params, 'ticker'> = {
@@ -104,7 +104,7 @@ describe('Requirements class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
       const args = {
@@ -148,7 +148,7 @@ describe('Requirements class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
       const args = {
@@ -175,7 +175,7 @@ describe('Requirements class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
@@ -220,7 +220,7 @@ describe('Requirements class', () => {
     beforeEach(() => {
       ticker = 'FAKETICKER';
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getMockAssetInstance({ ticker });
+      asset = entityMockUtils.getAssetInstance({ ticker });
       requirements = new Requirements(asset, context);
       defaultClaimIssuers = [
         { identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }) },
@@ -382,7 +382,7 @@ describe('Requirements class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
@@ -405,7 +405,7 @@ describe('Requirements class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
@@ -428,7 +428,7 @@ describe('Requirements class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
       const args = {
@@ -463,7 +463,7 @@ describe('Requirements class', () => {
     test('should return whether compliance conditions are paused or not', async () => {
       const fakeResult = false;
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const rawTicker = dsMockUtils.createMockTicker(asset.ticker);
       const mockBool = dsMockUtils.createMockBool(fakeResult);
 
@@ -518,7 +518,7 @@ describe('Requirements class', () => {
 
     beforeEach(async () => {
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getMockAssetInstance();
+      asset = entityMockUtils.getAssetInstance();
       requirements = new Requirements(asset, context);
       ({ did: currentDid } = await context.getCurrentIdentity());
 

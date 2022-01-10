@@ -41,7 +41,7 @@ describe('Issuance class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const issuance = new Issuance(asset, context);
 
       const args = {

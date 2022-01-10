@@ -51,7 +51,7 @@ export interface Params {
 
 /**
  * Represents an action initiated by the issuer of an Asset which may affect the positions of
- *   the Asset holders
+ *   the Asset Holders
  */
 export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unknown> {
   /**
@@ -85,7 +85,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   public description: string;
 
   /**
-   * Asset holder identities related to this Corporate action. If the treatment is `Exclude`, the Identities
+   * Asset Holder identities related to this Corporate action. If the treatment is `Exclude`, the Identities
    *   are not targeted by the Action, and any identities left out of the array will be targeted, and vice versa
    */
   public targets: CorporateActionTargets;

@@ -40,7 +40,7 @@ describe('Offerings class', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    asset = entityMockUtils.getMockAssetInstance({ ticker });
+    asset = entityMockUtils.getAssetInstance({ ticker });
 
     offerings = new Offerings(asset, context);
   });
@@ -274,7 +274,7 @@ describe('Offerings class', () => {
       sinon.restore();
     });
 
-    test('should return all offerings associated to the asset', async () => {
+    test('should return all Offerings associated to the Asset', async () => {
       const result = await offerings.get();
 
       expect(result[0].sto.id).toEqual(new BigNumber(1));
@@ -285,7 +285,7 @@ describe('Offerings class', () => {
       expect(result.length).toBe(2);
     });
 
-    test('should return offerings associated to the asset filtered by status', async () => {
+    test('should return Offerings associated to the Asset filtered by status', async () => {
       const result = await offerings.get({
         status: {
           sale: StoSaleStatus.Live,

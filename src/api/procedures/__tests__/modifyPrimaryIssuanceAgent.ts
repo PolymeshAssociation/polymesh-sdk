@@ -213,7 +213,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
     });

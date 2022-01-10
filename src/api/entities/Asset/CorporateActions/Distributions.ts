@@ -26,7 +26,7 @@ import { createProcedureMethod } from '~/utils/internal';
  */
 export class Distributions extends Namespace<Asset> {
   /**
-   * Create a Dividend Distribution for a subset of the Asset holders at a certain (existing or future) Checkpoint
+   * Create a Dividend Distribution for a subset of the Asset Holders at a certain (existing or future) Checkpoint
    *
    * @note required role:
    *   - Origin Portfolio Custodian

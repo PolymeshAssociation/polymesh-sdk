@@ -8,7 +8,7 @@ import { TargetTreatment } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
-import { CorporateActions } from '..';
+import { CorporateActions } from '../';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -50,7 +50,7 @@ describe('CorporateActions class', () => {
 
     context = dsMockUtils.getContextInstance();
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    asset = entityMockUtils.getMockAssetInstance();
+    asset = entityMockUtils.getAssetInstance();
     corporateActions = new CorporateActions(asset, context);
   });
 

@@ -201,7 +201,7 @@ describe('createCheckpointSchedule procedure', () => {
       };
       const repetitions = 10;
 
-      const asset = entityMockUtils.getMockAssetInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       expect(boundFunc({ ticker, start, period, repetitions })).toEqual({
         permissions: {

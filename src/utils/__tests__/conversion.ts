@@ -161,7 +161,7 @@ import {
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identityIdToString,
-  internalAssetTypeToAssetType,
+  internalSecurityTypeToAssetType,
   isCusipValid,
   isIsinValid,
   isLeiValid,
@@ -465,7 +465,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     const ticker = 'SOMEASSET';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
-    const asset = entityMockUtils.getMockAssetInstance({ ticker });
+    const asset = entityMockUtils.getAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
     const rawMemo = ('memo' as unknown) as Memo;
@@ -497,7 +497,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     expect(result).toBe(fakeResult);
 
     portfolioMovement = {
-      asset: asset,
+      asset,
       amount,
     };
 
@@ -517,7 +517,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .returns(fakeResult);
 
     portfolioMovement = {
-      asset: asset,
+      asset,
       amount,
       memo,
     };
@@ -1400,7 +1400,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const did = 'someDid';
     value = {
       assets: {
-        values: [entityMockUtils.getMockAssetInstance({ ticker })],
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Include,
       },
       transactions: {
@@ -1492,7 +1492,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     value = {
       assets: {
-        values: [entityMockUtils.getMockAssetInstance({ ticker })],
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Exclude,
       },
       transactions: {
@@ -1543,7 +1543,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     value = {
       assets: {
-        values: tickers.map(t => entityMockUtils.getMockAssetInstance({ ticker: t })),
+        values: tickers.map(t => entityMockUtils.getAssetInstance({ ticker: t })),
         type: PermissionType.Include,
       },
       transactions: {
@@ -1633,7 +1633,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const did = 'someDid';
     let fakeResult: Permissions = {
       assets: {
-        values: [entityMockUtils.getMockAssetInstance({ ticker })],
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Include,
       },
       transactions: {
@@ -1696,7 +1696,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
     fakeResult = {
       assets: {
-        values: [entityMockUtils.getMockAssetInstance({ ticker })],
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Exclude,
       },
       transactions: {
@@ -2166,7 +2166,7 @@ describe('u8ToTransferStatus', () => {
   });
 });
 
-describe('internalAssetTypeToAssetType and assetTypeToKnownOrId', () => {
+describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2179,14 +2179,14 @@ describe('internalAssetTypeToAssetType and assetTypeToKnownOrId', () => {
     dsMockUtils.cleanup();
   });
 
-  test('internalAssetTypeToAssetType should convert an AssetType to a polkadot AssetType object', () => {
+  test('internalSecurityTypeToAssetType should convert an AssetType to a polkadot AssetType object', () => {
     const value = KnownSecurityType.Commodity;
     const fakeResult = ('CommodityEnum' as unknown) as AssetType;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
 
-    const result = internalAssetTypeToAssetType(value, context);
+    const result = internalSecurityTypeToAssetType(value, context);
 
     expect(result).toBe(fakeResult);
   });

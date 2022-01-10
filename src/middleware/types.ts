@@ -1096,7 +1096,7 @@ export enum ItnRewardActionType {
   PolyxTransfer = 'PolyxTransfer',
   SecondaryKey = 'SecondaryKey',
   ReserveTokenTicker = 'ReserveTokenTicker',
-  Asset = 'SecurityToken',
+  SecurityToken = 'SecurityToken',
   ComplianceRequirement = 'ComplianceRequirement',
   TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
   ClaimAdded = 'ClaimAdded',

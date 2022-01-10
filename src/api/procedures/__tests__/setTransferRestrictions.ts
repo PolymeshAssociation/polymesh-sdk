@@ -351,7 +351,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
         },
@@ -373,7 +373,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.AddExemptedEntities],
           portfolios: [],
         },
@@ -395,7 +395,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.RemoveTransferManager],
           portfolios: [],
         },
@@ -417,7 +417,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.RemoveExemptedEntities],
           portfolios: [],
         },

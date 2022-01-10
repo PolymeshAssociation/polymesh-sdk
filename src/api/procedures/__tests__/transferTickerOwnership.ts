@@ -103,7 +103,7 @@ describe('transferTickerOwnership procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if an asset with that ticker has already been launched', () => {
+  test('should throw an error if an Asset with that ticker has already been launched', () => {
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,

@@ -149,7 +149,7 @@ describe('setGroupPermissions procedure', () => {
       ).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.SetGroupPermissions],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

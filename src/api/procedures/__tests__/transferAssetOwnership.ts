@@ -149,7 +149,7 @@ describe('transferAssetOwnership procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },

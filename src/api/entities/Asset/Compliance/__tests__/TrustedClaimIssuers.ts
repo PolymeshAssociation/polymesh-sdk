@@ -56,7 +56,7 @@ describe('TrustedClaimIssuers class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
 
       const args: ModifyAssetTrustedClaimIssuersAddSetParams = {
@@ -94,7 +94,7 @@ describe('TrustedClaimIssuers class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
 
       const args: ModifyAssetTrustedClaimIssuersAddSetParams = {
@@ -132,7 +132,7 @@ describe('TrustedClaimIssuers class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
 
       const args = {
@@ -179,7 +179,7 @@ describe('TrustedClaimIssuers class', () => {
       rawTicker = dsMockUtils.createMockTicker(ticker);
       stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getMockAssetInstance({ ticker });
+      asset = entityMockUtils.getAssetInstance({ ticker });
 
       expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
 

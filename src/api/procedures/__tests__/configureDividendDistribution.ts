@@ -108,7 +108,7 @@ describe('configureDividendDistribution procedure', () => {
       id: new BigNumber(2),
       assetBalances: [
         {
-          asset: entityMockUtils.getMockAssetInstance({ ticker: currency }),
+          asset: entityMockUtils.getAssetInstance({ ticker: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
           free: new BigNumber(1000001),
@@ -320,7 +320,7 @@ describe('configureDividendDistribution procedure', () => {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
           assetBalances: [
             {
-              asset: entityMockUtils.getMockAssetInstance({ ticker: currency }),
+              asset: entityMockUtils.getAssetInstance({ ticker: currency }),
               total: new BigNumber(1),
               locked: new BigNumber(0),
               free: new BigNumber(1),
@@ -469,7 +469,7 @@ describe('configureDividendDistribution procedure', () => {
         did: 'someDid',
         assetBalances: [
           {
-            asset: entityMockUtils.getMockAssetInstance({ ticker: currency }),
+            asset: entityMockUtils.getAssetInstance({ ticker: currency }),
             total: new BigNumber(1000001),
             locked: new BigNumber(0),
             free: new BigNumber(1000001),
@@ -630,7 +630,7 @@ describe('configureDividendDistribution procedure', () => {
         ],
         permissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [originPortfolio],
         },
       });

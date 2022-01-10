@@ -139,7 +139,7 @@ describe('controllerTransfer procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = entityMockUtils.getMockAssetInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
       const roles = [
         {
           type: RoleType.PortfolioCustodian,

@@ -55,7 +55,7 @@ describe('waivePermissions procedure', () => {
   });
 
   test('should throw an error if the Identity is not an Agent for the Asset', async () => {
-    const asset = entityMockUtils.getMockAssetInstance({
+    const asset = entityMockUtils.getAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -74,14 +74,14 @@ describe('waivePermissions procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: asset,
+      asset,
     });
 
     let error;
 
     try {
       await prepareWaivePermissions.call(proc, {
-        asset: asset,
+        asset,
         identity: entityMockUtils.getIdentityInstance({
           did,
         }),
@@ -94,7 +94,7 @@ describe('waivePermissions procedure', () => {
   });
 
   test('should add an abdicate transaction to the queue', async () => {
-    const asset = entityMockUtils.getMockAssetInstance({
+    const asset = entityMockUtils.getAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -107,11 +107,11 @@ describe('waivePermissions procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      asset: asset,
+      asset,
     });
 
     await prepareWaivePermissions.call(proc, {
-      asset: asset,
+      asset,
       identity: entityMockUtils.getIdentityInstance({
         did,
       }),
@@ -121,8 +121,8 @@ describe('waivePermissions procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the asset', () => {
-      const asset = entityMockUtils.getMockAssetInstance({
+    test('should return the Asset', () => {
+      const asset = entityMockUtils.getAssetInstance({
         ticker,
       });
 
@@ -144,7 +144,7 @@ describe('waivePermissions procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const asset = entityMockUtils.getMockAssetInstance({
+      const asset = entityMockUtils.getAssetInstance({
         ticker,
       });
 

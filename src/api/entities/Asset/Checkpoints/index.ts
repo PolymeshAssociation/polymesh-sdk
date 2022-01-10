@@ -43,7 +43,7 @@ export class Checkpoints extends Namespace<Asset> {
   }
 
   /**
-   * Create a snapshot of Asset holders and their respective balances at this moment
+   * Create a snapshot of Asset Holders and their respective balances at this moment
    */
   public create: NoArgsProcedureMethod<Checkpoint>;
 

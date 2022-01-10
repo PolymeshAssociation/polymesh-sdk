@@ -231,12 +231,4 @@ export class Assets {
 
     return asset;
   }
-
-  /**
-   * Create an Asset
-   *
-   * @note if ticker is already reserved, then required role:
-   *   - Ticker Owner
-   */
-  public createAsset: ProcedureMethod<CreateAssetWithTickerParams, Asset>;
 }

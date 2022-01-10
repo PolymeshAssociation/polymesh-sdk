@@ -84,7 +84,7 @@ export type ConfigureDividendDistributionParams = Omit<
    */
   maxAmount: BigNumber;
   /**
-   * date from which Asset holders can claim their Dividends
+   * date from which Asset Holders can claim their Dividends
    */
   paymentDate: Date;
   /**

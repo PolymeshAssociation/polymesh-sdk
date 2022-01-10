@@ -292,14 +292,14 @@ describe('addTransferRestriction procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
         },
       });
       expect(boundFunc({ ...args, exemptedScopeIds: ['someScopeId'] })).toEqual({
         permissions: {
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [
             TxTags.statistics.AddTransferManager,
             TxTags.statistics.AddExemptedEntities,

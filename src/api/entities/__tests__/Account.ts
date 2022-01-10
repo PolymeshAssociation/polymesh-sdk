@@ -459,7 +459,7 @@ describe('Account class', () => {
         result: true,
       });
 
-      const asset = entityMockUtils.getMockAssetInstance({ ticker: 'SOME_ASSET' });
+      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
       permissions = {
         assets: { values: [asset], type: PermissionType.Include },
         transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Include },

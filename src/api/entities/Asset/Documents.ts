@@ -22,7 +22,7 @@ export class Documents extends Namespace<Asset> {
   }
 
   /**
-   * Assign a new list of documents to the Asset by replacing the existing list of documents with the one passed in the parameters
+   * Assign a new list of documents to the Asset by replacing the existing list of documents with the ones passed in the parameters
    *
    * This requires two transactions
    */

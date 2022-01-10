@@ -96,7 +96,7 @@ describe('setPermissionGroup procedure', () => {
       CustomPermissionGroup | KnownPermissionGroup,
       Storage
     >(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetAgents: [
           {
@@ -137,7 +137,7 @@ describe('setPermissionGroup procedure', () => {
       CustomPermissionGroup | KnownPermissionGroup,
       Storage
     >(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetAgents: [],
       }),
@@ -181,7 +181,7 @@ describe('setPermissionGroup procedure', () => {
       CustomPermissionGroup | KnownPermissionGroup,
       Storage
     >(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetAgents: [
           {
@@ -241,7 +241,7 @@ describe('setPermissionGroup procedure', () => {
       CustomPermissionGroup | KnownPermissionGroup,
       Storage
     >(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetAgents: [
           {
@@ -365,7 +365,7 @@ describe('setPermissionGroup procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the asset', () => {
+    test('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<
         Params,
         CustomPermissionGroup | KnownPermissionGroup,
@@ -379,7 +379,7 @@ describe('setPermissionGroup procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        asset: entityMockUtils.getMockAssetInstance({ ticker }),
+        asset: entityMockUtils.getAssetInstance({ ticker }),
       });
 
       result = boundFunc({
@@ -390,7 +390,7 @@ describe('setPermissionGroup procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        asset: entityMockUtils.getMockAssetInstance({ ticker }),
+        asset: entityMockUtils.getAssetInstance({ ticker }),
       });
     });
   });
@@ -402,7 +402,7 @@ describe('setPermissionGroup procedure', () => {
         CustomPermissionGroup | KnownPermissionGroup,
         Storage
       >(mockContext, {
-        asset: entityMockUtils.getMockAssetInstance({
+        asset: entityMockUtils.getAssetInstance({
           ticker,
         }),
       });
@@ -411,7 +411,7 @@ describe('setPermissionGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.ChangeGroup],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

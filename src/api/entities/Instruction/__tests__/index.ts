@@ -528,7 +528,7 @@ describe('Instruction class', () => {
       sinon.assert.calledWithExactly(identityConstructor.firstCall, { did: fromDid }, context);
       sinon.assert.calledWithExactly(identityConstructor.secondCall, { did: toDid }, context);
       expect(leg[0].amount).toEqual(amount);
-      expect(leg[0].asset).toEqual(entityMockUtils.getMockAssetInstance());
+      expect(leg[0].asset).toEqual(entityMockUtils.getAssetInstance());
     });
 
     test('should throw an error if the instruction is not pending', () => {

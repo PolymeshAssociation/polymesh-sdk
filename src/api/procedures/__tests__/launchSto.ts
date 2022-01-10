@@ -239,7 +239,7 @@ describe('launchSto procedure', () => {
     expect(err?.message).toBe('A valid Venue for the Offering was neither supplied nor found');
   });
 
-  test("should throw an error if assets offered exceed the Portfolio's balance", async () => {
+  test("should throw an error if Assets offered exceed the Portfolio's balance", async () => {
     entityMockUtils.configureMocks({
       defaultPortfolioOptions: {
         assetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
@@ -377,7 +377,7 @@ describe('launchSto procedure', () => {
       portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(raisingPortfolioId, mockContext).returns(portfolios[1]);
 
-      const asset = entityMockUtils.getMockAssetInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
       const roles = [
         { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },

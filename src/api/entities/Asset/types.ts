@@ -18,7 +18,7 @@ export interface AssetDetails {
 }
 
 /**
- * Represents the balance of an Asset holder
+ * Represents the balance of an Asset Holder
  */
 export interface IdentityBalance {
   identity: Identity;

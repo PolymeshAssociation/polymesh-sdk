@@ -32,7 +32,7 @@ import {
   SecurityIdentifierType,
   TickerReservationStatus,
 } from '~/types';
-import { InternalAssetType, PolymeshTx } from '~/types/internal';
+import { InternalSecurityType, PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -53,7 +53,10 @@ describe('createAsset procedure', () => {
   let numberToBalanceStub: sinon.SinonStub;
   let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
-  let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
+  let internalSecurityTypeToAssetTypeStub: sinon.SinonStub<
+    [InternalSecurityType, Context],
+    AssetType
+  >;
   let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
     [SecurityIdentifier, Context],
     AssetIdentifier
@@ -97,9 +100,9 @@ describe('createAsset procedure', () => {
     numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
     stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
-    internalAssetTypeToAssetTypeStub = sinon.stub(
+    internalSecurityTypeToAssetTypeStub = sinon.stub(
       utilsConversionModule,
-      'internalAssetTypeToAssetType'
+      'internalSecurityTypeToAssetType'
     );
     securityIdentifierToAssetIdentifierStub = sinon.stub(
       utilsConversionModule,
@@ -194,7 +197,7 @@ describe('createAsset procedure', () => {
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
-    internalAssetTypeToAssetTypeStub
+    internalSecurityTypeToAssetTypeStub
       .withArgs(assetType as KnownSecurityType, mockContext)
       .returns(rawType);
     securityIdentifierToAssetIdentifierStub
@@ -266,7 +269,7 @@ describe('createAsset procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
 
     await prepareCreateAsset.call(proc, {
       ...args,
@@ -319,7 +322,7 @@ describe('createAsset procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
 
     proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
@@ -343,7 +346,7 @@ describe('createAsset procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {
@@ -376,7 +379,7 @@ describe('createAsset procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   test('should add a document add transaction to the queue', async () => {
@@ -400,7 +403,7 @@ describe('createAsset procedure', () => {
       rawTicker
     );
 
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   test('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
@@ -439,7 +442,7 @@ describe('createAsset procedure', () => {
       sinon.match.any
     );
 
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   describe('createRegisterCustomAssetTypeResolver', () => {
@@ -464,7 +467,9 @@ describe('createAsset procedure', () => {
 
     test('should return the new custom AssetType', () => {
       const fakeResult = ('assetType' as unknown) as AssetType;
-      internalAssetTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
+      internalSecurityTypeToAssetTypeStub
+        .withArgs({ Custom: rawId }, mockContext)
+        .returns(fakeResult);
       const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
 
       expect(result).toBe(fakeResult);

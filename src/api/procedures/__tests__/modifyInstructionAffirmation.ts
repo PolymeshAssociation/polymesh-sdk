@@ -389,7 +389,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       let from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
       let to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: true });
       const amount = new BigNumber(1);
-      const asset = entityMockUtils.getMockAssetInstance({ ticker: 'SOME_ASSET' });
+      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
 
       entityMockUtils.configureMocks({
         instructionOptions: {

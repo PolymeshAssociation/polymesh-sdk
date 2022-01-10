@@ -46,7 +46,7 @@ describe('Schedules class', () => {
 
     context = dsMockUtils.getContextInstance();
 
-    const asset = entityMockUtils.getMockAssetInstance({ ticker });
+    const asset = entityMockUtils.getAssetInstance({ ticker });
     schedules = new Schedules(asset, context);
   });
 

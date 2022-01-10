@@ -199,7 +199,7 @@ describe('investInSto procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(0));
   });
 
-  test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the assets", async () => {
+  test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the Assets", async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {
@@ -244,7 +244,7 @@ describe('investInSto procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(50));
   });
 
-  test('should throw an error if the STO does not have enough remaining assets', async () => {
+  test('should throw an error if the STO does not have enough remaining Assets', async () => {
     entityMockUtils.configureMocks({
       stoOptions: {
         details: {

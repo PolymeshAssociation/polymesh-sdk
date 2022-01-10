@@ -8,7 +8,7 @@ import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
-import { Checkpoints } from '..';
+import { Checkpoints } from '../';
 
 jest.mock(
   '~/api/entities/Checkpoint',
@@ -44,7 +44,7 @@ describe('Checkpoints class', () => {
     procedureMockUtils.reset();
 
     context = dsMockUtils.getContextInstance();
-    const asset = entityMockUtils.getMockAssetInstance({ ticker });
+    const asset = entityMockUtils.getAssetInstance({ ticker });
     checkpoints = new Checkpoints(asset, context);
   });
 

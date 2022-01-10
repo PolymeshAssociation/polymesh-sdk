@@ -110,7 +110,7 @@ describe('Checkpoint class', () => {
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     });
 
-    test("should return the Checkpoint's Asset holder balances", async () => {
+    test("should return the Checkpoint's Asset Holder balances", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       const balanceOf = [

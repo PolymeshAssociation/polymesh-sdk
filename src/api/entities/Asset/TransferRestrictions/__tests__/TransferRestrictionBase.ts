@@ -61,7 +61,7 @@ describe('TransferRestrictionBase class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getMockAssetInstance();
+      asset = entityMockUtils.getAssetInstance();
     });
 
     afterEach(() => {
@@ -131,7 +131,7 @@ describe('TransferRestrictionBase class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getMockAssetInstance();
+      asset = entityMockUtils.getAssetInstance();
     });
 
     afterEach(() => {
@@ -199,7 +199,7 @@ describe('TransferRestrictionBase class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getMockAssetInstance();
+      asset = entityMockUtils.getAssetInstance();
     });
 
     afterEach(() => {
@@ -284,7 +284,7 @@ describe('TransferRestrictionBase class', () => {
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getMockAssetInstance();
+      asset = entityMockUtils.getAssetInstance();
       dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
         returnValue: dsMockUtils.createMockU32(3),
       });

@@ -77,7 +77,7 @@ import { AssetDetails } from './types';
  */
 export interface UniqueIdentifiers {
   /**
-   * ticker of the asset
+   * ticker of the Asset
    */
   ticker: string;
 }

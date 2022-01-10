@@ -108,7 +108,7 @@ describe('createGroup procedure', () => {
     const customId = new BigNumber(1);
 
     let proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetGroups: {
           custom: [
@@ -143,7 +143,7 @@ describe('createGroup procedure', () => {
     expect(error.data.groupId).toEqual(customId);
 
     proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      asset: entityMockUtils.getMockAssetInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetGroups: {
           custom: [],
@@ -190,7 +190,7 @@ describe('createGroup procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
-        asset: entityMockUtils.getMockAssetInstance({
+        asset: entityMockUtils.getAssetInstance({
           ticker,
           permissionsGetGroups: {
             custom: [
@@ -254,7 +254,7 @@ describe('createGroup procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the asset', () => {
+    test('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext
       );
@@ -263,7 +263,7 @@ describe('createGroup procedure', () => {
       const result = boundFunc({ ticker } as Params);
 
       expect(result).toEqual({
-        asset: entityMockUtils.getMockAssetInstance({ ticker }),
+        asset: entityMockUtils.getAssetInstance({ ticker }),
       });
     });
   });
@@ -273,7 +273,7 @@ describe('createGroup procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext,
         {
-          asset: entityMockUtils.getMockAssetInstance({
+          asset: entityMockUtils.getAssetInstance({
             ticker,
           }),
         }
@@ -283,7 +283,7 @@ describe('createGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.CreateGroup],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

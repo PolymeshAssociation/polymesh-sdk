@@ -2334,7 +2334,7 @@ export function getTickerReservationDetailsStub(
  * @hidden
  * Retrieve an Asset instance
  */
-export function getMockAssetInstance(opts?: AssetOptions): MockAsset {
+export function getAssetInstance(opts?: AssetOptions): MockAsset {
   if (opts) {
     configureAsset({ ...defaultAssetOptions, ...opts });
   }

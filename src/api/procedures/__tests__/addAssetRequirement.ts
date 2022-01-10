@@ -150,7 +150,7 @@ describe('addAssetRequirement procedure', () => {
       fakeReceiverConditions
     );
 
-    expect(result).toMatchObject(entityMockUtils.getMockAssetInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -164,7 +164,7 @@ describe('addAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.AddComplianceRequirement],
-          assets: [entityMockUtils.getMockAssetInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

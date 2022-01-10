@@ -136,7 +136,7 @@ describe('Asset class', () => {
       });
     });
 
-    test('should return details for an asset', async () => {
+    test('should return details for an Asset', async () => {
       const tokensStub = dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: rawToken,
       });
@@ -298,7 +298,7 @@ describe('Asset class', () => {
       expect(result).toBeNull();
     });
 
-    test('should return the funding round for an asset', async () => {
+    test('should return the funding round for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
         returnValue: rawFundingRound,
       });
@@ -383,7 +383,7 @@ describe('Asset class', () => {
       asset = new Asset({ ticker }, context);
     });
 
-    test('should return the list of security identifiers for an asset', async () => {
+    test('should return the list of security identifiers for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'identifiers', {
         returnValue: [isinMock, cusipMock, cinsMock, leiMock],
       });
@@ -511,7 +511,7 @@ describe('Asset class', () => {
       frozenStub = dsMockUtils.createQueryStub('asset', 'frozen');
     });
 
-    test('should return whether the asset is frozen or not', async () => {
+    test('should return whether the Asset is frozen or not', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);

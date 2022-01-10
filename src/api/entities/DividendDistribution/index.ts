@@ -84,7 +84,7 @@ const notExistsMessage = 'The Dividend Distribution no longer exists';
 
 /**
  * Represents a Corporate Action via which an Asset issuer wishes to distribute dividends
- *   between a subset of the Asset holders (targets)
+ *   between a subset of the Asset Holders (targets)
  */
 export class DividendDistribution extends CorporateActionBase {
   /**
@@ -98,13 +98,13 @@ export class DividendDistribution extends CorporateActionBase {
   public currency: string;
 
   /**
-   * amount of `currency` to pay for each share held by the Asset holders
+   * amount of `currency` to pay for each share held by the Asset Holders
    */
   public perShare: BigNumber;
 
   /**
    * maximum amount of `currency` to be distributed. Distributions are "first come, first served", so funds can be depleted before
-   *   every Asset holder receives their corresponding amount
+   *   every Asset Holder receives their corresponding amount
    */
   public maxAmount: BigNumber;
 
@@ -274,7 +274,7 @@ export class DividendDistribution extends CorporateActionBase {
    * Retrieve a comprehensive list of all Identities that are entitled to dividends in this Distribution (participants),
    *   the amount they are entitled to and whether they have been paid or not
    *
-   * @note this request can take a lot of time with large amounts of Asset holders
+   * @note this request can take a lot of time with large amounts of Asset Holders
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be an empty array.
    *   This is because the Distribution participants cannot be determined without a Checkpoint
    */

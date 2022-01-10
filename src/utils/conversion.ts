@@ -194,7 +194,7 @@ import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
   InstructionStatus,
-  InternalAssetType,
+  InternalSecurityType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -1032,7 +1032,7 @@ export function meshPermissionsToPermissions(
   }
 
   return {
-    assets: assets,
+    assets,
     transactions,
     transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
@@ -1379,7 +1379,10 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
 /**
  * @hidden
  */
-export function internalAssetTypeToAssetType(type: InternalAssetType, context: Context): AssetType {
+export function internalSecurityTypeToAssetType(
+  type: InternalSecurityType,
+  context: Context
+): AssetType {
   return context.polymeshApi.createType('AssetType', type);
 }
 

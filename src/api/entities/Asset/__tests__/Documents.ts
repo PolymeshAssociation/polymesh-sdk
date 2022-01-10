@@ -44,7 +44,7 @@ describe('Documents class', () => {
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
-      const asset = entityMockUtils.getMockAssetInstance();
+      const asset = entityMockUtils.getAssetInstance();
       const documents = new Documents(asset, context);
 
       const args = {
@@ -75,8 +75,8 @@ describe('Documents class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all documents linked to the asset', async () => {
-      const asset = entityMockUtils.getMockAssetInstance();
+    test('should retrieve all documents linked to the Asset', async () => {
+      const asset = entityMockUtils.getAssetInstance();
       dsMockUtils.createQueryStub('asset', 'assetDocuments');
       const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
 
