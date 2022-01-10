@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import {
   Asset,
+  AuthorizationRequest,
   Context,
   createGroup,
   CreateGroupParams,
@@ -65,8 +66,10 @@ export class Permissions extends Namespace<Asset> {
 
   /**
    * Invite an Identity to be an Agent with permissions over this Asset
+   *
+   * @note this will create an AuthorizationRequest that will need to be accepted by the target
    */
-  public inviteAgent: ProcedureMethod<InviteExternalAgentParams, void>;
+  public inviteAgent: ProcedureMethod<InviteExternalAgentParams, AuthorizationRequest>;
 
   /**
    * Revoke an Agent's permissions for this Asset

@@ -1,18 +1,30 @@
+import { ISubmittableResult } from '@polkadot/types/types';
+
 import {
+  Account,
+  Asset,
+  AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
   Context,
   CustomPermissionGroup,
+  Identity,
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
+  PostTransactionValue,
+  TickerReservation,
 } from '~/internal';
 import {
+  AddRelayerPayingKeyAuthorizationData,
+  Authorization,
+  AuthorizationType,
   Condition,
   ConditionTarget,
   ConditionType,
   ErrorCode,
+  GenericAuthorizationData,
   InputCondition,
   InputTargets,
   InputTaxWithholding,
@@ -20,10 +32,13 @@ import {
   InstructionType,
   PermissionGroupType,
   SecondaryKey,
+  Signer,
   SignerValue,
+  TickerReservationStatus,
 } from '~/types';
-import { PortfolioId } from '~/types/internal';
+import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
 import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { filterEventRecords } from '~/utils/internal';
 
 // import { Proposal } from '~/internal';
 // import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
@@ -282,9 +297,9 @@ export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGr
  * @note conditions have already been "injected" with the default trusted claim issuers when they reach this point
  */
 export function assertRequirementsNotTooComplex(
-  context: Context,
   conditions: (Condition | InputCondition)[],
-  defaultClaimIssuerLength: number
+  defaultClaimIssuerLength: number,
+  context: Context
 ): void {
   const { maxConditionComplexity: maxComplexity } = context.polymeshApi.consts.complianceManager;
   let complexitySum = 0;
@@ -320,5 +335,254 @@ export function assertRequirementsNotTooComplex(
       message: 'Compliance Requirement complexity limit exceeded',
       data: { limit: maxComplexity },
     });
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertAuthorizationRequestValid(
+  authRequest: AuthorizationRequest,
+  context: Context
+): Promise<void> {
+  const exists = await authRequest.exists();
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Authorization Request no longer exists',
+    });
+  }
+  if (authRequest.isExpired()) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Authorization Request has expired',
+      data: {
+        expiry: authRequest.expiry,
+      },
+    });
+  }
+  const { data } = authRequest;
+  switch (data.type) {
+    case AuthorizationType.RotatePrimaryKey:
+      return assertPrimaryKeyRotationAuthorizationValid(authRequest);
+    case AuthorizationType.AttestPrimaryKeyRotation:
+      return assertAttestPrimaryKeyAuthorizationValid(authRequest);
+    case AuthorizationType.TransferTicker:
+      return assertTransferTickerAuthorizationValid(data, context);
+    case AuthorizationType.TransferAssetOwnership:
+      return assertTransferAssetOwnershipAuthorizationValid(data, context);
+    case AuthorizationType.BecomeAgent:
+      // no additional checks
+      return;
+    case AuthorizationType.AddMultiSigSigner:
+      // no additional checks
+      return;
+    case AuthorizationType.PortfolioCustody:
+      // no additional checks
+      return;
+    case AuthorizationType.JoinIdentity:
+      return assertJoinIdentityAuthorizationValid(authRequest);
+    case AuthorizationType.AddRelayerPayingKey:
+      return assertAddRelayerPayingKeyAuthorizationValid(data);
+    default:
+      throw new UnreachableCaseError(data); // ensures switch statement covers all values
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid  primary key rotation authorization
+ */
+export async function assertPrimaryKeyRotationAuthorizationValid(
+  authRequest: AuthorizationRequest
+): Promise<void> {
+  if (authRequest.target instanceof Identity) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'An Identity can not become the primary key of another Identity',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid attest primary key authorization
+ */
+export async function assertAttestPrimaryKeyAuthorizationValid(
+  authRequest: AuthorizationRequest
+): Promise<void> {
+  const isCddProvider = await authRequest.issuer.isCddProvider();
+  if (!isCddProvider) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Issuer must be a CDD provider',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts transfer ticker authorization is valid
+ */
+export async function assertTransferTickerAuthorizationValid(
+  data: GenericAuthorizationData,
+  context: Context
+): Promise<void> {
+  const reservation = new TickerReservation({ ticker: data.value }, context);
+  const { status } = await reservation.details();
+  if (status === TickerReservationStatus.Free) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Ticker is not reserved',
+    });
+  }
+  if (status === TickerReservationStatus.AssetCreated) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Ticker has already been used to create an Asset',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid transfer asset ownership authorization
+ */
+export async function assertTransferAssetOwnershipAuthorizationValid(
+  data: GenericAuthorizationData,
+  context: Context
+): Promise<void> {
+  const asset = new Asset({ ticker: data.value }, context);
+  const exists = await asset.exists();
+  if (!exists)
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Asset does not exist',
+    });
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid join identity authorization request
+ */
+export async function assertJoinIdentityAuthorizationValid(
+  authRequest: AuthorizationRequest
+): Promise<void> {
+  const issuer = authRequest.issuer;
+  const target = authRequest.target;
+  const hasValidCdd = await issuer.hasValidCdd();
+  if (!hasValidCdd) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Issuing Identity does not have a valid CDD claim',
+    });
+  }
+
+  assertIsAccount(target);
+
+  const targetIdentity = await target.getIdentity();
+  if (targetIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target Account already has an associated Identity',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid add relayer paying key authorization
+ */
+export async function assertAddRelayerPayingKeyAuthorizationValid(
+  data: AddRelayerPayingKeyAuthorizationData
+): Promise<void> {
+  const subsidy = data.value;
+
+  const [beneficiaryIdentity, subsidizerIdentity] = await Promise.all([
+    subsidy.beneficiary.getIdentity(),
+    subsidy.subsidizer.getIdentity(),
+  ]);
+
+  if (!beneficiaryIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Beneficiary Account does not have an Identity',
+    });
+  }
+
+  if (!subsidizerIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Subsidizer Account does not have an Identity',
+    });
+  }
+  const [isBeneficiaryCddValid, isSubsidizerCddValid] = await Promise.all([
+    beneficiaryIdentity.hasValidCdd(),
+    subsidizerIdentity.hasValidCdd(),
+  ]);
+
+  if (!isBeneficiaryCddValid) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Beneficiary Account does not have a valid CDD Claim',
+    });
+  }
+
+  if (!isSubsidizerCddValid) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Subsidizer Account does not have a valid CDD Claim',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Assert the target is an Account
+ */
+function assertIsAccount(target: Signer): asserts target is Account {
+  if (target instanceof Identity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target cannot be an Identity',
+    });
+  }
+}
+
+export const createAuthorizationResolver = (
+  auth: MaybePostTransactionValue<Authorization>,
+  issuer: Identity,
+  target: Identity | Account,
+  expiry: Date | null,
+  context: Context
+) => (receipt: ISubmittableResult): AuthorizationRequest => {
+  const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+  let rawAuth;
+  if (auth instanceof PostTransactionValue) {
+    rawAuth = auth.value;
+  } else {
+    rawAuth = auth;
+  }
+
+  const authId = u64ToBigNumber(data[3]);
+  return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+};
+
+/**
+ * @hidden
+ *
+ * Helper class to ensure a code path is unreachable. For example this can be used for ensuring switch statements are exhaustive
+ */
+export class UnreachableCaseError extends Error {
+  /** This should never be called */
+  constructor(val: never) {
+    super(`Unreachable case: ${JSON.stringify(val)}`);
   }
 }

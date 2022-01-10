@@ -49,9 +49,9 @@ export async function prepareSetAssetRequirements(
   const currentConditions = map(currentRequirements, 'conditions');
 
   assertRequirementsNotTooComplex(
-    context,
     flatten(requirements),
-    defaultTrustedClaimIssuers.length
+    defaultTrustedClaimIssuers.length,
+    context
   );
 
   const comparator = (

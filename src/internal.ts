@@ -70,6 +70,10 @@ export {
   SetAssetRequirementsParams,
 } from '~/api/procedures/setAssetRequirements';
 export {
+  modifyComplianceRequirement,
+  ModifyComplianceRequirementParams,
+} from '~/api/procedures/modifyComplianceRequirement';
+export {
   addAssetRequirement,
   AddAssetRequirementParams,
 } from '~/api/procedures/addAssetRequirement';

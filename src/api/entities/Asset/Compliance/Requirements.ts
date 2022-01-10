@@ -8,6 +8,8 @@ import {
   Asset,
   Context,
   Identity,
+  modifyComplianceRequirement,
+  ModifyComplianceRequirementParams,
   Namespace,
   removeAssetRequirement,
   RemoveAssetRequirementParams,
@@ -78,6 +80,10 @@ export class Requirements extends Namespace<Asset> {
         getProcedureAndArgs: () => [togglePauseRequirements, { ticker, pause: false }],
         voidArgs: true,
       },
+      context
+    );
+    this.modify = createProcedureMethod(
+      { getProcedureAndArgs: args => [modifyComplianceRequirement, { ticker, ...args }] },
       context
     );
   }
@@ -253,4 +259,9 @@ export class Requirements extends Namespace<Asset> {
 
     return boolToBoolean(paused);
   }
+
+  /**
+   * Modify a compliance requirement for the Security Token
+   */
+  public modify: ProcedureMethod<ModifyComplianceRequirementParams, void>;
 }

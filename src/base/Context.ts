@@ -524,6 +524,28 @@ export class Context {
   }
 
   /**
+   * Returns an Identity when given a did string
+   *
+   * @throws if the Identity does not exist
+   */
+  public async getIdentity(identity: Identity | string): Promise<Identity> {
+    if (identity instanceof Identity) {
+      return identity;
+    }
+    const id = new Identity({ did: identity }, this);
+    const exists = await id.exists();
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Identity does not exist',
+      });
+    }
+
+    return id;
+  }
+
+  /**
    * Retrieve the protocol fees associated with running a specific transaction
    *
    * @param tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")

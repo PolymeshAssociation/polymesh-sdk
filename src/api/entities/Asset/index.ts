@@ -5,12 +5,14 @@ import {
   AgentGroup,
   AssetName,
   Counter,
+  FundingRoundName,
   IdentityId,
   SecurityToken as MeshSecurityToken,
   Ticker,
 } from 'polymesh-types/types';
 
 import {
+  AuthorizationRequest,
   Context,
   controllerTransfer,
   ControllerTransferParams,
@@ -186,7 +188,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
-  public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, Asset>;
+  public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
 
   /**
    * Modify some properties of the Asset
@@ -299,13 +301,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public currentFundingRound(): Promise<string>;
-  public currentFundingRound(callback: SubCallback<string>): Promise<UnsubCallback>;
+  public currentFundingRound(): Promise<string | null>;
+  public currentFundingRound(callback: SubCallback<string | null>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async currentFundingRound(
-    callback?: SubCallback<string>
-  ): Promise<string | UnsubCallback> {
+    callback?: SubCallback<string | null>
+  ): Promise<string | null | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -318,14 +320,17 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
+    const assembleResult = (roundName: FundingRoundName): string | null =>
+      fundingRoundNameToString(roundName) || null;
+
     if (callback) {
       return asset.fundingRound(rawTicker, round => {
-        callback(fundingRoundNameToString(round));
+        callback(assembleResult(round));
       });
     }
 
     const fundingRound = await asset.fundingRound(rawTicker);
-    return fundingRoundNameToString(fundingRound);
+    return assembleResult(fundingRound);
   }
 
   /**

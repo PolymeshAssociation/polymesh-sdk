@@ -3,6 +3,7 @@ import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/t
 
 import {
   Asset,
+  AuthorizationRequest,
   Context,
   createAsset,
   CreateAssetParams,
@@ -192,7 +193,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * @note required role:
    *   - Ticker Owner
    */
-  public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, TickerReservation>;
+  public transferOwnership: ProcedureMethod<TransferTickerOwnershipParams, AuthorizationRequest>;
 
   /**
    * Determine whether this Ticker Reservation exists on chain

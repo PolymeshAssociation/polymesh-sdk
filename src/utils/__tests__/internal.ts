@@ -206,7 +206,7 @@ describe('filterEventRecords', () => {
     filterRecordsStub.withArgs(mod, eventName).returns([]);
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
-      `Event "${mod}.${eventName}" wasnt't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
+      `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
     );
   });
 });

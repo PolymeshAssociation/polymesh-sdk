@@ -126,6 +126,7 @@ interface IdentityOptions {
   assetPermissionsHasPermissions?: boolean;
   assetPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
+  isCddProvider?: boolean;
   getPrimaryKey?: Account;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
@@ -176,6 +177,7 @@ interface AuthorizationRequestOptions {
   expiry?: Date | null;
   data?: Authorization;
   exists?: boolean;
+  isExpired?: boolean;
 }
 
 interface ProposalOptions {
@@ -386,6 +388,7 @@ let identityAssetPermissionsCheckPermissionsStub: SinonStub;
 let identityAssetPermissionsGetStub: SinonStub;
 let identityAssetPermissionsGetGroupStub: SinonStub;
 let identityExistsStub: SinonStub;
+let identityIsCddProviderStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
 let accountGetIdentityStub: SinonStub;
 let accountGetTransactionHistoryStub: SinonStub;
@@ -704,6 +707,7 @@ export const mockAgentModule = (path: string) => (): Record<string, unknown> => 
 const defaultIdentityOptions: IdentityOptions = {
   did: 'someDid',
   hasValidCdd: true,
+  isCddProvider: false,
   authorizations: {
     getReceived: [],
     getSent: { data: [], next: null },
@@ -1255,6 +1259,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
     expiry: opts.expiry,
     data: opts.data,
     exists: authorizationRequestExistsStub.resolves(opts.data),
+    isExpired: authorizationRequestExistsStub.resolves(opts.isExpired),
   } as unknown) as MockAuthorizationRequest;
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
@@ -1449,6 +1454,7 @@ function configureIdentity(opts: IdentityOptions): void {
     areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
     isEqual: identityIsEqualStub.returns(opts.isEqual),
     exists: identityExistsStub.resolves(opts.exists),
+    isCddProvider: identityIsCddProviderStub.resolves(opts.isCddProvider),
   } as unknown) as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
@@ -1486,6 +1492,7 @@ function initIdentity(opts?: IdentityOptions): void {
   identityAssetPermissionsHasPermissionsStub = sinon.stub();
   identityAssetPermissionsCheckPermissionsStub = sinon.stub();
   identityExistsStub = sinon.stub();
+  identityIsCddProviderStub = sinon.stub();
 
   identityOptions = { ...defaultIdentityOptions, ...opts };
 

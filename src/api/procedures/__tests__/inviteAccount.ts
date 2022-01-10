@@ -142,7 +142,9 @@ describe('inviteAccount procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
 
-    const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
+      mockContext
+    );
 
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
@@ -151,7 +153,7 @@ describe('inviteAccount procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       null
@@ -162,7 +164,7 @@ describe('inviteAccount procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       rawExpiry
@@ -186,7 +188,7 @@ describe('inviteAccount procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       null
@@ -202,7 +204,9 @@ describe('inviteAccount procedure', () => {
 
     signerToStringStub.withArgs(args.targetAccount).returns(address);
 
-    const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
+      mockContext
+    );
 
     return expect(prepareInviteAccount.call(proc, { targetAccount })).rejects.toThrow(
       'The target Account is already part of an Identity'
@@ -264,7 +268,9 @@ describe('inviteAccount procedure', () => {
     signerToStringStub.withArgs(args.targetAccount).returns(address);
     signerToStringStub.withArgs(target).returns(address);
 
-    const proc = procedureMockUtils.getInstance<InviteAccountParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
+      mockContext
+    );
 
     return expect(prepareInviteAccount.call(proc, { ...args })).rejects.toThrow(
       'The target Account already has a pending invitation to join this Identity'

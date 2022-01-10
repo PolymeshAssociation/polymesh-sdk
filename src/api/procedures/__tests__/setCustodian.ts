@@ -105,7 +105,7 @@ describe('setCustodian procedure', () => {
     signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
     signerToStringStub.withArgs(target).returns(args.targetIdentity);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     return expect(prepareSetCustodian.call(proc, args)).rejects.toThrow(
       "The target Identity already has a pending invitation to be the Portfolio's custodian"
@@ -164,7 +164,7 @@ describe('setCustodian procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
@@ -173,7 +173,7 @@ describe('setCustodian procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       null
@@ -184,7 +184,7 @@ describe('setCustodian procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       transaction,
-      {},
+      sinon.match({ resolvers: sinon.match.array }),
       rawSignatory,
       rawAuthorizationData,
       rawExpiry
@@ -193,7 +193,7 @@ describe('setCustodian procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const id = new BigNumber(1);
       const did = 'someDid';

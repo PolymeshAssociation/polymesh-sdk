@@ -1,5 +1,6 @@
-import { Asset, Identity, Procedure } from '~/internal';
-import { AuthorizationType, SignerType, TxTags } from '~/types';
+import { createAuthorizationResolver } from '~/api/procedures/utils';
+import { Asset, AuthorizationRequest, Identity, PostTransactionValue, Procedure } from '~/internal';
+import { Authorization, AuthorizationType, SignerType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -25,9 +26,9 @@ export type Params = { ticker: string } & TransferAssetOwnershipParams;
  * @hidden
  */
 export async function prepareTransferAssetOwnership(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, AuthorizationRequest>,
   args: Params
-): Promise<Asset> {
+): Promise<PostTransactionValue<AuthorizationRequest>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -35,33 +36,41 @@ export async function prepareTransferAssetOwnership(
     context,
   } = this;
   const { ticker, target, expiry } = args;
+  const issuer = await context.getCurrentIdentity();
+  const targetIdentity = await context.getIdentity(target);
 
   const rawSignatory = signerValueToSignatory(
     { type: SignerType.Identity, value: signerToString(target) },
     context
   );
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    { type: AuthorizationType.TransferAssetOwnership, value: ticker },
-    context
-  );
+
+  const authRequest: Authorization = {
+    type: AuthorizationType.TransferAssetOwnership,
+    value: ticker,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
   const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
-  this.addTransaction(
+  const [auth] = this.addTransaction(
     tx.identity.addAuthorization,
-    {},
+    {
+      resolvers: [
+        createAuthorizationResolver(authRequest, issuer, targetIdentity, expiry || null, context),
+      ],
+    },
     rawSignatory,
     rawAuthorizationData,
     rawExpiry
   );
 
-  return new Asset({ ticker }, context);
+  return auth;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Asset>,
+  this: Procedure<Params, AuthorizationRequest>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
@@ -76,5 +85,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const transferAssetOwnership = (): Procedure<Params, Asset> =>
+export const transferAssetOwnership = (): Procedure<Params, AuthorizationRequest> =>
   new Procedure(prepareTransferAssetOwnership, getAuthorization);
