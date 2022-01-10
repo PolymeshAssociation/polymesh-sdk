@@ -58,9 +58,9 @@ import {
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
-  SecondaryKey,
   SecurityTokenDetails,
   SignerType,
+  SigningKey,
   StoBalanceStatus,
   StoDetails,
   StoSaleStatus,
@@ -127,7 +127,7 @@ interface IdentityOptions {
   tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   isCddProvider?: boolean;
-  getPrimaryKey?: Account;
+  getPrimaryKey?: SigningKey;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -135,7 +135,7 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
-  getSecondaryKeys?: SecondaryKey[];
+  getSecondaryKeys?: SigningKey[];
   areScondaryKeysFrozen?: boolean;
   isEqual?: boolean;
   tokenPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;

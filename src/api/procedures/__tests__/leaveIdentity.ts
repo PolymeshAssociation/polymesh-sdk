@@ -9,7 +9,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryKey } from '~/types';
+import { SigningKey } from '~/types';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -86,7 +86,7 @@ describe('modifyCaCheckpoint procedure', () => {
         getSecondaryKeys: [
           ({
             signer: entityMockUtils.getAccountInstance({ address }),
-          } as unknown) as SecondaryKey,
+          } as unknown) as SigningKey,
         ],
       }),
     });

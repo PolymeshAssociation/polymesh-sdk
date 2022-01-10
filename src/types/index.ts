@@ -1167,7 +1167,7 @@ export interface CheckpointWithData {
   totalSupply: BigNumber;
 }
 
-export interface SecondaryKey {
+export interface SigningKey {
   signer: Signer;
   permissions: Permissions;
 }

@@ -8,7 +8,7 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionType, SecondaryKey, Signer, SignerType, SignerValue } from '~/types';
+import { PermissionType, Signer, SignerType, SignerValue, SigningKey } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {
@@ -78,7 +78,7 @@ describe('modifySignerPermissions procedure', () => {
   });
 
   test('should add a batch of Set Permission To Signer transactions to the queue', async () => {
-    let secondaryKeys: SecondaryKey[] = [
+    let secondaryKeys: SigningKey[] = [
       {
         signer: account,
         permissions: {

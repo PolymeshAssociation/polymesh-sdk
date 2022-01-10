@@ -2,7 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
+import { PermissionsLike, RoleType, SigningKey } from '~/types';
 import { Modify } from '~/types/utils';
 import {
   identityIdToString,
@@ -15,7 +15,7 @@ import { filterEventRecords } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  secondaryKeys?: Modify<SecondaryKey, { permissions: PermissionsLike }>[];
+  secondaryKeys?: Modify<SigningKey, { permissions: PermissionsLike }>[];
 }
 
 /**

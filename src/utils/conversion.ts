@@ -164,11 +164,11 @@ import {
   RequirementCompliance,
   Scope,
   ScopeType,
-  SecondaryKey,
   SectionPermissions,
   Signer,
   SignerType,
   SignerValue,
+  SigningKey,
   SingleClaimCondition,
   StoBalanceStatus,
   StoDetails,
@@ -2613,7 +2613,7 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
  * @hidden
  */
 export function secondaryKeyToMeshSecondaryKey(
-  secondaryKey: SecondaryKey,
+  secondaryKey: SigningKey,
   context: Context
 ): MeshSecondaryKey {
   const { polymeshApi } = context;

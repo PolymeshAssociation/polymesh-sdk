@@ -11,6 +11,7 @@ import { BaseTransactionSpec, PolymeshTx, PostTransactionValueArray } from '~/ty
 import {
   balanceToBigNumber,
   hashToString,
+  signerToString,
   transactionToTxTag,
   u32ToBigNumber,
 } from '~/utils/conversion';
@@ -304,10 +305,10 @@ export abstract class PolymeshTransactionBase<
     const { paidForBy, context, tag } = this;
 
     if (paidForBy) {
-      const primaryKey = await paidForBy.getPrimaryKey();
+      const { signer } = await paidForBy.getPrimaryKey();
 
       return {
-        account: primaryKey,
+        account: new Account({ address: signerToString(signer) }, context),
         allowance: null,
       };
     }

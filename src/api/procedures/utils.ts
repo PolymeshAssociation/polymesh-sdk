@@ -31,9 +31,9 @@ import {
   InstructionStatus,
   InstructionType,
   PermissionGroupType,
-  SecondaryKey,
   Signer,
   SignerValue,
+  SigningKey,
   TickerReservationStatus,
 } from '~/types';
 import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
@@ -135,7 +135,7 @@ export async function assertPortfolioExists(
  */
 export function assertSecondaryKeys(
   signerValues: SignerValue[],
-  secondaryKeys: SecondaryKey[]
+  secondaryKeys: SigningKey[]
 ): void {
   const notInTheList: string[] = [];
   signerValues.forEach(({ value: itemValue }) => {

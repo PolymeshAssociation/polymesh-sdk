@@ -3,7 +3,7 @@ import { find } from 'lodash';
 import { assertSecondaryKeys } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, Signer, TxTags } from '~/types';
-import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { signerToSignerValue, signerToString, signerValueToSignatory } from '~/utils/conversion';
 
 export interface RemoveSecondaryKeysParams {
   signers: Signer[];
@@ -27,13 +27,15 @@ export async function prepareRemoveSecondaryKeys(
 
   const identity = await context.getCurrentIdentity();
 
-  const [primaryKey, secondaryKeys] = await Promise.all([
+  const [{ signer: primaryKeySigner }, secondaryKeys] = await Promise.all([
     identity.getPrimaryKey(),
     identity.getSecondaryKeys(),
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));
-  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKey.address);
+  const primaryKeySignerValue = signerToString(primaryKeySigner);
+
+  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKeySignerValue);
 
   if (isPrimaryKeyPresent) {
     throw new PolymeshError({

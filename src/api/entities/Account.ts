@@ -304,9 +304,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       return false;
     }
 
-    const primaryKey = await identity.getPrimaryKey();
+    const { signer } = await identity.getPrimaryKey();
 
-    if (address === primaryKey.address) {
+    if (address === signerToString(signer)) {
       return false;
     }
 
@@ -321,12 +321,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const currentIdentity = await context.getCurrentIdentity();
 
-    const [primaryKey, secondaryKeys] = await Promise.all([
+    const [{ signer: primaryKeySigner }, secondaryKeys] = await Promise.all([
       currentIdentity.getPrimaryKey(),
       currentIdentity.getSecondaryKeys(),
     ]);
 
-    if (address === primaryKey.address) {
+    if (address === signerToString(primaryKeySigner)) {
       return {
         tokens: null,
         transactions: null,

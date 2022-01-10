@@ -17,10 +17,10 @@ import {
   PortfolioCustodianRole,
   Role,
   RoleType,
-  SecondaryKey,
   Signer,
   SignerType,
   SignerValue,
+  SigningKey,
   TickerOwnerRole,
   VenueOwnerRole,
 } from '~/types';
@@ -465,12 +465,15 @@ describe('Identity class', () => {
     const accountId = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
 
     let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
+    let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
+    let fakeResult: SigningKey;
 
     beforeAll(() => {
       accountIdToStringStub = sinon.stub(utilsConversionModule, 'accountIdToString');
       accountIdToStringStub.returns(accountId);
+      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
     });
 
     beforeEach(() => {
@@ -482,6 +485,19 @@ describe('Identity class', () => {
         secondary_keys: [],
       });
       /* eslint-enabled @typescript-eslint/naming-convention */
+
+      const account = entityMockUtils.getAccountInstance({ address: accountId });
+      signerValueToSignerStub.returns(account);
+
+      fakeResult = {
+        signer: account,
+        permissions: {
+          tokens: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: [],
+        },
+      };
     });
 
     test('should return a PrimaryKey', async () => {
@@ -491,7 +507,7 @@ describe('Identity class', () => {
       didRecordsStub.returns(rawDidRecord);
 
       const result = await identity.getPrimaryKey();
-      expect(result).toEqual(entityMockUtils.getAccountInstance({ address: accountId }));
+      expect(result).toEqual(fakeResult);
     });
 
     test('should allow subscription', async () => {
@@ -509,10 +525,7 @@ describe('Identity class', () => {
       const result = await identity.getPrimaryKey(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(
-        callback,
-        entityMockUtils.getAccountInstance({ address: accountId })
-      );
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 
@@ -1142,7 +1155,7 @@ describe('Identity class', () => {
 
     let account: Account;
     let fakeIdentity: Identity;
-    let fakeResult: SecondaryKey[];
+    let fakeResult: SigningKey[];
 
     let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
     let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;

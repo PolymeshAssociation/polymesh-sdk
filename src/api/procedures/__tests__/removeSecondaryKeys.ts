@@ -8,7 +8,7 @@ import {
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Signer, SignerType, SignerValue } from '~/types';
+import { Identity, Signer, SignerType, SignerValue, SigningKey } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryKeys procedure', () => {
@@ -16,8 +16,11 @@ describe('removeSecondaryKeys procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
+  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
 
   let args: RemoveSecondaryKeysParams;
+  let primaryKey: SigningKey;
+  let primaryKeyAccount: Account;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -25,11 +28,26 @@ describe('removeSecondaryKeys procedure', () => {
     entityMockUtils.initMocks();
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
+    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
   });
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
+
+    primaryKeyAccount = entityMockUtils.getAccountInstance({ address: 'primaryKey' });
+
+    primaryKey = {
+      signer: primaryKeyAccount,
+      permissions: {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      },
+    };
+
+    signerToStringStub.returns(primaryKeyAccount.address);
 
     const signers = [entityMockUtils.getAccountInstance({ address: 'someFakeAccount' })];
     args = {
@@ -59,6 +77,7 @@ describe('removeSecondaryKeys procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
+        primaryKey,
         secondaryKeys: signers.map(signer => ({
           signer,
           permissions: {
@@ -85,16 +104,19 @@ describe('removeSecondaryKeys procedure', () => {
 
   test('should throw an error if attempting to remove the primary key', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
-    const signer = entityMockUtils.getAccountInstance({ address: 'primaryKey' });
 
     signerToSignerValueStub
-      .withArgs(signer)
-      .returns({ type: SignerType.Account, value: signer.address });
+      .withArgs(primaryKeyAccount)
+      .returns({ type: SignerType.Account, value: primaryKeyAccount.address });
 
     return expect(
       prepareRemoveSecondaryKeys.call(proc, {
         ...args,
-        signers: [signer],
+        signers: [primaryKeyAccount],
+        identity: entityMockUtils.getIdentityInstance({
+          getPrimaryKey: primaryKey,
+          getSecondaryKeys: [],
+        }),
       })
     ).rejects.toThrow('You cannot remove the primary key');
   });
@@ -111,7 +133,7 @@ describe('removeSecondaryKeys procedure', () => {
       prepareRemoveSecondaryKeys.call(proc, {
         ...args,
         identity: entityMockUtils.getIdentityInstance({
-          getPrimaryKey: entityMockUtils.getAccountInstance({ address: 'primaryKey' }),
+          getPrimaryKey: primaryKey,
           getSecondaryKeys: [],
         }),
       })

@@ -6,7 +6,6 @@ import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
-  Account,
   Context,
   Entity,
   Instruction,
@@ -30,7 +29,8 @@ import {
   Order,
   ResultSet,
   Role,
-  SecondaryKey,
+  SignerType,
+  SigningKey,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -52,6 +52,7 @@ import {
   signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
+  transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
@@ -256,11 +257,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getPrimaryKey(): Promise<Account>;
-  public async getPrimaryKey(callback: SubCallback<Account>): Promise<UnsubCallback>;
+  public async getPrimaryKey(): Promise<SigningKey>;
+  public async getPrimaryKey(callback: SubCallback<SigningKey>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getPrimaryKey(callback?: SubCallback<Account>): Promise<Account | UnsubCallback> {
+  public async getPrimaryKey(
+    callback?: SubCallback<SigningKey>
+  ): Promise<SigningKey | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -271,8 +274,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): Account => {
-      return new Account({ address: accountIdToString(primaryKey) }, context);
+    const assembleResult = ({ primary_key: primaryKey }: DidRecord): SigningKey => {
+      return {
+        signer: signerValueToSigner(
+          { type: SignerType.Account, value: accountIdToString(primaryKey) },
+          context
+        ),
+        permissions: {
+          tokens: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: transactionPermissionsToTxGroups(null),
+        },
+      };
     };
 
     const rawDid = stringToIdentityId(did, context);
@@ -650,13 +664,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
-  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
+  public async getSecondaryKeys(): Promise<SigningKey[]>;
+  public async getSecondaryKeys(callback: SubCallback<SigningKey[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getSecondaryKeys(
-    callback?: SubCallback<SecondaryKey[]>
-  ): Promise<SecondaryKey[] | UnsubCallback> {
+    callback?: SubCallback<SigningKey[]>
+  ): Promise<SigningKey[] | UnsubCallback> {
     const {
       did,
       context,
@@ -667,7 +681,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
+    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SigningKey[] => {
       return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
         signer: signerValueToSigner(signatoryToSignerValue(rawSigner), context),
         permissions: meshPermissionsToPermissions(permissions, context),

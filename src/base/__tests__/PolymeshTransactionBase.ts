@@ -11,6 +11,7 @@ import { Mocked } from '~/testUtils/types';
 import { TransactionStatus } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('Polymesh Transaction Base class', () => {
@@ -501,9 +502,17 @@ describe('Polymesh Transaction Base class', () => {
 
     test('should return a null allowance if the transaction is paid for a fixed third party', async () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const account = entityMockUtils.getAccountInstance();
+      const account = entityMockUtils.getAccountInstance({ address: DUMMY_ACCOUNT_ID });
       const paidForBy = entityMockUtils.getIdentityInstance({
-        getPrimaryKey: account,
+        getPrimaryKey: {
+          signer: account,
+          permissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
       });
 
       const args = tuple('SOMETHING');
@@ -520,7 +529,7 @@ describe('Polymesh Transaction Base class', () => {
 
       const result = await transaction.getPayingAccount();
 
-      expect(result?.account).toEqual(account);
+      expect(result?.account.address).toEqual(account.address);
       expect(result?.allowance).toBeNull();
     });
 

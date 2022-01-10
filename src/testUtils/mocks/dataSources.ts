@@ -155,8 +155,8 @@ import {
   ExtrinsicData,
   KeyringPair,
   ResultSet,
-  SecondaryKey,
   SignerType,
+  SigningKey,
   Subsidy,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
@@ -317,8 +317,8 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  primaryKey?: string;
-  secondaryKeys?: SecondaryKey[];
+  primaryKey?: SigningKey;
+  secondaryKeys?: SigningKey[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -584,7 +584,15 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
-  primaryKey: 'primaryKey',
+  primaryKey: {
+    signer: ('primaryKey' as unknown) as Account,
+    permissions: {
+      tokens: null,
+      transactions: null,
+      transactionGroups: [],
+      portfolios: null,
+    },
+  },
   secondaryKeys: [],
   transactionHistory: {
     data: [],
