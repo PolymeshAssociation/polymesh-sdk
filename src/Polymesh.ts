@@ -11,18 +11,9 @@ import { satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import WebSocketAsPromised from 'websocket-as-promised';
 
-import {
-  Account,
-  claimClassicTicker,
-  ClaimClassicTickerParams,
-  Context,
-  Identity,
-  PolymeshError,
-  registerIdentity,
-  RegisterIdentityParams,
-  SecurityToken,
-  TickerReservation,
-} from '~/internal';
+import { Assets } from '~/Assets';
+import { Identities } from '~/Identities';
+import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Settlements } from '~/Settlements';
 import {
@@ -30,23 +21,14 @@ import {
   CommonKeyring,
   ErrorCode,
   MiddlewareConfig,
-  ProcedureMethod,
   SubCallback,
-  TickerReservationStatus,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import {
-  signerToString,
-  stringToIdentityId,
-  stringToTicker,
-  tickerToString,
-} from '~/utils/conversion';
-import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
+import { signerToString } from '~/utils/conversion';
 
 import { Claims } from './Claims';
 import { CurrentIdentity } from './CurrentIdentity';
-// import { Governance } from './Governance';
 import { Network } from './Network';
 import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from './utils/constants';
 
@@ -64,8 +46,6 @@ export class Polymesh {
 
   // Namespaces
 
-  // NOTE uncomment in Governance v2 upgrade
-  // public governance: Governance;
   public claims: Claims;
   /**
    * A set of methods to interact with the Polymesh network. This includes transferring POLYX, reading network properties and querying for historical events
@@ -73,6 +53,14 @@ export class Polymesh {
   public network: Network;
   public settlements: Settlements;
   public currentIdentity: CurrentIdentity;
+  /**
+   * A set of methods for interacting with Polymesh Identities.
+   */
+  public identities: Identities;
+  /**
+   * A set of methods for interacting with Assets
+   */
+  public assets: Assets;
 
   /**
    * @hidden
@@ -80,24 +68,12 @@ export class Polymesh {
   private constructor(context: Context) {
     this.context = context;
 
-    // NOTE uncomment in Governance v2 upgrade
-    // this.governance = new Governance(context);
     this.claims = new Claims(context);
     this.network = new Network(context);
     this.settlements = new Settlements(context);
     this.currentIdentity = new CurrentIdentity(context);
-
-    this.registerIdentity = createProcedureMethod(
-      { getProcedureAndArgs: args => [registerIdentity, args] },
-      context
-    );
-
-    this.claimClassicTicker = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [claimClassicTicker, args],
-      },
-      context
-    );
+    this.identities = new Identities(context);
+    this.assets = new Assets(context);
   }
 
   /**
@@ -331,123 +307,6 @@ export class Polymesh {
   }
 
   /**
-   * Claim a ticker symbol that was reserved in Polymath Classic (Ethereum). The Ethereum account
-   *   that owns the ticker must sign a special message that contains the DID of the Identity that will own the ticker
-   *   in Polymesh, and provide the signed data to this call
-   */
-  public claimClassicTicker: ProcedureMethod<ClaimClassicTickerParams, TickerReservation>;
-
-  /**
-   * Check if a ticker hasn't been reserved
-   *
-   * @note can be subscribed to
-   */
-  public isTickerAvailable(args: { ticker: string }): Promise<boolean>;
-  public isTickerAvailable(
-    args: { ticker: string },
-    callback: SubCallback<boolean>
-  ): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async isTickerAvailable(
-    args: { ticker: string },
-    callback?: SubCallback<boolean>
-  ): Promise<boolean | UnsubCallback> {
-    const reservation = new TickerReservation(args, this.context);
-
-    if (callback) {
-      return reservation.details(({ status: reservationStatus }) => {
-        // eslint-disable-next-line standard/no-callback-literal
-        callback(reservationStatus === TickerReservationStatus.Free);
-      });
-    }
-    const { status } = await reservation.details();
-
-    return status === TickerReservationStatus.Free;
-  }
-
-  /**
-   * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include tokens that
-   *   have already been launched
-   *
-   * @param args.owner - defaults to the current Identity
-   *
-   * @note reservations with unreadable characters in their tickers will be left out
-   */
-  public async getTickerReservations(args?: {
-    owner: string | Identity;
-  }): Promise<TickerReservation[]> {
-    const {
-      context: {
-        polymeshApi: { query },
-      },
-      context,
-    } = this;
-
-    const did = await getDid(args?.owner, context);
-
-    const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(did, context)
-    );
-
-    return entries.reduce<TickerReservation[]>((result, [key, relation]) => {
-      if (relation.isTickerOwned) {
-        const ticker = tickerToString(key.args[1]);
-
-        if (isPrintableAscii(ticker)) {
-          return [...result, new TickerReservation({ ticker }, context)];
-        }
-      }
-
-      return result;
-    }, []);
-  }
-
-  /**
-   * Retrieve a Ticker Reservation
-   *
-   * @param args.ticker - Security Token ticker
-   */
-  public async getTickerReservation(args: { ticker: string }): Promise<TickerReservation> {
-    const { ticker } = args;
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      context,
-    } = this;
-
-    const { owner, expiry } = await asset.tickers(stringToTicker(ticker, context));
-
-    if (!owner.isEmpty) {
-      if (!expiry.isNone) {
-        return new TickerReservation({ ticker }, context);
-      }
-
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: `${ticker} token has been created`,
-      });
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `There is no reservation for ${ticker} ticker`,
-    });
-  }
-
-  /**
-   * Create an Identity instance from a DID
-   *
-   * @throws if there is no Identity with the passed DID
-   */
-  public async getIdentity(args: { did: string }): Promise<Identity> {
-    return this.context.getIdentity(args.did);
-  }
-
-  /**
    * Retrieve the Identity associated to the current Account (null if there is none)
    */
   public getCurrentIdentity(): Promise<Identity | null> {
@@ -474,16 +333,6 @@ export class Polymesh {
    */
   public getAccounts(): Account[] {
     return this.context.getAccounts();
-  }
-
-  /**
-   * Return whether the supplied Identity/DID exists
-   */
-  public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
-    const { identity: did } = args;
-    const identity = did instanceof Identity ? did : new Identity({ did }, this.context);
-
-    return identity.exists();
   }
 
   /**
@@ -519,74 +368,6 @@ export class Polymesh {
       polymeshApi.off('disconnected', callback);
     };
   }
-
-  /**
-   * Retrieve all the Security Tokens owned by an Identity
-   *
-   * @param args.owner - identity representation or Identity ID as stored in the blockchain
-   *
-   * @note tokens with unreadable characters in their tickers will be left out
-   */
-  public async getSecurityTokens(args?: { owner: string | Identity }): Promise<SecurityToken[]> {
-    const {
-      context: {
-        polymeshApi: { query },
-      },
-      context,
-    } = this;
-
-    const did = await getDid(args?.owner, context);
-
-    const entries = await query.asset.assetOwnershipRelations.entries(
-      stringToIdentityId(did, context)
-    );
-
-    return entries.reduce<SecurityToken[]>((result, [key, relation]) => {
-      if (relation.isAssetOwned) {
-        const ticker = tickerToString(key.args[1]);
-
-        if (isPrintableAscii(ticker)) {
-          return [...result, new SecurityToken({ ticker }, context)];
-        }
-      }
-
-      return result;
-    }, []);
-  }
-
-  /**
-   * Retrieve a Security Token
-   *
-   * @param args.ticker - Security Token ticker
-   */
-  public async getSecurityToken(args: { ticker: string }): Promise<SecurityToken> {
-    const { ticker } = args;
-
-    const token = new SecurityToken({ ticker }, this.context);
-    const exists = await token.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: `There is no Security Token with ticker "${ticker}"`,
-      });
-    }
-
-    return token;
-  }
-
-  /**
-   * Register an Identity
-   *
-   * @note must be a CDD provider
-   * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
-   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
-   *
-   * @note required role:
-   *   - Customer Due Diligence Provider
-   */
-  public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
 
   /**
    * Disconnect the client and close all open connections and subscriptions
