@@ -531,28 +531,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getNetworkVersion', () => {
-    test('should return the network version', async () => {
-      const networkVersion = '1.0.0';
-
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, networkVersion } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      const result = await polymesh.getNetworkVersion();
-
-      expect(result).toEqual(networkVersion);
-    });
-  });
-
   describe('method: addSigner', () => {
     test('should call the underlying addPair function', async () => {
       const pair = {
