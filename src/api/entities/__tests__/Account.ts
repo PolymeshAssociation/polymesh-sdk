@@ -344,6 +344,8 @@ describe('Account class', () => {
         returnValue: dsMockUtils.createMockBool(false),
       });
 
+      signerToStringStub.returns(address);
+
       keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId());
 
       let result = await account.isFrozen();
