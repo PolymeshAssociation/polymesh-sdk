@@ -120,17 +120,17 @@ describe('Settlements class', () => {
     });
 
     beforeEach(() => {
-      portfolioLikeToPortfolioIdStub.withArgs(fromDid).returns(fromPortfolioId);
       portfolioLikeToPortfolioIdStub.withArgs(toDid).returns(toPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(fromDid).returns(fromPortfolioId);
       portfolioIdToMeshPortfolioIdStub.withArgs(toPortfolioId, mockContext).returns(rawToPortfolio);
-      portfolioIdToPortfolioStub.withArgs(fromPortfolioId, mockContext).returns(
-        entityMockUtils.getDefaultPortfolioInstance({
-          did: fromDid,
-        })
-      );
       portfolioIdToPortfolioStub.withArgs(toPortfolioId, mockContext).returns(
         entityMockUtils.getDefaultPortfolioInstance({
           did: toDid,
+        })
+      );
+      portfolioIdToPortfolioStub.withArgs(fromPortfolioId, mockContext).returns(
+        entityMockUtils.getDefaultPortfolioInstance({
+          did: fromDid,
         })
       );
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);

@@ -431,15 +431,15 @@ function getMissingAssetPermissions(
   } else if (requiredPermissions === null) {
     return null;
   } else if (requiredPermissions) {
-    const { type: tokensType, values: tokensValues } = currentPermissions;
+    const { type: permissionType, values: assetValues } = currentPermissions;
 
     if (requiredPermissions.length) {
       let missingPermissions: Asset[];
 
-      if (tokensType === PermissionType.Include) {
-        missingPermissions = differenceBy(requiredPermissions, tokensValues, 'ticker');
+      if (permissionType === PermissionType.Include) {
+        missingPermissions = differenceBy(requiredPermissions, assetValues, 'ticker');
       } else {
-        missingPermissions = intersectionBy(requiredPermissions, tokensValues, 'ticker');
+        missingPermissions = intersectionBy(requiredPermissions, assetValues, 'ticker');
       }
 
       if (missingPermissions.length) {

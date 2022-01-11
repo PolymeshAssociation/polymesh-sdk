@@ -189,8 +189,6 @@ export async function prepareCreateAsset(
     fee = registerTickerFee.plus(createAssetFee);
   }
 
-  // TODO @shuffledex: refactoring with batching mechanism
-
   this.addTransaction(
     tx.asset.createAsset,
     { fee },
