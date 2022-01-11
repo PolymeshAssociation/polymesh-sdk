@@ -2547,68 +2547,6 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
   return `${tx.section}.${tx.method}` as TxTag;
 }
 
-// /**
-//  * @hidden
-//  */
-// export function middlewareProposalToProposalDetails(
-//   proposal: Proposal,
-//   context: Context
-// ): ProposalDetails {
-//   const {
-//     proposer: proposerAddress,
-//     createdAt,
-//     url: discussionUrl,
-//     description,
-//     coolOffEndBlock,
-//     endBlock,
-//     proposal: rawProposal,
-//     lastState,
-//     lastStateUpdatedAt,
-//     totalVotes,
-//     totalAyesWeight,
-//     totalNaysWeight,
-//   } = proposal;
-
-//   return {
-//     proposerAddress,
-//     createdAt: new BigNumber(createdAt),
-//     discussionUrl,
-//     description,
-//     coolOffEndBlock: new BigNumber(coolOffEndBlock),
-//     endBlock: new BigNumber(endBlock),
-//     transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
-//     lastState,
-//     lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
-//     totalVotes: new BigNumber(totalVotes),
-//     totalAyesWeight: new BigNumber(totalAyesWeight),
-//     totalNaysWeight: new BigNumber(totalNaysWeight),
-//   };
-// }
-
-// NOTE uncomment in Governance v2 upgrade
-// /**
-//  * @hidden
-//  */
-// export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
-//   if (proposalState.isPending) {
-//     return ProposalState.Pending;
-//   }
-
-//   if (proposalState.isCancelled) {
-//     return ProposalState.Cancelled;
-//   }
-
-//   if (proposalState.isKilled) {
-//     return ProposalState.Killed;
-//   }
-
-//   if (proposalState.isRejected) {
-//     return ProposalState.Rejected;
-//   }
-
-//   return ProposalState.Referendum;
-// }
-
 /**
  * @hidden
  */
