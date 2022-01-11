@@ -80,7 +80,7 @@ describe('Assets Class', () => {
         totalSupply: new BigNumber(100),
         isDivisible: true,
         assetType: KnownSecurityType.EquityCommon,
-        tokenIdentifiers: [{ type: SecurityIdentifierType.Isin, value: '12345' }],
+        securityIdentifier: [{ type: SecurityIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
         requireInvestorUniqueness: false,
         reservationRequired: false,
