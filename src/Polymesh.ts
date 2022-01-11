@@ -51,7 +51,11 @@ export class Polymesh {
    * A set of methods to interact with the Polymesh network. This includes transferring POLYX, reading network properties and querying for historical events
    */
   public network: Network;
+  /**
+   * A set of methods for exchanging Assets
+   */
   public settlements: Settlements;
+
   public currentIdentity: CurrentIdentity;
   /**
    * A set of methods for interacting with Polymesh Identities.
