@@ -1,22 +1,13 @@
 import {
   AuthorizationRequest,
   Context,
-  createSecurityToken,
-  CreateSecurityTokenWithTickerParams,
-  createVenue,
-  CreateVenueParams,
   inviteAccount,
   InviteAccountParams,
   modifySignerPermissions,
   ModifySignerPermissionsParams,
   removeSecondaryKeys,
   RemoveSecondaryKeysParams,
-  reserveTicker,
-  ReserveTickerParams,
-  SecurityToken,
-  TickerReservation,
   toggleFreezeSecondaryKeys,
-  Venue,
 } from '~/internal';
 import { NoArgsProcedureMethod, PermissionType, ProcedureMethod, Signer } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
@@ -71,28 +62,12 @@ export class CurrentIdentity {
       { getProcedureAndArgs: args => [inviteAccount, { ...args }] },
       context
     );
-    this.createVenue = createProcedureMethod(
-      { getProcedureAndArgs: args => [createVenue, args] },
-      context
-    );
     this.freezeSecondaryKeys = createProcedureMethod(
       { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true }], voidArgs: true },
       context
     );
     this.unfreezeSecondaryKeys = createProcedureMethod(
       { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: false }], voidArgs: true },
-      context
-    );
-    this.reserveTicker = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [reserveTicker, args],
-      },
-      context
-    );
-    this.createToken = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [createSecurityToken, { reservationRequired: false, ...args }],
-      },
       context
     );
   }
@@ -122,11 +97,6 @@ export class CurrentIdentity {
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
   /**
-   * Create a Venue under the ownership of the Current Identity
-   */
-  public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
-
-  /**
    * Freeze all the secondary keys in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
    */
   public freezeSecondaryKeys: NoArgsProcedureMethod<void>;
@@ -135,18 +105,4 @@ export class CurrentIdentity {
    * Unfreeze all the secondary keys in the Current Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryKeys: NoArgsProcedureMethod<void>;
-
-  /**
-   * Reserve a ticker symbol under the ownership of the Current Identity to later use in the creation of a Security Token.
-   *   The ticker will expire after a set amount of time, after which other users can reserve it
-   */
-  public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
-
-  /**
-   * Create a Security Token
-   *
-   * @note if ticker is already reserved, then required role:
-   *   - Ticker Owner
-   */
-  public createToken: ProcedureMethod<CreateSecurityTokenWithTickerParams, SecurityToken>;
 }

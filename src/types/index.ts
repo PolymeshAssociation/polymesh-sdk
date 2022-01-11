@@ -5,8 +5,6 @@ import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
 import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
-// NOTE uncomment in Governance v2 upgrade
-// import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
   Checkpoint,
@@ -1172,12 +1170,6 @@ export type TransactionArgument = {
 );
 
 export type Signer = Identity | Account;
-
-// NOTE uncomment in Governance v2 upgrade
-// export interface ProposalWithDetails {
-//   proposal: Proposal;
-//   details: ProposalDetails;
-// }
 
 export interface StoWithDetails {
   sto: Sto;
