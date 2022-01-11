@@ -94,11 +94,11 @@ describe('Network Class', () => {
     });
   });
 
-  describe('method: getTransactionFees', () => {
+  describe('method: getProtocolFees', () => {
     test('should return the fees associated to the supplied transaction', async () => {
       dsMockUtils.configureMocks({ contextOptions: { transactionFee: new BigNumber(500) } });
 
-      const fee = await network.getTransactionFees({ tag: TxTags.asset.CreateAsset });
+      const fee = await network.getProtocolFees({ tag: TxTags.asset.CreateAsset });
 
       expect(fee).toEqual(new BigNumber(500));
     });

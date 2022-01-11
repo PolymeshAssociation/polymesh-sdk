@@ -82,8 +82,8 @@ export class Network {
    *
    * @param args.tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
    */
-  public getTransactionFees(args: { tag: TxTag }): Promise<BigNumber> {
-    return this.context.getTransactionFees(args.tag);
+  public getProtocolFees(args: { tag: TxTag }): Promise<BigNumber> {
+    return this.context.getProtocolFees(args.tag);
   }
 
   /**
