@@ -1,3 +1,4 @@
+import { QueryableStorage } from '@polkadot/api/types';
 import { bool, Bytes, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import { hexToU8a } from '@polkadot/util';
@@ -44,6 +45,7 @@ import {
   IdentityId,
   ModuleName,
   Permissions as MeshPermissions,
+  PortfolioName,
   ProtocolOp,
   Scope as MeshScope,
   Signatory,
@@ -193,6 +195,7 @@ import {
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
+  portfolioNameToNumber,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
@@ -6852,5 +6855,62 @@ describe('agentGroupToPermissionGroup', () => {
 
     result = agentGroupToPermissionGroup(agentGroup, ticker, context);
     expect(result).toEqual(entityMockUtils.getCustomPermissionGroupInstance({ ticker, id }));
+  });
+});
+
+describe('portfolioNameToNumber', () => {
+  let nameToNumberStub: sinon.SinonStub;
+  let portfoliosStub: sinon.SinonStub;
+  let rawName: PortfolioName;
+  let identityId: IdentityId;
+  let query: QueryableStorage<'promise'>;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
+    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
+    query = ({
+      portfolio: {
+        nameToNumber: nameToNumberStub,
+        portfolios: portfoliosStub,
+      },
+    } as unknown) as QueryableStorage<'promise'>;
+  });
+
+  beforeEach(() => {
+    rawName = dsMockUtils.createMockText('someName');
+    identityId = dsMockUtils.createMockIdentityId('someDid');
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('should return undefined if no portfolio with given name is found', async () => {
+    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
+
+    const result = await portfolioNameToNumber(identityId, rawName, query);
+    expect(result).toBeUndefined();
+  });
+
+  test('should return portfolio number for given portfolio name', async () => {
+    nameToNumberStub.returns(dsMockUtils.createMockU64(2));
+
+    let result = await portfolioNameToNumber(identityId, rawName, query);
+    expect(result).toEqual(new BigNumber(2));
+
+    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    portfoliosStub.returns(rawName);
+
+    result = await portfolioNameToNumber(identityId, rawName, query);
+    expect(result).toEqual(new BigNumber(1));
   });
 });

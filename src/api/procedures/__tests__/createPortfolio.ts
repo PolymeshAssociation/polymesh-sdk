@@ -1,7 +1,7 @@
 import { Text, u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, PortfolioName, PortfolioNumber } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -19,29 +19,20 @@ describe('createPortfolio procedure', () => {
   let mockContext: Mocked<Context>;
   let numberedPortfolio: PostTransactionValue<NumberedPortfolio>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
-  let portfolio: { id: BigNumber; name: string };
-  let rawPortfolio: { id: PortfolioNumber; name: PortfolioName };
+  let portfolioNameToNumberStub: sinon.SinonStub;
   let newPortfolioName: string;
-  let addTransactionStub: sinon.SinonStub;
   let rawNewPortfolioName: Text;
-  let nameToNumberStub: sinon.SinonStub;
+  let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+
     numberedPortfolio = ('numberedPortfolio' as unknown) as PostTransactionValue<NumberedPortfolio>;
+
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
-
-    portfolio = {
-      id: new BigNumber(1),
-      name: 'portfolioName1',
-    };
-
-    rawPortfolio = {
-      id: dsMockUtils.createMockU64(portfolio.id.toNumber()),
-      name: dsMockUtils.createMockText(portfolio.name),
-    };
+    portfolioNameToNumberStub = sinon.stub(utilsConversionModule, 'portfolioNameToNumber');
 
     newPortfolioName = 'newPortfolioName';
     rawNewPortfolioName = dsMockUtils.createMockText(newPortfolioName);
@@ -51,8 +42,6 @@ describe('createPortfolio procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([numberedPortfolio]);
     stringToTextStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
-
-    nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
   });
 
   afterEach(() => {
@@ -69,9 +58,9 @@ describe('createPortfolio procedure', () => {
 
   test('should throw an error if the portfolio name is duplicated', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
-    nameToNumberStub.returns(rawPortfolio.id);
+    portfolioNameToNumberStub.returns(new BigNumber(1));
 
-    return expect(prepareCreatePortfolio.call(proc, { name: portfolio.name })).rejects.toThrow(
+    return expect(prepareCreatePortfolio.call(proc, { name: newPortfolioName })).rejects.toThrow(
       'A portfolio with that name already exists'
     );
   });
@@ -79,7 +68,7 @@ describe('createPortfolio procedure', () => {
   test('should add a create portfolio transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
     const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
-    nameToNumberStub.returns(dsMockUtils.createMockU64(0));
+    portfolioNameToNumberStub.returns(undefined);
 
     const result = await prepareCreatePortfolio.call(proc, { name: newPortfolioName });
 

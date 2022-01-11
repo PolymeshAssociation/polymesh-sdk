@@ -3,7 +3,12 @@ import BigNumber from 'bignumber.js';
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToIdentityId, stringToText, u64ToBigNumber } from '~/utils/conversion';
+import {
+  numberToU64,
+  portfolioNameToNumber,
+  stringToIdentityId,
+  stringToText,
+} from '~/utils/conversion';
 
 export interface RenamePortfolioParams {
   name: string;
@@ -24,7 +29,7 @@ export async function prepareRenamePortfolio(
   const {
     context: {
       polymeshApi: {
-        query: { portfolio: queryPortfolio },
+        query,
         tx: { portfolio },
       },
     },
@@ -34,13 +39,12 @@ export async function prepareRenamePortfolio(
   const { did, id, name: newName } = args;
 
   const identityId = stringToIdentityId(did, context);
+
   const rawNewName = stringToText(newName, context);
 
-  const rawExistingPortfolioNumber = await queryPortfolio.nameToNumber(identityId, rawNewName);
+  const existingPortfolioNumber = await portfolioNameToNumber(identityId, rawNewName, query);
 
-  const existingPortfolioNumber = u64ToBigNumber(rawExistingPortfolioNumber);
-
-  if (u64ToBigNumber(rawExistingPortfolioNumber).gt(0)) {
+  if (existingPortfolioNumber) {
     if (id.eq(existingPortfolioNumber)) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,

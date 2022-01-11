@@ -1,3 +1,4 @@
+import { QueryableStorage } from '@polkadot/api/types';
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
@@ -72,6 +73,7 @@ import {
   Permissions as MeshPermissions,
   PipId,
   PortfolioId as MeshPortfolioId,
+  PortfolioName,
   PosRatio,
   PriceTier,
   ProtocolOp,
@@ -3423,4 +3425,33 @@ export function agentGroupToPermissionGroup(
       return new CustomPermissionGroup({ id, ticker }, context);
     }
   }
+}
+
+/**
+ * @hidden
+ */
+export async function portfolioNameToNumber(
+  rawIdentityId: IdentityId,
+  rawName: PortfolioName,
+  query: QueryableStorage<'promise'>
+): Promise<BigNumber | undefined> {
+  const { portfolio } = query;
+
+  const rawPortfolioNumber = await portfolio.nameToNumber(rawIdentityId, rawName);
+
+  const portfolioId = u64ToBigNumber(rawPortfolioNumber);
+
+  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
+  if (portfolioId.eq(new BigNumber(1))) {
+    /**
+     * since nameToNumber returns for non-existing portfolios,
+     * we need to check if the name matches against the portfolio number 1
+     */
+    const rawExistingPortfolioName = await portfolio.portfolios(rawIdentityId, rawPortfolioNumber);
+    if (!rawName.eq(rawExistingPortfolioName)) {
+      return;
+    }
+  }
+
+  return portfolioId;
 }

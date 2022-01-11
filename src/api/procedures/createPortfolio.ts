@@ -11,6 +11,7 @@ import {
 import { ErrorCode } from '~/types';
 import {
   identityIdToString,
+  portfolioNameToNumber,
   stringToIdentityId,
   stringToText,
   u64ToBigNumber,
@@ -46,10 +47,7 @@ export async function prepareCreatePortfolio(
 ): Promise<PostTransactionValue<NumberedPortfolio>> {
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: { portfolio },
-      },
+      polymeshApi: { tx, query },
     },
     context,
   } = this;
@@ -57,14 +55,13 @@ export async function prepareCreatePortfolio(
 
   const { did } = await context.getCurrentIdentity();
 
+  const rawIdentityId = stringToIdentityId(did, context);
+
   const rawName = stringToText(portfolioName, context);
 
-  const rawPortfolioNumber = await portfolio.nameToNumber(
-    stringToIdentityId(did, context),
-    rawName
-  );
+  const existingPortfolioNumber = await portfolioNameToNumber(rawIdentityId, rawName, query);
 
-  if (u64ToBigNumber(rawPortfolioNumber).gt(0)) {
+  if (existingPortfolioNumber) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'A portfolio with that name already exists',
