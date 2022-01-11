@@ -7,7 +7,7 @@ import { TxTags } from 'polymesh-types/types';
 import semver from 'semver';
 import sinon from 'sinon';
 
-import { Account, Identity, TransactionQueue } from '~/internal';
+import { Account, TransactionQueue } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -404,25 +404,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getIdentity', () => {
-    test('should return an Identity object with the passed did', async () => {
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const params = { did: 'testDid' };
-
-      const context = dsMockUtils.getContextInstance();
-      const identity = new Identity(params, context);
-      context.getIdentity.onFirstCall().resolves(identity);
-
-      const result = await polymesh.getIdentity(params);
-
-      expect(result).toMatchObject(identity);
-    });
-  });
-
   describe('method: getCurrentIdentity', () => {
     test('should return the current Identity', async () => {
       const polymesh = await Polymesh.connect({
@@ -484,37 +465,6 @@ describe('Polymesh Class', () => {
       const result = polymesh.getAccounts();
 
       expect(result).toEqual(accounts);
-    });
-  });
-
-  describe('method: isIdentityValid', () => {
-    test('should return true if the supplied Identity exists', async () => {
-      const did = 'someDid';
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const result = await polymesh.isIdentityValid({
-        identity: entityMockUtils.getIdentityInstance({ did }),
-      });
-
-      expect(result).toBe(true);
-    });
-
-    test('should return false if the supplied Identity is invalid', async () => {
-      const did = 'someDid';
-      entityMockUtils.configureMocks({ identityOptions: { exists: false } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const result = await polymesh.isIdentityValid({ identity: did });
-
-      expect(result).toBe(false);
     });
   });
 
@@ -655,32 +605,6 @@ describe('Polymesh Class', () => {
       polkadot.emit('error');
 
       sinon.assert.calledOnce(callback);
-    });
-  });
-
-  describe('method: registerIdentity', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const args = {
-        targetAccount: 'someTarget',
-      };
-
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await polymesh.registerIdentity(args);
-
-      expect(queue).toBe(expectedQueue);
     });
   });
 

@@ -290,7 +290,7 @@ describe('Assets Class', () => {
       );
     });
 
-    test('should throw if ticker is already an asset', async () => {
+    test('should throw if ticker is already an Asset', async () => {
       const ticker = 'TEST';
 
       dsMockUtils.createQueryStub('asset', 'tickers', {

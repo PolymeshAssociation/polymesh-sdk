@@ -131,8 +131,6 @@ export { Account } from '~/api/entities/Account';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
-// NOTE uncomment in Governance v2 upgrade
-// export { Proposal } from '~/api/entities/Proposal';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Sto } from '~/api/entities/Sto';
 export { Venue, addInstructionTransformer } from '~/api/entities/Venue';

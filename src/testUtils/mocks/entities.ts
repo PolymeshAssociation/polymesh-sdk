@@ -82,8 +82,6 @@ type MockTickerReservation = Mocked<TickerReservation>;
 type MockAsset = Mocked<Asset>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 type MockPermissionGroup = Mocked<PermissionGroup>;
-// NOTE uncomment in Governance v2 upgrade
-// type MockProposal = Mocked<Proposal>;
 type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
@@ -102,8 +100,6 @@ const mockInstanceContainer = {
   asset: {} as MockAsset,
   authorizationRequest: {} as MockAuthorizationRequest,
   permissionGroup: {} as MockPermissionGroup,
-  // NOTE uncomment in Governance v2 upgrade
-  // proposal: {} as MockProposal,
   account: {} as MockAccount,
   venue: {} as MockVenue,
   instruction: {} as MockInstruction,
@@ -976,51 +972,6 @@ const defaultDividendDistributionOptions: DividendDistributionOptions = {
   exists: true,
 };
 let dividendDistributionOptions = defaultDividendDistributionOptions;
-// NOTE uncomment in Governance v2 upgrade
-// const defaultProposalOptions: ProposalOptions = {
-//   pipId: new BigNumber(1),
-//   getDetails: {
-//     lastState: ProposalState.Referendum,
-//     transaction: TxTags.treasury.Disbursement,
-//   } as ProposalDetails,
-//   getStage: ProposalStage.Open,
-//   identityHasVoted: false,
-// };
-
-// let proposalOptions = defaultProposalOptions;
-
-/**
- * @hidden
- * Configure the Proposal instance
- */
-// NOTE uncomment in Governance v2 upgrade
-
-// function configureProposal(opts: ProposalOptions): void {
-//   const proposal = ({
-//     pipId: opts.pipId,
-//     getDetails: sinon.stub().returns(opts.getDetails),
-//     getStage: sinon.stub().returns(opts.getStage),
-//     identityHasVoted: sinon.stub().returns(opts.identityHasVoted),
-//   } as unknown) as MockProposal;
-
-//   Object.assign(mockInstanceContainer.proposal, proposal);
-//   proposalConstructorStub.callsFake(args => {
-//     return merge({}, proposal, args);
-//   });
-// }
-
-/**
- * @hidden
- * Initialize the Proposal instance
- */
-// NOTE uncomment in Governance v2 upgrade
-// function initProposal(opts?: ProposalOptions): void {
-//   proposalConstructorStub = sinon.stub();
-
-//   proposalOptions = { ...defaultProposalOptions, ...opts };
-
-//   configureProposal(proposalOptions);
-// }
 
 /**
  * @hidden
@@ -1891,15 +1842,6 @@ export function configureMocks(opts?: MockOptions): void {
 
   configureAuthorizationRequest(tempAuthorizationRequestOptions);
 
-  // NOTE uncomment in Governance v2 upgrade
-  // const tempProposalOptions = {
-  //   ...defaultProposalOptions,
-  //   ...opts?.proposalOptions,
-  // };
-
-  // NOTE uncomment in Governance v2 upgrade
-  // configureProposal(tempProposalOptions);
-
   const tempVenueOptions = {
     ...defaultVenueOptions,
     ...opts?.venueOptions,
@@ -1991,10 +1933,6 @@ export function initMocks(opts?: MockOptions): void {
   // Instruction Request
   initInstruction(opts?.instructionOptions);
 
-  // Proposal
-  // NOTE uncomment in Governance v2 upgrade
-  // initProposal(opts?.proposalOptions);
-
   // Venue
   initVenue(opts?.venueOptions);
 
@@ -2040,8 +1978,6 @@ export function cleanup(): void {
   mockInstanceContainer.asset = {} as MockAsset;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
   mockInstanceContainer.permissionGroup = {} as MockPermissionGroup;
-  // NOTE uncomment in Governance v2 upgrade
-  // mockInstanceContainer.proposal = {} as MockProposal;
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
   mockInstanceContainer.sto = {} as MockSto;
@@ -2063,8 +1999,6 @@ export function reset(): void {
     tickerReservationOptions,
     assetOptions: assetOptions,
     authorizationRequestOptions,
-    // NOTE uncomment in Governance v2 upgrade
-    // proposalOptions,
     venueOptions,
     instructionOptions,
     numberedPortfolioOptions,
@@ -2497,20 +2431,6 @@ export function getAuthorizationRequestInstance(
 
   return new MockAuthorizationRequestClass() as MockAuthorizationRequest;
 }
-
-/**
- * @hidden
- * Retrieve a Proposal instance
- */
-// NOTE uncomment in Governance v2 upgrade
-
-// export function getProposalInstance(opts?: ProposalOptions): MockProposal {
-//   if (opts) {
-//     configureProposal(opts);
-//   }
-
-//   return mockInstanceContainer.proposal;
-// }
 
 /**
  * @hidden

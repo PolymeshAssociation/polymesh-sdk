@@ -14,13 +14,12 @@ import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import WebSocketAsPromised from 'websocket-as-promised';
 
 import { Assets } from '~/Assets';
+import { Identities } from '~/Identities';
 import {
   Account,
   Context,
   Identity,
   PolymeshError,
-  registerIdentity,
-  RegisterIdentityParams,
   transferPolyx,
   TransferPolyxParams,
 } from '~/internal';
@@ -47,7 +46,6 @@ import { createProcedureMethod } from '~/utils/internal';
 
 import { Claims } from './Claims';
 import { CurrentIdentity } from './CurrentIdentity';
-// import { Governance } from './Governance';
 import { Middleware } from './Middleware';
 import {
   SUPPORTED_VERSION_RANGE,
@@ -69,12 +67,18 @@ export class Polymesh {
 
   // Namespaces
 
-  // NOTE uncomment in Governance v2 upgrade
-  // public governance: Governance;
   public claims: Claims;
   public middleware: Middleware;
+
+  /**
+   * A set of methods for exchanging Assets
+   */
   public settlements: Settlements;
   public currentIdentity: CurrentIdentity;
+  /**
+   * A set of methods for interacting with Polymesh Identities.
+   */
+  public identities: Identities;
   /**
    * A set of methods for interacting with Assets
    */
@@ -86,21 +90,15 @@ export class Polymesh {
   private constructor(context: Context) {
     this.context = context;
 
-    // NOTE uncomment in Governance v2 upgrade
-    // this.governance = new Governance(context);
     this.claims = new Claims(context);
     this.middleware = new Middleware(context);
     this.settlements = new Settlements(context);
     this.currentIdentity = new CurrentIdentity(context);
+    this.identities = new Identities(context);
     this.assets = new Assets(context);
 
     this.transferPolyx = createProcedureMethod(
       { getProcedureAndArgs: args => [transferPolyx, args] },
-      context
-    );
-
-    this.registerIdentity = createProcedureMethod(
-      { getProcedureAndArgs: args => [registerIdentity, args] },
       context
     );
   }
@@ -341,15 +339,6 @@ export class Polymesh {
   }
 
   /**
-   * Create an Identity instance from a DID
-   *
-   * @throws if there is no Identity with the passed DID
-   */
-  public async getIdentity(args: { did: string }): Promise<Identity> {
-    return this.context.getIdentity(args.did);
-  }
-
-  /**
    * Retrieve the Identity associated to the current Account (null if there is none)
    */
   public getCurrentIdentity(): Promise<Identity | null> {
@@ -376,16 +365,6 @@ export class Polymesh {
    */
   public getAccounts(): Account[] {
     return this.context.getAccounts();
-  }
-
-  /**
-   * Return whether the supplied Identity/DID exists
-   */
-  public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
-    const { identity: did } = args;
-    const identity = did instanceof Identity ? did : new Identity({ did }, this.context);
-
-    return identity.exists();
   }
 
   /**
@@ -487,19 +466,6 @@ export class Polymesh {
     const { free } = await account.getBalance();
     return free;
   }
-
-  /**
-   * Register an Identity
-   *
-   * @note must be a CDD provider
-   * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
-   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
-   *
-   * @note required role:
-   *   - Customer Due Diligence Provider
-   */
-  public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
 
   /**
    * Retrieve the number of the latest block in the chain

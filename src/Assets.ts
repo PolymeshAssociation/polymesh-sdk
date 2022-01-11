@@ -56,7 +56,7 @@ export class Assets {
   }
 
   /**
-   * Reserve a ticker symbol under the ownership of the Current Identity to later use in the creation of an Asset.
+   * Reserve a ticker symbol under the ownership of the signing Identity to later use in the creation of an Asset.
    *   The ticker will expire after a set amount of time, after which other users can reserve it
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;

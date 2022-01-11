@@ -1,16 +1,15 @@
 import {
+  removeSecondaryKeys,
+  RemoveSecondaryKeysParams,
+} from '~/api/procedures/removeSecondaryKeys';
+import { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
+import {
   AuthorizationRequest,
   Context,
-  createVenue,
-  CreateVenueParams,
   inviteAccount,
   InviteAccountParams,
   modifySignerPermissions,
   ModifySignerPermissionsParams,
-  removeSecondaryKeys,
-  RemoveSecondaryKeysParams,
-  toggleFreezeSecondaryKeys,
-  Venue,
 } from '~/internal';
 import { NoArgsProcedureMethod, PermissionType, ProcedureMethod, Signer } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
@@ -65,10 +64,6 @@ export class CurrentIdentity {
       { getProcedureAndArgs: args => [inviteAccount, { ...args }] },
       context
     );
-    this.createVenue = createProcedureMethod(
-      { getProcedureAndArgs: args => [createVenue, args] },
-      context
-    );
     this.freezeSecondaryKeys = createProcedureMethod(
       { getProcedureAndArgs: () => [toggleFreezeSecondaryKeys, { freeze: true }], voidArgs: true },
       context
@@ -102,11 +97,6 @@ export class CurrentIdentity {
    *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
    */
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
-
-  /**
-   * Create a Venue under the ownership of the Current Identity
-   */
-  public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
 
   /**
    * Freeze all the secondary keys in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the keys are unfrozen via [[unfreezeSecondaryKeys]]
