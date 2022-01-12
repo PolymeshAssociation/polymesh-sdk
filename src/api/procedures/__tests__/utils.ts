@@ -231,7 +231,7 @@ describe('assertSecondaryAccounts', () => {
     signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
   });
 
-  test('should not throw an error if all signers are secondary accounts', async () => {
+  test('should not throw an error if all signers are secondary Accounts', async () => {
     const address = 'someAddress';
     const secondaryAccounts = [
       {
@@ -252,7 +252,7 @@ describe('assertSecondaryAccounts', () => {
     expect(result).toBeUndefined();
   });
 
-  test('should throw an error if one of the Signers is not a Secondary Key for the Identity', () => {
+  test('should throw an error if one of the Signers is not a Secondary Account for the Identity', () => {
     const address = 'someAddress';
     const secondaryAccounts = [
       {
@@ -277,7 +277,7 @@ describe('assertSecondaryAccounts', () => {
       error = err;
     }
 
-    expect(error.message).toBe('One of the Signers is not a Secondary Key for the Identity');
+    expect(error.message).toBe('One of the Signers is not a Secondary Account for the Identity');
     expect(error.data.missing).toEqual([signerValues[0].value]);
   });
 });
@@ -645,7 +645,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertPrimaryKeyRotationAuthorizationValid', () => {
+  describe('assertPrimaryAccountRotationAuthorizationValid', () => {
     const data = { type: AuthorizationType.RotatePrimaryKey } as Authorization;
     test('should not throw with a valid request', async () => {
       const goodTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
@@ -677,7 +677,7 @@ describe('authorization request validations', () => {
       }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'An Identity can not become the primary key of another Identity',
+        message: 'An Identity can not become the primary Account of another Identity',
       });
       expect(error).toEqual(expectedError);
     });

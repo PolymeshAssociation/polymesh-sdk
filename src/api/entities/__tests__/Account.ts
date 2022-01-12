@@ -378,8 +378,8 @@ describe('Account class', () => {
   });
 
   describe('method: getPermissions', () => {
-    test('should return full permissions if the account is the primary key', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+    test('should return full permissions if the Account is the primary Account', async () => {
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 
@@ -393,7 +393,7 @@ describe('Account class', () => {
       });
     });
 
-    test("should return the account's permissions if it is a secondary key", async () => {
+    test("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
         tokens: null,
         transactions: null,
@@ -408,7 +408,7 @@ describe('Account class', () => {
             permissions: {
               tokens: null,
               transactions: {
-                values: [TxTags.identity.AcceptPrimaryAccount],
+                values: [TxTags.identity.AcceptPrimaryKey],
                 type: PermissionType.Include,
               },
               transactionGroups: [],
@@ -428,7 +428,7 @@ describe('Account class', () => {
 
   describe('method: checkPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 
@@ -557,7 +557,7 @@ describe('Account class', () => {
       permissions = {
         tokens: { values: [token], type: PermissionType.Exclude },
         transactions: {
-          values: [ModuleName.Identity, TxTags.identity.LeaveIdentityAsAccount],
+          values: [ModuleName.Identity, TxTags.identity.LeaveIdentityAsKey],
           type: PermissionType.Exclude,
           exceptions: [TxTags.identity.AddClaim],
         },
@@ -578,17 +578,14 @@ describe('Account class', () => {
       result = await account.checkPermissions({
         tokens: [],
         portfolios: null,
-        transactions: [
-          TxTags.identity.AcceptPrimaryAccount,
-          TxTags.identity.LeaveIdentityAsAccount,
-        ],
+        transactions: [TxTags.identity.AcceptPrimaryKey, TxTags.identity.LeaveIdentityAsKey],
       });
 
       expect(result).toEqual({
         result: false,
         missingPermissions: {
           portfolios: null,
-          transactions: [TxTags.identity.AcceptPrimaryAccount],
+          transactions: [TxTags.identity.AcceptPrimaryKey],
         },
       });
 
@@ -629,7 +626,7 @@ describe('Account class', () => {
     });
 
     test('should exempt certain transactions from requiring permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 
@@ -653,7 +650,7 @@ describe('Account class', () => {
 
   describe('method: hasPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 

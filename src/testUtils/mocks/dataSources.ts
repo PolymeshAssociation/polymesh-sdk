@@ -317,7 +317,7 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  primaryKey?: string;
+  primaryAccount?: string;
   secondaryAccounts?: SecondaryAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
@@ -584,7 +584,7 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
-  primaryKey: 'primaryKey',
+  primaryAccount: 'primaryAccount',
   secondaryAccounts: [],
   transactionHistory: {
     data: [],
@@ -658,7 +658,7 @@ function configureContext(opts: ContextOptions): void {
     checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
+    getPrimaryAccount: sinon.stub().resolves({ address: opts.primaryAccount }),
     getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
@@ -673,7 +673,7 @@ function configureContext(opts: ContextOptions): void {
   opts.withSeed
     ? getCurrentIdentity.resolves(identity)
     : getCurrentIdentity.throws(
-        new Error('The current account does not have an associated identity')
+        new Error('The current Account does not have an associated identity')
       );
   const getCurrentAccount = sinon.stub();
   opts.withSeed
@@ -687,7 +687,7 @@ function configureContext(opts: ContextOptions): void {
         checkPermissions: sinon.stub().resolves(opts.checkPermissions),
         isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
-    : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
+    : getCurrentAccount.throws(new Error('There is no Account associated with the SDK'));
   const currentPair = opts.withSeed
     ? ({
         address: opts.currentPairAddress,
@@ -698,7 +698,7 @@ function configureContext(opts: ContextOptions): void {
   opts.withSeed
     ? getCurrentPair.returns(currentPair)
     : getCurrentPair.throws(
-        new Error('There is no account associated with the current SDK instance')
+        new Error('There is no Account associated with the current SDK instance')
       );
 
   const contextInstance = ({
@@ -2649,19 +2649,19 @@ export const createMockPipsMetadata = (metadata?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockSecondaryKey = (secondaryKey?: {
+export const createMockSecondaryAccount = (secondaryAccount?: {
   signer: Signatory;
   permissions: Permissions;
 }): MeshSecondaryKey => {
-  const key = secondaryKey || {
+  const account = secondaryAccount || {
     signer: createMockSignatory(),
     permissions: createMockPermissions(),
   };
   return createMockCodec(
     {
-      ...key,
+      ...account,
     },
-    !secondaryKey
+    !secondaryAccount
   ) as MeshSecondaryKey;
 };
 

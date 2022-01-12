@@ -33,7 +33,7 @@ describe('registerIdentity procedure', () => {
     stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
     secondaryAccountToMeshSecondaryKeyStub = sinon.stub(
       utilsConversionModule,
-      'secondaryKeyToMeshSecondaryKey'
+      'secondaryAccountToMeshSecondaryKey'
     );
     identity = ('identity' as unknown) as PostTransactionValue<Identity>;
   });
@@ -74,7 +74,7 @@ describe('registerIdentity procedure', () => {
       secondaryAccounts,
     };
     const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
-    const rawSecondaryKey = dsMockUtils.createMockSecondaryKey({
+    const rawSecondaryAccount = dsMockUtils.createMockSecondaryAccount({
       signer: dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(secondaryAccounts[0].signer.did),
       }),
@@ -86,7 +86,7 @@ describe('registerIdentity procedure', () => {
     stringToAccountIdStub.withArgs(targetAccount, mockContext).returns(rawAccountId);
     secondaryAccountToMeshSecondaryKeyStub
       .withArgs(secondaryAccounts[0], mockContext)
-      .returns(rawSecondaryKey);
+      .returns(rawSecondaryAccount);
 
     let result = await prepareRegisterIdentity.call(proc, args);
 
@@ -97,7 +97,7 @@ describe('registerIdentity procedure', () => {
         resolvers: sinon.match.array,
       }),
       rawAccountId,
-      [rawSecondaryKey]
+      [rawSecondaryAccount]
     );
     expect(result).toBe(identity);
 

@@ -29,16 +29,19 @@ export async function prepareRemoveSecondaryAccounts(
 
   const [primaryAccount, secondaryAccounts] = await Promise.all([
     identity.getPrimaryAccount(),
-    identity.getSecondaryAccount(),
+    identity.getSecondaryAccounts(),
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));
-  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryAccount.address);
+  const isPrimaryAccountPresent = find(
+    signerValues,
+    ({ value }) => value === primaryAccount.address
+  );
 
-  if (isPrimaryKeyPresent) {
+  if (isPrimaryAccountPresent) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'You cannot remove the primary key',
+      message: 'You cannot remove the primary Account',
     });
   }
 
@@ -57,7 +60,7 @@ export async function prepareRemoveSecondaryAccounts(
 export const removeSecondaryAccounts = (): Procedure<RemoveSecondaryAccountsParams> =>
   new Procedure(prepareRemoveSecondaryAccounts, {
     permissions: {
-      transactions: [TxTags.identity.RemoveSecondaryAccounts],
+      transactions: [TxTags.identity.RemoveSecondaryKeys],
       tokens: [],
       portfolios: [],
     },

@@ -200,7 +200,7 @@ import {
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
-  secondaryKeyToMeshSecondaryKey,
+  secondaryAccountToMeshSecondaryKey,
   signatoryToSignerValue,
   signerToSignerValue,
   signerToString,
@@ -3901,9 +3901,9 @@ describe('txTagToProtocolOp', () => {
     createTypeStub
       .withArgs('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
       .returns(fakeResult);
-    expect(
-      txTagToProtocolOp(TxTags.identity.AddSecondaryAccountsWithAuthorization, context)
-    ).toEqual(fakeResult);
+    expect(txTagToProtocolOp(TxTags.identity.AddSecondaryKeysWithAuthorization, context)).toEqual(
+      fakeResult
+    );
 
     createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
@@ -4581,7 +4581,7 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
   });
 });
 
-describe('secondaryKeyToMeshSecondaryKey', () => {
+describe('secondaryAccountToMeshSecondaryKey', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -4597,10 +4597,10 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
     entityMockUtils.cleanup();
   });
 
-  test('secondaryKeyToMeshSecondaryKey should convert a SecondaryKey to a polkadot SecondaryKey', () => {
+  test('secondaryAccountToMeshSecondaryKey should convert a SecondaryAccount to a polkadot SecondaryKey', () => {
     const address = 'someAccount';
     const context = dsMockUtils.getContextInstance();
-    const secondaryKey = {
+    const secondaryAccount = {
       signer: entityMockUtils.getAccountInstance(),
       permissions: {
         tokens: null,
@@ -4616,7 +4616,7 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
       portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
       extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
     });
-    const fakeResult = dsMockUtils.createMockSecondaryKey({
+    const fakeResult = dsMockUtils.createMockSecondaryAccount({
       signer: mockSignatory,
       permissions: mockPermissions,
     });
@@ -4625,11 +4625,11 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
       .getCreateTypeStub()
       .withArgs('SecondaryKey', {
         signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
-        permissions: permissionsToMeshPermissions(secondaryKey.permissions, context),
+        permissions: permissionsToMeshPermissions(secondaryAccount.permissions, context),
       })
       .returns(fakeResult);
 
-    const result = secondaryKeyToMeshSecondaryKey(secondaryKey, context);
+    const result = secondaryAccountToMeshSecondaryKey(secondaryAccount, context);
 
     expect(result).toEqual(fakeResult);
   });

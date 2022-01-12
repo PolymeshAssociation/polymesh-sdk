@@ -652,13 +652,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getSecondaryAccount(): Promise<SecondaryAccount[]>;
-  public async getSecondaryAccount(
+  public async getSecondaryAccounts(): Promise<SecondaryAccount[]>;
+  public async getSecondaryAccounts(
     callback: SubCallback<SecondaryAccount[]>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSecondaryAccount(
+  public async getSecondaryAccounts(
     callback?: SubCallback<SecondaryAccount[]>
   ): Promise<SecondaryAccount[] | UnsubCallback> {
     const {

@@ -100,7 +100,7 @@ export interface BaseTransactionSpec<
    */
   postTransactionValues?: PostTransactionValueArray<Values>;
   /**
-   * account that will sign the transaction
+   * Account that will sign the transaction
    */
   signer: AddressOrPair;
   /**

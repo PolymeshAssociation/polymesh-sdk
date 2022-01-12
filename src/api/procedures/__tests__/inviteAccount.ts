@@ -195,7 +195,7 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  test('should throw an error if the passed account is already part of an Identity', () => {
+  test('should throw an error if the passed Account is already part of an Identity', () => {
     const identity = entityMockUtils.getIdentityInstance();
     const targetAccount = entityMockUtils.getAccountInstance({
       address: 'someAddress',
@@ -213,7 +213,7 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  test('should throw an error if the passed account has a pending authorization to accept', () => {
+  test('should throw an error if the passed Account has a pending authorization to accept', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
     });

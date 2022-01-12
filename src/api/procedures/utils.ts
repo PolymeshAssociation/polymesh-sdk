@@ -150,7 +150,7 @@ export function assertSecondaryAccounts(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'One of the Signers is not a Secondary Key for the Identity',
+      message: 'One of the Signers is not a Secondary Account for the Identity',
       data: {
         missing: notInTheList,
       },
@@ -364,9 +364,9 @@ export async function assertAuthorizationRequestValid(
   const { data } = authRequest;
   switch (data.type) {
     case AuthorizationType.RotatePrimaryKey:
-      return assertPrimaryKeyRotationAuthorizationValid(authRequest);
+      return assertPrimaryAccountRotationAuthorizationValid(authRequest);
     case AuthorizationType.AttestPrimaryKeyRotation:
-      return assertAttestPrimaryKeyAuthorizationValid(authRequest);
+      return assertAttestPrimaryAccountAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
       return assertTransferTickerAuthorizationValid(data, context);
     case AuthorizationType.TransferAssetOwnership:
@@ -383,7 +383,7 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.JoinIdentity:
       return assertJoinIdentityAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
-      return assertAddRelayerPayingKeyAuthorizationValid(data);
+      return assertAddRelayerPayingAccountAuthorizationValid(data);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -392,15 +392,15 @@ export async function assertAuthorizationRequestValid(
 /**
  * @hidden
  *
- * Asserts valid  primary key rotation authorization
+ * Asserts valid primary Account rotation authorization
  */
-export async function assertPrimaryKeyRotationAuthorizationValid(
+export async function assertPrimaryAccountRotationAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   if (authRequest.target instanceof Identity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'An Identity can not become the primary key of another Identity',
+      message: 'An Identity can not become the primary Account of another Identity',
     });
   }
 }
@@ -408,9 +408,9 @@ export async function assertPrimaryKeyRotationAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid attest primary key authorization
+ * Asserts valid attest primary Account authorization
  */
-export async function assertAttestPrimaryKeyAuthorizationValid(
+export async function assertAttestPrimaryAccountAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   const isCddProvider = await authRequest.issuer.isCddProvider();
@@ -497,9 +497,9 @@ export async function assertJoinIdentityAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid add relayer paying key authorization
+ * Asserts valid add relayer paying Account authorization
  */
-export async function assertAddRelayerPayingKeyAuthorizationValid(
+export async function assertAddRelayerPayingAccountAuthorizationValid(
   data: AddRelayerPayingKeyAuthorizationData
 ): Promise<void> {
   const subsidy = data.value;

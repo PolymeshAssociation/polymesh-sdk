@@ -40,7 +40,7 @@ export async function prepareModifySignerPermissions(
 
   const identity = await context.getCurrentIdentity();
 
-  const secondaryAccounts = await identity.getSecondaryAccount();
+  const secondaryAccounts = await identity.getSecondaryAccounts();
   const signerValues = signers.map(({ signer, permissions }) => {
     return {
       signer: signerToSignerValue(signer),

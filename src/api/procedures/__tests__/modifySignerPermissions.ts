@@ -153,7 +153,7 @@ describe('modifySignerPermissions procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
   });
 
-  test('should throw an error if at least one of the Signers for which to modify permissions is not a Secondary Key for the Identity', () => {
+  test('should throw an error if at least one of the Signers for which to modify permissions is not a Secondary Account for the Identity', () => {
     const secondaryAccounts = [
       {
         signer: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
@@ -179,6 +179,6 @@ describe('modifySignerPermissions procedure', () => {
         secondaryAccounts,
         identity: entityMockUtils.getIdentityInstance({ getSecondaryAccounts: [] }),
       })
-    ).rejects.toThrow('One of the Signers is not a Secondary Key for the Identity');
+    ).rejects.toThrow('One of the Signers is not a Secondary Account for the Identity');
   });
 });

@@ -460,7 +460,7 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getPrimaryKey', () => {
+  describe('method: getPrimaryAccount', () => {
     const did = 'someDid';
     const accountId = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
 
@@ -484,7 +484,7 @@ describe('Identity class', () => {
       /* eslint-enabled @typescript-eslint/naming-convention */
     });
 
-    test('should return a PrimaryKey', async () => {
+    test('should return a PrimaryAccount', async () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
@@ -1189,7 +1189,7 @@ describe('Identity class', () => {
         roles: [],
         primary_key: dsMockUtils.createMockAccountId(),
         secondary_keys: [
-          dsMockUtils.createMockSecondaryKey({
+          dsMockUtils.createMockSecondaryAccount({
             signer: signerIdentityId,
             permissions: dsMockUtils.createMockPermissions({
               asset: dsMockUtils.createMockAssetPermissions(),
@@ -1197,7 +1197,7 @@ describe('Identity class', () => {
               portfolio: dsMockUtils.createMockPortfolioPermissions(),
             }),
           }),
-          dsMockUtils.createMockSecondaryKey({
+          dsMockUtils.createMockSecondaryAccount({
             signer: signerAccountId,
             permissions: dsMockUtils.createMockPermissions({
               asset: dsMockUtils.createMockAssetPermissions('Whole'),
@@ -1214,7 +1214,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       didRecordsStub.resolves(rawDidRecord);
 
-      const result = await identity.getSecondaryAccount();
+      const result = await identity.getSecondaryAccounts();
       expect(result).toEqual(fakeResult);
     });
 
@@ -1228,7 +1228,7 @@ describe('Identity class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await identity.getSecondaryAccount(callback);
+      const result = await identity.getSecondaryAccounts(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);

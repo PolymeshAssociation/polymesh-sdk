@@ -121,7 +121,7 @@ interface IdentityOptions {
   tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   isCddProvider?: boolean;
-  getPrimaryKey?: Account;
+  getPrimaryAccount?: Account;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -1386,7 +1386,7 @@ function configureIdentity(opts: IdentityOptions): void {
     checkRoles: identityCheckRolesStub.resolves(opts.checkRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
-    getPrimaryKey: identityGetPrimaryAccountStub.resolves(opts.getPrimaryKey),
+    getPrimaryAccount: identityGetPrimaryAccountStub.resolves(opts.getPrimaryAccount),
     portfolios: {},
     authorizations: {
       getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
@@ -2079,7 +2079,7 @@ export function getIdentityHasValidCddStub(): SinonStub {
  * @hidden
  * Retrieve the stub of the `Identity.getPrimaryAccount` method
  */
-export function getIdentityGetPrimaryKeyStub(): SinonStub {
+export function getIdentityGetPrimaryAccountStub(): SinonStub {
   return identityGetPrimaryAccountStub;
 }
 

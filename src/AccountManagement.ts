@@ -88,22 +88,22 @@ export class AccountManagement {
   }
 
   /**
-   * Remove a list of secondary accounts associated with the Current Identity
+   * Remove a list of secondary Accounts associated with the Current Identity
    */
   public removeSecondaryAccounts: ProcedureMethod<RemoveSecondaryAccountsParams, void>;
 
   /**
-   * Revoke all permissions of a list of secondary accounts associated with the Current Identity
+   * Revoke all permissions of a list of secondary Accounts associated with the Current Identity
    */
   public revokePermissions: ProcedureMethod<{ secondaryAccounts: Signer[] }, void>;
 
   /**
-   * Modify all permissions of a list of secondary accounts associated with the Current Identity
+   * Modify all permissions of a list of secondary Accounts associated with the Current Identity
    */
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
   /**
-   * Send an invitation to an Account to join the Current Identity as a secondary key
+   * Send an invitation to an Account to join the Current Identity as a secondary Account
    *
    * @note this will create an AuthorizationRequest which has to be accepted by
    *   the corresponding Account. An Account can
@@ -112,12 +112,12 @@ export class AccountManagement {
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
   /**
-   * Freeze all of the secondary accounts in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the accounts are unfrozen via [[unfreezeSecondaryAccounts]]
+   * Freeze all of the secondary Accounts in the Current Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the Accounts are unfrozen via [[unfreezeSecondaryAccounts]]
    */
   public freezeSecondaryAccounts: NoArgsProcedureMethod<void>;
 
   /**
-   * Unfreeze all of the secondary accounts in the Current Identity. This will restore their permissions as they were before being frozen
+   * Unfreeze all of the secondary Accounts in the Current Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryAccounts: NoArgsProcedureMethod<void>;
 

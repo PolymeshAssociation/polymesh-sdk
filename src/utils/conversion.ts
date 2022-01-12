@@ -2432,7 +2432,7 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     TxTags.complianceManager.AddComplianceRequirement,
     TxTags.identity.CddRegisterDid,
     TxTags.identity.AddClaim,
-    TxTags.identity.AddSecondaryAccountsWithAuthorization,
+    TxTags.identity.AddSecondaryKeysWithAuthorization,
     TxTags.pips.Propose,
     TxTags.corporateBallot.AttachBallot,
     TxTags.capitalDistribution.Distribute,
@@ -2550,7 +2550,7 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
 /**
  * @hidden
  */
-export function secondaryKeyToMeshSecondaryKey(
+export function secondaryAccountToMeshSecondaryKey(
   secondaryKey: SecondaryAccount,
   context: Context
 ): MeshSecondaryKey {

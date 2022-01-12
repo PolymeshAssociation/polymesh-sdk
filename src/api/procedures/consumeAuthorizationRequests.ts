@@ -139,7 +139,7 @@ export async function getAuthorization(
       [AuthorizationType.AddRelayerPayingKey]: TxTags.relayer.AcceptPayingKey,
       [AuthorizationType.BecomeAgent]: TxTags.externalAgents.AcceptBecomeAgent,
       [AuthorizationType.PortfolioCustody]: TxTags.portfolio.AcceptPortfolioCustody,
-      [AuthorizationType.RotatePrimaryKey]: TxTags.identity.AcceptPrimaryAccount,
+      [AuthorizationType.RotatePrimaryKey]: TxTags.identity.AcceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: TxTags.asset.AcceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: TxTags.asset.AcceptTickerTransfer,
     } as const;

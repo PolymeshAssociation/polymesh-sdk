@@ -947,7 +947,7 @@ export interface PermissionGroups {
 
 /**
  * This represents positive permissions (i.e. only "includes"). It is used
- *   for specifying procedure requirements and querying if an account has certain
+ *   for specifying procedure requirements and querying if an Account has certain
  *   permissions. Null values represent full permissions in that category
  */
 export interface SimplePermissions {

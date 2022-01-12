@@ -191,7 +191,7 @@ describe('AccountManagement class', () => {
       locked: new BigNumber(0),
       total: new BigNumber(100),
     };
-    test('should return the free and locked POLYX balance of the current account', async () => {
+    test('should return the free and locked POLYX balance of the current Account', async () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const result = await accountManagement.getAccountBalance();

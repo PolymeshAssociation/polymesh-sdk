@@ -32,7 +32,7 @@ export async function prepareLeaveIdentity(
     });
   }
 
-  const secondaryAccounts = await currentIdentity.getSecondaryAccount();
+  const secondaryAccounts = await currentIdentity.getSecondaryAccounts();
   const { address } = account;
   const isSecondaryAccount = secondaryAccounts.find(
     ({ signer }) => address === signerToString(signer)
@@ -62,7 +62,7 @@ export function getAuthorization(
   const permissions = {
     tokens: [],
     portfolios: [],
-    transactions: [TxTags.identity.LeaveIdentityAsAccount],
+    transactions: [TxTags.identity.LeaveIdentityAsKey],
   };
 
   return {

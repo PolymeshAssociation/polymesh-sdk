@@ -503,7 +503,7 @@ describe('Polymesh Transaction Base class', () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = entityMockUtils.getAccountInstance();
       const paidForBy = entityMockUtils.getIdentityInstance({
-        getPrimaryKey: account,
+        getPrimaryAccount: account,
       });
 
       const args = tuple('SOMETHING');

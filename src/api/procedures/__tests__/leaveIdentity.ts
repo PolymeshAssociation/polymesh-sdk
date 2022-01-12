@@ -58,7 +58,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(error.message).toBe('There is no Identity associated to this Account');
   });
 
-  test('should throw an error if the Account is not a secondary key', async () => {
+  test('should throw an error if the Account is not a secondary Account', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance();
 
@@ -73,7 +73,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(error.message).toBe('Only Secondary Accounts are allowed to leave an Identity');
   });
 
-  test('should add a leave identity as key transaction to the queue', async () => {
+  test('should add a leave identity as Account transaction to the queue', async () => {
     const address = 'someAddress';
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
     const leaveIdentityAsKeyTransaction = dsMockUtils.createTxStub(
@@ -109,7 +109,7 @@ describe('modifyCaCheckpoint procedure', () => {
         roles: 'Only the current Account can leave its Identity',
         permissions: {
           tokens: [],
-          transactions: [TxTags.identity.LeaveIdentityAsAccount],
+          transactions: [TxTags.identity.LeaveIdentityAsKey],
           portfolios: [],
         },
       });
@@ -120,7 +120,7 @@ describe('modifyCaCheckpoint procedure', () => {
         roles: true,
         permissions: {
           tokens: [],
-          transactions: [TxTags.identity.LeaveIdentityAsAccount],
+          transactions: [TxTags.identity.LeaveIdentityAsKey],
           portfolios: [],
         },
       });

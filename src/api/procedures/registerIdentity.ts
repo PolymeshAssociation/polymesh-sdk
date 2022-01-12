@@ -7,7 +7,7 @@ import { Modify } from '~/types/utils';
 import {
   identityIdToString,
   permissionsLikeToPermissions,
-  secondaryKeyToMeshSecondaryKey,
+  secondaryAccountToMeshSecondaryKey,
   signerToString,
   stringToAccountId,
 } from '~/utils/conversion';
@@ -49,7 +49,7 @@ export async function prepareRegisterIdentity(
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
   const rawSecondaryAccounts = secondaryAccounts.map(({ permissions, ...rest }) =>
-    secondaryKeyToMeshSecondaryKey(
+    secondaryAccountToMeshSecondaryKey(
       { ...rest, permissions: permissionsLikeToPermissions(permissions, context) },
       context
     )

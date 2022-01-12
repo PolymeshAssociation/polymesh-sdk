@@ -31,7 +31,7 @@ export async function prepareToggleFreezeSecondaryAccounts(
     if (areSecondaryAccountsFrozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The secondary accounts are already frozen',
+        message: 'The secondary Accounts are already frozen',
       });
     }
 
@@ -40,7 +40,7 @@ export async function prepareToggleFreezeSecondaryAccounts(
     if (!areSecondaryAccountsFrozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The secondary accounts are already unfrozen',
+        message: 'The secondary Accounts are already unfrozen',
       });
     }
 
@@ -58,9 +58,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [
-        freeze
-          ? TxTags.identity.FreezeSecondaryAccounts
-          : TxTags.identity.UnfreezeSecondaryAccounts,
+        freeze ? TxTags.identity.FreezeSecondaryKeys : TxTags.identity.UnfreezeSecondaryKeys,
       ],
       tokens: [],
       portfolios: [],
