@@ -1,7 +1,15 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Instruction, PolymeshError, Venue } from '~/internal';
-import { ErrorCode } from '~/types';
+import {
+  Context,
+  createVenue,
+  CreateVenueParams,
+  Instruction,
+  PolymeshError,
+  Venue,
+} from '~/internal';
+import { ErrorCode, ProcedureMethod } from '~/types';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Settlement related functionality
@@ -14,6 +22,11 @@ export class Settlements {
    */
   constructor(context: Context) {
     this.context = context;
+
+    this.createVenue = createProcedureMethod(
+      { getProcedureAndArgs: args => [createVenue, args] },
+      context
+    );
   }
 
   /**
@@ -57,4 +70,9 @@ export class Settlements {
 
     return instruction;
   }
+
+  /**
+   * Create a Venue under the ownership of the Current Identity
+   */
+  public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
 }

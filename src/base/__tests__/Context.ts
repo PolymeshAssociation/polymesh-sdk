@@ -883,7 +883,7 @@ describe('Context class', () => {
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  describe('method: getTransactionFees', () => {
+  describe('method: getProtocolFees', () => {
     test('should return the fees associated to the supplied transaction', async () => {
       const pair = {
         address: 'someAddress1',
@@ -917,11 +917,11 @@ describe('Context class', () => {
         returnValue: dsMockUtils.createMockBalance(500000000),
       });
 
-      let result = await context.getTransactionFees(TxTags.asset.CreateAsset);
+      let result = await context.getProtocolFees(TxTags.asset.CreateAsset);
 
       expect(result).toEqual(new BigNumber(250));
 
-      result = await context.getTransactionFees(TxTags.asset.Freeze);
+      result = await context.getProtocolFees(TxTags.asset.Freeze);
 
       expect(result).toEqual(new BigNumber(0));
     });

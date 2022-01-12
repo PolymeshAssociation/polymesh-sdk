@@ -719,7 +719,7 @@ function configureContext(opts: ContextOptions): void {
       .stub()
       .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
-    getTransactionFees: sinon.stub().resolves(opts.transactionFee),
+    getProtocolFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
     getSecondaryAccounts: sinon.stub().returns(opts.secondaryAccounts),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
