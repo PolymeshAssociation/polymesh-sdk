@@ -349,7 +349,7 @@ export abstract class PolymeshTransactionBase<
     const paymentInfoPromise = composedTx.paymentInfo(signer);
 
     if (!protocolFee) {
-      protocolFee = await context.getTransactionFees(this.tag);
+      protocolFee = await context.getProtocolFees(this.tag);
     }
 
     const { partialFee } = await paymentInfoPromise;
