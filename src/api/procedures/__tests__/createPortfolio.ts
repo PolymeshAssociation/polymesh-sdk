@@ -61,14 +61,14 @@ describe('createPortfolio procedure', () => {
     portfolioNameToNumberStub.returns(new BigNumber(1));
 
     return expect(prepareCreatePortfolio.call(proc, { name: newPortfolioName })).rejects.toThrow(
-      'A portfolio with that name already exists'
+      'A Portfolio with that name already exists'
     );
   });
 
   test('should add a create portfolio transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
     const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
-    portfolioNameToNumberStub.returns(undefined);
+    portfolioNameToNumberStub.returns(null);
 
     const result = await prepareCreatePortfolio.call(proc, { name: newPortfolioName });
 

@@ -47,7 +47,7 @@ export async function prepareCreatePortfolio(
 ): Promise<PostTransactionValue<NumberedPortfolio>> {
   const {
     context: {
-      polymeshApi: { tx, query },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -59,12 +59,12 @@ export async function prepareCreatePortfolio(
 
   const rawName = stringToText(portfolioName, context);
 
-  const existingPortfolioNumber = await portfolioNameToNumber(rawIdentityId, rawName, query);
+  const existingPortfolioNumber = await portfolioNameToNumber(rawIdentityId, rawName, context);
 
   if (existingPortfolioNumber) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'A portfolio with that name already exists',
+      message: 'A Portfolio with that name already exists',
     });
   }
 

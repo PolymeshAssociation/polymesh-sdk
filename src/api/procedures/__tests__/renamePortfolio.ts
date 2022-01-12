@@ -89,7 +89,7 @@ describe('renamePortfolio procedure', () => {
         did,
         name: newName,
       })
-    ).rejects.toThrow('A portfolio with that name already exists');
+    ).rejects.toThrow('A Portfolio with that name already exists');
   });
 
   test('should add a rename portfolio transaction to the queue', async () => {

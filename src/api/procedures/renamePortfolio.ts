@@ -29,7 +29,6 @@ export async function prepareRenamePortfolio(
   const {
     context: {
       polymeshApi: {
-        query,
         tx: { portfolio },
       },
     },
@@ -42,7 +41,7 @@ export async function prepareRenamePortfolio(
 
   const rawNewName = stringToText(newName, context);
 
-  const existingPortfolioNumber = await portfolioNameToNumber(identityId, rawNewName, query);
+  const existingPortfolioNumber = await portfolioNameToNumber(identityId, rawNewName, context);
 
   if (existingPortfolioNumber) {
     if (id.eq(existingPortfolioNumber)) {
@@ -53,7 +52,7 @@ export async function prepareRenamePortfolio(
     } else {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'A portfolio with that name already exists',
+        message: 'A Portfolio with that name already exists',
       });
     }
   }

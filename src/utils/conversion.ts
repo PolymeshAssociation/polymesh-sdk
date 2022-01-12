@@ -1,4 +1,3 @@
-import { QueryableStorage } from '@polkadot/api/types';
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
@@ -3371,9 +3370,13 @@ export function agentGroupToPermissionGroup(
 export async function portfolioNameToNumber(
   rawIdentityId: IdentityId,
   rawName: PortfolioName,
-  query: QueryableStorage<'promise'>
-): Promise<BigNumber | undefined> {
-  const { portfolio } = query;
+  context: Context
+): Promise<BigNumber | null> {
+  const {
+    polymeshApi: {
+      query: { portfolio },
+    },
+  } = context;
 
   const rawPortfolioNumber = await portfolio.nameToNumber(rawIdentityId, rawName);
 
@@ -3387,7 +3390,7 @@ export async function portfolioNameToNumber(
      */
     const rawExistingPortfolioName = await portfolio.portfolios(rawIdentityId, rawPortfolioNumber);
     if (!rawName.eq(rawExistingPortfolioName)) {
-      return;
+      return null;
     }
   }
 
