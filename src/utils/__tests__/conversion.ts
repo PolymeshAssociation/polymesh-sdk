@@ -4601,7 +4601,7 @@ describe('secondaryKeyToMeshSecondaryKey', () => {
     const address = 'someAccount';
     const context = dsMockUtils.getContextInstance();
     const secondaryKey = {
-      signer: entityMockUtils.getAccountInstance(),
+      account: entityMockUtils.getAccountInstance(),
       permissions: {
         tokens: null,
         transactions: null,

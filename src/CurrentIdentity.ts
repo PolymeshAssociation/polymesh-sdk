@@ -9,7 +9,7 @@ import {
   RemoveSecondaryKeysParams,
   toggleFreezeSecondaryKeys,
 } from '~/internal';
-import { NoArgsProcedureMethod, PermissionType, ProcedureMethod, Signer } from '~/types';
+import { Account, NoArgsProcedureMethod, PermissionType, ProcedureMethod } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -32,16 +32,16 @@ export class CurrentIdentity {
     );
 
     this.revokePermissions = createProcedureMethod<
-      { secondaryKeys: Signer[] },
+      { secondaryKeys: Account[] },
       ModifySignerPermissionsParams,
       void
     >(
       {
         getProcedureAndArgs: args => {
           const { secondaryKeys } = args;
-          const signers = secondaryKeys.map(signer => {
+          const signers = secondaryKeys.map(account => {
             return {
-              signer,
+              account,
               permissions: {
                 tokens: { type: PermissionType.Include, values: [] },
                 transactions: { type: PermissionType.Include, values: [] },
@@ -80,7 +80,7 @@ export class CurrentIdentity {
   /**
    * Revoke all permissions of a list of secondary keys associated with the Current Identity
    */
-  public revokePermissions: ProcedureMethod<{ secondaryKeys: Signer[] }, void>;
+  public revokePermissions: ProcedureMethod<{ secondaryKeys: Account[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary keys associated with the Current Identity

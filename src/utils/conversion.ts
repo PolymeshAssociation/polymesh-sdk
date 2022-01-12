@@ -154,6 +154,7 @@ import {
   isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
+  PermissionedAccount,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -168,7 +169,6 @@ import {
   Signer,
   SignerType,
   SignerValue,
-  SigningKey,
   SingleClaimCondition,
   StoBalanceStatus,
   StoDetails,
@@ -2551,14 +2551,14 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
  * @hidden
  */
 export function secondaryKeyToMeshSecondaryKey(
-  secondaryKey: SigningKey,
+  secondaryKey: PermissionedAccount,
   context: Context
 ): MeshSecondaryKey {
   const { polymeshApi } = context;
-  const { signer, permissions } = secondaryKey;
+  const { account, permissions } = secondaryKey;
 
   return polymeshApi.createType('SecondaryKey', {
-    signer: signerValueToSignatory(signerToSignerValue(signer), context),
+    signer: signerValueToSignatory(signerToSignerValue(account), context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
 }

@@ -50,6 +50,7 @@ import {
   InstructionType,
   Leg,
   PercentageTransferRestriction,
+  PermissionedAccount,
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
@@ -58,7 +59,6 @@ import {
   ScheduleWithDetails,
   SecurityTokenDetails,
   SignerType,
-  SigningKey,
   StoBalanceStatus,
   StoDetails,
   StoSaleStatus,
@@ -121,7 +121,7 @@ interface IdentityOptions {
   tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   isCddProvider?: boolean;
-  getPrimaryKey?: SigningKey;
+  getPrimaryKey?: PermissionedAccount;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -129,7 +129,7 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
-  getSecondaryKeys?: SigningKey[];
+  getSecondaryKeys?: PermissionedAccount[];
   areScondaryKeysFrozen?: boolean;
   isEqual?: boolean;
   tokenPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;

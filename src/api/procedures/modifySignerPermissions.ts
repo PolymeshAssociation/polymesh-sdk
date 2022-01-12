@@ -1,6 +1,6 @@
 import { assertSecondaryKeys } from '~/api/procedures/utils';
 import { Procedure } from '~/internal';
-import { PermissionsLike, Signer, TxTags } from '~/types';
+import { Account, PermissionsLike, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
@@ -14,7 +14,7 @@ export interface ModifySignerPermissionsParams {
    * list of secondary keys
    */
   secondaryKeys: {
-    signer: Signer;
+    account: Account;
     /**
      * list of permissions
      */
@@ -36,29 +36,23 @@ export async function prepareModifySignerPermissions(
     context,
   } = this;
 
-  const { secondaryKeys: signers } = args;
+  const { secondaryKeys } = args;
 
   const identity = await context.getCurrentIdentity();
 
-  const secondaryKeys = await identity.getSecondaryKeys();
-  const signerValues = signers.map(({ signer, permissions }) => {
-    return {
-      signer: signerToSignerValue(signer),
-      permissions,
-    };
-  });
+  const existingSecondaryKeys = await identity.getSecondaryKeys();
 
   assertSecondaryKeys(
-    signerValues.map(({ signer }) => signer),
-    secondaryKeys
+    secondaryKeys.map(({ account }) => account),
+    existingSecondaryKeys
   );
 
-  const signersList = signerValues.map(({ signer, permissions: permissionsLike }) => {
+  const signersList = secondaryKeys.map(({ account, permissions: permissionsLike }) => {
     const permissions = permissionsLikeToPermissions(permissionsLike, context);
 
     const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-    return tuple(signerValueToSignatory(signer, context), rawPermissions);
+    return tuple(signerValueToSignatory(signerToSignerValue(account), context), rawPermissions);
   });
 
   this.addBatchTransaction(tx.identity.setPermissionToSigner, {}, signersList);

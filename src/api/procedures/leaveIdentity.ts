@@ -3,7 +3,6 @@ import { TxTags } from 'polymesh-types/types';
 import { Account, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { signerToString } from '~/utils/conversion';
 
 export interface LeaveIdentityParams {
   account: Account;
@@ -34,7 +33,9 @@ export async function prepareLeaveIdentity(
 
   const secondaryKeys = await currentIdentity.getSecondaryKeys();
   const { address } = account;
-  const isSecondaryKey = secondaryKeys.find(({ signer }) => address === signerToString(signer));
+  const isSecondaryKey = secondaryKeys.find(
+    ({ account: { address: secondaryKeyAddress } }) => address === secondaryKeyAddress
+  );
 
   if (!isSecondaryKey) {
     throw new PolymeshError({

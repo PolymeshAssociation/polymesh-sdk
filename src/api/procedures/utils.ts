@@ -30,14 +30,13 @@ import {
   InputTaxWithholding,
   InstructionStatus,
   InstructionType,
+  PermissionedAccount,
   PermissionGroupType,
   Signer,
-  SignerValue,
-  SigningKey,
   TickerReservationStatus,
 } from '~/types';
 import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
-import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 // import { Proposal } from '~/internal';
@@ -134,16 +133,16 @@ export async function assertPortfolioExists(
  * @hidden
  */
 export function assertSecondaryKeys(
-  signerValues: SignerValue[],
-  secondaryKeys: SigningKey[]
+  accounts: Account[],
+  secondaryKeys: PermissionedAccount[]
 ): void {
   const notInTheList: string[] = [];
-  signerValues.forEach(({ value: itemValue }) => {
-    const isPresent = secondaryKeys
-      .map(({ signer }) => signerToSignerValue(signer))
-      .find(({ value }) => value === itemValue);
+  accounts.forEach(({ address }) => {
+    const isPresent = secondaryKeys.find(
+      ({ account: { address: existingAddress } }) => existingAddress === address
+    );
     if (!isPresent) {
-      notInTheList.push(itemValue);
+      notInTheList.push(address);
     }
   });
 

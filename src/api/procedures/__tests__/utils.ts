@@ -233,9 +233,10 @@ describe('assertSecondaryKeys', () => {
 
   test('should not throw an error if all signers are secondary keys', async () => {
     const address = 'someAddress';
+    const account = entityMockUtils.getAccountInstance({ address });
     const secondaryKeys = [
       {
-        signer: entityMockUtils.getAccountInstance({ address }),
+        account,
         permissions: {
           tokens: null,
           transactions: null,
@@ -244,19 +245,16 @@ describe('assertSecondaryKeys', () => {
         },
       },
     ];
-    const signerValues = [{ type: SignerType.Account, value: address }];
 
-    signerToSignerValueStub.returns(signerValues[0]);
-
-    const result = assertSecondaryKeys(signerValues, secondaryKeys);
+    const result = assertSecondaryKeys([account], secondaryKeys);
     expect(result).toBeUndefined();
   });
 
-  test('should throw an error if one of the Signers is not a Secondary Key for the Identity', () => {
+  test('should throw an error if one of the Accounts is not a Secondary Key for the Identity', () => {
     const address = 'someAddress';
     const secondaryKeys = [
       {
-        signer: entityMockUtils.getAccountInstance({ address }),
+        account: entityMockUtils.getAccountInstance({ address }),
         permissions: {
           tokens: null,
           transactions: null,
@@ -265,20 +263,20 @@ describe('assertSecondaryKeys', () => {
         },
       },
     ];
-    const signerValues = [{ type: SignerType.Account, value: 'otherAddress' }];
+    const accounts = [entityMockUtils.getAccountInstance({ address: 'otherAddress' })];
 
     signerToSignerValueStub.returns({ type: SignerType.Account, value: address });
 
     let error;
 
     try {
-      assertSecondaryKeys(signerValues, secondaryKeys);
+      assertSecondaryKeys(accounts, secondaryKeys);
     } catch (err) {
       error = err;
     }
 
     expect(error.message).toBe('One of the Signers is not a Secondary Key for the Identity');
-    expect(error.data.missing).toEqual([signerValues[0].value]);
+    expect(error.data.missing).toEqual([accounts[0].address]);
   });
 });
 

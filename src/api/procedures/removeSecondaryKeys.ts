@@ -2,11 +2,11 @@ import { find } from 'lodash';
 
 import { assertSecondaryKeys } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Signer, TxTags } from '~/types';
-import { signerToSignerValue, signerToString, signerValueToSignatory } from '~/utils/conversion';
+import { Account, ErrorCode, TxTags } from '~/types';
+import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
 export interface RemoveSecondaryKeysParams {
-  signers: Signer[];
+  accounts: Account[];
 }
 
 /**
@@ -23,19 +23,20 @@ export async function prepareRemoveSecondaryKeys(
     context,
   } = this;
 
-  const { signers } = args;
+  const { accounts } = args;
 
   const identity = await context.getCurrentIdentity();
 
-  const [{ signer: primaryKeySigner }, secondaryKeys] = await Promise.all([
-    identity.getPrimaryKey(),
-    identity.getSecondaryKeys(),
-  ]);
+  console.log(await identity.getPrimaryKey());
+  console.log(await identity.getSecondaryKeys());
+  const [
+    {
+      account: { address: primaryKeyAddress },
+    },
+    secondaryKeys,
+  ] = await Promise.all([identity.getPrimaryKey(), identity.getSecondaryKeys()]);
 
-  const signerValues = signers.map(signer => signerToSignerValue(signer));
-  const primaryKeySignerValue = signerToString(primaryKeySigner);
-
-  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKeySignerValue);
+  const isPrimaryKeyPresent = find(accounts, ({ address }) => address === primaryKeyAddress);
 
   if (isPrimaryKeyPresent) {
     throw new PolymeshError({
@@ -44,12 +45,12 @@ export async function prepareRemoveSecondaryKeys(
     });
   }
 
-  assertSecondaryKeys(signerValues, secondaryKeys);
+  assertSecondaryKeys(accounts, secondaryKeys);
 
   this.addTransaction(
     tx.identity.removeSecondaryKeys,
     {},
-    signerValues.map(signer => signerValueToSignatory(signer, context))
+    accounts.map(account => signerValueToSignatory(signerToSignerValue(account), context))
   );
 }
 

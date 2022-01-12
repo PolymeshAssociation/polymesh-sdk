@@ -23,7 +23,6 @@ describe('Account class', () => {
   let account: Account;
   let assertFormatValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
-  let signerToStringStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -31,7 +30,6 @@ describe('Account class', () => {
     procedureMockUtils.initMocks();
     assertFormatValidStub = sinon.stub(utilsInternalModule, 'assertFormatValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
 
     address = 'someAddress';
     key = 'someKey';
@@ -344,8 +342,6 @@ describe('Account class', () => {
         returnValue: dsMockUtils.createMockBool(false),
       });
 
-      signerToStringStub.returns(address);
-
       keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId());
 
       let result = await account.isFrozen();
@@ -385,7 +381,7 @@ describe('Account class', () => {
     test('should return full permissions if the account is the primary key', async () => {
       context = dsMockUtils.getContextInstance({
         primaryKey: {
-          signer: entityMockUtils.getAccountInstance({ address }),
+          account: entityMockUtils.getAccountInstance({ address }),
           permissions: {
             tokens: null,
             transactions: null,
@@ -394,8 +390,6 @@ describe('Account class', () => {
           },
         },
       });
-
-      signerToStringStub.returns(address);
 
       account = new Account({ address }, context);
 
@@ -416,13 +410,12 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       };
-      signerToStringStub.returns(address);
 
       context = dsMockUtils.getContextInstance({
         secondaryKeys: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+          { account: entityMockUtils.getAccountInstance({ address }), permissions },
           {
-            signer: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
             permissions: {
               tokens: null,
               transactions: {
@@ -448,7 +441,7 @@ describe('Account class', () => {
     test('should return whether the Account has the passed permissions', async () => {
       const primaryKeySigner = entityMockUtils.getAccountInstance({ address });
       const primaryKey = {
-        signer: primaryKeySigner,
+        account: primaryKeySigner,
         permissions: {
           tokens: null,
           transactions: null,
@@ -459,8 +452,6 @@ describe('Account class', () => {
       context = dsMockUtils.getContextInstance({
         primaryKey,
       });
-
-      signerToStringStub.withArgs(primaryKeySigner).returns(address);
 
       account = new Account({ address }, context);
 
@@ -480,11 +471,10 @@ describe('Account class', () => {
       const secondaryKeySigner = entityMockUtils.getAccountInstance({
         address: secondaryKeyAddress,
       });
-      signerToStringStub.withArgs(secondaryKeySigner).returns(secondaryKeyAddress);
 
       context = dsMockUtils.getContextInstance({
         primaryKey,
-        secondaryKeys: [{ signer: secondaryKeySigner, permissions }],
+        secondaryKeys: [{ account: secondaryKeySigner, permissions }],
       });
 
       account = new Account({ address: secondaryKeyAddress }, context);
@@ -510,7 +500,7 @@ describe('Account class', () => {
       };
       context = dsMockUtils.getContextInstance({
         primaryKey,
-        secondaryKeys: [{ signer: secondaryKeySigner, permissions }],
+        secondaryKeys: [{ account: secondaryKeySigner, permissions }],
       });
 
       account = new Account({ address: secondaryKeyAddress }, context);
@@ -539,7 +529,7 @@ describe('Account class', () => {
       };
       context = dsMockUtils.getContextInstance({
         primaryKey,
-        secondaryKeys: [{ signer: secondaryKeySigner, permissions }],
+        secondaryKeys: [{ account: secondaryKeySigner, permissions }],
       });
 
       account = new Account({ address: secondaryKeyAddress }, context);
@@ -604,7 +594,7 @@ describe('Account class', () => {
       };
       context = dsMockUtils.getContextInstance({
         primaryKey,
-        secondaryKeys: [{ signer: secondaryKeySigner, permissions }],
+        secondaryKeys: [{ account: secondaryKeySigner, permissions }],
       });
 
       account = new Account({ address: secondaryKeyAddress }, context);
@@ -638,7 +628,7 @@ describe('Account class', () => {
       };
       context = dsMockUtils.getContextInstance({
         primaryKey,
-        secondaryKeys: [{ signer: secondaryKeySigner, permissions }],
+        secondaryKeys: [{ account: secondaryKeySigner, permissions }],
       });
 
       account = new Account({ address: secondaryKeyAddress }, context);
@@ -661,7 +651,7 @@ describe('Account class', () => {
     test('should exempt certain transactions from requiring permissions', async () => {
       context = dsMockUtils.getContextInstance({
         primaryKey: {
-          signer: entityMockUtils.getAccountInstance({ address }),
+          account: entityMockUtils.getAccountInstance({ address }),
           permissions: {
             tokens: null,
             transactions: null,
@@ -670,8 +660,6 @@ describe('Account class', () => {
           },
         },
       });
-
-      signerToStringStub.returns(address);
 
       account = new Account({ address }, context);
 
@@ -698,7 +686,7 @@ describe('Account class', () => {
       const mockAccount = entityMockUtils.getAccountInstance({ address });
       context = dsMockUtils.getContextInstance({
         primaryKey: {
-          signer: mockAccount,
+          account: mockAccount,
           permissions: {
             tokens: null,
             transactions: null,
@@ -707,8 +695,6 @@ describe('Account class', () => {
           },
         },
       });
-
-      signerToStringStub.returns(address);
 
       account = new Account(mockAccount, context);
 

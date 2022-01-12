@@ -38,16 +38,16 @@ describe('CurrentIdentity class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const currentIdentity = new CurrentIdentity(context);
 
-      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+      const accounts = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
 
       const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
-        .withArgs({ args: { signers }, transformer: undefined }, context)
+        .withArgs({ args: { accounts }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await currentIdentity.removeSecondaryKeys({ signers });
+      const queue = await currentIdentity.removeSecondaryKeys({ accounts });
 
       expect(queue).toBe(expectedQueue);
     });
@@ -57,10 +57,10 @@ describe('CurrentIdentity class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const currentIdentity = new CurrentIdentity(context);
 
-      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+      const accounts = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
       const secondaryKeys = [
         {
-          signer: signers[0],
+          account: accounts[0],
           permissions: {
             tokens: { type: PermissionType.Include, values: [] },
             transactions: { type: PermissionType.Include, values: [] },
@@ -76,7 +76,7 @@ describe('CurrentIdentity class', () => {
         .withArgs({ args: { secondaryKeys }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await currentIdentity.revokePermissions({ secondaryKeys: signers });
+      const queue = await currentIdentity.revokePermissions({ secondaryKeys: accounts });
 
       expect(queue).toBe(expectedQueue);
     });
@@ -88,7 +88,7 @@ describe('CurrentIdentity class', () => {
 
       const secondaryKeys = [
         {
-          signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
+          account: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
           permissions: { tokens: null, transactions: null, portfolios: null },
         },
       ];

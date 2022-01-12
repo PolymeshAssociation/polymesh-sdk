@@ -154,9 +154,9 @@ import {
   DistributionWithDetails,
   ExtrinsicData,
   KeyringPair,
+  PermissionedAccount,
   ResultSet,
   SignerType,
-  SigningKey,
   Subsidy,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
@@ -317,8 +317,8 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  primaryKey?: SigningKey;
-  secondaryKeys?: SigningKey[];
+  primaryKey?: PermissionedAccount;
+  secondaryKeys?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -585,7 +585,9 @@ const defaultContextOptions: ContextOptions = {
     count: 1,
   },
   primaryKey: {
-    signer: ('primaryKey' as unknown) as Account,
+    account: ({
+      address: 'primaryKey',
+    } as unknown) as Account,
     permissions: {
       tokens: null,
       transactions: null,
@@ -666,7 +668,7 @@ function configureContext(opts: ContextOptions): void {
     checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
+    getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
     getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),

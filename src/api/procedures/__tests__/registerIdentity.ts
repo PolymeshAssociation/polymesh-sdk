@@ -10,7 +10,7 @@ import {
 import { Context, Identity, PostTransactionValue, RegisterIdentityParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SigningKey } from '~/types';
+import { PermissionedAccount } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -18,7 +18,10 @@ import * as utilsInternalModule from '~/utils/internal';
 describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let secondaryKeyToMeshSecondaryKeyStub: sinon.SinonStub<[SigningKey, Context], MeshSecondaryKey>;
+  let secondaryKeyToMeshSecondaryKeyStub: sinon.SinonStub<
+    [PermissionedAccount, Context],
+    MeshSecondaryKey
+  >;
   let addTransactionStub: sinon.SinonStub;
   let registerIdentityTransaction: PolymeshTx<unknown[]>;
   let identity: PostTransactionValue<Identity>;
@@ -57,7 +60,7 @@ describe('registerIdentity procedure', () => {
     const targetAccount = 'someAccount';
     const secondaryKeys = [
       {
-        signer: new Identity({ did: 'someValue' }, mockContext),
+        account: entityMockUtils.getAccountInstance({ address: 'someValue' }),
         permissions: {
           tokens: null,
           portfolios: null,
@@ -73,7 +76,7 @@ describe('registerIdentity procedure', () => {
     const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
     const rawSecondaryKey = dsMockUtils.createMockSecondaryKey({
       signer: dsMockUtils.createMockSignatory({
-        Identity: dsMockUtils.createMockIdentityId(secondaryKeys[0].signer.did),
+        Account: dsMockUtils.createMockAccountId(secondaryKeys[0].account.address),
       }),
       permissions: dsMockUtils.createMockPermissions(),
     });

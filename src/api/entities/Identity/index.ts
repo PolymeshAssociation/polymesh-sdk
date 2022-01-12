@@ -6,6 +6,7 @@ import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
+  Account,
   Context,
   Entity,
   Instruction,
@@ -27,10 +28,9 @@ import {
   isTickerOwnerRole,
   isVenueOwnerRole,
   Order,
+  PermissionedAccount,
   ResultSet,
   Role,
-  SignerType,
-  SigningKey,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -49,6 +49,7 @@ import {
   portfolioLikeToPortfolioId,
   scopeIdToString,
   signatoryToSignerValue,
+  signerToString,
   signerValueToSigner,
   stringToIdentityId,
   stringToTicker,
@@ -257,13 +258,13 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getPrimaryKey(): Promise<SigningKey>;
-  public async getPrimaryKey(callback: SubCallback<SigningKey>): Promise<UnsubCallback>;
+  public async getPrimaryKey(): Promise<PermissionedAccount>;
+  public async getPrimaryKey(callback: SubCallback<PermissionedAccount>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getPrimaryKey(
-    callback?: SubCallback<SigningKey>
-  ): Promise<SigningKey | UnsubCallback> {
+    callback?: SubCallback<PermissionedAccount>
+  ): Promise<PermissionedAccount | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -274,12 +275,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): SigningKey => {
+    const assembleResult = ({ primary_key: primaryKey }: DidRecord): PermissionedAccount => {
       return {
-        signer: signerValueToSigner(
-          { type: SignerType.Account, value: accountIdToString(primaryKey) },
-          context
-        ),
+        account: new Account({ address: accountIdToString(primaryKey) }, context),
         permissions: {
           tokens: null,
           portfolios: null,
@@ -664,13 +662,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getSecondaryKeys(): Promise<SigningKey[]>;
-  public async getSecondaryKeys(callback: SubCallback<SigningKey[]>): Promise<UnsubCallback>;
+  public async getSecondaryKeys(): Promise<PermissionedAccount[]>;
+  public async getSecondaryKeys(
+    callback: SubCallback<PermissionedAccount[]>
+  ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getSecondaryKeys(
-    callback?: SubCallback<SigningKey[]>
-  ): Promise<SigningKey[] | UnsubCallback> {
+    callback?: SubCallback<PermissionedAccount[]>
+  ): Promise<PermissionedAccount[] | UnsubCallback> {
     const {
       did,
       context,
@@ -681,9 +681,18 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SigningKey[] => {
+    const assembleResult = ({
+      secondary_keys: secondaryKeys,
+    }: DidRecord): PermissionedAccount[] => {
       return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
-        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), context),
+        account: new Account(
+          {
+            address: signerToString(
+              signerValueToSigner(signatoryToSignerValue(rawSigner), context)
+            ),
+          },
+          context
+        ),
         permissions: meshPermissionsToPermissions(permissions, context),
       }));
     };

@@ -47,7 +47,6 @@ import {
   extrinsicIdentifierToTxTag,
   identityIdToString,
   portfolioToPortfolioId,
-  signerToString,
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
@@ -304,9 +303,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       return false;
     }
 
-    const { signer } = await identity.getPrimaryKey();
+    const {
+      account: { address: primaryKeyAddress },
+    } = await identity.getPrimaryKey();
 
-    if (address === signerToString(signer)) {
+    if (address === primaryKeyAddress) {
       return false;
     }
 
@@ -321,12 +322,14 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const currentIdentity = await context.getCurrentIdentity();
 
-    const [{ signer: primaryKeySigner }, secondaryKeys] = await Promise.all([
-      currentIdentity.getPrimaryKey(),
-      currentIdentity.getSecondaryKeys(),
-    ]);
+    const [
+      {
+        account: { address: primaryKeyAddress },
+      },
+      secondaryKeys,
+    ] = await Promise.all([currentIdentity.getPrimaryKey(), currentIdentity.getSecondaryKeys()]);
 
-    if (address === signerToString(primaryKeySigner)) {
+    if (address === primaryKeyAddress) {
       return {
         tokens: null,
         transactions: null,
@@ -336,7 +339,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const key = secondaryKeys.find(({ signer }) => address === signerToString(signer))!;
+    const key = secondaryKeys.find(
+      ({ account: { address: secondaryKeyAddress } }) => address === secondaryKeyAddress
+    )!;
 
     return key.permissions;
   }

@@ -8,7 +8,7 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionType, Signer, SignerType, SignerValue, SigningKey } from '~/types';
+import { PermissionedAccount, PermissionType, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {
@@ -44,7 +44,7 @@ describe('modifySignerPermissions procedure', () => {
     identity = entityMockUtils.getIdentityInstance({
       getSecondaryKeys: [
         {
-          signer: account,
+          account,
           permissions: {
             tokens: {
               type: PermissionType.Include,
@@ -78,9 +78,9 @@ describe('modifySignerPermissions procedure', () => {
   });
 
   test('should add a batch of Set Permission To Signer transactions to the queue', async () => {
-    let secondaryKeys: SigningKey[] = [
+    let secondaryKeys: PermissionedAccount[] = [
       {
-        signer: account,
+        account,
         permissions: {
           tokens: null,
           transactions: null,
@@ -97,7 +97,7 @@ describe('modifySignerPermissions procedure', () => {
 
     const signerValue = {
       type: SignerType.Account,
-      value: (secondaryKeys[0].signer as Account).address,
+      value: secondaryKeys[0].account.address,
     };
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId(signerValue.value),
@@ -127,7 +127,7 @@ describe('modifySignerPermissions procedure', () => {
 
     secondaryKeys = [
       {
-        signer: account,
+        account,
         permissions: {
           tokens: null,
           transactions: null,
@@ -156,7 +156,7 @@ describe('modifySignerPermissions procedure', () => {
   test('should throw an error if at least one of the Signers for which to modify permissions is not a Secondary Key for the Identity', () => {
     const secondaryKeys = [
       {
-        signer: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
+        account: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
         permissions: {
           tokens: null,
           transactions: null,
@@ -167,10 +167,10 @@ describe('modifySignerPermissions procedure', () => {
 
     const signerValue = {
       type: SignerType.Account,
-      value: (secondaryKeys[0].signer as Account).address,
+      value: secondaryKeys[0].account.address,
     };
 
-    signerToSignerValueStub.withArgs(secondaryKeys[0].signer).returns(signerValue);
+    signerToSignerValueStub.withArgs(secondaryKeys[0].account).returns(signerValue);
 
     const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
 
