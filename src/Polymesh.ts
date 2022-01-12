@@ -26,12 +26,11 @@ import {
   UiKeyring,
   UnsubCallback,
 } from '~/types';
+import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 import { signerToString } from '~/utils/conversion';
 
 import { Claims } from './Claims';
-import { CurrentIdentity } from './CurrentIdentity';
 import { Network } from './Network';
-import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -56,8 +55,6 @@ export class Polymesh {
    * A set of methods for exchanging Assets
    */
   public settlements: Settlements;
-
-  public currentIdentity: CurrentIdentity;
   /**
    * A set of methods for managing a Polymesh Identity's Accounts and their permissions
    */
@@ -80,7 +77,6 @@ export class Polymesh {
     this.claims = new Claims(context);
     this.network = new Network(context);
     this.settlements = new Settlements(context);
-    this.currentIdentity = new CurrentIdentity(context);
     this.accountManagement = new AccountManagement(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
