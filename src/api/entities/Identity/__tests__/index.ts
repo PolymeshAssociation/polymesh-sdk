@@ -1189,7 +1189,7 @@ describe('Identity class', () => {
         roles: [],
         primary_key: dsMockUtils.createMockAccountId(),
         secondary_keys: [
-          dsMockUtils.createMockSecondaryAccount({
+          dsMockUtils.createMockSecondaryKey({
             signer: signerIdentityId,
             permissions: dsMockUtils.createMockPermissions({
               asset: dsMockUtils.createMockAssetPermissions(),
@@ -1197,7 +1197,7 @@ describe('Identity class', () => {
               portfolio: dsMockUtils.createMockPortfolioPermissions(),
             }),
           }),
-          dsMockUtils.createMockSecondaryAccount({
+          dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
             permissions: dsMockUtils.createMockPermissions({
               asset: dsMockUtils.createMockAssetPermissions('Whole'),

@@ -74,7 +74,7 @@ describe('registerIdentity procedure', () => {
       secondaryAccounts,
     };
     const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
-    const rawSecondaryAccount = dsMockUtils.createMockSecondaryAccount({
+    const rawSecondaryAccount = dsMockUtils.createMockSecondaryKey({
       signer: dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(secondaryAccounts[0].signer.did),
       }),

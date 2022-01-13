@@ -2649,19 +2649,19 @@ export const createMockPipsMetadata = (metadata?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockSecondaryAccount = (secondaryAccount?: {
+export const createMockSecondaryKey = (secondaryKey?: {
   signer: Signatory;
   permissions: Permissions;
 }): MeshSecondaryKey => {
-  const account = secondaryAccount || {
+  const key = secondaryKey || {
     signer: createMockSignatory(),
     permissions: createMockPermissions(),
   };
   return createMockCodec(
     {
-      ...account,
+      ...key,
     },
-    !secondaryAccount
+    !secondaryKey
   ) as MeshSecondaryKey;
 };
 

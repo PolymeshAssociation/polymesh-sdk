@@ -4616,7 +4616,7 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
       portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
       extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
     });
-    const fakeResult = dsMockUtils.createMockSecondaryAccount({
+    const fakeResult = dsMockUtils.createMockSecondaryKey({
       signer: mockSignatory,
       permissions: mockPermissions,
     });
