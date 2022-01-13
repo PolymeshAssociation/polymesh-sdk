@@ -1082,7 +1082,7 @@ export function authorizationToAuthorizationData(
 ): AuthorizationData {
   let value;
 
-  if (auth.type === AuthorizationType.RotatePrimaryKey) {
+  if (auth.type === AuthorizationType.RotatePrimaryAccount) {
     value = null;
   } else if (auth.type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
@@ -1127,14 +1127,14 @@ export function authorizationDataToAuthorization(
 ): Authorization {
   if (auth.isAttestPrimaryKeyRotation) {
     return {
-      type: AuthorizationType.AttestPrimaryKeyRotation,
+      type: AuthorizationType.AttestPrimaryAccountRotation,
       value: identityIdToString(auth.asAttestPrimaryKeyRotation),
     };
   }
 
   if (auth.isRotatePrimaryKey) {
     return {
-      type: AuthorizationType.RotatePrimaryKey,
+      type: AuthorizationType.RotatePrimaryAccount,
     };
   }
 
@@ -1177,7 +1177,7 @@ export function authorizationDataToAuthorization(
     const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
 
     return {
-      type: AuthorizationType.AddRelayerPayingKey,
+      type: AuthorizationType.AddRelayerPayingAccount,
       value: {
         beneficiary: new Account({ address: accountIdToString(userKey) }, context),
         subsidizer: new Account({ address: accountIdToString(payingKey) }, context),

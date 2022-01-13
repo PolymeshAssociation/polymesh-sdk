@@ -76,7 +76,7 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.RotatePrimaryKey },
+          data: { type: AuthorizationType.RotatePrimaryAccount },
         },
         context
       );
@@ -180,7 +180,7 @@ describe('AuthorizationRequest class', () => {
           expiry: null,
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.RotatePrimaryKey },
+          data: { type: AuthorizationType.RotatePrimaryAccount },
         },
         context
       );
@@ -280,7 +280,7 @@ describe('AuthorizationRequest class', () => {
           expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.RotatePrimaryKey },
+          data: { type: AuthorizationType.RotatePrimaryAccount },
         },
         context
       );
@@ -299,7 +299,7 @@ describe('AuthorizationRequest class', () => {
           expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.RotatePrimaryKey },
+          data: { type: AuthorizationType.RotatePrimaryAccount },
         },
         context
       );
@@ -333,7 +333,7 @@ describe('AuthorizationRequest class', () => {
           expiry: new Date('10/14/1987 UTC'),
           target: new Identity({ did: 'someDid' }, context),
           issuer: new Identity({ did: 'otherDid' }, context),
-          data: { type: AuthorizationType.RotatePrimaryKey },
+          data: { type: AuthorizationType.RotatePrimaryAccount },
         },
         context
       );
@@ -345,7 +345,7 @@ describe('AuthorizationRequest class', () => {
           value: 'someDid',
         },
         issuer: 'otherDid',
-        data: { type: AuthorizationType.RotatePrimaryKey },
+        data: { type: AuthorizationType.RotatePrimaryAccount },
       });
     });
   });

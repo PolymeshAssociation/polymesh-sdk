@@ -646,7 +646,7 @@ describe('authorization request validations', () => {
   });
 
   describe('assertPrimaryAccountRotationAuthorizationValid', () => {
-    const data = { type: AuthorizationType.RotatePrimaryKey } as Authorization;
+    const data = { type: AuthorizationType.RotatePrimaryAccount } as Authorization;
     test('should not throw with a valid request', async () => {
       const goodTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(
@@ -683,9 +683,9 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertAttestPrimaryKeyAuthorizationValid', () => {
+  describe('assertAttestPrimaryAccountAuthorizationValid', () => {
     const data: Authorization = {
-      type: AuthorizationType.AttestPrimaryKeyRotation,
+      type: AuthorizationType.AttestPrimaryAccountRotation,
       value: '',
     };
     test('should not throw with a valid request', async () => {
@@ -1027,7 +1027,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertAddRelayerPayingKeyAuthroizationValid', () => {
+  describe('assertAddRelayerPayingKeyAuthorizationValid', () => {
     const allowance = new BigNumber(100);
     test('should not throw with a valid request', async () => {
       const subsidizer = entityMockUtils.getAccountInstance({
@@ -1042,7 +1042,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingAccount,
         value: subsidy,
       };
 
@@ -1081,7 +1081,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingAccount,
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1125,7 +1125,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingAccount,
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1164,7 +1164,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingAccount,
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1206,7 +1206,7 @@ describe('authorization request validations', () => {
         remaining: allowance,
       };
       const data: Authorization = {
-        type: AuthorizationType.AddRelayerPayingKey,
+        type: AuthorizationType.AddRelayerPayingAccount,
         value: subsidy,
       };
       const auth = new AuthorizationRequest(
@@ -1275,7 +1275,7 @@ describe('createAuthorizationResolver', () => {
     const mockContext = dsMockUtils.getContextInstance();
 
     const authData: Authorization = {
-      type: AuthorizationType.RotatePrimaryKey,
+      type: AuthorizationType.RotatePrimaryAccount,
     };
 
     const resolver = createAuthorizationResolver(
@@ -1295,7 +1295,7 @@ describe('createAuthorizationResolver', () => {
     const mockContext = dsMockUtils.getContextInstance();
 
     const authData: Authorization = {
-      type: AuthorizationType.RotatePrimaryKey,
+      type: AuthorizationType.RotatePrimaryAccount,
     };
 
     const postTransaction = new PostTransactionValue(() => authData);

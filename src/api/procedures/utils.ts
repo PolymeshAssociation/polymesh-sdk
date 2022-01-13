@@ -17,7 +17,7 @@ import {
   TickerReservation,
 } from '~/internal';
 import {
-  AddRelayerPayingKeyAuthorizationData,
+  AddRelayerPayingAccountAuthorizationData,
   Authorization,
   AuthorizationType,
   Condition,
@@ -363,10 +363,10 @@ export async function assertAuthorizationRequestValid(
   }
   const { data } = authRequest;
   switch (data.type) {
-    case AuthorizationType.RotatePrimaryKey:
-      return assertPrimaryKeyRotationAuthorizationValid(authRequest);
-    case AuthorizationType.AttestPrimaryKeyRotation:
-      return assertAttestPrimaryKeyAuthorizationValid(authRequest);
+    case AuthorizationType.RotatePrimaryAccount:
+      return assertPrimaryAccountRotationAuthorizationValid(authRequest);
+    case AuthorizationType.AttestPrimaryAccountRotation:
+      return assertAttestPrimaryAccountAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
       return assertTransferTickerAuthorizationValid(data, context);
     case AuthorizationType.TransferAssetOwnership:
@@ -382,8 +382,8 @@ export async function assertAuthorizationRequestValid(
       return;
     case AuthorizationType.JoinIdentity:
       return assertJoinIdentityAuthorizationValid(authRequest);
-    case AuthorizationType.AddRelayerPayingKey:
-      return assertAddRelayerPayingKeyAuthorizationValid(data);
+    case AuthorizationType.AddRelayerPayingAccount:
+      return assertAddRelayerPayingAccountAuthorizationValid(data);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -394,7 +394,7 @@ export async function assertAuthorizationRequestValid(
  *
  * Asserts valid primary key authorization
  */
-export async function assertPrimaryKeyRotationAuthorizationValid(
+export async function assertPrimaryAccountRotationAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   if (authRequest.target instanceof Identity) {
@@ -408,9 +408,9 @@ export async function assertPrimaryKeyRotationAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid attest primary key authorization
+ * Asserts valid attest primary Account authorization
  */
-export async function assertAttestPrimaryKeyAuthorizationValid(
+export async function assertAttestPrimaryAccountAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   const isCddProvider = await authRequest.issuer.isCddProvider();
@@ -497,10 +497,10 @@ export async function assertJoinIdentityAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid add relayer paying key authorization
+ * Asserts valid add relayer paying Account authorization
  */
-export async function assertAddRelayerPayingKeyAuthorizationValid(
-  data: AddRelayerPayingKeyAuthorizationData
+export async function assertAddRelayerPayingAccountAuthorizationValid(
+  data: AddRelayerPayingAccountAuthorizationData
 ): Promise<void> {
   const subsidy = data.value;
 

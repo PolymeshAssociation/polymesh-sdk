@@ -207,15 +207,15 @@ export interface TokenDocument {
  * Type of Authorization Request
  */
 export enum AuthorizationType {
-  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
-  RotatePrimaryKey = 'RotatePrimaryKey',
+  AttestPrimaryAccountRotation = 'AttestPrimaryAccountRotation',
+  RotatePrimaryAccount = 'RotatePrimaryAccount',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   BecomeAgent = 'BecomeAgent',
-  AddRelayerPayingKey = 'AddRelayerPayingKey',
+  AddRelayerPayingAccount = 'AddRelayerPayingAccount',
 }
 
 export enum ConditionTarget {
@@ -1043,7 +1043,9 @@ export interface Subsidy {
   allowance: BigNumber;
 }
 
-export type RotatePrimaryKeyAuthorizationData = { type: AuthorizationType.RotatePrimaryKey };
+export type RotatePrimaryAccountAuthorizationData = {
+  type: AuthorizationType.RotatePrimaryAccount;
+};
 
 export type JoinIdentityAuthorizationData = {
   type: AuthorizationType.JoinIdentity;
@@ -1060,19 +1062,19 @@ export type BecomeAgentAuthorizationData = {
   value: KnownPermissionGroup | CustomPermissionGroup;
 };
 
-export type AddRelayerPayingKeyAuthorizationData = {
-  type: AuthorizationType.AddRelayerPayingKey;
+export type AddRelayerPayingAccountAuthorizationData = {
+  type: AuthorizationType.AddRelayerPayingAccount;
   value: Subsidy;
 };
 
 export type GenericAuthorizationData = {
   type: Exclude<
     AuthorizationType,
-    | AuthorizationType.RotatePrimaryKey
+    | AuthorizationType.RotatePrimaryAccount
     | AuthorizationType.JoinIdentity
     | AuthorizationType.PortfolioCustody
     | AuthorizationType.BecomeAgent
-    | AuthorizationType.AddRelayerPayingKey
+    | AuthorizationType.AddRelayerPayingAccount
   >;
   value: string;
 };
@@ -1080,11 +1082,11 @@ export type GenericAuthorizationData = {
  * Authorization request data corresponding to type
  */
 export type Authorization =
-  | RotatePrimaryKeyAuthorizationData
+  | RotatePrimaryAccountAuthorizationData
   | JoinIdentityAuthorizationData
   | PortfolioCustodyAuthorizationData
   | BecomeAgentAuthorizationData
-  | AddRelayerPayingKeyAuthorizationData
+  | AddRelayerPayingAccountAuthorizationData
   | GenericAuthorizationData;
 
 export enum TransactionArgumentType {

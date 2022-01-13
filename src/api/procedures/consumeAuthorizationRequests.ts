@@ -46,10 +46,10 @@ export async function prepareConsumeAuthorizationRequests(
   if (accept) {
     // auth types not present in this object should not be possible in this procedure
     const typesToExtrinsics = {
-      [AuthorizationType.AddRelayerPayingKey]: tx.relayer.acceptPayingKey,
+      [AuthorizationType.AddRelayerPayingAccount]: tx.relayer.acceptPayingKey,
       [AuthorizationType.BecomeAgent]: tx.externalAgents.acceptBecomeAgent,
       [AuthorizationType.PortfolioCustody]: tx.portfolio.acceptPortfolioCustody,
-      [AuthorizationType.RotatePrimaryKey]: tx.identity.acceptPrimaryKey,
+      [AuthorizationType.RotatePrimaryAccount]: tx.identity.acceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: tx.asset.acceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: tx.asset.acceptTickerTransfer,
     } as const;
@@ -75,7 +75,7 @@ export async function prepareConsumeAuthorizationRequests(
       const type = key as AllowedAuthType;
 
       // TODO @monitz87: include the attestation auth in the mix (should probably be a different procedure)
-      if (type === AuthorizationType.RotatePrimaryKey) {
+      if (type === AuthorizationType.RotatePrimaryAccount) {
         this.addBatchTransaction(
           typesToExtrinsics[type],
           {},
@@ -136,10 +136,10 @@ export async function getAuthorization(
 
   if (accept) {
     const typesToTags = {
-      [AuthorizationType.AddRelayerPayingKey]: TxTags.relayer.AcceptPayingKey,
+      [AuthorizationType.AddRelayerPayingAccount]: TxTags.relayer.AcceptPayingKey,
       [AuthorizationType.BecomeAgent]: TxTags.externalAgents.AcceptBecomeAgent,
       [AuthorizationType.PortfolioCustody]: TxTags.portfolio.AcceptPortfolioCustody,
-      [AuthorizationType.RotatePrimaryKey]: TxTags.identity.AcceptPrimaryKey,
+      [AuthorizationType.RotatePrimaryAccount]: TxTags.identity.AcceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: TxTags.asset.AcceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: TxTags.asset.AcceptTickerTransfer,
     } as const;

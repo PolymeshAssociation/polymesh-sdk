@@ -2043,8 +2043,8 @@ export const createMockSignatory = (
  */
 export const createMockAuthorizationType = (
   authorizationType?:
-    | 'AttestPrimaryKeyRotation'
-    | 'RotatePrimaryKey'
+    | 'AttestPrimaryAccountRotation'
+    | 'RotatePrimaryAccount'
     | 'TransferTicker'
     | 'AddMultiSigSigner'
     | 'TransferAssetOwnership'

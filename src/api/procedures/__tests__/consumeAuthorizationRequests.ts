@@ -95,7 +95,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         target: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid2' }),
         data: {
-          type: AuthorizationType.AddRelayerPayingKey,
+          type: AuthorizationType.AddRelayerPayingAccount,
           value: {
             beneficiary: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
             subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
@@ -109,7 +109,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         target: entityMockUtils.getAccountInstance({ address: 'targetAddress3' }),
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid3' }),
         data: {
-          type: AuthorizationType.RotatePrimaryKey,
+          type: AuthorizationType.RotatePrimaryAccount,
         },
       },
       {
