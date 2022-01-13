@@ -19,7 +19,7 @@ describe('createPortfolio procedure', () => {
   let mockContext: Mocked<Context>;
   let numberedPortfolio: PostTransactionValue<NumberedPortfolio>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
-  let portfolioNameToNumberStub: sinon.SinonStub;
+  let getPortfolioIdByNameStub: sinon.SinonStub;
   let newPortfolioName: string;
   let rawNewPortfolioName: Text;
   let addTransactionStub: sinon.SinonStub;
@@ -32,7 +32,7 @@ describe('createPortfolio procedure', () => {
     numberedPortfolio = ('numberedPortfolio' as unknown) as PostTransactionValue<NumberedPortfolio>;
 
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
-    portfolioNameToNumberStub = sinon.stub(utilsConversionModule, 'portfolioNameToNumber');
+    getPortfolioIdByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdByName');
 
     newPortfolioName = 'newPortfolioName';
     rawNewPortfolioName = dsMockUtils.createMockText(newPortfolioName);
@@ -58,7 +58,7 @@ describe('createPortfolio procedure', () => {
 
   test('should throw an error if the portfolio name is duplicated', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
-    portfolioNameToNumberStub.returns(new BigNumber(1));
+    getPortfolioIdByNameStub.returns(new BigNumber(1));
 
     return expect(prepareCreatePortfolio.call(proc, { name: newPortfolioName })).rejects.toThrow(
       'A Portfolio with that name already exists'
@@ -68,7 +68,7 @@ describe('createPortfolio procedure', () => {
   test('should add a create portfolio transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
     const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
-    portfolioNameToNumberStub.returns(null);
+    getPortfolioIdByNameStub.returns(null);
 
     const result = await prepareCreatePortfolio.call(proc, { name: newPortfolioName });
 

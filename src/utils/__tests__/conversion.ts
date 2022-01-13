@@ -44,7 +44,6 @@ import {
   IdentityId,
   ModuleName,
   Permissions as MeshPermissions,
-  PortfolioName,
   ProtocolOp,
   Scope as MeshScope,
   Signatory,
@@ -194,7 +193,6 @@ import {
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
-  portfolioNameToNumber,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
@@ -6726,57 +6724,5 @@ describe('agentGroupToPermissionGroup', () => {
 
     result = agentGroupToPermissionGroup(agentGroup, ticker, context);
     expect(result).toEqual(entityMockUtils.getCustomPermissionGroupInstance({ ticker, id }));
-  });
-});
-
-describe('portfolioNameToNumber', () => {
-  let context: Context;
-  let nameToNumberStub: sinon.SinonStub;
-  let portfoliosStub: sinon.SinonStub;
-  let rawName: PortfolioName;
-  let identityId: IdentityId;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    entityMockUtils.initMocks();
-  });
-
-  beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
-    rawName = dsMockUtils.createMockText('someName');
-    identityId = dsMockUtils.createMockIdentityId('someDid');
-    nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
-    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-    entityMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
-  });
-
-  test('should return null if no portfolio with given name is found', async () => {
-    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
-    portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
-
-    const result = await portfolioNameToNumber(identityId, rawName, context);
-    expect(result).toBeNull();
-  });
-
-  test('should return portfolio number for given portfolio name', async () => {
-    nameToNumberStub.returns(dsMockUtils.createMockU64(2));
-
-    let result = await portfolioNameToNumber(identityId, rawName, context);
-    expect(result).toEqual(new BigNumber(2));
-
-    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
-    portfoliosStub.returns(rawName);
-
-    result = await portfolioNameToNumber(identityId, rawName, context);
-    expect(result).toEqual(new BigNumber(1));
   });
 });

@@ -11,12 +11,11 @@ import {
 import { ErrorCode } from '~/types';
 import {
   identityIdToString,
-  portfolioNameToNumber,
   stringToIdentityId,
   stringToText,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, getPortfolioIdByName } from '~/utils/internal';
 
 /**
  * @hidden
@@ -59,7 +58,7 @@ export async function prepareCreatePortfolio(
 
   const rawName = stringToText(portfolioName, context);
 
-  const existingPortfolioNumber = await portfolioNameToNumber(rawIdentityId, rawName, context);
+  const existingPortfolioNumber = await getPortfolioIdByName(rawIdentityId, rawName, context);
 
   if (existingPortfolioNumber) {
     throw new PolymeshError({

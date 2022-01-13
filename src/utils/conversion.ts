@@ -72,7 +72,6 @@ import {
   Permissions as MeshPermissions,
   PipId,
   PortfolioId as MeshPortfolioId,
-  PortfolioName,
   PosRatio,
   PriceTier,
   ProtocolOp,
@@ -3362,37 +3361,4 @@ export function agentGroupToPermissionGroup(
       return new CustomPermissionGroup({ id, ticker }, context);
     }
   }
-}
-
-/**
- * @hidden
- */
-export async function portfolioNameToNumber(
-  rawIdentityId: IdentityId,
-  rawName: PortfolioName,
-  context: Context
-): Promise<BigNumber | null> {
-  const {
-    polymeshApi: {
-      query: { portfolio },
-    },
-  } = context;
-
-  const rawPortfolioNumber = await portfolio.nameToNumber(rawIdentityId, rawName);
-
-  const portfolioId = u64ToBigNumber(rawPortfolioNumber);
-
-  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
-  if (portfolioId.eq(new BigNumber(1))) {
-    /**
-     * since nameToNumber returns for non-existing portfolios,
-     * we need to check if the name matches against the portfolio number 1
-     */
-    const rawExistingPortfolioName = await portfolio.portfolios(rawIdentityId, rawPortfolioNumber);
-    if (!rawName.eq(rawExistingPortfolioName)) {
-      return null;
-    }
-  }
-
-  return portfolioId;
 }
