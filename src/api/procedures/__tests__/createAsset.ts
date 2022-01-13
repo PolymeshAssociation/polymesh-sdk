@@ -211,8 +211,8 @@ describe('createAsset procedure', () => {
       )
       .returns(rawDocuments[0]);
 
-    mockContext.getTransactionFees.withArgs(TxTags.asset.RegisterTicker).resolves(protocolFees[0]);
-    mockContext.getTransactionFees.withArgs(TxTags.asset.CreateAsset).resolves(protocolFees[1]);
+    mockContext.getProtocolFees.withArgs(TxTags.asset.RegisterTicker).resolves(protocolFees[0]);
+    mockContext.getProtocolFees.withArgs(TxTags.asset.CreateAsset).resolves(protocolFees[1]);
   });
 
   afterEach(() => {
