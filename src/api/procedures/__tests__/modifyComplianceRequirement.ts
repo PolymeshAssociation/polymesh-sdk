@@ -105,7 +105,7 @@ describe('modifyComplianceRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied requirement id does not belong to the Security Token', () => {
+  test('should throw an error if the supplied requirement id does not belong to the Asset', () => {
     const fakeConditions = (['condition'] as unknown) as Condition[];
     args = {
       ticker,

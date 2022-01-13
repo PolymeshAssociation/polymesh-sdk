@@ -261,7 +261,7 @@ export class Requirements extends Namespace<Asset> {
   }
 
   /**
-   * Modify a compliance requirement for the Security Token
+   * Modify a compliance requirement for the Asset
    */
   public modify: ProcedureMethod<ModifyComplianceRequirementParams, void>;
 }
