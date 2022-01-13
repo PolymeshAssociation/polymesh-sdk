@@ -103,8 +103,8 @@ describe('IdentityAuthorizations class', () => {
 
       requestPaginatedStub.resolves({ entries: authorizationsGivenEntries, lastKey: null });
 
-      const authsMultiArgs = authorizationsGivenEntries.map(([accounts, signatory]) =>
-        tuple(signatory, accounts.args[1])
+      const authsMultiArgs = authorizationsGivenEntries.map(([keys, signatory]) =>
+        tuple(signatory, keys.args[1])
       );
 
       const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');

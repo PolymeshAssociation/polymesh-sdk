@@ -225,7 +225,7 @@ export interface ProcedureAuthorization {
    */
   permissions?: SimplePermissions | true | string;
   /**
-   * permissions specific to Secondary Key Accounts. This value takes precedence over `permissions` for
+   * permissions specific to Secondary Accounts. This value takes precedence over `permissions` for
    *   Secondary Accounts
    */
   signerPermissions?: SimplePermissions | true | string;

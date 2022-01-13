@@ -252,7 +252,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the primary key associated with the Identity
+   * Retrieve the primary Account associated with the Identity
    *
    * @note can be subscribed to
    */
@@ -555,7 +555,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether secondary accounts are frozen
+   * Check whether secondary Accounts are frozen
    *
    * @note can be subscribed to
    */
@@ -648,7 +648,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Get the list of secondary accounts related to the Identity
+   * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
    */

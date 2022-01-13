@@ -364,9 +364,9 @@ export async function assertAuthorizationRequestValid(
   const { data } = authRequest;
   switch (data.type) {
     case AuthorizationType.RotatePrimaryKey:
-      return assertPrimaryAccountRotationAuthorizationValid(authRequest);
+      return assertPrimaryKeyRotationAuthorizationValid(authRequest);
     case AuthorizationType.AttestPrimaryKeyRotation:
-      return assertAttestPrimaryAccountAuthorizationValid(authRequest);
+      return assertAttestPrimaryKeyAuthorizationValid(authRequest);
     case AuthorizationType.TransferTicker:
       return assertTransferTickerAuthorizationValid(data, context);
     case AuthorizationType.TransferAssetOwnership:
@@ -383,7 +383,7 @@ export async function assertAuthorizationRequestValid(
     case AuthorizationType.JoinIdentity:
       return assertJoinIdentityAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
-      return assertAddRelayerPayingAccountAuthorizationValid(data);
+      return assertAddRelayerPayingKeyAuthorizationValid(data);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -392,9 +392,9 @@ export async function assertAuthorizationRequestValid(
 /**
  * @hidden
  *
- * Asserts valid primary Account rotation authorization
+ * Asserts valid primary key authorization
  */
-export async function assertPrimaryAccountRotationAuthorizationValid(
+export async function assertPrimaryKeyRotationAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   if (authRequest.target instanceof Identity) {
@@ -408,9 +408,9 @@ export async function assertPrimaryAccountRotationAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid attest primary Account authorization
+ * Asserts valid attest primary key authorization
  */
-export async function assertAttestPrimaryAccountAuthorizationValid(
+export async function assertAttestPrimaryKeyAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   const isCddProvider = await authRequest.issuer.isCddProvider();
@@ -497,9 +497,9 @@ export async function assertJoinIdentityAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid add relayer paying Account authorization
+ * Asserts valid add relayer paying key authorization
  */
-export async function assertAddRelayerPayingAccountAuthorizationValid(
+export async function assertAddRelayerPayingKeyAuthorizationValid(
   data: AddRelayerPayingKeyAuthorizationData
 ): Promise<void> {
   const subsidy = data.value;

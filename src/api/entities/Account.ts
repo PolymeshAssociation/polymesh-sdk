@@ -84,8 +84,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public address: string;
 
   /**
-   * A hex representation of the cryptographic public key of the Account. This is consistent to any
-   * Substrate chain, while the address depends on the chain as well.
+   * A hex representation of the cryptographic public key of the Account. This is consistent across
+   * Substrate chains, while the address depends on the chain as well.
    */
   public key: string;
 

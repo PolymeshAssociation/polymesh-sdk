@@ -22,14 +22,14 @@ describe('Account class', () => {
   let key: string;
   let account: Account;
   let assertFormatValidStub: sinon.SinonStub;
-  let addressToAccountStub: sinon.SinonStub;
+  let addressToKeyStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     assertFormatValidStub = sinon.stub(utilsInternalModule, 'assertFormatValid');
-    addressToAccountStub = sinon.stub(utilsConversionModule, 'addressToKey');
+    addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
 
     address = 'someAddress';
     key = 'someKey';
@@ -182,7 +182,7 @@ describe('Account class', () => {
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
 
-      addressToAccountStub.returns(key);
+      addressToKeyStub.returns(key);
 
       sinon.stub(utilsConversionModule, 'txTagToExtrinsicIdentifier').withArgs(tag).returns({
         moduleId,

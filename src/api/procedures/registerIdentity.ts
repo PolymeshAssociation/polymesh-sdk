@@ -48,7 +48,7 @@ export async function prepareRegisterIdentity(
   const { targetAccount, secondaryAccounts = [] } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
-  const rawSecondaryAccounts = secondaryAccounts.map(({ permissions, ...rest }) =>
+  const rawSecondaryKeys = secondaryAccounts.map(({ permissions, ...rest }) =>
     secondaryAccountToMeshSecondaryKey(
       { ...rest, permissions: permissionsLikeToPermissions(permissions, context) },
       context
@@ -61,7 +61,7 @@ export async function prepareRegisterIdentity(
       resolvers: [createRegisterIdentityResolver(context)],
     },
     rawTargetAccount,
-    rawSecondaryAccounts
+    rawSecondaryKeys
   );
 
   return newIdentity;
