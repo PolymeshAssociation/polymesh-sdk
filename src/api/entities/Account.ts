@@ -343,7 +343,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check if this Account possess certain Permissions to act on behalf of its corresponding Identity
+   * Check if this Account possesses certain Permissions to act on behalf of its corresponding Identity
    *
    * @return which permissions the Account is missing (if any) and the final result
    */

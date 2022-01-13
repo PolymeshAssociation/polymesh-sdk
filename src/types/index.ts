@@ -207,15 +207,15 @@ export interface TokenDocument {
  * Type of Authorization Request
  */
 export enum AuthorizationType {
-  AttestPrimaryAccountRotation = 'AttestPrimaryAccountRotation',
-  RotatePrimaryAccount = 'RotatePrimaryAccount',
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
   TransferTicker = 'TransferTicker',
   AddMultiSigSigner = 'AddMultiSigSigner',
   TransferAssetOwnership = 'TransferAssetOwnership',
   JoinIdentity = 'JoinIdentity',
   PortfolioCustody = 'PortfolioCustody',
   BecomeAgent = 'BecomeAgent',
-  AddRelayerPayingAccount = 'AddRelayerPayingAccount',
+  AddRelayerPayingKey = 'AddRelayerPayingKey',
 }
 
 export enum ConditionTarget {
@@ -1044,7 +1044,7 @@ export interface Subsidy {
 }
 
 export type RotatePrimaryAccountAuthorizationData = {
-  type: AuthorizationType.RotatePrimaryAccount;
+  type: AuthorizationType.RotatePrimaryKey;
 };
 
 export type JoinIdentityAuthorizationData = {
@@ -1062,19 +1062,19 @@ export type BecomeAgentAuthorizationData = {
   value: KnownPermissionGroup | CustomPermissionGroup;
 };
 
-export type AddRelayerPayingAccountAuthorizationData = {
-  type: AuthorizationType.AddRelayerPayingAccount;
+export type AddRelayerPayingKeyAuthorizationData = {
+  type: AuthorizationType.AddRelayerPayingKey;
   value: Subsidy;
 };
 
 export type GenericAuthorizationData = {
   type: Exclude<
     AuthorizationType,
-    | AuthorizationType.RotatePrimaryAccount
+    | AuthorizationType.RotatePrimaryKey
     | AuthorizationType.JoinIdentity
     | AuthorizationType.PortfolioCustody
     | AuthorizationType.BecomeAgent
-    | AuthorizationType.AddRelayerPayingAccount
+    | AuthorizationType.AddRelayerPayingKey
   >;
   value: string;
 };
@@ -1086,7 +1086,7 @@ export type Authorization =
   | JoinIdentityAuthorizationData
   | PortfolioCustodyAuthorizationData
   | BecomeAgentAuthorizationData
-  | AddRelayerPayingAccountAuthorizationData
+  | AddRelayerPayingKeyAuthorizationData
   | GenericAuthorizationData;
 
 export enum TransactionArgumentType {

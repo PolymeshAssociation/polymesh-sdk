@@ -943,7 +943,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     const context = dsMockUtils.getContextInstance();
 
     let value: Authorization = {
-      type: AuthorizationType.AttestPrimaryAccountRotation,
+      type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
     };
     const fakeResult = ('AuthorizationDataEnum' as unknown) as AuthorizationData;
@@ -1005,7 +1005,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     expect(result).toBe(fakeResult);
 
     value = {
-      type: AuthorizationType.RotatePrimaryAccount,
+      type: AuthorizationType.RotatePrimaryKey,
     };
 
     dsMockUtils
@@ -1082,7 +1082,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
     const context = dsMockUtils.getContextInstance();
     let fakeResult: Authorization = {
-      type: AuthorizationType.AttestPrimaryAccountRotation,
+      type: AuthorizationType.AttestPrimaryKeyRotation,
       value: 'someIdentity',
     };
     let authorizationData = dsMockUtils.createMockAuthorizationData({
@@ -1093,7 +1093,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      type: AuthorizationType.RotatePrimaryAccount,
+      type: AuthorizationType.RotatePrimaryKey,
     };
     authorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKey');
 
@@ -1183,7 +1183,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     const relayerAddress = 'relayerAddress';
     const allowance = new BigNumber(1000);
     fakeResult = {
-      type: AuthorizationType.AddRelayerPayingAccount,
+      type: AuthorizationType.AddRelayerPayingKey,
       value: {
         beneficiary: entityMockUtils.getAccountInstance({ address: beneficiaryAddress }),
         subsidizer: entityMockUtils.getAccountInstance({ address: relayerAddress }),
