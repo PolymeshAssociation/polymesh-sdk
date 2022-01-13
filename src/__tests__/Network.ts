@@ -1,34 +1,167 @@
 import BigNumber from 'bignumber.js';
+import { TxTags } from 'polymesh-types/types';
+import sinon from 'sinon';
 
-import { Context } from '~/internal';
-import { Middleware } from '~/Middleware';
-import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
+import { Context, TransactionQueue } from '~/internal';
+import {
+  eventByIndexedArgs,
+  eventsByIndexedArgs,
+  heartbeat,
+  transactionByHash,
+} from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { Network } from '~/Network';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { AccountBalance } from '~/types';
 
-describe('Middleware Class', () => {
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+
+describe('Network Class', () => {
   let context: Mocked<Context>;
-  let middleware: Middleware;
+  let network: Network;
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    network = new Network(context);
+  });
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-  });
-
-  beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
-    middleware = new Middleware(context);
+    procedureMockUtils.initMocks();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
     dsMockUtils.cleanup();
     entityMockUtils.cleanup();
+    procedureMockUtils.cleanup();
+  });
+
+  describe('method: getLatestBlock', () => {
+    test('should return the latest block number', async () => {
+      const blockNumber = new BigNumber(100);
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, latestBlock: blockNumber } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const result = await network.getLatestBlock();
+
+      expect(result).toEqual(blockNumber);
+    });
+  });
+
+  describe('method: getNetworkVersion', () => {
+    test('should return the network version', async () => {
+      const networkVersion = '1.0.0';
+
+      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, networkVersion } });
+      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const result = await network.getVersion();
+
+      expect(result).toEqual(networkVersion);
+    });
+  });
+
+  describe('method: getNetworkProperties', () => {
+    test('should return current network information', async () => {
+      const name = 'someName';
+      const version = 1;
+      const fakeResult = {
+        name,
+        version,
+      };
+
+      dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
+      dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
+
+      const result = await network.getNetworkProperties();
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('method: getProtocolFees', () => {
+    test('should return the fees associated to the supplied transaction', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { transactionFee: new BigNumber(500) } });
+
+      const fee = await network.getProtocolFees({ tag: TxTags.asset.CreateAsset });
+
+      expect(fee).toEqual(new BigNumber(500));
+    });
+  });
+
+  describe('method: getTreasuryAccount', () => {
+    test('should return the treasury account', async () => {
+      const treasuryAddress = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
+
+      expect(network.getTreasuryAccount().address).toEqual(treasuryAddress);
+    });
+  });
+
+  describe('method: getTreasuryBalance', () => {
+    let fakeBalance: AccountBalance;
+
+    beforeAll(() => {
+      fakeBalance = {
+        free: new BigNumber(500000),
+        locked: new BigNumber(0),
+        total: new BigNumber(500000),
+      };
+      entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
+    });
+
+    test('should return the POLYX balance of the treasury account', async () => {
+      const result = await network.getTreasuryBalance();
+      expect(result).toEqual(fakeBalance.free);
+    });
+
+    test('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback';
+
+      entityMockUtils.getAccountInstance().getBalance.callsFake(async cbFunc => {
+        cbFunc(fakeBalance);
+        return unsubCallback;
+      });
+
+      const callback = sinon.stub();
+      const result = await network.getTreasuryBalance(callback);
+      expect(result).toEqual(unsubCallback);
+      sinon.assert.calledWithExactly(callback, fakeBalance.free);
+    });
+  });
+
+  describe('method: transferPolyx', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        to: 'someAccount',
+        amount: new BigNumber(50),
+      };
+
+      const expectedQueue = ('' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await network.transferPolyx(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
   });
 
   describe('method: getEventByIndexedArgs', () => {
@@ -62,7 +195,7 @@ describe('Middleware Class', () => {
         }
       );
 
-      const result = await middleware.getEventByIndexedArgs(variables);
+      const result = await network.getEventByIndexedArgs(variables);
       expect(result).toEqual(fakeResult);
     });
 
@@ -76,7 +209,7 @@ describe('Middleware Class', () => {
         }),
         {}
       );
-      const result = await middleware.getEventByIndexedArgs({ ...variables, eventArg0: 'someDid' });
+      const result = await network.getEventByIndexedArgs({ ...variables, eventArg0: 'someDid' });
       expect(result).toBeNull();
     });
   });
@@ -117,7 +250,7 @@ describe('Middleware Class', () => {
         }
       );
 
-      const result = await middleware.getEventsByIndexedArgs(variables);
+      const result = await network.getEventsByIndexedArgs(variables);
       expect(result).toEqual(fakeResult);
     });
 
@@ -133,7 +266,7 @@ describe('Middleware Class', () => {
         }),
         {}
       );
-      const result = await middleware.getEventsByIndexedArgs({
+      const result = await network.getEventsByIndexedArgs({
         ...variables,
         eventArg0: 'someDid',
       });
@@ -171,7 +304,7 @@ describe('Middleware Class', () => {
         /* eslint-enable @typescript-eslint/naming-convention */
       });
 
-      let result = await middleware.getTransactionByHash(variable);
+      let result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
         blockHash,
@@ -203,7 +336,7 @@ describe('Middleware Class', () => {
         /* eslint-enable @typescript-eslint/naming-convention */
       });
 
-      result = await middleware.getTransactionByHash(variable);
+      result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
         blockHash,
@@ -225,7 +358,7 @@ describe('Middleware Class', () => {
         }),
         {}
       );
-      const result = await middleware.getTransactionByHash(variable);
+      const result = await network.getTransactionByHash(variable);
       expect(result).toBeNull();
     });
   });

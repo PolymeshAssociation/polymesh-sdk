@@ -5,24 +5,15 @@ import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
-import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
-import { TxTag } from 'polymesh-types/types';
 import { satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import WebSocketAsPromised from 'websocket-as-promised';
 
 import { Assets } from '~/Assets';
 import { Identities } from '~/Identities';
-import {
-  Account,
-  Context,
-  Identity,
-  PolymeshError,
-  transferPolyx,
-  TransferPolyxParams,
-} from '~/internal';
+import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Settlements } from '~/Settlements';
 import {
@@ -30,28 +21,16 @@ import {
   CommonKeyring,
   ErrorCode,
   MiddlewareConfig,
-  NetworkProperties,
-  ProcedureMethod,
   SubCallback,
   UiKeyring,
   UnsubCallback,
 } from '~/types';
-import {
-  moduleAddressToString,
-  signerToString,
-  textToString,
-  u32ToBigNumber,
-} from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { signerToString } from '~/utils/conversion';
 
 import { Claims } from './Claims';
 import { CurrentIdentity } from './CurrentIdentity';
-import { Middleware } from './Middleware';
-import {
-  SUPPORTED_VERSION_RANGE,
-  SYSTEM_VERSION_RPC_CALL,
-  TREASURY_MODULE_ADDRESS,
-} from './utils/constants';
+import { Network } from './Network';
+import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -68,12 +47,15 @@ export class Polymesh {
   // Namespaces
 
   public claims: Claims;
-  public middleware: Middleware;
-
+  /**
+   * A set of methods to interact with the Polymesh network. This includes transferring POLYX, reading network properties and querying for historical events
+   */
+  public network: Network;
   /**
    * A set of methods for exchanging Assets
    */
   public settlements: Settlements;
+
   public currentIdentity: CurrentIdentity;
   /**
    * A set of methods for interacting with Polymesh Identities.
@@ -91,16 +73,11 @@ export class Polymesh {
     this.context = context;
 
     this.claims = new Claims(context);
-    this.middleware = new Middleware(context);
+    this.network = new Network(context);
     this.settlements = new Settlements(context);
     this.currentIdentity = new CurrentIdentity(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
-
-    this.transferPolyx = createProcedureMethod(
-      { getProcedureAndArgs: args => [transferPolyx, args] },
-      context
-    );
   }
 
   /**
@@ -284,11 +261,6 @@ export class Polymesh {
   }
 
   /**
-   * Transfer an amount of POLYX to a specified Account
-   */
-  public transferPolyx: ProcedureMethod<TransferPolyxParams, void>;
-
-  /**
    * Get the free/locked POLYX balance of an Account
    *
    * @param args.account - defaults to the current Account
@@ -368,26 +340,6 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve the protocol fees associated with running a specific transaction
-   *
-   * @param args.tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
-   */
-  public getTransactionFees(args: { tag: TxTag }): Promise<BigNumber> {
-    return this.context.getTransactionFees(args.tag);
-  }
-
-  /**
-   * Get the treasury wallet address
-   */
-  public getTreasuryAccount(): Account {
-    const { context } = this;
-    return new Account(
-      { address: moduleAddressToString(TREASURY_MODULE_ADDRESS, context) },
-      context
-    );
-  }
-
-  /**
    * Handle connection errors
    *
    * @returns an unsubscribe callback
@@ -419,59 +371,6 @@ export class Polymesh {
     return (): void => {
       polymeshApi.off('disconnected', callback);
     };
-  }
-
-  /**
-   * Retrieve information for the current network
-   */
-  public async getNetworkProperties(): Promise<NetworkProperties> {
-    const {
-      context: {
-        polymeshApi: {
-          runtimeVersion: { specVersion },
-          rpc: {
-            system: { chain },
-          },
-        },
-      },
-    } = this;
-    const name = await chain();
-
-    return {
-      name: textToString(name),
-      version: u32ToBigNumber(specVersion).toNumber(),
-    };
-  }
-
-  /**
-   * Get the Treasury POLYX balance
-   *
-   * @note can be subscribed to
-   */
-  public getTreasuryBalance(): Promise<BigNumber>;
-  public getTreasuryBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async getTreasuryBalance(
-    callback?: SubCallback<BigNumber>
-  ): Promise<BigNumber | UnsubCallback> {
-    const account = this.getTreasuryAccount();
-
-    if (callback) {
-      return account.getBalance(({ free: freeBalance }) => {
-        callback(freeBalance);
-      });
-    }
-
-    const { free } = await account.getBalance();
-    return free;
-  }
-
-  /**
-   * Retrieve the number of the latest block in the chain
-   */
-  public getLatestBlock(): Promise<BigNumber> {
-    return this.context.getLatestBlock();
   }
 
   /**
@@ -528,13 +427,6 @@ export class Polymesh {
    */
   public setSigner(signer: string | Account): void {
     this.context.setPair(signerToString(signer));
-  }
-
-  /**
-   * Fetch the current network version (i.e. 3.1.0)
-   */
-  public async getNetworkVersion(): Promise<string> {
-    return this.context.getNetworkVersion();
   }
 
   // TODO @monitz87: remove when the dApp team no longer needs it
