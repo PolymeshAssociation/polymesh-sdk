@@ -388,7 +388,7 @@ describe('addInstruction procedure', () => {
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
-    const result = await prepareAddInstruction.call(proc, args);
+    let result = await prepareAddInstruction.call(proc, args);
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
@@ -398,6 +398,10 @@ describe('addInstruction procedure', () => {
       }),
       [[rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]]]
     );
+    expect(result).toBe(instruction);
+
+    const argsWithId = { ...args, venue: venueId };
+    result = await prepareAddInstruction.call(proc, argsWithId);
     expect(result).toBe(instruction);
   });
 
@@ -472,7 +476,7 @@ describe('addInstruction procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({
-        venue,
+        venue: venueId,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
         ],
