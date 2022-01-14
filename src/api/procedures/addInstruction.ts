@@ -72,11 +72,19 @@ export interface AddInstructionsParams {
   instructions: AddInstructionParams[];
 }
 
+export interface AddInstructionParamsWithVenue extends AddInstructionParams {
+  venueId: BigNumber;
+}
+
+export interface AddInstructionsParamsWithVenue extends AddInstructionsParams {
+  venueId: BigNumber;
+}
+
 /**
  * @hidden
  */
 export type Params = AddInstructionsParams & {
-  venue: Venue;
+  venue: Venue | BigNumber;
 };
 
 /**
@@ -284,10 +292,9 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const {
-    instructions,
-    venue: { id: venueId },
-  } = args;
+  const { instructions, venue } = args;
+
+  const venueId = venue instanceof Venue ? venue.id : venue;
 
   const latestBlock = await context.getLatestBlock();
 
@@ -369,12 +376,13 @@ export async function prepareAddInstruction(
  */
 export async function getAuthorization(
   this: Procedure<Params, Instruction[], Storage>,
-  { venue: { id: venueId } }: Params
+  { venue }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { portfoliosToAffirm },
   } = this;
 
+  const venueId = venue instanceof Venue ? venue.id : venue;
   let transactions: SettlementTx[] = [];
   let portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
 
