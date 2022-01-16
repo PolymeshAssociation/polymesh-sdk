@@ -13,7 +13,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, differenceWith, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
-import { ModuleName, TxTag } from 'polymesh-types/types';
+import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
 
 import {
   Checkpoint,
@@ -62,7 +62,7 @@ import {
   DEFAULT_MAX_BATCH_ELEMENTS,
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
-import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
+import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
 import { isEntity } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
@@ -857,4 +857,39 @@ export function hasSameElements<T>(
   comparator: (a: T, b: T) => boolean = isEqual
 ): boolean {
   return !differenceWith(first, second, comparator).length && first.length === second.length;
+}
+
+/**
+ * @hidden
+ *
+ * Returns portfolio number for a given portfolio name
+ */
+export async function getPortfolioIdByName(
+  rawIdentityId: IdentityId,
+  rawName: PortfolioName,
+  context: Context
+): Promise<BigNumber | null> {
+  const {
+    polymeshApi: {
+      query: { portfolio },
+    },
+  } = context;
+
+  const rawPortfolioNumber = await portfolio.nameToNumber(rawIdentityId, rawName);
+
+  const portfolioId = u64ToBigNumber(rawPortfolioNumber);
+
+  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
+  if (portfolioId.eq(1)) {
+    /**
+     * since nameToNumber returns 1 for non-existing portfolios,
+     * we need to check if the name matches against the portfolio number 1
+     */
+    const rawExistingPortfolioName = await portfolio.portfolios(rawIdentityId, rawPortfolioNumber);
+    if (!rawName.eq(rawExistingPortfolioName)) {
+      return null;
+    }
+  }
+
+  return portfolioId;
 }
