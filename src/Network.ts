@@ -73,7 +73,7 @@ export class Network {
 
     return {
       name: textToString(name),
-      version: u32ToBigNumber(specVersion).toNumber(),
+      version: u32ToBigNumber(specVersion),
     };
   }
 
@@ -182,8 +182,8 @@ export class Network {
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
-    size?: number;
-    start?: number;
+    size?: BigNumber;
+    start?: BigNumber;
   }): Promise<EventIdentifier[] | null> {
     const { context } = this;
 
@@ -196,8 +196,8 @@ export class Network {
         eventArg0,
         eventArg1,
         eventArg2,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
@@ -254,13 +254,13 @@ export class Network {
         blockNumber: new BigNumber(blockNumber),
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
         blockHash: block!.hash!,
-        extrinsicIdx,
+        extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ?? null,
-        nonce: nonce!,
+        nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({ moduleId, callId }),
         params,
         success: !!txSuccess,
-        specVersionId,
+        specVersionId: new BigNumber(specVersionId),
         extrinsicHash: extrinsicHash!,
         /* eslint-enable @typescript-eslint/no-non-null-assertion */
       };

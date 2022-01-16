@@ -4,7 +4,7 @@ import { Moment } from 'polymesh-types/types';
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
 import { ErrorCode, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { dateToMoment, numberToU64, stringToTicker } from '~/utils/conversion';
+import { bigNumberToU64, dateToMoment, stringToTicker } from '~/utils/conversion';
 
 export type ModifyStoTimesParams =
   | {
@@ -99,7 +99,7 @@ export async function prepareModifyStoTimes(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawId = numberToU64(id, context);
+  const rawId = bigNumberToU64(id, context);
   const rawStart = newStart ? dateToMoment(newStart, context) : dateToMoment(start, context);
   let rawEnd: Moment | null;
 

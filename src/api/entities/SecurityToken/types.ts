@@ -1,4 +1,4 @@
-import { BigNumber } from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 
 import { CustomPermissionGroup, Identity, KnownPermissionGroup } from '~/internal';
 import { Compliance, TransferError, TransferRestriction } from '~/types';

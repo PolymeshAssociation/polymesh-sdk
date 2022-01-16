@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { flatMap, remove } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
@@ -11,7 +12,7 @@ export type ModifyComplianceRequirementParams = {
   /**
    * ID of the Compliance Requirement
    */
-  id: number;
+  id: BigNumber;
   /**
    * array of conditions to replace the existing array of conditions for the requirement (identified by `id`).
    *   Conditions within a requirement are *AND* between them. This means that in order
@@ -51,9 +52,8 @@ export async function prepareModifyComplianceRequirement(
     defaultTrustedClaimIssuers,
   } = await token.compliance.requirements.get();
 
-  const existingRequirements = remove(
-    currentRequirements,
-    ({ id: currentRequirementId }) => id === currentRequirementId
+  const existingRequirements = remove(currentRequirements, ({ id: currentRequirementId }) =>
+    id.eq(currentRequirementId)
   );
 
   if (!existingRequirements.length) {
@@ -76,7 +76,7 @@ export async function prepareModifyComplianceRequirement(
 
   assertRequirementsNotTooComplex(
     [...unchangedConditions, ...newConditions],
-    defaultTrustedClaimIssuers.length,
+    new BigNumber(defaultTrustedClaimIssuers.length),
     context
   );
 

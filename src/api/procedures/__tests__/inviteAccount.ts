@@ -88,7 +88,7 @@ describe('inviteAccount procedure', () => {
         portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
       }),
     });
-    const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
+    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
         new AuthorizationRequest(
@@ -110,8 +110,8 @@ describe('inviteAccount procedure', () => {
           mockContext
         ),
       ],
-      next: 1,
-      count: 1,
+      next: new BigNumber(1),
+      count: new BigNumber(1),
     };
 
     dsMockUtils.configureMocks({
@@ -240,8 +240,8 @@ describe('inviteAccount procedure', () => {
           mockContext
         ),
       ],
-      next: 1,
-      count: 1,
+      next: new BigNumber(1),
+      count: new BigNumber(1),
     };
 
     dsMockUtils.configureMocks({

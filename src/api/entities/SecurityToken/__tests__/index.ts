@@ -73,7 +73,7 @@ describe('SecurityToken class', () => {
   describe('method: details', () => {
     let ticker: string;
     let name: string;
-    let totalSupply: number;
+    let totalSupply: BigNumber;
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
@@ -90,7 +90,7 @@ describe('SecurityToken class', () => {
     beforeAll(() => {
       ticker = 'FAKETICKER';
       name = 'tokenName';
-      totalSupply = 1000;
+      totalSupply = new BigNumber(1000);
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
@@ -171,7 +171,9 @@ describe('SecurityToken class', () => {
         dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(owner),
-          asset_type: dsMockUtils.createMockAssetType({ Custom: dsMockUtils.createMockU32(10) }),
+          asset_type: dsMockUtils.createMockAssetType({
+            Custom: dsMockUtils.createMockU32(new BigNumber(10)),
+          }),
           divisible: dsMockUtils.createMockBool(isDivisible),
           total_supply: dsMockUtils.createMockBalance(totalSupply),
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -418,7 +420,7 @@ describe('SecurityToken class', () => {
       const ticker = 'SOMETICKER';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const variables = {
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
@@ -433,7 +435,7 @@ describe('SecurityToken class', () => {
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
-          event_idx: eventIdx,
+          event_idx: eventIdx.toNumber(),
         },
         /* eslint-enable @typescript-eslint/naming-convention */
       });
@@ -603,11 +605,11 @@ describe('SecurityToken class', () => {
 
   describe('method: investorCount', () => {
     let investorCountPerAssetStub: sinon.SinonStub;
-    let investorCount: number;
+    let investorCount: BigNumber;
     let rawInvestorCount: u64;
 
     beforeAll(() => {
-      investorCount = 10;
+      investorCount = new BigNumber(10);
       rawInvestorCount = dsMockUtils.createMockU64(investorCount);
     });
 
@@ -627,7 +629,7 @@ describe('SecurityToken class', () => {
 
       const result = await securityToken.investorCount();
 
-      expect(result).toBe(investorCount);
+      expect(result).toEqual(investorCount);
     });
 
     test('should allow subscription', async () => {
@@ -644,7 +646,7 @@ describe('SecurityToken class', () => {
       const callback = sinon.stub();
       const result = await securityToken.investorCount(callback);
 
-      expect(result).toBe(unsubCallback);
+      expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, investorCount);
     });
   });
@@ -679,7 +681,7 @@ describe('SecurityToken class', () => {
       const did = 'someDid';
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
-      const eventIndex = 'eventId';
+      const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
       dsMockUtils.createQueryStub('system', 'blockHash', {
@@ -698,7 +700,7 @@ describe('SecurityToken class', () => {
                 {
                   block_id: blockId.toNumber(),
                   datetime,
-                  event_idx: eventIndex,
+                  event_idx: eventIndex.toNumber(),
                 },
               ],
             },
@@ -748,7 +750,7 @@ describe('SecurityToken class', () => {
       const securityToken = new SecurityToken({ ticker }, context);
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
-        size: 10,
+        size: new BigNumber(10),
       });
 
       let result = await securityToken.exists();
@@ -756,7 +758,7 @@ describe('SecurityToken class', () => {
       expect(result).toBe(true);
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
-        size: 0,
+        size: new BigNumber(0),
       });
 
       result = await securityToken.exists();

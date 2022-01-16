@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 
 import {
   CheckpointSchedule,
@@ -30,7 +31,7 @@ export interface CreateCheckpointScheduleParams {
   /**
    * The number of snapshots to take. A null value indicates snapshots should be made indefinitely
    */
-  repetitions: number | null;
+  repetitions: BigNumber | null;
 }
 
 /**

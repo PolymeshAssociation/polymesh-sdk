@@ -21,7 +21,7 @@ jest.mock(
 describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalance: sinon.SinonStub;
+  let bigNumberToBalance: sinon.SinonStub;
   let ticker: string;
   let rawTicker: Ticker;
   let amount: BigNumber;
@@ -33,11 +33,11 @@ describe('issueTokens procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToBalance = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalance = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawAmount = dsMockUtils.createMockBalance(amount);
   });
 
   beforeEach(() => {
@@ -109,7 +109,7 @@ describe('issueTokens procedure', () => {
       },
     });
 
-    numberToBalance.withArgs(amount, mockContext, isDivisible).returns(rawAmount);
+    bigNumberToBalance.withArgs(amount, mockContext, isDivisible).returns(rawAmount);
 
     const transaction = dsMockUtils.createTxStub('asset', 'issue');
     const proc = procedureMockUtils.getInstance<IssueTokensParams, SecurityToken>(mockContext);

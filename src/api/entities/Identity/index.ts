@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { BigNumber } from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
@@ -294,8 +294,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getHeldTokens(
     opts: {
       order?: Order;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = { order: Order.Asc }
   ): Promise<ResultSet<SecurityToken>> {
     const { context, did } = this;
@@ -305,17 +305,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
       tokensHeldByDid({
         did,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
         order,
       })
     );
 
     const {
       data: {
-        tokensHeldByDid: { items: tokensHeldByDidList, totalCount: count },
+        tokensHeldByDid: { items: tokensHeldByDidList, totalCount },
       },
     } = result;
+
+    const count = new BigNumber(totalCount);
 
     const data = tokensHeldByDidList.map(ticker => new SecurityToken({ ticker }, context));
 
@@ -597,11 +599,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const { context, did } = this;
     let tokens: SecurityToken[] = [];
     let allFetched = false;
-    let start: number | undefined;
+    let start: BigNumber | undefined;
 
     while (!allFetched) {
       const { data, next } = await this.getHeldTokens({ size: MAX_PAGE_SIZE, start });
-      start = (next as number) || undefined;
+      start = next ? new BigNumber(next) : undefined;
       allFetched = !next;
       tokens = [...tokens, ...data];
     }

@@ -16,9 +16,9 @@ import {
 import { ErrorCode, PortfolioLike, RoleType, StoTier, TxTags, VenueType } from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToBalance,
+  bigNumberToU64,
   dateToMoment,
-  numberToBalance,
-  numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -180,10 +180,10 @@ export async function prepareLaunchSto(
     portfolioIdToMeshPortfolioId(raisingPortfolioId, context),
     stringToTicker(raisingCurrency, context),
     tiers.map(tier => stoTierToPriceTier(tier, context)),
-    numberToU64(venueId, context),
+    bigNumberToU64(venueId, context),
     start ? dateToMoment(start, context) : null,
     end ? dateToMoment(end, context) : null,
-    numberToBalance(minInvestment, context),
+    bigNumberToBalance(minInvestment, context),
     stringToText(name, context)
   );
 

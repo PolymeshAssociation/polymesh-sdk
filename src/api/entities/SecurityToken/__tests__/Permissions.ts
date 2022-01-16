@@ -197,7 +197,7 @@ describe('Permissions class', () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
         entries: [
           tuple(
-            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id.toNumber())],
+            [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id)],
             dsMockUtils.createMockOption(dsMockUtils.createMockExtrinsicPermissions())
           ),
         ],
@@ -244,7 +244,7 @@ describe('Permissions class', () => {
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(otherDid)],
             dsMockUtils.createMockOption(
               dsMockUtils.createMockAgentGroup({
-                Custom: dsMockUtils.createMockU32(customId.toNumber()),
+                Custom: dsMockUtils.createMockU32(customId),
               })
             )
           ),

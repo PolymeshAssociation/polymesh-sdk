@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, SecurityToken } from '~/internal';
@@ -60,7 +61,7 @@ export async function prepareSetTokenDocuments(
     batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
       this.addTransaction(
         tx.asset.removeDocuments,
-        { batchSize: docIdBatch.length },
+        { batchSize: new BigNumber(docIdBatch.length) },
         docIdBatch,
         rawTicker
       );
@@ -71,7 +72,7 @@ export async function prepareSetTokenDocuments(
     batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
-        { batchSize: rawDocumentBatch.length },
+        { batchSize: new BigNumber(rawDocumentBatch.length) },
         rawDocumentBatch,
         rawTicker
       );

@@ -25,24 +25,24 @@ describe('deletePortfolio procedure', () => {
   const id = new BigNumber(1);
   const did = 'someDid';
   const identityId = dsMockUtils.createMockIdentityId(did);
-  const portfolioNumber = dsMockUtils.createMockU64(id.toNumber());
+  const portfolioNumber = dsMockUtils.createMockU64(id);
   const zeroBalance = { total: new BigNumber(0) } as PortfolioBalance;
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToIdentityIdStub.withArgs(did, mockContext).returns(identityId);
-    numberToU64Stub.withArgs(id, mockContext).returns(portfolioNumber);
+    bigNumberToU64Stub.withArgs(id, mockContext).returns(portfolioNumber);
     dsMockUtils
       .createQueryStub('portfolio', 'portfolios')
       .returns(dsMockUtils.createMockBytes('someName'));

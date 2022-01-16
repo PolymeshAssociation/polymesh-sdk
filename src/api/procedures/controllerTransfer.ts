@@ -4,7 +4,7 @@ import { DefaultPortfolio, PolymeshError, Procedure, SecurityToken } from '~/int
 import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  numberToBalance,
+  bigNumberToBalance,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -64,7 +64,7 @@ export async function prepareControllerTransfer(
     tx.asset.controllerTransfer,
     {},
     stringToTicker(ticker, context),
-    numberToBalance(amount, context),
+    bigNumberToBalance(amount, context),
     portfolioIdToMeshPortfolioId(originPortfolioId, context)
   );
 }

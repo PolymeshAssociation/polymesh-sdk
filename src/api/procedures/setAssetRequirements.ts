@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
@@ -50,7 +51,7 @@ export async function prepareSetAssetRequirements(
 
   assertRequirementsNotTooComplex(
     flatten(requirements),
-    defaultTrustedClaimIssuers.length,
+    new BigNumber(defaultTrustedClaimIssuers.length),
     context
   );
 
@@ -72,7 +73,10 @@ export async function prepareSetAssetRequirements(
     this.addTransaction(tx.complianceManager.resetAssetCompliance, {}, rawTicker);
   } else {
     const rawAssetCompliance = requirements.map((requirement, index) =>
-      requirementToComplianceRequirement({ conditions: requirement, id: index }, context)
+      requirementToComplianceRequirement(
+        { conditions: requirement, id: new BigNumber(index) },
+        context
+      )
     );
 
     this.addTransaction(

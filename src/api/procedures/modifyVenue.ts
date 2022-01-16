@@ -1,7 +1,7 @@
 import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToVenueDetails, venueTypeToMeshVenueType } from '~/utils/conversion';
+import { bigNumberToU64, stringToVenueDetails, venueTypeToMeshVenueType } from '~/utils/conversion';
 
 export type ModifyVenueParams =
   | {
@@ -60,7 +60,7 @@ export async function prepareModifyVenue(
     this.addTransaction(
       tx.settlement.updateVenueDetails,
       {},
-      numberToU64(venueId, context),
+      bigNumberToU64(venueId, context),
       stringToVenueDetails(description, context)
     );
   }
@@ -69,7 +69,7 @@ export async function prepareModifyVenue(
     this.addTransaction(
       tx.settlement.updateVenueType,
       {},
-      numberToU64(venueId, context),
+      bigNumberToU64(venueId, context),
       venueTypeToMeshVenueType(type, context)
     );
   }

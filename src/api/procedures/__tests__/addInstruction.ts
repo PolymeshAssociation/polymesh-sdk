@@ -40,9 +40,9 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioStub: sinon.SinonStub;
   let getCustodianStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let numberToBalanceStub: sinon.SinonStub<
-    [number | BigNumber, Context, (boolean | undefined)?],
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let bigNumberToBalanceStub: sinon.SinonStub<
+    [BigNumber, Context, (boolean | undefined)?],
     Balance
   >;
   let endConditionToSettlementTypeStub: sinon.SinonStub<
@@ -109,8 +109,8 @@ describe('addInstruction procedure', () => {
     portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
     getCustodianStub = entityMockUtils.getNumberedPortfolioGetCustodianStub();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     endConditionToSettlementTypeStub = sinon.stub(
       utilsConversionModule,
       'endConditionToSettlementType'
@@ -135,8 +135,8 @@ describe('addInstruction procedure', () => {
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
     endBlock = new BigNumber(1000);
-    rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawVenueId = dsMockUtils.createMockU64(venueId);
+    rawAmount = dsMockUtils.createMockBalance(amount);
     rawFrom = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(from),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -146,9 +146,9 @@ describe('addInstruction procedure', () => {
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     rawToken = dsMockUtils.createMockTicker(token);
-    rawTradeDate = dsMockUtils.createMockMoment(tradeDate.getTime());
-    rawValueDate = dsMockUtils.createMockMoment(valueDate.getTime());
-    rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
+    rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
+    rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
+    rawEndBlock = dsMockUtils.createMockU32(endBlock);
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawLeg = {
@@ -209,8 +209,8 @@ describe('addInstruction procedure', () => {
     getCustodianStub.onCall(0).returns({ did: fromDid });
     getCustodianStub.onCall(1).returns({ did: toDid });
     stringToTickerStub.withArgs(token, mockContext).returns(rawToken);
-    numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
-    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    bigNumberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
+    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     endConditionToSettlementTypeStub
       .withArgs({ type: InstructionType.SettleOnBlock, value: endBlock }, mockContext)
       .returns(rawBlockSettlementType);
@@ -524,7 +524,7 @@ describe('addInstruction procedure', () => {
 describe('createAddInstructionResolver', () => {
   const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
 
   beforeAll(() => {
     entityMockUtils.initMocks({

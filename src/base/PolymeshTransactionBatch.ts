@@ -2,6 +2,7 @@ import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { u32 } from '@polkadot/types';
 import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { BatchTransactionSpec, MapMaybePostTransactionValue } from '~/types/internal';
@@ -39,7 +40,7 @@ export class PolymeshTransactionBatch<
     super(rest, context);
 
     this.inputArgs = args;
-    this.batchSize = args.length;
+    this.batchSize = new BigNumber(args.length);
   }
 
   /**

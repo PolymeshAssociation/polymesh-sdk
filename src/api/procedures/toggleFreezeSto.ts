@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PolymeshError, Procedure, SecurityToken, Sto } from '~/internal';
 import { ErrorCode, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToTicker } from '~/utils/conversion';
+import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
 
 export interface ToggleFreezeStoParams {
   id: BigNumber;
@@ -29,7 +29,7 @@ export async function prepareToggleFreezeSto(
   const { ticker, id, freeze } = args;
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawId = numberToU64(id, context);
+  const rawId = bigNumberToU64(id, context);
 
   const sto = new Sto({ ticker, id }, context);
 

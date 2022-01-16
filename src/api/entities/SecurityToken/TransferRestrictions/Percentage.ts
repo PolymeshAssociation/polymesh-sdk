@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { TransferRestrictionBase } from '~/api/entities/SecurityToken/TransferRestrictions/TransferRestrictionBase';
 import {
   AddPercentageTransferRestrictionParams,
@@ -24,7 +26,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    */
   public addRestriction!: ProcedureMethod<
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
-    number
+    BigNumber
   >;
 
   /**
@@ -34,7 +36,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    */
   public setRestrictions!: ProcedureMethod<
     Omit<SetPercentageTransferRestrictionsParams, 'type'>,
-    number
+    BigNumber
   >;
 
   /**
@@ -42,7 +44,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions!: NoArgsProcedureMethod<number>;
+  public removeRestrictions!: NoArgsProcedureMethod<BigNumber>;
 
   /**
    * Retrieve all active Percentage Transfer Restrictions

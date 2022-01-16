@@ -34,7 +34,7 @@ describe('Portfolios class', () => {
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const numberedPortfolioId = new BigNumber(1);
-  const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId.toNumber());
+  const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId);
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;

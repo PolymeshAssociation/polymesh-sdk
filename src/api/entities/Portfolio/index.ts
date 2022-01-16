@@ -23,11 +23,11 @@ import { Ensured, QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
+  bigNumberToU32,
   hashToString,
   identityIdToString,
   keyToAddress,
   middlewarePortfolioToPortfolio,
-  numberToU32,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
@@ -144,7 +144,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }): Promise<PortfolioBalance[]> {
     const {
       owner: { did },
-      _id: number,
+      _id: portfolioId,
       context: {
         polymeshApi: {
           query: { portfolio },
@@ -153,7 +153,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       context,
     } = this;
 
-    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
     const [exists, totalBalanceEntries, lockedBalanceEntries] = await Promise.all([
       this.exists(),
       portfolio.portfolioAssetBalances.entries(rawPortfolioId),
@@ -246,7 +246,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     const {
       owner,
       owner: { did },
-      _id: number,
+      _id: portfolioId,
       context: {
         polymeshApi: {
           query: { portfolio },
@@ -255,7 +255,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       context,
     } = this;
 
-    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number }, context);
+    const rawPortfolioId = portfolioIdToMeshPortfolioId({ did, number: portfolioId }, context);
     const [portfolioCustodian, exists] = await Promise.all([
       portfolio.portfolioCustodian(rawPortfolioId),
       this.exists(),
@@ -291,8 +291,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     filters: {
       account?: string;
       ticker?: string;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<HistoricSettlement>> {
     const {
@@ -303,7 +303,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       },
       context,
       owner: { did },
-      _id: number,
+      _id: portfolioId,
     } = this;
 
     const { account, ticker, size, start } = filters;
@@ -311,11 +311,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'settlements'>>(
       settlements({
         identityId: did,
-        portfolioNumber: number ? number.toString() : null,
+        portfolioNumber: portfolioId ? portfolioId.toString() : null,
         addressFilter: account ? addressToKey(account, context) : undefined,
         tickerFilter: ticker,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
@@ -333,7 +333,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } = result;
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { items, totalCount: count } = settlementsResult!;
+    const { items, totalCount } = settlementsResult!;
 
     const multiParams: BlockNumber[] = [];
     const data: Omit<HistoricSettlement, 'blockHash'>[] = [];
@@ -341,7 +341,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     items!.forEach(item => {
       const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
 
-      multiParams.push(numberToU32(blockId, context));
+      multiParams.push(bigNumberToU32(new BigNumber(blockId), context));
       data.push({
         blockNumber: new BigNumber(blockId),
         status,
@@ -359,6 +359,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         }),
       });
     });
+    const count = new BigNumber(totalCount);
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const next = calculateNextKey(count, size, start);

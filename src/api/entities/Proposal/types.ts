@@ -11,8 +11,8 @@ export interface ProposalVote {
 }
 
 export interface ProposalTimeFrames {
-  duration: number;
-  coolOff: number;
+  duration: BigNumber;
+  coolOff: BigNumber;
 }
 
 export enum ProposalStage {

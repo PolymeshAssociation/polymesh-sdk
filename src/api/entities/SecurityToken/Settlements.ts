@@ -6,9 +6,9 @@ import { Namespace, SecurityToken } from '~/internal';
 import { PortfolioLike, TransferBreakdown, TransferStatus } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import {
+  bigNumberToBalance,
   canTransferResultToTransferStatus,
   granularCanTransferResultToTransferBreakdown,
-  numberToBalance,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -84,7 +84,7 @@ export class Settlements extends Namespace<SecurityToken> {
       stringToIdentityId(toCustodian.did, context),
       portfolioIdToMeshPortfolioId(toPortfolioId, context),
       stringToTicker(ticker, context),
-      numberToBalance(amount, context, isDivisible)
+      bigNumberToBalance(amount, context, isDivisible)
     );
 
     return canTransferResultToTransferStatus(res);
@@ -147,7 +147,7 @@ export class Settlements extends Namespace<SecurityToken> {
       stringToIdentityId(toCustodian.did, context),
       portfolioIdToMeshPortfolioId(toPortfolioId, context),
       stringToTicker(ticker, context),
-      numberToBalance(amount, context, isDivisible)
+      bigNumberToBalance(amount, context, isDivisible)
     );
 
     return granularCanTransferResultToTransferBreakdown(res, context);

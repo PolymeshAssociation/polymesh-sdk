@@ -18,11 +18,11 @@ import {
 import { CorporateActionKind, ErrorCode, InputCaCheckpoint, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToBalance,
+  bigNumberToU64,
   dateToMoment,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
-  numberToBalance,
-  numberToU64,
   portfolioToPortfolioId,
   stringToTicker,
   tickerToString,
@@ -192,13 +192,13 @@ export async function prepareConfigureDividendDistribution(
 
   const rawPortfolioNumber =
     originPortfolio &&
-    optionize(numberToU64)(
+    optionize(bigNumberToU64)(
       originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
       context
     );
   const rawCurrency = stringToTicker(currency, context);
-  const rawPerShare = numberToBalance(perShare, context);
-  const rawAmount = numberToBalance(maxAmount, context);
+  const rawPerShare = bigNumberToBalance(perShare, context);
+  const rawAmount = bigNumberToBalance(maxAmount, context);
   const rawPaymentAt = dateToMoment(paymentDate, context);
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 

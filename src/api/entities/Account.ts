@@ -204,8 +204,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       blockHash?: string;
       tag?: TxTag;
       success?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
       orderBy?: TransactionOrderByInput;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
@@ -238,17 +238,19 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         module_id: moduleId,
         call_id: callId,
         success,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
         orderBy,
       })
     );
 
     const {
       data: {
-        transactions: { items: transactionList, totalCount: count },
+        transactions: { items: transactionList, totalCount },
       },
     } = result;
+
+    const count = new BigNumber(totalCount);
 
     const data = transactionList.map(
       ({
@@ -269,13 +271,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         return {
           blockNumber: new BigNumber(block_id),
           blockHash: block!.hash!,
-          extrinsicIdx: extrinsic_idx,
+          extrinsicIdx: new BigNumber(extrinsic_idx),
           address: rawAddress ?? null,
-          nonce: nonce!,
+          nonce: new BigNumber(nonce!),
           txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
           params,
           success: !!txSuccess,
-          specVersionId: spec_version_id,
+          specVersionId: new BigNumber(spec_version_id),
           extrinsicHash: extrinsic_hash!,
         };
         /* eslint-enabled @typescript-eslint/no-non-null-assertion */

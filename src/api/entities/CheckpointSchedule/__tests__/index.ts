@@ -23,10 +23,10 @@ describe('CheckpointSchedule class', () => {
   let ticker: string;
   let period: CalendarPeriod;
   let start: Date;
-  let remaining: number;
+  let remaining: BigNumber;
   let nextCheckpointDate: Date;
   let stringToTickerStub: sinon.SinonStub;
-  let numberToU64Stub: sinon.SinonStub;
+  let bigNumberToU64Stub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -36,13 +36,13 @@ describe('CheckpointSchedule class', () => {
     ticker = 'SOME_TICKER';
     period = {
       unit: CalendarUnit.Month,
-      amount: 1,
+      amount: new BigNumber(1),
     };
     start = new Date('10/14/1987 UTC');
-    remaining = 11;
+    remaining = new BigNumber(11);
     nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
@@ -66,7 +66,7 @@ describe('CheckpointSchedule class', () => {
   describe('constructor', () => {
     test('should assign ticker and id to instance', () => {
       let schedule = new CheckpointSchedule(
-        { id, ticker, start, period, remaining: 0, nextCheckpointDate },
+        { id, ticker, start, period, remaining: new BigNumber(0), nextCheckpointDate },
         context
       );
 
@@ -81,7 +81,7 @@ describe('CheckpointSchedule class', () => {
           id,
           ticker,
           start,
-          period: { unit: CalendarUnit.Month, amount: 0 },
+          period: { unit: CalendarUnit.Month, amount: new BigNumber(0) },
           remaining,
           nextCheckpointDate,
         },
@@ -99,8 +99,8 @@ describe('CheckpointSchedule class', () => {
           id,
           ticker,
           start,
-          period: { unit: CalendarUnit.Year, amount: 1 },
-          remaining: 2,
+          period: { unit: CalendarUnit.Year, amount: new BigNumber(1) },
+          remaining: new BigNumber(2),
           nextCheckpointDate: start,
         },
         context
@@ -127,7 +127,7 @@ describe('CheckpointSchedule class', () => {
         { id: new BigNumber(2), ticker, period, start, remaining, nextCheckpointDate },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
+      const rawScheduleId = dsMockUtils.createMockU64(id);
 
       stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
 
@@ -156,7 +156,7 @@ describe('CheckpointSchedule class', () => {
         { id, ticker, period, start, remaining, nextCheckpointDate },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
+      const rawScheduleId = dsMockUtils.createMockU64(id);
 
       stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
       sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
@@ -166,22 +166,22 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: dsMockUtils.createMockCheckpointSchedule({
-              start: dsMockUtils.createMockMoment(start.getTime()),
+              start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
               period: dsMockUtils.createMockCalendarPeriod({
                 unit: dsMockUtils.createMockCalendarUnit('Month'),
-                amount: dsMockUtils.createMockU64(1),
+                amount: dsMockUtils.createMockU64(new BigNumber(1)),
               }),
             }),
             id: rawScheduleId,
-            at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
-            remaining: dsMockUtils.createMockU32(rawRemaining.toNumber()),
+            at: dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
+            remaining: dsMockUtils.createMockU32(rawRemaining),
           }),
         ],
       });
 
       const result = await checkpointSchedule.details();
 
-      expect(result.remainingCheckpoints).toEqual(rawRemaining.toNumber());
+      expect(result.remainingCheckpoints).toEqual(rawRemaining);
       expect(result.nextCheckpointDate).toEqual(nextCheckpointDate);
     });
   });
@@ -192,7 +192,7 @@ describe('CheckpointSchedule class', () => {
         { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
         context
       );
-      const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
+      const rawScheduleId = dsMockUtils.createMockU64(id);
 
       dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
@@ -220,9 +220,9 @@ describe('CheckpointSchedule class', () => {
       );
       const firstId = new BigNumber(1);
       const secondId = new BigNumber(2);
-      const rawFirstId = dsMockUtils.createMockU64(firstId.toNumber());
-      const rawSecondId = dsMockUtils.createMockU64(secondId.toNumber());
-      const rawScheduleId = dsMockUtils.createMockU64(id.toNumber());
+      const rawFirstId = dsMockUtils.createMockU64(firstId);
+      const rawSecondId = dsMockUtils.createMockU64(secondId);
+      const rawScheduleId = dsMockUtils.createMockU64(id);
 
       dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
@@ -236,8 +236,8 @@ describe('CheckpointSchedule class', () => {
         returnValue: [rawFirstId, rawSecondId],
       });
 
-      numberToU64Stub.withArgs(firstId).returns(rawFirstId);
-      numberToU64Stub.withArgs(secondId).returns(rawSecondId);
+      bigNumberToU64Stub.withArgs(firstId).returns(rawFirstId);
+      bigNumberToU64Stub.withArgs(secondId).returns(rawSecondId);
 
       const result = await schedule.getCheckpoints();
 
@@ -256,7 +256,7 @@ describe('CheckpointSchedule class', () => {
       dsMockUtils.createQueryStub('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
-            id: dsMockUtils.createMockU64(id.toNumber()),
+            id: dsMockUtils.createMockU64(id),
           } as StoredSchedule),
         ],
       });
@@ -292,9 +292,12 @@ describe('CheckpointSchedule class', () => {
       expect(schedule.toJson()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
-        period,
+        period: {
+          unit: 'month',
+          amount: '1',
+        },
         start: '1987-10-14T00:00:00.000Z',
-        complexity: 12,
+        complexity: '12',
         expiryDate: schedule.expiryDate?.toISOString(),
       });
     });

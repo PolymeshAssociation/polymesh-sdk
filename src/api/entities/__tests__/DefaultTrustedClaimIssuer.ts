@@ -65,7 +65,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     test('should return the event identifier object of the trusted claim issuer creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
@@ -74,7 +74,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
         eventByAddedTrustedClaimIssuer: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
-          event_idx: eventIdx,
+          event_idx: eventIdx.toNumber(),
         },
         /* eslint-enable @typescript-eslint/naming-convention */
       });

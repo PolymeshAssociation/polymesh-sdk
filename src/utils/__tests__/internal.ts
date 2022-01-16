@@ -295,9 +295,9 @@ describe('requestPaginated', () => {
   test('should fetch and return entries and the hex value of the last key', async () => {
     const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       entries: [
-        tuple(['ticker0'], dsMockUtils.createMockU32(0)),
-        tuple(['ticker1'], dsMockUtils.createMockU32(1)),
-        tuple(['ticker2'], dsMockUtils.createMockU32(2)),
+        tuple(['ticker0'], dsMockUtils.createMockU32(new BigNumber(0))),
+        tuple(['ticker1'], dsMockUtils.createMockU32(new BigNumber(1))),
+        tuple(['ticker2'], dsMockUtils.createMockU32(new BigNumber(2))),
       ],
     });
 
@@ -311,7 +311,7 @@ describe('requestPaginated', () => {
     sinon.resetHistory();
 
     res = await requestPaginated(queryStub, {
-      paginationOpts: { size: 3 },
+      paginationOpts: { size: new BigNumber(3) },
     });
 
     expect(typeof res.lastKey).toBe('string');
@@ -320,7 +320,7 @@ describe('requestPaginated', () => {
     sinon.resetHistory();
 
     res = await requestPaginated(queryStub, {
-      paginationOpts: { size: 4 },
+      paginationOpts: { size: new BigNumber(4) },
       arg: 'something',
     });
 
@@ -334,7 +334,7 @@ describe('requestAtBlock', () => {
     const context = dsMockUtils.getContextInstance({
       isArchiveNode: true,
     });
-    const returnValue = dsMockUtils.createMockU32(5);
+    const returnValue = dsMockUtils.createMockU32(new BigNumber(5));
     const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue,
     });
@@ -372,7 +372,7 @@ describe('requestAtBlock', () => {
     });
 
     const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
-      returnValue: dsMockUtils.createMockU32(5),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(5)),
     });
 
     return expect(
@@ -438,28 +438,28 @@ describe('batchArguments', () => {
 
 describe('calculateNextKey', () => {
   test('should return NextKey null as there are less elements than the default page size', () => {
-    const totalCount = 20;
+    const totalCount = new BigNumber(20);
     const nextKey = calculateNextKey(totalCount);
 
     expect(nextKey).toBeNull();
   });
 
   test('should return NextKey null as it is the last page', () => {
-    const totalCount = 50;
-    const currentPageSize = 30;
-    const currentStart = 31;
+    const totalCount = new BigNumber(50);
+    const currentPageSize = new BigNumber(30);
+    const currentStart = new BigNumber(31);
     const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
 
     expect(nextKey).toBeNull();
   });
 
   test('should return NextKey', () => {
-    const totalCount = 50;
-    const currentPageSize = 30;
-    const currentStart = 0;
+    const totalCount = new BigNumber(50);
+    const currentPageSize = new BigNumber(30);
+    const currentStart = new BigNumber(0);
     const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
 
-    expect(nextKey).toEqual(30);
+    expect(nextKey).toEqual(new BigNumber(30));
   });
 });
 
@@ -552,7 +552,7 @@ describe('assertIsInteger', () => {
   });
 
   test('assertIsInteger should throw an error if the argument is not an integer', async () => {
-    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+    expect(() => assertIsInteger(new BigNumber('noInteger'))).toThrow(
       'The number must be an integer'
     );
 
@@ -582,7 +582,7 @@ describe('getCommonKeyring', () => {
 });
 
 describe('assertFormatValid', () => {
-  const ss58Format = 42;
+  const ss58Format = new BigNumber(42);
 
   test('should throw an error if the address is prefixed with an invalid ss58', async () => {
     expect(() =>
@@ -598,8 +598,8 @@ describe('assertFormatValid', () => {
 });
 
 describe('assertKeyringFormatValid', () => {
-  const ss58Format = 42;
-  const keyring = new Keyring({ ss58Format });
+  const ss58Format = new BigNumber(42);
+  const keyring = new Keyring({ ss58Format: ss58Format.toNumber() });
 
   test('should not throw if the keyring is set with valid ss58', async () => {
     expect(() => assertKeyringFormatValid(keyring, ss58Format)).not.toThrow();
@@ -629,46 +629,46 @@ describe('periodComplexity', () => {
   test('should calculate complexity for any period', () => {
     const period: CalendarPeriod = {
       unit: CalendarUnit.Second,
-      amount: 1,
+      amount: new BigNumber(1),
     };
     let result = periodComplexity(period);
-    expect(result).toBe(31536000);
+    expect(result).toEqual(new BigNumber(31536000));
 
     period.unit = CalendarUnit.Minute;
     result = periodComplexity(period);
-    expect(result).toBe(525600);
+    expect(result).toEqual(new BigNumber(525600));
 
     period.unit = CalendarUnit.Hour;
     result = periodComplexity(period);
-    expect(result).toBe(8760);
+    expect(result).toEqual(new BigNumber(8760));
 
     period.unit = CalendarUnit.Day;
     result = periodComplexity(period);
-    expect(result).toBe(365);
+    expect(result).toEqual(new BigNumber(365));
 
     period.unit = CalendarUnit.Week;
     result = periodComplexity(period);
-    expect(result).toBe(52);
+    expect(result).toEqual(new BigNumber(52));
 
     period.unit = CalendarUnit.Month;
     result = periodComplexity(period);
-    expect(result).toBe(12);
+    expect(result).toEqual(new BigNumber(12));
 
     period.unit = CalendarUnit.Year;
     result = periodComplexity(period);
-    expect(result).toBe(2);
+    expect(result).toEqual(new BigNumber(2));
 
-    period.amount = 0;
+    period.amount = new BigNumber(0);
     result = periodComplexity(period);
-    expect(result).toBe(1);
+    expect(result).toEqual(new BigNumber(1));
   });
 });
 
 describe('optionize', () => {
   test('should transform a conversion util into a version that returns null if the first input is falsy, passing along the rest if not', () => {
-    const number = 1;
+    const number = new BigNumber(1);
 
-    const toString = (value: number, foo: string, bar: number): string =>
+    const toString = (value: BigNumber, foo: string, bar: number): string =>
       `${value.toString()}${foo}${bar}`;
 
     let result = optionize(toString)(number, 'notNeeded', 1);
@@ -827,7 +827,7 @@ describe('getPortfolioIdByName', () => {
   });
 
   test('should return null if no portfolio with given name is found', async () => {
-    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
 
     const result = await getPortfolioIdByName(identityId, rawName, context);
@@ -835,12 +835,12 @@ describe('getPortfolioIdByName', () => {
   });
 
   test('should return portfolio number for given portfolio name', async () => {
-    nameToNumberStub.returns(dsMockUtils.createMockU64(2));
+    nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(2)));
 
     let result = await getPortfolioIdByName(identityId, rawName, context);
     expect(result).toEqual(new BigNumber(2));
 
-    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(rawName);
 
     result = await getPortfolioIdByName(identityId, rawName, context);

@@ -6,9 +6,9 @@ import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
+  bigNumberToU64,
   identityIdToString,
   momentToDate,
-  numberToU64,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
@@ -74,7 +74,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const rawSupply = await context.polymeshApi.query.checkpoint.totalSupply(
       stringToTicker(ticker, context),
-      numberToU64(id, context)
+      bigNumberToU64(id, context)
     );
 
     return balanceToBigNumber(rawSupply);
@@ -92,7 +92,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const creationTime = await context.polymeshApi.query.checkpoint.timestamps(
       stringToTicker(ticker, context),
-      numberToU64(id, context)
+      bigNumberToU64(id, context)
     );
 
     return momentToDate(creationTime);

@@ -33,11 +33,11 @@ describe('TokenHolders class', () => {
   const fakeData = [
     {
       identity: 'someIdentity',
-      value: 1000,
+      value: new BigNumber(1000),
     },
     {
       identity: 'otherIdentity',
-      value: 2000,
+      value: new BigNumber(2000),
     },
   ];
 
@@ -144,7 +144,7 @@ describe('TokenHolders class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const tokenHolders = new TokenHolders(token, context);
 
-      const result = await tokenHolders.get({ size: 1 });
+      const result = await tokenHolders.get({ size: new BigNumber(1) });
 
       expect(result).toEqual({ data: expectedHolders, next: 'someKey' });
     });

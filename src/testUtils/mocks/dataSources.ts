@@ -31,7 +31,7 @@ import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/typ
 import { hexToU8a, stringToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
-import { BigNumber } from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 import {
@@ -325,7 +325,7 @@ interface ContextOptions {
   middlewareAvailable?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
-  ss58Format?: number;
+  ss58Format?: BigNumber;
   areScondaryKeysFrozen?: boolean;
   getDividendDistributionsForTokens?: DistributionWithDetails[];
   isFrozen?: boolean;
@@ -423,8 +423,8 @@ const otherFailReceipt = createFailReceipt({ isOther: true });
 const moduleFailReceipt = createFailReceipt({
   isModule: true,
   asModule: ({
-    error: { toNumber: (): number => 1 },
-    index: { toNumber: (): number => 1 },
+    error: { toNumber: (): BigNumber => new BigNumber(1) },
+    index: { toNumber: (): BigNumber => new BigNumber(1) },
     registry: {
       findMetaError: (): { section: string; name: string; docs: string[] } => ({
         section: 'someModule',
@@ -559,8 +559,8 @@ const defaultContextOptions: ContextOptions = {
         claim: { type: ClaimType.NoData },
       },
     ],
-    next: 1,
-    count: 1,
+    next: new BigNumber(1),
+    count: new BigNumber(1),
   },
   getIdentityClaimsFromChain: [
     {
@@ -581,26 +581,26 @@ const defaultContextOptions: ContextOptions = {
         claim: { type: ClaimType.NoData },
       },
     ],
-    next: 1,
-    count: 1,
+    next: new BigNumber(1),
+    count: new BigNumber(1),
   },
   primaryKey: 'primaryKey',
   secondaryKeys: [],
   transactionHistory: {
     data: [],
     next: null,
-    count: 1,
+    count: new BigNumber(1),
   },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
   middlewareAvailable: true,
   sentAuthorizations: {
     data: [{} as AuthorizationRequest],
-    next: 1,
-    count: 1,
+    next: new BigNumber(1),
+    count: new BigNumber(1),
   },
   isArchiveNode: true,
-  ss58Format: 42,
+  ss58Format: new BigNumber(42),
   areScondaryKeysFrozen: false,
   getDividendDistributionsForTokens: [],
   isFrozen: false,
@@ -1044,7 +1044,7 @@ export function createTxStub<
   const {
     autoresolve = MockTxStatus.Succeeded,
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    gas = createMockBalance(1),
+    gas = createMockBalance(new BigNumber(1)),
     meta = { args: [] },
   } = opts;
 
@@ -1151,7 +1151,7 @@ export function createQueryStub<
     returnValue?: unknown;
     entries?: [unknown[], unknown][]; // [Keys, Codec]
     multi?: unknown;
-    size?: number;
+    size?: BigNumber;
   }
 ): Queries[ModuleName][QueryName] & SinonStub & StubQuery {
   let runtimeModule = queryModule[mod];
@@ -1194,7 +1194,7 @@ export function createQueryStub<
   }
   if (typeof opts?.size !== 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    stub.size.resolves(createMockU64(opts.size));
+    stub.size.resolves(createMockU64(new BigNumber(opts.size)));
   }
   if (opts?.returnValue) {
     stub.resolves(opts.returnValue);
@@ -1469,12 +1469,12 @@ const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
 /**
  * @hidden
  */
-const createMockNumberCodec = (value?: number): Codec =>
+const createMockBigNumberCodec = (value?: BigNumber): Codec =>
   createMockCodec(
     {
-      toNumber: () => value,
-      toString: () => `${value}`,
-      isZero: () => value === 0,
+      toNumber: () => value?.toNumber(),
+      toString: () => value?.toString(),
+      isZero: () => value?.isZero(),
     },
     value === undefined
   );
@@ -1548,12 +1548,12 @@ export const createMockAccountId = (accountId?: string): AccountId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBalance = (balance?: number | Balance): Balance => {
+export const createMockBalance = (balance?: BigNumber | Balance): Balance => {
   if (isCodec<Balance>(balance)) {
     return balance;
   }
 
-  return createMockNumberCodec(balance) as Balance;
+  return createMockBigNumberCodec(balance) as Balance;
 };
 
 /**
@@ -1642,12 +1642,12 @@ export const createMockCompact = <T extends CompactEncodable>(
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockMoment = (millis?: number | Moment): Moment => {
+export const createMockMoment = (millis?: BigNumber | Moment): Moment => {
   if (isCodec<Moment>(millis)) {
     return millis;
   }
 
-  return createMockNumberCodec(millis) as Moment;
+  return createMockBigNumberCodec(millis) as Moment;
 };
 
 /**
@@ -1679,39 +1679,39 @@ export const createMockTickerRegistration = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value) as u8;
+export const createMockU8 = (value?: BigNumber): u8 => createMockBigNumberCodec(value) as u8;
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU32 = (value?: number | u32): u32 => {
+export const createMockU32 = (value?: BigNumber | u32): u32 => {
   if (isCodec<u32>(value)) {
     return value;
   }
-  return createMockNumberCodec(value) as u32;
+  return createMockBigNumberCodec(value) as u32;
 };
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU64 = (value?: number | u64): u64 => {
+export const createMockU64 = (value?: BigNumber | u64): u64 => {
   if (isCodec<u64>(value)) {
     return value;
   }
-  return createMockNumberCodec(value) as u64;
+  return createMockBigNumberCodec(value) as u64;
 };
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPermill = (value?: number | Permill): Permill => {
+export const createMockPermill = (value?: BigNumber | Permill): Permill => {
   if (isCodec<Permill>(value)) {
     return value;
   }
-  return createMockNumberCodec(value) as Permill;
+  return createMockBigNumberCodec(value) as Permill;
 };
 
 /**
@@ -1741,7 +1741,7 @@ export const createMockAssetName = (name?: string): AssetName =>
 /**
  * @hidden
  */
-export const createMockPosRatio = (numerator: number, denominator: number): PosRatio =>
+export const createMockPosRatio = (numerator: BigNumber, denominator: BigNumber): PosRatio =>
   [createMockU32(numerator), createMockU32(denominator)] as PosRatio;
 
 /**
@@ -1975,14 +1975,15 @@ export const createMockAccountData = (accountData?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockIndex = (value?: number): Index => createMockNumberCodec(value) as Index;
+export const createMockIndex = (value?: BigNumber): Index =>
+  createMockBigNumberCodec(value) as Index;
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRefCount = (value?: number): RefCount =>
-  createMockNumberCodec(value) as RefCount;
+export const createMockRefCount = (value?: BigNumber): RefCount =>
+  createMockBigNumberCodec(value) as RefCount;
 
 /**
  * @hidden
@@ -2670,8 +2671,8 @@ export const createMockSecondaryKey = (secondaryKey?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPipId = (id: number | BigNumber): PipId =>
-  createMockU32(new BigNumber(id).toNumber()) as PipId;
+export const createMockPipId = (id: BigNumber | BigNumber): PipId =>
+  createMockU32(new BigNumber(id)) as PipId;
 
 /**
  * @hidden

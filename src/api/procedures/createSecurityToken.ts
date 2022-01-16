@@ -15,10 +15,10 @@ import {
 } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToBalance,
   booleanToBool,
   boolToBoolean,
   internalTokenTypeToAssetType,
-  numberToBalance,
   stringToAssetName,
   stringToBytes,
   stringToFundingRoundName,
@@ -204,7 +204,7 @@ export async function prepareCreateSecurityToken(
   );
 
   if (initialSupply && initialSupply.gt(0)) {
-    const rawInitialSupply = numberToBalance(initialSupply, context, isDivisible);
+    const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
     this.addTransaction(tx.asset.issue, {}, rawTicker, rawInitialSupply);
   }
@@ -214,7 +214,7 @@ export async function prepareCreateSecurityToken(
     batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction(
         tx.asset.addDocuments,
-        { isCritical: false, batchSize: rawDocumentBatch.length },
+        { isCritical: false, batchSize: new BigNumber(rawDocumentBatch.length) },
         rawDocumentBatch,
         rawTicker
       );

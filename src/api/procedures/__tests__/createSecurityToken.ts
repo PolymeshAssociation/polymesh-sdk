@@ -50,7 +50,7 @@ jest.mock(
 describe('createSecurityToken procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: sinon.SinonStub;
+  let bigNumberToBalanceStub: sinon.SinonStub;
   let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let internalTokenTypeToAssetTypeStub: sinon.SinonStub<[InternalTokenType, Context], AssetType>;
@@ -94,7 +94,7 @@ describe('createSecurityToken procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     internalTokenTypeToAssetTypeStub = sinon.stub(
@@ -129,7 +129,7 @@ describe('createSecurityToken procedure', () => {
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawName = dsMockUtils.createMockAssetName(name);
-    rawInitialSupply = dsMockUtils.createMockBalance(initialSupply.toNumber());
+    rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
     rawType = dsMockUtils.createMockAssetType(tokenType as KnownTokenType);
     rawIdentifiers = tokenIdentifiers.map(({ type, value }) =>
@@ -149,7 +149,7 @@ describe('createSecurityToken procedure', () => {
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
         filing_date: dsMockUtils.createMockOption(
-          filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+          filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
         /* eslint-enable @typescript-eslint/naming-convention */
       })
@@ -190,7 +190,9 @@ describe('createSecurityToken procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(initialSupply, mockContext, isDivisible).returns(rawInitialSupply);
+    bigNumberToBalanceStub
+      .withArgs(initialSupply, mockContext, isDivisible)
+      .returns(rawInitialSupply);
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
@@ -384,7 +386,7 @@ describe('createSecurityToken procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: {
         rawValue,
-        id: dsMockUtils.createMockU32(10),
+        id: dsMockUtils.createMockU32(new BigNumber(10)),
       },
       status: TickerReservationStatus.Reserved,
     });
@@ -395,7 +397,7 @@ describe('createSecurityToken procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       tx,
-      { isCritical: false, batchSize: rawDocuments.length },
+      { isCritical: false, batchSize: new BigNumber(rawDocuments.length) },
       rawDocuments,
       rawTicker
     );
@@ -416,7 +418,7 @@ describe('createSecurityToken procedure', () => {
     const createTokenTx = dsMockUtils.createTxStub('asset', 'createAsset');
 
     const newCustomType = dsMockUtils.createMockAssetType({
-      Custom: dsMockUtils.createMockU32(10),
+      Custom: dsMockUtils.createMockU32(new BigNumber(10)),
     });
     addTransactionStub
       .withArgs(registerAssetTypeTx, sinon.match.object, rawValue)
@@ -445,7 +447,7 @@ describe('createSecurityToken procedure', () => {
   describe('createRegisterCustomAssetTypeResolver', () => {
     const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
-    const rawId = dsMockUtils.createMockU32(id.toNumber());
+    const rawId = dsMockUtils.createMockU32(id);
     const rawValue = dsMockUtils.createMockBytes('something');
 
     beforeEach(() => {
@@ -518,7 +520,7 @@ describe('createSecurityToken procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
         customTypeData: {
-          id: dsMockUtils.createMockU32(10),
+          id: dsMockUtils.createMockU32(new BigNumber(10)),
           rawValue: dsMockUtils.createMockBytes('something'),
         },
         status: TickerReservationStatus.Reserved,
@@ -539,7 +541,7 @@ describe('createSecurityToken procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
         customTypeData: {
-          id: dsMockUtils.createMockU32(10),
+          id: dsMockUtils.createMockU32(new BigNumber(10)),
           rawValue: dsMockUtils.createMockBytes('something'),
         },
         status: TickerReservationStatus.Free,
@@ -598,7 +600,7 @@ describe('createSecurityToken procedure', () => {
         status: TickerReservationStatus.Reserved,
       });
 
-      id = dsMockUtils.createMockU32(10);
+      id = dsMockUtils.createMockU32(new BigNumber(10));
       customTypesStub.resolves(id);
 
       result = await boundFunc({ tokenType: 'something' } as Params);

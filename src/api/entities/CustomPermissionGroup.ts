@@ -8,8 +8,8 @@ import {
 } from '~/internal';
 import { GroupPermissions, ProcedureMethod } from '~/types';
 import {
+  bigNumberToU32,
   extrinsicPermissionsToTransactionPermissions,
-  numberToU32,
   stringToTicker,
   transactionPermissionsToTxGroups,
   u32ToBigNumber,
@@ -79,7 +79,7 @@ export class CustomPermissionGroup extends PermissionGroup {
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawAgId = numberToU32(id, context);
+    const rawAgId = bigNumberToU32(id, context);
 
     const rawGroupPermissions = await externalAgents.groupPermissions(rawTicker, rawAgId);
 

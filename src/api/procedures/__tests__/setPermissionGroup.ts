@@ -253,7 +253,7 @@ describe('setPermissionGroup procedure', () => {
     });
 
     const rawAgentGroup = dsMockUtils.createMockAgentGroup({
-      Custom: dsMockUtils.createMockU32(id.toNumber()),
+      Custom: dsMockUtils.createMockU32(id),
     });
 
     permissionGroupIdentifierToAgentGroupStub

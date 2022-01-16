@@ -6,8 +6,8 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { EventIdentifier, ProcedureMethod } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  bigNumberToU64,
   middlewareEventToEventIdentifier,
-  numberToU64,
   stringToIdentityId,
   textToString,
 } from '~/utils/conversion';
@@ -76,7 +76,7 @@ export class NumberedPortfolio extends Portfolio {
       context,
     } = this;
 
-    const rawPortfolioName = await portfolio.portfolios(did, numberToU64(id, context));
+    const rawPortfolioName = await portfolio.portfolios(did, bigNumberToU64(id, context));
 
     return textToString(rawPortfolioName);
   }
@@ -124,7 +124,7 @@ export class NumberedPortfolio extends Portfolio {
     } = this;
 
     const identityId = stringToIdentityId(did, context);
-    const rawPortfolioNumber = numberToU64(id, context);
+    const rawPortfolioNumber = bigNumberToU64(id, context);
     const size = await portfolio.portfolios.size(identityId, rawPortfolioNumber);
 
     return !size.isZero();

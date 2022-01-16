@@ -89,7 +89,7 @@ export abstract class PolymeshTransactionBase<
    *
    * number of elements in the batch (only applicable to batch transactions)
    */
-  protected batchSize: number | null;
+  protected batchSize: BigNumber | null;
 
   /**
    * @hidden

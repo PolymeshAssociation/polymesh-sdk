@@ -74,11 +74,11 @@ describe('addTransferRestriction procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
-      returnValue: dsMockUtils.createMockU32(3),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawCount = dsMockUtils.createMockU64(count.toNumber());
-    rawPercentage = dsMockUtils.createMockPermill(percentage.toNumber() * 10000);
+    rawCount = dsMockUtils.createMockU64(count);
+    rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
     rawCountTm = dsMockUtils.createMockTransferManager({ CountTransferManager: rawCount });
     rawPercentageTm = dsMockUtils.createMockTransferManager({
       PercentageTransferManager: rawPercentage,
@@ -110,7 +110,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, number>(mockContext);
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
+      mockContext
+    );
 
     dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
       returnValue: [],
@@ -126,7 +128,7 @@ describe('addTransferRestriction procedure', () => {
       rawCountTm
     );
 
-    expect(result).toEqual(1);
+    expect(result).toEqual(new BigNumber(1));
 
     args = {
       type: TransferRestrictionType.Percentage,
@@ -145,7 +147,7 @@ describe('addTransferRestriction procedure', () => {
       rawPercentageTm
     );
 
-    expect(result).toEqual(1);
+    expect(result).toEqual(new BigNumber(1));
   });
 
   test('should add an add exempted entities transaction to the queue', async () => {
@@ -162,7 +164,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, number>(mockContext);
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
+      mockContext
+    );
 
     dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
       returnValue: [],
@@ -178,13 +182,13 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       addExemptedEntitiesTransaction,
-      { batchSize: 2 },
+      { batchSize: new BigNumber(2) },
       rawTicker,
       rawCountTm,
       [rawScopeId, rawIdentityScopeId]
     );
 
-    expect(result).toEqual(1);
+    expect(result).toEqual(new BigNumber(1));
 
     result = await prepareAddTransferRestriction.call(proc, {
       ...args,
@@ -194,13 +198,13 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       addExemptedEntitiesTransaction,
-      { batchSize: 2 },
+      { batchSize: new BigNumber(2) },
       rawTicker,
       rawCountTm,
       [rawScopeId, rawIdentityScopeId]
     );
 
-    expect(result).toEqual(1);
+    expect(result).toEqual(new BigNumber(1));
   });
 
   test('should throw an error if attempting to add a restriction that already exists', async () => {
@@ -210,7 +214,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, number>(mockContext);
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
+      mockContext
+    );
 
     dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
       returnValue: [rawCountTm],
@@ -233,7 +239,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, number>(mockContext);
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
+      mockContext
+    );
 
     dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
       returnValue: [rawPercentageTm, rawPercentageTm, rawPercentageTm],
@@ -248,7 +256,7 @@ describe('addTransferRestriction procedure', () => {
     }
 
     expect(err.message).toBe('Transfer Restriction limit reached');
-    expect(err.data).toEqual({ limit: 3 });
+    expect(err.data).toEqual({ limit: new BigNumber(3) });
   });
 
   test('should throw an error if exempted scope IDs are repeated', async () => {
@@ -258,7 +266,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, number>(mockContext);
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
+      mockContext
+    );
 
     dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
       returnValue: [],
@@ -285,7 +295,7 @@ describe('addTransferRestriction procedure', () => {
         type: TransferRestrictionType.Count,
       };
 
-      const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, number>(
+      const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
         mockContext
       );
       const boundFunc = getAuthorization.bind(proc);

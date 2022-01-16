@@ -24,7 +24,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
+import { bigNumberToU64, fundraiserToStoDetails, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { Investment, StoDetails } from './types';
@@ -129,7 +129,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     ): StoDetails => fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawU64 = numberToU64(id, context);
+    const rawU64 = bigNumberToU64(id, context);
 
     const fetchName = (): Promise<FundraiserName> => sto.fundraiserNames(rawTicker, rawU64);
 
@@ -190,8 +190,8 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
    */
   public async getInvestments(
     opts: {
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<Investment>> {
     const {
@@ -206,8 +206,8 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
       investments({
         stoId: id.toNumber(),
         ticker: ticker,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
@@ -216,7 +216,9 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     } = result;
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { items, totalCount: count } = investmentsResult!;
+    const { items, totalCount } = investmentsResult!;
+
+    const count = new BigNumber(totalCount);
 
     const data: Investment[] = [];
 
@@ -252,7 +254,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const fundraiser = await context.polymeshApi.query.sto.fundraisers(
       stringToTicker(ticker, context),
-      numberToU64(id, context)
+      bigNumberToU64(id, context)
     );
 
     return fundraiser.isSome;

@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 
 import {
   Account,
@@ -298,11 +299,11 @@ export function isFullGroupType(group: KnownPermissionGroup | CustomPermissionGr
  */
 export function assertRequirementsNotTooComplex(
   conditions: (Condition | InputCondition)[],
-  defaultClaimIssuerLength: number,
+  defaultClaimIssuerLength: BigNumber,
   context: Context
 ): void {
   const { maxConditionComplexity: maxComplexity } = context.polymeshApi.consts.complianceManager;
-  let complexitySum = 0;
+  let complexitySum = new BigNumber(0);
 
   conditions.forEach(condition => {
     const { target, trustedClaimIssuers = [] } = condition;
@@ -311,22 +312,22 @@ export function assertRequirementsNotTooComplex(
       case ConditionType.IsIdentity:
       case ConditionType.IsAbsent:
         // single claim conditions add one to the complexity
-        complexitySum += 1;
+        complexitySum = complexitySum.plus(1);
         break;
       case ConditionType.IsAnyOf:
       case ConditionType.IsNoneOf:
         // multi claim conditions add one to the complexity per each claim
-        complexitySum += condition.claims.length;
+        complexitySum = complexitySum.plus(condition.claims.length);
         break;
     }
 
     // if the condition affects both, it actually represents two conditions on chain
     if (target === ConditionTarget.Both) {
-      complexitySum = complexitySum * 2;
+      complexitySum = complexitySum.multipliedBy(2);
     }
 
     const claimIssuerLength = trustedClaimIssuers.length || defaultClaimIssuerLength;
-    complexitySum = complexitySum * claimIssuerLength;
+    complexitySum = complexitySum.multipliedBy(claimIssuerLength);
   });
 
   if (u32ToBigNumber(maxComplexity).lt(complexitySum)) {

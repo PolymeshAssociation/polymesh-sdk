@@ -2,10 +2,10 @@ import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
 import { Checkpoint, Context, Entity, PolymeshError, SecurityToken } from '~/internal';
-import { CalendarPeriod, ErrorCode, ScheduleDetails } from '~/types';
+import { CalendarPeriod, CalendarUnit, ErrorCode, ScheduleDetails } from '~/types';
 import {
+  bigNumberToU64,
   momentToDate,
-  numberToU64,
   stringToTicker,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -17,19 +17,24 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+interface CalendarPeriodHumanReadable {
+  unit: CalendarUnit;
+  amount: string;
+}
+
 interface HumanReadable {
   id: string;
   ticker: string;
-  period: CalendarPeriod | null;
+  period: CalendarPeriodHumanReadable | null;
   start: string;
   expiryDate: string | null;
-  complexity: number;
+  complexity: string;
 }
 
 export interface Params {
   period: CalendarPeriod;
   start: Date;
-  remaining: number;
+  remaining: BigNumber;
   nextCheckpointDate: Date;
 }
 
@@ -80,7 +85,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * abstract measure of the complexity of this Schedule. Shorter periods translate into more complexity
    */
-  public complexity: number;
+  public complexity: BigNumber;
 
   /**
    * @hidden
@@ -92,7 +97,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     const { id, ticker } = identifiers;
 
-    const noPeriod = period.amount === 0;
+    const noPeriod = period.amount.isZero();
 
     this.id = id;
     this.token = new SecurityToken({ ticker }, context);
@@ -100,7 +105,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
     this.start = start;
     this.complexity = periodComplexity(period);
 
-    if (remaining === 0 && !noPeriod) {
+    if (remaining.isZero() && !noPeriod) {
       this.expiryDate = null;
     } else if (!this.period) {
       this.expiryDate = start;
@@ -108,7 +113,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
       const { amount, unit } = period;
 
       this.expiryDate = dayjs(nextCheckpointDate)
-        .add(amount * (remaining - 1), unit)
+        .add(amount.multipliedBy(remaining.minus(1)).toNumber(), unit)
         .toDate();
     }
   }
@@ -142,7 +147,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
     const { at, remaining } = schedule;
 
     return {
-      remainingCheckpoints: u32ToBigNumber(remaining).toNumber(),
+      remainingCheckpoints: u32ToBigNumber(remaining),
       nextCheckpointDate: momentToDate(at),
     };
   }
@@ -173,7 +178,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     const result = await checkpoint.schedulePoints(
       stringToTicker(ticker, context),
-      numberToU64(id, context)
+      bigNumberToU64(id, context)
     );
 
     return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), ticker }, context));

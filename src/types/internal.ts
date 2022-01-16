@@ -152,7 +152,7 @@ export interface TransactionSpec<
   /**
    * number of elements in the batch (only applicable to batch transactions)
    */
-  batchSize: number | null;
+  batchSize: BigNumber | null;
 }
 
 export interface AuthTarget {
@@ -196,7 +196,7 @@ export enum InstructionAffirmationOperation {
 export interface ScheduleSpec {
   start: Date | null;
   period: CalendarPeriod | null;
-  repetitions: number | null;
+  repetitions: BigNumber | null;
 }
 
 export interface ScopeClaimProof {

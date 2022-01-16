@@ -40,9 +40,9 @@ export type AddTransferRestrictionParams = { ticker: string } & (
  * @hidden
  */
 export async function prepareAddTransferRestriction(
-  this: Procedure<AddTransferRestrictionParams, number>,
+  this: Procedure<AddTransferRestrictionParams, BigNumber>,
   args: AddTransferRestrictionParams
-): Promise<number> {
+): Promise<BigNumber> {
   const {
     context: {
       polymeshApi: {
@@ -57,14 +57,12 @@ export async function prepareAddTransferRestriction(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxTransferManagers = u32ToBigNumber(
-    consts.statistics.maxTransferManagersPerAsset
-  ).toNumber();
+  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
 
   const currentTms = await query.statistics.activeTransferManagers(ticker);
-  const restrictionAmount = currentTms.length;
+  const restrictionAmount = new BigNumber(currentTms.length);
 
-  if (restrictionAmount >= maxTransferManagers) {
+  if (restrictionAmount.gte(maxTransferManagers)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
       message: 'Transfer Restriction limit reached',
@@ -130,7 +128,7 @@ export async function prepareAddTransferRestriction(
     batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).forEach(scopeIdBatch => {
       this.addTransaction(
         statistics.addExemptedEntities,
-        { batchSize: scopeIdBatch.length },
+        { batchSize: new BigNumber(scopeIdBatch.length) },
         rawTicker,
         rawTransferManager,
         scopeIdBatch
@@ -138,14 +136,14 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  return restrictionAmount + 1;
+  return restrictionAmount.plus(1);
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<AddTransferRestrictionParams, number>,
+  this: Procedure<AddTransferRestrictionParams, BigNumber>,
   { ticker, exemptedScopeIds = [], exemptedIdentities = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.AddTransferManager];
@@ -168,5 +166,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const addTransferRestriction = (): Procedure<AddTransferRestrictionParams, number> =>
+export const addTransferRestriction = (): Procedure<AddTransferRestrictionParams, BigNumber> =>
   new Procedure(prepareAddTransferRestriction, getAuthorization);

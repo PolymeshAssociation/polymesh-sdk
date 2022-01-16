@@ -13,9 +13,9 @@ import {
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToU32,
   corporateActionIdentifierToCaId,
   momentToDate,
-  numberToU32,
   stringToTicker,
 } from '~/utils/conversion';
 
@@ -65,7 +65,7 @@ const assertCaIsRemovable = async (
   } else {
     const CA = await query.corporateAction.corporateActions(
       stringToTicker(ticker, context),
-      numberToU32(corporateAction as BigNumber, context)
+      bigNumberToU32(corporateAction as BigNumber, context)
     );
 
     if (CA.isEmpty) {

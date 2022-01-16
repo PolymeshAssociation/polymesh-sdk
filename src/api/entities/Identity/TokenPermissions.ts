@@ -34,10 +34,10 @@ import { Ensured, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
+  bigNumberToU32,
   extrinsicPermissionsToTransactionPermissions,
   hashToString,
   middlewareEventToEventIdentifier,
-  numberToU32,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -357,8 +357,8 @@ export class TokenPermissions extends Namespace<Identity> {
     token: string | SecurityToken;
     moduleId?: ModuleId;
     eventId?: EventId;
-    size?: number;
-    start?: number;
+    size?: BigNumber;
+    start?: BigNumber;
   }): Promise<ResultSet<EventIdentifier>> {
     const {
       context: {
@@ -381,8 +381,8 @@ export class TokenPermissions extends Namespace<Identity> {
         caller_did: did,
         pallet_name,
         event_id,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -391,7 +391,7 @@ export class TokenPermissions extends Namespace<Identity> {
       data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
     } = result;
 
-    const { items, totalCount: count } = tickerExternalAgentActionsResult;
+    const { items, totalCount } = tickerExternalAgentActionsResult;
 
     const multiParams: BlockNumber[] = [];
     const data: Omit<EventIdentifier, 'blockHash'>[] = [];
@@ -399,11 +399,11 @@ export class TokenPermissions extends Namespace<Identity> {
     items.forEach(item => {
       const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
-      multiParams.push(numberToU32(blockId, context));
+      multiParams.push(bigNumberToU32(new BigNumber(blockId), context));
       data.push({
         blockNumber: new BigNumber(blockId),
         blockDate: new Date(`${datetime}Z`),
-        eventIndex,
+        eventIndex: new BigNumber(eventIndex),
       });
     });
 
@@ -413,6 +413,7 @@ export class TokenPermissions extends Namespace<Identity> {
       hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
     }
 
+    const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, size, start);
 
     return {

@@ -5,8 +5,8 @@ import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } fro
 import { ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToU64,
   booleanToBool,
-  numberToU64,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
@@ -41,7 +41,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   await assertAuthorizationRequestValid(authRequest, context);
 
-  const rawAuthId = numberToU64(authId, context);
+  const rawAuthId = bigNumberToU64(authId, context);
 
   if (!accept) {
     const { address } = context.getCurrentAccount();

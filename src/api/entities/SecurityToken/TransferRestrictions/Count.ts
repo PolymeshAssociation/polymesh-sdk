@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { TransferRestrictionBase } from '~/api/entities/SecurityToken/TransferRestrictions/TransferRestrictionBase';
 import { AddCountTransferRestrictionParams, SetCountTransferRestrictionsParams } from '~/internal';
 import {
@@ -19,7 +21,10 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public addRestriction!: ProcedureMethod<Omit<AddCountTransferRestrictionParams, 'type'>, number>;
+  public addRestriction!: ProcedureMethod<
+    Omit<AddCountTransferRestrictionParams, 'type'>,
+    BigNumber
+  >;
 
   /**
    * Sets all Count Transfer Restrictions on this Security Token
@@ -28,7 +33,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    */
   public setRestrictions!: ProcedureMethod<
     Omit<SetCountTransferRestrictionsParams, 'type'>,
-    number
+    BigNumber
   >;
 
   /**
@@ -36,7 +41,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions!: NoArgsProcedureMethod<number>;
+  public removeRestrictions!: NoArgsProcedureMethod<BigNumber>;
 
   /**
    * Retrieve all active Count Transfer Restrictions

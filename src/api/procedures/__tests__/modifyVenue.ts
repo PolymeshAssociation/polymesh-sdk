@@ -101,7 +101,7 @@ describe('modifyVenue procedure', () => {
 
     const rawDetails = dsMockUtils.createMockVenueDetails(description);
     const rawType = dsMockUtils.createMockVenueType(type);
-    const rawId = dsMockUtils.createMockU64(venueId.toNumber());
+    const rawId = dsMockUtils.createMockU64(venueId);
 
     const args = {
       venue,
@@ -109,7 +109,7 @@ describe('modifyVenue procedure', () => {
       type,
     };
 
-    sinon.stub(utilsConversionModule, 'numberToU64').returns(rawId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
     sinon.stub(utilsConversionModule, 'stringToVenueDetails').returns(rawDetails);
     sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType').returns(rawType);
 

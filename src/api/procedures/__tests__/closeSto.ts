@@ -23,7 +23,7 @@ describe('closeSto procedure', () => {
   const id = new BigNumber(1);
 
   const rawTicker = dsMockUtils.createMockTicker(ticker);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -45,7 +45,7 @@ describe('closeSto procedure', () => {
     procedureMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'numberToU64').returns(rawId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
   });
 
   beforeEach(() => {

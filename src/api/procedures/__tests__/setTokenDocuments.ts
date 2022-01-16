@@ -75,13 +75,13 @@ describe('setTokenDocuments procedure', () => {
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
         filing_date: dsMockUtils.createMockOption(
-          filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+          filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
         /* eslint-enabled @typescript-eslint/naming-convention */
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>
-      tuple([rawTicker, dsMockUtils.createMockU32(index)], doc)
+      tuple([rawTicker, dsMockUtils.createMockU32(new BigNumber(index))], doc)
     );
     args = {
       ticker,
@@ -147,14 +147,14 @@ describe('setTokenDocuments procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
-      { batchSize: 1 },
+      { batchSize: new BigNumber(1) },
       docIds,
       rawTicker
     );
     sinon.assert.calledWith(
       addTransactionStub.secondCall,
       addDocumentsTransaction,
-      { batchSize: rawDocuments.length },
+      { batchSize: new BigNumber(rawDocuments.length) },
       rawDocuments,
       rawTicker
     );
@@ -172,7 +172,7 @@ describe('setTokenDocuments procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       addDocumentsTransaction,
-      { batchSize: rawDocuments.length },
+      { batchSize: new BigNumber(rawDocuments.length) },
       rawDocuments,
       rawTicker
     );
@@ -192,7 +192,7 @@ describe('setTokenDocuments procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub.firstCall,
       removeDocumentsTransaction,
-      { batchSize: 1 },
+      { batchSize: new BigNumber(1) },
       docIds,
       rawTicker
     );

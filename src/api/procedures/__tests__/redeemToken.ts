@@ -29,8 +29,8 @@ describe('redeemToken procedure', () => {
   let amount: BigNumber;
   let rawAmount: Balance;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: sinon.SinonStub<
-    [number | BigNumber, Context, (boolean | undefined)?],
+  let bigNumberToBalanceStub: sinon.SinonStub<
+    [BigNumber, Context, (boolean | undefined)?],
     Balance
   >;
 
@@ -41,16 +41,16 @@ describe('redeemToken procedure', () => {
     ticker = 'SOMETICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawAmount = dsMockUtils.createMockBalance(amount);
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
   });
 
   afterEach(() => {

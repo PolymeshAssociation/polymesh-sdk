@@ -104,10 +104,10 @@ describe('DividendDistribution class', () => {
             did: 'someDid',
           },
           currency: 'USD',
-          per_share: 20000000,
-          amount: 50000000000,
-          remaining: 40000000000,
-          payment_at: new Date(new Date().getTime() + 60 * 60 * 1000).getTime(),
+          per_share: new BigNumber(20000000),
+          amount: new BigNumber(50000000000),
+          remaining: new BigNumber(40000000000),
+          payment_at: new BigNumber(new Date(new Date().getTime() + 60 * 60 * 1000).getTime()),
           expires_at: null,
           reclaimed: false,
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -400,7 +400,7 @@ describe('DividendDistribution class', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       sinon
         .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .returns(dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() }));
+        .returns(dsMockUtils.createMockCAId({ ticker, local_id: id }));
       /* eslint-enable @typescript-eslint/naming-convention */
       sinon.stub(utilsConversionModule, 'boolToBoolean').returns(false);
 

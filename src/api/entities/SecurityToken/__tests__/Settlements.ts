@@ -31,7 +31,7 @@ describe('Settlements class', () => {
   let settlements: Settlements;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
   let stringToTickerStub: SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: sinon.SinonStub;
+  let bigNumberToBalanceStub: sinon.SinonStub;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
   let portfolioIdToPortfolioStub: sinon.SinonStub<
@@ -43,7 +43,7 @@ describe('Settlements class', () => {
   let rawTicker: Ticker;
   let rawToDid: IdentityId;
   let rawAmount: Balance;
-  let statusCode: number;
+  let statusCode: BigNumber;
   let amount: BigNumber;
   let toDid: string;
   let ticker: string;
@@ -54,11 +54,11 @@ describe('Settlements class', () => {
     dsMockUtils.initMocks();
 
     toDid = 'toDid';
-    statusCode = 81;
+    statusCode = new BigNumber(81);
     amount = new BigNumber(100);
     stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     portfolioIdToMeshPortfolioIdStub = sinon.stub(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
@@ -69,13 +69,13 @@ describe('Settlements class', () => {
     );
     portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawAmount = dsMockUtils.createMockBalance(amount);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     mockSecurityToken = entityMockUtils.getSecurityTokenInstance();
-    numberToBalanceStub.withArgs(amount, mockContext, false).returns(rawAmount);
+    bigNumberToBalanceStub.withArgs(amount, mockContext, false).returns(rawAmount);
     settlements = new Settlements(mockSecurityToken, mockContext);
     ticker = mockSecurityToken.ticker;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

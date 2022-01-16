@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import {
   ComplianceRequirement,
   Condition as MeshCondition,
@@ -69,7 +70,7 @@ describe('addAssetRequirement procedure', () => {
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(50),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
@@ -103,7 +104,7 @@ describe('addAssetRequirement procedure', () => {
           requirements: [
             {
               conditions,
-              id: 1,
+              id: new BigNumber(1),
             },
           ],
           defaultTrustedClaimIssuers: [],
@@ -123,13 +124,13 @@ describe('addAssetRequirement procedure', () => {
     const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
 
     requirementToComplianceRequirementStub
-      .withArgs({ conditions: fakeConditions, id: 1 }, mockContext)
+      .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
       .returns(
         dsMockUtils.createMockComplianceRequirement({
           /* eslint-disable @typescript-eslint/naming-convention */
           sender_conditions: fakeSenderConditions,
           receiver_conditions: fakeReceiverConditions,
-          id: dsMockUtils.createMockU32(1),
+          id: dsMockUtils.createMockU32(new BigNumber(1)),
           /* eslint-enable @typescript-eslint/naming-convention */
         })
       );

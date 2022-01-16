@@ -44,10 +44,10 @@ import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/ty
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
+  bigNumberToU32,
   boolToBoolean,
   corporateActionIdentifierToCaId,
   hashToString,
-  numberToU32,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
@@ -451,7 +451,7 @@ export class DividendDistribution extends CorporateActionBase {
    * @note supports pagination
    */
   public async getPaymentHistory(
-    opts: { size?: number; start?: number } = {}
+    opts: { size?: BigNumber; start?: BigNumber } = {}
   ): Promise<ResultSet<DistributionPayment>> {
     const {
       id,
@@ -472,8 +472,8 @@ export class DividendDistribution extends CorporateActionBase {
         CAId: { ticker, localId: id.toNumber() },
         fromDate: null,
         toDate: null,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
@@ -490,8 +490,9 @@ export class DividendDistribution extends CorporateActionBase {
       data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
     } = result;
 
-    const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult;
+    const { items, totalCount } = getHistoryOfPaymentEventsForCaResult;
 
+    const count = new BigNumber(totalCount);
     const data: Omit<DistributionPayment, 'blockHash'>[] = [];
     const multiParams: BlockNumber[] = [];
 
@@ -499,7 +500,7 @@ export class DividendDistribution extends CorporateActionBase {
     items!.forEach(item => {
       const { blockId, datetime, eventDid: did, balance, tax } = item!;
 
-      multiParams.push(numberToU32(blockId, context));
+      multiParams.push(bigNumberToU32(new BigNumber(blockId), context));
       data.push({
         blockNumber: new BigNumber(blockId),
         date: new Date(datetime),
@@ -549,7 +550,7 @@ export class DividendDistribution extends CorporateActionBase {
      * For optimization, we separate the participants into chunks that can fit into one multi call
      * and then sequentially perform bunches of said multi requests in parallel
      */
-    const participantChunks = chunk(participants, MAX_PAGE_SIZE);
+    const participantChunks = chunk(participants, MAX_PAGE_SIZE.toNumber());
     const parallelCallChunks = chunk(participantChunks, MAX_CONCURRENT_REQUESTS);
 
     let paidStatuses: boolean[] = [];

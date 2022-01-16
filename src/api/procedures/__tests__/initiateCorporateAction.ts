@@ -92,18 +92,21 @@ describe('initiateCorporateAction procedure', () => {
 
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawKind = dsMockUtils.createMockCAKind(kind);
-    rawDeclDate = dsMockUtils.createMockMoment(declarationDate.getTime());
+    rawDeclDate = dsMockUtils.createMockMoment(new BigNumber(declarationDate.getTime()));
     rawRecordDate = dsMockUtils.createMockRecordDateSpec({
-      Scheduled: dsMockUtils.createMockMoment(checkpoint.getTime()),
+      Scheduled: dsMockUtils.createMockMoment(new BigNumber(checkpoint.getTime())),
     });
     rawDetails = dsMockUtils.createMockText(description);
     rawTargets = dsMockUtils.createMockTargetIdentities({
       identities: targets.identities as string[],
       treatment: targets.treatment,
     });
-    rawTax = dsMockUtils.createMockPermill(defaultTaxWithholding.toNumber());
+    rawTax = dsMockUtils.createMockPermill(defaultTaxWithholding);
     rawWithholdings = [
-      tuple(dsMockUtils.createMockIdentityId('someDid'), dsMockUtils.createMockPermill(30)),
+      tuple(
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockPermill(new BigNumber(30))
+      ),
     ];
 
     rawCaId = ('caId' as unknown) as PostTransactionValue<CAId>;
@@ -137,7 +140,7 @@ describe('initiateCorporateAction procedure', () => {
     );
 
     maxDetailsLengthQueryStub = dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
-      returnValue: dsMockUtils.createMockU32(100),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(100)),
     });
     mockContext = dsMockUtils.getContextInstance();
 
@@ -192,7 +195,7 @@ describe('initiateCorporateAction procedure', () => {
   test('should throw an error if the description is too long', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
-    maxDetailsLengthQueryStub.returns(dsMockUtils.createMockU32(1));
+    maxDetailsLengthQueryStub.returns(dsMockUtils.createMockU32(new BigNumber(1)));
 
     let err;
 

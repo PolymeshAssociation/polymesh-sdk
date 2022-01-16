@@ -43,7 +43,7 @@ interface AddBatchTransactionOpts<Values extends unknown[], Args extends unknown
 }
 
 interface AddTransactionOpts<Values extends unknown[]> extends AddTransactionOptsBase<Values> {
-  batchSize?: number;
+  batchSize?: BigNumber;
 }
 
 /**
