@@ -27,10 +27,12 @@ import {
   BlockedClaim,
   BuyLockupClaim,
   CddClaim,
+  CddProviderRole,
   Claim,
   ClaimType,
   ConditionType,
   ExemptClaim,
+  IdentityRole,
   InputCondition,
   InputConditionBase,
   InvestorUniquenessClaim,
@@ -39,10 +41,15 @@ import {
   KnowYourCustomerClaim,
   MultiClaimCondition,
   NoDataClaim,
+  PortfolioCustodianRole,
+  Role,
+  RoleType,
   ScopedClaim,
   SellLockupClaim,
   SingleClaimCondition,
+  TickerOwnerRole,
   UnscopedClaim,
+  VenueOwnerRole,
 } from '~/types';
 
 /**
@@ -305,4 +312,39 @@ export function isMultiClaimCondition(
   condition: InputCondition
 ): condition is InputConditionBase & MultiClaimCondition {
   return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
+}
+
+/**
+ * Return whether Role is PortfolioCustodianRole
+ */
+export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
+  return role.type === RoleType.PortfolioCustodian;
+}
+
+/**
+ * Return whether Role is VenueOwnerRole
+ */
+export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
+  return role.type === RoleType.VenueOwner;
+}
+
+/**
+ * Return whether Role is CddProviderRole
+ */
+export function isCddProviderRole(role: Role): role is CddProviderRole {
+  return role.type === RoleType.CddProvider;
+}
+
+/**
+ * Return whether Role is TickerOwnerRole
+ */
+export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
+  return role.type === RoleType.TickerOwner;
+}
+
+/**
+ * Return whether Role is IdentityRole
+ */
+export function isIdentityRole(role: Role): role is IdentityRole {
+  return role.type === RoleType.Identity;
 }

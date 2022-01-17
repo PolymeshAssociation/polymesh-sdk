@@ -123,41 +123,6 @@ export type Role =
   | PortfolioCustodianRole
   | IdentityRole;
 
-/**
- * @hidden
- */
-export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
-  return role.type === RoleType.PortfolioCustodian;
-}
-
-/**
- * @hidden
- */
-export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
-  return role.type === RoleType.VenueOwner;
-}
-
-/**
- * @hidden
- */
-export function isCddProviderRole(role: Role): role is CddProviderRole {
-  return role.type === RoleType.CddProvider;
-}
-
-/**
- * @hidden
- */
-export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
-  return role.type === RoleType.TickerOwner;
-}
-
-/**
- * @hidden
- */
-export function isIdentityRole(role: Role): role is IdentityRole {
-  return role.type === RoleType.Identity;
-}
-
 export enum KnownTokenType {
   EquityCommon = 'EquityCommon',
   EquityPreferred = 'EquityPreferred',
