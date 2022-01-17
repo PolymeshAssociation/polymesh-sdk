@@ -392,7 +392,7 @@ export async function assertAuthorizationRequestValid(
 /**
  * @hidden
  *
- * Asserts valid primary key authorization
+ * Asserts valid primary key rotation authorization
  */
 export async function assertPrimaryKeyRotationAuthorizationValid(
   authRequest: AuthorizationRequest

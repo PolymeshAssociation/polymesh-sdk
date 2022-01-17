@@ -1043,7 +1043,7 @@ export interface Subsidy {
   allowance: BigNumber;
 }
 
-export type RotatePrimaryAccountAuthorizationData = {
+export type RotatePrimaryKeyAuthorizationData = {
   type: AuthorizationType.RotatePrimaryKey;
 };
 
@@ -1082,7 +1082,7 @@ export type GenericAuthorizationData = {
  * Authorization request data corresponding to type
  */
 export type Authorization =
-  | RotatePrimaryAccountAuthorizationData
+  | RotatePrimaryKeyAuthorizationData
   | JoinIdentityAuthorizationData
   | PortfolioCustodyAuthorizationData
   | BecomeAgentAuthorizationData

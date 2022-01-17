@@ -645,7 +645,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertPrimaryAccountRotationKeyValid', () => {
+  describe('assertPrimaryKeyRotationValid', () => {
     const data = { type: AuthorizationType.RotatePrimaryKey } as Authorization;
     test('should not throw with a valid request', async () => {
       const goodTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
