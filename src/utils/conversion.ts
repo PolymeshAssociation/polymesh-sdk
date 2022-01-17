@@ -150,8 +150,6 @@ import {
   InputRequirement,
   InputTrustedClaimIssuer,
   InstructionType,
-  isMultiClaimCondition,
-  isSingleClaimCondition,
   KnownTokenType,
   MultiClaimCondition,
   PermissionGroupType,
@@ -224,6 +222,7 @@ import {
   padString,
   removePadding,
 } from '~/utils/internal';
+import { isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 

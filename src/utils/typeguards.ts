@@ -21,6 +21,29 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
+import {
+  AccreditedClaim,
+  AffiliateClaim,
+  BlockedClaim,
+  BuyLockupClaim,
+  CddClaim,
+  Claim,
+  ClaimType,
+  ConditionType,
+  ExemptClaim,
+  InputCondition,
+  InputConditionBase,
+  InvestorUniquenessClaim,
+  InvestorUniquenessV2Claim,
+  JurisdictionClaim,
+  KnowYourCustomerClaim,
+  MultiClaimCondition,
+  NoDataClaim,
+  ScopedClaim,
+  SellLockupClaim,
+  SingleClaimCondition,
+  UnscopedClaim,
+} from '~/types';
 
 /**
  * Return whether value is an Entity
@@ -155,4 +178,131 @@ export function isVenue(value: unknown): value is Venue {
  */
 export function isPolymeshError(value: unknown): value is PolymeshError {
   return value instanceof PolymeshError;
+}
+
+/**
+ * Return whether a Claim is a ScopedClaim
+ */
+export function isScopedClaim(claim: Claim): claim is ScopedClaim {
+  const { type } = claim;
+
+  return (
+    ![ClaimType.NoData, ClaimType.CustomerDueDiligence, ClaimType.InvestorUniquenessV2].includes(
+      type
+    ) && 'scope' in claim
+  );
+}
+
+/**
+ * Return whether a Claim is an UnscopedClaim
+ */
+export function isUnscopedClaim(claim: Claim): claim is UnscopedClaim {
+  const { type } = claim;
+  return [
+    ClaimType.NoData,
+    ClaimType.CustomerDueDiligence,
+    ClaimType.InvestorUniquenessV2,
+  ].includes(type);
+}
+
+/**
+ * Return whether Claim is an AccreditedClaim
+ */
+export function isAccreditedClaim(claim: Claim): claim is AccreditedClaim {
+  return claim.type === ClaimType.Accredited;
+}
+
+/**
+ * Return whether Claim is an AffiliateClaim
+ */
+export function isAffiliateClaim(claim: Claim): claim is AffiliateClaim {
+  return claim.type === ClaimType.Affiliate;
+}
+
+/**
+ * Return whether Claim is an BuyLockupClaim
+ */
+export function isBuyLockupClaim(claim: Claim): claim is BuyLockupClaim {
+  return claim.type === ClaimType.BuyLockup;
+}
+
+/**
+ * Return whether Claim is a SellLockupClaim
+ */
+export function isSellLockupClaim(claim: Claim): claim is SellLockupClaim {
+  return claim.type === ClaimType.SellLockup;
+}
+
+/**
+ * Return whether Claim is a CustomerDueDiligenceClaim
+ */
+export function isCustomerDueDiligenceClaim(claim: Claim): claim is CddClaim {
+  return claim.type === ClaimType.CustomerDueDiligence;
+}
+
+/**
+ * Return whether Claim is a KnowYourCustomerClaim
+ */
+export function isKnowYourCustomerClaim(claim: Claim): claim is KnowYourCustomerClaim {
+  return claim.type === ClaimType.KnowYourCustomer;
+}
+
+/**
+ * Return whether Claim is a JurisdictionClaim
+ */
+export function isJurisdictionClaim(claim: Claim): claim is JurisdictionClaim {
+  return claim.type === ClaimType.Jurisdiction;
+}
+
+/**
+ * Return whether Claim is a ExemptClaim
+ */
+export function isExemptClaim(claim: Claim): claim is ExemptClaim {
+  return claim.type === ClaimType.Exempted;
+}
+
+/**
+ * Return whether Claim is a BlockedClaim
+ */
+export function isBlockedClaim(claim: Claim): claim is BlockedClaim {
+  return claim.type === ClaimType.Blocked;
+}
+
+/**
+ * Return whether a Claim is an InvestorUniquenessClaim
+ */
+export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
+  return claim.type === ClaimType.InvestorUniqueness;
+}
+
+/**
+ * Return whether Claim is a NoDataClaim
+ */
+export function isNoDataClaim(claim: Claim): claim is NoDataClaim {
+  return claim.type === ClaimType.NoData;
+}
+
+/**
+ *  Return whether a Claim is an InvestorUniquenessV2Claim
+ */
+export function isInvestorUniquenessV2Claim(claim: Claim): claim is InvestorUniquenessV2Claim {
+  return claim.type === ClaimType.InvestorUniquenessV2;
+}
+
+/**
+ * Return whether Condition has a single Claim
+ */
+export function isSingleClaimCondition(
+  condition: InputCondition
+): condition is InputConditionBase & SingleClaimCondition {
+  return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
+}
+
+/**
+ * Return whether Condition has multiple Claims
+ */
+export function isMultiClaimCondition(
+  condition: InputCondition
+): condition is InputConditionBase & MultiClaimCondition {
+  return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
 }

@@ -6,16 +6,7 @@ import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import {
-  CddClaim,
-  Claim,
-  ClaimTarget,
-  ClaimType,
-  ErrorCode,
-  isInvestorUniquenessClaim,
-  isScopedClaim,
-  RoleType,
-} from '~/types';
+import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType } from '~/types';
 import {
   ClaimOperation,
   Extrinsics,
@@ -34,6 +25,7 @@ import {
   stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
+import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
 
 interface AddClaimsParams {
   /**

@@ -251,7 +251,23 @@ export enum ClaimType {
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
+export type AccreditedClaim = { type: ClaimType.Accredited; scope: Scope };
+
+export type AffiliateClaim = { type: ClaimType.Affiliate; scope: Scope };
+
+export type BuyLockupClaim = { type: ClaimType.BuyLockup; scope: Scope };
+
+export type SellLockupClaim = { type: ClaimType.SellLockup; scope: Scope };
+
 export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+
+export type KnowYourCustomerClaim = { type: ClaimType.KnowYourCustomer; scope: Scope };
+
+export type JurisdictionClaim = { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope };
+
+export type ExemptClaim = { type: ClaimType.Exempted; scope: Scope };
+
+export type BlockedClaim = { type: ClaimType.Blocked; scope: Scope };
 
 export type InvestorUniquenessClaim = {
   type: ClaimType.InvestorUniqueness;
@@ -260,49 +276,27 @@ export type InvestorUniquenessClaim = {
   scopeId: string;
 };
 
+export type NoDataClaim = { type: ClaimType.NoData };
+
 export type InvestorUniquenessV2Claim = {
   type: ClaimType.InvestorUniquenessV2;
   cddId: string;
 };
 
 export type ScopedClaim =
-  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
+  | JurisdictionClaim
   | InvestorUniquenessClaim
-  | {
-      type: Exclude<
-        ClaimType,
-        | ClaimType.NoData
-        | ClaimType.Jurisdiction
-        | ClaimType.CustomerDueDiligence
-        | ClaimType.InvestorUniqueness
-        | ClaimType.InvestorUniquenessV2
-      >;
-      scope: Scope;
-    };
+  | AccreditedClaim
+  | AffiliateClaim
+  | BuyLockupClaim
+  | SellLockupClaim
+  | KnowYourCustomerClaim
+  | ExemptClaim
+  | BlockedClaim;
 
-export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = NoDataClaim | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
-
-/**
- * @hidden
- */
-export function isScopedClaim(claim: Claim): claim is ScopedClaim {
-  const { type } = claim;
-
-  return ![
-    ClaimType.NoData,
-    ClaimType.CustomerDueDiligence,
-    ClaimType.InvestorUniquenessV2,
-  ].includes(type);
-}
-
-/**
- * @hidden
- */
-export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
-  return claim.type === ClaimType.InvestorUniqueness;
-}
 
 export interface ClaimData<ClaimType = Claim> {
   target: Identity;
@@ -416,24 +410,6 @@ export type InputCondition = (
   | ExternalAgentCondition
 ) &
   InputConditionBase;
-
-/**
- * @hidden
- */
-export function isSingleClaimCondition(
-  condition: InputCondition
-): condition is InputConditionBase & SingleClaimCondition {
-  return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
-}
-
-/**
- * @hidden
- */
-export function isMultiClaimCondition(
-  condition: InputCondition
-): condition is InputConditionBase & MultiClaimCondition {
-  return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
-}
 
 export interface Requirement {
   id: number;

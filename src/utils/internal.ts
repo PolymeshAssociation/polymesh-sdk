@@ -39,8 +39,6 @@ import {
   ErrorCode,
   InputCaCheckpoint,
   InputCondition,
-  isMultiClaimCondition,
-  isSingleClaimCondition,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
@@ -63,7 +61,7 @@ import {
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
-import { isEntity } from '~/utils/typeguards';
+import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
