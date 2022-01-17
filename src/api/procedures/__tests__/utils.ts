@@ -1027,7 +1027,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertAddRelayerPayingKeyValid', () => {
+  describe('assertAddRelayerPayingKeyAuthorizationValid', () => {
     const allowance = new BigNumber(100);
     test('should not throw with a valid request', async () => {
       const subsidizer = entityMockUtils.getAccountInstance({
