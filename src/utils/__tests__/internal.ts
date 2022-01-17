@@ -2,7 +2,7 @@ import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { ModuleName, TxTags } from 'polymesh-types/types';
+import { IdentityId, ModuleName, PortfolioName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
@@ -34,6 +34,7 @@ import {
   getCheckpointValue,
   getCommonKeyring,
   getDid,
+  getPortfolioIdByName,
   getTicker,
   hasSameElements,
   isModuleOrTagMatch,
@@ -792,5 +793,57 @@ describe('hasSameElements', () => {
 
     result = hasSameElements([1, 2], [2, 3]);
     expect(result).toEqual(false);
+  });
+});
+
+describe('getPortfolioIdByName', () => {
+  let context: Context;
+  let nameToNumberStub: sinon.SinonStub;
+  let portfoliosStub: sinon.SinonStub;
+  let rawName: PortfolioName;
+  let identityId: IdentityId;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    rawName = dsMockUtils.createMockText('someName');
+    identityId = dsMockUtils.createMockIdentityId('someDid');
+    nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
+    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    entityMockUtils.cleanup();
+  });
+
+  test('should return null if no portfolio with given name is found', async () => {
+    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
+
+    const result = await getPortfolioIdByName(identityId, rawName, context);
+    expect(result).toBeNull();
+  });
+
+  test('should return portfolio number for given portfolio name', async () => {
+    nameToNumberStub.returns(dsMockUtils.createMockU64(2));
+
+    let result = await getPortfolioIdByName(identityId, rawName, context);
+    expect(result).toEqual(new BigNumber(2));
+
+    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    portfoliosStub.returns(rawName);
+
+    result = await getPortfolioIdByName(identityId, rawName, context);
+    expect(result).toEqual(new BigNumber(1));
   });
 });
