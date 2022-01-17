@@ -148,7 +148,7 @@ describe('Settlements Class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { instructions: [{ legs, tradeDate, endBlock }], venue: venueId },
+            args: { instructions: [{ legs, tradeDate, endBlock }], venueId },
             transformer: addInstructionTransformer,
           },
           context

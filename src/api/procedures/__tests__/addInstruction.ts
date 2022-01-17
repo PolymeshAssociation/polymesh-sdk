@@ -222,7 +222,7 @@ describe('addInstruction procedure', () => {
 
     venue = entityMockUtils.getVenueInstance({ id: venueId });
     args = {
-      venue,
+      venueId,
       instructions: [
         {
           legs: [
@@ -259,7 +259,7 @@ describe('addInstruction procedure', () => {
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs: [] }] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
     } catch (err) {
       error = err;
     }
@@ -289,7 +289,7 @@ describe('addInstruction procedure', () => {
     });
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs }] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
     } catch (err) {
       error = err;
     }
@@ -314,7 +314,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venue,
+        venueId,
         instructions: [
           {
             legs: [
@@ -352,7 +352,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venue,
+        venueId,
         instructions: [
           {
             legs: [
@@ -388,7 +388,7 @@ describe('addInstruction procedure', () => {
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
 
-    let result = await prepareAddInstruction.call(proc, args);
+    const result = await prepareAddInstruction.call(proc, args);
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
@@ -398,10 +398,6 @@ describe('addInstruction procedure', () => {
       }),
       [[rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]]]
     );
-    expect(result).toBe(instruction);
-
-    const argsWithId = { ...args, venue: venueId };
-    result = await prepareAddInstruction.call(proc, argsWithId);
     expect(result).toBe(instruction);
   });
 
@@ -418,7 +414,7 @@ describe('addInstruction procedure', () => {
     });
 
     const result = await prepareAddInstruction.call(proc, {
-      venue,
+      venueId: venueId,
       instructions: [
         {
           legs: [
@@ -455,7 +451,7 @@ describe('addInstruction procedure', () => {
       let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc({
-        venue,
+        venueId: venue.id,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
         ],
@@ -476,7 +472,7 @@ describe('addInstruction procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({
-        venue: venueId,
+        venueId,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
         ],

@@ -23,7 +23,6 @@ import {
   PostTransactionValue,
   Procedure,
   SecurityToken,
-  Venue,
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -76,15 +75,11 @@ export interface AddInstructionParamsWithVenue extends AddInstructionParams {
   venueId: BigNumber;
 }
 
-export interface AddInstructionsParamsWithVenue extends AddInstructionsParams {
-  venueId: BigNumber;
-}
-
 /**
  * @hidden
  */
 export type Params = AddInstructionsParams & {
-  venue: Venue | BigNumber;
+  venueId: BigNumber;
 };
 
 /**
@@ -292,9 +287,7 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const { instructions, venue } = args;
-
-  const venueId = venue instanceof Venue ? venue.id : venue;
+  const { instructions, venueId } = args;
 
   const latestBlock = await context.getLatestBlock();
 
@@ -376,13 +369,12 @@ export async function prepareAddInstruction(
  */
 export async function getAuthorization(
   this: Procedure<Params, Instruction[], Storage>,
-  { venue }: Params
+  { venueId }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { portfoliosToAffirm },
   } = this;
 
-  const venueId = venue instanceof Venue ? venue.id : venue;
   let transactions: SettlementTx[] = [];
   let portfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
 
