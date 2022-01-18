@@ -2,15 +2,12 @@ import { Keyring } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
-import BigNumber from 'bignumber.js';
 import semver from 'semver';
 import sinon from 'sinon';
 
-import { Account } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { AccountBalance, SubCallback } from '~/types';
 import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
 
 jest.mock(
@@ -345,64 +342,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getAccountBalance', () => {
-    const fakeBalance = {
-      free: new BigNumber(100),
-      locked: new BigNumber(0),
-      total: new BigNumber(100),
-    };
-    test('should return the free and locked POLYX balance of the current account', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      const result = await polymesh.getAccountBalance();
-      expect(result).toEqual(fakeBalance);
-    });
-
-    test('should return the free and locked POLYX balance of the supplied account', async () => {
-      entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      let result = await polymesh.getAccountBalance({ account: 'someId' });
-      expect(result).toEqual(fakeBalance);
-
-      result = await polymesh.getAccountBalance({
-        account: new Account({ address: 'someId ' }, dsMockUtils.getContextInstance()),
-      });
-      expect(result).toEqual(fakeBalance);
-    });
-
-    test('should allow subscription (with and without a supplied account id)', async () => {
-      const unsubCallback = 'unsubCallback';
-      dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
-      entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
-
-      let accountBalanceStub = (dsMockUtils.getContextInstance().getCurrentAccount()
-        .getBalance as sinon.SinonStub).resolves(unsubCallback);
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
-      let result = await polymesh.getAccountBalance(callback);
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
-
-      accountBalanceStub = entityMockUtils.getAccountGetBalanceStub().resolves(unsubCallback);
-      const account = 'someId';
-      result = await polymesh.getAccountBalance({ account }, callback);
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
-    });
-  });
-
   describe('method: getCurrentIdentity', () => {
     test('should return the current Identity', async () => {
       const polymesh = await Polymesh.connect({
@@ -417,53 +356,6 @@ describe('Polymesh Class', () => {
       ]);
 
       expect(result).toEqual(currentIdentity);
-    });
-  });
-
-  describe('method: getAccount', () => {
-    test('should return an Account object with the passed address', async () => {
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const params = { address: 'testAddress' };
-
-      const result = polymesh.getAccount(params);
-
-      expect(result.address).toBe(params.address);
-    });
-
-    test('should return the current Account if no address is passed', async () => {
-      const address = 'someAddress';
-      dsMockUtils.configureMocks({ contextOptions: { currentPairAddress: address } });
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const result = polymesh.getAccount();
-
-      expect(result.address).toBe(address);
-    });
-  });
-
-  describe('method: getAccounts', () => {
-    test('should return the list of signer accounts associated to the SDK', async () => {
-      const accounts = [entityMockUtils.getAccountInstance()];
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getAccounts: accounts,
-        },
-      });
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const result = polymesh.getAccounts();
-
-      expect(result).toEqual(accounts);
     });
   });
 

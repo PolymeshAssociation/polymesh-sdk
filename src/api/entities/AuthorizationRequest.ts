@@ -73,7 +73,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
    * | Type                        | Data                            |
    * |-----------------------------|---------------------------------|
    * | Add Relayer Paying Key      | Beneficiary, Relayer, Allowance |
-   * | Become Agent                | Permission Group
+   * | Become Agent                | Permission Group                |
    * | Attest Primary Key Rotation | DID                             |
    * | Rotate Primary Key          | DID                             |
    * | Transfer Ticker             | Ticker                          |
