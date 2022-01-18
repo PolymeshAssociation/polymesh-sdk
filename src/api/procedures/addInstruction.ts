@@ -71,7 +71,7 @@ export interface AddInstructionsParams {
   instructions: AddInstructionParams[];
 }
 
-export interface AddInstructionParamsWithVenueId extends AddInstructionParams {
+export interface AddInstructionWithVenueIdParams extends AddInstructionParams {
   venueId: BigNumber;
 }
 

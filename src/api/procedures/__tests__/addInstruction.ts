@@ -19,7 +19,6 @@ import {
   Instruction,
   NumberedPortfolio,
   PostTransactionValue,
-  Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -69,7 +68,6 @@ describe('addInstruction procedure', () => {
   let valueDate: Date;
   let endBlock: BigNumber;
   let args: Params;
-  let venue: Mocked<Venue>;
 
   let rawVenueId: u64;
   let rawAmount: Balance;
@@ -220,7 +218,6 @@ describe('addInstruction procedure', () => {
     dateToMomentStub.withArgs(tradeDate, mockContext).returns(rawTradeDate);
     dateToMomentStub.withArgs(valueDate, mockContext).returns(rawValueDate);
 
-    venue = entityMockUtils.getVenueInstance({ id: venueId });
     args = {
       venueId,
       instructions: [
@@ -414,7 +411,7 @@ describe('addInstruction procedure', () => {
     });
 
     const result = await prepareAddInstruction.call(proc, {
-      venueId: venueId,
+      venueId,
       instructions: [
         {
           legs: [
@@ -451,7 +448,7 @@ describe('addInstruction procedure', () => {
       let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc({
-        venueId: venue.id,
+        venueId,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
         ],

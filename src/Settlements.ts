@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { addInstruction, AddInstructionParamsWithVenueId } from '~/api/procedures/addInstruction';
+import { addInstruction, AddInstructionWithVenueIdParams } from '~/api/procedures/addInstruction';
 import {
   addInstructionTransformer,
   Context,
@@ -105,7 +105,7 @@ export class Settlements {
    * Create an Instruction to exchange Assets
    */
   public addInstruction: ProcedureMethod<
-    AddInstructionParamsWithVenueId,
+    AddInstructionWithVenueIdParams,
     Instruction[],
     Instruction
   >;
