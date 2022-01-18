@@ -162,7 +162,7 @@ describe('Claims Class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -175,6 +175,7 @@ describe('Claims Class', () => {
         claimTypes: [ClaimType.Accredited],
         includeExpired: false,
         size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
@@ -285,7 +286,7 @@ describe('Claims Class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -299,6 +300,7 @@ describe('Claims Class', () => {
         claimTypes: [ClaimType.Accredited],
         includeExpired: false,
         size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
@@ -595,7 +597,7 @@ describe('Claims Class', () => {
           trustedClaimIssuers: [did],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
@@ -607,6 +609,7 @@ describe('Claims Class', () => {
         trustedClaimIssuers: [did],
         includeExpired: false,
         size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(result.data).toEqual(fakeClaims);

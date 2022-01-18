@@ -505,8 +505,8 @@ describe('DividendDistribution class', () => {
           CAId: { ticker, localId: id.toNumber() },
           fromDate: null,
           toDate: null,
-          count: undefined,
-          skip: undefined,
+          count: 1,
+          skip: 0,
         }),
         {
           getHistoryOfPaymentEventsForCA: {
@@ -525,7 +525,10 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      const result = await dividendDistribution.getPaymentHistory();
+      const result = await dividendDistribution.getPaymentHistory({
+        size: new BigNumber(1),
+        start: new BigNumber(0),
+      });
 
       expect(result.data).toEqual([
         {

@@ -65,7 +65,7 @@ const assertCaIsRemovable = async (
   } else {
     const CA = await query.corporateAction.corporateActions(
       stringToTicker(ticker, context),
-      bigNumberToU32(corporateAction as BigNumber, context)
+      bigNumberToU32(corporateAction, context)
     );
 
     if (CA.isEmpty) {

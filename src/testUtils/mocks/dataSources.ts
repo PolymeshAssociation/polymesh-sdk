@@ -2671,8 +2671,7 @@ export const createMockSecondaryKey = (secondaryKey?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPipId = (id: BigNumber | BigNumber): PipId =>
-  createMockU32(new BigNumber(id)) as PipId;
+export const createMockPipId = (id: BigNumber): PipId => createMockU32(new BigNumber(id)) as PipId;
 
 /**
  * @hidden

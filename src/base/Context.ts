@@ -178,11 +178,11 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    const ss58Format: BigNumber | undefined = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
+    const ss58Format: BigNumber = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
     let keyring: CommonKeyring = new Keyring({
       type: 'sr25519',
-      ss58Format: ss58Format?.toNumber(),
+      ss58Format: ss58Format.toNumber(),
     });
 
     if (passedKeyring) {

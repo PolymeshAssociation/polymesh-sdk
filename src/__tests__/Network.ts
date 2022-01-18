@@ -234,8 +234,8 @@ describe('Network Class', () => {
           eventArg0: undefined,
           eventArg1: undefined,
           eventArg2: undefined,
-          count: undefined,
-          skip: undefined,
+          count: 1,
+          skip: 0,
         }),
         {
           /* eslint-disable @typescript-eslint/naming-convention */
@@ -250,7 +250,11 @@ describe('Network Class', () => {
         }
       );
 
-      const result = await network.getEventsByIndexedArgs(variables);
+      const result = await network.getEventsByIndexedArgs({
+        ...variables,
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+      });
       expect(result).toEqual(fakeResult);
     });
 
@@ -326,6 +330,7 @@ describe('Network Class', () => {
           extrinsic_idx: extrinsicIdx,
           spec_version_id: specVersionId,
           params: [],
+          nonce: 12345,
           block_id: blockNumber.toNumber(),
           address: null,
           success: 0,
@@ -342,7 +347,7 @@ describe('Network Class', () => {
         blockHash,
         extrinsicIdx: extrinsicIdx,
         address: null,
-        nonce: null,
+        nonce: new BigNumber(12345),
         txTag: 'asset.registerTicker',
         params: [],
         success: false,

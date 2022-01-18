@@ -222,7 +222,7 @@ describe('Context class', () => {
         keyring: dsMockUtils.getKeyringInstance(),
       });
 
-      return expect(context).rejects.toThrow(
+      expect(context).rejects.toThrow(
         new Error("The supplied keyring is not using the chain's SS58 format")
       );
     });
@@ -1248,7 +1248,7 @@ describe('Context class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: true,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -1261,6 +1261,7 @@ describe('Context class', () => {
         claimTypes: [ClaimType.Accredited],
         includeExpired: true,
         size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(result.data).toEqual(fakeClaims);

@@ -463,8 +463,8 @@ describe('TokenPermissions class', () => {
           caller_did: did,
           pallet_name: undefined,
           event_id: undefined,
-          count: undefined,
-          skip: undefined,
+          count: 1,
+          skip: 0,
         }),
         {
           tickerExternalAgentActions: {
@@ -483,6 +483,8 @@ describe('TokenPermissions class', () => {
 
       let result = await tokenPermissions.getOperationHistory({
         token: ticker,
+        start: new BigNumber(0),
+        size: new BigNumber(1),
       });
 
       expect(result.next).toEqual(null);

@@ -548,7 +548,23 @@ describe('Identity class', () => {
         }
       );
 
-      const result = await identity.getHeldTokens();
+      let result = await identity.getHeldTokens();
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensHeldByDid({ did, count: 1, skip: 0, order: Order.Asc }),
+        {
+          tokensHeldByDid: { items: tickers, totalCount: 2 },
+        }
+      );
+
+      result = await identity.getHeldTokens({
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+        order: Order.Asc,
+      });
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
