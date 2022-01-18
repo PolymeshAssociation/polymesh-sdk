@@ -1455,6 +1455,7 @@ const createMockStringCodec = (value?: string): Codec =>
   createMockCodec(
     {
       toString: () => value,
+      eq: (compareValue: Codec) => value === compareValue.toString(),
     },
     value === undefined
   );
