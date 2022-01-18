@@ -334,7 +334,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the Asset's asset identifiers list
+   * Retrieve the Asset's identifiers list
    *
    * @note can be subscribed to
    */

@@ -354,8 +354,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const missingAssetPermissions = getMissingAssetPermissions(assets, currentAssets);
 
-    const hasAsset = missingAssetPermissions === undefined;
-    if (!hasAsset) {
+    const hasAssets = missingAssetPermissions === undefined;
+    if (!hasAssets) {
       missingPermissions.assets = missingAssetPermissions;
     }
 
@@ -379,7 +379,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       missingPermissions.portfolios = missingPortfolioPermissions;
     }
 
-    const result = hasAsset && hasTransactions && hasPortfolios;
+    const result = hasAssets && hasTransactions && hasPortfolios;
 
     if (result) {
       return { result };

@@ -3,7 +3,13 @@ import BigNumber from 'bignumber.js';
 import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getAuthorization, IssueAssetParams, prepareIssueAsset } from '~/api/procedures/issueAsset';
+import {
+  getAuthorization,
+  IssueAssetParams,
+  prepareIssueAsset,
+  prepareStorage,
+  Storage,
+} from '~/api/procedures/issueAsset';
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -19,6 +25,7 @@ describe('issueAssets procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToBalance: sinon.SinonStub;
   let ticker: string;
+  let asset: Asset;
   let rawTicker: Ticker;
   let amount: BigNumber;
   let rawAmount: Balance;
@@ -31,6 +38,7 @@ describe('issueAssets procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     numberToBalance = sinon.stub(utilsConversionModule, 'numberToBalance');
     ticker = 'someTicker';
+    asset = entityMockUtils.getAssetInstance({ ticker });
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
@@ -54,6 +62,22 @@ describe('issueAssets procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  describe('prepareStorage', () => {
+    test('should return the Asset', () => {
+      const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = boundFunc({
+        ticker,
+        amount: new BigNumber(10),
+      });
+
+      expect(result).toEqual({
+        asset,
+      });
+    });
+  });
+
   test('should throw an error if Asset supply is bigger than the limit total supply', async () => {
     const args = {
       amount,
@@ -70,7 +94,9 @@ describe('issueAssets procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext, {
+      asset: entityMockUtils.getAssetInstance(),
+    });
 
     let error;
 
@@ -98,6 +124,7 @@ describe('issueAssets procedure', () => {
 
     entityMockUtils.configureMocks({
       assetOptions: {
+        ticker,
         details: {
           isDivisible,
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance()],
@@ -108,23 +135,26 @@ describe('issueAssets procedure', () => {
     numberToBalance.withArgs(amount, mockContext, isDivisible).returns(rawAmount);
 
     const transaction = dsMockUtils.createTxStub('asset', 'issue');
-    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset>(mockContext);
+    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext, {
+      asset: entityMockUtils.getAssetInstance(),
+    });
 
     const result = await prepareIssueAsset.call(proc, args);
-
     sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
     expect(result.ticker).toBe(ticker);
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset>(mockContext);
+      const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext, {
+        asset: entityMockUtils.getAssetInstance({ ticker }),
+      });
       const boundFunc = getAuthorization.bind(proc);
-      const args = {
-        ticker,
-      } as IssueAssetParams;
+      // const args = {
+      //   ticker,
+      // } as IssueAssetParams;
 
-      expect(boundFunc(args)).toEqual({
+      expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.asset.Issue],
           assets: [entityMockUtils.getAssetInstance({ ticker })],

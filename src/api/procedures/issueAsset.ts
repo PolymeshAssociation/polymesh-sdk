@@ -11,11 +11,15 @@ export interface IssueAssetParams {
   ticker: string;
 }
 
+export interface Storage {
+  asset: Asset;
+}
+
 /**
  * @hidden
  */
 export async function prepareIssueAsset(
-  this: Procedure<IssueAssetParams, Asset>,
+  this: Procedure<IssueAssetParams, Asset, Storage>,
   args: IssueAssetParams
 ): Promise<Asset> {
   const {
@@ -25,10 +29,9 @@ export async function prepareIssueAsset(
       },
     },
     context,
+    storage: { asset: assetEntity },
   } = this;
   const { ticker, amount } = args;
-
-  const assetEntity = new Asset({ ticker }, context);
 
   const { isDivisible, totalSupply } = await assetEntity.details();
 
@@ -47,7 +50,6 @@ export async function prepareIssueAsset(
 
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = numberToBalance(amount, context, isDivisible);
-
   this.addTransaction(asset.issue, {}, rawTicker, rawValue);
 
   return assetEntity;
@@ -57,14 +59,15 @@ export async function prepareIssueAsset(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<IssueAssetParams, Asset>,
-  { ticker }: IssueAssetParams
+  this: Procedure<IssueAssetParams, Asset, Storage>
 ): ProcedureAuthorization {
-  const { context } = this;
+  const {
+    storage: { asset },
+  } = this;
   return {
     permissions: {
       transactions: [TxTags.asset.Issue],
-      assets: [new Asset({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -73,5 +76,19 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const issueAsset = (): Procedure<IssueAssetParams, Asset> =>
-  new Procedure(prepareIssueAsset, getAuthorization);
+export function prepareStorage(
+  this: Procedure<IssueAssetParams, Asset, Storage>,
+  { ticker }: IssueAssetParams
+): Storage {
+  const { context } = this;
+
+  return {
+    asset: new Asset({ ticker }, context),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const issueAsset = (): Procedure<IssueAssetParams, Asset, Storage> =>
+  new Procedure(prepareIssueAsset, getAuthorization, prepareStorage);

@@ -120,7 +120,7 @@ describe('inviteExternalAgent procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
         mockContext,
         {
-          asset: asset,
+          asset,
         }
       );
       const boundFunc = getAuthorization.bind(proc);

@@ -30,7 +30,7 @@ export interface InvestInStoParams {
    */
   fundingPortfolio: PortfolioLike;
   /**
-   * amount of assets to purchase
+   * amount of Assets to purchase
    */
   purchaseAmount: BigNumber;
   /**
