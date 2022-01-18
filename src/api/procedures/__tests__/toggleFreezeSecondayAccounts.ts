@@ -40,7 +40,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if freeze is set to true and the Secondary Accounts are already frozen', () => {
+  test('should throw an error if freeze is set to true and the secondary Accounts are already frozen', () => {
     const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
       mockContext
     );
@@ -52,10 +52,10 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
           areSecondaryAccountsFrozen: true,
         }),
       })
-    ).rejects.toThrow('The Secondary Accounts are already frozen');
+    ).rejects.toThrow('The secondary Accounts are already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the Secondary Accounts are already unfrozen', () => {
+  test('should throw an error if freeze is set to false and the secondary Accounts are already unfrozen', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: false,
@@ -70,10 +70,10 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       prepareToggleFreezeSecondaryAccounts.call(proc, {
         freeze: false,
       })
-    ).rejects.toThrow('The Secondary Accounts are already unfrozen');
+    ).rejects.toThrow('The secondary Accounts are already unfrozen');
   });
 
-  test('should add a freeze Secondary Accounts transaction to the queue', async () => {
+  test('should add a freeze secondary Accounts transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: false,
@@ -93,7 +93,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     sinon.assert.calledWith(addTransactionStub, transaction, {});
   });
 
-  test('should add a unfreeze Secondary Accounts transaction to the queue', async () => {
+  test('should add a unfreeze secondary Accounts transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: true,

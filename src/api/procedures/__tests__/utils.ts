@@ -231,7 +231,7 @@ describe('assertSecondaryAccounts', () => {
     signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
   });
 
-  test('should not throw an error if all signers are Secondary Accounts', async () => {
+  test('should not throw an error if all signers are secondary Accounts', async () => {
     const address = 'someAddress';
     const secondaryAccounts = [
       {
@@ -252,7 +252,7 @@ describe('assertSecondaryAccounts', () => {
     expect(result).toBeUndefined();
   });
 
-  test('should throw an error if one of the Signers is not a Secondary Account for the Identity', () => {
+  test('should throw an error if one of the Signers is not a secondary Account for the Identity', () => {
     const address = 'someAddress';
     const secondaryAccounts = [
       {
@@ -277,7 +277,7 @@ describe('assertSecondaryAccounts', () => {
       error = err;
     }
 
-    expect(error.message).toBe('One of the Signers is not a Secondary Account for the Identity');
+    expect(error.message).toBe('One of the Signers is not a secondary Account for the Identity');
     expect(error.data.missing).toEqual([signerValues[0].value]);
   });
 });

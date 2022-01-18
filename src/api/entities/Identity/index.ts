@@ -555,7 +555,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether Secondary Accounts are frozen
+   * Check whether secondary Accounts are frozen
    *
    * @note can be subscribed to
    */
@@ -648,7 +648,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Get the list of Secondary Accounts related to the Identity
+   * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
    */

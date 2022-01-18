@@ -41,7 +41,7 @@ export async function prepareLeaveIdentity(
   if (!isSecondaryAccount) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Only Secondary Accounts are allowed to leave an Identity',
+      message: 'Only secondary Accounts are allowed to leave an Identity',
     });
   }
 

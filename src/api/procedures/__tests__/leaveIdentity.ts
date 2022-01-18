@@ -58,7 +58,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(error.message).toBe('There is no Identity associated to this Account');
   });
 
-  test('should throw an error if the Account is not a Secondary Account', async () => {
+  test('should throw an error if the Account is not a secondary Account', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance();
 
@@ -70,7 +70,7 @@ describe('modifyCaCheckpoint procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Only Secondary Accounts are allowed to leave an Identity');
+    expect(error.message).toBe('Only secondary Accounts are allowed to leave an Identity');
   });
 
   test('should add a leave identity as Account transaction to the queue', async () => {
