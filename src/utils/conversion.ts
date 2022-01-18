@@ -1090,6 +1090,8 @@ export function authorizationToAuthorizationData(
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
     value = stringToTicker(auth.value, context);
+  } else if (auth.type === AuthorizationType.RotatePrimaryKeyToSecondary) {
+    value = null;
   } else if (auth.type === AuthorizationType.BecomeAgent) {
     const ticker = stringToTicker(auth.value.token.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {
@@ -1193,6 +1195,10 @@ export function authorizationDataToAuthorization(
       type: AuthorizationType.BecomeAgent,
       value: agentGroupToPermissionGroup(agentGroup, tickerToString(ticker), context),
     };
+  }
+
+  if (auth.isRotatePrimaryKeyToSecondary) {
+    return { type: AuthorizationType.RotatePrimaryKeyToSecondary };
   }
 
   throw new PolymeshError({

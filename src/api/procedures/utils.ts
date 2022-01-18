@@ -384,6 +384,8 @@ export async function assertAuthorizationRequestValid(
       return assertJoinIdentityAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
       return assertAddRelayerPayingKeyAuthorizationValid(data);
+    case AuthorizationType.RotatePrimaryKeyToSecondary:
+      return assertRotatePrimaryKeyToSecondaryAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -538,6 +540,23 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Subsidizer Account does not have a valid CDD Claim',
+    });
+  }
+}
+
+/**
+ *
+ * @hidden
+ *
+ * Asserts valid rotate primary key to secondary authorization
+ */
+export async function assertRotatePrimaryKeyToSecondaryAuthorizationValid(
+  authRequest: AuthorizationRequest
+): Promise<void> {
+  if (authRequest.target instanceof Identity) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'An Identity can not become the primary key of another Identity',
     });
   }
 }

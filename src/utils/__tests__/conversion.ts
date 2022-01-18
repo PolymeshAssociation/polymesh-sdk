@@ -1217,6 +1217,14 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
+
+    authorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKeyToSecondary');
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+    };
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
   });
 
   test('should throw an error if the authorization has an unsupported type', () => {

@@ -70,17 +70,18 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
   /**
    * Authorization Request data corresponding to type of Authorization
    *
-   * | Type                        | Data                            |
-   * |-----------------------------|---------------------------------|
-   * | Add Relayer Paying Key      | Beneficiary, Relayer, Allowance |
-   * | Become Agent                | Permission Group
-   * | Attest Primary Key Rotation | DID                             |
-   * | Rotate Primary Key          | DID                             |
-   * | Transfer Ticker             | Ticker                          |
-   * | Add MultiSig Signer         | Account                         |
-   * | Transfer Token Ownership    | Ticker                          |
-   * | Join Identity               | DID                             |
-   * | Portfolio Custody           | Portfolio                       |
+   * | Type                            | Data                            |
+   * |---------------------------------|---------------------------------|
+   * | Add Relayer Paying Key          | Beneficiary, Relayer, Allowance |
+   * | Become Agent                    | Permission Group                |
+   * | Attest Primary Key Rotation     | DID                             |
+   * | Rotate Primary Key              | DID                             |
+   * | Rotate Primary Key to Secondary | DID                             |
+   * | Transfer Ticker                 | Ticker                          |
+   * | Add MultiSig Signer             | Account                         |
+   * | Transfer Token Ownership        | Ticker                          |
+   * | Join Identity                   | DID                             |
+   * | Portfolio Custody               | Portfolio                       |
    */
   public data: Authorization;
 

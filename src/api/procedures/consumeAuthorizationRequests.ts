@@ -52,6 +52,7 @@ export async function prepareConsumeAuthorizationRequests(
       [AuthorizationType.RotatePrimaryKey]: tx.identity.acceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: tx.asset.acceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: tx.asset.acceptTickerTransfer,
+      [AuthorizationType.RotatePrimaryKeyToSecondary]: tx.identity.rotatePrimaryKeyToSecondary,
     } as const;
 
     type AllowedAuthType = keyof typeof typesToExtrinsics;
@@ -75,7 +76,10 @@ export async function prepareConsumeAuthorizationRequests(
       const type = key as AllowedAuthType;
 
       // TODO @monitz87: include the attestation auth in the mix (should probably be a different procedure)
-      if (type === AuthorizationType.RotatePrimaryKey) {
+      if (
+        type === AuthorizationType.RotatePrimaryKey ||
+        type === AuthorizationType.RotatePrimaryKeyToSecondary
+      ) {
         this.addBatchTransaction(
           typesToExtrinsics[type],
           {},
@@ -142,6 +146,7 @@ export async function getAuthorization(
       [AuthorizationType.RotatePrimaryKey]: TxTags.identity.AcceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: TxTags.asset.AcceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: TxTags.asset.AcceptTickerTransfer,
+      [AuthorizationType.RotatePrimaryKeyToSecondary]: TxTags.identity.RotatePrimaryKeyToSecondary,
     } as const;
 
     transactions = authRequests.map(

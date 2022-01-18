@@ -662,7 +662,7 @@ describe('authorization request validations', () => {
       expect(error).toBe(undefined);
     });
 
-    test('should throw not with target that is an Identity', async () => {
+    test('should throw with target that is an Identity', async () => {
       const badTarget = entityMockUtils.getIdentityInstance();
       const auth = new AuthorizationRequest(
         { authId: new BigNumber(1), target: badTarget, issuer, expiry, data },
@@ -1027,7 +1027,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertAddRelayerPayingKeyAuthroizationValid', () => {
+  describe('assertAddRelayerPayingKeyAuthorizationValid', () => {
     const allowance = new BigNumber(100);
     test('should not throw with a valid request', async () => {
       const subsidizer = entityMockUtils.getAccountInstance({
@@ -1228,6 +1228,44 @@ describe('authorization request validations', () => {
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Subsidizer Account does not have an Identity',
+      });
+      expect(error).toEqual(expectedError);
+    });
+  });
+
+  describe('assertPrimaryKeyRotationAuthorizationValid', () => {
+    const data = { type: AuthorizationType.RotatePrimaryKeyToSecondary } as Authorization;
+    test('should not throw with a valid request', async () => {
+      const goodTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
+      const auth = new AuthorizationRequest(
+        { authId: new BigNumber(1), target: goodTarget, issuer, expiry, data },
+        mockContext
+      );
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      expect(error).toBe(undefined);
+    });
+
+    test('should throw with target that is an Identity', async () => {
+      const badTarget = entityMockUtils.getIdentityInstance();
+      const auth = new AuthorizationRequest(
+        { authId: new BigNumber(1), target: badTarget, issuer, expiry, data },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'An Identity can not become the primary key of another Identity',
       });
       expect(error).toEqual(expectedError);
     });
