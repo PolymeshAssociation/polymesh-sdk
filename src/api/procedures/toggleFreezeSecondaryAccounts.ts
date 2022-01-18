@@ -31,7 +31,7 @@ export async function prepareToggleFreezeSecondaryAccounts(
     if (areSecondaryAccountsFrozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The secondary Accounts are already frozen',
+        message: 'The Secondary Accounts are already frozen',
       });
     }
 
@@ -40,7 +40,7 @@ export async function prepareToggleFreezeSecondaryAccounts(
     if (!areSecondaryAccountsFrozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The secondary Accounts are already unfrozen',
+        message: 'The Secondary Accounts are already unfrozen',
       });
     }
 

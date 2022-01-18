@@ -58,7 +58,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(error.message).toBe('There is no Identity associated to this Account');
   });
 
-  test('should throw an error if the Account is not a secondary Account', async () => {
+  test('should throw an error if the Account is not a Secondary Account', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance();
 

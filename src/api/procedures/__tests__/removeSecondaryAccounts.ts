@@ -99,7 +99,7 @@ describe('removeSecondaryAccounts procedure', () => {
     ).rejects.toThrow('You cannot remove the primary Account');
   });
 
-  test('should throw an error if at least one of the secondary Accounts to remove is not present in the secondary Accounts list', () => {
+  test('should throw an error if at least one of the Secondary Accounts to remove is not present in the Secondary Accounts list', () => {
     const { signers } = args;
     const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
 

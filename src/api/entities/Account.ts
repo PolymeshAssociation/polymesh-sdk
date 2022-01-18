@@ -113,7 +113,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Leave the Account's Identity. This operation can only be done if the Account is a secondary Account for the Identity
+   * Leave the Account's Identity. This operation can only be done if the Account is a Secondary Account for the Identity
    */
   public leaveIdentity: NoArgsProcedureMethod<void>;
 
@@ -294,7 +294,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary Account of the Identity unfreezes all secondary Accounts
+   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary Account of the Identity unfreezes all Secondary Accounts
    */
   public async isFrozen(): Promise<boolean> {
     const { address } = this;

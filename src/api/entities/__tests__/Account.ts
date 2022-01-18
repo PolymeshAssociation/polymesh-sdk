@@ -393,7 +393,7 @@ describe('Account class', () => {
       });
     });
 
-    test("should return the Account's permissions if it is a secondary Account", async () => {
+    test("should return the Account's permissions if it is a Secondary Account", async () => {
       const permissions = {
         tokens: null,
         transactions: null,
