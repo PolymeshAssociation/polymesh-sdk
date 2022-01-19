@@ -1233,14 +1233,30 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertPrimaryKeyRotationAuthorizationValid', () => {
-    const data = { type: AuthorizationType.RotatePrimaryKeyToSecondary } as Authorization;
+  describe('assertRotatePrimaryKeyToSecondaryAuthorization', () => {
+    const permissions = {
+      tokens: null,
+      transactions: null,
+      transactionGroups: [],
+      portfolios: null,
+    };
+    const data: Authorization = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: permissions,
+    };
     test('should not throw with a valid request', async () => {
-      const goodTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
+      const mockTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(
-        { authId: new BigNumber(1), target: goodTarget, issuer, expiry, data },
+        {
+          authId: new BigNumber(1),
+          target: mockTarget,
+          issuer,
+          expiry,
+          data,
+        },
         mockContext
       );
+
       let error;
       try {
         await assertAuthorizationRequestValid(auth, mockContext);
@@ -1250,10 +1266,16 @@ describe('authorization request validations', () => {
       expect(error).toBe(undefined);
     });
 
-    test('should throw with target that is an Identity', async () => {
-      const badTarget = entityMockUtils.getIdentityInstance();
+    test('should throw when the issuer lacks a valid CDD', async () => {
+      const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: false });
       const auth = new AuthorizationRequest(
-        { authId: new BigNumber(1), target: badTarget, issuer, expiry, data },
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer: mockIssuer,
+          expiry,
+          data,
+        },
         mockContext
       );
 
@@ -1265,7 +1287,63 @@ describe('authorization request validations', () => {
       }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'An Identity can not become the primary key of another Identity',
+        message: 'Issuing Identity does not have a valid CDD claim',
+      });
+      expect(error).toEqual(expectedError);
+    });
+
+    test('should throw when the target is an Identity', async () => {
+      const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
+      const mockTarget = entityMockUtils.getIdentityInstance();
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: mockTarget,
+          issuer: mockIssuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The target cannot be an Identity',
+      });
+      expect(error).toEqual(expectedError);
+    });
+
+    test('should throw if the target already has an Identity', async () => {
+      const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
+      const mockTarget = entityMockUtils.getAccountInstance({
+        getIdentity: entityMockUtils.getIdentityInstance(),
+      });
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: mockTarget,
+          issuer: mockIssuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The target Account already has an associated Identity',
       });
       expect(error).toEqual(expectedError);
     });

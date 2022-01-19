@@ -1218,9 +1218,16 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
 
-    authorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKeyToSecondary');
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      RotatePrimaryKeyToSecondary: dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      }),
+    });
     fakeResult = {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: { tokens: null, portfolios: null, transactions: null, transactionGroups: [] },
     };
 
     result = authorizationDataToAuthorization(authorizationData, context);

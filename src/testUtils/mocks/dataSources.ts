@@ -2185,7 +2185,7 @@ export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: IdentityId }
     | 'RotatePrimaryKey'
-    | 'RotatePrimaryKeyToSecondary'
+    | { RotatePrimaryKeyToSecondary: Permissions }
     | { TransferTicker: Ticker }
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }

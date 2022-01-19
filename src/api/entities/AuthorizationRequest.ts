@@ -1,6 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+  consumeRotatePrimaryKeyToSecondaryAuthorization,
+} from '~/api/procedures/consumeRotatePrimaryKeyToSecondaryAuthorization';
+import {
   consumeAddMultiSigSignerAuthorization,
   ConsumeAddMultiSigSignerAuthorizationParams,
   consumeAuthorizationRequests,
@@ -115,7 +119,8 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     this.accept = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinIdentityAuthorizationParams
-      | ConsumeAddMultiSigSignerAuthorizationParams,
+      | ConsumeAddMultiSigSignerAuthorizationParams
+      | ConsumeRotatePrimaryKeyToSecondaryAuthorization,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any
@@ -125,6 +130,12 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
           switch (this.data.type) {
             case AuthorizationType.JoinIdentity: {
               return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+            }
+            case AuthorizationType.RotatePrimaryKeyToSecondary: {
+              return [
+                consumeRotatePrimaryKeyToSecondaryAuthorization,
+                { authRequest: this, accept: true },
+              ];
             }
             case AuthorizationType.AddMultiSigSigner: {
               return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: true }];
@@ -152,6 +163,12 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
           switch (this.data.type) {
             case AuthorizationType.JoinIdentity: {
               return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+            }
+            case AuthorizationType.RotatePrimaryKeyToSecondary: {
+              return [
+                consumeRotatePrimaryKeyToSecondaryAuthorization,
+                { authRequest: this, accept: false },
+              ];
             }
             case AuthorizationType.AddMultiSigSigner: {
               return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: false }];

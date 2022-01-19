@@ -1050,6 +1050,7 @@ export type RotatePrimaryKeyAuthorizationData = {
 
 export type RotatePrimaryKeyToSecondaryData = {
   type: AuthorizationType.RotatePrimaryKeyToSecondary;
+  value: Permissions;
 };
 
 export type JoinIdentityAuthorizationData = {

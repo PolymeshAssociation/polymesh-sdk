@@ -1198,7 +1198,10 @@ export function authorizationDataToAuthorization(
   }
 
   if (auth.isRotatePrimaryKeyToSecondary) {
-    return { type: AuthorizationType.RotatePrimaryKeyToSecondary };
+    return {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: meshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
+    };
   }
 
   throw new PolymeshError({

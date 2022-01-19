@@ -553,10 +553,23 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
 export async function assertRotatePrimaryKeyToSecondaryAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
-  if (authRequest.target instanceof Identity) {
+  const issuer = authRequest.issuer;
+  const target = authRequest.target;
+  const hasValidCdd = await issuer.hasValidCdd();
+  if (!hasValidCdd) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'An Identity can not become the primary key of another Identity',
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Issuing Identity does not have a valid CDD claim',
+    });
+  }
+
+  assertIsAccount(target);
+
+  const targetIdentity = await target.getIdentity();
+  if (targetIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target Account already has an associated Identity',
     });
   }
 }
