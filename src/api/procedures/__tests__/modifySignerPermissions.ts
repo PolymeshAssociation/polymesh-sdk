@@ -179,6 +179,6 @@ describe('modifySignerPermissions procedure', () => {
         secondaryAccounts,
         identity: entityMockUtils.getIdentityInstance({ getSecondaryAccounts: [] }),
       })
-    ).rejects.toThrow('One of the Signers is not a secondary Account for the Identity');
+    ).rejects.toThrow('One of the Accounts is not a secondary Account for the Identity');
   });
 });

@@ -304,10 +304,10 @@ export abstract class PolymeshTransactionBase<
     const { paidForBy, context, tag } = this;
 
     if (paidForBy) {
-      const { account } = await paidForBy.getPrimaryAccount();
+      const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
 
       return {
-        account,
+        account: primaryAccount,
         allowance: null,
       };
     }

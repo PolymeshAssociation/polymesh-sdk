@@ -327,7 +327,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       {
         account: { address: primaryAccountAddress },
       },
-      secondaryKeys,
+      secondaryAccounts,
     ] = await Promise.all([
       currentIdentity.getPrimaryAccount(),
       currentIdentity.getSecondaryAccounts(),
@@ -342,8 +342,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    const account = secondaryKeys.find(
-      ({ account: { address: secondaryKeyAddress } }) => address === secondaryKeyAddress
+    const account = secondaryAccounts.find(
+      ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
     )!;
 
     return account.permissions;

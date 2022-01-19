@@ -275,7 +275,7 @@ describe('assertSecondaryAccounts', () => {
       error = err;
     }
 
-    expect(error.message).toBe('One of the Signers is not a secondary Account for the Identity');
+    expect(error.message).toBe('One of the Accounts is not a secondary Account for the Identity');
     expect(error.data.missing).toEqual([accounts[0].address]);
   });
 });

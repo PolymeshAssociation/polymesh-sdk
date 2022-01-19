@@ -149,7 +149,7 @@ export function assertSecondaryAccounts(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'One of the Signers is not a secondary Account for the Identity',
+      message: 'One of the Accounts is not a secondary Account for the Identity',
       data: {
         missing: notInTheList,
       },

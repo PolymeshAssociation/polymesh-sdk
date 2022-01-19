@@ -40,11 +40,11 @@ export async function prepareModifySignerPermissions(
 
   const identity = await context.getCurrentIdentity();
 
-  const existingSecondaryKeys = await identity.getSecondaryAccounts();
+  const existingSecondaryAccounts = await identity.getSecondaryAccounts();
 
   assertSecondaryAccounts(
     secondaryAccounts.map(({ account }) => account),
-    existingSecondaryKeys
+    existingSecondaryAccounts
   );
 
   const signersList = secondaryAccounts.map(({ account, permissions: permissionsLike }) => {

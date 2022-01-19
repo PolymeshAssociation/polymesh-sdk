@@ -115,10 +115,10 @@ describe('removeSecondaryAccounts procedure', () => {
   });
 
   test('should throw an error if at least one of the secondary Accounts to remove is not present in the secondary Accounts list', () => {
-    const { accounts: signers } = args;
-    const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
+    const { accounts } = args;
+    const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
-    signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
+    signerToSignerValueStub.withArgs(accounts[0]).returns(signerValue);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
 
@@ -130,6 +130,6 @@ describe('removeSecondaryAccounts procedure', () => {
           getSecondaryAccounts: [],
         }),
       })
-    ).rejects.toThrow('One of the Signers is not a secondary Account for the Identity');
+    ).rejects.toThrow('One of the Accounts is not a secondary Account for the Identity');
   });
 });
