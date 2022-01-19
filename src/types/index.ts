@@ -947,7 +947,7 @@ export interface PermissionGroups {
 
 /**
  * This represents positive permissions (i.e. only "includes"). It is used
- *   for specifying procedure requirements and querying if an account has certain
+ *   for specifying procedure requirements and querying if an Account has certain
  *   permissions. Null values represent full permissions in that category
  */
 export interface SimplePermissions {
@@ -1043,7 +1043,9 @@ export interface Subsidy {
   allowance: BigNumber;
 }
 
-export type RotatePrimaryKeyAuthorizationData = { type: AuthorizationType.RotatePrimaryKey };
+export type RotatePrimaryKeyAuthorizationData = {
+  type: AuthorizationType.RotatePrimaryKey;
+};
 
 export type JoinIdentityAuthorizationData = {
   type: AuthorizationType.JoinIdentity;
@@ -1159,7 +1161,7 @@ export interface CheckpointWithData {
   totalSupply: BigNumber;
 }
 
-export interface SecondaryKey {
+export interface SecondaryAccount {
   signer: Signer;
   permissions: Permissions;
 }
