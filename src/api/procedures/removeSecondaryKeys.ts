@@ -27,8 +27,6 @@ export async function prepareRemoveSecondaryKeys(
 
   const identity = await context.getCurrentIdentity();
 
-  console.log(await identity.getPrimaryKey());
-  console.log(await identity.getSecondaryKeys());
   const [
     {
       account: { address: primaryKeyAddress },

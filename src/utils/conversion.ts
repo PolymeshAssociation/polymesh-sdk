@@ -388,6 +388,21 @@ export function stringToEcdsaSignature(signature: string, context: Context): Ecd
 /**
  * @hidden
  */
+export function signatoryToAccount(signatory: Signatory, context: Context): Account {
+  if (signatory.isAccount) {
+    return new Account({ address: accountIdToString(signatory.asAccount) }, context);
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message:
+      'Received an Identity where an Account was expected. Please report this issue to the Polymath team',
+  });
+}
+
+/**
+ * @hidden
+ */
 export function signerValueToSignatory(signer: SignerValue, context: Context): Signatory {
   return context.polymeshApi.createType('Signatory', {
     [signer.type]: signer.value,

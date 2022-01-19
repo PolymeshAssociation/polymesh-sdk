@@ -48,9 +48,7 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  signatoryToSignerValue,
-  signerToString,
-  signerValueToSigner,
+  signatoryToAccount,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -685,14 +683,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       secondary_keys: secondaryKeys,
     }: DidRecord): PermissionedAccount[] => {
       return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
-        account: new Account(
-          {
-            address: signerToString(
-              signerValueToSigner(signatoryToSignerValue(rawSigner), context)
-            ),
-          },
-          context
-        ),
+        account: signatoryToAccount(rawSigner, context),
         permissions: meshPermissionsToPermissions(permissions, context),
       }));
     };

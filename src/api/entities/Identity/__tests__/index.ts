@@ -18,9 +18,6 @@ import {
   PortfolioCustodianRole,
   Role,
   RoleType,
-  Signer,
-  SignerType,
-  SignerValue,
   TickerOwnerRole,
   VenueOwnerRole,
 } from '~/types';
@@ -1145,25 +1142,15 @@ describe('Identity class', () => {
     let account: Account;
     let fakeResult: PermissionedAccount[];
 
-    let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-    let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
-    let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
+    let signatoryToAccountStub: sinon.SinonStub<[Signatory, Context], Account>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      const signerValue = { value: accountId, type: SignerType.Account };
-
-      signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
-      signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValue);
-
-      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
-      signerValueToSignerStub.withArgs(signerValue, sinon.match.object).returns(account);
-
-      signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-      signerToStringStub.returns(accountId);
-
       account = entityMockUtils.getAccountInstance({ address: accountId });
+
+      signatoryToAccountStub = sinon.stub(utilsConversionModule, 'signatoryToAccount');
+      signatoryToAccountStub.withArgs(signerAccountId, sinon.match.object).returns(account);
 
       fakeResult = [
         {

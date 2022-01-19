@@ -35,8 +35,6 @@ describe('removeSecondaryKeys procedure', () => {
 
     primaryKeyAccount = entityMockUtils.getAccountInstance({ address: 'primaryKey' });
 
-    console.log('here');
-    console.log(primaryKeyAccount);
     primaryKey = {
       account: primaryKeyAccount,
       permissions: {
