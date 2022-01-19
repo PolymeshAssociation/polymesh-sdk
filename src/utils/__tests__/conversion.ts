@@ -1079,7 +1079,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     expect(result).toBe(fakeResult);
 
     value = {
-      type: AuthorizationType.JoinIdentity,
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
       value: {
         tokens: null,
         transactions: null,

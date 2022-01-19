@@ -40,9 +40,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
     context,
   } = this;
   const { authRequest, accept } = args;
-
   const { target, authId, issuer } = authRequest;
-
   const rawAuthId = numberToU64(authId, context);
 
   if (!accept) {
@@ -64,7 +62,6 @@ export async function prepareConsumeJoinIdentityAuthorization(
   }
 
   await assertAuthorizationRequestValid(authRequest, context);
-
   this.addTransaction(identity.joinIdentityAsKey, { paidForBy: issuer }, rawAuthId);
 }
 
