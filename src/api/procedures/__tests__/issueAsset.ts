@@ -150,9 +150,6 @@ describe('issueAssets procedure', () => {
         asset: entityMockUtils.getAssetInstance({ ticker }),
       });
       const boundFunc = getAuthorization.bind(proc);
-      // const args = {
-      //   ticker,
-      // } as IssueAssetParams;
 
       expect(boundFunc()).toEqual({
         permissions: {
