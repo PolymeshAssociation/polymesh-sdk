@@ -389,8 +389,8 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     beforeEach(() => {
-      context.getTransactionFees.withArgs(TxTags.asset.RegisterTicker).resolves(protocolFees[0]);
-      context.getTransactionFees.withArgs(TxTags.asset.CreateAsset).resolves(protocolFees[1]);
+      context.getProtocolFees.withArgs(TxTags.asset.RegisterTicker).resolves(protocolFees[0]);
+      context.getProtocolFees.withArgs(TxTags.asset.CreateAsset).resolves(protocolFees[1]);
       rawGasFees.forEach((rawGasFee, index) =>
         balanceToBigNumberStub.withArgs(rawGasFee).returns(new BigNumber(gasFees[index]))
       );
@@ -503,7 +503,7 @@ describe('Polymesh Transaction Base class', () => {
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = entityMockUtils.getAccountInstance();
       const paidForBy = entityMockUtils.getIdentityInstance({
-        getPrimaryKey: {
+        getPrimaryAccount: {
           account,
           permissions: {
             tokens: null,

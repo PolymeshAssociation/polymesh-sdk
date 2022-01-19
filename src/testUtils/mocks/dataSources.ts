@@ -317,8 +317,8 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  primaryKey?: PermissionedAccount;
-  secondaryKeys?: PermissionedAccount[];
+  primaryAccount?: PermissionedAccount;
+  secondaryAccounts?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -326,7 +326,7 @@ interface ContextOptions {
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
   ss58Format?: number;
-  areScondaryKeysFrozen?: boolean;
+  areSecondaryAccountsFrozen?: boolean;
   getDividendDistributionsForTokens?: DistributionWithDetails[];
   isFrozen?: boolean;
   addPair?: Pair;
@@ -584,9 +584,9 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
-  primaryKey: {
+  primaryAccount: {
     account: ({
-      address: 'primaryKey',
+      address: 'primaryAccount',
     } as unknown) as Account,
     permissions: {
       tokens: null,
@@ -595,7 +595,7 @@ const defaultContextOptions: ContextOptions = {
       portfolios: null,
     },
   },
-  secondaryKeys: [],
+  secondaryAccounts: [],
   transactionHistory: {
     data: [],
     next: null,
@@ -611,7 +611,7 @@ const defaultContextOptions: ContextOptions = {
   },
   isArchiveNode: true,
   ss58Format: 42,
-  areScondaryKeysFrozen: false,
+  areSecondaryAccountsFrozen: false,
   getDividendDistributionsForTokens: [],
   isFrozen: false,
   addPair: {
@@ -668,8 +668,8 @@ function configureContext(opts: ContextOptions): void {
     checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryKey: sinon.stub().resolves(opts.primaryKey),
-    getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
+    getPrimaryAccount: sinon.stub().resolves(opts.primaryAccount),
+    getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
@@ -677,13 +677,13 @@ function configureContext(opts: ContextOptions): void {
       hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
       checkPermissions: sinon.stub().resolves(opts.checkTokenPermissions),
     },
-    areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
+    areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
     isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
   };
   opts.withSeed
     ? getCurrentIdentity.resolves(identity)
     : getCurrentIdentity.throws(
-        new Error('The current account does not have an associated identity')
+        new Error('The current Account does not have an associated identity')
       );
   const getCurrentAccount = sinon.stub();
   opts.withSeed
@@ -697,7 +697,7 @@ function configureContext(opts: ContextOptions): void {
         checkPermissions: sinon.stub().resolves(opts.checkPermissions),
         isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
-    : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
+    : getCurrentAccount.throws(new Error('There is no Account associated with the SDK'));
   const currentPair = opts.withSeed
     ? ({
         address: opts.currentPairAddress,
@@ -708,7 +708,7 @@ function configureContext(opts: ContextOptions): void {
   opts.withSeed
     ? getCurrentPair.returns(currentPair)
     : getCurrentPair.throws(
-        new Error('There is no account associated with the current SDK instance')
+        new Error('There is no Account associated with the current SDK instance')
       );
 
   const contextInstance = ({
@@ -729,9 +729,9 @@ function configureContext(opts: ContextOptions): void {
       .stub()
       .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
-    getTransactionFees: sinon.stub().resolves(opts.transactionFee),
+    getProtocolFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
-    getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
+    getSecondaryAccounts: sinon.stub().returns(opts.secondaryAccounts),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getIdentity: sinon.stub().resolves(opts.getIdentity),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
@@ -1465,6 +1465,7 @@ const createMockStringCodec = (value?: string): Codec =>
   createMockCodec(
     {
       toString: () => value,
+      eq: (compareValue: Codec) => value === compareValue.toString(),
     },
     value === undefined
   );

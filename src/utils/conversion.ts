@@ -2565,7 +2565,7 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
 /**
  * @hidden
  */
-export function secondaryKeyToMeshSecondaryKey(
+export function secondaryAccountToMeshSecondaryKey(
   secondaryKey: PermissionedAccount,
   context: Context
 ): MeshSecondaryKey {

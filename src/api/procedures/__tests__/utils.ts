@@ -11,7 +11,7 @@ import {
   assertInstructionValid,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
-  assertSecondaryKeys,
+  assertSecondaryAccounts,
   createAuthorizationResolver,
   UnreachableCaseError,
 } from '~/api/procedures/utils';
@@ -224,17 +224,17 @@ describe('assertPortfolioExists', () => {
   });
 });
 
-describe('assertSecondaryKeys', () => {
+describe('assertSecondaryAccounts', () => {
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
 
   beforeAll(() => {
     signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
   });
 
-  test('should not throw an error if all signers are secondary keys', async () => {
+  test('should not throw an error if all signers are secondary Accounts', async () => {
     const address = 'someAddress';
     const account = entityMockUtils.getAccountInstance({ address });
-    const secondaryKeys = [
+    const secondaryAccounts = [
       {
         account,
         permissions: {
@@ -246,13 +246,13 @@ describe('assertSecondaryKeys', () => {
       },
     ];
 
-    const result = assertSecondaryKeys([account], secondaryKeys);
+    const result = assertSecondaryAccounts([account], secondaryAccounts);
     expect(result).toBeUndefined();
   });
 
-  test('should throw an error if one of the Accounts is not a Secondary Key for the Identity', () => {
+  test('should throw an error if one of the Accounts is not a Secondary Account for the Identity', () => {
     const address = 'someAddress';
-    const secondaryKeys = [
+    const secondaryAccounts = [
       {
         account: entityMockUtils.getAccountInstance({ address }),
         permissions: {
@@ -270,12 +270,12 @@ describe('assertSecondaryKeys', () => {
     let error;
 
     try {
-      assertSecondaryKeys(accounts, secondaryKeys);
+      assertSecondaryAccounts(accounts, secondaryAccounts);
     } catch (err) {
       error = err;
     }
 
-    expect(error.message).toBe('One of the Signers is not a Secondary Key for the Identity');
+    expect(error.message).toBe('One of the Signers is not a secondary Account for the Identity');
     expect(error.data.missing).toEqual([accounts[0].address]);
   });
 });
@@ -643,7 +643,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertPrimaryKeyRotationAuthorizationValid', () => {
+  describe('assertPrimaryKeyRotationValid', () => {
     const data = { type: AuthorizationType.RotatePrimaryKey } as Authorization;
     test('should not throw with a valid request', async () => {
       const goodTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
@@ -675,7 +675,7 @@ describe('authorization request validations', () => {
       }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'An Identity can not become the primary key of another Identity',
+        message: 'An Identity can not become the primary Account of another Identity',
       });
       expect(error).toEqual(expectedError);
     });
@@ -1025,7 +1025,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertAddRelayerPayingKeyAuthroizationValid', () => {
+  describe('assertAddRelayerPayingKeyAuthorizationValid', () => {
     const allowance = new BigNumber(100);
     test('should not throw with a valid request', async () => {
       const subsidizer = entityMockUtils.getAccountInstance({

@@ -56,9 +56,9 @@ export {
 } from '~/api/procedures/modifyTokenTrustedClaimIssuers';
 export { registerIdentity, RegisterIdentityParams } from '~/api/procedures/registerIdentity';
 export {
-  removeSecondaryKeys,
-  RemoveSecondaryKeysParams,
-} from '~/api/procedures/removeSecondaryKeys';
+  removeSecondaryAccounts,
+  RemoveSecondaryAccountsParams,
+} from '~/api/procedures/removeSecondaryAccounts';
 export {
   modifySignerPermissions,
   ModifySignerPermissionsParams,
@@ -188,7 +188,7 @@ export {
   transferTickerOwnership,
   TransferTickerOwnershipParams,
 } from '~/api/procedures/transferTickerOwnership';
-export { toggleFreezeSecondaryKeys } from '~/api/procedures/toggleFreezeSecondaryKeys';
+export { toggleFreezeSecondaryAccounts } from '~/api/procedures/toggleFreezeSecondaryAccounts';
 export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';
 export { claimClassicTicker, ClaimClassicTickerParams } from '~/api/procedures/claimClassicTicker';

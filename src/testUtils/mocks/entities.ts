@@ -121,7 +121,7 @@ interface IdentityOptions {
   tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   isCddProvider?: boolean;
-  getPrimaryKey?: PermissionedAccount;
+  getPrimaryAccount?: PermissionedAccount;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -129,8 +129,8 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
-  getSecondaryKeys?: PermissionedAccount[];
-  areScondaryKeysFrozen?: boolean;
+  getSecondaryAccounts?: PermissionedAccount[];
+  areSecondaryAccountsFrozen?: boolean;
   isEqual?: boolean;
   tokenPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;
   tokenPermissionsGet?: TokenWithGroup[];
@@ -368,14 +368,14 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityCheckRolesStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
-let identityGetPrimaryKeyStub: SinonStub;
+let identityGetPrimaryAccountStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityAuthorizationsGetSentStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
 let identityGetTokenBalanceStub: SinonStub;
-let identityGetSecondaryKeysStub: SinonStub;
-let identityAreSecondaryKeysFrozenStub: SinonStub;
+let identityGetSecondaryAccountsStub: SinonStub;
+let identityAreSecondaryAccountsFrozenStub: SinonStub;
 let identityIsEqualStub: SinonStub;
 let identityTokenPermissionsHasPermissionsStub: SinonStub;
 let identityTokenPermissionsCheckPermissionsStub: SinonStub;
@@ -709,8 +709,8 @@ const defaultIdentityOptions: IdentityOptions = {
   getVenues: [],
   getScopeId: 'someScopeId',
   getTokenBalance: new BigNumber(100),
-  getSecondaryKeys: [],
-  areScondaryKeysFrozen: false,
+  getSecondaryAccounts: [],
+  areSecondaryAccountsFrozen: false,
   isEqual: true,
   tokenPermissionsGet: [],
   tokenPermissionsCheckPermissions: {
@@ -1386,7 +1386,7 @@ function configureIdentity(opts: IdentityOptions): void {
     checkRoles: identityCheckRolesStub.resolves(opts.checkRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
-    getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
+    getPrimaryAccount: identityGetPrimaryAccountStub.resolves(opts.getPrimaryAccount),
     portfolios: {},
     authorizations: {
       getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
@@ -1405,8 +1405,10 @@ function configureIdentity(opts: IdentityOptions): void {
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
     getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
-    getSecondaryKeys: identityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
-    areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(opts.areScondaryKeysFrozen),
+    getSecondaryAccounts: identityGetSecondaryAccountsStub.resolves(opts.getSecondaryAccounts),
+    areSecondaryAccountsFrozen: identityAreSecondaryAccountsFrozenStub.resolves(
+      opts.areSecondaryAccountsFrozen
+    ),
     isEqual: identityIsEqualStub.returns(opts.isEqual),
     exists: identityExistsStub.resolves(opts.exists),
     isCddProvider: identityIsCddProviderStub.resolves(opts.isCddProvider),
@@ -1433,14 +1435,14 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityCheckRolesStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
-  identityGetPrimaryKeyStub = sinon.stub();
+  identityGetPrimaryAccountStub = sinon.stub();
   identityAuthorizationsGetReceivedStub = sinon.stub();
   identityAuthorizationsGetSentStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
   identityGetTokenBalanceStub = sinon.stub();
-  identityGetSecondaryKeysStub = sinon.stub();
-  identityAreSecondaryKeysFrozenStub = sinon.stub();
+  identityGetSecondaryAccountsStub = sinon.stub();
+  identityAreSecondaryAccountsFrozenStub = sinon.stub();
   identityIsEqualStub = sinon.stub();
   identityTokenPermissionsGetStub = sinon.stub();
   identityTokenPermissionsGetGroupStub = sinon.stub();
@@ -2075,10 +2077,10 @@ export function getIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.getPrimaryKey` method
+ * Retrieve the stub of the `Identity.getPrimaryAccount` method
  */
-export function getIdentityGetPrimaryKeyStub(): SinonStub {
-  return identityGetPrimaryKeyStub;
+export function getIdentityGetPrimaryAccountStub(): SinonStub {
+  return identityGetPrimaryAccountStub;
 }
 
 /**

@@ -58,7 +58,7 @@ describe('leaveIdentity procedure', () => {
     expect(error.message).toBe('There is no Identity associated to this Account');
   });
 
-  test('should throw an error if the Account is not a secondary key', async () => {
+  test('should throw an error if the Account is not a secondary Account', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance();
 
@@ -70,10 +70,10 @@ describe('leaveIdentity procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Only Secondary Keys are allowed to leave an Identity');
+    expect(error.message).toBe('Only secondary Accounts are allowed to leave an Identity');
   });
 
-  test('should add a leave identity as key transaction to the queue', async () => {
+  test('should add a leave identity as Account transaction to the queue', async () => {
     const address = 'someAddress';
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
     const leaveIdentityAsKeyTransaction = dsMockUtils.createTxStub(
@@ -83,7 +83,7 @@ describe('leaveIdentity procedure', () => {
     const account = entityMockUtils.getAccountInstance({
       address,
       getIdentity: entityMockUtils.getIdentityInstance({
-        getSecondaryKeys: [
+        getSecondaryAccounts: [
           ({
             account: entityMockUtils.getAccountInstance({ address }),
           } as unknown) as PermissionedAccount,

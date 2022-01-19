@@ -132,13 +132,13 @@ export async function assertPortfolioExists(
 /**
  * @hidden
  */
-export function assertSecondaryKeys(
+export function assertSecondaryAccounts(
   accounts: Account[],
-  secondaryKeys: PermissionedAccount[]
+  secondaryAccounts: PermissionedAccount[]
 ): void {
   const notInTheList: string[] = [];
   accounts.forEach(({ address }) => {
-    const isPresent = secondaryKeys.find(
+    const isPresent = secondaryAccounts.find(
       ({ account: { address: existingAddress } }) => existingAddress === address
     );
     if (!isPresent) {
@@ -149,7 +149,7 @@ export function assertSecondaryKeys(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'One of the Signers is not a Secondary Key for the Identity',
+      message: 'One of the Signers is not a secondary Account for the Identity',
       data: {
         missing: notInTheList,
       },
@@ -391,7 +391,7 @@ export async function assertAuthorizationRequestValid(
 /**
  * @hidden
  *
- * Asserts valid  primary key rotation authorization
+ * Asserts valid primary key rotation authorization
  */
 export async function assertPrimaryKeyRotationAuthorizationValid(
   authRequest: AuthorizationRequest
@@ -399,7 +399,7 @@ export async function assertPrimaryKeyRotationAuthorizationValid(
   if (authRequest.target instanceof Identity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'An Identity can not become the primary key of another Identity',
+      message: 'An Identity can not become the primary Account of another Identity',
     });
   }
 }

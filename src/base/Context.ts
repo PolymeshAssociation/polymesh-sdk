@@ -320,7 +320,7 @@ export class Context {
   }
 
   /**
-   * Retrieve the account level POLYX balance
+   * Retrieve the Account POLYX balance
    *
    * @note can be subscribed to
    */
@@ -379,7 +379,7 @@ export class Context {
   }
 
   /**
-   * Retrieve the account level subsidizer relationship. If there is no such relationship, return null
+   * Retrieve the Account level subsidizer relationship. If there is no such relationship, return null
    *
    * @note can be subscribed to
    */
@@ -550,7 +550,7 @@ export class Context {
    *
    * @param tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
    */
-  public async getTransactionFees(tag: TxTag): Promise<BigNumber> {
+  public async getProtocolFees(tag: TxTag): Promise<BigNumber> {
     const {
       polymeshApi: {
         query: { protocolFee },

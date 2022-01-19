@@ -108,7 +108,7 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * account that will sign the transaction
+   * Account that will sign the transaction
    */
   protected signer: AddressOrPair;
 
@@ -304,7 +304,7 @@ export abstract class PolymeshTransactionBase<
     const { paidForBy, context, tag } = this;
 
     if (paidForBy) {
-      const { account } = await paidForBy.getPrimaryKey();
+      const { account } = await paidForBy.getPrimaryAccount();
 
       return {
         account,
@@ -349,7 +349,7 @@ export abstract class PolymeshTransactionBase<
     const paymentInfoPromise = composedTx.paymentInfo(signer);
 
     if (!protocolFee) {
-      protocolFee = await context.getTransactionFees(this.tag);
+      protocolFee = await context.getProtocolFees(this.tag);
     }
 
     const { partialFee } = await paymentInfoPromise;
