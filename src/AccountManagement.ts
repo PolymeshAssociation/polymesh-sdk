@@ -15,7 +15,6 @@ import {
   NoArgsProcedureMethod,
   PermissionType,
   ProcedureMethod,
-  Signer,
   SubCallback,
   UnsubCallback,
 } from '~/types';
