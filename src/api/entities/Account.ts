@@ -65,7 +65,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents an account in the Polymesh blockchain. Accounts can hold POLYX, control Identities and vote on proposals (among other things)
+ * Represents an Account in the Polymesh blockchain. Accounts can hold POLYX, control Identities and vote on proposals (among other things)
  */
 export class Account extends Entity<UniqueIdentifiers, string> {
   /**
@@ -84,7 +84,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public address: string;
 
   /**
-   * public key of the Account. This is a hex representation of the address that is transversal to any Substrate chain
+   * A hex representation of the cryptographic public key of the Account. This is consistent across
+   * Substrate chains, while the address depends on the chain as well.
    */
   public key: string;
 
@@ -112,7 +113,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Leave the Account's Identity. This operation can only be done if the Account is a secondary key for the Identity
+   * Leave the Account's Identity. This operation can only be done if the Account is a secondary Account for the Identity
    */
   public leaveIdentity: NoArgsProcedureMethod<void>;
 
@@ -295,7 +296,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary key of the Identity unfreezes all secondary keys
+   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary Account of the Identity unfreezes all secondary Accounts
    */
   public async isFrozen(): Promise<boolean> {
     const { address } = this;
@@ -306,29 +307,29 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       return false;
     }
 
-    const primaryKey = await identity.getPrimaryKey();
+    const primaryAccount = await identity.getPrimaryAccount();
 
-    if (address === primaryKey.address) {
+    if (address === primaryAccount.address) {
       return false;
     }
 
-    return identity.areSecondaryKeysFrozen();
+    return identity.areSecondaryAccountsFrozen();
   }
 
   /**
-   * Retrieve the Permissions this Account has as a Signing Key for its corresponding Identity
+   * Retrieve the Permissions this Account has as a Permissioned Account for its corresponding Identity
    */
   public async getPermissions(): Promise<Permissions> {
     const { context, address } = this;
 
     const currentIdentity = await context.getCurrentIdentity();
 
-    const [primaryKey, secondaryKeys] = await Promise.all([
-      currentIdentity.getPrimaryKey(),
-      currentIdentity.getSecondaryKeys(),
+    const [primaryAccount, secondaryAccount] = await Promise.all([
+      currentIdentity.getPrimaryAccount(),
+      currentIdentity.getSecondaryAccounts(),
     ]);
 
-    if (address === primaryKey.address) {
+    if (address === primaryAccount.address) {
       return {
         tokens: null,
         transactions: null,
@@ -338,13 +339,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const key = secondaryKeys.find(({ signer }) => address === signerToString(signer))!;
+    const account = secondaryAccount.find(({ signer }) => address === signerToString(signer))!;
 
-    return key.permissions;
+    return account.permissions;
   }
 
   /**
-   * Check if this Account posseses certain Permissions to act on behalf of its corresponding Identity
+   * Check if this Account possesses certain Permissions to act on behalf of its corresponding Identity
    *
    * @return which permissions the Account is missing (if any) and the final result
    */
@@ -469,7 +470,7 @@ function getMissingTransactionPermissions(
   requiredPermissions: TxTag[] | null | undefined,
   currentPermissions: TransactionPermissions | null
 ): SimplePermissions['transactions'] {
-  // these transactions are allowed to any account, independent of permissions
+  // these transactions are allowed to any Account, independent of permissions
   const exemptedTransactions: (TxTag | ModuleName)[] = [
     TxTags.identity.LeaveIdentityAsKey,
     TxTags.identity.JoinIdentityAsKey,

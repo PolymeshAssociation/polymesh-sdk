@@ -108,7 +108,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     ).rejects.toThrow('The Authorization Request has expired');
   });
 
-  test('should throw an error if the passed account is already part of an Identity', async () => {
+  test('should throw an error if the passed Account is already part of an Identity', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );

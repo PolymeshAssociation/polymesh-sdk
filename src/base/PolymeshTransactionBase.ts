@@ -108,7 +108,7 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * account that will sign the transaction
+   * Account that will sign the transaction
    */
   protected signer: AddressOrPair;
 
@@ -304,10 +304,10 @@ export abstract class PolymeshTransactionBase<
     const { paidForBy, context, tag } = this;
 
     if (paidForBy) {
-      const primaryKey = await paidForBy.getPrimaryKey();
+      const primaryAccount = await paidForBy.getPrimaryAccount();
 
       return {
-        account: primaryKey,
+        account: primaryAccount,
         allowance: null,
       };
     }

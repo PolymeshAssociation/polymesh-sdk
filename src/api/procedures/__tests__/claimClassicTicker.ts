@@ -178,7 +178,7 @@ describe('claimClassicTicker procedure', () => {
     }
 
     expect(error.message).toBe(
-      'The account that signed the message is not the classic Ticker owner'
+      'The Account that signed the message is not the classic Ticker owner'
     );
     expect(error.data).toEqual({
       signerAddress: ethereumAddress,

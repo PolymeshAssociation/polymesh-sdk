@@ -30,7 +30,7 @@ import {
   Order,
   ResultSet,
   Role,
-  SecondaryKey,
+  SecondaryAccount,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -252,15 +252,17 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the primary key associated with the Identity
+   * Retrieve the primary Account associated with the Identity
    *
    * @note can be subscribed to
    */
-  public async getPrimaryKey(): Promise<Account>;
-  public async getPrimaryKey(callback: SubCallback<Account>): Promise<UnsubCallback>;
+  public async getPrimaryAccount(): Promise<Account>;
+  public async getPrimaryAccount(callback: SubCallback<Account>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getPrimaryKey(callback?: SubCallback<Account>): Promise<Account | UnsubCallback> {
+  public async getPrimaryAccount(
+    callback?: SubCallback<Account>
+  ): Promise<Account | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -555,15 +557,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether secondary keys are frozen
+   * Check whether secondary Accounts are frozen
    *
    * @note can be subscribed to
    */
-  public areSecondaryKeysFrozen(): Promise<boolean>;
-  public areSecondaryKeysFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
+  public areSecondaryAccountsFrozen(): Promise<boolean>;
+  public areSecondaryAccountsFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async areSecondaryKeysFrozen(
+  public async areSecondaryAccountsFrozen(
     callback?: SubCallback<boolean>
   ): Promise<boolean | UnsubCallback> {
     const {
@@ -648,17 +650,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Get the list of secondary keys related to the Identity
+   * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
    */
-  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
-  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
+  public async getSecondaryAccounts(): Promise<SecondaryAccount[]>;
+  public async getSecondaryAccounts(
+    callback: SubCallback<SecondaryAccount[]>
+  ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSecondaryKeys(
-    callback?: SubCallback<SecondaryKey[]>
-  ): Promise<SecondaryKey[] | UnsubCallback> {
+  public async getSecondaryAccounts(
+    callback?: SubCallback<SecondaryAccount[]>
+  ): Promise<SecondaryAccount[] | UnsubCallback> {
     const {
       did,
       context,
@@ -669,8 +673,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
-      return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
+    const assembleResult = ({
+      secondary_keys: secondaryAccounts,
+    }: DidRecord): SecondaryAccount[] => {
+      return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
         signer: signerValueToSigner(signatoryToSignerValue(rawSigner), context),
         permissions: meshPermissionsToPermissions(permissions, context),
       }));

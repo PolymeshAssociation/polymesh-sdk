@@ -421,7 +421,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the account POLYX balance if currentPair is set', async () => {
+    test('should return the Account POLYX balance if currentPair is set', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -449,7 +449,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the account POLYX balance if accountId is set', async () => {
+    test('should return the Account POLYX balance if accountId is set', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -531,7 +531,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the account subsidizer and allowance if currentPair is set', async () => {
+    test('should return the Account subsidizer and allowance if currentPair is set', async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -556,7 +556,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the account subsidizer and allowance if accountId is set', async () => {
+    test('should return the Account subsidizer and allowance if accountId is set', async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -581,7 +581,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return null if the account has no subsidizer', async () => {
+    test('should return null if the Account has no subsidizer', async () => {
       const returnValue = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
@@ -686,7 +686,7 @@ describe('Context class', () => {
       expect(result.address).toBe(address);
     });
 
-    test('should throw an error if there is no account associated with the SDK', async () => {
+    test('should throw an error if there is no Account associated with the SDK', async () => {
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: [],

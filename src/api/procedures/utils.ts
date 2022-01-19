@@ -32,7 +32,7 @@ import {
   InstructionStatus,
   InstructionType,
   PermissionGroupType,
-  SecondaryKey,
+  SecondaryAccount,
   Signer,
   SignerValue,
   TickerReservationStatus,
@@ -134,13 +134,13 @@ export async function assertPortfolioExists(
 /**
  * @hidden
  */
-export function assertSecondaryKeys(
+export function assertSecondaryAccounts(
   signerValues: SignerValue[],
-  secondaryKeys: SecondaryKey[]
+  secondaryAccounts: SecondaryAccount[]
 ): void {
   const notInTheList: string[] = [];
   signerValues.forEach(({ value: itemValue }) => {
-    const isPresent = secondaryKeys
+    const isPresent = secondaryAccounts
       .map(({ signer }) => signerToSignerValue(signer))
       .find(({ value }) => value === itemValue);
     if (!isPresent) {
@@ -151,7 +151,7 @@ export function assertSecondaryKeys(
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'One of the Signers is not a Secondary Key for the Identity',
+      message: 'One of the Signers is not a secondary Account for the Identity',
       data: {
         missing: notInTheList,
       },
@@ -393,7 +393,7 @@ export async function assertAuthorizationRequestValid(
 /**
  * @hidden
  *
- * Asserts valid  primary key rotation authorization
+ * Asserts valid primary key rotation authorization
  */
 export async function assertPrimaryKeyRotationAuthorizationValid(
   authRequest: AuthorizationRequest
@@ -401,7 +401,7 @@ export async function assertPrimaryKeyRotationAuthorizationValid(
   if (authRequest.target instanceof Identity) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'An Identity can not become the primary key of another Identity',
+      message: 'An Identity can not become the primary Account of another Identity',
     });
   }
 }

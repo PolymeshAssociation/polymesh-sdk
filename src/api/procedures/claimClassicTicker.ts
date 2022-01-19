@@ -114,7 +114,7 @@ export async function prepareClaimClassicTicker(
   if (signerAddress !== u8aToString(ethOwner).toLowerCase()) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The account that signed the message is not the classic Ticker owner',
+      message: 'The Account that signed the message is not the classic Ticker owner',
       data: {
         signerAddress,
       },

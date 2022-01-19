@@ -1,4 +1,4 @@
-import { assertSecondaryKeys } from '~/api/procedures/utils';
+import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Procedure } from '~/internal';
 import { PermissionsLike, Signer, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
@@ -11,9 +11,9 @@ import {
 
 export interface ModifySignerPermissionsParams {
   /**
-   * list of secondary keys
+   * list of secondary accounts
    */
-  secondaryKeys: {
+  secondaryAccounts: {
     signer: Signer;
     /**
      * list of permissions
@@ -36,11 +36,11 @@ export async function prepareModifySignerPermissions(
     context,
   } = this;
 
-  const { secondaryKeys: signers } = args;
+  const { secondaryAccounts: signers } = args;
 
   const identity = await context.getCurrentIdentity();
 
-  const secondaryKeys = await identity.getSecondaryKeys();
+  const secondaryAccounts = await identity.getSecondaryAccounts();
   const signerValues = signers.map(({ signer, permissions }) => {
     return {
       signer: signerToSignerValue(signer),
@@ -48,9 +48,9 @@ export async function prepareModifySignerPermissions(
     };
   });
 
-  assertSecondaryKeys(
+  assertSecondaryAccounts(
     signerValues.map(({ signer }) => signer),
-    secondaryKeys
+    secondaryAccounts
   );
 
   const signersList = signerValues.map(({ signer, permissions: permissionsLike }) => {
