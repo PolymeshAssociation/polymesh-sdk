@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  ConsumeRotatePrimaryKeyToSecondaryAuthorization,
   consumeRotatePrimaryKeyToSecondaryAuthorization,
+  ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
 } from '~/api/procedures/consumeRotatePrimaryKeyToSecondaryAuthorization';
 import {
   consumeAddMultiSigSignerAuthorization,
@@ -120,7 +120,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinIdentityAuthorizationParams
       | ConsumeAddMultiSigSignerAuthorizationParams
-      | ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+      | ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any

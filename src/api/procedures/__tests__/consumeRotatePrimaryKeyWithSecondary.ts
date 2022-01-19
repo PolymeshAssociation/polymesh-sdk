@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+  ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
   getAuthorization,
   prepareConsumeRotatePrimaryKeyToSecondaryAuthorization,
   prepareStorage,
@@ -90,7 +90,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
 
   test('should throw an error if the Authorization Request is expired', () => {
     const proc = procedureMockUtils.getInstance<
-      ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+      ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -127,7 +127,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
 
   test('should throw an error if the target Account is already part of an Identity', () => {
     const proc = procedureMockUtils.getInstance<
-      ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+      ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -164,7 +164,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
 
   test('should add a rotatePrimaryKeyToSecondary transaction to the queue if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<
-      ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+      ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -207,7 +207,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
 
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
     let proc = procedureMockUtils.getInstance<
-      ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+      ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -252,7 +252,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
 
     target = targetAccount;
     proc = procedureMockUtils.getInstance<
-      ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+      ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -295,7 +295,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
   describe('prepareStorage', () => {
     test("should return the current Account, whether the target is the caller and the target's identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
-        ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+        ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
         void,
         Storage
       >(mockContext);
@@ -304,7 +304,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
 
       const result = await boundFunc(({
         authRequest: { target },
-      } as unknown) as ConsumeRotatePrimaryKeyToSecondaryAuthorization);
+      } as unknown) as ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams);
 
       expect(result).toEqual({
         currentAccount: mockContext.getCurrentAccount(),
@@ -316,7 +316,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<
-        ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+        ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
         void,
         Storage
       >(mockContext, {
@@ -365,7 +365,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
       mockContext.getCurrentAccount.returns(targetAccount);
 
       proc = procedureMockUtils.getInstance<
-        ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+        ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
         void,
         Storage
       >(mockContext, {
@@ -389,7 +389,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
       });
 
       proc = procedureMockUtils.getInstance<
-        ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+        ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
         void,
         Storage
       >(mockContext, {
@@ -416,7 +416,7 @@ describe('consumeRotatePrimaryKeyWithSecondary procedure', () => {
       targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
 
       proc = procedureMockUtils.getInstance<
-        ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+        ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
         void,
         Storage
       >(mockContext, {

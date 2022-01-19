@@ -13,7 +13,7 @@ import {
 /**
  * @hidden
  */
-export interface ConsumeRotatePrimaryKeyToSecondaryAuthorization {
+export interface ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams {
   authRequest: AuthorizationRequest;
   accept: boolean;
 }
@@ -27,8 +27,8 @@ export interface Storage {
  * @hidden
  */
 export async function prepareConsumeRotatePrimaryKeyToSecondaryAuthorization(
-  this: Procedure<ConsumeRotatePrimaryKeyToSecondaryAuthorization, void, Storage>,
-  args: ConsumeRotatePrimaryKeyToSecondaryAuthorization
+  this: Procedure<ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams, void, Storage>,
+  args: ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams
 ): Promise<void> {
   const {
     context: {
@@ -75,8 +75,8 @@ export async function prepareConsumeRotatePrimaryKeyToSecondaryAuthorization(
  * - If the auth is being rejected, we check that the caller is either the target or the issuer
  */
 export async function getAuthorization(
-  this: Procedure<ConsumeRotatePrimaryKeyToSecondaryAuthorization, void, Storage>,
-  { authRequest, accept }: ConsumeRotatePrimaryKeyToSecondaryAuthorization
+  this: Procedure<ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams, void, Storage>,
+  { authRequest, accept }: ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams
 ): Promise<ProcedureAuthorization> {
   const { issuer } = authRequest;
   const {
@@ -126,8 +126,8 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<ConsumeRotatePrimaryKeyToSecondaryAuthorization, void, Storage>,
-  { authRequest: { target } }: ConsumeRotatePrimaryKeyToSecondaryAuthorization
+  this: Procedure<ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams, void, Storage>,
+  { authRequest: { target } }: ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams
 ): Promise<Storage> {
   const { context } = this;
 
@@ -146,7 +146,7 @@ export async function prepareStorage(
  * @hidden
  */
 export const consumeRotatePrimaryKeyToSecondaryAuthorization = (): Procedure<
-  ConsumeRotatePrimaryKeyToSecondaryAuthorization,
+  ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
   void,
   Storage
 > =>

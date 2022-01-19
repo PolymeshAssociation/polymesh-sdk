@@ -1091,7 +1091,7 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
     value = stringToTicker(auth.value, context);
   } else if (auth.type === AuthorizationType.RotatePrimaryKeyToSecondary) {
-    value = null;
+    value = permissionsToMeshPermissions(auth.value, context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
     const ticker = stringToTicker(auth.value.token.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {

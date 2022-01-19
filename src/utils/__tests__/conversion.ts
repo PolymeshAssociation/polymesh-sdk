@@ -1077,6 +1077,26 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.JoinIdentity,
+      value: {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      },
+    };
+
+    createTypeStub.withArgs('Permissions', sinon.match(sinon.match.object)).returns(rawPermissions);
+    createTypeStub
+      .withArgs('AuthorizationData', {
+        [value.type]: rawPermissions,
+      })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {

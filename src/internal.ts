@@ -17,6 +17,10 @@ export {
   ConsumeJoinIdentityAuthorizationParams,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
 export {
+  ConsumeRotatePrimaryKeyToSecondaryAuthorizationParams,
+  consumeRotatePrimaryKeyToSecondaryAuthorization,
+} from '~/api/procedures/consumeRotatePrimaryKeyToSecondaryAuthorization';
+export {
   addInstruction,
   AddInstructionParams,
   AddInstructionsParams,

@@ -135,6 +135,43 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
+    test('should prepare the consumeJoinIdentityAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: {
+            type: AuthorizationType.RotatePrimaryKeyToSecondary,
+            value: {
+              tokens: null,
+              transactions: null,
+              transactionGroups: [],
+              portfolios: null,
+            },
+          },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+        accept: true,
+      };
+
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await authorizationRequest.accept();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
     test('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
@@ -270,6 +307,43 @@ describe('AuthorizationRequest class', () => {
 
       expect(queue).toBe(expectedQueue);
     });
+  });
+
+  test('should prepare the consumeRotatePrimaryKeyToSecondary procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    const authorizationRequest = new AuthorizationRequest(
+      {
+        authId: new BigNumber(1),
+        expiry: null,
+        target: new Identity({ did: 'someDid' }, context),
+        issuer: new Identity({ did: 'otherDid' }, context),
+        data: {
+          type: AuthorizationType.RotatePrimaryKeyToSecondary,
+          value: {
+            tokens: null,
+            transactions: null,
+            transactionGroups: [],
+            portfolios: null,
+          },
+        },
+      },
+      context
+    );
+
+    const args = {
+      authRequest: authorizationRequest,
+      accept: false,
+    };
+
+    const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+
+    procedureMockUtils
+      .getPrepareStub()
+      .withArgs({ args, transformer: undefined }, context)
+      .resolves(expectedQueue);
+
+    const queue = await authorizationRequest.remove();
+
+    expect(queue).toBe(expectedQueue);
   });
 
   describe('method: isExpired', () => {

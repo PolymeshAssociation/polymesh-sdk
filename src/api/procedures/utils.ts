@@ -381,11 +381,11 @@ export async function assertAuthorizationRequestValid(
       // no additional checks
       return;
     case AuthorizationType.JoinIdentity:
-      return assertJoinIdentityAuthorizationValid(authRequest);
+      return assertAccountRotationAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
       return assertAddRelayerPayingKeyAuthorizationValid(data);
     case AuthorizationType.RotatePrimaryKeyToSecondary:
-      return assertRotatePrimaryKeyToSecondaryAuthorizationValid(authRequest);
+      return assertAccountRotationAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -470,35 +470,6 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid join identity authorization request
- */
-export async function assertJoinIdentityAuthorizationValid(
-  authRequest: AuthorizationRequest
-): Promise<void> {
-  const issuer = authRequest.issuer;
-  const target = authRequest.target;
-  const hasValidCdd = await issuer.hasValidCdd();
-  if (!hasValidCdd) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Issuing Identity does not have a valid CDD claim',
-    });
-  }
-
-  assertIsAccount(target);
-
-  const targetIdentity = await target.getIdentity();
-  if (targetIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The target Account already has an associated Identity',
-    });
-  }
-}
-
-/**
- * @hidden
- *
  * Asserts valid add relayer paying key authorization
  */
 export async function assertAddRelayerPayingKeyAuthorizationValid(
@@ -545,12 +516,25 @@ export async function assertAddRelayerPayingKeyAuthorizationValid(
 }
 
 /**
- *
  * @hidden
  *
- * Asserts valid rotate primary key to secondary authorization
+ * Assert the target is an Account
  */
-export async function assertRotatePrimaryKeyToSecondaryAuthorizationValid(
+function assertIsAccount(target: Signer): asserts target is Account {
+  if (target instanceof Identity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target cannot be an Identity',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid request for becoming a Primary Account (JoinIdentity and RotatePrimaryKeyToSecondary)
+ */
+async function assertAccountRotationAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   const issuer = authRequest.issuer;
@@ -570,20 +554,6 @@ export async function assertRotatePrimaryKeyToSecondaryAuthorizationValid(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The target Account already has an associated Identity',
-    });
-  }
-}
-
-/**
- * @hidden
- *
- * Assert the target is an Account
- */
-function assertIsAccount(target: Signer): asserts target is Account {
-  if (target instanceof Identity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The target cannot be an Identity',
     });
   }
 }

@@ -1245,11 +1245,11 @@ describe('authorization request validations', () => {
       value: permissions,
     };
     test('should not throw with a valid request', async () => {
-      const mockTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
+      const validTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
-          target: mockTarget,
+          target: validTarget,
           issuer,
           expiry,
           data,
@@ -1267,12 +1267,12 @@ describe('authorization request validations', () => {
     });
 
     test('should throw when the issuer lacks a valid CDD', async () => {
-      const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: false });
+      const noCddIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: false });
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
           target,
-          issuer: mockIssuer,
+          issuer: noCddIssuer,
           expiry,
           data,
         },
@@ -1294,11 +1294,11 @@ describe('authorization request validations', () => {
 
     test('should throw when the target is an Identity', async () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
-      const mockTarget = entityMockUtils.getIdentityInstance();
+      const identityTarget = entityMockUtils.getIdentityInstance();
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
-          target: mockTarget,
+          target: identityTarget,
           issuer: mockIssuer,
           expiry,
           data,
@@ -1321,13 +1321,13 @@ describe('authorization request validations', () => {
 
     test('should throw if the target already has an Identity', async () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
-      const mockTarget = entityMockUtils.getAccountInstance({
+      const unavailableTarget = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance(),
       });
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
-          target: mockTarget,
+          target: unavailableTarget,
           issuer: mockIssuer,
           expiry,
           data,
