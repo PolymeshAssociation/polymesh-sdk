@@ -165,7 +165,7 @@ import {
   RequirementCompliance,
   Scope,
   ScopeType,
-  SecondaryKey,
+  SecondaryAccount,
   SectionPermissions,
   SecurityIdentifier,
   SecurityIdentifierType,
@@ -2555,8 +2555,8 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
 /**
  * @hidden
  */
-export function secondaryKeyToMeshSecondaryKey(
-  secondaryKey: SecondaryKey,
+export function secondaryAccountToMeshSecondaryKey(
+  secondaryKey: SecondaryAccount,
   context: Context
 ): MeshSecondaryKey {
   const { polymeshApi } = context;

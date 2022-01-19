@@ -2,22 +2,22 @@ import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  prepareRemoveSecondaryKeys,
-  RemoveSecondaryKeysParams,
-} from '~/api/procedures/removeSecondaryKeys';
+  prepareRemoveSecondaryAccounts,
+  RemoveSecondaryAccountsParams,
+} from '~/api/procedures/removeSecondaryAccounts';
 import { Account, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('removeSecondaryKeys procedure', () => {
+describe('removeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
 
-  let args: RemoveSecondaryKeysParams;
+  let args: RemoveSecondaryAccountsParams;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -59,7 +59,7 @@ describe('removeSecondaryKeys procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
-        secondaryKeys: signers.map(signer => ({
+        secondaryAccounts: signers.map(signer => ({
           signer,
           permissions: {
             assets: null,
@@ -74,47 +74,47 @@ describe('removeSecondaryKeys procedure', () => {
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
 
-    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeSecondaryKeys');
 
-    await prepareRemoveSecondaryKeys.call(proc, args);
+    await prepareRemoveSecondaryAccounts.call(proc, args);
 
     sinon.assert.calledWith(addTransactionStub, transaction, {}, [rawSignatory]);
   });
 
-  test('should throw an error if attempting to remove the primary key', () => {
-    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
-    const signer = entityMockUtils.getAccountInstance({ address: 'primaryKey' });
+  test('should throw an error if attempting to remove the primary Account', () => {
+    const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
+    const signer = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
 
     signerToSignerValueStub
       .withArgs(signer)
       .returns({ type: SignerType.Account, value: signer.address });
 
     return expect(
-      prepareRemoveSecondaryKeys.call(proc, {
+      prepareRemoveSecondaryAccounts.call(proc, {
         ...args,
         signers: [signer],
       })
-    ).rejects.toThrow('You cannot remove the primary key');
+    ).rejects.toThrow('You cannot remove the primary Account');
   });
 
-  test('should throw an error if at least one of the secondary keys to remove is not present in the secondary keys list', () => {
+  test('should throw an error if at least one of the secondary Accounts to remove is not present in the secondary Accounts list', () => {
     const { signers } = args;
     const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
 
     signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
 
-    const proc = procedureMockUtils.getInstance<RemoveSecondaryKeysParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
 
     return expect(
-      prepareRemoveSecondaryKeys.call(proc, {
+      prepareRemoveSecondaryAccounts.call(proc, {
         ...args,
         identity: entityMockUtils.getIdentityInstance({
-          getPrimaryKey: entityMockUtils.getAccountInstance({ address: 'primaryKey' }),
-          getSecondaryKeys: [],
+          getPrimaryAccount: entityMockUtils.getAccountInstance({ address: 'primaryAccount' }),
+          getSecondaryAccounts: [],
         }),
       })
-    ).rejects.toThrow('One of the Signers is not a Secondary Key for the Identity');
+    ).rejects.toThrow('One of the Signers is not a secondary Account for the Identity');
   });
 });

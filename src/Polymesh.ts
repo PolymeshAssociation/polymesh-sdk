@@ -11,26 +11,18 @@ import { satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 import WebSocketAsPromised from 'websocket-as-promised';
 
+import { AccountManagement } from '~/AccountManagement';
 import { Assets } from '~/Assets';
 import { Identities } from '~/Identities';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Settlements } from '~/Settlements';
-import {
-  AccountBalance,
-  CommonKeyring,
-  ErrorCode,
-  MiddlewareConfig,
-  SubCallback,
-  UiKeyring,
-  UnsubCallback,
-} from '~/types';
+import { CommonKeyring, ErrorCode, MiddlewareConfig, UiKeyring } from '~/types';
+import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 import { signerToString } from '~/utils/conversion';
 
 import { Claims } from './Claims';
-import { CurrentIdentity } from './CurrentIdentity';
 import { Network } from './Network';
-import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -55,8 +47,10 @@ export class Polymesh {
    * A set of methods for exchanging Assets
    */
   public settlements: Settlements;
-
-  public currentIdentity: CurrentIdentity;
+  /**
+   * A set of methods for managing a Polymesh Identity's Accounts and their permissions
+   */
+  public accountManagement: AccountManagement;
   /**
    * A set of methods for interacting with Polymesh Identities.
    */
@@ -75,7 +69,7 @@ export class Polymesh {
     this.claims = new Claims(context);
     this.network = new Network(context);
     this.settlements = new Settlements(context);
-    this.currentIdentity = new CurrentIdentity(context);
+    this.accountManagement = new AccountManagement(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
   }
@@ -261,82 +255,10 @@ export class Polymesh {
   }
 
   /**
-   * Get the free/locked POLYX balance of an Account
-   *
-   * @param args.account - defaults to the current Account
-   *
-   * @note can be subscribed to
-   */
-  public getAccountBalance(args?: { account: string | Account }): Promise<AccountBalance>;
-  public getAccountBalance(callback: SubCallback<AccountBalance>): Promise<UnsubCallback>;
-  public getAccountBalance(
-    args: { account: string | Account },
-    callback: SubCallback<AccountBalance>
-  ): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public getAccountBalance(
-    args?: { account: string | Account } | SubCallback<AccountBalance>,
-    callback?: SubCallback<AccountBalance>
-  ): Promise<AccountBalance | UnsubCallback> {
-    const { context } = this;
-    let account: string | Account | undefined;
-    let cb: SubCallback<AccountBalance> | undefined = callback;
-
-    switch (typeof args) {
-      case 'undefined': {
-        break;
-      }
-      case 'function': {
-        cb = args;
-        break;
-      }
-      default: {
-        ({ account } = args);
-        break;
-      }
-    }
-
-    if (!account) {
-      account = context.getCurrentAccount();
-    } else if (typeof account === 'string') {
-      account = new Account({ address: account }, context);
-    }
-
-    if (cb) {
-      return account.getBalance(cb);
-    }
-
-    return account.getBalance();
-  }
-
-  /**
    * Retrieve the Identity associated to the current Account (null if there is none)
    */
   public getCurrentIdentity(): Promise<Identity | null> {
     return this.context.getCurrentAccount().getIdentity();
-  }
-
-  /**
-   * Create an Account instance from an address. If no address is passed, the current Account is returned
-   */
-  public getAccount(args?: { address: string }): Account {
-    const { context } = this;
-
-    if (args) {
-      return new Account(args, context);
-    }
-
-    return context.getCurrentAccount();
-  }
-
-  /**
-   * Return a list that contains all the signing Accounts associated to the SDK instance
-   *
-   * @throws — if there is no current Account associated to the SDK instance
-   */
-  public getAccounts(): Account[] {
-    return this.context.getAccounts();
   }
 
   /**
