@@ -9,13 +9,13 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/consumeJoinIdentityAuthorization';
-import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
+import { Account, AuthorizationRequest, Context, Identity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Signer, TxTags } from '~/types';
+import { Authorization, AuthorizationType, ErrorCode, Signer, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('consumeJoinSignerAuthorization procedure', () => {
+describe('consumeJoinIdentityAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
@@ -197,6 +197,99 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     });
 
     sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
+  });
+
+  test('should add a rotatePrimaryKeyToSecondary transaction to the queue if the target is an Account', async () => {
+    const proc = procedureMockUtils.getInstance<
+      ConsumeJoinIdentityAuthorizationParams,
+      void,
+      Storage
+    >(mockContext, {
+      currentAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const transaction = dsMockUtils.createTxStub('identity', 'rotatePrimaryKeyToSecondary');
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
+
+    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer,
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.RotatePrimaryKeyToSecondary,
+            value: {
+              tokens: null,
+              transactions: null,
+              transactionGroups: [],
+              portfolios: null,
+            },
+          },
+        },
+        mockContext
+      ),
+      accept: true,
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      transaction,
+      { paidForBy: issuer },
+      rawAuthId,
+      null
+    );
+  });
+
+  test('should throw if called with an Authorization that is not JoinIdentity or rotatePrimaryKeyToSecondary', async () => {
+    const proc = procedureMockUtils.getInstance<
+      ConsumeJoinIdentityAuthorizationParams,
+      void,
+      Storage
+    >(mockContext, {
+      currentAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
+
+    let error;
+    try {
+      await prepareConsumeJoinIdentityAuthorization.call(proc, {
+        authRequest: new AuthorizationRequest(
+          {
+            target,
+            issuer,
+            authId,
+            expiry: null,
+            data: {
+              type: AuthorizationType.RotatePrimaryKey,
+            },
+          },
+          mockContext
+        ),
+        accept: true,
+      });
+    } catch (err) {
+      error = err;
+    }
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message:
+        'Unrecognized auth type: "RotatePrimaryKey" for consumeJoinIdentityAuthorization method',
+    });
+    expect(error).toEqual(expectedError);
   });
 
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {

@@ -1,7 +1,8 @@
 import { TxTags } from 'polymesh-types/types';
 
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
+import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
+import { AuthorizationType, ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
@@ -25,6 +26,8 @@ export interface Storage {
 
 /**
  * @hidden
+ *
+ * Consumes JoinIdentity and RotatePrimaryKeyToSecondaryKey Authorizations
  */
 export async function prepareConsumeJoinIdentityAuthorization(
   this: Procedure<ConsumeJoinIdentityAuthorizationParams, void, Storage>,
@@ -40,7 +43,23 @@ export async function prepareConsumeJoinIdentityAuthorization(
     context,
   } = this;
   const { authRequest, accept } = args;
-  const { target, authId, issuer } = authRequest;
+
+  const {
+    target,
+    authId,
+    issuer,
+    data: { type },
+  } = authRequest;
+
+  if (
+    ![AuthorizationType.JoinIdentity, AuthorizationType.RotatePrimaryKeyToSecondary].includes(type)
+  ) {
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: `Unrecognized auth type: "${type}" for consumeJoinIdentityAuthorization method`,
+    });
+  }
+
   const rawAuthId = numberToU64(authId, context);
 
   if (!accept) {
@@ -62,7 +81,17 @@ export async function prepareConsumeJoinIdentityAuthorization(
   }
 
   await assertAuthorizationRequestValid(authRequest, context);
-  this.addTransaction(identity.joinIdentityAsKey, { paidForBy: issuer }, rawAuthId);
+
+  if (type === AuthorizationType.JoinIdentity) {
+    this.addTransaction(identity.joinIdentityAsKey, { paidForBy: issuer }, rawAuthId);
+  } else {
+    this.addTransaction(
+      identity.rotatePrimaryKeyToSecondary,
+      { paidForBy: issuer },
+      rawAuthId,
+      null
+    );
+  }
 }
 
 /**
@@ -79,8 +108,9 @@ export async function getAuthorization(
   const {
     storage: { currentAccount, calledByTarget },
   } = this;
-
   let hasRoles = calledByTarget;
+
+  const { type } = authRequest.data;
 
   /*
    * when accepting a JoinIdentity request, you don't need permissions (and can't have them by definition),
@@ -88,8 +118,7 @@ export async function getAuthorization(
    */
   if (accept) {
     return {
-      roles:
-        hasRoles || '"JoinIdentity" Authorization Requests must be accepted by the target Account',
+      roles: hasRoles || `"${type}" Authorization Requests must be accepted by the target Account`,
     };
   }
 
@@ -111,7 +140,7 @@ export async function getAuthorization(
   return {
     roles:
       hasRoles ||
-      '"JoinIdentity" Authorization Requests can only be removed by the issuer Identity or the target Account',
+      `"${type}" Authorization Requests can only be removed by the issuer Identity or the target Account`,
     permissions: {
       transactions: [TxTags.identity.RemoveAuthorization],
     },
