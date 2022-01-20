@@ -146,7 +146,6 @@ export async function getAuthorization(
       [AuthorizationType.RotatePrimaryKey]: TxTags.identity.AcceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: TxTags.asset.AcceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: TxTags.asset.AcceptTickerTransfer,
-      // [AuthorizationType.RotatePrimaryKeyToSecondary]: TxTags.identity.RotatePrimaryKeyToSecondary,
     } as const;
 
     transactions = authRequests.map(
