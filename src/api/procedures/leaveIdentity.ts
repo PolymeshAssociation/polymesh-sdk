@@ -32,14 +32,16 @@ export async function prepareLeaveIdentity(
     });
   }
 
-  const secondaryKeys = await currentIdentity.getSecondaryKeys();
+  const secondaryAccounts = await currentIdentity.getSecondaryAccounts();
   const { address } = account;
-  const isSecondaryKey = secondaryKeys.find(({ signer }) => address === signerToString(signer));
+  const isSecondaryAccount = secondaryAccounts.find(
+    ({ signer }) => address === signerToString(signer)
+  );
 
-  if (!isSecondaryKey) {
+  if (!isSecondaryAccount) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Only Secondary Keys are allowed to leave an Identity',
+      message: 'Only secondary Accounts are allowed to leave an Identity',
     });
   }
 

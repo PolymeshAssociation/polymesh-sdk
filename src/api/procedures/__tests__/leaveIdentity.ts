@@ -9,7 +9,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryKey } from '~/types';
+import { SecondaryAccount } from '~/types';
 
 jest.mock(
   '~/api/entities/SecurityToken',
@@ -58,7 +58,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(error.message).toBe('There is no Identity associated to this Account');
   });
 
-  test('should throw an error if the Account is not a secondary key', async () => {
+  test('should throw an error if the Account is not a secondary Account', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance();
 
@@ -70,10 +70,10 @@ describe('modifyCaCheckpoint procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('Only Secondary Keys are allowed to leave an Identity');
+    expect(error.message).toBe('Only secondary Accounts are allowed to leave an Identity');
   });
 
-  test('should add a leave identity as key transaction to the queue', async () => {
+  test('should add a leave identity as Account transaction to the queue', async () => {
     const address = 'someAddress';
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
     const leaveIdentityAsKeyTransaction = dsMockUtils.createTxStub(
@@ -83,10 +83,10 @@ describe('modifyCaCheckpoint procedure', () => {
     const account = entityMockUtils.getAccountInstance({
       address,
       getIdentity: entityMockUtils.getIdentityInstance({
-        getSecondaryKeys: [
+        getSecondaryAccounts: [
           ({
             signer: entityMockUtils.getAccountInstance({ address }),
-          } as unknown) as SecondaryKey,
+          } as unknown) as SecondaryAccount,
         ],
       }),
     });
