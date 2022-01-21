@@ -69,8 +69,6 @@ export class NumberedPortfolio extends Portfolio {
 
   /**
    * Return the Portfolio name
-   *
-   * @throws if the Portfolio does not exist
    */
   public async getName(): Promise<string> {
     const {
