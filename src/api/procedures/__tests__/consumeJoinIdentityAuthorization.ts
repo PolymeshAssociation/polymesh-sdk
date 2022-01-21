@@ -248,7 +248,7 @@ describe('consumeJoinIdentityAuthorization procedure', () => {
     );
   });
 
-  test('should throw if called with an Authorization that is not JoinIdentity or rotatePrimaryKeyToSecondary', async () => {
+  test('should throw if called with an Authorization that is not JoinIdentity or RotatePrimaryKeyToSecondary', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinIdentityAuthorizationParams,
       void,

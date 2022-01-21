@@ -381,11 +381,11 @@ export async function assertAuthorizationRequestValid(
       // no additional checks
       return;
     case AuthorizationType.JoinIdentity:
-      return assertAccountRotationAuthorizationValid(authRequest);
+      return assertJoinIdentityAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
       return assertAddRelayerPayingKeyAuthorizationValid(data);
     case AuthorizationType.RotatePrimaryKeyToSecondary:
-      return assertAccountRotationAuthorizationValid(authRequest);
+      return assertJoinIdentityAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -534,7 +534,7 @@ function assertIsAccount(target: Signer): asserts target is Account {
  *
  * Asserts valid request for becoming a Primary Account (JoinIdentity and RotatePrimaryKeyToSecondary)
  */
-async function assertAccountRotationAuthorizationValid(
+async function assertJoinIdentityAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   const issuer = authRequest.issuer;
