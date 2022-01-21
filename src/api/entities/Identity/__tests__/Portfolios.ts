@@ -170,22 +170,6 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: create', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const name = 'someName';
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { name }, transformer: undefined }, mockContext)
-        .resolves(expectedQueue);
-
-      const queue = await portfolios.create({ name });
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
   describe('method: delete', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolioId = new BigNumber(5);
