@@ -264,7 +264,7 @@ describe('Portfolio class', () => {
       exists = false;
 
       return expect(portfolio.getTokenBalances()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });
@@ -312,7 +312,7 @@ describe('Portfolio class', () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
 
       return expect(portfolio.getCustodian()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });
@@ -567,7 +567,7 @@ describe('Portfolio class', () => {
       );
 
       return expect(portfolio.getTransactionHistory()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });

@@ -51,7 +51,7 @@ interface HumanReadable {
   id?: string;
 }
 
-const notExistsMessage = 'The Portfolio was removed and no longer exists';
+const notExistsMessage = "The Portfolio doesn't exist or was removed by its owner";
 
 /**
  * Represents a base Portfolio for a specific Identity in the Polymesh blockchain

@@ -66,22 +66,6 @@ describe('deletePortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the portfolio does not exist', async () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        exists: false,
-      },
-    });
-    const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
-
-    return expect(
-      prepareDeletePortfolio.call(proc, {
-        id,
-        did,
-      })
-    ).rejects.toThrow("The Portfolio doesn't exist");
-  });
-
   test('should throw an error if the portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {

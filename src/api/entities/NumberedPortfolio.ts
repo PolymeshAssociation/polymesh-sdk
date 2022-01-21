@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Portfolio, renamePortfolio, RenamePortfolioParams } from '~/internal';
+import {
+  Context,
+  PolymeshError,
+  Portfolio,
+  renamePortfolio,
+  RenamePortfolioParams,
+} from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdentifier, ProcedureMethod } from '~/types';
+import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   middlewareEventToEventIdentifier,
@@ -63,6 +69,8 @@ export class NumberedPortfolio extends Portfolio {
 
   /**
    * Return the Portfolio name
+   *
+   * @throws if the Portfolio does not exist
    */
   public async getName(): Promise<string> {
     const {
@@ -75,9 +83,17 @@ export class NumberedPortfolio extends Portfolio {
       },
       context,
     } = this;
+    const [rawPortfolioName, exists] = await Promise.all([
+      portfolio.portfolios(did, numberToU64(id, context)),
+      this.exists(),
+    ]);
 
-    const rawPortfolioName = await portfolio.portfolios(did, numberToU64(id, context));
-
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The Portfolio doesn't exist",
+      });
+    }
     return textToString(rawPortfolioName);
   }
 

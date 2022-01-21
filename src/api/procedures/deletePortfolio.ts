@@ -31,17 +31,7 @@ export async function prepareDeletePortfolio(
   const numberedPortfolio = new NumberedPortfolio({ did, id }, context);
   const rawPortfolioNumber = numberToU64(id, context);
 
-  const [exists, portfolioBalances] = await Promise.all([
-    numberedPortfolio.exists(),
-    numberedPortfolio.getTokenBalances(),
-  ]);
-
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: "The Portfolio doesn't exist",
-    });
-  }
+  const portfolioBalances = await numberedPortfolio.getTokenBalances();
 
   if (portfolioBalances.some(({ total }) => total.gt(0))) {
     throw new PolymeshError({
