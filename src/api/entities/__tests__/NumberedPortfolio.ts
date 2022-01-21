@@ -107,7 +107,7 @@ describe('NumberedPortfolio class', () => {
       spy.mockRestore();
     });
 
-    test('should throw an error if the portfolio no longer exists', async () => {
+    test('should throw an error if the Portfolio no longer exists', async () => {
       const emptyName = dsMockUtils.createMockText('');
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         returnValue: emptyName,
