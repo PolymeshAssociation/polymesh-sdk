@@ -59,7 +59,6 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -121,12 +120,12 @@ describe('reclaimDividendDistributionFunds procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      const params = ({
+      const params = {
         distribution: {
           origin,
           token: { ticker },
         },
-      } as unknown) as Params;
+      } as unknown as Params;
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
@@ -137,8 +136,8 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
-          portfolios: [origin],
+          tokens: [expect.objectContaining({ ticker })],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
         },
       });
     });

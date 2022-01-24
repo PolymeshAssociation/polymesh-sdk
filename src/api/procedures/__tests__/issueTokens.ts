@@ -53,7 +53,6 @@ describe('issueTokens procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -131,7 +130,7 @@ describe('issueTokens procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.asset.Issue],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

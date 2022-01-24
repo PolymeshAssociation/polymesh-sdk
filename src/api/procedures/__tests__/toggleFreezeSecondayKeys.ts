@@ -24,7 +24,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance({
-      areScondaryKeysFrozen: true,
+      areSecondaryKeysFrozen: true,
     });
   });
 
@@ -35,7 +35,6 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -47,7 +46,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
       prepareToggleFreezeSecondaryKeys.call(proc, {
         freeze: true,
         identity: entityMockUtils.getIdentityInstance({
-          areScondaryKeysFrozen: true,
+          areSecondaryKeysFrozen: true,
         }),
       })
     ).rejects.toThrow('The secondary keys are already frozen');
@@ -56,7 +55,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   test('should throw an error if freeze is set to false and the secondary keys are already unfrozen', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        areScondaryKeysFrozen: false,
+        areSecondaryKeysFrozen: false,
       },
     });
 
@@ -72,7 +71,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   test('should add a freeze secondary keys transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        areScondaryKeysFrozen: false,
+        areSecondaryKeysFrozen: false,
       },
     });
 
@@ -90,7 +89,7 @@ describe('toggleFreezeSecondaryKeys procedure', () => {
   test('should add a unfreeze secondary keys transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
-        areScondaryKeysFrozen: true,
+        areSecondaryKeysFrozen: true,
       },
     });
 

@@ -95,7 +95,6 @@ describe('Settlements class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend namespace', () => {
@@ -109,6 +108,8 @@ describe('Settlements class', () => {
     let rawFromPortfolio: MeshPortfolioId;
     let rawToPortfolio: MeshPortfolioId;
     let rawFromDid: IdentityId;
+    let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
+    let toPortfolio: entityMockUtils.MockDefaultPortfolio;
 
     beforeAll(() => {
       fromDid = 'fromDid';
@@ -120,19 +121,17 @@ describe('Settlements class', () => {
     });
 
     beforeEach(() => {
+      fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: fromDid,
+      });
+      toPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: toDid,
+      });
       portfolioLikeToPortfolioIdStub.withArgs(fromDid).returns(fromPortfolioId);
       portfolioLikeToPortfolioIdStub.withArgs(toDid).returns(toPortfolioId);
       portfolioIdToMeshPortfolioIdStub.withArgs(toPortfolioId, mockContext).returns(rawToPortfolio);
-      portfolioIdToPortfolioStub.withArgs(fromPortfolioId, mockContext).returns(
-        entityMockUtils.getDefaultPortfolioInstance({
-          did: fromDid,
-        })
-      );
-      portfolioIdToPortfolioStub.withArgs(toPortfolioId, mockContext).returns(
-        entityMockUtils.getDefaultPortfolioInstance({
-          did: toDid,
-        })
-      );
+      portfolioIdToPortfolioStub.withArgs(fromPortfolioId, mockContext).returns(fromPortfolio);
+      portfolioIdToPortfolioStub.withArgs(toPortfolioId, mockContext).returns(toPortfolio);
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
@@ -144,6 +143,9 @@ describe('Settlements class', () => {
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
       const currentDefaultPortfolioId = { did: currentDid };
 
+      fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: currentDid }));
+      toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
+
       portfolioLikeToPortfolioIdStub.withArgs(currentIdentity).returns(currentDefaultPortfolioId);
       portfolioIdToMeshPortfolioIdStub
         .withArgs(currentDefaultPortfolioId, mockContext)
@@ -154,12 +156,6 @@ describe('Settlements class', () => {
         })
       );
       stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
-
-      const getCustodianStub = entityMockUtils.getDefaultPortfolioGetCustodianStub();
-      getCustodianStub
-        .onFirstCall()
-        .resolves(entityMockUtils.getIdentityInstance({ did: currentDid }));
-      getCustodianStub.onSecondCall().resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
 
       // also test the case where the SDK was instanced without an account
       mockContext.currentPair = undefined;
@@ -192,15 +188,12 @@ describe('Settlements class', () => {
         Ok: dsMockUtils.createMockU8(statusCode),
       });
 
+      fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: fromDid }));
+      toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
+
       portfolioIdToMeshPortfolioIdStub
         .withArgs({ did: fromDid }, mockContext)
         .returns(rawFromPortfolio);
-
-      const getCustodianStub = entityMockUtils.getDefaultPortfolioGetCustodianStub();
-      getCustodianStub
-        .onFirstCall()
-        .resolves(entityMockUtils.getIdentityInstance({ did: fromDid }));
-      getCustodianStub.onSecondCall().resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
 
       dsMockUtils
         .createRpcStub('asset', 'canTransfer')
@@ -228,6 +221,8 @@ describe('Settlements class', () => {
     let rawFromPortfolio: MeshPortfolioId;
     let rawToPortfolio: MeshPortfolioId;
     let rawFromDid: IdentityId;
+    let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
+    let toPortfolio: entityMockUtils.MockDefaultPortfolio;
     let granularCanTransferResultToTransferBreakdownStub: sinon.SinonStub;
 
     beforeAll(() => {
@@ -244,19 +239,17 @@ describe('Settlements class', () => {
     });
 
     beforeEach(() => {
+      fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: fromDid,
+      });
+      toPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+        did: toDid,
+      });
       portfolioLikeToPortfolioIdStub.withArgs(fromDid).returns(fromPortfolioId);
       portfolioLikeToPortfolioIdStub.withArgs(toDid).returns(toPortfolioId);
       portfolioIdToMeshPortfolioIdStub.withArgs(toPortfolioId, mockContext).returns(rawToPortfolio);
-      portfolioIdToPortfolioStub.withArgs(fromPortfolioId, mockContext).returns(
-        entityMockUtils.getDefaultPortfolioInstance({
-          did: fromDid,
-        })
-      );
-      portfolioIdToPortfolioStub.withArgs(toPortfolioId, mockContext).returns(
-        entityMockUtils.getDefaultPortfolioInstance({
-          did: toDid,
-        })
-      );
+      portfolioIdToPortfolioStub.withArgs(fromPortfolioId, mockContext).returns(fromPortfolio);
+      portfolioIdToPortfolioStub.withArgs(toPortfolioId, mockContext).returns(toPortfolio);
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
@@ -274,24 +267,21 @@ describe('Settlements class', () => {
       portfolioIdToPortfolioStub.withArgs(currentDefaultPortfolioId, mockContext).returns(
         entityMockUtils.getDefaultPortfolioInstance({
           did: currentDid,
+          getCustodian: entityMockUtils.getIdentityInstance({ did: currentDid }),
         })
       );
       stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
 
-      const getCustodianStub = entityMockUtils.getDefaultPortfolioGetCustodianStub();
-      getCustodianStub
-        .onFirstCall()
-        .resolves(entityMockUtils.getIdentityInstance({ did: currentDid }));
-      getCustodianStub.onSecondCall().resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
+      toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
 
-      const response = ('rpcResponse' as unknown) as GranularCanTransferResult;
+      const response = 'rpcResponse' as unknown as GranularCanTransferResult;
 
       dsMockUtils
         .createRpcStub('asset', 'canTransferGranular')
         .withArgs(rawCurrentDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
         .returns(response);
 
-      const expected = ('breakdown' as unknown) as TransferBreakdown;
+      const expected = 'breakdown' as unknown as TransferBreakdown;
 
       granularCanTransferResultToTransferBreakdownStub
         .withArgs(response, mockContext)
@@ -303,24 +293,20 @@ describe('Settlements class', () => {
     });
 
     test('should return a transfer breakdown representing whether the transaction can be made from another Identity', async () => {
-      const response = ('rpcResponse' as unknown) as GranularCanTransferResult;
+      const response = 'rpcResponse' as unknown as GranularCanTransferResult;
 
       portfolioIdToMeshPortfolioIdStub
         .withArgs({ did: fromDid }, mockContext)
         .returns(rawFromPortfolio);
 
-      const getCustodianStub = entityMockUtils.getDefaultPortfolioGetCustodianStub();
-      getCustodianStub
-        .onFirstCall()
-        .resolves(entityMockUtils.getIdentityInstance({ did: fromDid }));
-      getCustodianStub.onSecondCall().resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
-
+      fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: fromDid }));
+      toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
       dsMockUtils
         .createRpcStub('asset', 'canTransferGranular')
         .withArgs(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
         .returns(response);
 
-      const expected = ('breakdown' as unknown) as TransferBreakdown;
+      const expected = 'breakdown' as unknown as TransferBreakdown;
 
       granularCanTransferResultToTransferBreakdownStub
         .withArgs(response, mockContext)

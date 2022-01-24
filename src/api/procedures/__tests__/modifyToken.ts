@@ -56,7 +56,6 @@ describe('modifyToken procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -64,14 +63,16 @@ describe('modifyToken procedure', () => {
   test('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
-    return expect(prepareModifyToken.call(proc, ({} as unknown) as Params)).rejects.toThrow(
+    return expect(prepareModifyToken.call(proc, {} as unknown as Params)).rejects.toThrow(
       'Nothing to modify'
     );
   });
 
   test('should throw an error if makeDivisible is set to true and the security token is already divisible', () => {
-    entityMockUtils.getSecurityTokenDetailsStub({
-      isDivisible: true,
+    entityMockUtils.configureMocks({
+      securityTokenOptions: {
+        details: { isDivisible: true },
+      },
     });
 
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
@@ -205,7 +206,7 @@ describe('modifyToken procedure', () => {
         permissions: {
           transactions: [],
           portfolios: [],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
         },
       });
 
@@ -218,7 +219,7 @@ describe('modifyToken procedure', () => {
             TxTags.asset.UpdateIdentifiers,
           ],
           portfolios: [],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
         },
       });
     });

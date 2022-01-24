@@ -62,7 +62,6 @@ describe('Instruction class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -265,7 +264,6 @@ describe('Instruction class', () => {
       const tradeDate = new Date('11/17/1987');
       const valueDate = new Date('11/17/1987');
       const venueId = new BigNumber(1);
-      const venue = entityMockUtils.getVenueInstance({ id: venueId });
       let type = InstructionType.SettleOnAffirmation;
       const owner = 'someDid';
 
@@ -290,14 +288,14 @@ describe('Instruction class', () => {
 
       let result = await instruction.details();
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         status,
         createdAt,
         tradeDate,
         valueDate,
         type,
-        venue,
       });
+      expect(result.venue.id).toEqual(venueId);
 
       type = InstructionType.SettleOnBlock;
       const endBlock = new BigNumber(100);
@@ -317,15 +315,15 @@ describe('Instruction class', () => {
 
       result = await instruction.details();
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         status,
         createdAt,
         tradeDate: null,
         valueDate: null,
         type,
         endBlock,
-        venue,
       });
+      expect(result.venue.id).toEqual(venueId);
 
       status = InstructionStatus.Failed;
       type = InstructionType.SettleOnAffirmation;
@@ -339,14 +337,14 @@ describe('Instruction class', () => {
 
       result = await instruction.details();
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         status,
         createdAt,
         tradeDate,
         valueDate,
         type,
-        venue,
       });
+      expect(result.venue.id).toEqual(venueId);
     });
 
     test('should throw an error if the Instruction is not pending', () => {
@@ -396,9 +394,9 @@ describe('Instruction class', () => {
       ];
       const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
         tuple(
-          ({
+          {
             args: [instructionId, portfolioId],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
       );
@@ -497,16 +495,15 @@ describe('Instruction class', () => {
     });
 
     test("should return the instruction's legs", async () => {
-      const identityConstructor = entityMockUtils.getIdentityConstructorStub();
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ securityTokenOptions: { ticker } });
 
       const entries = [
-        tuple((['instructionId', 'legId'] as unknown) as StorageKey, {
+        tuple(['instructionId', 'legId'] as unknown as StorageKey, {
           from: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(fromDid),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -524,11 +521,10 @@ describe('Instruction class', () => {
 
       const { data: leg } = await instruction.getLegs();
 
-      sinon.assert.calledTwice(identityConstructor);
-      sinon.assert.calledWithExactly(identityConstructor.firstCall, { did: fromDid }, context);
-      sinon.assert.calledWithExactly(identityConstructor.secondCall, { did: toDid }, context);
       expect(leg[0].amount).toEqual(amount);
-      expect(leg[0].token).toEqual(entityMockUtils.getSecurityTokenInstance());
+      expect(leg[0].token.ticker).toBe(ticker);
+      expect(leg[0].from.owner.did).toBe(fromDid);
+      expect(leg[0].to.owner.did).toBe(toDid);
     });
 
     test('should throw an error if the instruction is not pending', () => {
@@ -557,7 +553,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -581,7 +577,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -606,7 +602,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -631,7 +627,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()

@@ -8,7 +8,7 @@ jest.mock(
 );
 
 describe('KnownPermissionGroup class', () => {
-  const ticker = 'TOKENNAME';
+  const ticker = 'TOKEN_NAME';
 
   let context: Context;
 
@@ -28,7 +28,6 @@ describe('KnownPermissionGroup class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend PermissionGroup', () => {

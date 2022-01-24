@@ -49,7 +49,6 @@ describe('TokenPermissions class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -136,7 +135,7 @@ describe('TokenPermissions class', () => {
         },
         token,
       };
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -156,10 +155,6 @@ describe('TokenPermissions class', () => {
 
     afterEach(() => {
       entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
     });
 
     test('should check whether the Identity has the appropriate permissions for the token', async () => {
@@ -363,10 +358,6 @@ describe('TokenPermissions class', () => {
       entityMockUtils.reset();
     });
 
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
     test('should check whether the Identity has the appropriate permissions for the token', async () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
@@ -385,7 +376,7 @@ describe('TokenPermissions class', () => {
         identity,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

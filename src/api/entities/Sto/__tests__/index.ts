@@ -58,7 +58,6 @@ describe('Sto class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -140,11 +139,13 @@ describe('Sto class', () => {
 
     test('should return details for a security token offering', async () => {
       const fakeResult = {
-        creator: entityMockUtils.getIdentityInstance({ did: someDid }),
+        creator: expect.objectContaining({ did: someDid }),
         name,
-        offeringPortfolio: entityMockUtils.getDefaultPortfolioInstance({ did: someDid }),
-        raisingPortfolio: entityMockUtils.getNumberedPortfolioInstance({
-          did: otherDid,
+        offeringPortfolio: expect.objectContaining({
+          owner: expect.objectContaining({ did: someDid }),
+        }),
+        raisingPortfolio: expect.objectContaining({
+          owner: expect.objectContaining({ did: otherDid }),
           id: new BigNumber(1),
         }),
         raisingCurrency,
@@ -155,7 +156,7 @@ describe('Sto class', () => {
             remaining: remaining.shiftedBy(-6),
           },
         ],
-        venue: entityMockUtils.getVenueInstance({ id: new BigNumber(1) }),
+        venue: expect.objectContaining({ id: new BigNumber(1) }),
         start: date,
         end: date,
         status: {
@@ -213,7 +214,7 @@ describe('Sto class', () => {
         id,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -243,7 +244,7 @@ describe('Sto class', () => {
         end,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -340,7 +341,7 @@ describe('Sto class', () => {
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Sto>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -359,7 +360,7 @@ describe('Sto class', () => {
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Sto>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -391,7 +392,7 @@ describe('Sto class', () => {
         purchaseAmount,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

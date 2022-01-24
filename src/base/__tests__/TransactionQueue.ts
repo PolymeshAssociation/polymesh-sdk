@@ -39,7 +39,6 @@ describe('Transaction Queue class', () => {
 
   afterAll(() => {
     jest.useRealTimers();
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 

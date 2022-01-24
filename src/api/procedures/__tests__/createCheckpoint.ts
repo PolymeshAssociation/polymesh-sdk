@@ -38,7 +38,7 @@ describe('createCheckpoint procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    checkpoint = ('checkpoint' as unknown) as PostTransactionValue<Checkpoint>;
+    checkpoint = 'checkpoint' as unknown as PostTransactionValue<Checkpoint>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -56,7 +56,6 @@ describe('createCheckpoint procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -109,12 +108,10 @@ describe('createCheckpoint procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-
       expect(boundFunc({ ticker })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateCheckpoint],
-          tokens: [token],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

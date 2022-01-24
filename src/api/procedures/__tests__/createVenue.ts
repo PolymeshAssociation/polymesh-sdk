@@ -26,7 +26,7 @@ describe('createVenue procedure', () => {
     dsMockUtils.initMocks();
     stringToVenueDetailsStub = sinon.stub(utilsConversionModule, 'stringToVenueDetails');
     venueTypeToMeshVenueTypeStub = sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType');
-    venue = ('venue' as unknown) as PostTransactionValue<Venue>;
+    venue = 'venue' as unknown as PostTransactionValue<Venue>;
   });
 
   beforeEach(() => {
@@ -42,7 +42,6 @@ describe('createVenue procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

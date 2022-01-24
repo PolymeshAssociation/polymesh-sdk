@@ -42,7 +42,6 @@ describe('transferPolyx procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -61,7 +60,11 @@ describe('transferPolyx procedure', () => {
   });
 
   test("should throw an error if destination account doesn't have an associated Identity", () => {
-    entityMockUtils.getAccountGetIdentityStub().resolves(null);
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: null,
+      },
+    });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
@@ -75,10 +78,8 @@ describe('transferPolyx procedure', () => {
       .createQueryStub('identity', 'keyToIdentityIds')
       .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        validCdd: false,
-      },
+    mockContext = dsMockUtils.getContextInstance({
+      validCdd: false,
     });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
@@ -94,8 +95,10 @@ describe('transferPolyx procedure', () => {
       .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
     entityMockUtils.configureMocks({
-      identityOptions: {
-        hasValidCdd: false,
+      accountOptions: {
+        getIdentity: entityMockUtils.getIdentityInstance({
+          hasValidCdd: false,
+        }),
       },
     });
 
@@ -112,7 +115,7 @@ describe('transferPolyx procedure', () => {
     const memo = 'someMessage';
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
-    const rawMemo = ('memo' as unknown) as Memo;
+    const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')

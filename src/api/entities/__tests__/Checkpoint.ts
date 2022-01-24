@@ -46,7 +46,6 @@ describe('Checkpoint class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -141,7 +140,7 @@ describe('Checkpoint class', () => {
       });
 
       const balanceOfEntries = rawBalanceOf.map(({ identityId, balance }) =>
-        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, balance)
+        tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, balance)
       );
 
       dsMockUtils.createQueryStub('asset', 'balanceOf');

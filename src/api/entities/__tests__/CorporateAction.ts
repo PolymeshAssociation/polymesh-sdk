@@ -81,7 +81,6 @@ describe('CorporateAction class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -91,7 +90,7 @@ describe('CorporateAction class', () => {
 
   describe('method: modifyCheckpoint', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const args = {
         checkpoint: new Date(),
       };

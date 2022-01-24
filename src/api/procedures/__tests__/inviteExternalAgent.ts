@@ -91,7 +91,6 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -110,7 +109,7 @@ describe('inviteExternalAgent procedure', () => {
       });
 
       expect(result).toEqual({
-        token,
+        token: expect.objectContaining({ ticker }),
       });
     });
   });

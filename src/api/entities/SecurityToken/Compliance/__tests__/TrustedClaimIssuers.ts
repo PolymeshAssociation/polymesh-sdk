@@ -3,7 +3,6 @@ import sinon from 'sinon';
 
 import {
   Context,
-  DefaultTrustedClaimIssuer,
   ModifyTokenTrustedClaimIssuersAddSetParams,
   Namespace,
   SecurityToken,
@@ -66,7 +65,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -104,7 +103,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -139,7 +138,7 @@ describe('TrustedClaimIssuers class', () => {
         claimIssuers: ['someDid', 'otherDid'],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -167,7 +166,6 @@ describe('TrustedClaimIssuers class', () => {
     let context: Context;
     let token: SecurityToken;
     let expectedDids: string[];
-    let expectedTrustedClaimIssuers: DefaultTrustedClaimIssuer[];
     let claimIssuers: TrustedIssuer[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
@@ -183,11 +181,9 @@ describe('TrustedClaimIssuers class', () => {
 
       expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
 
-      expectedTrustedClaimIssuers = [];
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
         claimIssuers.push(
           dsMockUtils.createMockTrustedIssuer({
             issuer: dsMockUtils.createMockIdentityId(did),
@@ -215,7 +211,7 @@ describe('TrustedClaimIssuers class', () => {
 
       const result = await trustedClaimIssuers.get();
 
-      expect(result).toEqual(expectedTrustedClaimIssuers);
+      expect(result).toEqual(expectedDids.map(did => expect.objectContaining({ did })));
     });
 
     test('should allow subscription', async () => {
@@ -231,7 +227,10 @@ describe('TrustedClaimIssuers class', () => {
       const result = await trustedClaimIssuers.get(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, expectedTrustedClaimIssuers);
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match(expectedDids.map(did => sinon.match({ did })))
+      );
     });
   });
 });

@@ -32,7 +32,7 @@ describe('createPortfolio procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    numberedPortfolio = ('numberedPortfolio' as unknown) as PostTransactionValue<NumberedPortfolio>;
+    numberedPortfolio = 'numberedPortfolio' as unknown as PostTransactionValue<NumberedPortfolio>;
     textToStringStub = sinon.stub(utilsConversionModule, 'textToString');
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
 
@@ -68,7 +68,6 @@ describe('createPortfolio procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

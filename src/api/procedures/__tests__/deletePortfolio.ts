@@ -49,7 +49,7 @@ describe('deletePortfolio procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,
-        tokenBalances: [zeroBalance, zeroBalance],
+        getTokenBalances: [zeroBalance, zeroBalance],
       },
     });
   });
@@ -61,7 +61,6 @@ describe('deletePortfolio procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -85,7 +84,7 @@ describe('deletePortfolio procedure', () => {
   test('should throw an error if the portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        tokenBalances: [
+        getTokenBalances: [
           { total: new BigNumber(1) },
           { total: new BigNumber(0) },
         ] as PortfolioBalance[],
@@ -118,7 +117,7 @@ describe('deletePortfolio procedure', () => {
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        tokenBalances: [],
+        getTokenBalances: [],
       },
     });
 

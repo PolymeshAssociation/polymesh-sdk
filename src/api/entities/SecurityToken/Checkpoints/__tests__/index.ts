@@ -49,7 +49,6 @@ describe('Checkpoints class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -64,7 +63,7 @@ describe('Checkpoints class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Checkpoint>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Checkpoint>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -85,9 +84,10 @@ describe('Checkpoints class', () => {
     test('should return the requested Checkpoint', async () => {
       const id = new BigNumber(1);
 
-      return expect(checkpoints.getOne({ id })).resolves.toEqual(
-        entityMockUtils.getCheckpointInstance({ id })
-      );
+      const result = await checkpoints.getOne({ id });
+
+      expect(result.id).toEqual(id);
+      expect(result.token.ticker).toBe(ticker);
     });
 
     test('should throw an error if the Checkpoint does not exist', async () => {
@@ -132,7 +132,7 @@ describe('Checkpoints class', () => {
       }));
 
       const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
-        tuple(({ args: [rawTicker, checkpointId] } as unknown) as StorageKey, balance)
+        tuple({ args: [rawTicker, checkpointId] } as unknown as StorageKey, balance)
       );
 
       requestPaginatedStub.resolves({ entries: totalSupplyEntries, lastKey: null });
@@ -151,9 +151,8 @@ describe('Checkpoints class', () => {
           moment: expectedMoment,
         } = totalSupply[index];
 
-        expect(checkpoint).toEqual(
-          entityMockUtils.getCheckpointInstance({ id: expectedCheckpointId })
-        );
+        expect(checkpoint.id).toEqual(expectedCheckpointId);
+        expect(checkpoint.token.ticker).toBe(ticker);
         expect(ts).toEqual(expectedBalance.shiftedBy(-6));
         expect(createdAt).toEqual(expectedMoment);
       });

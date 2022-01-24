@@ -100,13 +100,12 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should throw an error if the supplied requirement id does not belong to the Security Token', () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
     args = {
       ticker,
       id: 2,
@@ -133,9 +132,9 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   test('should add a modify compliance requirement transaction to the queue', async () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
-    const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
-    const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
     const rawComplianceRequirement = dsMockUtils.createMockComplianceRequirement({
       /* eslint-disable @typescript-eslint/naming-convention */
@@ -179,7 +178,7 @@ describe('modifyComplianceRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

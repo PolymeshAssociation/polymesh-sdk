@@ -47,7 +47,6 @@ describe('TransferRestrictionBase class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -76,7 +75,7 @@ describe('TransferRestrictionBase class', () => {
         exemptedScopeIds: ['someScopeId'],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -104,7 +103,7 @@ describe('TransferRestrictionBase class', () => {
         exemptedScopeIds: ['someScopeId'],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -145,7 +144,7 @@ describe('TransferRestrictionBase class', () => {
         restrictions: [{ count: new BigNumber(3), exemptedScopeIds: ['someScopeId'] }],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -172,7 +171,7 @@ describe('TransferRestrictionBase class', () => {
         restrictions: [{ percentage: new BigNumber(49), exemptedScopeIds: ['someScopeId'] }],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -209,7 +208,7 @@ describe('TransferRestrictionBase class', () => {
     test('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const count = new Count(token, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -230,7 +229,7 @@ describe('TransferRestrictionBase class', () => {
     test('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const percentage = new Percentage(token, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<number>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
       procedureMockUtils
         .getPrepareStub()

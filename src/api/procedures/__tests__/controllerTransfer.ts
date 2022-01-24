@@ -66,7 +66,7 @@ describe('controllerTransfer procedure', () => {
     });
     originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did,
-      tokenBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
+      getTokenBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
     });
     amount = new BigNumber(50);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
@@ -90,7 +90,6 @@ describe('controllerTransfer procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -139,7 +138,6 @@ describe('controllerTransfer procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
       const roles = [
         {
           type: RoleType.PortfolioCustodian,
@@ -151,8 +149,10 @@ describe('controllerTransfer procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.asset.ControllerTransfer],
-          tokens: [token],
-          portfolios: [entityMockUtils.getDefaultPortfolioInstance()],
+          tokens: [expect.objectContaining({ ticker })],
+          portfolios: [
+            expect.objectContaining({ owner: expect.objectContaining({ did: portfolioId.did }) }),
+          ],
         },
       });
     });

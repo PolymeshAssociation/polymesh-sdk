@@ -58,7 +58,6 @@ describe('removeCheckpointSchedule procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -154,7 +153,7 @@ describe('removeCheckpointSchedule procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.RemoveSchedule],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

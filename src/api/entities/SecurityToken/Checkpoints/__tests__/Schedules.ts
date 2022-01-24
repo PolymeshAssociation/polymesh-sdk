@@ -51,7 +51,6 @@ describe('Schedules class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -66,7 +65,7 @@ describe('Schedules class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<CheckpointSchedule>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<CheckpointSchedule>;
       const args = {
         start: null,
         period: {
@@ -93,7 +92,7 @@ describe('Schedules class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const args = {
         schedule: new BigNumber(1),
       };
@@ -227,11 +226,11 @@ describe('Schedules class', () => {
 
     test('should return the sum of the complexity of all schedules', async () => {
       const getStub = sinon.stub(schedules, 'get');
-      getStub.resolves(([
+      getStub.resolves([
         { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 1 }) },
         { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 2 }) },
         { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 2.5 }) },
-      ] as unknown) as ScheduleWithDetails[]);
+      ] as unknown as ScheduleWithDetails[]);
 
       let result = await schedules.currentComplexity();
 

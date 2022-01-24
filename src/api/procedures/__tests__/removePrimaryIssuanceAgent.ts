@@ -52,7 +52,6 @@ describe('removePrimaryIssuanceAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -112,7 +111,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.RemoveAgent],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

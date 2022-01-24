@@ -18,7 +18,6 @@ import {
   camelCase,
   flatten,
   includes,
-  isEqual,
   map,
   padEnd,
   range,
@@ -2284,23 +2283,7 @@ export function complianceRequirementResultToRequirementCompliance(
   const conditionCompliancesAreEqual = (
     { condition: aCondition, complies: aComplies }: ConditionCompliance,
     { condition: bCondition, complies: bComplies }: ConditionCompliance
-  ): boolean => {
-    let equalClaims = false;
-
-    if (isSingleClaimCondition(aCondition) && isSingleClaimCondition(bCondition)) {
-      equalClaims = isEqual(aCondition.claim, bCondition.claim);
-    }
-
-    if (isMultiClaimCondition(aCondition) && isMultiClaimCondition(bCondition)) {
-      equalClaims = isEqual(aCondition.claims, bCondition.claims);
-    }
-
-    return (
-      equalClaims &&
-      isEqual(aCondition.trustedClaimIssuers, bCondition.trustedClaimIssuers) &&
-      aComplies === bComplies
-    );
-  };
+  ): boolean => conditionsAreEqual(aCondition, bCondition) && aComplies === bComplies;
 
   complianceRequirement.sender_conditions.forEach(
     ({ condition: { condition_type: conditionType, issuers }, result }) => {
@@ -3122,6 +3105,7 @@ export function storedScheduleToCheckpointScheduleParams(
     at,
     remaining,
   } = storedSchedule;
+
   return {
     id: u64ToBigNumber(id),
     period: meshCalendarPeriodToCalendarPeriod(period),

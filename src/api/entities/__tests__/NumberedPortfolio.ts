@@ -37,7 +37,6 @@ describe('NumberedPortfolio class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -49,10 +48,9 @@ describe('NumberedPortfolio class', () => {
     test('should assign Identity and id to instance', () => {
       const did = 'someDid';
       const id = new BigNumber(1);
-      const identity = entityMockUtils.getIdentityInstance({ did });
       const portfolio = new NumberedPortfolio({ did, id }, context);
 
-      expect(portfolio.owner).toEqual(identity);
+      expect(portfolio.owner.did).toBe(did);
       expect(portfolio.id).toEqual(id);
     });
   });
@@ -75,7 +73,7 @@ describe('NumberedPortfolio class', () => {
       const did = 'someDid';
       const name = 'newName';
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()

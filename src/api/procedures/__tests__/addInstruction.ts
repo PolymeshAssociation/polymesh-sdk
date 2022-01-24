@@ -107,7 +107,7 @@ describe('addInstruction procedure', () => {
       'portfolioLikeToPortfolioId'
     );
     portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
-    getCustodianStub = entityMockUtils.getNumberedPortfolioGetCustodianStub();
+    getCustodianStub = sinon.stub();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
     numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
@@ -158,7 +158,7 @@ describe('addInstruction procedure', () => {
       asset: rawToken,
     };
 
-    instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
+    instruction = ['instruction'] as unknown as PostTransactionValue<[Instruction]>;
   });
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
@@ -184,7 +184,8 @@ describe('addInstruction procedure', () => {
       .getAddBatchTransactionStub()
       .returns([instruction]);
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
+    const tickerReservationDetailsStub = sinon.stub();
+    tickerReservationDetailsStub.resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.Free,
@@ -208,6 +209,14 @@ describe('addInstruction procedure', () => {
     portfolioIdToMeshPortfolioIdStub.withArgs({ did: toDid }, mockContext).returns(rawTo);
     getCustodianStub.onCall(0).returns({ did: fromDid });
     getCustodianStub.onCall(1).returns({ did: toDid });
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        getCustodian: getCustodianStub,
+      },
+      tickerReservationOptions: {
+        details: tickerReservationDetailsStub,
+      },
+    });
     stringToTickerStub.withArgs(token, mockContext).returns(rawToken);
     numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
@@ -246,7 +255,6 @@ describe('addInstruction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -554,9 +562,9 @@ describe('createAddInstructionResolver', () => {
     const fakeContext = {} as Context;
     const previousInstructionId = new BigNumber(2);
 
-    const previousInstructions = ({
+    const previousInstructions = {
       value: [new Instruction({ id: previousInstructionId }, fakeContext)],
-    } as unknown) as PostTransactionValue<Instruction[]>;
+    } as unknown as PostTransactionValue<Instruction[]>;
 
     const result = createAddInstructionResolver(
       fakeContext,

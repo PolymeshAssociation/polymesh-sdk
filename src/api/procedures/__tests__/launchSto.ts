@@ -59,6 +59,7 @@ describe('launchSto procedure', () => {
   let portfolioIdToPortfolioStub: sinon.SinonStub;
   let ticker: string;
   let offeringPortfolio: PortfolioLike;
+  let portfolio: entityMockUtils.MockDefaultPortfolio;
   let offeringPortfolioId: PortfolioId;
   let raisingPortfolio: PortfolioLike;
   let raisingPortfolioId: PortfolioId;
@@ -141,7 +142,7 @@ describe('launchSto procedure', () => {
     ];
     rawMinInvestment = dsMockUtils.createMockBalance(minInvestment.toNumber());
 
-    sto = ('sto' as unknown) as PostTransactionValue<Sto>;
+    sto = 'sto' as unknown as PostTransactionValue<Sto>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -171,9 +172,8 @@ describe('launchSto procedure', () => {
     dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
     stringToTextStub.withArgs(name, mockContext).returns(rawName);
     numberToBalanceStub.withArgs(minInvestment, mockContext).returns(rawMinInvestment);
-    portfolioIdToPortfolioStub
-      .withArgs(offeringPortfolioId, mockContext)
-      .returns(new DefaultPortfolio(offeringPortfolioId, mockContext));
+    portfolio = entityMockUtils.getDefaultPortfolioInstance(offeringPortfolioId);
+    portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolio);
 
     args = {
       ticker,
@@ -196,18 +196,15 @@ describe('launchSto procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should throw an error if no valid Venue was supplied or found', async () => {
+    portfolio.getTokenBalances.resolves([{ free: new BigNumber(20) }]);
     entityMockUtils.configureMocks({
       identityOptions: {
         getVenues: [entityMockUtils.getVenueInstance({ details: { type: VenueType.Exchange } })],
-      },
-      defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
@@ -240,11 +237,7 @@ describe('launchSto procedure', () => {
   });
 
   test("should throw an error if tokens offered exceed the Portfolio's balance", async () => {
-    entityMockUtils.configureMocks({
-      defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
-      },
-    });
+    portfolio.getTokenBalances.resolves([{ free: new BigNumber(1) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
       offeringPortfolioId,
@@ -263,11 +256,7 @@ describe('launchSto procedure', () => {
   });
 
   test('should add a create fundraiser transaction to the queue', async () => {
-    entityMockUtils.configureMocks({
-      defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
-      },
-    });
+    portfolio.getTokenBalances.resolves([{ free: new BigNumber(1000) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
       offeringPortfolioId,
@@ -306,7 +295,7 @@ describe('launchSto procedure', () => {
         getVenues: [venue],
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
+        getTokenBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
       },
     });
 
@@ -357,8 +346,9 @@ describe('launchSto procedure', () => {
     test('should return the new Sto', () => {
       const result = createStoResolver(ticker, mockContext)({} as ISubmittableResult);
 
-      const newSto = entityMockUtils.getStoInstance();
-      expect(result).toEqual(newSto);
+      expect(result).toEqual(
+        expect.objectContaining({ token: expect.objectContaining({ ticker }), id: stoId })
+      );
     });
   });
 
@@ -371,13 +361,12 @@ describe('launchSto procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       const portfolios = [
-        ('offering' as unknown) as DefaultPortfolio,
-        ('raising' as unknown) as DefaultPortfolio,
+        'offering' as unknown as DefaultPortfolio,
+        'raising' as unknown as DefaultPortfolio,
       ];
       portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(raisingPortfolioId, mockContext).returns(portfolios[1]);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
       const roles = [
         { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },
@@ -387,7 +376,7 @@ describe('launchSto procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.sto.CreateFundraiser],
-          tokens: [token],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios,
         },
       });

@@ -238,8 +238,7 @@ export function filterEventRecords<
   }
 
   return eventRecords.map(
-    eventRecord =>
-      (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>
+    eventRecord => eventRecord.event as unknown as IEvent<EventData<Events[ModuleName][EventName]>>
   );
 }
 
@@ -809,7 +808,16 @@ export function conditionsAreEqual(
   const { trustedClaimIssuers: aClaimIssuers = [] } = a;
   const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
-  const equalClaimIssuers = hasSameElements(aClaimIssuers, bClaimIssuers);
+  const equalClaimIssuers = hasSameElements(
+    aClaimIssuers,
+    bClaimIssuers,
+    (
+      { identity: aIdentity, trustedFor: aTrustedFor = [] },
+      { identity: bIdentity, trustedFor: bTrustedFor = [] }
+    ) =>
+      signerToString(aIdentity) === signerToString(bIdentity) &&
+      hasSameElements(aTrustedFor, bTrustedFor)
+  );
 
   return equalClaims && equalClaimIssuers;
 }

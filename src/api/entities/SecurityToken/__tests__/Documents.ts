@@ -29,7 +29,6 @@ describe('Documents class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -57,7 +56,7 @@ describe('Documents class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -94,9 +93,9 @@ describe('Documents class', () => {
       ];
       const entries = expectedDocuments.map(({ name, uri, contentHash, type, filedAt }, index) =>
         tuple(
-          ({
+          {
             args: [dsMockUtils.createMockTicker(token.ticker), dsMockUtils.createMockU32(index)],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockDocument({
             uri: dsMockUtils.createMockDocumentUri(uri),
             name: dsMockUtils.createMockDocumentName(name),

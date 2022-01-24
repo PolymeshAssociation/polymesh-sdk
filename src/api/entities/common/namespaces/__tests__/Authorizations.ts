@@ -33,7 +33,6 @@ describe('Authorizations class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -149,6 +148,7 @@ describe('Authorizations class', () => {
 
     test('should return the requested Authorization Request', async () => {
       const did = 'someDid';
+      const issuerDid = 'alice';
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
@@ -158,16 +158,6 @@ describe('Authorizations class', () => {
 
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
-      const target = identity;
-      const issuer = entityMockUtils.getIdentityInstance({ did: 'alice' });
-
-      const authParams = {
-        authId,
-        expiry: null,
-        data,
-        target,
-        issuer,
-      };
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
@@ -177,16 +167,19 @@ describe('Authorizations class', () => {
               TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),
             expiry: dsMockUtils.createMockOption(),
-            authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
+            authorized_by: dsMockUtils.createMockIdentityId(issuerDid),
           })
         ),
       });
 
-      entityMockUtils.getAuthorizationRequestInstance(authParams);
-
       const result = await authsNamespace.getOne({ id });
 
-      expect(result).toEqual(entityMockUtils.getAuthorizationRequestInstance(authParams));
+      expect(result.authId).toEqual(authId);
+      expect(result.expiry).toBeNull();
+      expect(result.data).toEqual(data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.target as any).did).toEqual(did);
+      expect(result.issuer.did).toEqual(issuerDid);
     });
 
     test('should throw an error if the Authorization Request does not exist', async () => {

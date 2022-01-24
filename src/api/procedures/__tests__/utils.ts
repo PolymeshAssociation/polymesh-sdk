@@ -106,7 +106,6 @@ describe('assertInstructionValid', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -548,7 +547,7 @@ describe('assertRequirementsNotTooComplex', () => {
           {
             type: ConditionType.IsPresent,
             target: ConditionTarget.Both,
-            trustedClaimIssuers: [('issuer' as unknown) as TrustedClaimIssuer],
+            trustedClaimIssuers: ['issuer' as unknown as TrustedClaimIssuer],
           },
           {
             type: ConditionType.IsAnyOf,
@@ -607,7 +606,6 @@ describe('authorization request validations', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   describe('assertAuthorizationRequestValid', () => {
@@ -1112,11 +1110,11 @@ describe('authorization request validations', () => {
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
       // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
-      const subsidizer = ({
+      const subsidizer = {
         getIdentity: () => {
           return { hasValidCdd: () => false };
         },
-      } as unknown) as Account;
+      } as unknown as Account;
 
       const subsidy = {
         beneficiary,
@@ -1195,9 +1193,9 @@ describe('authorization request validations', () => {
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
       // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
-      const subsidizer = ({
+      const subsidizer = {
         getIdentity: () => null,
-      } as unknown) as Account;
+      } as unknown as Account;
 
       const subsidy = {
         beneficiary,
@@ -1285,9 +1283,9 @@ describe('createAuthorizationResolver', () => {
       null,
       mockContext
     );
-    const authRequest = resolver(({
+    const authRequest = resolver({
       filterRecords: filterRecords,
-    } as unknown) as ISubmittableResult);
+    } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });
 
@@ -1309,9 +1307,9 @@ describe('createAuthorizationResolver', () => {
       mockContext
     );
 
-    const authRequest = resolver(({
+    const authRequest = resolver({
       filterRecords: filterRecords,
-    } as unknown) as ISubmittableResult);
+    } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });
 });

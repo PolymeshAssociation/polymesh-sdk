@@ -50,7 +50,7 @@ describe('createCheckpointSchedule procedure', () => {
     );
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    schedule = ('schedule' as unknown) as PostTransactionValue<CheckpointSchedule>;
+    schedule = 'schedule' as unknown as PostTransactionValue<CheckpointSchedule>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -68,7 +68,6 @@ describe('createCheckpointSchedule procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -202,12 +201,10 @@ describe('createCheckpointSchedule procedure', () => {
       };
       const repetitions = 10;
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
-
       expect(boundFunc({ ticker, start, period, repetitions })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateSchedule],
-          tokens: [token],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -42,7 +42,6 @@ describe('Requirements class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -84,7 +83,7 @@ describe('Requirements class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -128,7 +127,7 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -155,7 +154,7 @@ describe('Requirements class', () => {
         requirement: 10,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -178,7 +177,7 @@ describe('Requirements class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const requirements = new Requirements(token, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -223,7 +222,7 @@ describe('Requirements class', () => {
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       requirements = new Requirements(token, context);
       defaultClaimIssuers = [
-        { identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }) },
+        { identity: entityMockUtils.getIdentityInstance({ did: 'defaultIssuer' }) },
       ];
       notDefaultClaimIssuer = {
         identity: entityMockUtils.getIdentityInstance({ did: 'notDefaultClaimIssuer' }),
@@ -299,7 +298,7 @@ describe('Requirements class', () => {
             }),
           ],
         } as AssetCompliance,
-        (defaultClaimIssuers as unknown) as Vec<IdentityId>,
+        defaultClaimIssuers as unknown as Vec<IdentityId>,
       ];
 
       expected = {
@@ -314,7 +313,12 @@ describe('Requirements class', () => {
                   type: ClaimType.Exempted,
                   scope: { type: ScopeType.Identity, value: tokenDid },
                 },
-                trustedClaimIssuers: [notDefaultClaimIssuer],
+                trustedClaimIssuers: [
+                  {
+                    identity: expect.objectContaining({ did: notDefaultClaimIssuer.identity.did }),
+                    trustedFor: undefined,
+                  },
+                ],
               },
             ],
           },
@@ -343,7 +347,9 @@ describe('Requirements class', () => {
             ],
           },
         ],
-        defaultTrustedClaimIssuers: defaultClaimIssuers,
+        defaultTrustedClaimIssuers: [
+          { identity: expect.objectContaining({ did: 'defaultIssuer' }) },
+        ],
       };
     });
 
@@ -351,7 +357,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should return all requirements attached to the Security Token, using the default trusted claim issuers where none are set', async () => {
+    test('should return all requirements attached to the Security Token, along with the default trusted claim issuers', async () => {
       queryMultiStub.resolves(queryMultiResult);
       const result = await requirements.get();
 
@@ -371,7 +377,36 @@ describe('Requirements class', () => {
 
       expect(result).toBe(unsubCallback);
 
-      sinon.assert.calledWithExactly(callback, expected);
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match({
+          requirements: [
+            {
+              id: 1,
+              conditions: [
+                {
+                  ...expected.requirements[0].conditions[0],
+                  trustedClaimIssuers: [
+                    {
+                      identity: sinon.match({ did: notDefaultClaimIssuer.identity.did }),
+                      trustedFor: undefined,
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              id: 2,
+              conditions: expected.requirements[1].conditions,
+            },
+          ],
+          defaultTrustedClaimIssuers: [
+            {
+              identity: sinon.match({ did: 'defaultIssuer' }),
+            },
+          ],
+        })
+      );
     });
   });
 
@@ -385,7 +420,7 @@ describe('Requirements class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const requirements = new Requirements(token, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -408,7 +443,7 @@ describe('Requirements class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const requirements = new Requirements(token, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -442,7 +477,7 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -538,7 +573,7 @@ describe('Requirements class', () => {
     });
 
     test('checkSettle should return the current requirement compliance and whether the transfer complies', async () => {
-      const rawResponse = ('response' as unknown) as AssetComplianceResult;
+      const rawResponse = 'response' as unknown as AssetComplianceResult;
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
@@ -555,7 +590,7 @@ describe('Requirements class', () => {
     });
 
     test('checkSettle should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
-      const rawResponse = ('response' as unknown) as AssetComplianceResult;
+      const rawResponse = 'response' as unknown as AssetComplianceResult;
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')

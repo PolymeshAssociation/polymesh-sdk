@@ -62,7 +62,6 @@ describe('TokenHolders class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -93,7 +92,7 @@ describe('TokenHolders class', () => {
         balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
 
         balanceOfEntries.push(
-          tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
+          tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
         );
 
         expectedHolders.push({
@@ -131,7 +130,7 @@ describe('TokenHolders class', () => {
       balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
 
       balanceOfEntries.push(
-        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
+        tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
       );
 
       expectedHolders.push({
@@ -146,7 +145,9 @@ describe('TokenHolders class', () => {
 
       const result = await tokenHolders.get({ size: 1 });
 
-      expect(result).toEqual({ data: expectedHolders, next: 'someKey' });
+      expect(result.data[0].balance).toEqual(balance);
+      expect(result.data[0].identity.did).toBe(identity);
+      expect(result.next).toBe('someKey');
     });
   });
 });

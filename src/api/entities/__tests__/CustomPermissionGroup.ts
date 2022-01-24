@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'TOKENNAME';
+  const ticker = 'TOKEN_NAME';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -40,7 +40,6 @@ describe('CustomPermissionGroup class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -92,7 +91,7 @@ describe('CustomPermissionGroup class', () => {
         },
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

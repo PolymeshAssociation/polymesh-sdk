@@ -68,7 +68,6 @@ describe('Polymesh Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -384,8 +383,9 @@ describe('Polymesh Class', () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
-      let accountBalanceStub = (dsMockUtils.getContextInstance().getCurrentAccount()
-        .getBalance as sinon.SinonStub).resolves(unsubCallback);
+      const accountBalanceStub = (
+        dsMockUtils.getContextInstance().getCurrentAccount().getBalance as sinon.SinonStub
+      ).resolves(unsubCallback);
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -396,11 +396,16 @@ describe('Polymesh Class', () => {
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(accountBalanceStub, callback);
 
-      accountBalanceStub = entityMockUtils.getAccountGetBalanceStub().resolves(unsubCallback);
+      const getBalanceStub = sinon.stub().resolves(unsubCallback);
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getBalance: getBalanceStub,
+        },
+      });
       const account = 'someId';
       result = await polymesh.getAccountBalance({ account }, callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
+      sinon.assert.calledWithExactly(getBalanceStub, callback);
     });
   });
 
@@ -509,7 +514,7 @@ describe('Polymesh Class', () => {
         amount: new BigNumber(50),
       };
 
-      const expectedQueue = ('' as unknown) as TransactionQueue<void>;
+      const expectedQueue = '' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -568,9 +573,13 @@ describe('Polymesh Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      entityMockUtils.getAccountInstance().getBalance.callsFake(async cbFunc => {
-        cbFunc(fakeBalance);
-        return unsubCallback;
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getBalance: async cbFunc => {
+            cbFunc(fakeBalance);
+            return unsubCallback;
+          },
+        },
       });
 
       const polymesh = await Polymesh.connect({

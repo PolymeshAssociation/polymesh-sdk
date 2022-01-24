@@ -62,7 +62,6 @@ describe('toggleFreezeSto procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -208,7 +207,7 @@ describe('toggleFreezeSto procedure', () => {
       const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const token = expect.objectContaining({ ticker });
 
       expect(boundFunc({ ticker, id, freeze: true })).toEqual({
         permissions: {

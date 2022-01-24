@@ -89,7 +89,6 @@ describe('transferTokenOwnership procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -149,7 +148,7 @@ describe('transferTokenOwnership procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },

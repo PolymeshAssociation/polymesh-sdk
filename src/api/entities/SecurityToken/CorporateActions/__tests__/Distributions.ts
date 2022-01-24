@@ -50,7 +50,6 @@ describe('Distributions class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -68,9 +67,9 @@ describe('Distributions class', () => {
       const token = entityMockUtils.getSecurityTokenInstance();
       const distributions = new Distributions(token, context);
 
-      const args = ({ foo: 'bar' } as unknown) as ConfigureDividendDistributionParams;
+      const args = { foo: 'bar' } as unknown as ConfigureDividendDistributionParams;
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<DividendDistribution>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<DividendDistribution>;
 
       procedureMockUtils
         .getPrepareStub()

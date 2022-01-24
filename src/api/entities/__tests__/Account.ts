@@ -47,7 +47,6 @@ describe('Account class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
     sinon.restore();
@@ -70,7 +69,7 @@ describe('Account class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Account.isUniqueIdentifiers({ address: 'someAdddress' })).toBe(true);
+      expect(Account.isUniqueIdentifiers({ address: 'someAddress' })).toBe(true);
       expect(Account.isUniqueIdentifiers({})).toBe(false);
       expect(Account.isUniqueIdentifiers({ address: 3 })).toBe(false);
     });
@@ -475,16 +474,18 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
+      const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
+
       result = await account.checkPermissions({
         tokens: [token],
-        portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+        portfolios: [portfolio],
         transactions: [TxTags.asset.CreateAsset],
       });
 
       expect(result).toEqual({
         result: false,
         missingPermissions: {
-          portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+          portfolios: [portfolio],
         },
       });
 
@@ -652,7 +653,7 @@ describe('Account class', () => {
 
   describe('method: leaveIdentity', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       const args = {
         account,

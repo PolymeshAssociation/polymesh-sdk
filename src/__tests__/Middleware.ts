@@ -28,7 +28,6 @@ describe('Middleware Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   describe('method: getEventByIndexedArgs', () => {

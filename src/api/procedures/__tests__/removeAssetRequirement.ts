@@ -68,12 +68,12 @@ describe('removeAssetRequirement procedure', () => {
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
 
     senderConditions = [
-      ('senderConditions0' as unknown) as MeshCondition[],
-      ('senderConditions1' as unknown) as MeshCondition[],
+      'senderConditions0' as unknown as MeshCondition[],
+      'senderConditions1' as unknown as MeshCondition[],
     ];
     receiverConditions = [
-      ('receiverConditions0' as unknown) as MeshCondition[],
-      ('receiverConditions1' as unknown) as MeshCondition[],
+      'receiverConditions0' as unknown as MeshCondition[],
+      'receiverConditions1' as unknown as MeshCondition[],
     ];
     rawComplianceRequirement = senderConditions.map(
       (sConditions, index) =>
@@ -100,7 +100,6 @@ describe('removeAssetRequirement procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -133,7 +132,7 @@ describe('removeAssetRequirement procedure', () => {
       rawId
     );
 
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -147,7 +146,7 @@ describe('removeAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.RemoveComplianceRequirement],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

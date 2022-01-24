@@ -219,7 +219,6 @@ describe('createSecurityToken procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -266,7 +265,7 @@ describe('createSecurityToken procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
 
     await prepareCreateSecurityToken.call(proc, {
       ...args,
@@ -319,7 +318,7 @@ describe('createSecurityToken procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
 
     proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
       customTypeData: null,
@@ -343,7 +342,7 @@ describe('createSecurityToken procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {
@@ -376,7 +375,7 @@ describe('createSecurityToken procedure', () => {
       rawFundingRound,
       rawDisableIu
     );
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a document add transaction to the queue', async () => {
@@ -400,7 +399,7 @@ describe('createSecurityToken procedure', () => {
       rawTicker
     );
 
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
@@ -439,7 +438,7 @@ describe('createSecurityToken procedure', () => {
       sinon.match.any
     );
 
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('createRegisterCustomAssetTypeResolver', () => {
@@ -463,7 +462,7 @@ describe('createSecurityToken procedure', () => {
     });
 
     test('should return the new custom AssetType', () => {
-      const fakeResult = ('assetType' as unknown) as AssetType;
+      const fakeResult = 'assetType' as unknown as AssetType;
       internalTokenTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
       const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
 
@@ -564,11 +563,20 @@ describe('createSecurityToken procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: null,
-        status: TickerReservationStatus.Reserved,
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: null,
+            status: TickerReservationStatus.Reserved,
+          },
+        },
       });
+      // entityMockUtils.getTickerReservationDetailsStub().resolves({
+      //   owner: entityMockUtils.getIdentityInstance(),
+      //   expiryDate: null,
+      //   status: TickerReservationStatus.Reserved,
+      // });
 
       let result = await boundFunc({ tokenType: KnownTokenType.EquityCommon } as Params);
 

@@ -35,7 +35,6 @@ describe('Identities Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -58,7 +57,7 @@ describe('Identities Class', () => {
         targetAccount: 'someTarget',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Identity>;
 
       procedureMockUtils
         .getPrepareStub()

@@ -119,7 +119,6 @@ describe('setTokenDocuments procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -158,7 +157,7 @@ describe('setTokenDocuments procedure', () => {
       rawDocuments,
       rawTicker
     );
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should not add a remove documents transaction if there are no documents linked to the token', async () => {
@@ -177,7 +176,7 @@ describe('setTokenDocuments procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
@@ -197,7 +196,7 @@ describe('setTokenDocuments procedure', () => {
       rawTicker
     );
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -210,7 +209,7 @@ describe('setTokenDocuments procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
           portfolios: [],
         },
@@ -224,7 +223,7 @@ describe('setTokenDocuments procedure', () => {
 
       expect(boundFunc({ ...args, documents: [] })).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [],
           portfolios: [],
         },

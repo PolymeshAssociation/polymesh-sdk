@@ -52,7 +52,6 @@ describe('Offerings class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -67,7 +66,7 @@ describe('Offerings class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Sto>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Sto>;
       const args = {
         offeringPortfolio: 'otherDid',
         raisingCurrency: 'USD',
@@ -98,7 +97,7 @@ describe('Offerings class', () => {
       const id = new BigNumber(1);
       const result = await offerings.getOne({ id });
 
-      expect(result).toEqual(entityMockUtils.getStoInstance());
+      expect(result.id).toEqual(id);
     });
 
     test('should throw an error if the Offering does not exist', () => {

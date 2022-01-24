@@ -80,7 +80,6 @@ describe('setPermissionGroup procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -170,12 +169,11 @@ describe('setPermissionGroup procedure', () => {
         type: PermissionGroupType.PolymeshV1Caa,
       }),
     });
-    let group: Mocked<
-      CustomPermissionGroup | KnownPermissionGroup
-    > = entityMockUtils.getKnownPermissionGroupInstance({
-      ticker,
-      type: PermissionGroupType.PolymeshV1Caa,
-    });
+    let group: Mocked<CustomPermissionGroup | KnownPermissionGroup> =
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.PolymeshV1Caa,
+      });
     const proc = procedureMockUtils.getInstance<
       Params,
       CustomPermissionGroup | KnownPermissionGroup,
@@ -338,6 +336,7 @@ describe('setPermissionGroup procedure', () => {
     const fakeCustomPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
       ticker,
       id: new BigNumber(2),
+      isEqual: false,
     });
 
     const result = await prepareSetPermissionGroup.call(proc, {
@@ -379,7 +378,7 @@ describe('setPermissionGroup procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        token: entityMockUtils.getSecurityTokenInstance({ ticker }),
+        token: expect.objectContaining({ ticker }),
       });
 
       result = boundFunc({
@@ -390,7 +389,7 @@ describe('setPermissionGroup procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        token: entityMockUtils.getSecurityTokenInstance({ ticker }),
+        token: expect.objectContaining({ ticker }),
       });
     });
   });
@@ -411,7 +410,7 @@ describe('setPermissionGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.ChangeGroup],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -130,7 +130,6 @@ describe('investInSto procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -178,7 +177,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
+        getTokenBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
 
@@ -220,7 +219,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
+        getTokenBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
       },
     });
 
@@ -270,7 +269,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        getTokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
@@ -319,7 +318,7 @@ describe('investInSto procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        getTokenBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
@@ -377,8 +376,8 @@ describe('investInSto procedure', () => {
         'portfolioIdToPortfolio'
       );
       const portfolios = [
-        ('investment' as unknown) as DefaultPortfolio,
-        ('funding' as unknown) as DefaultPortfolio,
+        'investment' as unknown as DefaultPortfolio,
+        'funding' as unknown as DefaultPortfolio,
       ];
       portfolioIdToPortfolioStub.withArgs(purchasePortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(fundingPortfolioId, mockContext).returns(portfolios[1]);

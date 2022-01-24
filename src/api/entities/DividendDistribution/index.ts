@@ -307,6 +307,7 @@ export class DividendDistribution extends CorporateActionBase {
 
     const participants: DistributionParticipant[] = [];
     const clonedTargets = [...targetIdentities];
+
     balances.forEach(({ identity: { did }, identity, balance }) => {
       const isTarget = !!remove(clonedTargets, ({ did: targetDid }) => did === targetDid).length;
 

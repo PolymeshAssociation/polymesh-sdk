@@ -108,7 +108,6 @@ describe('linkCaDocs procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -158,7 +157,7 @@ describe('linkCaDocs procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [TxTags.corporateAction.LinkCaDoc],
           portfolios: [],
         },

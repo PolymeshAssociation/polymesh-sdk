@@ -62,7 +62,6 @@ describe('Portfolios class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -94,13 +93,13 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: getCustodiedPortfolos', () => {
+  describe('method: getCustodiedPortfolios', () => {
     test('should retrieve all the Portfolios custodied by the Identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody');
 
       const entries = [
         tuple(
-          ({
+          {
             args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
@@ -108,11 +107,11 @@ describe('Portfolios class', () => {
                 kind: dsMockUtils.createMockPortfolioKind('Default'),
               }),
             ],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockBool(true)
         ),
         tuple(
-          ({
+          {
             args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
@@ -120,7 +119,7 @@ describe('Portfolios class', () => {
                 kind: dsMockUtils.createMockPortfolioKind({ User: rawNumberedPortfolioId }),
               }),
             ],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockBool(true)
         ),
       ];
@@ -173,7 +172,7 @@ describe('Portfolios class', () => {
   describe('method: create', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const name = 'someName';
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -189,7 +188,7 @@ describe('Portfolios class', () => {
   describe('method: delete', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolioId = new BigNumber(5);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

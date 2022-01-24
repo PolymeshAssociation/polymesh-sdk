@@ -43,7 +43,6 @@ describe('SecurityToken class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -88,7 +87,7 @@ describe('SecurityToken class', () => {
     let securityToken: SecurityToken;
 
     beforeAll(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       name = 'tokenName';
       totalSupply = 1000;
       isDivisible = true;
@@ -145,13 +144,13 @@ describe('SecurityToken class', () => {
 
       expect(details.name).toBe(name);
       expect(details.totalSupply).toEqual(
-        utilsConversionModule.balanceToBigNumber((totalSupply as unknown) as Balance)
+        utilsConversionModule.balanceToBigNumber(totalSupply as unknown as Balance)
       );
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
-      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did: owner })]);
+      expect(details.primaryIssuanceAgents[0].did).toBe(did);
+      expect(details.fullAgents[0].did).toBe(owner);
       expect(details.requiresInvestorUniqueness).toBe(true);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
@@ -165,7 +164,7 @@ describe('SecurityToken class', () => {
 
       details = await securityToken.details();
       expect(details.primaryIssuanceAgents).toEqual([]);
-      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
+      expect(details.fullAgents[0].did).toEqual(did);
 
       tokensStub.resolves(
         dsMockUtils.createMockSecurityToken({
@@ -211,8 +210,8 @@ describe('SecurityToken class', () => {
           name,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
-          fullAgents: [entityMockUtils.getIdentityInstance({ did: owner })],
+          primaryIssuanceAgents: [sinon.match({ did })],
+          fullAgents: [sinon.match({ did: owner })],
           requiresInvestorUniqueness: true,
         })
       );
@@ -232,7 +231,7 @@ describe('SecurityToken class', () => {
         expiry,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -256,7 +255,7 @@ describe('SecurityToken class', () => {
         makeDivisible,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -278,7 +277,7 @@ describe('SecurityToken class', () => {
     let securityToken: SecurityToken;
 
     beforeAll(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       fundingRound = 'Series A';
     });
 
@@ -465,7 +464,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -484,7 +483,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -549,7 +548,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -568,7 +567,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -588,7 +587,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -657,7 +656,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

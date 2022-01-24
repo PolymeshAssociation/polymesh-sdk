@@ -72,7 +72,6 @@ describe('Context class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should throw an error if accessing the transaction submodule without an active account', async () => {
@@ -550,7 +549,7 @@ describe('Context class', () => {
       const result = await context.accountSubsidy();
       expect(result).toEqual({
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+        subsidizer: expect.objectContaining({ address: 'payingKey' }),
       });
     });
 
@@ -575,7 +574,7 @@ describe('Context class', () => {
       const result = await context.accountSubsidy('accountId');
       expect(result).toEqual({
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+        subsidizer: expect.objectContaining({ address: 'payingKey' }),
       });
     });
 
@@ -622,7 +621,7 @@ describe('Context class', () => {
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
+        subsidizer: sinon.match({ address: 'payingKey' }),
       });
     });
   });
@@ -645,7 +644,11 @@ describe('Context class', () => {
     });
 
     test('should throw an error if there is no Identity associated to the Current Account', async () => {
-      entityMockUtils.getAccountGetIdentityStub().resolves(null);
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getIdentity: null,
+        },
+      });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -749,7 +752,14 @@ describe('Context class', () => {
   });
 
   describe('method: getIdentity', () => {
+    const did = 'someDid';
+
     test('should return an Identity if given an Identity', async () => {
+      entityMockUtils.configureMocks({
+        identityOptions: {
+          did,
+        },
+      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -757,17 +767,22 @@ describe('Context class', () => {
 
       const identity = entityMockUtils.getIdentityInstance();
       const result = await context.getIdentity(identity);
-      expect(result).toBe(identity);
+      expect(result).toEqual(expect.objectContaining({ did }));
     });
     test('should return an Identity if given a valid DID', async () => {
+      entityMockUtils.configureMocks({
+        identityOptions: {
+          did,
+          exists: true,
+        },
+      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      const identity = entityMockUtils.getIdentityInstance({ exists: true });
-      const result = await context.getIdentity(identity.did);
-      expect(result).toEqual(identity);
+      const result = await context.getIdentity(did);
+      expect(result).toEqual(expect.objectContaining({ did }));
     });
 
     test('should throw if the Identity does not exist', async () => {
@@ -776,11 +791,16 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      const identity = entityMockUtils.getIdentityInstance({ exists: false });
+      entityMockUtils.configureMocks({
+        identityOptions: {
+          did,
+          exists: false,
+        },
+      });
 
       let error;
       try {
-        await context.getIdentity(identity.did);
+        await context.getIdentity(did);
       } catch (err) {
         error = err;
       }
@@ -910,7 +930,7 @@ describe('Context class', () => {
 
       txTagToProtocolOpStub
         .withArgs(TxTags.asset.CreateAsset, context)
-        .returns(('someProtocolOp' as unknown) as ProtocolOp);
+        .returns('someProtocolOp' as unknown as ProtocolOp);
       txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
 
       dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
@@ -1187,11 +1207,12 @@ describe('Context class', () => {
 
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
       const date = 1589816265000;
       const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
       const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
+        target: expect.objectContaining({ did: targetDid }),
+        issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
       };
       const fakeClaims = [
@@ -1200,6 +1221,7 @@ describe('Context class', () => {
           expiry: new Date(date),
           claim: {
             type: customerDueDiligenceType,
+            id: cddId,
           },
         },
         {
@@ -1207,6 +1229,7 @@ describe('Context class', () => {
           expiry: null,
           claim: {
             type: customerDueDiligenceType,
+            id: cddId,
           },
         },
       ];
@@ -1216,6 +1239,7 @@ describe('Context class', () => {
         issuer: issuerDid,
         issuance_date: date,
         last_update_date: date,
+        cdd_id: cddId,
       };
       const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
         totalCount: 25,
@@ -1316,8 +1340,8 @@ describe('Context class', () => {
 
       const fakeClaims = [
         {
-          target: new Identity({ did: targetDid }, context),
-          issuer: new Identity({ did: issuerDid }, context),
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
           expiry: expiryOne,
           claim: {
@@ -1326,8 +1350,8 @@ describe('Context class', () => {
           },
         },
         {
-          target: new Identity({ did: targetDid }, context),
-          issuer: new Identity({ did: issuerDid }, context),
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
           expiry: null,
           claim: {
@@ -1336,8 +1360,8 @@ describe('Context class', () => {
           },
         },
         {
-          target: new Identity({ did: targetDid }, context),
-          issuer: new Identity({ did: issuerDid }, context),
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
           expiry: expiryTwo,
           claim: {
@@ -1445,25 +1469,25 @@ describe('Context class', () => {
       dsMockUtils.throwOnMiddlewareQuery();
 
       await expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
       await expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
       return expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Some Message');
     });
 
     test('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1710,7 +1734,7 @@ describe('Context class', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pair = ('something' as unknown) as any;
+      const pair = 'something' as unknown as any;
 
       context.addPair({ pair });
 
@@ -1867,7 +1891,7 @@ describe('Context class', () => {
       expect(result[0].details.fundsReclaimed).toBe(false);
       expect(result[0].details.remainingFunds).toEqual(new BigNumber(400000));
       expect(result[0].distribution.origin).toEqual(
-        entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })
+        expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) })
       );
       expect(result[0].distribution.currency).toBe('USD');
       expect(result[0].distribution.perShare).toEqual(new BigNumber(10));
@@ -1878,7 +1902,10 @@ describe('Context class', () => {
       expect(result[1].details.fundsReclaimed).toBe(false);
       expect(result[1].details.remainingFunds).toEqual(new BigNumber(200000));
       expect(result[1].distribution.origin).toEqual(
-        entityMockUtils.getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(2) })
+        expect.objectContaining({
+          owner: expect.objectContaining({ did: 'someDid' }),
+          id: new BigNumber(2),
+        })
       );
       expect(result[1].distribution.currency).toBe('CAD');
       expect(result[1].distribution.perShare).toEqual(new BigNumber(20));

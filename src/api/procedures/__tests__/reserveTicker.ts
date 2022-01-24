@@ -43,14 +43,14 @@ describe('reserveTicker procedure', () => {
       },
     });
     procedureMockUtils.initMocks();
-    entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
+    entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOMETICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       ticker,
     };
-    reservation = ('reservation' as unknown) as PostTransactionValue<TickerReservation>;
+    reservation = 'reservation' as unknown as PostTransactionValue<TickerReservation>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -60,10 +60,14 @@ describe('reserveTicker procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([reservation]);
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.Free,
+    entityMockUtils.configureMocks({
+      tickerReservationOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+          expiryDate: null,
+          status: TickerReservationStatus.Free,
+        },
+      },
     });
 
     dsMockUtils.createQueryStub('asset', 'tickerConfig', {
@@ -84,17 +88,20 @@ describe('reserveTicker procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should throw an error if the ticker is already reserved', async () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate,
-      status: TickerReservationStatus.Reserved,
+    entityMockUtils.configureMocks({
+      tickerReservationOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+          expiryDate,
+          status: TickerReservationStatus.Reserved,
+        },
+      },
     });
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
@@ -113,10 +120,14 @@ describe('reserveTicker procedure', () => {
   });
 
   test('should throw an error if the current reservation is permanent', async () => {
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.Reserved,
+    entityMockUtils.configureMocks({
+      tickerReservationOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+          expiryDate: null,
+          status: TickerReservationStatus.Reserved,
+        },
+      },
     });
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
@@ -135,10 +146,14 @@ describe('reserveTicker procedure', () => {
   });
 
   test('should throw an error if a token with that ticker has already been launched', () => {
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.TokenCreated,
+    entityMockUtils.configureMocks({
+      tickerReservationOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+          expiryDate: null,
+          status: TickerReservationStatus.TokenCreated,
+        },
+      },
     });
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
@@ -151,10 +166,14 @@ describe('reserveTicker procedure', () => {
 
   test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', () => {
     const expiryDate = new Date(2019, 1, 1);
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate,
-      status: TickerReservationStatus.Free,
+    entityMockUtils.configureMocks({
+      tickerReservationOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+          expiryDate,
+          status: TickerReservationStatus.Free,
+        },
+      },
     });
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
@@ -182,10 +201,14 @@ describe('reserveTicker procedure', () => {
     );
     expect(result).toBe(reservation);
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expriy: new Date(3000, 12, 12),
-      status: TickerReservationStatus.Reserved,
+    entityMockUtils.configureMocks({
+      tickerReservationOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
+          expiryDate: new Date(3000, 12, 12),
+          status: TickerReservationStatus.Reserved,
+        },
+      },
     });
 
     result = await prepareReserveTicker.call(proc, { ...args, extendPeriod: true });

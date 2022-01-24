@@ -91,7 +91,6 @@ describe('addAssetRequirement procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -118,9 +117,9 @@ describe('addAssetRequirement procedure', () => {
   });
 
   test('should add an add compliance requirement transaction to the queue', async () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
-    const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
-    const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
     requirementToComplianceRequirementStub
       .withArgs({ conditions: fakeConditions, id: 1 }, mockContext)
@@ -150,7 +149,7 @@ describe('addAssetRequirement procedure', () => {
       fakeReceiverConditions
     );
 
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -164,7 +163,7 @@ describe('addAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.AddComplianceRequirement],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

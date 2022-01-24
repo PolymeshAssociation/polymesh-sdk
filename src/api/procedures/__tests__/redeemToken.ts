@@ -4,7 +4,7 @@ import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareRedeemToken } from '~/api/procedures/redeemToken';
-import { Context, DefaultPortfolio, SecurityToken } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, TxTags } from '~/types';
@@ -60,7 +60,6 @@ describe('redeemToken procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -77,11 +76,11 @@ describe('redeemToken procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [
+        getTokenBalances: [
           {
-            token: new SecurityToken({ ticker }, mockContext),
+            token: entityMockUtils.getSecurityTokenInstance({ ticker }),
             free: new BigNumber(500),
-          } as PortfolioBalance,
+          } as unknown as PortfolioBalance,
         ],
       },
     });
@@ -102,11 +101,11 @@ describe('redeemToken procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        tokenBalances: [
+        getTokenBalances: [
           {
-            token: new SecurityToken({ ticker }, mockContext),
+            token: entityMockUtils.getSecurityTokenInstance({ ticker }),
             free: new BigNumber(0),
-          } as PortfolioBalance,
+          } as unknown as PortfolioBalance,
         ],
       },
     });
@@ -139,8 +138,10 @@ describe('redeemToken procedure', () => {
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.asset.Redeem],
-          tokens: [new SecurityToken({ ticker }, mockContext)],
-          portfolios: [new DefaultPortfolio({ did: someDid }, mockContext)],
+          tokens: [expect.objectContaining({ ticker })],
+          portfolios: [
+            expect.objectContaining({ owner: expect.objectContaining({ did: someDid }) }),
+          ],
         },
       });
     });

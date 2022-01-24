@@ -35,7 +35,7 @@ describe('registerIdentity procedure', () => {
       utilsConversionModule,
       'secondaryKeyToMeshSecondaryKey'
     );
-    identity = ('identity' as unknown) as PostTransactionValue<Identity>;
+    identity = 'identity' as unknown as PostTransactionValue<Identity>;
   });
 
   beforeEach(() => {
@@ -51,7 +51,6 @@ describe('registerIdentity procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

@@ -14,7 +14,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TickerReservationStatus, TransferRestriction, TransferRestrictionType } from '~/types';
+import { TransferRestriction, TransferRestrictionType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -86,12 +86,6 @@ describe('setTransferRestrictions procedure', () => {
 
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.Free,
-    });
-
     addTransferManagerTransaction = dsMockUtils.createTxStub('statistics', 'addTransferManager');
     addExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'addExemptedEntities');
     removeTransferManagerTransaction = dsMockUtils.createTxStub(
@@ -129,7 +123,6 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -351,7 +344,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
         },
@@ -373,7 +366,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.AddExemptedEntities],
           portfolios: [],
         },
@@ -395,7 +388,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.RemoveTransferManager],
           portfolios: [],
         },
@@ -417,7 +410,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          tokens: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.RemoveExemptedEntities],
           portfolios: [],
         },
@@ -447,22 +440,26 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     test('should fetch, process and return shared data', async () => {
+      const getCountStub = sinon.stub();
+      getCountStub.resolves({
+        restrictions: [],
+        availableSlots: 1,
+      });
+      const getPercentageStub = sinon.stub();
+      getPercentageStub.resolves({
+        restrictions: [{ percentage }],
+        availableSlots: 1,
+      });
+
       entityMockUtils.configureMocks({
         identityOptions: {
           getScopeId: identityScopeId,
         },
+        securityTokenOptions: {
+          transferRestrictionsCountGet: getCountStub,
+          transferRestrictionsPercentageGet: getPercentageStub,
+        },
       });
-
-      const getCountStub = entityMockUtils.getSecurityTokenTransferRestrictionsCountGetStub({
-        restrictions: [],
-        availableSlots: 1,
-      });
-      const getPercentageStub = entityMockUtils.getSecurityTokenTransferRestrictionsPercentageGetStub(
-        {
-          restrictions: [{ percentage }],
-          availableSlots: 1,
-        }
-      );
 
       const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
         mockContext

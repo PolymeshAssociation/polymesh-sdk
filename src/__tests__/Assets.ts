@@ -47,17 +47,16 @@ describe('Assets Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
   describe('method: reserveTicker', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
-        ticker: 'SOMETICKER',
+        ticker: 'SOME_TICKER',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -72,7 +71,7 @@ describe('Assets Class', () => {
 
   describe('method: createToken', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'FAKETICKER';
+      const ticker = 'FAKE_TICKER';
 
       const args = {
         ticker,
@@ -86,7 +85,7 @@ describe('Assets Class', () => {
         reservationRequired: false,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -102,11 +101,11 @@ describe('Assets Class', () => {
   describe('method: claimClassicTicker', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
-        ticker: 'SOMETICKER',
+        ticker: 'SOME_TICKER',
         ethereumSignature: 'someSig',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -120,35 +119,35 @@ describe('Assets Class', () => {
   });
 
   describe('method: isTickerAvailable', () => {
-    beforeAll(() => {
-      entityMockUtils.initMocks();
-    });
-
     afterEach(() => {
       entityMockUtils.reset();
     });
 
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
     test('should return true if ticker is available to reserve it', async () => {
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: new Date(),
-        status: TickerReservationStatus.Free,
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: new Date(),
+            status: TickerReservationStatus.Free,
+          },
+        },
       });
 
-      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'someTicker' });
+      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' });
 
       expect(isTickerAvailable).toBeTruthy();
     });
 
     test('should return false if ticker is not available to reserve it', async () => {
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: new Date(),
-        status: TickerReservationStatus.Reserved,
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: new Date(),
+            status: TickerReservationStatus.Reserved,
+          },
+        },
       });
 
       const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'someTicker' });
@@ -159,14 +158,18 @@ describe('Assets Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      entityMockUtils.getTickerReservationDetailsStub().callsFake(async cbFunc => {
-        cbFunc({
-          owner: entityMockUtils.getIdentityInstance(),
-          expiryDate: new Date(),
-          status: TickerReservationStatus.Free,
-        });
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: async cbFunc => {
+            cbFunc({
+              owner: entityMockUtils.getIdentityInstance(),
+              expiryDate: new Date(),
+              status: TickerReservationStatus.Free,
+            });
 
-        return unsubCallback;
+            return unsubCallback;
+          },
+        },
       });
 
       const callback = sinon.stub();

@@ -62,7 +62,6 @@ describe('Permissions class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -82,7 +81,7 @@ describe('Permissions class', () => {
         permissions: { transactions: {} as TransactionPermissions },
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -107,7 +106,7 @@ describe('Permissions class', () => {
         permissions: { transactions: {} as TransactionPermissions },
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -131,7 +130,7 @@ describe('Permissions class', () => {
         target,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -159,7 +158,8 @@ describe('Permissions class', () => {
 
       const result = await permissions.getGroup({ id });
 
-      expect(result).toEqual(entityMockUtils.getCustomPermissionGroupInstance({ id, ticker }));
+      expect(result.id).toEqual(id);
+      expect(result.token.ticker).toBe(ticker);
     });
 
     test('should throw an error if the Custom Permission Group does not exist', () => {
@@ -182,7 +182,8 @@ describe('Permissions class', () => {
 
       const result = await permissions.getGroup({ type });
 
-      expect(result).toEqual(entityMockUtils.getKnownPermissionGroupInstance({ type, ticker }));
+      expect(result.type).toEqual(type);
+      expect(result.token.ticker).toBe(ticker);
     });
   });
 

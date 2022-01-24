@@ -36,7 +36,6 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -84,9 +83,9 @@ describe('modifyCaCheckpoint procedure', () => {
       address,
       getIdentity: entityMockUtils.getIdentityInstance({
         getSecondaryKeys: [
-          ({
+          {
             signer: entityMockUtils.getAccountInstance({ address }),
-          } as unknown) as SecondaryKey,
+          } as unknown as SecondaryKey,
         ],
       }),
     });
