@@ -285,7 +285,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test("should return the current account, whether the target is the caller and the target's identity (if any)", async () => {
+    test("should return the current Account, whether the target is the caller and the target's identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
         ConsumeJoinIdentityAuthorizationParams,
         void,

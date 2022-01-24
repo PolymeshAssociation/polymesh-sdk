@@ -31,13 +31,13 @@ import { batchArguments, filterEventRecords } from '~/utils/internal';
 /**
  * @hidden
  */
-export const createRegisterCustomAssetTypeResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): AssetType => {
-  const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
+export const createRegisterCustomAssetTypeResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): AssetType => {
+    const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
 
-  return internalTokenTypeToAssetType({ Custom: data[1] }, context);
-};
+    return internalTokenTypeToAssetType({ Custom: data[1] }, context);
+  };
 
 export interface CreateSecurityTokenParams {
   name: string;
@@ -183,8 +183,8 @@ export async function prepareCreateSecurityToken(
     fee = new BigNumber(0);
   } else if (status === TickerReservationStatus.Free) {
     const [registerTickerFee, createAssetFee] = await Promise.all([
-      context.getTransactionFees(TxTags.asset.RegisterTicker),
-      context.getTransactionFees(TxTags.asset.CreateAsset),
+      context.getProtocolFees(TxTags.asset.RegisterTicker),
+      context.getProtocolFees(TxTags.asset.CreateAsset),
     ]);
     fee = registerTickerFee.plus(createAssetFee);
   }

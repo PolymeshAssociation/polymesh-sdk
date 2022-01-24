@@ -377,8 +377,8 @@ describe('Account class', () => {
   });
 
   describe('method: getPermissions', () => {
-    test('should return full permissions if the account is the primary key', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+    test('should return full permissions if the Account is the primary Account', async () => {
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 
@@ -392,7 +392,7 @@ describe('Account class', () => {
       });
     });
 
-    test("should return the account's permissions if it is a secondary key", async () => {
+    test("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
         tokens: null,
         transactions: null,
@@ -400,7 +400,7 @@ describe('Account class', () => {
         portfolios: null,
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [
+        secondaryAccounts: [
           { signer: entityMockUtils.getAccountInstance({ address }), permissions },
           {
             signer: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
@@ -427,7 +427,7 @@ describe('Account class', () => {
 
   describe('method: checkPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 
@@ -444,7 +444,9 @@ describe('Account class', () => {
         portfolios: null,
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -469,7 +471,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -499,7 +503,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -563,7 +569,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -596,7 +604,9 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryKeys: [{ signer: entityMockUtils.getAccountInstance({ address }), permissions }],
+        secondaryAccounts: [
+          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+        ],
       });
 
       account = new Account({ address }, context);
@@ -617,7 +627,7 @@ describe('Account class', () => {
     });
 
     test('should exempt certain transactions from requiring permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 
@@ -641,7 +651,7 @@ describe('Account class', () => {
 
   describe('method: hasPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryKey: address });
+      context = dsMockUtils.getContextInstance({ primaryAccount: address });
 
       account = new Account({ address }, context);
 

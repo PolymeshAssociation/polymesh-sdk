@@ -61,7 +61,7 @@ export class Settlements extends Namespace<SecurityToken> {
 
     /*
      * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account
-     * or a dummy account (Alice's in testnet) if the SDK was instanced without one
+     * or a dummy Account (Alice's in testnet) if the SDK was instanced without one
      */
     const senderAddress = context.currentPair?.address || DUMMY_ACCOUNT_ID;
 

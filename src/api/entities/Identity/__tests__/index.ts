@@ -17,7 +17,7 @@ import {
   PortfolioCustodianRole,
   Role,
   RoleType,
-  SecondaryKey,
+  SecondaryAccount,
   Signer,
   SignerType,
   SignerValue,
@@ -474,7 +474,7 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getPrimaryKey', () => {
+  describe('method: getPrimaryAccount', () => {
     const did = 'someDid';
     const accountId = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
 
@@ -498,14 +498,14 @@ describe('Identity class', () => {
       /* eslint-enabled @typescript-eslint/naming-convention */
     });
 
-    test('should return a PrimaryKey', async () => {
+    test('should return a PrimaryAccount', async () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
       didRecordsStub.returns(rawDidRecord);
 
-      const result = await identity.getPrimaryKey();
-      expect(result.address).toBe(accountId);
+      const result = await identity.getPrimaryAccount();
+      expect(result).toEqual(expect.objectContaining({ address: accountId }));
     });
 
     test('should allow subscription', async () => {
@@ -520,7 +520,7 @@ describe('Identity class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await identity.getPrimaryKey(callback);
+      const result = await identity.getPrimaryAccount(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithMatch(callback, { address: accountId });
@@ -1000,7 +1000,7 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: areSecondaryKeysFrozen', () => {
+  describe('method: areSecondaryAccountsFrozen', () => {
     let frozenStub: sinon.SinonStub;
     let boolValue: boolean;
     let rawBoolValue: bool;
@@ -1019,7 +1019,7 @@ describe('Identity class', () => {
 
       frozenStub.resolves(rawBoolValue);
 
-      const result = await identity.areSecondaryKeysFrozen();
+      const result = await identity.areSecondaryAccountsFrozen();
 
       expect(result).toBe(boolValue);
     });
@@ -1034,7 +1034,7 @@ describe('Identity class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await identity.areSecondaryKeysFrozen(callback);
+      const result = await identity.areSecondaryAccountsFrozen(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, boolValue);
@@ -1133,7 +1133,7 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getSecondaryKeys', () => {
+  describe('method: getSecondaryAccounts', () => {
     const did = 'someDid';
     const accountId = 'someAccountId';
     const signerValues = [
@@ -1149,7 +1149,7 @@ describe('Identity class', () => {
 
     let account: Account;
     let fakeIdentity: Identity;
-    let fakeResult: SecondaryKey[];
+    let fakeResult: SecondaryAccount[];
 
     let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
     let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
@@ -1221,7 +1221,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       didRecordsStub.resolves(rawDidRecord);
 
-      const result = await identity.getSecondaryKeys();
+      const result = await identity.getSecondaryAccounts();
       expect(result).toEqual(fakeResult);
     });
 
@@ -1235,7 +1235,7 @@ describe('Identity class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await identity.getSecondaryKeys(callback);
+      const result = await identity.getSecondaryAccounts(callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);

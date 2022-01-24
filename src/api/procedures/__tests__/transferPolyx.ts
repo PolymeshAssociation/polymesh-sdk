@@ -59,7 +59,7 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('Insufficient free balance');
   });
 
-  test("should throw an error if destination account doesn't have an associated Identity", () => {
+  test("should throw an error if destination Account doesn't have an associated Identity", () => {
     entityMockUtils.configureMocks({
       accountOptions: {
         getIdentity: null,
@@ -70,7 +70,7 @@ describe('transferPolyx procedure', () => {
 
     return expect(
       prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow("The destination account doesn't have an asssociated Identity");
+    ).rejects.toThrow("The destination Account doesn't have an asssociated Identity");
   });
 
   test("should throw an error if sender Identity doesn't have valid CDD", () => {

@@ -72,10 +72,8 @@ export class Procedure<
     args: Args
   ) => Promise<Storage> | Storage;
 
-  private transactions: (
-    | PolymeshTransaction<unknown[]>
-    | PolymeshTransactionBatch<unknown[]>
-  )[] = [];
+  private transactions: (PolymeshTransaction<unknown[]> | PolymeshTransactionBatch<unknown[]>)[] =
+    [];
 
   private _storage: null | Storage = null;
   private _context: null | Context = null;
@@ -162,10 +160,8 @@ export class Procedure<
 
     const { permissions = true, roles = true } = checkAuthorizationResult;
 
-    const {
-      signerPermissions = permissions,
-      agentPermissions = permissions,
-    } = checkAuthorizationResult;
+    const { signerPermissions = permissions, agentPermissions = permissions } =
+      checkAuthorizationResult;
 
     let identity: Identity | null = null;
     let rolesResult: CheckRolesResult;
@@ -275,13 +271,8 @@ export class Procedure<
       const { args: procArgs, transformer } = args;
       const ctx = await this.setup(procArgs, context, opts);
 
-      const {
-        roles,
-        signerPermissions,
-        agentPermissions,
-        accountFrozen,
-        noIdentity,
-      } = await this._checkAuthorization(procArgs, ctx);
+      const { roles, signerPermissions, agentPermissions, accountFrozen, noIdentity } =
+        await this._checkAuthorization(procArgs, ctx);
 
       if (noIdentity) {
         throw new PolymeshError({
@@ -357,7 +348,7 @@ export class Procedure<
    * @param options.resolvers - asynchronous callbacks used to return runtime data after
    *   the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
-   * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
+   * @param options.signer - address or keyring pair of the Account that will sign this transaction. Defaults to the current pair in the context
    * @param options.batchSize - amount of elements in the batch (this is only used for certain transactions whose fees depend on the size of the arg list, like `asset.addDocuments`)
    * @param options.paidForBy - third party Identity that will pay for the transaction fees
    * @param args - arguments to be passed to the transaction method
@@ -371,7 +362,7 @@ export class Procedure<
   ): PostTransactionValueArray<Values> {
     const {
       fee = null,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
       batchSize = null,
@@ -456,7 +447,7 @@ export class Procedure<
    * @param options.resolvers - asynchronous callbacks used to return runtime data after
    *   the added transaction has finished successfully
    * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
-   * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
+   * @param options.signer - address or keyring pair of the Account that will sign this transaction. Defaults to the current pair in the context
    * @param options.paidByThirdParty - if the transaction fees will be paid by a third party. Defaults to false
    * @param options.groupByFn - function that establishes how to group the arguments in case the list is too large and they must be separated internally
    * @param args - arguments to be passed to each method in the batch
@@ -471,7 +462,7 @@ export class Procedure<
   ): PostTransactionValueArray<Values> {
     const {
       fee = null,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
       groupByFn,
@@ -543,7 +534,7 @@ export class Procedure<
   }
 
   /**
-   * contains the data services, current account, etc. In short, the *context* in which
+   * contains the data services, current Account, etc. In short, the *context* in which
    *   the Procedure is being run
    */
   public get context(): Context {

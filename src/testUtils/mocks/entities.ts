@@ -55,7 +55,7 @@ import {
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
-  SecondaryKey,
+  SecondaryAccount,
   SecurityTokenDetails,
   Signer,
   SignerType,
@@ -108,14 +108,14 @@ interface IdentityOptions extends EntityOptions {
   tokenPermissionsCheckPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Identity>>;
   hasValidCdd?: EntityGetter<boolean>;
   isCddProvider?: EntityGetter<boolean>;
-  getPrimaryKey?: EntityGetter<Account>;
+  getPrimaryAccount?: EntityGetter<Account>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
   getVenues?: EntityGetter<Venue[]>;
   getScopeId?: EntityGetter<string>;
   getTokenBalance?: EntityGetter<BigNumber>;
-  getSecondaryKeys?: EntityGetter<SecondaryKey[]>;
-  areSecondaryKeysFrozen?: EntityGetter<boolean>;
+  getSecondaryAccounts?: EntityGetter<SecondaryAccount[]>;
+  areSecondaryAccountsFrozen?: EntityGetter<boolean>;
   tokenPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   tokenPermissionsGet?: EntityGetter<TokenWithGroup[]>;
 }
@@ -443,7 +443,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     checkRoles!: sinon.SinonStub;
     hasRole!: sinon.SinonStub;
     hasValidCdd!: sinon.SinonStub;
-    getPrimaryKey!: sinon.SinonStub;
+    getPrimaryAccount!: sinon.SinonStub;
     portfolios = {};
     authorizations = {} as {
       getReceived: sinon.SinonStub;
@@ -460,8 +460,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getVenues!: sinon.SinonStub;
     getScopeId!: sinon.SinonStub;
     getTokenBalance!: sinon.SinonStub;
-    getSecondaryKeys!: sinon.SinonStub;
-    areSecondaryKeysFrozen!: sinon.SinonStub;
+    getSecondaryAccounts!: sinon.SinonStub;
+    areSecondaryAccountsFrozen!: sinon.SinonStub;
     isCddProvider!: sinon.SinonStub;
 
     /**
@@ -487,7 +487,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.checkRoles = createEntityGetterStub(opts.checkRoles);
       this.hasRole = createEntityGetterStub(opts.hasRole);
       this.hasValidCdd = createEntityGetterStub(opts.hasValidCdd);
-      this.getPrimaryKey = createEntityGetterStub(opts.getPrimaryKey);
+      this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
       this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
       this.tokenPermissions.get = createEntityGetterStub(opts.tokenPermissionsGet);
@@ -501,8 +501,8 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getVenues = createEntityGetterStub(opts.getVenues);
       this.getScopeId = createEntityGetterStub(opts.getScopeId);
       this.getTokenBalance = createEntityGetterStub(opts.getTokenBalance);
-      this.getSecondaryKeys = createEntityGetterStub(opts.getSecondaryKeys);
-      this.areSecondaryKeysFrozen = createEntityGetterStub(opts.areSecondaryKeysFrozen);
+      this.getSecondaryAccounts = createEntityGetterStub(opts.getSecondaryAccounts);
+      this.areSecondaryAccountsFrozen = createEntityGetterStub(opts.areSecondaryAccountsFrozen);
       this.isCddProvider = createEntityGetterStub(opts.isCddProvider);
     }
   },
@@ -515,9 +515,9 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getVenues: [],
     getScopeId: 'someScopeId',
     getTokenBalance: new BigNumber(100),
-    getSecondaryKeys: [],
-    areSecondaryKeysFrozen: false,
-    getPrimaryKey: getAccountInstance(),
+    getSecondaryAccounts: [],
+    areSecondaryAccountsFrozen: false,
+    getPrimaryAccount: getAccountInstance(),
     tokenPermissionsGet: [],
     tokenPermissionsGetGroup: getKnownPermissionGroupInstance(),
     tokenPermissionsCheckPermissions: {

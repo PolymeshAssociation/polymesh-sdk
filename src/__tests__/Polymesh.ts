@@ -2,16 +2,12 @@ import { Keyring } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/api/types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
-import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import semver from 'semver';
 import sinon from 'sinon';
 
-import { Account, TransactionQueue } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { AccountBalance, SubCallback } from '~/types';
 import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
 
 jest.mock(
@@ -345,70 +341,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getAccountBalance', () => {
-    const fakeBalance = {
-      free: new BigNumber(100),
-      locked: new BigNumber(0),
-      total: new BigNumber(100),
-    };
-    test('should return the free and locked POLYX balance of the current account', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      const result = await polymesh.getAccountBalance();
-      expect(result).toEqual(fakeBalance);
-    });
-
-    test('should return the free and locked POLYX balance of the supplied account', async () => {
-      entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      let result = await polymesh.getAccountBalance({ account: 'someId' });
-      expect(result).toEqual(fakeBalance);
-
-      result = await polymesh.getAccountBalance({
-        account: new Account({ address: 'someId ' }, dsMockUtils.getContextInstance()),
-      });
-      expect(result).toEqual(fakeBalance);
-    });
-
-    test('should allow subscription (with and without a supplied account id)', async () => {
-      const unsubCallback = 'unsubCallback';
-      dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
-      entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
-
-      const accountBalanceStub = (
-        dsMockUtils.getContextInstance().getCurrentAccount().getBalance as sinon.SinonStub
-      ).resolves(unsubCallback);
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
-      let result = await polymesh.getAccountBalance(callback);
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
-
-      const getBalanceStub = sinon.stub().resolves(unsubCallback);
-      entityMockUtils.configureMocks({
-        accountOptions: {
-          getBalance: getBalanceStub,
-        },
-      });
-      const account = 'someId';
-      result = await polymesh.getAccountBalance({ account }, callback);
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(getBalanceStub, callback);
-    });
-  });
-
   describe('method: getCurrentIdentity', () => {
     test('should return the current Identity', async () => {
       const polymesh = await Polymesh.connect({
@@ -423,173 +355,6 @@ describe('Polymesh Class', () => {
       ]);
 
       expect(result).toEqual(currentIdentity);
-    });
-  });
-
-  describe('method: getAccount', () => {
-    test('should return an Account object with the passed address', async () => {
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const params = { address: 'testAddress' };
-
-      const result = polymesh.getAccount(params);
-
-      expect(result.address).toBe(params.address);
-    });
-
-    test('should return the current Account if no address is passed', async () => {
-      const address = 'someAddress';
-      dsMockUtils.configureMocks({ contextOptions: { currentPairAddress: address } });
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const result = polymesh.getAccount();
-
-      expect(result.address).toBe(address);
-    });
-  });
-
-  describe('method: getAccounts', () => {
-    test('should return the list of signer accounts associated to the SDK', async () => {
-      const accounts = [entityMockUtils.getAccountInstance()];
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getAccounts: accounts,
-        },
-      });
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const result = polymesh.getAccounts();
-
-      expect(result).toEqual(accounts);
-    });
-  });
-
-  describe('method: getTransactionFees', () => {
-    test('should return the fees associated to the supplied transaction', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { transactionFee: new BigNumber(500) } });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const fee = await polymesh.getTransactionFees({ tag: TxTags.asset.CreateAsset });
-
-      expect(fee).toEqual(new BigNumber(500));
-    });
-  });
-
-  describe('method: getTreasuryAccount', () => {
-    test('should return the treasury account', async () => {
-      const treasuryAddress = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      expect(polymesh.getTreasuryAccount().address).toEqual(treasuryAddress);
-    });
-  });
-
-  describe('method: transferPolyx', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      const args = {
-        to: 'someAccount',
-        amount: new BigNumber(50),
-      };
-
-      const expectedQueue = '' as unknown as TransactionQueue<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await polymesh.transferPolyx(args);
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
-  describe('method: getNetworkProperties', () => {
-    test('should return current network information', async () => {
-      const name = 'someName';
-      const version = 1;
-      const fakeResult = {
-        name,
-        version,
-      };
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-      });
-
-      dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
-      dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
-
-      const result = await polymesh.getNetworkProperties();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getTreasuryBalance', () => {
-    let fakeBalance: AccountBalance;
-
-    beforeAll(() => {
-      fakeBalance = {
-        free: new BigNumber(500000),
-        locked: new BigNumber(0),
-        total: new BigNumber(500000),
-      };
-      entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
-    });
-
-    test('should return the POLYX balance of the treasury account', async () => {
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      const result = await polymesh.getTreasuryBalance();
-      expect(result).toEqual(fakeBalance.free);
-    });
-
-    test('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallback';
-
-      entityMockUtils.configureMocks({
-        accountOptions: {
-          getBalance: async cbFunc => {
-            cbFunc(fakeBalance);
-            return unsubCallback;
-          },
-        },
-      });
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-      });
-
-      const callback = sinon.stub();
-      const result = await polymesh.getTreasuryBalance(callback);
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeBalance.free);
     });
   });
 
@@ -641,28 +406,6 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getLatestBlock', () => {
-    test('should return the latest block number', async () => {
-      const blockNumber = new BigNumber(100);
-
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, latestBlock: blockNumber } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      const result = await polymesh.getLatestBlock();
-
-      expect(result).toEqual(blockNumber);
-    });
-  });
-
   describe('method: disconnect', () => {
     test('should call the underlying disconnect function', async () => {
       const polymesh = await Polymesh.connect({
@@ -676,28 +419,6 @@ describe('Polymesh Class', () => {
 
       await polymesh.disconnect();
       sinon.assert.calledOnce(dsMockUtils.getContextInstance().disconnect);
-    });
-  });
-
-  describe('method: getNetworkVersion', () => {
-    test('should return the network version', async () => {
-      const networkVersion = '1.0.0';
-
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, networkVersion } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      const result = await polymesh.getNetworkVersion();
-
-      expect(result).toEqual(networkVersion);
     });
   });
 

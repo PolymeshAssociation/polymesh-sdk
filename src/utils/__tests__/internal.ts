@@ -2,7 +2,7 @@ import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { ModuleName, TxTags } from 'polymesh-types/types';
+import { IdentityId, ModuleName, PortfolioName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
@@ -34,6 +34,7 @@ import {
   getCheckpointValue,
   getCommonKeyring,
   getDid,
+  getPortfolioIdByName,
   getTicker,
   hasSameElements,
   isModuleOrTagMatch,
@@ -181,9 +182,9 @@ describe('unwrapValues', () => {
 
 describe('filterEventRecords', () => {
   const filterRecordsStub = sinon.stub();
-  const mockReceipt = ({
+  const mockReceipt = {
     filterRecords: filterRecordsStub,
-  } as unknown) as ISubmittableResult;
+  } as unknown as ISubmittableResult;
 
   afterEach(() => {
     filterRecordsStub.reset();
@@ -496,10 +497,10 @@ describe('createProcedureMethod', () => {
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
     const fakeProcedure = (): Procedure<number, void> =>
-      (({
+      ({
         prepare,
         checkAuthorization,
-      } as unknown) as Procedure<number, void>);
+      } as unknown as Procedure<number, void>);
 
     const method: ProcedureMethod<number, void> = createProcedureMethod(
       { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
@@ -521,10 +522,10 @@ describe('createProcedureMethod', () => {
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
     const fakeProcedure = (): Procedure<void, void> =>
-      (({
+      ({
         prepare,
         checkAuthorization,
-      } as unknown) as Procedure<void, void>);
+      } as unknown as Procedure<void, void>);
 
     const method = createProcedureMethod(
       { getProcedureAndArgs: () => [fakeProcedure, undefined], transformer, voidArgs: true },
@@ -551,7 +552,7 @@ describe('assertIsInteger', () => {
   });
 
   test('assertIsInteger should throw an error if the argument is not an integer', async () => {
-    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+    expect(() => assertIsInteger('noInteger' as unknown as BigNumber)).toThrow(
       'The number must be an integer'
     );
 
@@ -570,7 +571,7 @@ describe('assertIsPositive', () => {
 
 describe('getCommonKeyring', () => {
   test('should return a common keyring', async () => {
-    const fakeKeyring = ('keyring' as unknown) as CommonKeyring;
+    const fakeKeyring = 'keyring' as unknown as CommonKeyring;
     let result = getCommonKeyring(fakeKeyring);
 
     expect(result).toBe(fakeKeyring);
@@ -792,5 +793,56 @@ describe('hasSameElements', () => {
 
     result = hasSameElements([1, 2], [2, 3]);
     expect(result).toEqual(false);
+  });
+});
+
+describe('getPortfolioIdByName', () => {
+  let context: Context;
+  let nameToNumberStub: sinon.SinonStub;
+  let portfoliosStub: sinon.SinonStub;
+  let rawName: PortfolioName;
+  let identityId: IdentityId;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    rawName = dsMockUtils.createMockText('someName');
+    identityId = dsMockUtils.createMockIdentityId('someDid');
+    nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
+    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should return null if no portfolio with given name is found', async () => {
+    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
+
+    const result = await getPortfolioIdByName(identityId, rawName, context);
+    expect(result).toBeNull();
+  });
+
+  test('should return portfolio number for given portfolio name', async () => {
+    nameToNumberStub.returns(dsMockUtils.createMockU64(2));
+
+    let result = await getPortfolioIdByName(identityId, rawName, context);
+    expect(result).toEqual(new BigNumber(2));
+
+    nameToNumberStub.returns(dsMockUtils.createMockU64(1));
+    portfoliosStub.returns(rawName);
+
+    result = await getPortfolioIdByName(identityId, rawName, context);
+    expect(result).toEqual(new BigNumber(1));
   });
 });

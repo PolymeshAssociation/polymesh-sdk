@@ -1,17 +1,32 @@
 import BigNumber from 'bignumber.js';
 
-import { Context } from '~/internal';
+import { Account, Context, transferPolyx, TransferPolyxParams } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
-import { EventIdentifier, ExtrinsicData } from '~/types';
+import {
+  EventIdentifier,
+  ExtrinsicData,
+  NetworkProperties,
+  ProcedureMethod,
+  SubCallback,
+  TxTag,
+  UnsubCallback,
+} from '~/types';
 import { Ensured } from '~/types/utils';
-import { extrinsicIdentifierToTxTag, middlewareEventToEventIdentifier } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
+import {
+  extrinsicIdentifierToTxTag,
+  middlewareEventToEventIdentifier,
+  moduleAddressToString,
+  textToString,
+  u32ToBigNumber,
+} from '~/utils/conversion';
+import { createProcedureMethod, optionize } from '~/utils/internal';
 
 /**
- * Handles all Middleware related functionality
+ * Handles all Network related functionality, including querying for historical events from middleware
  */
-export class Middleware {
+export class Network {
   private context: Context;
 
   /**
@@ -19,7 +34,97 @@ export class Middleware {
    */
   constructor(context: Context) {
     this.context = context;
+
+    this.transferPolyx = createProcedureMethod(
+      { getProcedureAndArgs: args => [transferPolyx, args] },
+      context
+    );
   }
+
+  /**
+   * Retrieve the number of the latest block in the chain
+   */
+  public getLatestBlock(): Promise<BigNumber> {
+    return this.context.getLatestBlock();
+  }
+
+  /**
+   * Fetch the current network version (i.e. 3.1.0)
+   */
+  public async getVersion(): Promise<string> {
+    return this.context.getNetworkVersion();
+  }
+
+  /**
+   * Retrieve information for the current network
+   */
+  public async getNetworkProperties(): Promise<NetworkProperties> {
+    const {
+      context: {
+        polymeshApi: {
+          runtimeVersion: { specVersion },
+          rpc: {
+            system: { chain },
+          },
+        },
+      },
+    } = this;
+    const name = await chain();
+
+    return {
+      name: textToString(name),
+      version: u32ToBigNumber(specVersion).toNumber(),
+    };
+  }
+
+  /**
+   * Retrieve the protocol fees associated with running a specific transaction
+   *
+   * @param args.tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
+   */
+  public getProtocolFees(args: { tag: TxTag }): Promise<BigNumber> {
+    return this.context.getProtocolFees(args.tag);
+  }
+
+  /**
+   * Get the treasury wallet address
+   */
+  public getTreasuryAccount(): Account {
+    const { context } = this;
+    return new Account(
+      { address: moduleAddressToString(TREASURY_MODULE_ADDRESS, context) },
+      context
+    );
+  }
+
+  /**
+   * Get the Treasury POLYX balance
+   *
+   * @note can be subscribed to
+   */
+  public getTreasuryBalance(): Promise<BigNumber>;
+  public getTreasuryBalance(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async getTreasuryBalance(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
+    const account = this.getTreasuryAccount();
+
+    if (callback) {
+      return account.getBalance(({ free: freeBalance }) => {
+        callback(freeBalance);
+      });
+    }
+
+    const { free } = await account.getBalance();
+    return free;
+  }
+
+  /**
+   * Transfer an amount of POLYX to a specified Account
+   */
+  public transferPolyx: ProcedureMethod<TransferPolyxParams, void>;
 
   /**
    * Retrieve a single event by any of its indexed arguments. Can be filtered using parameters

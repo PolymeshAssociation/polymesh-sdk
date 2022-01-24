@@ -299,10 +299,10 @@ describe('Procedure class', () => {
 
     test('should prepare and return a transaction queue with the corresponding transactions, arguments, fees and return value', async () => {
       const ticker = 'MY_TOKEN';
-      const secondaryKeys = ['0x1', '0x2'];
+      const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        secondaryKeys,
+        secondaryAccounts,
       };
       const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
       const tx2 = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
@@ -315,7 +315,7 @@ describe('Procedure class', () => {
       ): Promise<string> {
         this.addTransaction(tx1, {}, args.ticker);
 
-        this.addTransaction(tx2, {}, args.secondaryKeys);
+        this.addTransaction(tx2, {}, args.secondaryAccounts);
 
         return returnValue;
       };
@@ -329,7 +329,7 @@ describe('Procedure class', () => {
       expect(queue).toMatchObject({
         transactions: [
           { tx: tx1, args: [ticker] },
-          { tx: tx2, args: [secondaryKeys] },
+          { tx: tx2, args: [secondaryAccounts] },
         ],
       });
       sinon.assert.calledWith(
@@ -337,7 +337,7 @@ describe('Procedure class', () => {
         sinon.match({
           transactions: sinon.match([
             sinon.match({ tx: tx1, args: [ticker] }),
-            sinon.match({ tx: tx2, args: [secondaryKeys] }),
+            sinon.match({ tx: tx2, args: [secondaryAccounts] }),
           ]),
         }),
         { ...context, currentPair: { address: 'something' } }
@@ -360,7 +360,7 @@ describe('Procedure class', () => {
       expect(queue).toMatchObject({
         transactions: [
           { tx: tx1, args: [ticker] },
-          { tx: tx2, args: [secondaryKeys] },
+          { tx: tx2, args: [secondaryAccounts] },
         ],
         procedureResult: returnValue,
       });
@@ -369,7 +369,7 @@ describe('Procedure class', () => {
         sinon.match({
           transactions: sinon.match([
             sinon.match({ tx: tx1, args: [ticker] }),
-            sinon.match({ tx: tx2, args: [secondaryKeys] }),
+            sinon.match({ tx: tx2, args: [secondaryAccounts] }),
           ]),
           procedureResult: returnValue,
         }),
@@ -379,10 +379,10 @@ describe('Procedure class', () => {
 
     test('should throw any errors encountered during preparation', () => {
       const ticker = 'MY_TOKEN';
-      const secondaryKeys = ['0x1', '0x2'];
+      const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        secondaryKeys,
+        secondaryAccounts,
       };
 
       const errorMsg = 'failed';
@@ -397,10 +397,10 @@ describe('Procedure class', () => {
 
     test("should throw an error if the caller doesn't have the appropriate roles", async () => {
       const ticker = 'MY_TOKEN';
-      const secondaryKeys = ['0x1', '0x2'];
+      const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        secondaryKeys,
+        secondaryAccounts,
       };
       const func = async function (this: Procedure<typeof procArgs, string>): Promise<string> {
         return 'success';
