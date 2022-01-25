@@ -2122,7 +2122,7 @@ export function trustedIssuerToTrustedClaimIssuer(
 
   const identity = new Identity({ did: identityIdToString(issuer) }, context);
 
-  let trustedFor: ClaimType[] | undefined;
+  let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
     trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);

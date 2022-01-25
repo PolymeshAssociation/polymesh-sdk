@@ -338,9 +338,9 @@ export interface ClaimScope {
 export interface TrustedClaimIssuer {
   identity: Identity;
   /**
-   * an undefined value means that the issuer is trusted for all claim types.
+   * a null value means that the issuer is trusted for all claim types.
    */
-  trustedFor?: ClaimType[];
+  trustedFor: ClaimType[] | null;
 }
 
 export type InputTrustedClaimIssuer = Modify<

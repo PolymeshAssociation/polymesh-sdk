@@ -3608,8 +3608,8 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           scope: { type: ScopeType.Identity, value: 'someTickerDid' },
         },
         trustedClaimIssuers: [
-          { identity: new Identity({ did }, context) },
-          { identity: new Identity({ did: 'otherDid' }, context) },
+          { identity: new Identity({ did }, context), trustedFor: null },
+          { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
         ],
       },
       {
@@ -3695,8 +3695,8 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     const cddId = 'someCddId';
     const context = dsMockUtils.getContextInstance();
     const issuerDids = [
-      { identity: new Identity({ did: 'someDid' }, context) },
-      { identity: new Identity({ did: 'otherDid' }, context) },
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
     ];
     const targetIdentityDid = 'someDid';
     const conditions: Condition[] = [
@@ -4092,8 +4092,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const cddId = 'someCddId';
     const context = dsMockUtils.getContextInstance();
     const issuerDids = [
-      { identity: new Identity({ did: 'someDid' }, context) },
-      { identity: new Identity({ did: 'otherDid' }, context) },
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
     ];
     const targetIdentityDid = 'someDid';
     const conditions: ConditionCompliance[] = [
@@ -4304,8 +4304,8 @@ describe('assetComplianceResultToCompliance', () => {
     const cddId = 'someCddId';
     const context = dsMockUtils.getContextInstance();
     const issuerDids = [
-      { identity: new Identity({ did: 'someDid' }, context) },
-      { identity: new Identity({ did: 'otherDid' }, context) },
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
     ];
     const conditions: ConditionCompliance[] = [
       {
@@ -5049,6 +5049,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
 
     let issuer: TrustedClaimIssuer = {
       identity: entityMockUtils.getIdentityInstance({ did }),
+      trustedFor: null,
     };
 
     dsMockUtils
@@ -5084,6 +5085,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
     const context = dsMockUtils.getContextInstance();
     let fakeResult: TrustedClaimIssuer = {
       identity: new Identity({ did }, context),
+      trustedFor: null,
     };
     let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
       issuer: dsMockUtils.createMockIdentityId(did),

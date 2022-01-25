@@ -61,8 +61,8 @@ describe('TrustedClaimIssuers class', () => {
 
       const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
         claimIssuers: [
-          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
-          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }), trustedFor: null },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }), trustedFor: null },
         ],
       };
 
@@ -99,8 +99,8 @@ describe('TrustedClaimIssuers class', () => {
 
       const args: ModifyTokenTrustedClaimIssuersAddSetParams = {
         claimIssuers: [
-          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
-          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }), trustedFor: null },
+          { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }), trustedFor: null },
         ],
       };
 

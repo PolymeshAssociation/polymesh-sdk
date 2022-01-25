@@ -223,11 +223,14 @@ describe('Requirements class', () => {
       token = entityMockUtils.getSecurityTokenInstance({ ticker });
       requirements = new Requirements(token, context);
       defaultClaimIssuers = [
-        { identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }) },
+        {
+          identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }),
+          trustedFor: null,
+        },
       ];
       notDefaultClaimIssuer = {
         identity: entityMockUtils.getIdentityInstance({ did: 'notDefaultClaimIssuer' }),
-        trustedFor: undefined,
+        trustedFor: null,
       };
       tokenDid = 'someTokenDid';
       cddId = 'someCddId';
@@ -238,6 +241,7 @@ describe('Requirements class', () => {
 
       trustedIssuerToTrustedClaimIssuerStub.returns({
         identity: defaultClaimIssuers[0].identity,
+        trustedFor: null,
       });
 
       const scope = dsMockUtils.createMockScope({

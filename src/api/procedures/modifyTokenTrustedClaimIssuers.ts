@@ -18,7 +18,10 @@ export interface ModifyTokenTrustedClaimIssuersAddSetParams {
   /**
    * array of Identity IDs
    */
-  claimIssuers: { identity: string | Identity; trustedFor?: ClaimType[] }[];
+  claimIssuers: {
+    identity: string | Identity;
+    trustedFor: ClaimType[] | null;
+  }[];
 }
 
 export interface ModifyTokenTrustedClaimIssuersRemoveParams {
@@ -81,7 +84,7 @@ const areSameClaimIssuers = (
       { identity: bIdentity, trustedFor: bTrustedFor }
     ) => {
       const sameClaimTypes =
-        (aTrustedFor === undefined && bTrustedFor === undefined) ||
+        (aTrustedFor === null && bTrustedFor === null) ||
         (aTrustedFor && bTrustedFor && isEqual(sortBy(aTrustedFor), sortBy(bTrustedFor)));
 
       return signerToString(aIdentity) === signerToString(bIdentity) && !!sameClaimTypes;
