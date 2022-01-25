@@ -572,11 +572,6 @@ describe('createSecurityToken procedure', () => {
           },
         },
       });
-      // entityMockUtils.getTickerReservationDetailsStub().resolves({
-      //   owner: entityMockUtils.getIdentityInstance(),
-      //   expiryDate: null,
-      //   status: TickerReservationStatus.Reserved,
-      // });
 
       let result = await boundFunc({ tokenType: KnownTokenType.EquityCommon } as Params);
 

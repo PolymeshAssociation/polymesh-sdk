@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import BigNumber from 'bignumber.js';
+import { pick } from 'lodash';
 import sinon from 'sinon';
 
 import {
@@ -288,6 +289,22 @@ type Configurable<Options> = {
   argsToOpts?(...args: any[]): Partial<Options>;
 };
 
+/* eslint-disable @typescript-eslint/ban-types */
+/**
+ * @hidden
+ */
+function extractFromArgs<ArgsType extends object[], Props extends keyof ArgsType[0]>(
+  args: ArgsType,
+  properties: Props[]
+): Pick<ArgsType[0], Props> | Record<string, never> {
+  if (args.length) {
+    return pick<ArgsType[0], Props>(args[0], properties);
+  }
+
+  return {};
+}
+/* eslint-enable @typescript-eslint/ban-types */
+
 /**
  * @hidden
  *
@@ -468,13 +485,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof Identity>) {
-      if (args.length) {
-        const [{ did }] = args;
-
-        return { did };
-      }
-
-      return {};
+      return extractFromArgs(args, ['did']);
     }
 
     /**
@@ -550,13 +561,7 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof Account>) {
-      if (args.length) {
-        const [{ address }] = args;
-
-        return { address };
-      }
-
-      return {};
+      return extractFromArgs(args, ['address']);
     }
 
     /**
@@ -603,13 +608,7 @@ const MockTickerReservationClass = createMockEntityClass<TickerReservationOption
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof TickerReservation>) {
-      if (args.length) {
-        const [{ ticker }] = args;
-
-        return { ticker };
-      }
-
-      return {};
+      return extractFromArgs(args, ['ticker']);
     }
 
     /**
@@ -688,13 +687,7 @@ const MockSecurityTokenClass = createMockEntityClass<SecurityTokenOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof SecurityToken>) {
-      if (args.length) {
-        const [{ ticker }] = args;
-
-        return { ticker };
-      }
-
-      return {};
+      return extractFromArgs(args, ['ticker']);
     }
 
     /**
@@ -792,13 +785,7 @@ const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequest
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof AuthorizationRequest>) {
-      if (args.length) {
-        const [{ authId, target, issuer, expiry, data }] = args;
-
-        return { authId, target, issuer, expiry, data };
-      }
-
-      return {};
+      return extractFromArgs(args, ['authId', 'target', 'issuer', 'expiry', 'data']);
     }
 
     /**
@@ -835,13 +822,7 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof Venue>) {
-      if (args.length) {
-        const [{ id }] = args;
-
-        return { id };
-      }
-
-      return {};
+      return extractFromArgs(args, ['id']);
     }
 
     /**
@@ -876,13 +857,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof Instruction>) {
-      if (args.length) {
-        const [{ id }] = args;
-
-        return { id };
-      }
-
-      return {};
+      return extractFromArgs(args, ['id']);
     }
 
     /**
@@ -936,13 +911,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof NumberedPortfolio>) {
-      if (args.length) {
-        const [{ id, did }] = args;
-
-        return { id, did };
-      }
-
-      return {};
+      return extractFromArgs(args, ['id', 'did']);
     }
 
     /**
@@ -993,13 +962,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof DefaultPortfolio>) {
-      if (args.length) {
-        const [{ did }] = args;
-
-        return { did };
-      }
-
-      return {};
+      return extractFromArgs(args, ['did']);
     }
 
     /**
@@ -1045,13 +1008,7 @@ const MockStoClass = createMockEntityClass<StoOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof Sto>) {
-      if (args.length) {
-        const [{ id, ticker }] = args;
-
-        return { id, ticker };
-      }
-
-      return {};
+      return extractFromArgs(args, ['id', 'ticker']);
     }
 
     /**
@@ -1110,13 +1067,7 @@ const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof Checkpoint>) {
-      if (args.length) {
-        const [{ id, ticker }] = args;
-
-        return { id, ticker };
-      }
-
-      return {};
+      return extractFromArgs(args, ['id', 'ticker']);
     }
 
     /**
@@ -1166,13 +1117,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CheckpointSchedule>) {
-      if (args.length) {
-        const [{ id, ticker, start, period }] = args;
-
-        return { id, ticker, start, period };
-      }
-
-      return {};
+      return extractFromArgs(args, ['id', 'ticker', 'start', 'period']);
     }
 
     /**
@@ -1223,34 +1168,16 @@ const MockCorporateActionClass = createMockEntityClass<CorporateActionOptions>(
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CorporateAction>) {
-      if (args.length) {
-        const [
-          {
-            id,
-            ticker,
-            kind,
-            declarationDate,
-            targets,
-            description,
-            defaultTaxWithholding,
-            taxWithholdings,
-          },
-        ] = args;
-
-        return {
-          id,
-          ticker,
-          kind,
-          declarationDate,
-          targets,
-          description,
-          defaultTaxWithholding,
-          taxWithholdings,
-          origin,
-        };
-      }
-
-      return {};
+      return extractFromArgs(args, [
+        'id',
+        'ticker',
+        'kind',
+        'declarationDate',
+        'targets',
+        'description',
+        'defaultTaxWithholding',
+        'taxWithholdings',
+      ]);
     }
 
     /**
@@ -1314,47 +1241,22 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof DividendDistribution>) {
-      if (args.length) {
-        const [
-          {
-            id,
-            ticker,
-            kind,
-            declarationDate,
-            targets,
-            description,
-            defaultTaxWithholding,
-            taxWithholdings,
-            origin,
-            currency,
-            perShare,
-            maxAmount,
-            expiryDate,
-            paymentDate,
-          },
-        ] = args;
-
-        return {
-          id,
-          ticker,
-          kind: kind as
-            | CorporateActionKind.PredictableBenefit
-            | CorporateActionKind.UnpredictableBenefit,
-          declarationDate,
-          targets,
-          description,
-          defaultTaxWithholding,
-          taxWithholdings,
-          origin,
-          currency,
-          perShare,
-          maxAmount,
-          expiryDate,
-          paymentDate,
-        };
-      }
-
-      return {};
+      return extractFromArgs(args, [
+        'id',
+        'ticker',
+        'declarationDate',
+        'targets',
+        'kind',
+        'description',
+        'defaultTaxWithholding',
+        'taxWithholdings',
+        'origin',
+        'currency',
+        'perShare',
+        'maxAmount',
+        'expiryDate',
+        'paymentDate',
+      ]) as Partial<DividendDistributionOptions>;
     }
 
     /**
@@ -1429,13 +1331,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CustomPermissionGroup>) {
-      if (args.length) {
-        const [{ id, ticker }] = args;
-
-        return { id, ticker };
-      }
-
-      return {};
+      return extractFromArgs(args, ['id', 'ticker']);
     }
 
     /**
@@ -1470,13 +1366,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof KnownPermissionGroup>) {
-      if (args.length) {
-        const [{ type, ticker }] = args;
-
-        return { type, ticker };
-      }
-
-      return {};
+      return extractFromArgs(args, ['type', 'ticker']);
     }
 
     /**

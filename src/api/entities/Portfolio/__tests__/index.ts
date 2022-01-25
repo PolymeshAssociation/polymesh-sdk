@@ -5,7 +5,6 @@ import sinon from 'sinon';
 
 import {
   Context,
-  DefaultPortfolio,
   Entity,
   NumberedPortfolio,
   Portfolio,

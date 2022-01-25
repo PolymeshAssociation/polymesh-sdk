@@ -96,7 +96,7 @@ describe('TokenHolders class', () => {
         );
 
         expectedHolders.push({
-          identity: entityMockUtils.getIdentityInstance({ did: identity }),
+          identity: expect.objectContaining({ did: identity }),
           balance,
         });
       });
@@ -108,7 +108,7 @@ describe('TokenHolders class', () => {
 
       const result = await tokenHolders.get();
 
-      expect(JSON.stringify(result.data)).toBe(JSON.stringify(expectedHolders));
+      expect(result.data).toEqual(expectedHolders);
       expect(result.next).toBeNull();
     });
 
@@ -134,7 +134,7 @@ describe('TokenHolders class', () => {
       );
 
       expectedHolders.push({
-        identity: entityMockUtils.getIdentityInstance({ did: identity }),
+        identity: expect.objectContaining({ did: identity }),
         balance,
       });
 
@@ -145,8 +145,7 @@ describe('TokenHolders class', () => {
 
       const result = await tokenHolders.get({ size: 1 });
 
-      expect(result.data[0].balance).toEqual(balance);
-      expect(result.data[0].identity.did).toBe(identity);
+      expect(result.data).toEqual(expectedHolders);
       expect(result.next).toBe('someKey');
     });
   });
