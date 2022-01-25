@@ -90,17 +90,17 @@ export class DefaultTrustedClaimIssuer extends Identity {
 
     const claimIssuers = await complianceManager.trustedClaimIssuer(rawTicker);
 
-    const issuer = claimIssuers
-      .map(claimIssuer => trustedIssuerToTrustedClaimIssuer(claimIssuer, context))
+    const claimIssuer = claimIssuers
+      .map(issuer => trustedIssuerToTrustedClaimIssuer(issuer, context))
       .find(({ identity: { did: issuerDid } }) => did === issuerDid);
 
-    if (!issuer) {
+    if (!claimIssuer) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `The Identity with DID "${did}" is no longer a trusted issuer for "${ticker}"`,
       });
     }
 
-    return issuer.trustedFor;
+    return claimIssuer.trustedFor;
   }
 }
