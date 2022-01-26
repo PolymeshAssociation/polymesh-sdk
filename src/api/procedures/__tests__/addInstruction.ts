@@ -23,7 +23,13 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionType, PortfolioLike, RoleType, TickerReservationStatus } from '~/types';
+import {
+  ErrorCode,
+  InstructionType,
+  PortfolioLike,
+  RoleType,
+  TickerReservationStatus,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -158,7 +164,7 @@ describe('addInstruction procedure', () => {
       asset: rawToken,
     };
 
-    instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
+    instruction = ['instruction'] as unknown as PostTransactionValue<[Instruction]>;
   });
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
@@ -265,6 +271,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('The Instructions array cannot be empty');
+    expect(error.code).toBe(ErrorCode.ValidationError);
   });
 
   test('should throw an error if the legs array is empty', async () => {
@@ -281,6 +288,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe("The legs array can't be empty");
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
@@ -311,6 +319,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('The legs array exceeds the maximum allowed length');
+    expect(error.code).toBe(ErrorCode.LimitExceeded);
   });
 
   test('should throw an error if the end block is in the past', async () => {
@@ -350,6 +359,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('End block must be a future block');
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
@@ -389,6 +399,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('Value date must be after trade date');
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
@@ -578,9 +589,9 @@ describe('createAddInstructionResolver', () => {
     const fakeContext = {} as Context;
     const previousInstructionId = new BigNumber(2);
 
-    const previousInstructions = ({
+    const previousInstructions = {
       value: [new Instruction({ id: previousInstructionId }, fakeContext)],
-    } as unknown) as PostTransactionValue<Instruction[]>;
+    } as unknown as PostTransactionValue<Instruction[]>;
 
     const result = createAddInstructionResolver(
       fakeContext,
