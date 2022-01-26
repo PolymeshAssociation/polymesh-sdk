@@ -181,10 +181,10 @@ describe('Polymesh Transaction Base class', () => {
       const args = tuple('YET_ANOTHER_TICKER');
       const firstStub = sinon.stub().resolves(1);
       const secondStub = sinon.stub().resolves('someString');
-      const postTransactionValues = ([
+      const postTransactionValues = [
         { run: firstStub },
         { run: secondStub },
-      ] as unknown) as PostTransactionValueArray<[number, string]>;
+      ] as unknown as PostTransactionValueArray<[number, string]>;
 
       const tx = new PolymeshTransaction(
         {
@@ -399,12 +399,10 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     beforeEach(() => {
-      context.getTransactionFees
+      context.getProtocolFees
         .withArgs({ tag: TxTags.asset.RegisterTicker })
         .resolves(protocolFees[0]);
-      context.getTransactionFees
-        .withArgs({ tag: TxTags.asset.CreateAsset })
-        .resolves(protocolFees[1]);
+      context.getProtocolFees.withArgs({ tag: TxTags.asset.CreateAsset }).resolves(protocolFees[1]);
       rawGasFees.forEach((rawGasFee, index) =>
         balanceToBigNumberStub.withArgs(rawGasFee).returns(new BigNumber(gasFees[index]))
       );
@@ -574,7 +572,7 @@ describe('Polymesh Transaction Base class', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = entityMockUtils.getAccountInstance();
       const paidForBy = entityMockUtils.getIdentityInstance({
-        getPrimaryKey: account,
+        getPrimaryAccount: account,
       });
 
       const args = tuple('SOMETHING');

@@ -76,7 +76,7 @@ describe('setCustodian procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the passed account has a pending authorization to accept', () => {
+  test('should throw an error if the passed Account has a pending authorization to accept', () => {
     const did = 'someDid';
     const args = { targetIdentity: 'targetIdentity', did };
 

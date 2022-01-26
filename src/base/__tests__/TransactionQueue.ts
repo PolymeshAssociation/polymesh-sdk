@@ -178,7 +178,7 @@ describe('Transaction Queue class', () => {
       return expect(runPromise).rejects.toThrow('Transaction Error');
     });
 
-    test("should throw an error if the current account doesn't have enough balance to pay the transaction fees", () => {
+    test("should throw an error if the current Account doesn't have enough balance to pay the transaction fees", () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -213,7 +213,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test("should throw an error if any third party account doesn't have enough balance to pay the transaction fees", () => {
+    test("should throw an error if any third party Account doesn't have enough balance to pay the transaction fees", () => {
       const account1 = entityMockUtils.getAccountInstance({
         address: 'account1',
         getBalance: {
@@ -273,7 +273,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test("should throw an error if any third party account doesn't have enough allowance to pay the transaction fees", () => {
+    test("should throw an error if any third party Account doesn't have enough allowance to pay the transaction fees", () => {
       const account = entityMockUtils.getAccountInstance({
         getBalance: {
           free: new BigNumber(1000),

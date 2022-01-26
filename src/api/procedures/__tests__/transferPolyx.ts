@@ -60,14 +60,14 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('Insufficient free balance');
   });
 
-  test("should throw an error if destination account doesn't have an associated Identity", () => {
+  test("should throw an error if destination Account doesn't have an associated Identity", () => {
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     return expect(
       prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow("The destination account doesn't have an associated Identity");
+    ).rejects.toThrow("The destination Account doesn't have an associated Identity");
   });
 
   test("should throw an error if sender Identity doesn't have valid CDD", () => {
@@ -112,7 +112,7 @@ describe('transferPolyx procedure', () => {
     const memo = 'someMessage';
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
-    const rawMemo = ('memo' as unknown) as Memo;
+    const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')

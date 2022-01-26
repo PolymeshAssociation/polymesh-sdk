@@ -289,7 +289,7 @@ describe('Procedure class', () => {
 
       posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
       txTags.forEach(txTag =>
-        txTagToProtocolOpStub.withArgs(txTag, context).returns((txTag as unknown) as ProtocolOp)
+        txTagToProtocolOpStub.withArgs(txTag, context).returns(txTag as unknown as ProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>
@@ -299,10 +299,10 @@ describe('Procedure class', () => {
 
     test('should prepare and return a transaction queue with the corresponding transactions, arguments, fees and return value', async () => {
       const ticker = 'MY_TOKEN';
-      const secondaryKeys = ['0x1', '0x2'];
+      const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        secondaryKeys,
+        secondaryAccounts,
       };
       const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
       const tx2 = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
@@ -315,7 +315,7 @@ describe('Procedure class', () => {
       ): Promise<string> {
         this.addTransaction({ transaction: tx1, args: [args.ticker] });
 
-        this.addTransaction({ transaction: tx2, args: [args.secondaryKeys] });
+        this.addTransaction({ transaction: tx2, args: [args.secondaryAccounts] });
 
         return returnValue;
       };
@@ -329,7 +329,7 @@ describe('Procedure class', () => {
       expect(queue).toMatchObject({
         transactions: [
           { transaction: tx1, args: [ticker] },
-          { transaction: tx2, args: [secondaryKeys] },
+          { transaction: tx2, args: [secondaryAccounts] },
         ],
       });
       sinon.assert.calledWith(
@@ -337,7 +337,7 @@ describe('Procedure class', () => {
         sinon.match({
           transactions: sinon.match([
             sinon.match({ transaction: tx1, args: [ticker] }),
-            sinon.match({ transaction: tx2, args: [secondaryKeys] }),
+            sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
         }),
         { ...context, currentPair: { address: 'something' } }
@@ -360,7 +360,7 @@ describe('Procedure class', () => {
       expect(queue).toMatchObject({
         transactions: [
           { transaction: tx1, args: [ticker] },
-          { transaction: tx2, args: [secondaryKeys] },
+          { transaction: tx2, args: [secondaryAccounts] },
         ],
         procedureResult: returnValue,
       });
@@ -369,7 +369,7 @@ describe('Procedure class', () => {
         sinon.match({
           transactions: sinon.match([
             sinon.match({ transaction: tx1, args: [ticker] }),
-            sinon.match({ transaction: tx2, args: [secondaryKeys] }),
+            sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
           procedureResult: returnValue,
         }),
@@ -379,10 +379,10 @@ describe('Procedure class', () => {
 
     test('should throw any errors encountered during preparation', () => {
       const ticker = 'MY_TOKEN';
-      const secondaryKeys = ['0x1', '0x2'];
+      const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        secondaryKeys,
+        secondaryAccounts,
       };
 
       const errorMsg = 'failed';
@@ -397,24 +397,24 @@ describe('Procedure class', () => {
 
     test("should throw an error if the caller doesn't have the appropriate roles", async () => {
       const ticker = 'MY_TOKEN';
-      const secondaryKeys = ['0x1', '0x2'];
+      const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
-        secondaryKeys,
+        secondaryAccounts,
       };
       const func = async function (this: Procedure<typeof procArgs, string>): Promise<string> {
         return 'success';
       };
 
       let proc = new Procedure(func, {
-        roles: [({ type: 'FakeRole' } as unknown) as Role],
+        roles: [{ type: 'FakeRole' } as unknown as Role],
       });
 
       context = dsMockUtils.getContextInstance({
         isFrozen: false,
         checkRoles: {
           result: false,
-          missingRoles: [({ type: 'FakeRole' } as unknown) as Role],
+          missingRoles: [{ type: 'FakeRole' } as unknown as Role],
         },
         checkPermissions: {
           result: false,

@@ -12,7 +12,7 @@ import {
 
 export interface TransferPolyxParams {
   /**
-   * account that will receive the POLYX
+   * Account that will receive the POLYX
    */
   to: string | Account;
   /**
@@ -69,7 +69,7 @@ export async function prepareTransferPolyx(
   if (!receiverIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: "The destination account doesn't have an associated Identity",
+      message: "The destination Account doesn't have an associated Identity",
     });
   }
 

@@ -56,7 +56,7 @@ import {
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
-  SecondaryKey,
+  SecondaryAccount,
   SecurityTokenDetails,
   SignerType,
   StoBalanceStatus,
@@ -121,7 +121,7 @@ interface IdentityOptions {
   tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   isCddProvider?: boolean;
-  getPrimaryKey?: Account;
+  getPrimaryAccount?: Account;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -129,8 +129,8 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getTokenBalance?: BigNumber;
-  getSecondaryKeys?: SecondaryKey[];
-  areSecondaryKeysFrozen?: boolean;
+  getSecondaryAccounts?: SecondaryAccount[];
+  areSecondaryAccountsFrozen?: boolean;
   isEqual?: boolean;
   tokenPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;
   tokenPermissionsGet?: TokenWithGroup[];
@@ -368,14 +368,14 @@ let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
 let identityCheckRolesStub: SinonStub;
 let identityHasValidCddStub: SinonStub;
-let identityGetPrimaryKeyStub: SinonStub;
+let identityGetPrimaryAccountStub: SinonStub;
 let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityAuthorizationsGetSentStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
 let identityGetTokenBalanceStub: SinonStub;
-let identityGetSecondaryKeysStub: SinonStub;
-let identityAreSecondaryKeysFrozenStub: SinonStub;
+let identityGetSecondaryAccountsStub: SinonStub;
+let identityAreSecondaryAccountsFrozenStub: SinonStub;
 let identityIsEqualStub: SinonStub;
 let identityTokenPermissionsHasPermissionsStub: SinonStub;
 let identityTokenPermissionsCheckPermissionsStub: SinonStub;
@@ -709,8 +709,8 @@ const defaultIdentityOptions: IdentityOptions = {
   getVenues: [],
   getScopeId: 'someScopeId',
   getTokenBalance: new BigNumber(100),
-  getSecondaryKeys: [],
-  areSecondaryKeysFrozen: false,
+  getSecondaryAccounts: [],
+  areSecondaryAccountsFrozen: false,
   isEqual: true,
   tokenPermissionsGet: [],
   tokenPermissionsCheckPermissions: {
@@ -812,7 +812,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   isOwnedBy: true,
   tokenBalances: [
     {
-      token: ('someToken' as unknown) as SecurityToken,
+      token: 'someToken' as unknown as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
       free: new BigNumber(1),
@@ -820,7 +820,7 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   ],
   did: 'someDid',
   exists: true,
-  custodian: ('identity' as unknown) as Identity,
+  custodian: 'identity' as unknown as Identity,
   isCustodiedBy: true,
   isEqual: true,
 };
@@ -829,14 +829,14 @@ const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
   isOwnedBy: true,
   tokenBalances: [
     {
-      token: ('someToken' as unknown) as SecurityToken,
+      token: 'someToken' as unknown as SecurityToken,
       total: new BigNumber(1),
       locked: new BigNumber(0),
       free: new BigNumber(1),
     },
   ],
   did: 'someDid',
-  custodian: ('identity' as unknown) as Identity,
+  custodian: 'identity' as unknown as Identity,
   isCustodiedBy: true,
   isEqual: true,
   exists: true,
@@ -855,7 +855,7 @@ const defaultCustomPermissionGroupOptions: CustomPermissionGroupOptions = {
 let customPermissionGroupOptions = defaultCustomPermissionGroupOptions;
 const defaultKnownPermissionGroupOptions: KnownPermissionGroupOptions = {
   ticker: 'SOME_TICKER',
-  type: ('someType' as unknown) as PermissionGroupType,
+  type: 'someType' as unknown as PermissionGroupType,
   getPermissions: {
     transactions: null,
     transactionGroups: [],
@@ -977,12 +977,12 @@ let dividendDistributionOptions = defaultDividendDistributionOptions;
  */
 function configureVenue(opts: VenueOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const venue = ({
+  const venue = {
     uuid: 'venue',
     id: opts.id,
     details: venueDetailsStub.resolves(details),
     exists: venueExistsStub.resolves(opts.exists),
-  } as unknown) as MockVenue;
+  } as unknown as MockVenue;
 
   Object.assign(mockInstanceContainer.venue, venue);
   venueConstructorStub.callsFake(args => {
@@ -1014,7 +1014,7 @@ function initVenue(opts?: VenueOptions): void {
  * Configure the Numbered Portfolio instance
  */
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
-  const numberedPortfolio = ({
+  const numberedPortfolio = {
     uuid: 'numberedPortfolio',
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
@@ -1024,7 +1024,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
     isCustodiedBy: numberedPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
     isEqual: numberedPortfolioIsEqualStub.returns(opts.isEqual),
-  } as unknown) as MockNumberedPortfolio;
+  } as unknown as MockNumberedPortfolio;
 
   Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1063,7 +1063,7 @@ function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
  * Configure the Default Portfolio instance
  */
 function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
-  const defaultPortfolio = ({
+  const defaultPortfolio = {
     uuid: 'defaultPortfolio',
     isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
@@ -1072,7 +1072,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
     isCustodiedBy: defaultPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
     isEqual: defaultPortfolioIsEqualStub.returns(opts.isEqual),
     exists: defaultPortfolioExistsStub.resolves(opts.exists),
-  } as unknown) as MockDefaultPortfolio;
+  } as unknown as MockDefaultPortfolio;
 
   Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1110,14 +1110,14 @@ function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
  * Configure the Custom Permission Group instance
  */
 function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): void {
-  const customPermissionGroup = ({
+  const customPermissionGroup = {
     uuid: 'customPermissionGroup',
     id: opts.id,
     token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: customPermissionGroupIsEqualStub.returns(opts.isEqual),
     exists: customPermissionGroupExistsStub.resolves(opts.exists),
-  } as unknown) as MockCustomPermissionGroup;
+  } as unknown as MockCustomPermissionGroup;
 
   Object.assign(mockInstanceContainer.customPermissionGroup, customPermissionGroup);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1155,14 +1155,14 @@ function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
  * Configure the Known Permission Group instance
  */
 function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void {
-  const knownPermissionGroup = ({
+  const knownPermissionGroup = {
     uuid: 'knownPermissionGroup',
     token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     type: opts.type,
     getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: knownPermissionGroupIsEqualStub.returns(opts.isEqual),
     exists: knownPermissionGroupExistsStub.resolves(opts.exists),
-  } as unknown) as MockKnownPermissionGroup;
+  } as unknown as MockKnownPermissionGroup;
 
   Object.assign(mockInstanceContainer.knownPermissionGroup, knownPermissionGroup);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1200,7 +1200,7 @@ function initKnownPermissionGroup(opts?: KnownPermissionGroupOptions): void {
  * Configure the Authorization Request instance
  */
 function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void {
-  const authorizationRequest = ({
+  const authorizationRequest = {
     uuid: 'authorizationRequest',
     authId: opts.authId,
     issuer: opts.issuer,
@@ -1209,7 +1209,7 @@ function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void 
     data: opts.data,
     exists: authorizationRequestExistsStub.resolves(opts.data),
     isExpired: authorizationRequestExistsStub.resolves(opts.isExpired),
-  } as unknown) as MockAuthorizationRequest;
+  } as unknown as MockAuthorizationRequest;
 
   Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
   authorizationRequestConstructorStub.callsFake(args => {
@@ -1241,7 +1241,7 @@ function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
  */
 function configureSecurityToken(opts: SecurityTokenOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const securityToken = ({
+  const securityToken = {
     uuid: 'securityToken',
     ticker: opts.ticker,
     details: securityTokenDetailsStub.resolves(details),
@@ -1291,7 +1291,7 @@ function configureSecurityToken(opts: SecurityTokenOptions): void {
     isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
     exists: securityTokenExistsStub.resolves(opts.exists),
     toJson: securityTokenToJsonStub.returns(opts.toJson),
-  } as unknown) as MockSecurityToken;
+  } as unknown as MockSecurityToken;
 
   Object.assign(mockInstanceContainer.securityToken, securityToken);
   securityTokenConstructorStub.callsFake(args => {
@@ -1339,12 +1339,12 @@ function initSecurityToken(opts?: SecurityTokenOptions): void {
  */
 function configureTickerReservation(opts: TickerReservationOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const tickerReservation = ({
+  const tickerReservation = {
     uuid: 'tickerReservation',
     ticker: opts.ticker,
     details: tickerReservationDetailsStub.resolves(details),
     exists: tickerReservationExistsStub.resolves(opts.exists),
-  } as unknown) as MockTickerReservation;
+  } as unknown as MockTickerReservation;
 
   Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
   tickerReservationConstructorStub.callsFake(args => {
@@ -1379,14 +1379,14 @@ function initTickerReservation(opts?: TickerReservationOptions): void {
  * Configure the identity instance
  */
 function configureIdentity(opts: IdentityOptions): void {
-  const identity = ({
+  const identity = {
     uuid: 'identity',
     did: opts.did,
     hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
     checkRoles: identityCheckRolesStub.resolves(opts.checkRoles),
     hasRole: identityHasRoleStub.resolves(opts.hasRole),
     hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
-    getPrimaryKey: identityGetPrimaryKeyStub.resolves(opts.getPrimaryKey),
+    getPrimaryAccount: identityGetPrimaryAccountStub.resolves(opts.getPrimaryAccount),
     portfolios: {},
     authorizations: {
       getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
@@ -1405,14 +1405,14 @@ function configureIdentity(opts: IdentityOptions): void {
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
     getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
-    getSecondaryKeys: identityGetSecondaryKeysStub.resolves(opts.getSecondaryKeys),
-    areSecondaryKeysFrozen: identityAreSecondaryKeysFrozenStub.resolves(
-      opts.areSecondaryKeysFrozen
+    getSecondaryAccounts: identityGetSecondaryAccountsStub.resolves(opts.getSecondaryAccounts),
+    areSecondaryAccountsFrozen: identityAreSecondaryAccountsFrozenStub.resolves(
+      opts.areSecondaryAccountsFrozen
     ),
     isEqual: identityIsEqualStub.returns(opts.isEqual),
     exists: identityExistsStub.resolves(opts.exists),
     isCddProvider: identityIsCddProviderStub.resolves(opts.isCddProvider),
-  } as unknown) as MockIdentity;
+  } as unknown as MockIdentity;
 
   Object.assign(mockInstanceContainer.identity, identity);
   identityConstructorStub.callsFake(args => {
@@ -1435,14 +1435,14 @@ function initIdentity(opts?: IdentityOptions): void {
   identityHasRoleStub = sinon.stub();
   identityCheckRolesStub = sinon.stub();
   identityHasValidCddStub = sinon.stub();
-  identityGetPrimaryKeyStub = sinon.stub();
+  identityGetPrimaryAccountStub = sinon.stub();
   identityAuthorizationsGetReceivedStub = sinon.stub();
   identityAuthorizationsGetSentStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
   identityGetTokenBalanceStub = sinon.stub();
-  identityGetSecondaryKeysStub = sinon.stub();
-  identityAreSecondaryKeysFrozenStub = sinon.stub();
+  identityGetSecondaryAccountsStub = sinon.stub();
+  identityAreSecondaryAccountsFrozenStub = sinon.stub();
   identityIsEqualStub = sinon.stub();
   identityTokenPermissionsGetStub = sinon.stub();
   identityTokenPermissionsGetGroupStub = sinon.stub();
@@ -1473,14 +1473,14 @@ function configureInstruction(opts: InstructionOptions): void {
     ],
     next: null,
   };
-  const instruction = ({
+  const instruction = {
     uuid: 'instruction',
     id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
     isPending: instructionIsPendingStub.resolves(opts.isPending),
     exists: instructionExistsStub.resolves(opts.exists),
-  } as unknown) as MockInstruction;
+  } as unknown as MockInstruction;
 
   Object.assign(mockInstanceContainer.instruction, instruction);
   instructionConstructorStub.callsFake(args => {
@@ -1514,7 +1514,7 @@ function initInstruction(opts?: InstructionOptions): void {
  * Configure the Account instance
  */
 function configureAccount(opts: AccountOptions): void {
-  const account = ({
+  const account = {
     uuid: 'account',
     address: opts.address,
     key: opts.key,
@@ -1528,7 +1528,7 @@ function configureAccount(opts: AccountOptions): void {
     exists: accountExistsStub.resolves(opts.exists),
     hasPermissions: accountHasPermissionsStub.returns(opts.hasPermissions),
     checkPermissions: accountCheckPermissionsStub.returns(opts.checkPermissions),
-  } as unknown) as MockAccount;
+  } as unknown as MockAccount;
 
   Object.assign(mockInstanceContainer.account, account);
   accountConstructorStub.callsFake(args => {
@@ -1573,13 +1573,13 @@ function configureSto(opts: StoOptions): void {
     raisingPortfolio: mockInstanceContainer.numberedPortfolio,
     ...opts.details,
   };
-  const sto = ({
+  const sto = {
     uuid: 'sto',
     details: stoDetailsStub.resolves(details),
     token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
     id: opts.id,
     exists: stoExistsStub.resolves(opts.exists),
-  } as unknown) as MockSto;
+  } as unknown as MockSto;
 
   Object.assign(mockInstanceContainer.sto, sto);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1621,7 +1621,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     ],
     next: null,
   };
-  const checkpoint = ({
+  const checkpoint = {
     uuid: 'checkpoint',
     createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
     totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
@@ -1630,7 +1630,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     exists: checkpointExistsStub.resolves(opts.exists),
     allBalances: checkpointAllBalancesStub.resolves(allBalances),
     balance: checkpointBalanceStub.resolves(opts.balance),
-  } as unknown) as MockCheckpoint;
+  } as unknown as MockCheckpoint;
 
   Object.assign(mockInstanceContainer.checkpoint, checkpoint);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1666,7 +1666,7 @@ function initCheckpoint(opts?: CheckpointOptions): void {
  * Configure the CheckpointSchedule instance
  */
 function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
-  const checkpointSchedule = ({
+  const checkpointSchedule = {
     uuid: 'checkpointSchedule',
     id: opts.id,
     token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
@@ -1676,7 +1676,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
     complexity: opts.complexity,
     details: checkpointScheduleDetailsStub.resolves(opts.details),
     exists: checkpointScheduleExistsStub.resolves(opts.exists),
-  } as unknown) as MockCheckpointSchedule;
+  } as unknown as MockCheckpointSchedule;
 
   Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1709,7 +1709,7 @@ function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
  * Configure the CorporateAction instance
  */
 function configureCorporateAction(opts: CorporateActionOptions): void {
-  const corporateAction = ({
+  const corporateAction = {
     uuid: 'corporateAction',
     id: opts.id,
     token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
@@ -1720,7 +1720,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
     defaultTaxWithholding: opts.defaultTaxWithholding,
     taxWithholdings: opts.taxWithholdings,
     exists: corporateActionExistsStub.resolves(opts.exists),
-  } as unknown) as MockCorporateAction;
+  } as unknown as MockCorporateAction;
 
   Object.assign(mockInstanceContainer.corporateAction, corporateAction);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1762,7 +1762,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     ? { ...defaultDividendDistributionOptions.getParticipant, ...opts.getParticipant }
     : null;
 
-  const dividendDistribution = ({
+  const dividendDistribution = {
     uuid: 'dividendDistribution',
     id: opts.id,
     token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
@@ -1782,7 +1782,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
     getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
     checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
     exists: dividendDistributionExistsStub.resolves(opts.exists),
-  } as unknown) as MockDividendDistribution;
+  } as unknown as MockDividendDistribution;
 
   Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -2077,10 +2077,10 @@ export function getIdentityHasValidCddStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.getPrimaryKey` method
+ * Retrieve the stub of the `Identity.getPrimaryAccount` method
  */
-export function getIdentityGetPrimaryKeyStub(): SinonStub {
-  return identityGetPrimaryKeyStub;
+export function getIdentityGetPrimaryAccountStub(): SinonStub {
+  return identityGetPrimaryAccountStub;
 }
 
 /**

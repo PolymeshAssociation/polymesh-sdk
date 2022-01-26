@@ -208,10 +208,10 @@ describe('createSecurityToken procedure', () => {
       )
       .returns(rawDocuments[0]);
 
-    mockContext.getTransactionFees
+    mockContext.getProtocolFees
       .withArgs({ tag: TxTags.asset.RegisterTicker })
       .resolves(protocolFees[0]);
-    mockContext.getTransactionFees
+    mockContext.getProtocolFees
       .withArgs({ tag: TxTags.asset.CreateAsset })
       .resolves(protocolFees[1]);
   });
@@ -472,7 +472,7 @@ describe('createSecurityToken procedure', () => {
     });
 
     test('should return the new custom AssetType', () => {
-      const fakeResult = ('assetType' as unknown) as AssetType;
+      const fakeResult = 'assetType' as unknown as AssetType;
       internalTokenTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
       const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
 

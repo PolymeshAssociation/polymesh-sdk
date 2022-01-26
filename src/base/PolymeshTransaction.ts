@@ -58,7 +58,7 @@ export class PolymeshTransaction<
 
     super(rest, context);
 
-    this.inputArgs = (args as unknown) as MapMaybePostTransactionValue<Args>;
+    this.inputArgs = args as unknown as MapMaybePostTransactionValue<Args>;
     this.transaction = transaction;
     this.tag = transactionToTxTag(transaction);
     this.feeMultiplier = feeMultiplier;
@@ -85,7 +85,7 @@ export class PolymeshTransaction<
   // eslint-disable-next-line require-jsdoc
   protected async getProtocolFees(): Promise<BigNumber> {
     const { tag } = this;
-    const fees = await this.context.getTransactionFees({ tag });
+    const fees = await this.context.getProtocolFees({ tag });
 
     return fees.multipliedBy(this.feeMultiplier);
   }

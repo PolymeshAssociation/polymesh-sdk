@@ -68,7 +68,8 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    *
    * wrappers for values that will exist after this transaction has executed
    */
-  protected postValues: PostTransactionValueArray<Values> = ([] as unknown) as PostTransactionValueArray<Values>;
+  protected postValues: PostTransactionValueArray<Values> =
+    [] as unknown as PostTransactionValueArray<Values>;
 
   /**
    * @hidden
@@ -80,7 +81,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
   /**
    * @hidden
    *
-   * account that will sign the transaction
+   * Account that will sign the transaction
    */
   protected signer: AddressOrPair;
 
@@ -268,11 +269,11 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
     }
 
     if (paidForBy) {
-      const primaryKey = await paidForBy.getPrimaryKey();
+      const primaryAccount = await paidForBy.getPrimaryAccount();
 
       return {
         type: PayingAccountType.Other,
-        account: primaryKey,
+        account: primaryAccount,
         allowance: null,
       };
     }

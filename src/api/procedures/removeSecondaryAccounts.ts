@@ -1,20 +1,20 @@
 import { find } from 'lodash';
 
-import { assertSecondaryKeys } from '~/api/procedures/utils';
+import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, Signer, TxTags } from '~/types';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
-export interface RemoveSecondaryKeysParams {
+export interface RemoveSecondaryAccountsParams {
   signers: Signer[];
 }
 
 /**
  * @hidden
  */
-export async function prepareRemoveSecondaryKeys(
-  this: Procedure<RemoveSecondaryKeysParams>,
-  args: RemoveSecondaryKeysParams
+export async function prepareRemoveSecondaryAccounts(
+  this: Procedure<RemoveSecondaryAccountsParams>,
+  args: RemoveSecondaryAccountsParams
 ): Promise<void> {
   const {
     context: {
@@ -27,22 +27,25 @@ export async function prepareRemoveSecondaryKeys(
 
   const identity = await context.getCurrentIdentity();
 
-  const [primaryKey, secondaryKeys] = await Promise.all([
-    identity.getPrimaryKey(),
-    identity.getSecondaryKeys(),
+  const [primaryAccount, secondaryAccounts] = await Promise.all([
+    identity.getPrimaryAccount(),
+    identity.getSecondaryAccounts(),
   ]);
 
   const signerValues = signers.map(signer => signerToSignerValue(signer));
-  const isPrimaryKeyPresent = find(signerValues, ({ value }) => value === primaryKey.address);
+  const isPrimaryAccountPresent = find(
+    signerValues,
+    ({ value }) => value === primaryAccount.address
+  );
 
-  if (isPrimaryKeyPresent) {
+  if (isPrimaryAccountPresent) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'You cannot remove the primary key',
+      message: 'You cannot remove the primary Account',
     });
   }
 
-  assertSecondaryKeys(signerValues, secondaryKeys);
+  assertSecondaryAccounts(signerValues, secondaryAccounts);
 
   this.addTransaction({
     transaction: tx.identity.removeSecondaryKeys,
@@ -54,8 +57,8 @@ export async function prepareRemoveSecondaryKeys(
 /**
  * @hidden
  */
-export const removeSecondaryKeys = (): Procedure<RemoveSecondaryKeysParams> =>
-  new Procedure(prepareRemoveSecondaryKeys, {
+export const removeSecondaryAccounts = (): Procedure<RemoveSecondaryAccountsParams> =>
+  new Procedure(prepareRemoveSecondaryAccounts, {
     permissions: {
       transactions: [TxTags.identity.RemoveSecondaryKeys],
       tokens: [],

@@ -54,10 +54,8 @@ export class Procedure<
     args: Args
   ) => Promise<Storage> | Storage;
 
-  private transactions: (
-    | PolymeshTransaction<unknown[]>
-    | PolymeshTransactionBatch<unknown[][]>
-  )[] = [];
+  private transactions: (PolymeshTransaction<unknown[]> | PolymeshTransactionBatch<unknown[][]>)[] =
+    [];
 
   private _storage: null | Storage = null;
   private _context: null | Context = null;
@@ -144,10 +142,8 @@ export class Procedure<
 
     const { permissions = true, roles = true } = checkAuthorizationResult;
 
-    const {
-      signerPermissions = permissions,
-      agentPermissions = permissions,
-    } = checkAuthorizationResult;
+    const { signerPermissions = permissions, agentPermissions = permissions } =
+      checkAuthorizationResult;
 
     let identity: Identity | null = null;
     let rolesResult: CheckRolesResult;
@@ -257,13 +253,8 @@ export class Procedure<
       const { args: procArgs, transformer } = args;
       const ctx = await this.setup(procArgs, context, opts);
 
-      const {
-        roles,
-        signerPermissions,
-        agentPermissions,
-        accountFrozen,
-        noIdentity,
-      } = await this._checkAuthorization(procArgs, ctx);
+      const { roles, signerPermissions, agentPermissions, accountFrozen, noIdentity } =
+        await this._checkAuthorization(procArgs, ctx);
 
       if (noIdentity) {
         throw new PolymeshError({
@@ -343,7 +334,7 @@ export class Procedure<
       transaction,
       args: txArgs,
       fee,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
       feeMultiplier,
@@ -427,7 +418,7 @@ export class Procedure<
     const {
       transactions,
       fee,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
     } = args;
@@ -490,7 +481,7 @@ export class Procedure<
   }
 
   /**
-   * contains the data services, current account, etc. In short, the *context* in which
+   * contains the data services, current Account, etc. In short, the *context* in which
    *   the Procedure is being run
    */
   public get context(): Context {

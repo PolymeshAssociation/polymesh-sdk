@@ -17,6 +17,7 @@
   ],
   "cSpell.ignoreRegExpList": [
     "/from\\s+(['\"]).*\\1/", // ignore imports
+    "/\/\/ TODO @\\w+/", // ignore github handles in TODOs
     "/0x.+/" // ignore hex values
   ],
   "cSpell.words": [

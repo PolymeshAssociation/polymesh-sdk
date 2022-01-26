@@ -164,7 +164,7 @@ export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
    */
   postTransactionValues?: PostTransactionValueArray<Values>;
   /**
-   * account that will sign the transaction
+   * Account that will sign the transaction
    */
   signer: AddressOrPair;
   /**
@@ -324,8 +324,8 @@ export interface ProcedureAuthorization {
    */
   permissions?: SimplePermissions | true | string;
   /**
-   * permissions specific to Secondary Key Accounts. This value takes precedence over `permissions` for
-   *   Secondary Keys
+   * permissions specific to secondary Accounts. This value takes precedence over `permissions` for
+   *   secondary Accounts
    */
   signerPermissions?: SimplePermissions | true | string;
   /**

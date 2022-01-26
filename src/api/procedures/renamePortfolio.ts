@@ -3,7 +3,8 @@ import BigNumber from 'bignumber.js';
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToIdentityId, stringToText, textToString } from '~/utils/conversion';
+import { numberToU64, stringToIdentityId, stringToText } from '~/utils/conversion';
+import { getPortfolioIdByName } from '~/utils/internal';
 
 export interface RenamePortfolioParams {
   name: string;
@@ -24,7 +25,6 @@ export async function prepareRenamePortfolio(
   const {
     context: {
       polymeshApi: {
-        query: { portfolio: queryPortfolio },
         tx: { portfolio },
       },
     },
@@ -34,32 +34,28 @@ export async function prepareRenamePortfolio(
   const { did, id, name: newName } = args;
 
   const identityId = stringToIdentityId(did, context);
-  const rawPortfolioNumber = numberToU64(id, context);
 
-  const [rawPortfolioName, rawPortfolios] = await Promise.all([
-    queryPortfolio.portfolios(identityId, rawPortfolioNumber),
-    queryPortfolio.portfolios.entries(identityId),
-  ]);
+  const rawNewName = stringToText(newName, context);
 
-  if (textToString(rawPortfolioName) === newName) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: 'New name is the same as current name',
-    });
-  }
+  const existingPortfolioNumber = await getPortfolioIdByName(identityId, rawNewName, context);
 
-  const portfolioNames = rawPortfolios.map(([, name]) => textToString(name));
-
-  if (portfolioNames.includes(newName)) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'A portfolio with that name already exists',
-    });
+  if (existingPortfolioNumber) {
+    if (id.eq(existingPortfolioNumber)) {
+      throw new PolymeshError({
+        code: ErrorCode.NoDataChange,
+        message: 'New name is the same as current name',
+      });
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'A Portfolio with that name already exists',
+      });
+    }
   }
 
   this.addTransaction({
     transaction: portfolio.renamePortfolio,
-    args: [rawPortfolioNumber, stringToText(newName, context)],
+    args: [numberToU64(id, context), rawNewName],
   });
 
   return new NumberedPortfolio({ did, id }, context);

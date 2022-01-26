@@ -13,10 +13,9 @@ import {
   identityIdToString,
   stringToIdentityId,
   stringToText,
-  textToString,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, getPortfolioIdByName } from '~/utils/internal';
 
 /**
  * @hidden
@@ -28,15 +27,15 @@ export interface Params {
 /**
  * @hidden
  */
-export const createPortfolioResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): NumberedPortfolio => {
-  const [{ data }] = filterEventRecords(receipt, 'portfolio', 'PortfolioCreated');
-  const did = identityIdToString(data[0]);
-  const id = u64ToBigNumber(data[1]);
+export const createPortfolioResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): NumberedPortfolio => {
+    const [{ data }] = filterEventRecords(receipt, 'portfolio', 'PortfolioCreated');
+    const did = identityIdToString(data[0]);
+    const id = u64ToBigNumber(data[1]);
 
-  return new NumberedPortfolio({ did, id }, context);
-};
+    return new NumberedPortfolio({ did, id }, context);
+  };
 
 /**
  * @hidden
@@ -47,10 +46,7 @@ export async function prepareCreatePortfolio(
 ): Promise<PostTransactionValue<NumberedPortfolio>> {
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: { portfolio },
-      },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -58,18 +54,18 @@ export async function prepareCreatePortfolio(
 
   const { did } = await context.getCurrentIdentity();
 
-  const rawPortfolios = await portfolio.portfolios.entries(stringToIdentityId(did, context));
-
-  const portfolioNames = rawPortfolios.map(([, name]) => textToString(name));
-
-  if (portfolioNames.includes(portfolioName)) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'A portfolio with that name already exists',
-    });
-  }
+  const rawIdentityId = stringToIdentityId(did, context);
 
   const rawName = stringToText(portfolioName, context);
+
+  const existingPortfolioNumber = await getPortfolioIdByName(rawIdentityId, rawName, context);
+
+  if (existingPortfolioNumber) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'A Portfolio with that name already exists',
+    });
+  }
 
   const [newNumberedPortfolio] = this.addTransaction({
     transaction: tx.portfolio.createPortfolio,

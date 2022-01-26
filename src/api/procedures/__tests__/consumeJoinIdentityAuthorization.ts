@@ -290,7 +290,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test("should return the current account, whether the target is the caller and the target's identity (if any)", async () => {
+    test("should return the current Account, whether the target is the caller and the target's identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
         ConsumeJoinIdentityAuthorizationParams,
         void,
@@ -299,9 +299,9 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       const boundFunc = prepareStorage.bind(proc);
       const target = entityMockUtils.getAccountInstance({ getIdentity: null });
 
-      const result = await boundFunc(({
+      const result = await boundFunc({
         authRequest: { target },
-      } as unknown) as ConsumeJoinIdentityAuthorizationParams);
+      } as unknown as ConsumeJoinIdentityAuthorizationParams);
 
       expect(result).toEqual({
         currentAccount: mockContext.getCurrentAccount(),

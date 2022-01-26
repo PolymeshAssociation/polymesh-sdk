@@ -2,16 +2,16 @@ import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 
-export interface ToggleFreezeSecondaryKeysParams {
+export interface ToggleFreezeSecondaryAccountsParams {
   freeze: boolean;
 }
 
 /**
  * @hidden
  */
-export async function prepareToggleFreezeSecondaryKeys(
-  this: Procedure<ToggleFreezeSecondaryKeysParams, void>,
-  args: ToggleFreezeSecondaryKeysParams
+export async function prepareToggleFreezeSecondaryAccounts(
+  this: Procedure<ToggleFreezeSecondaryAccountsParams, void>,
+  args: ToggleFreezeSecondaryAccountsParams
 ): Promise<void> {
   const {
     context: {
@@ -25,22 +25,22 @@ export async function prepareToggleFreezeSecondaryKeys(
 
   const identity = await context.getCurrentIdentity();
 
-  const areSecondaryKeysFrozen = await identity.areSecondaryKeysFrozen();
+  const areSecondaryAccountsFrozen = await identity.areSecondaryAccountsFrozen();
 
   if (freeze) {
-    if (areSecondaryKeysFrozen) {
+    if (areSecondaryAccountsFrozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The secondary keys are already frozen',
+        message: 'The secondary Accounts are already frozen',
       });
     }
 
     this.addTransaction({ transaction: identityTx.freezeSecondaryKeys });
   } else {
-    if (!areSecondaryKeysFrozen) {
+    if (!areSecondaryAccountsFrozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The secondary keys are already unfrozen',
+        message: 'The secondary Accounts are already unfrozen',
       });
     }
 
@@ -52,8 +52,8 @@ export async function prepareToggleFreezeSecondaryKeys(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<ToggleFreezeSecondaryKeysParams, void>,
-  { freeze }: ToggleFreezeSecondaryKeysParams
+  this: Procedure<ToggleFreezeSecondaryAccountsParams, void>,
+  { freeze }: ToggleFreezeSecondaryAccountsParams
 ): ProcedureAuthorization {
   return {
     permissions: {
@@ -69,5 +69,7 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeSecondaryKeys = (): Procedure<ToggleFreezeSecondaryKeysParams, void> =>
-  new Procedure(prepareToggleFreezeSecondaryKeys, getAuthorization);
+export const toggleFreezeSecondaryAccounts = (): Procedure<
+  ToggleFreezeSecondaryAccountsParams,
+  void
+> => new Procedure(prepareToggleFreezeSecondaryAccounts, getAuthorization);

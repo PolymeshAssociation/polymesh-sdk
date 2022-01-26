@@ -418,7 +418,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the account POLYX balance if currentPair is set', async () => {
+    test('should return the Account POLYX balance if currentPair is set', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -446,7 +446,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the account POLYX balance if accountId is set', async () => {
+    test('should return the Account POLYX balance if accountId is set', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -528,7 +528,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the account subsidizer and allowance if currentPair is set', async () => {
+    test('should return the Account subsidizer and allowance if currentPair is set', async () => {
       const allowance = dsMockUtils.createMockBalance(100);
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -553,7 +553,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the account subsidizer and allowance if accountId is set', async () => {
+    test('should return the Account subsidizer and allowance if accountId is set', async () => {
       const allowance = dsMockUtils.createMockBalance(100);
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -578,7 +578,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return null if the account has no subsidizer', async () => {
+    test('should return null if the Account has no subsidizer', async () => {
       const returnValue = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
@@ -683,7 +683,7 @@ describe('Context class', () => {
       expect(result.address).toBe(address);
     });
 
-    test('should throw an error if there is no account associated with the SDK', async () => {
+    test('should throw an error if there is no Account associated with the SDK', async () => {
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: [],
@@ -882,7 +882,7 @@ describe('Context class', () => {
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  describe('method: getTransactionFees', () => {
+  describe('method: getProtocolFees', () => {
     test('should return the fees associated to the supplied transaction', async () => {
       const pair = {
         address: 'someAddress1',
@@ -909,18 +909,18 @@ describe('Context class', () => {
 
       txTagToProtocolOpStub
         .withArgs(TxTags.asset.CreateAsset, context)
-        .returns(('someProtocolOp' as unknown) as ProtocolOp);
+        .returns('someProtocolOp' as unknown as ProtocolOp);
       txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
 
       dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
         returnValue: dsMockUtils.createMockBalance(500000000),
       });
 
-      let result = await context.getTransactionFees({ tag: TxTags.asset.CreateAsset });
+      let result = await context.getProtocolFees({ tag: TxTags.asset.CreateAsset });
 
       expect(result).toEqual(new BigNumber(250));
 
-      result = await context.getTransactionFees({ tag: TxTags.asset.Freeze });
+      result = await context.getProtocolFees({ tag: TxTags.asset.Freeze });
 
       expect(result).toEqual(new BigNumber(0));
     });
@@ -1444,25 +1444,25 @@ describe('Context class', () => {
       dsMockUtils.throwOnMiddlewareQuery();
 
       await expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
       await expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
       return expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Some Message');
     });
 
     test('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1709,7 +1709,7 @@ describe('Context class', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pair = ('something' as unknown) as any;
+      const pair = 'something' as unknown as any;
 
       context.addPair({ pair });
 

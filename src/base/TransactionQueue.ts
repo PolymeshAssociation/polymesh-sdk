@@ -63,7 +63,7 @@ export class TransactionQueue<
    * @hidden
    * internal queue of transactions to be run
    */
-  private queue = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+  private queue = [] as unknown as PolymeshTransactionArray<TransactionArgs>;
 
   /**
    * @hidden
@@ -109,14 +109,14 @@ export class TransactionQueue<
     const {
       transactions,
       procedureResult,
-      transformer = async (val): Promise<ReturnType> => (val as unknown) as ReturnType,
+      transformer = async (val): Promise<ReturnType> => val as unknown as ReturnType,
     } = args;
 
     this.emitter = new EventEmitter();
     this.procedureResult = procedureResult;
     this.hasRun = false;
     this.context = context;
-    this.transactions = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+    this.transactions = [] as unknown as PolymeshTransactionArray<TransactionArgs>;
     this.transformer = transformer;
 
     transactions.forEach(transaction => {
@@ -144,7 +144,7 @@ export class TransactionQueue<
 
     await this.assertFeesCovered();
 
-    this.queue = ([...this.transactions] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+    this.queue = [...this.transactions] as unknown as PolymeshTransactionArray<TransactionArgs>;
     this.updateStatus(TransactionQueueStatus.Running);
 
     let procRes: ProcedureReturnType;
@@ -207,7 +207,7 @@ export class TransactionQueue<
   > {
     const { context, transactions } = this;
 
-    // get the fees and paying account for each transaction in the queue
+    // get the fees and paying Account for each transaction in the queue
     const allFees = await P.map(transactions, async transaction => {
       const [payingAccount, fees] = await Promise.all([
         transaction.getPayingAccount(),
@@ -237,7 +237,7 @@ export class TransactionQueue<
       };
     };
 
-    // account address -> fee data (for efficiency)
+    // Account address -> fee data (for efficiency)
     const breakdownByAccount: Record<string, ThirdPartyFees> = {};
 
     // fees for the current Account
@@ -248,7 +248,7 @@ export class TransactionQueue<
 
     const subsidizedTransactions: PolymeshTransactionBase[] = [];
 
-    // compile the fees and other data for each paying account (and the current account as well)
+    // compile the fees and other data for each paying a¡Account (and the current account as well)
     const eachPromise = P.each(allFees, async (transactionFees, index) => {
       if (!transactionFees) {
         return;
@@ -269,7 +269,7 @@ export class TransactionQueue<
         }
 
         if (!thirdPartyData) {
-          // first time encountering this third party account, we must populate the initial values
+          // first time encountering this third party Account, we must populate the initial values
           const { free: balance } = await account.getBalance();
           breakdownByAccount[address] = {
             ...payingAccount,
@@ -277,7 +277,7 @@ export class TransactionQueue<
             fees,
           };
         } else {
-          // already encountered the account before, just add the fees
+          // already encountered the Account before, just add the fees
           thirdPartyData.fees = addFees(thirdPartyData.fees, fees);
         }
       }
