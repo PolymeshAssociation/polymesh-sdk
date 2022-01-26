@@ -184,7 +184,7 @@ describe('reserveTicker procedure', () => {
 
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
-      expiry: new Date(3000, 12, 12),
+      expiryDate: new Date(3000, 12, 12),
       status: TickerReservationStatus.Reserved,
     });
 
