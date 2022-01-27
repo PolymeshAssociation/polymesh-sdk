@@ -16,14 +16,14 @@ export interface Params {
 /**
  * @hidden
  */
-export const createCheckpointResolver = (ticker: string, context: Context) => (
-  receipt: ISubmittableResult
-): Checkpoint => {
-  const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'CheckpointCreated');
-  const id = u64ToBigNumber(data[2]);
+export const createCheckpointResolver =
+  (ticker: string, context: Context) =>
+  (receipt: ISubmittableResult): Checkpoint => {
+    const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'CheckpointCreated');
+    const id = u64ToBigNumber(data[2]);
 
-  return new Checkpoint({ ticker, id }, context);
-};
+    return new Checkpoint({ ticker, id }, context);
+  };
 
 /**
  * @hidden
@@ -37,13 +37,11 @@ export async function prepareCreateCheckpoint(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const [checkpoint] = this.addTransaction(
-    context.polymeshApi.tx.checkpoint.createCheckpoint,
-    {
-      resolvers: [createCheckpointResolver(ticker, context)],
-    },
-    rawTicker
-  );
+  const [checkpoint] = this.addTransaction({
+    transaction: context.polymeshApi.tx.checkpoint.createCheckpoint,
+    resolvers: [createCheckpointResolver(ticker, context)],
+    args: [rawTicker],
+  });
 
   return checkpoint;
 }

@@ -106,7 +106,7 @@ describe('initiateCorporateAction procedure', () => {
       tuple(dsMockUtils.createMockIdentityId('someDid'), dsMockUtils.createMockPermill(30)),
     ];
 
-    rawCaId = ('caId' as unknown) as PostTransactionValue<CAId>;
+    rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
 
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     corporateActionKindToCaKindStub = sinon.stub(
@@ -232,18 +232,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      rawRecordDate,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          rawRecordDate,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     expect(result).toEqual(rawCaId);
@@ -260,18 +262,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          null,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     await prepareInitiateCorporateAction.call(proc, {
@@ -285,24 +289,17 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      null
+        args: [rawTicker, rawKind, rawDeclDate, null, rawDetails, rawTargets, rawTax, null],
+      })
     );
   });
 
   describe('caIdResolver', () => {
     const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
-    const id = ('caId' as unknown) as CAId;
+    const id = 'caId' as unknown as CAId;
 
     beforeEach(() => {
       filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['data', id])]);

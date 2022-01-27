@@ -242,14 +242,10 @@ describe('moveFunds procedure', () => {
 
     let addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawFromMeshPortfolioId,
-      rawToMeshPortfolioId,
-      [rawMovePortfolioItem]
-    );
+      args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+    });
 
     const defaultTo = new DefaultPortfolio({ did }, mockContext);
 
@@ -272,14 +268,10 @@ describe('moveFunds procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawFromMeshPortfolioId,
-      rawToMeshPortfolioId,
-      [rawMovePortfolioItem]
-    );
+      args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+    });
 
     const defaultFrom = new DefaultPortfolio({ did }, mockContext);
 
@@ -315,14 +307,10 @@ describe('moveFunds procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawFromMeshPortfolioId,
-      rawToMeshPortfolioId,
-      [rawMovePortfolioItem]
-    );
+      args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+    });
   });
 
   describe('getAuthorization', () => {

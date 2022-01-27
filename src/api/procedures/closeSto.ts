@@ -43,7 +43,10 @@ export async function prepareCloseSto(this: Procedure<Params, void>, args: Param
   const rawTicker = stringToTicker(ticker, context);
   const rawId = numberToU64(id, context);
 
-  this.addTransaction(txSto.stop, {}, rawTicker, rawId);
+  this.addTransaction({
+    transaction: txSto.stop,
+    args: [rawTicker, rawId],
+  });
 }
 
 /**

@@ -208,7 +208,7 @@ describe('TickerReservation class', () => {
         extendPeriod: true,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -238,7 +238,7 @@ describe('TickerReservation class', () => {
         reservationRequired: true,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -264,7 +264,7 @@ describe('TickerReservation class', () => {
         expiry,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
