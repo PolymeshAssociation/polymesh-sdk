@@ -108,7 +108,7 @@ describe('Settlements Class', () => {
         type: VenueType.Distribution,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Venue>;
 
       procedureMockUtils
         .getPrepareStub()

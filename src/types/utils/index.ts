@@ -64,7 +64,7 @@ export type Modify<T, R> = Omit<T, keyof R> & R;
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
 
 /**
- * Pick a single property sfrom T and ensure it is defined
+ * Pick a single property from T and ensure it is defined
  */
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 

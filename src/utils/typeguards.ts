@@ -16,6 +16,8 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
   SecurityToken,
   Sto,
   TickerReservation,
@@ -155,4 +157,18 @@ export function isVenue(value: unknown): value is Venue {
  */
 export function isPolymeshError(value: unknown): value is PolymeshError {
   return value instanceof PolymeshError;
+}
+
+/**
+ * Return whether value is a PolymeshTransaction
+ */
+export function isPolymeshTransaction(value: unknown): value is PolymeshTransaction {
+  return value instanceof PolymeshTransaction;
+}
+
+/**
+ * Return whether value is a PolymeshTransactionBatch
+ */
+export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTransactionBatch {
+  return value instanceof PolymeshTransactionBatch;
 }

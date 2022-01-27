@@ -46,10 +46,8 @@ export async function prepareModifyComplianceRequirement(
 
   const token = new SecurityToken({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await token.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await token.compliance.requirements.get();
 
   const existingRequirements = remove(
     currentRequirements,
@@ -85,12 +83,10 @@ export async function prepareModifyComplianceRequirement(
     context
   );
 
-  this.addTransaction(
-    tx.complianceManager.changeComplianceRequirement,
-    {},
-    rawTicker,
-    rawComplianceRequirement
-  );
+  this.addTransaction({
+    transaction: tx.complianceManager.changeComplianceRequirement,
+    args: [rawTicker, rawComplianceRequirement],
+  });
 }
 
 /**

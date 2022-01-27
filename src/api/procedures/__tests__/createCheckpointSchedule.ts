@@ -50,7 +50,7 @@ describe('createCheckpointSchedule procedure', () => {
     );
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    schedule = ('schedule' as unknown) as PostTransactionValue<CheckpointSchedule>;
+    schedule = 'schedule' as unknown as PostTransactionValue<CheckpointSchedule>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -120,10 +120,7 @@ describe('createCheckpointSchedule procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker,
-      rawSpec
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker, rawSpec] })
     );
 
     expect(result).toBe(schedule);

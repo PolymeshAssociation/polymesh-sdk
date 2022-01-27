@@ -10,7 +10,7 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('claimDividends procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
@@ -147,7 +147,7 @@ describe('claimDividends procedure', () => {
     expect(err.message).toBe('The current Identity has already claimed dividends');
   });
 
-  test('should add a claim dividens transaction to the queue', async () => {
+  test('should add a claim dividends transaction to the queue', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: {
@@ -161,6 +161,9 @@ describe('claimDividends procedure', () => {
       distribution,
     });
 
-    sinon.assert.calledWith(addTransactionStub, claimDividendsTransaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: claimDividendsTransaction,
+      args: [rawCaId],
+    });
   });
 });
