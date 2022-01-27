@@ -64,7 +64,7 @@ describe('modifyToken procedure', () => {
   test('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
 
-    return expect(prepareModifyToken.call(proc, ({} as unknown) as Params)).rejects.toThrow(
+    return expect(prepareModifyToken.call(proc, {} as unknown as Params)).rejects.toThrow(
       'Nothing to modify'
     );
   });
@@ -133,7 +133,7 @@ describe('modifyToken procedure', () => {
       makeDivisible: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker);
+    sinon.assert.calledWith(addTransactionStub, sinon.match({ transaction, args: [rawTicker] }));
     expect(result.ticker).toBe(ticker);
   });
 
@@ -151,7 +151,7 @@ describe('modifyToken procedure', () => {
       name: newName,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAssetName);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAssetName] });
     expect(result.ticker).toBe(ticker);
   });
 
@@ -169,7 +169,10 @@ describe('modifyToken procedure', () => {
       fundingRound: newFundingRound,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawFundingRound);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawTicker, rawFundingRound],
+    });
     expect(result.ticker).toBe(ticker);
   });
 
@@ -188,7 +191,10 @@ describe('modifyToken procedure', () => {
       identifiers,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, [rawIdentifier]);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawTicker, [rawIdentifier]],
+    });
     expect(result.ticker).toBe(ticker);
   });
 

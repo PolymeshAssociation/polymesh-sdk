@@ -50,7 +50,10 @@ export async function prepareDeletePortfolio(
     });
   }
 
-  this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);
+  this.addTransaction({
+    transaction: portfolio.deletePortfolio,
+    args: [rawPortfolioNumber],
+  });
 }
 
 /**
