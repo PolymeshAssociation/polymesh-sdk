@@ -141,7 +141,7 @@ describe('launchSto procedure', () => {
     ];
     rawMinInvestment = dsMockUtils.createMockBalance(minInvestment.toNumber());
 
-    sto = ('sto' as unknown) as PostTransactionValue<Sto>;
+    sto = 'sto' as unknown as PostTransactionValue<Sto>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -379,8 +379,8 @@ describe('launchSto procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       const portfolios = [
-        ('offering' as unknown) as DefaultPortfolio,
-        ('raising' as unknown) as DefaultPortfolio,
+        'offering' as unknown as DefaultPortfolio,
+        'raising' as unknown as DefaultPortfolio,
       ];
       portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(raisingPortfolioId, mockContext).returns(portfolios[1]);

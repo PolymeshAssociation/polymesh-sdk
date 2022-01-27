@@ -57,7 +57,7 @@ describe('Assets Class', () => {
         ticker: 'SOME_TICKER',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -86,7 +86,7 @@ describe('Assets Class', () => {
         reservationRequired: false,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -106,7 +106,7 @@ describe('Assets Class', () => {
         ethereumSignature: 'someSig',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()

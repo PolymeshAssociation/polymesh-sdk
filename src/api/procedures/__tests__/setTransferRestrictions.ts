@@ -477,12 +477,11 @@ describe('setTransferRestrictions procedure', () => {
         restrictions: [],
         availableSlots: 1,
       });
-      const getPercentageStub = entityMockUtils.getSecurityTokenTransferRestrictionsPercentageGetStub(
-        {
+      const getPercentageStub =
+        entityMockUtils.getSecurityTokenTransferRestrictionsPercentageGetStub({
           restrictions: [{ percentage }],
           availableSlots: 1,
-        }
-      );
+        });
 
       const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
         mockContext

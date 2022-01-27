@@ -33,30 +33,30 @@ import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/inter
 /**
  * @hidden
  */
-export const createDividendDistributionResolver = (context: Context) => async (
-  receipt: ISubmittableResult
-): Promise<DividendDistribution> => {
-  const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
-  const [, caId, distribution] = data;
-  const { ticker, local_id: localId } = caId;
+export const createDividendDistributionResolver =
+  (context: Context) =>
+  async (receipt: ISubmittableResult): Promise<DividendDistribution> => {
+    const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
+    const [, caId, distribution] = data;
+    const { ticker, local_id: localId } = caId;
 
-  const { corporateAction } = context.polymeshApi.query;
+    const { corporateAction } = context.polymeshApi.query;
 
-  const [corpAction, details] = await Promise.all([
-    corporateAction.corporateActions(ticker, localId),
-    corporateAction.details(caId),
-  ]);
+    const [corpAction, details] = await Promise.all([
+      corporateAction.corporateActions(ticker, localId),
+      corporateAction.details(caId),
+    ]);
 
-  return new DividendDistribution(
-    {
-      ticker: tickerToString(ticker),
-      id: u32ToBigNumber(localId),
-      ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
-      ...distributionToDividendDistributionParams(distribution, context),
-    },
-    context
-  );
-};
+    return new DividendDistribution(
+      {
+        ticker: tickerToString(ticker),
+        id: u32ToBigNumber(localId),
+        ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
+        ...distributionToDividendDistributionParams(distribution, context),
+      },
+      context
+    );
+  };
 
 export type ConfigureDividendDistributionParams = Omit<
   InitiateCorporateActionParams,

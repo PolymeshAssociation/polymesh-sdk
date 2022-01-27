@@ -148,8 +148,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
       >(
         [
-          [(asset.tickers as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
-          [(asset.tokens as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
+          [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+          [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
         ],
         ([registration, token]) => {
           callback(assembleResult(registration, token));
@@ -161,8 +161,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     const [tickerRegistration, securityToken] = await queryMulti<
       [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
     >([
-      [(asset.tickers as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
-      [(asset.tokens as unknown) as QueryableStorageEntry<'promise'>, rawTicker],
+      [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+      [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
     return assembleResult(tickerRegistration, securityToken);

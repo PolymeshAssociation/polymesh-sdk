@@ -128,8 +128,8 @@ describe('configureDividendDistribution procedure', () => {
     rawPaymentAt = dsMockUtils.createMockMoment(paymentDate.getTime());
     rawExpiresAt = dsMockUtils.createMockMoment(expiryDate.getTime());
 
-    rawCaId = ('caId' as unknown) as PostTransactionValue<CAId>;
-    distribution = ('distribution' as unknown) as PostTransactionValue<DividendDistribution>;
+    rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
+    distribution = 'distribution' as unknown as PostTransactionValue<DividendDistribution>;
 
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
