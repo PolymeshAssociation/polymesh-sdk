@@ -133,7 +133,7 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   test('should add a modify compliance requirement transaction to the queue', async () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
+    const fakeConditions = ([{ claim: '' }] as unknown) as Condition[];
     const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
     const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
 

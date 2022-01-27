@@ -28,19 +28,19 @@ import {
   AffiliateClaim,
   BlockedClaim,
   BuyLockupClaim,
-  CddClaim,
   CddProviderRole,
   Claim,
   ClaimType,
   ConditionType,
-  ExemptClaim,
+  CustomerDueDiligenceClaim,
+  ExemptedClaim,
   IdentityRole,
   InputCondition,
   InputConditionBase,
   InvestorUniquenessClaim,
   InvestorUniquenessV2Claim,
   JurisdictionClaim,
-  KnowYourCustomerClaim,
+  KnowYouCustomerClaim,
   MultiClaimCondition,
   NoDataClaim,
   PortfolioCustodianRole,
@@ -229,7 +229,7 @@ export function isAffiliateClaim(claim: Claim): claim is AffiliateClaim {
 }
 
 /**
- * Return whether Claim is an BuyLockupClaim
+ * Return whether Claim is a BuyLockupClaim
  */
 export function isBuyLockupClaim(claim: Claim): claim is BuyLockupClaim {
   return claim.type === ClaimType.BuyLockup;
@@ -245,14 +245,14 @@ export function isSellLockupClaim(claim: Claim): claim is SellLockupClaim {
 /**
  * Return whether Claim is a CustomerDueDiligenceClaim
  */
-export function isCustomerDueDiligenceClaim(claim: Claim): claim is CddClaim {
+export function isCustomerDueDiligenceClaim(claim: Claim): claim is CustomerDueDiligenceClaim {
   return claim.type === ClaimType.CustomerDueDiligence;
 }
 
 /**
  * Return whether Claim is a KnowYourCustomerClaim
  */
-export function isKnowYourCustomerClaim(claim: Claim): claim is KnowYourCustomerClaim {
+export function isKnowYourCustomerClaim(claim: Claim): claim is KnowYouCustomerClaim {
   return claim.type === ClaimType.KnowYourCustomer;
 }
 
@@ -264,9 +264,9 @@ export function isJurisdictionClaim(claim: Claim): claim is JurisdictionClaim {
 }
 
 /**
- * Return whether Claim is a ExemptClaim
+ * Return whether Claim is an ExemptedClaim
  */
-export function isExemptClaim(claim: Claim): claim is ExemptClaim {
+export function isExemptedClaim(claim: Claim): claim is ExemptedClaim {
   return claim.type === ClaimType.Exempted;
 }
 
@@ -292,7 +292,7 @@ export function isNoDataClaim(claim: Claim): claim is NoDataClaim {
 }
 
 /**
- *  Return whether a Claim is an InvestorUniquenessV2Claim
+ * Return whether a Claim is an InvestorUniquenessV2Claim
  */
 export function isInvestorUniquenessV2Claim(claim: Claim): claim is InvestorUniquenessV2Claim {
   return claim.type === ClaimType.InvestorUniquenessV2;
@@ -304,7 +304,7 @@ export function isInvestorUniquenessV2Claim(claim: Claim): claim is InvestorUniq
 export function isSingleClaimCondition(
   condition: InputCondition
 ): condition is InputConditionBase & SingleClaimCondition {
-  return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
+  return 'claim' in condition;
 }
 
 /**
@@ -313,7 +313,7 @@ export function isSingleClaimCondition(
 export function isMultiClaimCondition(
   condition: InputCondition
 ): condition is InputConditionBase & MultiClaimCondition {
-  return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
+  return 'claims' in condition;
 }
 
 /**
