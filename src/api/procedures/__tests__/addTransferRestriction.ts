@@ -118,13 +118,10 @@ describe('addTransferRestriction procedure', () => {
 
     let result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addTransferManagerTransaction,
-      {},
-      rawTicker,
-      rawCountTm
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addTransferManagerTransaction,
+      args: [rawTicker, rawCountTm],
+    });
 
     expect(result).toEqual(1);
 
@@ -137,13 +134,10 @@ describe('addTransferRestriction procedure', () => {
 
     result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addTransferManagerTransaction,
-      {},
-      rawTicker,
-      rawPercentageTm
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addTransferManagerTransaction,
+      args: [rawTicker, rawPercentageTm],
+    });
 
     expect(result).toEqual(1);
   });
@@ -175,14 +169,11 @@ describe('addTransferRestriction procedure', () => {
 
     let result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addExemptedEntitiesTransaction,
-      { batchSize: 2 },
-      rawTicker,
-      rawCountTm,
-      [rawScopeId, rawIdentityScopeId]
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addExemptedEntitiesTransaction,
+      feeMultiplier: 2,
+      args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+    });
 
     expect(result).toEqual(1);
 
@@ -191,14 +182,11 @@ describe('addTransferRestriction procedure', () => {
       exemptedIdentities: [entityMockUtils.getIdentityInstance()],
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addExemptedEntitiesTransaction,
-      { batchSize: 2 },
-      rawTicker,
-      rawCountTm,
-      [rawScopeId, rawIdentityScopeId]
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addExemptedEntitiesTransaction,
+      feeMultiplier: 2,
+      args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+    });
 
     expect(result).toEqual(1);
   });

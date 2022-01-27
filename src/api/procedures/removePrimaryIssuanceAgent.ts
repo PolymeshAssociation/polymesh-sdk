@@ -45,7 +45,10 @@ export async function prepareRemovePrimaryIssuanceAgent(
   const rawTicker = stringToTicker(ticker, context);
   const rawIdentityId = stringToIdentityId(primaryIssuanceAgents[0].did, context);
 
-  this.addTransaction(externalAgents.removeAgent, {}, rawTicker, rawIdentityId);
+  this.addTransaction({
+    transaction: externalAgents.removeAgent,
+    args: [rawTicker, rawIdentityId],
+  });
 }
 
 /**

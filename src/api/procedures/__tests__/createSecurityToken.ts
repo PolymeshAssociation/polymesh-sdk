@@ -208,8 +208,12 @@ describe('createSecurityToken procedure', () => {
       )
       .returns(rawDocuments[0]);
 
-    mockContext.getProtocolFees.withArgs(TxTags.asset.RegisterTicker).resolves(protocolFees[0]);
-    mockContext.getProtocolFees.withArgs(TxTags.asset.CreateAsset).resolves(protocolFees[1]);
+    mockContext.getProtocolFees
+      .withArgs({ tag: TxTags.asset.RegisterTicker })
+      .resolves(protocolFees[0]);
+    mockContext.getProtocolFees
+      .withArgs({ tag: TxTags.asset.CreateAsset })
+      .resolves(protocolFees[1]);
   });
 
   afterEach(() => {
@@ -254,18 +258,19 @@ describe('createSecurityToken procedure', () => {
 
     const result = await prepareCreateSecurityToken.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      createAssetTransaction,
-      { fee: undefined },
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      rawIdentifiers,
-      rawFundingRound,
-      rawDisableIu
-    );
+    sinon.assert.calledWith(addTransactionStub.firstCall, {
+      transaction: createAssetTransaction,
+      fee: undefined,
+      args: [
+        rawName,
+        rawTicker,
+        rawIsDivisible,
+        rawType,
+        rawIdentifiers,
+        rawFundingRound,
+        rawDisableIu,
+      ],
+    });
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
 
     await prepareCreateSecurityToken.call(proc, {
@@ -276,24 +281,20 @@ describe('createSecurityToken procedure', () => {
       requireInvestorUniqueness: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub.secondCall,
-      createAssetTransaction,
-      { fee: undefined },
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      [],
-      null,
-      rawIsDivisible // disable IU = true
-    );
+    sinon.assert.calledWith(addTransactionStub.secondCall, {
+      transaction: createAssetTransaction,
+      fee: undefined,
+      args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawIsDivisible], // disable IU = true
+    });
 
     const issueTransaction = dsMockUtils.createTxStub('asset', 'issue');
 
     await prepareCreateSecurityToken.call(proc, { ...args, initialSupply });
 
-    sinon.assert.calledWith(addTransactionStub, issueTransaction, {}, rawTicker, rawInitialSupply);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: issueTransaction,
+      args: [rawTicker, rawInitialSupply],
+    });
   });
 
   test('should add a token creation transaction to the queue when reservationRequired is false', async () => {
@@ -307,18 +308,19 @@ describe('createSecurityToken procedure', () => {
       reservationRequired: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      createAssetTransaction,
-      { fee: undefined },
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      rawIdentifiers,
-      rawFundingRound,
-      rawDisableIu
-    );
+    sinon.assert.calledWith(addTransactionStub.firstCall, {
+      transaction: createAssetTransaction,
+      fee: undefined,
+      args: [
+        rawName,
+        rawTicker,
+        rawIsDivisible,
+        rawType,
+        rawIdentifiers,
+        rawFundingRound,
+        rawDisableIu,
+      ],
+    });
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
 
     proc = procedureMockUtils.getInstance<Params, SecurityToken, Storage>(mockContext, {
@@ -331,18 +333,19 @@ describe('createSecurityToken procedure', () => {
       reservationRequired: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub.secondCall,
-      createAssetTransaction,
-      { fee: protocolFees[0].plus(protocolFees[1]) },
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      rawIdentifiers,
-      rawFundingRound,
-      rawDisableIu
-    );
+    sinon.assert.calledWith(addTransactionStub.secondCall, {
+      transaction: createAssetTransaction,
+      fee: protocolFees[0].plus(protocolFees[1]),
+      args: [
+        rawName,
+        rawTicker,
+        rawIsDivisible,
+        rawType,
+        rawIdentifiers,
+        rawFundingRound,
+        rawDisableIu,
+      ],
+    });
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
@@ -364,18 +367,19 @@ describe('createSecurityToken procedure', () => {
 
     const result = await prepareCreateSecurityToken.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      createAssetTransaction,
-      { fee: new BigNumber(0) },
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      rawIdentifiers,
-      rawFundingRound,
-      rawDisableIu
-    );
+    sinon.assert.calledWith(addTransactionStub.firstCall, {
+      transaction: createAssetTransaction,
+      fee: new BigNumber(0),
+      args: [
+        rawName,
+        rawTicker,
+        rawIsDivisible,
+        rawType,
+        rawIdentifiers,
+        rawFundingRound,
+        rawDisableIu,
+      ],
+    });
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
@@ -392,13 +396,12 @@ describe('createSecurityToken procedure', () => {
 
     const result = await prepareCreateSecurityToken.call(proc, { ...args, documents });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      tx,
-      { isCritical: false, batchSize: rawDocuments.length },
-      rawDocuments,
-      rawTicker
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: tx,
+      isCritical: false,
+      feeMultiplier: rawDocuments.length,
+      args: [rawDocuments, rawTicker],
+    });
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
@@ -419,24 +422,30 @@ describe('createSecurityToken procedure', () => {
       Custom: dsMockUtils.createMockU32(10),
     });
     addTransactionStub
-      .withArgs(registerAssetTypeTx, sinon.match.object, rawValue)
+      .withArgs(sinon.match({ transaction: registerAssetTypeTx, args: [rawValue] }))
       .returns([newCustomType]);
 
     const result = await prepareCreateSecurityToken.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, registerAssetTypeTx, sinon.match.object, rawValue);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      sinon.match({ transaction: registerAssetTypeTx, args: [rawValue] })
+    );
 
     sinon.assert.calledWith(
       addTransactionStub,
-      createTokenTx,
-      sinon.match.any,
-      sinon.match.any,
-      sinon.match.any,
-      sinon.match.any,
-      newCustomType,
-      sinon.match.any,
-      sinon.match.any,
-      sinon.match.any
+      sinon.match({
+        transaction: createTokenTx,
+        args: [
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match.any,
+          newCustomType,
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match.any,
+        ],
+      })
     );
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
@@ -463,7 +472,7 @@ describe('createSecurityToken procedure', () => {
     });
 
     test('should return the new custom AssetType', () => {
-      const fakeResult = ('assetType' as unknown) as AssetType;
+      const fakeResult = 'assetType' as unknown as AssetType;
       internalTokenTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
       const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
 
