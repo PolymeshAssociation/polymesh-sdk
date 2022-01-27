@@ -10,7 +10,7 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('payDividends procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
@@ -86,9 +86,9 @@ describe('payDividends procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await preparePayDividends.call(proc, { targets, distribution });
-    sinon.assert.calledWith(addBatchTransactionStub, payDividendsTransaction, {}, [
-      [rawCaId, identityId],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [{ transaction: payDividendsTransaction, args: [rawCaId, identityId] }],
+    });
   });
 
   test('should throw an error if the Distribution is expired', async () => {

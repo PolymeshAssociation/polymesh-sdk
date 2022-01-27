@@ -333,6 +333,7 @@ interface ContextOptions {
   getAccounts?: Account[];
   currentIdentityIsEqual?: boolean;
   networkVersion?: string;
+  supportsSubsidy?: boolean;
 }
 
 interface KeyringOptions {
@@ -613,6 +614,7 @@ const defaultContextOptions: ContextOptions = {
   getAccounts: [],
   currentIdentityIsEqual: true,
   networkVersion: '1.0.0',
+  supportsSubsidy: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -737,6 +739,7 @@ function configureContext(opts: ContextOptions): void {
       .resolves(opts.getDividendDistributionsForTokens),
     addPair: sinon.stub().returns(opts.addPair),
     getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
+    supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
   } as unknown) as MockContext;
 
   contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
@@ -1019,7 +1022,7 @@ export function reset(): void {
  *
  * @param mod - name of the module
  * @param tx - name of the transaction function
- * @param autoresolve - if set to a status, the transaction will resolve immediately with that status.
+ * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
  *  If set to false, the transaction lifecycle will be controlled by [[updateTxStatus]]
  */
 export function createTxStub<
@@ -1029,7 +1032,7 @@ export function createTxStub<
   mod: ModuleName,
   tx: TransactionName,
   opts: {
-    autoresolve?: MockTxStatus | false;
+    autoResolve?: MockTxStatus | false;
     gas?: Balance;
     meta?: { args: Array<{ name: string; type: string }> };
   } = {}
@@ -1042,7 +1045,7 @@ export function createTxStub<
   }
 
   const {
-    autoresolve = MockTxStatus.Succeeded,
+    autoResolve = MockTxStatus.Succeeded,
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     gas = createMockBalance(1),
     meta = { args: [] },
@@ -1051,22 +1054,22 @@ export function createTxStub<
   const transaction = (sinon.stub().returns({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: sinon.stub().callsFake((_, cback: StatusCallback) => {
-      if (autoresolve === MockTxStatus.Rejected) {
+    signAndSend: sinon.stub().callsFake((_, cb: StatusCallback) => {
+      if (autoResolve === MockTxStatus.Rejected) {
         return Promise.reject(new Error('Cancelled'));
       }
 
       const unsubCallback = sinon.stub();
 
       txMocksData.set(runtimeModule[tx], {
-        statusCallback: cback,
+        statusCallback: cb,
         unsubCallback,
-        resolved: !!autoresolve,
+        resolved: !!autoResolve,
         status: (null as unknown) as MockTxStatus,
       });
 
-      if (autoresolve) {
-        process.nextTick(() => cback(statusToReceipt(autoresolve)));
+      if (autoResolve) {
+        process.nextTick(() => cb(statusToReceipt(autoResolve)));
       }
 
       return Promise.resolve(unsubCallback);
@@ -1800,14 +1803,14 @@ export const createMockPortfolioKind = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioId = (
-  portfiolioId?:
+  portfolioId?:
     | PortfolioId
     | {
         did: IdentityId | Parameters<typeof createMockIdentityId>[0];
         kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
       }
 ): PortfolioId => {
-  const { did, kind } = portfiolioId || {
+  const { did, kind } = portfolioId || {
     did: createMockIdentityId(),
     kind: createMockPortfolioKind(),
   };
@@ -1816,7 +1819,7 @@ export const createMockPortfolioId = (
       did: createMockIdentityId(did),
       kind: createMockPortfolioKind(kind),
     },
-    !portfiolioId
+    !portfolioId
   ) as PortfolioId;
 };
 

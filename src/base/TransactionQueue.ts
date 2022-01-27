@@ -6,7 +6,14 @@ import { range, values } from 'lodash';
 import { Context, PolymeshError, PolymeshTransactionBase, PostTransactionValue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { ErrorCode, Fees, FeesBreakdown, ThirdPartyFees, TransactionQueueStatus } from '~/types';
+import {
+  ErrorCode,
+  Fees,
+  FeesBreakdown,
+  PayingAccountType,
+  ThirdPartyFees,
+  TransactionQueueStatus,
+} from '~/types';
 import { MaybePostTransactionValue } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import { delay } from '~/utils/internal';
@@ -168,7 +175,7 @@ export class TransactionQueue<
   }
 
   /**
-   * Retrieves a lower bound of the fees required to execute this transaction queue.
+   * Retrieve a lower bound of the fees required to execute this transaction queue.
    *   Transaction fees can be higher at execution time for three reasons:
    *
    * - One or more transaction arguments depend on the result of another transaction in the queue.
@@ -181,6 +188,23 @@ export class TransactionQueue<
    *   either the current Account or a **single** third party Account
    */
   public async getMinFees(): Promise<FeesBreakdown> {
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      subsidizedTransactions,
+      ...rest
+    } = await this._getMinFees();
+
+    return rest;
+  }
+
+  /**
+   * @hidden
+   *
+   * Return a breakdown of the queue's fees and which transactions are being subsidized
+   */
+  private async _getMinFees(): Promise<
+    FeesBreakdown & { subsidizedTransactions: PolymeshTransactionBase[] }
+  > {
     const { context, transactions } = this;
 
     // get the fees and paying Account for each transaction in the queue
@@ -222,8 +246,10 @@ export class TransactionQueue<
       gas: new BigNumber(0),
     };
 
-    // compile the fees and other data for each paying Account (and the current Account as well)
-    const eachPromise = P.each(allFees, async transactionFees => {
+    const subsidizedTransactions: PolymeshTransactionBase[] = [];
+
+    // compile the fees and other data for each paying a¡Account (and the current account as well)
+    const eachPromise = P.each(allFees, async (transactionFees, index) => {
       if (!transactionFees) {
         return;
       }
@@ -234,17 +260,20 @@ export class TransactionQueue<
         // payingAccount === null means the current Account has to pay
         accountFees = addFees(accountFees, fees);
       } else {
-        const { account, allowance } = payingAccount;
+        const { account, type } = payingAccount;
         const { address } = account;
         const thirdPartyData = breakdownByAccount[address];
+
+        if (type === PayingAccountType.Subsidy) {
+          subsidizedTransactions.push(transactions[index]);
+        }
 
         if (!thirdPartyData) {
           // first time encountering this third party Account, we must populate the initial values
           const { free: balance } = await account.getBalance();
           breakdownByAccount[address] = {
-            account,
+            ...payingAccount,
             balance,
-            allowance,
             fees,
           };
         } else {
@@ -263,6 +292,7 @@ export class TransactionQueue<
       thirdPartyFees,
       accountBalance,
       accountFees,
+      subsidizedTransactions,
     };
   }
 
@@ -290,8 +320,8 @@ export class TransactionQueue<
    *
    * @returns unsubscribe function
    */
-  public onTransactionStatusChange<TxArgs extends unknown[], Values extends unknown[]>(
-    listener: (transaction: PolymeshTransactionBase<TxArgs, Values>, transactionQueue: this) => void
+  public onTransactionStatusChange<Values extends unknown[]>(
+    listener: (transaction: PolymeshTransactionBase<Values>, transactionQueue: this) => void
   ): () => void {
     this.emitter.on(Event.TransactionStatusChange, listener);
 
@@ -423,9 +453,23 @@ export class TransactionQueue<
    *   are sufficient to cover this queue's fees
    */
   private async assertFeesCovered(): Promise<void> {
-    const breakdown = await this.getMinFees();
+    const breakdown = await this._getMinFees();
 
-    const { accountBalance, accountFees, thirdPartyFees } = breakdown;
+    const { accountBalance, accountFees, thirdPartyFees, subsidizedTransactions } = breakdown;
+
+    const unsupportedTransactions = subsidizedTransactions.filter(
+      transaction => !transaction.supportsSubsidy()
+    );
+
+    if (unsupportedTransactions.length) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Some of the transactions in the queue cannot be run with a subsidized Account',
+        data: {
+          unsupportedTransactions,
+        },
+      });
+    }
 
     const calculateTotal = ({ protocol, gas }: Fees): BigNumber => protocol.plus(gas);
 

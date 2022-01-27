@@ -79,13 +79,11 @@ export async function prepareReserveTicker(
     }
   }
 
-  const [newReservation] = this.addTransaction(
-    tx.asset.registerTicker,
-    {
-      resolvers: [createTickerReservationResolver(context)],
-    },
-    rawTicker
-  );
+  const [newReservation] = this.addTransaction({
+    transaction: tx.asset.registerTicker,
+    resolvers: [createTickerReservationResolver(context)],
+    args: [rawTicker],
+  });
 
   return newReservation;
 }

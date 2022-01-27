@@ -397,7 +397,7 @@ let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
-let instructionIsPendigStub: SinonStub;
+let instructionIsPendingStub: SinonStub;
 let instructionExistsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetTokenBalancesStub: SinonStub;
@@ -1015,7 +1015,7 @@ function initVenue(opts?: VenueOptions): void {
  */
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = ({
-    uuid: 'numberedPorfolio',
+    uuid: 'numberedPortfolio',
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
@@ -1478,7 +1478,7 @@ function configureInstruction(opts: InstructionOptions): void {
     id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
-    isPending: instructionIsPendigStub.resolves(opts.isPending),
+    isPending: instructionIsPendingStub.resolves(opts.isPending),
     exists: instructionExistsStub.resolves(opts.exists),
   } as unknown) as MockInstruction;
 
@@ -1501,7 +1501,7 @@ function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
   instructionGetLegsStub = sinon.stub();
-  instructionIsPendigStub = sinon.stub();
+  instructionIsPendingStub = sinon.stub();
   instructionExistsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
@@ -1570,7 +1570,7 @@ function configureSto(opts: StoOptions): void {
     creator: mockInstanceContainer.identity,
     venue: mockInstanceContainer.venue,
     offeringPortfolio: mockInstanceContainer.defaultPortfolio,
-    raisingPorfolio: mockInstanceContainer.numberedPortfolio,
+    raisingPortfolio: mockInstanceContainer.numberedPortfolio,
     ...opts.details,
   };
   const sto = ({
@@ -1837,13 +1837,13 @@ export function configureMocks(opts?: MockOptions): void {
 
   configureTickerReservation(tempTickerReservationOptions);
 
-  const tempSecuritytokenOptions = merge(
+  const tempSecurityTokenOptions = merge(
     {},
     defaultSecurityTokenOptions,
     opts?.securityTokenOptions
   );
 
-  configureSecurityToken(tempSecuritytokenOptions);
+  configureSecurityToken(tempSecurityTokenOptions);
 
   const tempAuthorizationRequestOptions = {
     ...defaultAuthorizationRequestOptions,
@@ -2350,7 +2350,7 @@ export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.transferRestictions.count.get` method
+ * Retrieve the stub of the `SecurityToken.transferRestrictions.count.get` method
  */
 export function getSecurityTokenTransferRestrictionsCountGetStub(
   restrictions?: ActiveTransferRestrictions<CountTransferRestriction>
@@ -2364,7 +2364,7 @@ export function getSecurityTokenTransferRestrictionsCountGetStub(
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.transferRestictions.pecentage.get` method
+ * Retrieve the stub of the `SecurityToken.transferRestrictions.percentage.get` method
  */
 export function getSecurityTokenTransferRestrictionsPercentageGetStub(
   restrictions?: ActiveTransferRestrictions<PercentageTransferRestriction>

@@ -16,6 +16,8 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
   SecurityToken,
   Sto,
   TickerReservation,
@@ -347,4 +349,17 @@ export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
  */
 export function isIdentityRole(role: Role): role is IdentityRole {
   return role.type === RoleType.Identity;
+}
+/**
+ * Return whether value is a PolymeshTransaction
+ */
+export function isPolymeshTransaction(value: unknown): value is PolymeshTransaction {
+  return value instanceof PolymeshTransaction;
+}
+
+/**
+ * Return whether value is a PolymeshTransactionBatch
+ */
+export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTransactionBatch {
+  return value instanceof PolymeshTransactionBatch;
 }

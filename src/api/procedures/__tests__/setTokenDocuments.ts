@@ -144,20 +144,16 @@ describe('setTokenDocuments procedure', () => {
 
     const result = await prepareSetTokenDocuments.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      removeDocumentsTransaction,
-      { batchSize: 1 },
-      docIds,
-      rawTicker
-    );
-    sinon.assert.calledWith(
-      addTransactionStub.secondCall,
-      addDocumentsTransaction,
-      { batchSize: rawDocuments.length },
-      rawDocuments,
-      rawTicker
-    );
+    sinon.assert.calledWith(addTransactionStub.firstCall, {
+      transaction: removeDocumentsTransaction,
+      feeMultiplier: 1,
+      args: [docIds, rawTicker],
+    });
+    sinon.assert.calledWith(addTransactionStub.secondCall, {
+      transaction: addDocumentsTransaction,
+      feeMultiplier: rawDocuments.length,
+      args: [rawDocuments, rawTicker],
+    });
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
 
@@ -169,13 +165,11 @@ describe('setTokenDocuments procedure', () => {
 
     const result = await prepareSetTokenDocuments.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      addDocumentsTransaction,
-      { batchSize: rawDocuments.length },
-      rawDocuments,
-      rawTicker
-    );
+    sinon.assert.calledWith(addTransactionStub.firstCall, {
+      transaction: addDocumentsTransaction,
+      feeMultiplier: rawDocuments.length,
+      args: [rawDocuments, rawTicker],
+    });
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
@@ -189,13 +183,11 @@ describe('setTokenDocuments procedure', () => {
 
     const result = await prepareSetTokenDocuments.call(proc, { ...args, documents: [] });
 
-    sinon.assert.calledWith(
-      addTransactionStub.firstCall,
-      removeDocumentsTransaction,
-      { batchSize: 1 },
-      docIds,
-      rawTicker
-    );
+    sinon.assert.calledWith(addTransactionStub.firstCall, {
+      transaction: removeDocumentsTransaction,
+      feeMultiplier: 1,
+      args: [docIds, rawTicker],
+    });
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });

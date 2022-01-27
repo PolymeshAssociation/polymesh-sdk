@@ -18,7 +18,7 @@ import {
   stringToTicker,
   targetsToTargetIdentities,
 } from '~/utils/conversion';
-import { hasSameElements } from '~/utils/internal';
+import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
 
 export type ModifyCaDefaultConfigParams =
   | {
@@ -112,12 +112,10 @@ export async function prepareModifyCaDefaultConfig(
       });
     }
 
-    this.addTransaction(
-      tx.corporateAction.setDefaultTargets,
-      {},
-      rawTicker,
-      targetsToTargetIdentities(newTargets, context)
-    );
+    this.addTransaction({
+      transaction: tx.corporateAction.setDefaultTargets,
+      args: [rawTicker, targetsToTargetIdentities(newTargets, context)],
+    });
   }
 
   if (newDefaultTaxWithholding) {
@@ -128,12 +126,10 @@ export async function prepareModifyCaDefaultConfig(
       });
     }
 
-    this.addTransaction(
-      tx.corporateAction.setDefaultWithholdingTax,
-      {},
-      rawTicker,
-      percentageToPermill(newDefaultTaxWithholding, context)
-    );
+    this.addTransaction({
+      transaction: tx.corporateAction.setDefaultWithholdingTax,
+      args: [rawTicker, percentageToPermill(newDefaultTaxWithholding, context)],
+    });
   }
 
   if (newTaxWithholdings) {
@@ -151,15 +147,22 @@ export async function prepareModifyCaDefaultConfig(
       });
     }
 
-    const batchParams = newTaxWithholdings.map(({ identity, percentage }) =>
-      tuple(
-        rawTicker,
-        stringToIdentityId(signerToString(identity), context),
-        percentageToPermill(percentage, context)
-      )
+    const transaction = tx.corporateAction.setDidWithholdingTax;
+
+    const transactions = assembleBatchTransactions(
+      tuple({
+        transaction,
+        argsArray: newTaxWithholdings.map(({ identity, percentage }) =>
+          tuple(
+            rawTicker,
+            stringToIdentityId(signerToString(identity), context),
+            percentageToPermill(percentage, context)
+          )
+        ),
+      })
     );
 
-    this.addBatchTransaction(tx.corporateAction.setDidWithholdingTax, {}, batchParams);
+    this.addBatchTransaction({ transactions });
   }
 }
 

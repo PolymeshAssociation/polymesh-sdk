@@ -115,7 +115,10 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     portfolioMovementToMovePortfolioItem(item, context)
   );
 
-  this.addTransaction(portfolio.movePortfolioFunds, {}, rawFrom, rawTo, rawMovePortfolioItems);
+  this.addTransaction({
+    transaction: portfolio.movePortfolioFunds,
+    args: [rawFrom, rawTo, rawMovePortfolioItems],
+  });
 }
 
 /**

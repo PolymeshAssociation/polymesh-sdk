@@ -45,7 +45,10 @@ export async function prepareModifyCaCheckpoint(
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
   const rawRecordDateSpec = optionize(checkpointToRecordDateSpec)(checkpointValue, context);
 
-  this.addTransaction(tx.corporateAction.changeRecordDate, {}, rawCaId, rawRecordDateSpec);
+  this.addTransaction({
+    transaction: tx.corporateAction.changeRecordDate,
+    args: [rawCaId, rawRecordDateSpec],
+  });
 }
 
 /**

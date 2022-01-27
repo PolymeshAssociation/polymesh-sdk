@@ -64,13 +64,10 @@ export async function prepareSetGroupPermissions(
     context
   );
 
-  this.addTransaction(
-    externalAgents.setGroupPermissions,
-    {},
-    rawTicker,
-    rawAgId,
-    rawExtrinsicPermissions
-  );
+  this.addTransaction({
+    transaction: externalAgents.setGroupPermissions,
+    args: [rawTicker, rawAgId, rawExtrinsicPermissions],
+  });
 }
 
 /**

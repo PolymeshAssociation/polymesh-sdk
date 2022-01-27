@@ -135,7 +135,7 @@ export abstract class TransferRestrictionBase<
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type
    *
-   * @note there is a maximum number of restrictions allowed accross all types.
+   * @note there is a maximum number of restrictions allowed across all types.
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */

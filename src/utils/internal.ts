@@ -12,7 +12,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, differenceWith, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
+import { chunk, differenceWith, flatMap, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
 
 import {
@@ -52,7 +52,9 @@ import {
   Events,
   Falsyable,
   MapMaybePostTransactionValue,
+  MapTxWithArgs,
   MaybePostTransactionValue,
+  PolymeshTx,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
@@ -401,7 +403,7 @@ export function batchArguments<Args>(
  * Returns null if there is no next page.
  *
  * @param size - page size requested
- * @param start - start index requestd
+ * @param start - start index requested
  * @param totalCount - total amount of elements returned by query
  *
  * @hidden
@@ -840,6 +842,40 @@ export async function getCheckpointValue(
       })
     ).schedule;
   }
+}
+
+interface TxAndArgsArray<Args extends unknown[] = unknown[]> {
+  transaction: PolymeshTx<Args>;
+  argsArray: Args[];
+}
+
+type MapTxAndArgsArray<Args extends unknown[][]> = {
+  [K in keyof Args]: Args[K] extends unknown[] ? TxAndArgsArray<Args[K]> : never;
+};
+
+// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
+/**
+ * @hidden
+ */
+function mapArgs<Args extends unknown[] | []>({
+  transaction,
+  argsArray,
+}: TxAndArgsArray<Args>): MapTxWithArgs<Args[]> {
+  return (argsArray.map(args => ({
+    transaction,
+    args,
+  })) as unknown) as MapTxWithArgs<Args[]>;
+}
+
+// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
+/**
+ * Assemble the `transactions` array that has to be passed to `addBatchTransaction` from a set of parameter arrays with their
+ *   respective transaction
+ */
+export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
+  txsAndArgs: MapTxAndArgsArray<ArgsArray>
+): MapTxWithArgs<unknown[][]> {
+  return (flatMap(txsAndArgs, mapArgs) as unknown) as MapTxWithArgs<unknown[][]>;
 }
 
 /**

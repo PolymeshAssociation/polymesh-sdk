@@ -95,7 +95,7 @@ describe('modifyCaCheckpoint procedure', () => {
 
     await prepareLeaveIdentity.call(proc, { account });
 
-    sinon.assert.calledWith(addTransactionStub, leaveIdentityAsKeyTransaction, {});
+    sinon.assert.calledWith(addTransactionStub, { transaction: leaveIdentityAsKeyTransaction });
   });
 
   describe('getAuthorization', () => {

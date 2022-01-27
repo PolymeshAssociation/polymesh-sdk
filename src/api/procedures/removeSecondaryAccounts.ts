@@ -47,11 +47,11 @@ export async function prepareRemoveSecondaryAccounts(
 
   assertSecondaryAccounts(signerValues, secondaryAccounts);
 
-  this.addTransaction(
-    tx.identity.removeSecondaryKeys,
-    {},
-    signerValues.map(signer => signerValueToSignatory(signer, context))
-  );
+  this.addTransaction({
+    transaction: tx.identity.removeSecondaryKeys,
+    feeMultiplier: signerValues.length,
+    args: [signerValues.map(signer => signerValueToSignatory(signer, context))],
+  });
 }
 
 /**

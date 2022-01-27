@@ -418,17 +418,19 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      rawPortfolioNumber,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      rawExpiresAt
+        args: [
+          rawCaId,
+          rawPortfolioNumber,
+          rawCurrency,
+          rawPerShare,
+          rawAmount,
+          rawPaymentAt,
+          rawExpiresAt,
+        ],
+      })
     );
 
     expect(result).toEqual(distribution);
@@ -451,17 +453,19 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      rawPortfolioNumber,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      rawExpiresAt
+        args: [
+          rawCaId,
+          rawPortfolioNumber,
+          rawCurrency,
+          rawPerShare,
+          rawAmount,
+          rawPaymentAt,
+          rawExpiresAt,
+        ],
+      })
     );
 
     proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
@@ -494,17 +498,11 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      null,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      null
+        args: [rawCaId, null, rawCurrency, rawPerShare, rawAmount, rawPaymentAt, null],
+      })
     );
   });
 
