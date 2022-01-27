@@ -128,22 +128,21 @@ type InternalAddInstructionParams = [
 /**
  * @hidden
  */
-export const createAddInstructionResolver = (
-  context: Context,
-  previousInstructions?: PostTransactionValue<Instruction[]>
-) => (receipt: ISubmittableResult): Instruction[] => {
-  const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated');
+export const createAddInstructionResolver =
+  (context: Context, previousInstructions?: PostTransactionValue<Instruction[]>) =>
+  (receipt: ISubmittableResult): Instruction[] => {
+    const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated');
 
-  const result = events.map(
-    ({ data }) => new Instruction({ id: u64ToBigNumber(data[2]) }, context)
-  );
+    const result = events.map(
+      ({ data }) => new Instruction({ id: u64ToBigNumber(data[2]) }, context)
+    );
 
-  if (previousInstructions) {
-    return previousInstructions.value.concat(result);
-  }
+    if (previousInstructions) {
+      return previousInstructions.value.concat(result);
+    }
 
-  return result;
-};
+    return result;
+  };
 
 /**
  * @hidden

@@ -98,11 +98,8 @@ export async function prepareModifyCaDefaultConfig(
 
   const securityToken = new SecurityToken({ ticker }, context);
 
-  const {
-    targets,
-    defaultTaxWithholding,
-    taxWithholdings,
-  } = await securityToken.corporateActions.getDefaultConfig();
+  const { targets, defaultTaxWithholding, taxWithholdings } =
+    await securityToken.corporateActions.getDefaultConfig();
 
   if (newTargets) {
     if (areSameTargets(targets, newTargets)) {

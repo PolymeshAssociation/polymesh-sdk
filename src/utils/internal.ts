@@ -240,8 +240,7 @@ export function filterEventRecords<
   }
 
   return eventRecords.map(
-    eventRecord =>
-      (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>
+    eventRecord => eventRecord.event as unknown as IEvent<EventData<Events[ModuleName][EventName]>>
   );
 }
 
@@ -863,10 +862,10 @@ function mapArgs<Args extends unknown[] | []>({
   transaction,
   argsArray,
 }: TxAndArgsArray<Args>): MapTxWithArgs<Args[]> {
-  return (argsArray.map(args => ({
+  return argsArray.map(args => ({
     transaction,
     args,
-  })) as unknown) as MapTxWithArgs<Args[]>;
+  })) as unknown as MapTxWithArgs<Args[]>;
 }
 
 // * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
@@ -877,7 +876,7 @@ function mapArgs<Args extends unknown[] | []>({
 export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
   txsAndArgs: MapTxAndArgsArray<ArgsArray>
 ): MapTxWithArgs<unknown[][]> {
-  return (flatMap(txsAndArgs, mapArgs) as unknown) as MapTxWithArgs<unknown[][]>;
+  return flatMap(txsAndArgs, mapArgs) as unknown as MapTxWithArgs<unknown[][]>;
 }
 
 /**

@@ -43,21 +43,21 @@ export type Params = CreateCheckpointScheduleParams & {
 /**
  * @hidden
  */
-export const createCheckpointScheduleResolver = (ticker: string, context: Context) => (
-  receipt: ISubmittableResult
-): CheckpointSchedule => {
-  const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
+export const createCheckpointScheduleResolver =
+  (ticker: string, context: Context) =>
+  (receipt: ISubmittableResult): CheckpointSchedule => {
+    const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
 
-  const scheduleParams = storedScheduleToCheckpointScheduleParams(data[2]);
+    const scheduleParams = storedScheduleToCheckpointScheduleParams(data[2]);
 
-  return new CheckpointSchedule(
-    {
-      ticker,
-      ...scheduleParams,
-    },
-    context
-  );
-};
+    return new CheckpointSchedule(
+      {
+        ticker,
+        ...scheduleParams,
+      },
+      context
+    );
+  };
 
 /**
  * @hidden

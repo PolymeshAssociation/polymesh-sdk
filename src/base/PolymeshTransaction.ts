@@ -58,7 +58,7 @@ export class PolymeshTransaction<
 
     super(rest, context);
 
-    this.inputArgs = (args as unknown) as MapMaybePostTransactionValue<Args>;
+    this.inputArgs = args as unknown as MapMaybePostTransactionValue<Args>;
     this.transaction = transaction;
     this.tag = transactionToTxTag(transaction);
     this.feeMultiplier = feeMultiplier;

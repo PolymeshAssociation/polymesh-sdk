@@ -82,9 +82,8 @@ export class Offerings extends Namespace<SecurityToken> {
       context,
     } = this;
 
-    const {
-      status: { timing: timingFilter, balance: balanceFilter, sale: saleFilter } = {},
-    } = opts;
+    const { status: { timing: timingFilter, balance: balanceFilter, sale: saleFilter } = {} } =
+      opts;
 
     const rawTicker = stringToTicker(ticker, context);
 
@@ -101,8 +100,13 @@ export class Offerings extends Namespace<SecurityToken> {
         fundraiser,
       ]) => {
         const id = u64ToBigNumber(rawFundraiserId);
-        const [[, name]] = remove(nameEntries, ([{ args: [, rawId] }]) =>
-          u64ToBigNumber(rawId).eq(id)
+        const [[, name]] = remove(
+          nameEntries,
+          ([
+            {
+              args: [, rawId],
+            },
+          ]) => u64ToBigNumber(rawId).eq(id)
         );
         return {
           sto: new Sto({ id, ticker }, context),

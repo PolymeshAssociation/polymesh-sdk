@@ -149,5 +149,6 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const consumeAddMultiSigSignerAuthorization = (): Procedure<ConsumeAddMultiSigSignerAuthorizationParams> =>
-  new Procedure(prepareConsumeAddMultiSigSignerAuthorization, getAuthorization);
+export const consumeAddMultiSigSignerAuthorization =
+  (): Procedure<ConsumeAddMultiSigSignerAuthorizationParams> =>
+    new Procedure(prepareConsumeAddMultiSigSignerAuthorization, getAuthorization);

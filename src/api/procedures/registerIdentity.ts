@@ -21,14 +21,14 @@ export interface RegisterIdentityParams {
 /**
  * @hidden
  */
-export const createRegisterIdentityResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): Identity => {
-  const [{ data }] = filterEventRecords(receipt, 'identity', 'DidCreated');
-  const did = identityIdToString(data[0]);
+export const createRegisterIdentityResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): Identity => {
+    const [{ data }] = filterEventRecords(receipt, 'identity', 'DidCreated');
+    const did = identityIdToString(data[0]);
 
-  return new Identity({ did }, context);
-};
+    return new Identity({ did }, context);
+  };
 
 /**
  * @hidden

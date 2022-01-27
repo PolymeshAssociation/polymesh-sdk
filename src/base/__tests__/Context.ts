@@ -909,7 +909,7 @@ describe('Context class', () => {
 
       txTagToProtocolOpStub
         .withArgs(TxTags.asset.CreateAsset, context)
-        .returns(('someProtocolOp' as unknown) as ProtocolOp);
+        .returns('someProtocolOp' as unknown as ProtocolOp);
       txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
 
       dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
@@ -1444,25 +1444,25 @@ describe('Context class', () => {
       dsMockUtils.throwOnMiddlewareQuery();
 
       await expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
       await expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
       return expect(
-        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
+        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Some Message');
     });
 
     test('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1709,7 +1709,7 @@ describe('Context class', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pair = ('something' as unknown) as any;
+      const pair = 'something' as unknown as any;
 
       context.addPair({ pair });
 

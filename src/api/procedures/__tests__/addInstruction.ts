@@ -164,7 +164,7 @@ describe('addInstruction procedure', () => {
       asset: rawToken,
     };
 
-    instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
+    instruction = ['instruction'] as unknown as PostTransactionValue<[Instruction]>;
   });
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
@@ -589,9 +589,9 @@ describe('createAddInstructionResolver', () => {
     const fakeContext = {} as Context;
     const previousInstructionId = new BigNumber(2);
 
-    const previousInstructions = ({
+    const previousInstructions = {
       value: [new Instruction({ id: previousInstructionId }, fakeContext)],
-    } as unknown) as PostTransactionValue<Instruction[]>;
+    } as unknown as PostTransactionValue<Instruction[]>;
 
     const result = createAddInstructionResolver(
       fakeContext,
