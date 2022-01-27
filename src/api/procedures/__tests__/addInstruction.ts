@@ -262,7 +262,7 @@ describe('addInstruction procedure', () => {
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [] });
     } catch (err) {
       error = err;
     }
