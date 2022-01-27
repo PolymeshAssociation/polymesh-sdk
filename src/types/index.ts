@@ -224,9 +224,9 @@ export type BuyLockupClaim = { type: ClaimType.BuyLockup; scope: Scope };
 
 export type SellLockupClaim = { type: ClaimType.SellLockup; scope: Scope };
 
-export type CustomerDueDiligenceClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
 
-export type KnowYouCustomerClaim = { type: ClaimType.KnowYourCustomer; scope: Scope };
+export type KycClaim = { type: ClaimType.KnowYourCustomer; scope: Scope };
 
 export type JurisdictionClaim = { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope };
 
@@ -255,11 +255,11 @@ export type ScopedClaim =
   | AffiliateClaim
   | BuyLockupClaim
   | SellLockupClaim
-  | KnowYouCustomerClaim
+  | KycClaim
   | ExemptedClaim
   | BlockedClaim;
 
-export type UnscopedClaim = NoDataClaim | CustomerDueDiligenceClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = NoDataClaim | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 

@@ -11,10 +11,10 @@ import {
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
+  CddClaim,
   ClaimData,
   ClaimScope,
   ClaimType,
-  CustomerDueDiligenceClaim,
   IdentityWithClaims,
   InvestorUniquenessClaim,
   ProcedureMethod,
@@ -289,7 +289,7 @@ export class Claims {
       target?: string | Identity;
       includeExpired?: boolean;
     } = {}
-  ): Promise<ClaimData<CustomerDueDiligenceClaim>[]> {
+  ): Promise<ClaimData<CddClaim>[]> {
     const { context } = this;
     const { target, includeExpired = true } = opts;
 
@@ -299,7 +299,7 @@ export class Claims {
       targets: [did],
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
-    }) as Promise<ClaimData<CustomerDueDiligenceClaim>[]>;
+    }) as Promise<ClaimData<CddClaim>[]>;
   }
 
   /**

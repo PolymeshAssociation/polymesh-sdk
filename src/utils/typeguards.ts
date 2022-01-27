@@ -28,10 +28,10 @@ import {
   AffiliateClaim,
   BlockedClaim,
   BuyLockupClaim,
+  CddClaim,
   CddProviderRole,
   Claim,
   ClaimType,
-  CustomerDueDiligenceClaim,
   ExemptedClaim,
   IdentityRole,
   InputCondition,
@@ -39,7 +39,7 @@ import {
   InvestorUniquenessClaim,
   InvestorUniquenessV2Claim,
   JurisdictionClaim,
-  KnowYouCustomerClaim,
+  KycClaim,
   MultiClaimCondition,
   NoDataClaim,
   PortfolioCustodianRole,
@@ -231,16 +231,16 @@ export function isSellLockupClaim(claim: Claim): claim is SellLockupClaim {
 }
 
 /**
- * Return whether Claim is a CustomerDueDiligenceClaim
+ * Return whether Claim is a CddClaim
  */
-export function isCustomerDueDiligenceClaim(claim: Claim): claim is CustomerDueDiligenceClaim {
+export function isCddClaim(claim: Claim): claim is CddClaim {
   return claim.type === ClaimType.CustomerDueDiligence;
 }
 
 /**
- * Return whether Claim is a KnowYourCustomerClaim
+ * Return whether Claim is a KycClaim
  */
-export function isKnowYourCustomerClaim(claim: Claim): claim is KnowYouCustomerClaim {
+export function isKycClaim(claim: Claim): claim is KycClaim {
   return claim.type === ClaimType.KnowYourCustomer;
 }
 

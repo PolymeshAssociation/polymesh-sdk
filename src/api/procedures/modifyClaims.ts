@@ -6,14 +6,7 @@ import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import {
-  Claim,
-  ClaimTarget,
-  ClaimType,
-  CustomerDueDiligenceClaim,
-  ErrorCode,
-  RoleType,
-} from '~/types';
+import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType } from '~/types';
 import {
   ClaimOperation,
   Extrinsics,
@@ -150,8 +143,8 @@ const findInvalidCddClaims = async (
 
       if (issuedClaimsForTarget.length) {
         // we know both claims are CDD claims
-        const { id: newCddId } = issuedClaimsForTarget[0].claim as CustomerDueDiligenceClaim;
-        const { id: currentCddId } = claim as CustomerDueDiligenceClaim;
+        const { id: newCddId } = issuedClaimsForTarget[0].claim as CddClaim;
+        const { id: currentCddId } = claim as CddClaim;
 
         if (newCddId !== currentCddId) {
           invalidCddClaims.push({
