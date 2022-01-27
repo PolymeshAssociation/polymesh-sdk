@@ -31,7 +31,6 @@ import {
   CddProviderRole,
   Claim,
   ClaimType,
-  ConditionType,
   CustomerDueDiligenceClaim,
   ExemptedClaim,
   IdentityRole,
