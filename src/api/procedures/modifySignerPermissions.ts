@@ -1,7 +1,7 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Procedure } from '~/internal';
-import { Account, PermissionsLike, TxTags } from '~/types';
-import { tuple } from '~/types/utils';
+import { PermissionedAccount, PermissionsLike, TxTags } from '~/types';
+import { Modify, tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
@@ -13,13 +13,7 @@ export interface ModifySignerPermissionsParams {
   /**
    * list of secondary accounts
    */
-  secondaryAccounts: {
-    account: Account;
-    /**
-     * list of permissions
-     */
-    permissions: PermissionsLike;
-  }[];
+  secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
 }
 
 /**

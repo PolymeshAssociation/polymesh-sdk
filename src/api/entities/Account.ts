@@ -278,7 +278,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           specVersionId: spec_version_id,
           extrinsicHash: extrinsic_hash!,
         };
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+        /* eslint-enable @typescript-eslint/no-non-null-assertion */
       }
     );
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -342,6 +342,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const account = secondaryAccounts.find(
       ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
     )!;

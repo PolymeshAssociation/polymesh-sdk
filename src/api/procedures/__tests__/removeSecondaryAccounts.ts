@@ -5,10 +5,10 @@ import {
   prepareRemoveSecondaryAccounts,
   RemoveSecondaryAccountsParams,
 } from '~/api/procedures/removeSecondaryAccounts';
-import { Account, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionedAccount, Signer, SignerType, SignerValue } from '~/types';
+import { Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryAccounts procedure', () => {
@@ -18,8 +18,6 @@ describe('removeSecondaryAccounts procedure', () => {
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
 
   let args: RemoveSecondaryAccountsParams;
-  let primaryAccount: PermissionedAccount;
-  let account: Account;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -32,18 +30,6 @@ describe('removeSecondaryAccounts procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-
-    account = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
-
-    primaryAccount = {
-      account,
-      permissions: {
-        tokens: null,
-        transactions: null,
-        transactionGroups: [],
-        portfolios: null,
-      },
-    };
 
     const accounts = [entityMockUtils.getAccountInstance({ address: 'someFakeAccount' })];
 
@@ -74,7 +60,6 @@ describe('removeSecondaryAccounts procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
-        primaryAccount,
         secondaryAccounts: accounts.map(secondaryAccount => ({
           account: secondaryAccount,
           permissions: {
@@ -105,15 +90,12 @@ describe('removeSecondaryAccounts procedure', () => {
 
   test('should throw an error if attempting to remove the primary Account', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
+    const account = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
 
     return expect(
       prepareRemoveSecondaryAccounts.call(proc, {
         ...args,
         accounts: [account],
-        identity: entityMockUtils.getIdentityInstance({
-          getPrimaryAccount: primaryAccount,
-          getSecondaryAccounts: [],
-        }),
       })
     ).rejects.toThrow('You cannot remove the primary Account');
   });
@@ -129,10 +111,6 @@ describe('removeSecondaryAccounts procedure', () => {
     return expect(
       prepareRemoveSecondaryAccounts.call(proc, {
         ...args,
-        identity: entityMockUtils.getIdentityInstance({
-          getPrimaryAccount: primaryAccount,
-          getSecondaryAccounts: [],
-        }),
       })
     ).rejects.toThrow('One of the Accounts is not a secondary Account for the Identity');
   });

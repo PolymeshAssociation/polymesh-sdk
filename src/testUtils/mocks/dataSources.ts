@@ -317,7 +317,7 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  primaryAccount?: PermissionedAccount;
+  primaryAccount?: string;
   secondaryAccounts?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
@@ -585,17 +585,7 @@ const defaultContextOptions: ContextOptions = {
     next: 1,
     count: 1,
   },
-  primaryAccount: {
-    account: ({
-      address: 'primaryAccount',
-    } as unknown) as Account,
-    permissions: {
-      tokens: null,
-      transactions: null,
-      transactionGroups: [],
-      portfolios: null,
-    },
-  },
+  primaryAccount: 'primaryAccount',
   secondaryAccounts: [],
   transactionHistory: {
     data: [],
@@ -670,7 +660,17 @@ function configureContext(opts: ContextOptions): void {
     checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryAccount: sinon.stub().resolves(opts.primaryAccount),
+    getPrimaryAccount: sinon.stub().resolves({
+      account: {
+        address: opts.primaryAccount,
+      },
+      permissions: {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      },
+    }),
     getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
