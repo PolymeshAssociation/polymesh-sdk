@@ -27,15 +27,15 @@ export interface Params {
 /**
  * @hidden
  */
-export const createPortfolioResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): NumberedPortfolio => {
-  const [{ data }] = filterEventRecords(receipt, 'portfolio', 'PortfolioCreated');
-  const did = identityIdToString(data[0]);
-  const id = u64ToBigNumber(data[1]);
+export const createPortfolioResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): NumberedPortfolio => {
+    const [{ data }] = filterEventRecords(receipt, 'portfolio', 'PortfolioCreated');
+    const did = identityIdToString(data[0]);
+    const id = u64ToBigNumber(data[1]);
 
-  return new NumberedPortfolio({ did, id }, context);
-};
+    return new NumberedPortfolio({ did, id }, context);
+  };
 
 /**
  * @hidden

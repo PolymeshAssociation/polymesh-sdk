@@ -185,9 +185,9 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
  * Create a mock instance of the Apollo client
  */
 function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
-  return ({
+  return {
     stop: sinon.stub(),
-  } as unknown) as Mutable<ApolloClient<NormalizedCacheObject>>;
+  } as unknown as Mutable<ApolloClient<NormalizedCacheObject>>;
 }
 
 let apolloConstructorStub: SinonStub;
@@ -196,12 +196,12 @@ let apolloConstructorStub: SinonStub;
  * Create a mock instance of the WebSocketAsPromised lib
  */
 function createWebSocketAsPromised(): WebSocketAsPromised {
-  return ({
+  return {
     open: sinon.stub(),
     send: sinon.stub(),
     sendRequest: sinon.stub().resolves({ result: '4.1.0' }),
     close: sinon.stub(),
-  } as unknown) as WebSocketAsPromised;
+  } as unknown as WebSocketAsPromised;
 }
 
 let webSocketAsPromisedConstructorStub: SinonStub;
@@ -423,7 +423,7 @@ const otherFailReceipt = createFailReceipt({ isOther: true });
 
 const moduleFailReceipt = createFailReceipt({
   isModule: true,
-  asModule: ({
+  asModule: {
     error: { toNumber: (): number => 1 },
     index: { toNumber: (): number => 1 },
     registry: {
@@ -433,7 +433,7 @@ const moduleFailReceipt = createFailReceipt({
         docs: ['This is very bad'],
       }),
     },
-  } as unknown) as DispatchErrorModule,
+  } as unknown as DispatchErrorModule,
 });
 
 const abortReceipt: ISubmittableResult = merge({}, defaultReceipt, {
@@ -553,8 +553,8 @@ const defaultContextOptions: ContextOptions = {
   issuedClaims: {
     data: [
       {
-        target: ('targetIdentity' as unknown) as Identity,
-        issuer: ('issuerIdentity' as unknown) as Identity,
+        target: 'targetIdentity' as unknown as Identity,
+        issuer: 'issuerIdentity' as unknown as Identity,
         issuedAt: new Date(),
         expiry: null,
         claim: { type: ClaimType.NoData },
@@ -565,8 +565,8 @@ const defaultContextOptions: ContextOptions = {
   },
   getIdentityClaimsFromChain: [
     {
-      target: ('targetIdentity' as unknown) as Identity,
-      issuer: ('issuerIdentity' as unknown) as Identity,
+      target: 'targetIdentity' as unknown as Identity,
+      issuer: 'issuerIdentity' as unknown as Identity,
       issuedAt: new Date(),
       expiry: null,
       claim: { type: ClaimType.NoData },
@@ -575,8 +575,8 @@ const defaultContextOptions: ContextOptions = {
   getIdentityClaimsFromMiddleware: {
     data: [
       {
-        target: ('targetIdentity' as unknown) as Identity,
-        issuer: ('issuerIdentity' as unknown) as Identity,
+        target: 'targetIdentity' as unknown as Identity,
+        issuer: 'issuerIdentity' as unknown as Identity,
         issuedAt: new Date(),
         expiry: null,
         claim: { type: ClaimType.NoData },
@@ -703,7 +703,7 @@ function configureContext(opts: ContextOptions): void {
         new Error('There is no Account associated with the current SDK instance')
       );
 
-  const contextInstance = ({
+  const contextInstance = {
     currentPair,
     getCurrentIdentity,
     getCurrentAccount,
@@ -740,7 +740,7 @@ function configureContext(opts: ContextOptions): void {
     addPair: sinon.stub().returns(opts.addPair),
     getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
     supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
-  } as unknown) as MockContext;
+  } as unknown as MockContext;
 
   contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
 
@@ -874,7 +874,7 @@ function initQueryMulti(): void {
  * @hidden
  */
 function initApi(): void {
-  mockInstanceContainer.apiInstance.registry = ('registry' as unknown) as Registry;
+  mockInstanceContainer.apiInstance.registry = 'registry' as unknown as Registry;
   mockInstanceContainer.apiInstance.createType = sinon.stub();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
 
@@ -924,7 +924,7 @@ function configureKeyring(opts: KeyringOptions): void {
     keyringInstance.encodeAddress.throws(err);
   }
 
-  Object.assign(mockInstanceContainer.keyringInstance, (keyringInstance as unknown) as Keyring);
+  Object.assign(mockInstanceContainer.keyringInstance, keyringInstance as unknown as Keyring);
 
   keyringConstructorStub.returns(keyringInstance);
 }
@@ -1051,7 +1051,7 @@ export function createTxStub<
     meta = { args: [] },
   } = opts;
 
-  const transaction = (sinon.stub().returns({
+  const transaction = sinon.stub().returns({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
     signAndSend: sinon.stub().callsFake((_, cb: StatusCallback) => {
@@ -1065,7 +1065,7 @@ export function createTxStub<
         statusCallback: cb,
         unsubCallback,
         resolved: !!autoResolve,
-        status: (null as unknown) as MockTxStatus,
+        status: null as unknown as MockTxStatus,
       });
 
       if (autoResolve) {
@@ -1076,7 +1076,7 @@ export function createTxStub<
     }),
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     paymentInfo: sinon.stub().resolves({ partialFee: gas }),
-  }) as unknown) as Extrinsics[ModuleName][TransactionName];
+  }) as unknown as Extrinsics[ModuleName][TransactionName];
 
   (transaction as any).section = mod;
   (transaction as any).method = tx;
@@ -1088,7 +1088,7 @@ export function createTxStub<
 
   const instance = mockInstanceContainer.apiInstance;
 
-  return (instance.tx[mod][tx] as unknown) as PolymeshTx<
+  return instance.tx[mod][tx] as unknown as PolymeshTx<
     ArgsType<Extrinsics[ModuleName][TransactionName]>
   > &
     SinonStub;
@@ -1169,7 +1169,7 @@ export function createQueryStub<
   let stub: QueryStub;
 
   if (!runtimeModule[query]) {
-    stub = (sinon.stub() as unknown) as QueryStub;
+    stub = sinon.stub() as unknown as QueryStub;
     stub.entries = sinon.stub();
     stub.entriesPaged = sinon.stub();
     stub.at = sinon.stub();
@@ -1367,7 +1367,7 @@ export function setContextAccountBalance(balance: AccountBalance): void {
  * Retrieve an instance of the mocked Polkadot API
  */
 export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {
-  return (mockInstanceContainer.apiInstance as unknown) as ApiPromise &
+  return mockInstanceContainer.apiInstance as unknown as ApiPromise &
     SinonStubbedInstance<ApiPromise> &
     EventEmitter;
 }
@@ -2236,20 +2236,20 @@ export const createMockAuthorization = (authorization?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockEventRecord = (data: unknown[]): EventRecord =>
-  (({
+  ({
     event: {
       data,
     },
-  } as unknown) as EventRecord);
+  } as unknown as EventRecord);
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockIEvent = <T extends Codec[]>(data: unknown[]): IEvent<T> =>
-  (({
+  ({
     data,
-  } as unknown) as IEvent<T>);
+  } as unknown as IEvent<T>);
 
 /**
  * @hidden
@@ -2614,7 +2614,7 @@ export const createMockProposalState = (
 export const createMockPip = (pip?: { id: u32; proposal: Call; state: ProposalState }): Pip => {
   const proposal = pip || {
     id: createMockU32(),
-    proposal: ('proposal' as unknown) as Call,
+    proposal: 'proposal' as unknown as Call,
     state: createMockProposalState(),
   };
 
@@ -3233,21 +3233,15 @@ export const createMockCorporateAction = (corporateAction?: {
     Tax | Parameters<typeof createMockPermill>[0]
   ][];
 }): CorporateAction => {
-  const {
-    kind,
-    decl_date,
-    record_date,
-    targets,
-    default_withholding_tax,
-    withholding_tax,
-  } = corporateAction || {
-    kind: createMockCAKind(),
-    decl_date: createMockMoment(),
-    record_date: createMockOption(),
-    targets: createMockTargetIdentities(),
-    default_withholding_tax: createMockPermill(),
-    withholding_tax: [],
-  };
+  const { kind, decl_date, record_date, targets, default_withholding_tax, withholding_tax } =
+    corporateAction || {
+      kind: createMockCAKind(),
+      decl_date: createMockMoment(),
+      record_date: createMockOption(),
+      targets: createMockTargetIdentities(),
+      default_withholding_tax: createMockPermill(),
+      withholding_tax: [],
+    };
 
   return createMockCodec(
     {
@@ -3302,25 +3296,17 @@ export const createMockDistribution = (distribution?: {
   payment_at: Moment | Parameters<typeof createMockMoment>[0];
   expires_at: Option<Moment> | Parameters<typeof createMockOption>[0];
 }): Distribution => {
-  const {
-    from,
-    currency,
-    per_share,
-    amount,
-    remaining,
-    reclaimed,
-    payment_at,
-    expires_at,
-  } = distribution || {
-    from: createMockPortfolioId(),
-    currency: createMockTicker(),
-    per_share: createMockBalance(),
-    amount: createMockBalance(),
-    remaining: createMockBalance(),
-    reclaimed: createMockBool(),
-    payment_at: createMockMoment(),
-    expires_at: createMockOption(),
-  };
+  const { from, currency, per_share, amount, remaining, reclaimed, payment_at, expires_at } =
+    distribution || {
+      from: createMockPortfolioId(),
+      currency: createMockTicker(),
+      per_share: createMockBalance(),
+      amount: createMockBalance(),
+      remaining: createMockBalance(),
+      reclaimed: createMockBool(),
+      payment_at: createMockMoment(),
+      expires_at: createMockOption(),
+    };
 
   return createMockCodec(
     {

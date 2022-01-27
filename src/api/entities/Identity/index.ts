@@ -620,33 +620,30 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
      *   - They have not begun
      *   - This Identity has already been paid
      */
-    return P.filter(
-      distributions,
-      async ({ distribution }): Promise<boolean> => {
-        const {
-          expiryDate,
-          token: { ticker },
-          id: localId,
-          paymentDate,
-        } = distribution;
+    return P.filter(distributions, async ({ distribution }): Promise<boolean> => {
+      const {
+        expiryDate,
+        token: { ticker },
+        id: localId,
+        paymentDate,
+      } = distribution;
 
-        const isExpired = expiryDate && expiryDate < now;
-        const hasNotStarted = paymentDate > now;
+      const isExpired = expiryDate && expiryDate < now;
+      const hasNotStarted = paymentDate > now;
 
-        if (isExpired || hasNotStarted) {
-          return false;
-        }
-
-        const holderPaid = await context.polymeshApi.query.capitalDistribution.holderPaid(
-          tuple(
-            corporateActionIdentifierToCaId({ ticker, localId }, context),
-            stringToIdentityId(did, context)
-          )
-        );
-
-        return !boolToBoolean(holderPaid);
+      if (isExpired || hasNotStarted) {
+        return false;
       }
-    );
+
+      const holderPaid = await context.polymeshApi.query.capitalDistribution.holderPaid(
+        tuple(
+          corporateActionIdentifierToCaId({ ticker, localId }, context),
+          stringToIdentityId(did, context)
+        )
+      );
+
+      return !boolToBoolean(holderPaid);
+    });
   }
 
   /**

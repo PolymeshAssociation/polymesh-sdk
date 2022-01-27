@@ -63,7 +63,7 @@ export class TransactionQueue<
    * @hidden
    * internal queue of transactions to be run
    */
-  private queue = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+  private queue = [] as unknown as PolymeshTransactionArray<TransactionArgs>;
 
   /**
    * @hidden
@@ -109,14 +109,14 @@ export class TransactionQueue<
     const {
       transactions,
       procedureResult,
-      transformer = async (val): Promise<ReturnType> => (val as unknown) as ReturnType,
+      transformer = async (val): Promise<ReturnType> => val as unknown as ReturnType,
     } = args;
 
     this.emitter = new EventEmitter();
     this.procedureResult = procedureResult;
     this.hasRun = false;
     this.context = context;
-    this.transactions = ([] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+    this.transactions = [] as unknown as PolymeshTransactionArray<TransactionArgs>;
     this.transformer = transformer;
 
     transactions.forEach(transaction => {
@@ -144,7 +144,7 @@ export class TransactionQueue<
 
     await this.assertFeesCovered();
 
-    this.queue = ([...this.transactions] as unknown) as PolymeshTransactionArray<TransactionArgs>;
+    this.queue = [...this.transactions] as unknown as PolymeshTransactionArray<TransactionArgs>;
     this.updateStatus(TransactionQueueStatus.Running);
 
     let procRes: ProcedureReturnType;

@@ -84,9 +84,9 @@ describe('modifyCaCheckpoint procedure', () => {
       address,
       getIdentity: entityMockUtils.getIdentityInstance({
         getSecondaryAccounts: [
-          ({
+          {
             signer: entityMockUtils.getAccountInstance({ address }),
-          } as unknown) as SecondaryAccount,
+          } as unknown as SecondaryAccount,
         ],
       }),
     });

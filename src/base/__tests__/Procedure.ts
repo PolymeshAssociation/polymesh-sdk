@@ -289,7 +289,7 @@ describe('Procedure class', () => {
 
       posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
       txTags.forEach(txTag =>
-        txTagToProtocolOpStub.withArgs(txTag, context).returns((txTag as unknown) as ProtocolOp)
+        txTagToProtocolOpStub.withArgs(txTag, context).returns(txTag as unknown as ProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>
@@ -407,14 +407,14 @@ describe('Procedure class', () => {
       };
 
       let proc = new Procedure(func, {
-        roles: [({ type: 'FakeRole' } as unknown) as Role],
+        roles: [{ type: 'FakeRole' } as unknown as Role],
       });
 
       context = dsMockUtils.getContextInstance({
         isFrozen: false,
         checkRoles: {
           result: false,
-          missingRoles: [({ type: 'FakeRole' } as unknown) as Role],
+          missingRoles: [{ type: 'FakeRole' } as unknown as Role],
         },
         checkPermissions: {
           result: false,

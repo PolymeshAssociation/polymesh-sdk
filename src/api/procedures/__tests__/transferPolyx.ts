@@ -112,7 +112,7 @@ describe('transferPolyx procedure', () => {
     const memo = 'someMessage';
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
     const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
-    const rawMemo = ('memo' as unknown) as Memo;
+    const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')

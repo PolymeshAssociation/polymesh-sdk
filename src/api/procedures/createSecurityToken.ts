@@ -31,13 +31,13 @@ import { batchArguments, filterEventRecords } from '~/utils/internal';
 /**
  * @hidden
  */
-export const createRegisterCustomAssetTypeResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): AssetType => {
-  const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
+export const createRegisterCustomAssetTypeResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): AssetType => {
+    const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
 
-  return internalTokenTypeToAssetType({ Custom: data[1] }, context);
-};
+    return internalTokenTypeToAssetType({ Custom: data[1] }, context);
+  };
 
 export interface CreateSecurityTokenParams {
   name: string;
