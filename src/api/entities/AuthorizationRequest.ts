@@ -5,8 +5,8 @@ import {
   ConsumeAddMultiSigSignerAuthorizationParams,
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
-  consumeJoinIdentityAuthorization,
-  ConsumeJoinIdentityAuthorizationParams,
+  consumeJoinOrRotateAuthorization,
+  ConsumeJoinOrRotateAuthorizationParams,
   Context,
   Entity,
   Identity,
@@ -114,7 +114,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.accept = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
-      | ConsumeJoinIdentityAuthorizationParams
+      | ConsumeJoinOrRotateAuthorizationParams
       | ConsumeAddMultiSigSignerAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,10 +124,10 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
         getProcedureAndArgs: () => {
           switch (this.data.type) {
             case AuthorizationType.JoinIdentity: {
-              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: true }];
             }
             case AuthorizationType.RotatePrimaryKeyToSecondary: {
-              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: true }];
             }
             case AuthorizationType.AddMultiSigSigner: {
               return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: true }];
@@ -144,7 +144,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.remove = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
-      | ConsumeJoinIdentityAuthorizationParams
+      | ConsumeJoinOrRotateAuthorizationParams
       | ConsumeAddMultiSigSignerAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,10 +154,10 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
         getProcedureAndArgs: () => {
           switch (this.data.type) {
             case AuthorizationType.JoinIdentity: {
-              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: false }];
             }
             case AuthorizationType.RotatePrimaryKeyToSecondary: {
-              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: false }];
             }
             case AuthorizationType.AddMultiSigSigner: {
               return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: false }];

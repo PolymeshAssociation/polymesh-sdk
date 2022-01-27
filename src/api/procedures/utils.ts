@@ -381,11 +381,11 @@ export async function assertAuthorizationRequestValid(
       // no additional checks
       return;
     case AuthorizationType.JoinIdentity:
-      return assertJoinIdentityAuthorizationValid(authRequest);
+      return assertJoinOrRotateAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
       return assertAddRelayerPayingKeyAuthorizationValid(data);
     case AuthorizationType.RotatePrimaryKeyToSecondary:
-      return assertJoinIdentityAuthorizationValid(authRequest);
+      return assertJoinOrRotateAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -532,9 +532,9 @@ function assertIsAccount(target: Signer): asserts target is Account {
 /**
  * @hidden
  *
- * Asserts valid request for becoming a Primary Account (JoinIdentity and RotatePrimaryKeyToSecondary)
+ * Asserts valid authorization for JoinIdentity and RotatePrimaryKeyToSecondary types
  */
-async function assertJoinIdentityAuthorizationValid(
+async function assertJoinOrRotateAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
   const issuer = authRequest.issuer;
@@ -558,24 +558,26 @@ async function assertJoinIdentityAuthorizationValid(
   }
 }
 
-export const createAuthorizationResolver = (
-  auth: MaybePostTransactionValue<Authorization>,
-  issuer: Identity,
-  target: Identity | Account,
-  expiry: Date | null,
-  context: Context
-) => (receipt: ISubmittableResult): AuthorizationRequest => {
-  const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
-  let rawAuth;
-  if (auth instanceof PostTransactionValue) {
-    rawAuth = auth.value;
-  } else {
-    rawAuth = auth;
-  }
+export const createAuthorizationResolver =
+  (
+    auth: MaybePostTransactionValue<Authorization>,
+    issuer: Identity,
+    target: Identity | Account,
+    expiry: Date | null,
+    context: Context
+  ) =>
+  (receipt: ISubmittableResult): AuthorizationRequest => {
+    const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+    let rawAuth;
+    if (auth instanceof PostTransactionValue) {
+      rawAuth = auth.value;
+    } else {
+      rawAuth = auth;
+    }
 
-  const authId = u64ToBigNumber(data[3]);
-  return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
-};
+    const authId = u64ToBigNumber(data[3]);
+    return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+  };
 
 /**
  * @hidden

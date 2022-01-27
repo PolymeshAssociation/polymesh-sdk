@@ -14,7 +14,7 @@ import {
 /**
  * @hidden
  */
-export interface ConsumeJoinIdentityAuthorizationParams {
+export interface ConsumeJoinOrRotateAuthorizationParams {
   authRequest: AuthorizationRequest;
   accept: boolean;
 }
@@ -29,9 +29,9 @@ export interface Storage {
  *
  * Consumes JoinIdentity and RotatePrimaryKeyToSecondaryKey Authorizations
  */
-export async function prepareConsumeJoinIdentityAuthorization(
-  this: Procedure<ConsumeJoinIdentityAuthorizationParams, void, Storage>,
-  args: ConsumeJoinIdentityAuthorizationParams
+export async function prepareConsumeJoinOrRotateAuthorization(
+  this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
+  args: ConsumeJoinOrRotateAuthorizationParams
 ): Promise<void> {
   const {
     context: {
@@ -56,7 +56,7 @@ export async function prepareConsumeJoinIdentityAuthorization(
   ) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message: `Unrecognized auth type: "${type}" for consumeJoinIdentityAuthorization method`,
+      message: `Unrecognized auth type: "${type}" for consumeJoinOrRotateAuthorization method`,
     });
   }
 
@@ -106,8 +106,8 @@ export async function prepareConsumeJoinIdentityAuthorization(
  * - If the auth is being rejected, we check that the caller is either the target or the issuer
  */
 export async function getAuthorization(
-  this: Procedure<ConsumeJoinIdentityAuthorizationParams, void, Storage>,
-  { authRequest, accept }: ConsumeJoinIdentityAuthorizationParams
+  this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
+  { authRequest, accept }: ConsumeJoinOrRotateAuthorizationParams
 ): Promise<ProcedureAuthorization> {
   const { issuer } = authRequest;
   const {
@@ -115,7 +115,9 @@ export async function getAuthorization(
   } = this;
   let hasRoles = calledByTarget;
 
-  const { type } = authRequest.data;
+  const {
+    data: { type },
+  } = authRequest;
 
   /*
    * when accepting a JoinIdentity request, you don't need permissions (and can't have them by definition),
@@ -156,8 +158,8 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<ConsumeJoinIdentityAuthorizationParams, void, Storage>,
-  { authRequest: { target } }: ConsumeJoinIdentityAuthorizationParams
+  this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
+  { authRequest: { target } }: ConsumeJoinOrRotateAuthorizationParams
 ): Promise<Storage> {
   const { context } = this;
 
@@ -175,8 +177,8 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const consumeJoinIdentityAuthorization = (): Procedure<
-  ConsumeJoinIdentityAuthorizationParams,
+export const consumeJoinOrRotateAuthorization = (): Procedure<
+  ConsumeJoinOrRotateAuthorizationParams,
   void,
   Storage
-> => new Procedure(prepareConsumeJoinIdentityAuthorization, getAuthorization, prepareStorage);
+> => new Procedure(prepareConsumeJoinOrRotateAuthorization, getAuthorization, prepareStorage);

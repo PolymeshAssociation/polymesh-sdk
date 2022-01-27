@@ -13,9 +13,9 @@ export {
   ConsumeAddMultiSigSignerAuthorizationParams,
 } from '~/api/procedures/consumeAddMultiSigSignerAuthorization';
 export {
-  consumeJoinIdentityAuthorization,
-  ConsumeJoinIdentityAuthorizationParams,
-} from '~/api/procedures/consumeJoinIdentityAuthorization';
+  consumeJoinOrRotateAuthorization,
+  ConsumeJoinOrRotateAuthorizationParams,
+} from '~/api/procedures/consumeJoinOrRotateAuthorization';
 export {
   addInstruction,
   AddInstructionParams,

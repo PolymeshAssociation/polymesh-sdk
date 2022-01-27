@@ -98,7 +98,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeJoinIdentityAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    test('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -135,7 +135,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeJoinIdentityAuthorization procedure with a RotatePrimaryKeyToSecondary auth and return the resulting transaction queue', async () => {
+    test('should prepare the consumeJoinOrRotateAuthorization procedure with a RotatePrimaryKeyToSecondary auth and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -239,7 +239,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeJoinIdentityAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    test('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
