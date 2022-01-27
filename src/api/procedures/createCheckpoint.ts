@@ -16,14 +16,14 @@ export interface Params {
 /**
  * @hidden
  */
-export const createCheckpointResolver = (ticker: string, context: Context) => (
-  receipt: ISubmittableResult
-): Checkpoint => {
-  const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'CheckpointCreated');
-  const id = u64ToBigNumber(data[2]);
+export const createCheckpointResolver =
+  (ticker: string, context: Context) =>
+  (receipt: ISubmittableResult): Checkpoint => {
+    const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'CheckpointCreated');
+    const id = u64ToBigNumber(data[2]);
 
-  return new Checkpoint({ ticker, id }, context);
-};
+    return new Checkpoint({ ticker, id }, context);
+  };
 
 /**
  * @hidden

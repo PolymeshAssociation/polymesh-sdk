@@ -70,7 +70,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           addTransferRestriction,
-          ({ ...args, type: this.type, ticker } as unknown) as AddTransferRestrictionParams,
+          { ...args, type: this.type, ticker } as unknown as AddTransferRestrictionParams,
         ],
       },
       context
@@ -85,7 +85,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           setTransferRestrictions,
-          ({ ...args, type: this.type, ticker } as unknown) as SetTransferRestrictionsParams,
+          { ...args, type: this.type, ticker } as unknown as SetTransferRestrictionsParams,
         ],
       },
       context
@@ -99,11 +99,11 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: () => [
           setTransferRestrictions,
-          ({
+          {
             restrictions: [],
             type: this.type,
             ticker,
-          } as unknown) as SetTransferRestrictionsParams,
+          } as unknown as SetTransferRestrictionsParams,
         ],
         voidArgs: true,
       },
@@ -166,7 +166,13 @@ export abstract class TransferRestrictionBase<
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {
-      const exemptedScopeIds = list.map(([{ args: [, scopeId] }]) => scopeIdToString(scopeId));
+      const exemptedScopeIds = list.map(
+        ([
+          {
+            args: [, scopeId],
+          },
+        ]) => scopeIdToString(scopeId)
+      );
       const { value } = transferManagerToTransferRestriction(filteredTms[index]);
       let restriction;
 

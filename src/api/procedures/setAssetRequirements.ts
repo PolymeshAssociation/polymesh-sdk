@@ -41,10 +41,8 @@ export async function prepareSetAssetRequirements(
 
   const token = new SecurityToken({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await token.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await token.compliance.requirements.get();
 
   const currentConditions = map(currentRequirements, 'conditions');
 

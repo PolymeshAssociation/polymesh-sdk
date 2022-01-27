@@ -154,12 +154,8 @@ export function getAuthorization(
   this: Procedure<SetTransferRestrictionsParams, number, Storage>,
   { ticker }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
-  const {
-    restrictionsToRemove,
-    restrictionsToAdd,
-    exemptionsToAdd,
-    exemptionsToRemove,
-  } = this.storage;
+  const { restrictionsToRemove, restrictionsToAdd, exemptionsToAdd, exemptionsToRemove } =
+    this.storage;
   const transactions: TxTag[] = [];
   if (restrictionsToAdd.length) {
     transactions.push(TxTags.statistics.AddTransferManager);
