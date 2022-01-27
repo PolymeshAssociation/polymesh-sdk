@@ -123,7 +123,9 @@ describe('modifySignerPermissions procedure', () => {
 
     await prepareModifySignerPermissions.call(proc, { secondaryAccounts });
 
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: signersList.map(signers => ({ transaction, args: signers })),
+    });
 
     secondaryAccounts = [
       {
@@ -150,7 +152,9 @@ describe('modifySignerPermissions procedure', () => {
 
     await prepareModifySignerPermissions.call(proc, { secondaryAccounts, identity });
 
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, signersList);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: signersList.map(signers => ({ transaction, args: signers })),
+    });
   });
 
   test('should throw an error if at least one of the Accounts for which to modify permissions is not a secondary Account for the Identity', () => {

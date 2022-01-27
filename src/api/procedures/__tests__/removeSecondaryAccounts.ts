@@ -96,7 +96,11 @@ describe('removeSecondaryAccounts procedure', () => {
 
     await prepareRemoveSecondaryAccounts.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, [rawSignatory]);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      feeMultiplier: 1,
+      args: [[rawSignatory]],
+    });
   });
 
   test('should throw an error if attempting to remove the primary Account', () => {

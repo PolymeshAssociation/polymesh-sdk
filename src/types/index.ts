@@ -727,22 +727,45 @@ export interface Fees {
 }
 
 /**
- * Breakdown of the fees that will be paid by a specific third party in a Transaction Queue
+ * Type of relationship between a paying account and a beneficiary
  */
-export interface ThirdPartyFees {
+export enum PayingAccountType {
   /**
-   * third party Account that will pay for the fees
+   * the paying Account is currently subsidizing the caller
+   */
+  Subsidy = 'Subsidy',
+  /**
+   * the paying Account is paying for a specific transaction because of
+   *   chain-specific constraints (i.e. the caller is accepting an invitation to an Identity
+   *   and cannot have any funds to pay for it by definition)
+   */
+  Other = 'Other',
+}
+
+/**
+ * Represents a relationship in which a third party Account
+ *   is paying for a transaction on behalf of the caller
+ */
+export interface PayingAccount {
+  type: PayingAccountType;
+  /**
+   * Account that pays for the transaction
    */
   account: Account;
+  /**
+   * total amount that will be paid for
+   */
+  allowance: BigNumber | null;
+}
+
+/**
+ * Breakdown of the fees that will be paid by a specific third party in a Transaction Queue
+ */
+export interface ThirdPartyFees extends PayingAccount {
   /**
    * fees that will be paid by the third party Account
    */
   fees: Fees;
-  /**
-   * maximum amount that the third party Account can pay on behalf of the current Account. A null
-   *   value signifies no limit
-   */
-  allowance: BigNumber | null;
   /**
    * free balance of the third party Account
    */
@@ -763,11 +786,11 @@ export interface FeesBreakdown {
    */
   thirdPartyFees: ThirdPartyFees[];
   /**
-   * fees that must be paid by the current Account
+   * fees that must be paid by the caller Account
    */
   accountFees: Fees;
   /**
-   * free balance of the current Account
+   * free balance of the caller Account
    */
   accountBalance: BigNumber;
 }

@@ -47,19 +47,21 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
     const { address } = context.getCurrentAccount();
 
     const paidByThirdParty = address === signerToString(target);
-    const opts: { paidForBy?: Identity } = {};
+    const addTransactionArgs: { paidForBy?: Identity } = {};
 
     if (paidByThirdParty) {
-      opts.paidForBy = issuer;
+      addTransactionArgs.paidForBy = issuer;
     }
 
-    this.addTransaction(
-      identity.removeAuthorization,
-      opts,
-      signerValueToSignatory(signerToSignerValue(target), context),
-      rawAuthId,
-      booleanToBool(paidByThirdParty, context)
-    );
+    this.addTransaction({
+      transaction: identity.removeAuthorization,
+      ...addTransactionArgs,
+      args: [
+        signerValueToSignatory(signerToSignerValue(target), context),
+        rawAuthId,
+        booleanToBool(paidByThirdParty, context),
+      ],
+    });
 
     return;
   }
@@ -79,7 +81,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
     transaction = multiSig.acceptMultisigSignerAsKey;
   }
 
-  this.addTransaction(transaction, { paidForBy: issuer }, rawAuthId);
+  this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
 }
 
 /**

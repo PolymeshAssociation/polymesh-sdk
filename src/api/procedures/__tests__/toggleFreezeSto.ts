@@ -170,7 +170,7 @@ describe('toggleFreezeSto procedure', () => {
       freeze: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
 
     expect(sto.token.ticker).toBe(result.token.ticker);
   });
@@ -198,7 +198,7 @@ describe('toggleFreezeSto procedure', () => {
       freeze: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
 
     expect(sto.token.ticker).toBe(result.token.ticker);
   });

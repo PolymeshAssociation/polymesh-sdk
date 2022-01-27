@@ -67,13 +67,11 @@ export async function prepareCreatePortfolio(
     });
   }
 
-  const [newNumberedPortfolio] = this.addTransaction(
-    tx.portfolio.createPortfolio,
-    {
-      resolvers: [createPortfolioResolver(context)],
-    },
-    rawName
-  );
+  const [newNumberedPortfolio] = this.addTransaction({
+    transaction: tx.portfolio.createPortfolio,
+    resolvers: [createPortfolioResolver(context)],
+    args: [rawName],
+  });
 
   return newNumberedPortfolio;
 }

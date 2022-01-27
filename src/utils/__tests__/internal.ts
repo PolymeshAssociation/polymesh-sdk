@@ -154,7 +154,7 @@ describe('getDid', () => {
 });
 
 describe('unwrapValue', () => {
-  test('should unwrap a Post Transactin Value', async () => {
+  test('should unwrap a Post Transaction Value', async () => {
     const wrapped = new PostTransactionValue(async () => 1);
     await wrapped.run({} as ISubmittableResult);
 

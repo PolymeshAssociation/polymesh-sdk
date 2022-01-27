@@ -44,7 +44,7 @@ export async function prepareLeaveIdentity(
     });
   }
 
-  this.addTransaction(tx.identity.leaveIdentityAsKey, {});
+  this.addTransaction({ transaction: tx.identity.leaveIdentityAsKey });
 }
 
 /**

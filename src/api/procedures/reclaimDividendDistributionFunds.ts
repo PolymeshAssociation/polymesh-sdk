@@ -53,7 +53,11 @@ export async function prepareReclaimDividendDistributionFunds(
   }
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
-  this.addTransaction(tx.capitalDistribution.reclaim, {}, rawCaId);
+
+  this.addTransaction({
+    transaction: tx.capitalDistribution.reclaim,
+    args: [rawCaId],
+  });
 }
 
 /**

@@ -104,14 +104,11 @@ export async function prepareCreateGroup(
     context
   );
 
-  const [customPermissionGroup] = this.addTransaction(
-    externalAgents.createGroup,
-    {
-      resolvers: [createCreateGroupResolver(context)],
-    },
-    rawTicker,
-    rawExtrinsicPermissions
-  );
+  const [customPermissionGroup] = this.addTransaction({
+    transaction: externalAgents.createGroup,
+    resolvers: [createCreateGroupResolver(context)],
+    args: [rawTicker, rawExtrinsicPermissions],
+  });
 
   return customPermissionGroup;
 }

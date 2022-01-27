@@ -22,7 +22,7 @@ jest.mock(
 
 describe('TokenPermissions class', () => {
   const did = 'someDid';
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   let token: Mocked<SecurityToken>;
 
   let context: Mocked<Context>;

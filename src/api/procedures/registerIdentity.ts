@@ -55,14 +55,11 @@ export async function prepareRegisterIdentity(
     )
   );
 
-  const [newIdentity] = this.addTransaction(
-    identity.cddRegisterDid,
-    {
-      resolvers: [createRegisterIdentityResolver(context)],
-    },
-    rawTargetAccount,
-    rawSecondaryKeys
-  );
+  const [newIdentity] = this.addTransaction({
+    transaction: identity.cddRegisterDid,
+    resolvers: [createRegisterIdentityResolver(context)],
+    args: [rawTargetAccount, rawSecondaryKeys],
+  });
 
   return newIdentity;
 }

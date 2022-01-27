@@ -280,18 +280,22 @@ describe('launchSto procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawOfferingPortfolio,
-      rawTicker,
-      rawRaisingPortfolio,
-      rawRaisingCurrency,
-      rawTiers,
-      rawVenueId,
-      rawStart,
-      rawEnd,
-      rawMinInvestment,
-      rawName
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [
+          rawOfferingPortfolio,
+          rawTicker,
+          rawRaisingPortfolio,
+          rawRaisingCurrency,
+          rawTiers,
+          rawVenueId,
+          rawStart,
+          rawEnd,
+          rawMinInvestment,
+          rawName,
+        ],
+      })
     );
 
     expect(result).toBe(sto);
@@ -319,18 +323,22 @@ describe('launchSto procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawOfferingPortfolio,
-      rawTicker,
-      rawRaisingPortfolio,
-      rawRaisingCurrency,
-      rawTiers,
-      rawVenueId,
-      null,
-      null,
-      rawMinInvestment,
-      rawName
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [
+          rawOfferingPortfolio,
+          rawTicker,
+          rawRaisingPortfolio,
+          rawRaisingCurrency,
+          rawTiers,
+          rawVenueId,
+          null,
+          null,
+          rawMinInvestment,
+          rawName,
+        ],
+      })
     );
 
     expect(result).toEqual(sto);

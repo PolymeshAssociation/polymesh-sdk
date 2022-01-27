@@ -141,14 +141,10 @@ describe('addAssetRequirement procedure', () => {
       conditions: fakeConditions,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addComplianceRequirementTransaction,
-      {},
-      rawTicker,
-      fakeSenderConditions,
-      fakeReceiverConditions
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addComplianceRequirementTransaction,
+      args: [rawTicker, fakeSenderConditions, fakeReceiverConditions],
+    });
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
