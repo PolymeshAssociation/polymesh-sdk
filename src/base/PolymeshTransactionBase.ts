@@ -3,17 +3,11 @@ import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
-import { TxTag, TxTags } from 'polymesh-types/types';
 
-import { Account, Context, Identity, PolymeshError } from '~/internal';
-import { ErrorCode, Fees, TransactionStatus } from '~/types';
-import { BaseTransactionSpec, PolymeshTx, PostTransactionValueArray } from '~/types/internal';
-import {
-  balanceToBigNumber,
-  hashToString,
-  transactionToTxTag,
-  u32ToBigNumber,
-} from '~/utils/conversion';
+import { Context, Identity, PolymeshError } from '~/internal';
+import { ErrorCode, Fees, PayingAccount, PayingAccountType, TransactionStatus } from '~/types';
+import { BaseTransactionSpec, PostTransactionValueArray } from '~/types/internal';
+import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -25,10 +19,7 @@ enum Event {
 /**
  * Wrapper class for a Polymesh Transaction
  */
-export abstract class PolymeshTransactionBase<
-  Args extends unknown[],
-  Values extends unknown[] = unknown[]
-> {
+export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown[]> {
   /**
    * current status of the transaction
    */
@@ -65,11 +56,6 @@ export abstract class PolymeshTransactionBase<
   public isCritical: boolean;
 
   /**
-   * type of transaction represented by this instance (mostly for display purposes)
-   */
-  public tag: TxTag;
-
-  /**
    * @hidden
    *
    * Identity that will pay for this transaction's fees. This value overrides any subsidy,
@@ -80,23 +66,10 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * underlying transaction to be executed
-   */
-  protected tx: PolymeshTx<Args>;
-
-  /**
-   * @hidden
-   *
-   * number of elements in the batch (only applicable to batch transactions)
-   */
-  protected batchSize: number | null;
-
-  /**
-   * @hidden
-   *
    * wrappers for values that will exist after this transaction has executed
    */
-  protected postValues: PostTransactionValueArray<Values> = ([] as unknown) as PostTransactionValueArray<Values>;
+  protected postValues: PostTransactionValueArray<Values> =
+    [] as unknown as PostTransactionValueArray<Values>;
 
   /**
    * @hidden
@@ -116,38 +89,29 @@ export abstract class PolymeshTransactionBase<
    * @hidden
    *
    * used by procedures to set the fee manually in case the protocol op can't be
-   *   dynamically generated from the transaction name
+   *   dynamically generated from the transaction name, or a specific procedure has
+   *   special rules for calculating them
    */
-  protected protocolFee: BigNumber | null;
+  protected protocolFee?: BigNumber;
 
   protected context: Context;
 
   /**
    * @hidden
-   *
-   * Promise to set the block number. Must be resolved before marking an extrinsic as succeeded or failed
    */
-  private settingBlockData?: Promise<void>;
-
-  /**
-   * @hidden
-   */
-  constructor(transactionSpec: BaseTransactionSpec<Args, Values>, context: Context) {
-    const { postTransactionValues, tx, signer, isCritical, fee, paidForBy } = transactionSpec;
+  constructor(transactionSpec: BaseTransactionSpec<Values>, context: Context) {
+    const { postTransactionValues, signer, isCritical, fee, paidForBy } = transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
     }
 
     this.emitter = new EventEmitter();
-    this.tx = tx;
-    this.tag = transactionToTxTag(tx);
     this.signer = signer;
     this.isCritical = isCritical;
     this.protocolFee = fee;
     this.context = context;
     this.paidForBy = paidForBy;
-    this.batchSize = null;
   }
 
   /**
@@ -289,24 +253,26 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
-   * Retrieve the Account that would pay for the transaction fees if it was run at this moment, as well as the maximum amount that can be
-   *   charged to it. A null allowance means that there is no limit to that amount
+   * Retrieve the Account that would pay fees for the transaction if it was run at this moment, as well as the total amount that can be
+   *   charged to it (allowance). A null allowance means that there is no limit to that amount
    *
-   * A null return value signifies that the current Account will pay for the fees
+   * A null return value signifies that the caller Account would pay the fees
    *
-   * @note this value might change if, before running the transaction, the current Account enters (or leaves)
+   * @note this value might change if, before running the transaction, the caller Account enters (or leaves)
    *   a subsidizer relationship
    */
-  public async getPayingAccount(): Promise<{
-    account: Account;
-    allowance: BigNumber | null;
-  } | null> {
-    const { paidForBy, context, tag } = this;
+  public async getPayingAccount(): Promise<PayingAccount | null> {
+    const { paidForBy, context } = this;
+
+    if (this.ignoresSubsidy()) {
+      return null;
+    }
 
     if (paidForBy) {
       const primaryAccount = await paidForBy.getPrimaryAccount();
 
       return {
+        type: PayingAccountType.Other,
         account: primaryAccount,
         allowance: null,
       };
@@ -314,14 +280,14 @@ export abstract class PolymeshTransactionBase<
 
     const subsidy = await context.accountSubsidy();
 
-    // `relayer.removePayingKey` is always paid by the caller
-    if (!subsidy || tag === TxTags.relayer.RemovePayingKey) {
+    if (!subsidy) {
       return null;
     }
 
     const { subsidizer: account, allowance } = subsidy;
 
     return {
+      type: PayingAccountType.Subsidy,
       account,
       allowance,
     };
@@ -335,8 +301,8 @@ export abstract class PolymeshTransactionBase<
    * @note this value might change if the transaction is run at a later time. This can be due to a governance vote
    */
   public async getFees(): Promise<Fees | null> {
-    const { signer, context } = this;
-    let { protocolFee } = this;
+    const { signer } = this;
+    let { protocolFee: protocol } = this;
 
     let composedTx;
 
@@ -348,14 +314,14 @@ export abstract class PolymeshTransactionBase<
 
     const paymentInfoPromise = composedTx.paymentInfo(signer);
 
-    if (!protocolFee) {
-      protocolFee = await context.getProtocolFees(this.tag);
+    if (!protocol) {
+      protocol = await this.getProtocolFees();
     }
 
     const { partialFee } = await paymentInfoPromise;
 
     return {
-      protocol: protocolFee.multipliedBy(this.batchSize || 1),
+      protocol,
       gas: balanceToBigNumber(partialFee),
     };
   }
@@ -384,11 +350,41 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
+   * Return whether the transaction can be subsidized. If the result is false
+   *   AND the caller is being subsidized by a third party, the transaction can't be executed and trying
+   *   to do so will result in an error
+   *
+   * @note this depends on the type of transaction itself (i.e. `staking.bond` can't be subsidized, but `asset.createAsset` can)
+   */
+  public abstract supportsSubsidy(): boolean;
+
+  /**
    * @hidden
    *
    * Compose a Transaction Object with arguments that can be signed
    */
   protected abstract composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult>;
+
+  /**
+   * @hidden
+   *
+   * Return whether the transaction ignores any existing subsidizer relationships
+   *   and is always paid by the caller
+   */
+  protected ignoresSubsidy(): boolean {
+    /*
+     * since we don't know anything about the transaction, a safe default is
+     *   to assume it doesn't ignore subsidies
+     */
+    return false;
+  }
+
+  /**
+   * @hidden
+   *
+   * Fetch and calculate this transaction's protocol fees
+   */
+  protected abstract getProtocolFees(): Promise<BigNumber>;
 
   /**
    * @hidden

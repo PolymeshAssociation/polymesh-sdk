@@ -43,7 +43,7 @@ describe('AuthorizationRequest class', () => {
       const targetIdentity = new Identity({ did: targetDid }, context);
       const issuerIdentity = new Identity({ did: issuerDid }, context);
       const expiry = new Date();
-      const data = ('something' as unknown) as Authorization;
+      const data = 'something' as unknown as Authorization;
       const authRequest = new AuthorizationRequest(
         { target: targetIdentity, issuer: issuerIdentity, expiry, data, authId: new BigNumber(1) },
         context
@@ -86,7 +86,7 @@ describe('AuthorizationRequest class', () => {
         authRequests: [authorizationRequest],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -123,7 +123,7 @@ describe('AuthorizationRequest class', () => {
         accept: true,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -155,7 +155,7 @@ describe('AuthorizationRequest class', () => {
         accept: true,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -190,7 +190,7 @@ describe('AuthorizationRequest class', () => {
         authRequests: [authorizationRequest],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -227,7 +227,7 @@ describe('AuthorizationRequest class', () => {
         accept: false,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -259,7 +259,7 @@ describe('AuthorizationRequest class', () => {
         accept: false,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

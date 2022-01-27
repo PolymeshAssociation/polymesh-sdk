@@ -90,14 +90,14 @@ export interface Storage {
 /**
  * @hidden
  */
-export const createStoResolver = (ticker: string, context: Context) => (
-  receipt: ISubmittableResult
-): Sto => {
-  const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
-  const newFundraiserId = u64ToBigNumber(data[1]);
+export const createStoResolver =
+  (ticker: string, context: Context) =>
+  (receipt: ISubmittableResult): Sto => {
+    const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
+    const newFundraiserId = u64ToBigNumber(data[1]);
 
-  return new Sto({ id: newFundraiserId, ticker }, context);
-};
+    return new Sto({ id: newFundraiserId, ticker }, context);
+  };
 
 /**
  * @hidden
@@ -170,22 +170,22 @@ export async function prepareLaunchSto(
     });
   }
 
-  const [sto] = this.addTransaction(
-    tx.sto.createFundraiser,
-    {
-      resolvers: [createStoResolver(ticker, context)],
-    },
-    portfolioIdToMeshPortfolioId(offeringPortfolioId, context),
-    stringToTicker(ticker, context),
-    portfolioIdToMeshPortfolioId(raisingPortfolioId, context),
-    stringToTicker(raisingCurrency, context),
-    tiers.map(tier => stoTierToPriceTier(tier, context)),
-    numberToU64(venueId, context),
-    start ? dateToMoment(start, context) : null,
-    end ? dateToMoment(end, context) : null,
-    numberToBalance(minInvestment, context),
-    stringToText(name, context)
-  );
+  const [sto] = this.addTransaction({
+    transaction: tx.sto.createFundraiser,
+    resolvers: [createStoResolver(ticker, context)],
+    args: [
+      portfolioIdToMeshPortfolioId(offeringPortfolioId, context),
+      stringToTicker(ticker, context),
+      portfolioIdToMeshPortfolioId(raisingPortfolioId, context),
+      stringToTicker(raisingCurrency, context),
+      tiers.map(tier => stoTierToPriceTier(tier, context)),
+      numberToU64(venueId, context),
+      start ? dateToMoment(start, context) : null,
+      end ? dateToMoment(end, context) : null,
+      numberToBalance(minInvestment, context),
+      stringToText(name, context),
+    ],
+  });
 
   return sto;
 }

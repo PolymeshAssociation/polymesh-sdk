@@ -46,7 +46,7 @@ export class Identities {
   public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
 
   /**
-   * Create a new Portfolio under the ownership of the Current Identity
+   * Create a new Portfolio under the ownership of the signing Identity
    */
   public createPortfolio: ProcedureMethod<{ name: string }, NumberedPortfolio>;
 

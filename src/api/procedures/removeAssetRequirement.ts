@@ -42,12 +42,10 @@ export async function prepareRemoveAssetRequirement(
     });
   }
 
-  this.addTransaction(
-    tx.complianceManager.removeComplianceRequirement,
-    {},
-    rawTicker,
-    numberToU32(reqId, context)
-  );
+  this.addTransaction({
+    transaction: tx.complianceManager.removeComplianceRequirement,
+    args: [rawTicker, numberToU32(reqId, context)],
+  });
 
   return new SecurityToken({ ticker }, context);
 }
