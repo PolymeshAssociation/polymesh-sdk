@@ -68,12 +68,12 @@ describe('removeAssetRequirement procedure', () => {
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
 
     senderConditions = [
-      ('senderConditions0' as unknown) as MeshCondition[],
-      ('senderConditions1' as unknown) as MeshCondition[],
+      'senderConditions0' as unknown as MeshCondition[],
+      'senderConditions1' as unknown as MeshCondition[],
     ];
     receiverConditions = [
-      ('receiverConditions0' as unknown) as MeshCondition[],
-      ('receiverConditions1' as unknown) as MeshCondition[],
+      'receiverConditions0' as unknown as MeshCondition[],
+      'receiverConditions1' as unknown as MeshCondition[],
     ];
     rawComplianceRequirement = senderConditions.map(
       (sConditions, index) =>

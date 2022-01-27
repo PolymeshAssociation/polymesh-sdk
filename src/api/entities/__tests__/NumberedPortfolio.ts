@@ -75,7 +75,7 @@ describe('NumberedPortfolio class', () => {
       const did = 'someDid';
       const name = 'newName';
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()

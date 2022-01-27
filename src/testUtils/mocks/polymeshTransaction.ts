@@ -85,11 +85,9 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
     ({ isCritical, autoResolve, fees = null, payingAccount = null, supportsSubsidy = true }) => {
       const instance = {} as MockTransaction;
       if (autoResolve === TransactionStatus.Failed) {
-        instance.run = (sinon
-          .stub()
-          .rejects(new Error(error)) as unknown) as MockTransaction['run'];
+        instance.run = sinon.stub().rejects(new Error(error)) as unknown as MockTransaction['run'];
       } else if (autoResolve === TransactionStatus.Succeeded) {
-        instance.run = (sinon.stub().resolves(receipt) as unknown) as MockTransaction['run'];
+        instance.run = sinon.stub().resolves(receipt) as unknown as MockTransaction['run'];
       } else {
         const runStub = sinon.stub().returns(
           new Promise((resolve, reject) => {
@@ -114,11 +112,11 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
             });
           })
         );
-        instance.run = (runStub as unknown) as MockTransaction['run'];
+        instance.run = runStub as unknown as MockTransaction['run'];
       }
 
       instance.isCritical = isCritical;
-      instance.onStatusChange = (sinon.stub().callsFake(listener => {
+      instance.onStatusChange = sinon.stub().callsFake(listener => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const mockData = transactionMocksData.get(instance)!;
 
@@ -126,7 +124,7 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
           ...mockData,
           statusChangeListener: listener,
         });
-      }) as unknown) as MockTransaction['onStatusChange'];
+      }) as unknown as MockTransaction['onStatusChange'];
 
       instance.status = autoResolve || TransactionStatus.Idle;
       instance.getPayingAccount = sinon
