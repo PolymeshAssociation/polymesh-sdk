@@ -72,7 +72,10 @@ export async function prepareRemoveExternalAgent(
   const rawTicker = stringToTicker(ticker, context);
   const rawAgent = stringToIdentityId(did, context);
 
-  this.addTransaction(externalAgents.removeAgent, {}, rawTicker, rawAgent);
+  this.addTransaction({
+    transaction: externalAgents.removeAgent,
+    args: [rawTicker, rawAgent],
+  });
 }
 
 /**

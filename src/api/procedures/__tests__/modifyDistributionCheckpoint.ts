@@ -26,7 +26,7 @@ jest.mock(
 );
 
 describe('modifyDistributionCheckpoint procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
 
   let mockContext: Mocked<Context>;
   let addProcedureStub: sinon.SinonStub;

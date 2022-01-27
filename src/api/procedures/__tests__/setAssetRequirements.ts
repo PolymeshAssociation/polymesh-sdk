@@ -101,14 +101,14 @@ describe('setAssetRequirements procedure', () => {
       id: index,
     }));
     senderConditions = [
-      ('senderConditions0' as unknown) as MeshCondition[],
-      ('senderConditions1' as unknown) as MeshCondition[],
-      ('senderConditions2' as unknown) as MeshCondition[],
+      'senderConditions0' as unknown as MeshCondition[],
+      'senderConditions1' as unknown as MeshCondition[],
+      'senderConditions2' as unknown as MeshCondition[],
     ];
     receiverConditions = [
-      ('receiverConditions0' as unknown) as MeshCondition[],
-      ('receiverConditions1' as unknown) as MeshCondition[],
-      ('receiverConditions2' as unknown) as MeshCondition[],
+      'receiverConditions0' as unknown as MeshCondition[],
+      'receiverConditions1' as unknown as MeshCondition[],
+      'receiverConditions2' as unknown as MeshCondition[],
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -191,7 +191,10 @@ describe('setAssetRequirements procedure', () => {
 
     const result = await prepareSetAssetRequirements.call(proc, { ...args, requirements: [] });
 
-    sinon.assert.calledWith(addTransactionStub, resetAssetComplianceTransaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: resetAssetComplianceTransaction,
+      args: [rawTicker],
+    });
 
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
@@ -210,13 +213,10 @@ describe('setAssetRequirements procedure', () => {
 
     const result = await prepareSetAssetRequirements.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      replaceAssetComplianceTransaction,
-      {},
-      rawTicker,
-      rawComplianceRequirements
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: replaceAssetComplianceTransaction,
+      args: [rawTicker, rawComplianceRequirements],
+    });
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });
@@ -238,9 +238,7 @@ describe('setAssetRequirements procedure', () => {
         },
       });
 
-      expect(
-        boundFunc({ ...params, requirements: ([1] as unknown) as InputCondition[][] })
-      ).toEqual({
+      expect(boundFunc({ ...params, requirements: [1] as unknown as InputCondition[][] })).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ReplaceAssetCompliance],
           tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],

@@ -58,23 +58,21 @@ export async function prepareSetTokenDocuments(
 
   if (currentDocIds.length) {
     batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
-      this.addTransaction(
-        tx.asset.removeDocuments,
-        { batchSize: docIdBatch.length },
-        docIdBatch,
-        rawTicker
-      );
+      this.addTransaction({
+        transaction: tx.asset.removeDocuments,
+        feeMultiplier: docIdBatch.length,
+        args: [docIdBatch, rawTicker],
+      });
     });
   }
 
   if (rawDocuments.length) {
     batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
-      this.addTransaction(
-        tx.asset.addDocuments,
-        { batchSize: rawDocumentBatch.length },
-        rawDocumentBatch,
-        rawTicker
-      );
+      this.addTransaction({
+        transaction: tx.asset.addDocuments,
+        feeMultiplier: rawDocumentBatch.length,
+        args: [rawDocumentBatch, rawTicker],
+      });
     });
   }
 

@@ -118,9 +118,9 @@ describe('addAssetRequirement procedure', () => {
   });
 
   test('should add an add compliance requirement transaction to the queue', async () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
-    const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
-    const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
     requirementToComplianceRequirementStub
       .withArgs({ conditions: fakeConditions, id: 1 }, mockContext)
@@ -141,14 +141,10 @@ describe('addAssetRequirement procedure', () => {
       conditions: fakeConditions,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addComplianceRequirementTransaction,
-      {},
-      rawTicker,
-      fakeSenderConditions,
-      fakeReceiverConditions
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addComplianceRequirementTransaction,
+      args: [rawTicker, fakeSenderConditions, fakeReceiverConditions],
+    });
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });

@@ -45,7 +45,10 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction(asset.freeze, {}, rawTicker);
+    this.addTransaction({
+      transaction: asset.freeze,
+      args: [rawTicker],
+    });
   } else {
     if (!isFrozen) {
       throw new PolymeshError({
@@ -54,7 +57,10 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction(asset.unfreeze, {}, rawTicker);
+    this.addTransaction({
+      transaction: asset.unfreeze,
+      args: [rawTicker],
+    });
   }
 
   return securityToken;

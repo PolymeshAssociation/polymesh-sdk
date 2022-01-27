@@ -38,7 +38,7 @@ describe('redeemToken procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    ticker = 'SOMETICKER';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
@@ -91,7 +91,7 @@ describe('redeemToken procedure', () => {
       amount,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
   });
 
   test('should throw an error if the portfolio has not sufficient balance to redeem', () => {

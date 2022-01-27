@@ -116,7 +116,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.createQueryStub('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(id.toNumber()),
+          id: rawId,
         } as StoredSchedule),
       ],
     });
@@ -128,7 +128,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
     await prepareRemoveCheckpointSchedule.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
 
     transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -140,7 +140,7 @@ describe('removeCheckpointSchedule procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
   });
 
   describe('getAuthorization', () => {

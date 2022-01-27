@@ -13,14 +13,14 @@ export interface CreateVenueParams {
 /**
  * @hidden
  */
-export const createCreateVenueResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): Venue => {
-  const [{ data }] = filterEventRecords(receipt, 'settlement', 'VenueCreated');
-  const id = u64ToBigNumber(data[1]);
+export const createCreateVenueResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): Venue => {
+    const [{ data }] = filterEventRecords(receipt, 'settlement', 'VenueCreated');
+    const id = u64ToBigNumber(data[1]);
 
-  return new Venue({ id }, context);
-};
+    return new Venue({ id }, context);
+  };
 
 /**
  * @hidden
@@ -43,15 +43,11 @@ export async function prepareCreateVenue(
   const rawType = venueTypeToMeshVenueType(type, context);
 
   // NOTE @monitz87: we're sending an empty signer array for the moment
-  const [newVenue] = this.addTransaction(
-    settlement.createVenue,
-    {
-      resolvers: [createCreateVenueResolver(context)],
-    },
-    rawDetails,
-    [],
-    rawType
-  );
+  const [newVenue] = this.addTransaction({
+    transaction: settlement.createVenue,
+    resolvers: [createCreateVenueResolver(context)],
+    args: [rawDetails, [], rawType],
+  });
 
   return newVenue;
 }
