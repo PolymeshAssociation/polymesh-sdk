@@ -134,3 +134,8 @@ export const SYSTEM_VERSION_RPC_CALL = {
   method: 'system_version',
   params: [],
 };
+
+/**
+ * Default cdd_id associated with an Identity on chain
+ */
+export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';

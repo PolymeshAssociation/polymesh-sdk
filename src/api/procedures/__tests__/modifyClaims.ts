@@ -16,6 +16,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { Claim, ClaimType, RoleType, ScopeType } from '~/types';
 import { ClaimOperation, PolymeshTx } from '~/types/internal';
+import { DEFAULT_CDD_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
@@ -180,7 +181,7 @@ describe('modifyClaims procedure', () => {
               issuer: ('issuerIdentity' as unknown) as Identity,
               issuedAt: new Date(),
               expiry: null,
-              claim: cddClaim,
+              claim: { type: ClaimType.CustomerDueDiligence, id: DEFAULT_CDD_ID },
             },
           ],
           next: 1,
@@ -342,8 +343,8 @@ describe('modifyClaims procedure', () => {
       newCddId,
     } = error.data.invalidCddClaims[0];
     expect(targetDid).toEqual(someDid);
-    expect(currentCddId).toEqual(cddId);
-    expect(newCddId).toEqual(otherId);
+    expect(currentCddId).toEqual(otherId);
+    expect(newCddId).toEqual(cddId);
   });
 
   test("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {
