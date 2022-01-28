@@ -11,7 +11,6 @@ import {
 import { CountryCode } from '~/generated/types';
 import {
   Account,
-  /*, Proposal */
   Asset,
   Checkpoint,
   CheckpointSchedule,
