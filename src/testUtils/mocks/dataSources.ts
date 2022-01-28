@@ -1883,19 +1883,19 @@ export const createMockTickerRegistrationConfig = (regConfig?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockAsset = (asset?: {
+export const createMockSecurityToken = (token?: {
   total_supply: Balance;
   owner_did: IdentityId;
   divisible: bool;
   asset_type: AssetType;
 }): SecurityToken => {
-  const st = asset || {
+  const st = token || {
     total_supply: createMockBalance(),
     owner_did: createMockIdentityId(),
     divisible: createMockBool(),
     asset_type: createMockAssetType(),
   };
-  return createMockCodec({ ...st }, !asset) as SecurityToken;
+  return createMockCodec({ ...st }, !token) as SecurityToken;
 };
 
 /**

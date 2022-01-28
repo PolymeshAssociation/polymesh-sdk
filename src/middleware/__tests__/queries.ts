@@ -10,8 +10,6 @@ import {
 } from '~/middleware/types';
 
 import {
-  assetsByTrustedClaimIssuer,
-  assetsHeldByDid,
   didsWithClaims,
   eventByAddedTrustedClaimIssuer,
   eventByIndexedArgs,
@@ -27,6 +25,8 @@ import {
   settlements,
   tickerExternalAgentActions,
   tickerExternalAgentHistory,
+  tokensByTrustedClaimIssuer,
+  tokensHeldByDid,
   transactionByHash,
   transactions,
 } from '../queries';
@@ -136,7 +136,7 @@ describe('assetsByTrustedClaimIssuer', () => {
       claimIssuerDid: 'someDid',
     };
 
-    const result = assetsByTrustedClaimIssuer(variables);
+    const result = tokensByTrustedClaimIssuer(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
@@ -149,7 +149,7 @@ describe('assetsHeldByDid', () => {
       did: 'someDid',
     };
 
-    const result = assetsHeldByDid(variables);
+    const result = tokensHeldByDid(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

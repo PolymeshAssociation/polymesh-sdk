@@ -6,7 +6,7 @@ import { DidRecord, IdentityId, ScopeId, Signatory, Ticker } from 'polymesh-type
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
-import { assetsByTrustedClaimIssuer, assetsHeldByDid } from '~/middleware/queries';
+import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -345,7 +345,7 @@ describe('Identity class', () => {
     beforeEach(() => {
       /* eslint-disable @typescript-eslint/naming-convention */
       assetStub.withArgs(rawTicker).resolves(
-        dsMockUtils.createMockAsset({
+        dsMockUtils.createMockSecurityToken({
           owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
           total_supply: dsMockUtils.createMockBalance(3000),
           divisible: dsMockUtils.createMockBool(true),
@@ -379,7 +379,7 @@ describe('Identity class', () => {
     });
 
     test("should throw an error if the Asset doesn't exist", async () => {
-      assetStub.withArgs(rawTicker).resolves(dsMockUtils.createMockAsset());
+      assetStub.withArgs(rawTicker).resolves(dsMockUtils.createMockSecurityToken());
 
       let error;
 
@@ -523,7 +523,7 @@ describe('Identity class', () => {
     test('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloQueryStub(assetsByTrustedClaimIssuer({ claimIssuerDid: did }), {
+      dsMockUtils.createApolloQueryStub(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
         tokensByTrustedClaimIssuer: tickers,
       });
 
@@ -542,7 +542,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryStub(
-        assetsHeldByDid({ did, count: undefined, skip: undefined, order: Order.Asc }),
+        tokensHeldByDid({ did, count: undefined, skip: undefined, order: Order.Asc }),
         {
           tokensHeldByDid: { items: tickers, totalCount: 2 },
         }

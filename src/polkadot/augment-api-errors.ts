@@ -79,7 +79,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
       /**
-       * No such asset.
+       * No such token.
        **/
       NoSuchAsset: AugmentedError<ApiType>;
       /**

@@ -1437,12 +1437,12 @@ export type QueryScopesByIdentityArgs = {
   did: Scalars['String'];
 };
 
-export type QueryAssetsByTrustedClaimIssuerArgs = {
+export type QueryTokensByTrustedClaimIssuerArgs = {
   claimIssuerDid: Scalars['String'];
   order?: Maybe<Order>;
 };
 
-export type QueryAssetsHeldByDidArgs = {
+export type QueryTokensHeldByDidArgs = {
   did: Scalars['String'];
   count?: Maybe<Scalars['Int']>;
   skip?: Maybe<Scalars['Int']>;

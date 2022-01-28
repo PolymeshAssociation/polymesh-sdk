@@ -935,7 +935,7 @@ export interface TransactionPermissions extends SectionPermissions<TxTag | Modul
 
 /**
  * Permissions a Secondary Key has over the Identity. A null value means the key has
- *   all permissions of that type (i.e. if `tokens` is null, the key has permissions over all
+ *   all permissions of that type (i.e. if `assets` is null, the key has permissions over all
  *   of the Identity's Assets)
  */
 export interface Permissions {

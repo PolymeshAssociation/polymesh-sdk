@@ -99,7 +99,7 @@ describe('Asset class', () => {
     });
 
     beforeEach(() => {
-      rawToken = dsMockUtils.createMockAsset({
+      rawToken = dsMockUtils.createMockSecurityToken({
         /* eslint-disable @typescript-eslint/naming-convention */
         owner_did: dsMockUtils.createMockIdentityId(owner),
         asset_type: dsMockUtils.createMockAssetType(assetType),
@@ -168,7 +168,7 @@ describe('Asset class', () => {
       expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
 
       tokensStub.resolves(
-        dsMockUtils.createMockAsset({
+        dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(owner),
           asset_type: dsMockUtils.createMockAssetType({ Custom: dsMockUtils.createMockU32(10) }),

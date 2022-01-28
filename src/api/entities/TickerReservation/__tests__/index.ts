@@ -64,7 +64,7 @@ describe('TickerReservation class', () => {
 
       queryMultiStub.resolves([
         dsMockUtils.createMockTickerRegistration(),
-        dsMockUtils.createMockAsset(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -87,7 +87,7 @@ describe('TickerReservation class', () => {
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryDate.getTime())),
         }),
-        dsMockUtils.createMockAsset(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -110,7 +110,7 @@ describe('TickerReservation class', () => {
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(), // null expiry
         }),
-        dsMockUtils.createMockAsset(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -133,7 +133,7 @@ describe('TickerReservation class', () => {
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryDate.getTime())),
         }),
-        dsMockUtils.createMockAsset(),
+        dsMockUtils.createMockSecurityToken(),
       ]);
 
       const details = await tickerReservation.details();
@@ -156,7 +156,7 @@ describe('TickerReservation class', () => {
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(),
         }),
-        dsMockUtils.createMockAsset({
+        dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(ownerDid),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
@@ -182,7 +182,7 @@ describe('TickerReservation class', () => {
       const unsubCallback = 'unsubCallback';
 
       queryMultiStub.callsFake(async (_, cbFunc) => {
-        cbFunc([dsMockUtils.createMockTickerRegistration(), dsMockUtils.createMockAsset()]);
+        cbFunc([dsMockUtils.createMockTickerRegistration(), dsMockUtils.createMockSecurityToken()]);
         return unsubCallback;
       });
 

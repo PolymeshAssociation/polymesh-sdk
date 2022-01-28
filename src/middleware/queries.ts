@@ -1,8 +1,6 @@
 import gql from 'graphql-tag';
 
 import {
-  QueryAssetsByTrustedClaimIssuerArgs,
-  QueryAssetsHeldByDidArgs,
   QueryDidsWithClaimsArgs,
   QueryEventByAddedTrustedClaimIssuerArgs,
   QueryEventsByIndexedArgsArgs,
@@ -17,6 +15,8 @@ import {
   QuerySettlementsArgs,
   QueryTickerExternalAgentActionsArgs,
   QueryTickerExternalAgentHistoryArgs,
+  QueryTokensByTrustedClaimIssuerArgs,
+  QueryTokensHeldByDidArgs,
   QueryTransactionByHashArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
@@ -275,9 +275,9 @@ export function proposals(
  *
  * Get the tickers of all the Assets for which the passed DID is a trusted claim issuer
  */
-export function assetsByTrustedClaimIssuer(
-  variables: QueryAssetsByTrustedClaimIssuerArgs
-): GraphqlQuery<QueryAssetsByTrustedClaimIssuerArgs> {
+export function tokensByTrustedClaimIssuer(
+  variables: QueryTokensByTrustedClaimIssuerArgs
+): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
   const query = gql`
     query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!) {
       tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid)
@@ -295,9 +295,9 @@ export function assetsByTrustedClaimIssuer(
  *
  * Get all tickers of Assets that were held at some point by the given did
  */
-export function assetsHeldByDid(
-  variables: QueryAssetsHeldByDidArgs
-): GraphqlQuery<QueryAssetsHeldByDidArgs> {
+export function tokensHeldByDid(
+  variables: QueryTokensHeldByDidArgs
+): GraphqlQuery<QueryTokensHeldByDidArgs> {
   const query = gql`
     query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
       tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
@@ -687,7 +687,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
- * Get the transaction history of each external agent of a asset
+ * Get the transaction history of each external agent of an Asset
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs

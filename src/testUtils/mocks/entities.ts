@@ -4,11 +4,9 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage } from '~/api/entities/Proposal/types';
 import {
   Account,
-  // NOTE uncomment in Governance v2 upgrade
-  // Proposal,
   Asset,
   AuthorizationRequest,
   Checkpoint,

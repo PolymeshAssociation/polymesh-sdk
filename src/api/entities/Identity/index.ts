@@ -15,7 +15,7 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
-import { assetsByTrustedClaimIssuer, assetsHeldByDid } from '~/middleware/queries';
+import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   CheckRolesResult,
@@ -305,7 +305,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const { size, start, order } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
-      assetsHeldByDid({
+      tokensHeldByDid({
         did,
         count: size,
         skip: start,
@@ -374,7 +374,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const {
       data: { tokensByTrustedClaimIssuer: tickers },
     } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
-      assetsByTrustedClaimIssuer({ claimIssuerDid: did })
+      tokensByTrustedClaimIssuer({ claimIssuerDid: did })
     );
 
     return tickers.map(ticker => new Asset({ ticker: removePadding(ticker) }, context));
