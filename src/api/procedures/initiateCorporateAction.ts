@@ -36,11 +36,13 @@ import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/inter
 /**
  * @hidden
  */
-export const createCaIdResolver = () => (receipt: ISubmittableResult): CAId => {
-  const [{ data }] = filterEventRecords(receipt, 'corporateAction', 'CAInitiated');
+export const createCaIdResolver =
+  () =>
+  (receipt: ISubmittableResult): CAId => {
+    const [{ data }] = filterEventRecords(receipt, 'corporateAction', 'CAInitiated');
 
-  return data[1];
-};
+    return data[1];
+  };
 
 /**
  * @hidden

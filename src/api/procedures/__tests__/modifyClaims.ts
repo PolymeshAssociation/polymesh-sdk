@@ -177,7 +177,7 @@ describe('modifyClaims procedure', () => {
           data: [
             {
               target: new Identity({ did: someDid }, mockContext),
-              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuer: 'issuerIdentity' as unknown as Identity,
               issuedAt: new Date(),
               expiry: null,
               claim: cddClaim,
@@ -272,7 +272,7 @@ describe('modifyClaims procedure', () => {
           data: [
             {
               target: new Identity({ did: someDid }, mockContext),
-              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuer: 'issuerIdentity' as unknown as Identity,
               issuedAt: new Date(),
               expiry: null,
               claim: { type: ClaimType.CustomerDueDiligence, id: otherId },

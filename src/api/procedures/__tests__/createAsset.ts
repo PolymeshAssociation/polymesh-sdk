@@ -466,7 +466,7 @@ describe('createAsset procedure', () => {
     });
 
     test('should return the new custom AssetType', () => {
-      const fakeResult = ('assetType' as unknown) as AssetType;
+      const fakeResult = 'assetType' as unknown as AssetType;
       internalSecurityTypeToAssetTypeStub
         .withArgs({ Custom: rawId }, mockContext)
         .returns(fakeResult);

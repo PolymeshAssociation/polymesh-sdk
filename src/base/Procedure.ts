@@ -72,10 +72,8 @@ export class Procedure<
     args: Args
   ) => Promise<Storage> | Storage;
 
-  private transactions: (
-    | PolymeshTransaction<unknown[]>
-    | PolymeshTransactionBatch<unknown[]>
-  )[] = [];
+  private transactions: (PolymeshTransaction<unknown[]> | PolymeshTransactionBatch<unknown[]>)[] =
+    [];
 
   private _storage: null | Storage = null;
   private _context: null | Context = null;
@@ -162,10 +160,8 @@ export class Procedure<
 
     const { permissions = true, roles = true } = checkAuthorizationResult;
 
-    const {
-      signerPermissions = permissions,
-      agentPermissions = permissions,
-    } = checkAuthorizationResult;
+    const { signerPermissions = permissions, agentPermissions = permissions } =
+      checkAuthorizationResult;
 
     let identity: Identity | null = null;
     let rolesResult: CheckRolesResult;
@@ -275,13 +271,8 @@ export class Procedure<
       const { args: procArgs, transformer } = args;
       const ctx = await this.setup(procArgs, context, opts);
 
-      const {
-        roles,
-        signerPermissions,
-        agentPermissions,
-        accountFrozen,
-        noIdentity,
-      } = await this._checkAuthorization(procArgs, ctx);
+      const { roles, signerPermissions, agentPermissions, accountFrozen, noIdentity } =
+        await this._checkAuthorization(procArgs, ctx);
 
       if (noIdentity) {
         throw new PolymeshError({
@@ -371,7 +362,7 @@ export class Procedure<
   ): PostTransactionValueArray<Values> {
     const {
       fee = null,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
       batchSize = null,
@@ -471,7 +462,7 @@ export class Procedure<
   ): PostTransactionValueArray<Values> {
     const {
       fee = null,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
       groupByFn,

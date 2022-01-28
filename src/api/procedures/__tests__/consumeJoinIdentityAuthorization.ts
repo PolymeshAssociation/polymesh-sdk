@@ -295,9 +295,9 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       const boundFunc = prepareStorage.bind(proc);
       const target = entityMockUtils.getAccountInstance({ getIdentity: null });
 
-      const result = await boundFunc(({
+      const result = await boundFunc({
         authRequest: { target },
-      } as unknown) as ConsumeJoinIdentityAuthorizationParams);
+      } as unknown as ConsumeJoinIdentityAuthorizationParams);
 
       expect(result).toEqual({
         currentAccount: mockContext.getCurrentAccount(),

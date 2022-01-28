@@ -64,7 +64,7 @@ describe('modifyAsset procedure', () => {
   test('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    return expect(prepareModifyAsset.call(proc, ({} as unknown) as Params)).rejects.toThrow(
+    return expect(prepareModifyAsset.call(proc, {} as unknown as Params)).rejects.toThrow(
       'Nothing to modify'
     );
   });

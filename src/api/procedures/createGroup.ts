@@ -48,16 +48,16 @@ export interface Storage {
 /**
  * @hidden
  */
-export const createCreateGroupResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): CustomPermissionGroup => {
-  const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
+export const createCreateGroupResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): CustomPermissionGroup => {
+    const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
 
-  return new CustomPermissionGroup(
-    { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
-    context
-  );
-};
+    return new CustomPermissionGroup(
+      { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+      context
+    );
+  };
 
 /**
  * @hidden

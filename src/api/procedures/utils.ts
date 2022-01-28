@@ -556,24 +556,26 @@ function assertIsAccount(target: Signer): asserts target is Account {
   }
 }
 
-export const createAuthorizationResolver = (
-  auth: MaybePostTransactionValue<Authorization>,
-  issuer: Identity,
-  target: Identity | Account,
-  expiry: Date | null,
-  context: Context
-) => (receipt: ISubmittableResult): AuthorizationRequest => {
-  const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
-  let rawAuth;
-  if (auth instanceof PostTransactionValue) {
-    rawAuth = auth.value;
-  } else {
-    rawAuth = auth;
-  }
+export const createAuthorizationResolver =
+  (
+    auth: MaybePostTransactionValue<Authorization>,
+    issuer: Identity,
+    target: Identity | Account,
+    expiry: Date | null,
+    context: Context
+  ) =>
+  (receipt: ISubmittableResult): AuthorizationRequest => {
+    const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+    let rawAuth;
+    if (auth instanceof PostTransactionValue) {
+      rawAuth = auth.value;
+    } else {
+      rawAuth = auth;
+    }
 
-  const authId = u64ToBigNumber(data[3]);
-  return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
-};
+    const authId = u64ToBigNumber(data[3]);
+    return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+  };
 
 /**
  * @hidden

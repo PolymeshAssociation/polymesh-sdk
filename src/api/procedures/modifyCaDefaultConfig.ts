@@ -98,11 +98,8 @@ export async function prepareModifyCaDefaultConfig(
 
   const asset = new Asset({ ticker }, context);
 
-  const {
-    targets,
-    defaultTaxWithholding,
-    taxWithholdings,
-  } = await asset.corporateActions.getDefaultConfig();
+  const { targets, defaultTaxWithholding, taxWithholdings } =
+    await asset.corporateActions.getDefaultConfig();
 
   if (newTargets) {
     if (areSameTargets(targets, newTargets)) {

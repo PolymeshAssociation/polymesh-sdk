@@ -46,10 +46,8 @@ export async function prepareModifyComplianceRequirement(
 
   const token = new Asset({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await token.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await token.compliance.requirements.get();
 
   const existingRequirements = remove(
     currentRequirements,

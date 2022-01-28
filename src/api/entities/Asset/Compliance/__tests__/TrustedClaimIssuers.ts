@@ -66,7 +66,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -104,7 +104,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -139,7 +139,7 @@ describe('TrustedClaimIssuers class', () => {
         claimIssuers: ['someDid', 'otherDid'],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()

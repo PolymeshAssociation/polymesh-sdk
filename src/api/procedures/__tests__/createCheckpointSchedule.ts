@@ -50,7 +50,7 @@ describe('createCheckpointSchedule procedure', () => {
     );
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    schedule = ('schedule' as unknown) as PostTransactionValue<CheckpointSchedule>;
+    schedule = 'schedule' as unknown as PostTransactionValue<CheckpointSchedule>;
   });
 
   let addTransactionStub: sinon.SinonStub;

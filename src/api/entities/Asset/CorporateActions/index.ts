@@ -157,17 +157,14 @@ export class CorporateActions extends Namespace<Asset> {
       ]
     >([
       [
-        (corporateAction.defaultTargetIdentities as unknown) as QueryableStorageEntry<'promise'>,
+        corporateAction.defaultTargetIdentities as unknown as QueryableStorageEntry<'promise'>,
         rawTicker,
       ],
       [
-        (corporateAction.defaultWithholdingTax as unknown) as QueryableStorageEntry<'promise'>,
+        corporateAction.defaultWithholdingTax as unknown as QueryableStorageEntry<'promise'>,
         rawTicker,
       ],
-      [
-        (corporateAction.didWithholdingTax as unknown) as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
+      [corporateAction.didWithholdingTax as unknown as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
     return {

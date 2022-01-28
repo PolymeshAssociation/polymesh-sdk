@@ -73,9 +73,9 @@ describe('modifyCaDefaultConfig procedure', () => {
   test('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(
-      prepareModifyCaDefaultConfig.call(proc, ({} as unknown) as Params)
-    ).rejects.toThrow('Nothing to modify');
+    return expect(prepareModifyCaDefaultConfig.call(proc, {} as unknown as Params)).rejects.toThrow(
+      'Nothing to modify'
+    );
   });
 
   test('should throw an error if the new targets are the same as the current ones', () => {

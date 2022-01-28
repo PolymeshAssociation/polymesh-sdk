@@ -42,10 +42,8 @@ export async function prepareAddAssetRequirement(
 
   const asset = new Asset({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await asset.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await asset.compliance.requirements.get();
 
   const currentConditions = map(currentRequirements, 'conditions');
 
@@ -68,10 +66,8 @@ export async function prepareAddAssetRequirement(
     context
   );
 
-  const {
-    sender_conditions: senderConditions,
-    receiver_conditions: receiverConditions,
-  } = requirementToComplianceRequirement({ conditions, id: 1 }, context);
+  const { sender_conditions: senderConditions, receiver_conditions: receiverConditions } =
+    requirementToComplianceRequirement({ conditions, id: 1 }, context);
 
   this.addTransaction(
     tx.complianceManager.addComplianceRequirement,

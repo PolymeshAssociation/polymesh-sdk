@@ -238,8 +238,7 @@ export function filterEventRecords<
   }
 
   return eventRecords.map(
-    eventRecord =>
-      (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>
+    eventRecord => eventRecord.event as unknown as IEvent<EventData<Events[ModuleName][EventName]>>
   );
 }
 

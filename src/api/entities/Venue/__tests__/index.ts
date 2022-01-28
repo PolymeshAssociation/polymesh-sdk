@@ -244,7 +244,7 @@ describe('Venue class', () => {
       const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
       const endBlock = new BigNumber(10000);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -295,7 +295,7 @@ describe('Venue class', () => {
         },
       ];
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -320,7 +320,7 @@ describe('Venue class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
       const description = 'someDetails';
       const type = VenueType.Other;
 

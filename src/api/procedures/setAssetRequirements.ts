@@ -41,10 +41,8 @@ export async function prepareSetAssetRequirements(
 
   const asset = new Asset({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await asset.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await asset.compliance.requirements.get();
 
   const currentConditions = map(currentRequirements, 'conditions');
 

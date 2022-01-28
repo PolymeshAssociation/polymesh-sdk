@@ -68,9 +68,9 @@ describe('Distributions class', () => {
       const asset = entityMockUtils.getAssetInstance();
       const distributions = new Distributions(asset, context);
 
-      const args = ({ foo: 'bar' } as unknown) as ConfigureDividendDistributionParams;
+      const args = { foo: 'bar' } as unknown as ConfigureDividendDistributionParams;
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<DividendDistribution>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<DividendDistribution>;
 
       procedureMockUtils
         .getPrepareStub()

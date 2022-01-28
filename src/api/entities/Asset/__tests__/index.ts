@@ -145,7 +145,7 @@ describe('Asset class', () => {
 
       expect(details.name).toBe(name);
       expect(details.totalSupply).toEqual(
-        utilsConversionModule.balanceToBigNumber((totalSupply as unknown) as Balance)
+        utilsConversionModule.balanceToBigNumber(totalSupply as unknown as Balance)
       );
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
@@ -232,7 +232,7 @@ describe('Asset class', () => {
         expiry,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -256,7 +256,7 @@ describe('Asset class', () => {
         makeDivisible,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -465,7 +465,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -484,7 +484,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -549,7 +549,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -568,7 +568,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -588,7 +588,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -657,7 +657,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

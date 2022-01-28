@@ -77,7 +77,7 @@ describe('CorporateActions class', () => {
           percentage: new BigNumber(20),
         },
       ];
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -104,7 +104,7 @@ describe('CorporateActions class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const target = 'someDid';
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -119,7 +119,7 @@ describe('CorporateActions class', () => {
 
   describe('method: removeAgent', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -134,7 +134,7 @@ describe('CorporateActions class', () => {
 
   describe('method: remove', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const corporateAction = new BigNumber(100);
 
       procedureMockUtils

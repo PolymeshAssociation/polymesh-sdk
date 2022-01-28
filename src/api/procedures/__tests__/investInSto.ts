@@ -377,8 +377,8 @@ describe('investInSto procedure', () => {
         'portfolioIdToPortfolio'
       );
       const portfolios = [
-        ('investment' as unknown) as DefaultPortfolio,
-        ('funding' as unknown) as DefaultPortfolio,
+        'investment' as unknown as DefaultPortfolio,
+        'funding' as unknown as DefaultPortfolio,
       ];
       portfolioIdToPortfolioStub.withArgs(purchasePortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(fundingPortfolioId, mockContext).returns(portfolios[1]);
