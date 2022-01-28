@@ -1,11 +1,16 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, Sto, TransactionQueue } from '~/internal';
+import { Context, Entity, Offering, TransactionQueue } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
 import { InvestmentResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
+import {
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -37,7 +42,7 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 
-describe('Sto class', () => {
+describe('Offering class', () => {
   let context: Context;
 
   beforeAll(() => {
@@ -63,26 +68,26 @@ describe('Sto class', () => {
   });
 
   test('should extend Entity', () => {
-    expect(Sto.prototype instanceof Entity).toBe(true);
+    expect(Offering.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
     test('should assign ticker and id to instance', () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
-      const sto = new Sto({ id, ticker }, context);
+      const offering = new Offering({ id, ticker }, context);
 
-      expect(sto.asset.ticker).toBe(ticker);
-      expect(sto.id).toEqual(id);
+      expect(offering.asset.ticker).toBe(ticker);
+      expect(offering.id).toEqual(id);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Sto.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
-      expect(Sto.isUniqueIdentifiers({})).toBe(false);
-      expect(Sto.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
-      expect(Sto.isUniqueIdentifiers({ id: 1 })).toBe(false);
+      expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
+      expect(Offering.isUniqueIdentifiers({})).toBe(false);
+      expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
+      expect(Offering.isUniqueIdentifiers({ id: 1 })).toBe(false);
     });
   });
 
@@ -131,11 +136,11 @@ describe('Sto class', () => {
 
     const rawName = dsMockUtils.createMockFundraiserName(name);
 
-    let sto: Sto;
+    let offering: Offering;
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
-      sto = new Sto({ ticker, id }, context);
+      offering = new Offering({ ticker, id }, context);
     });
 
     test('should return details for an Asset offering', async () => {
@@ -159,9 +164,9 @@ describe('Sto class', () => {
         start: date,
         end: date,
         status: {
-          sale: StoSaleStatus.Live,
-          timing: StoTimingStatus.Expired,
-          balance: StoBalanceStatus.Residual,
+          sale: OfferingSaleStatus.Live,
+          timing: OfferingTimingStatus.Expired,
+          balance: OfferingBalanceStatus.Residual,
         },
         minInvestment: minInvestmentValue.shiftedBy(-6),
         totalAmount: amount.shiftedBy(-6),
@@ -176,7 +181,7 @@ describe('Sto class', () => {
         returnValue: rawName,
       });
 
-      const details = await sto.details();
+      const details = await offering.details();
       expect(details).toEqual(fakeResult);
     });
 
@@ -193,9 +198,11 @@ describe('Sto class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await sto.details(callback);
+      const result = await offering.details(callback);
 
-      sinon.stub(utilsConversionModule, 'fundraiserToStoDetails').returns({} as StoDetails);
+      sinon
+        .stub(utilsConversionModule, 'fundraiserToOfferingDetails')
+        .returns({} as OfferingDetails);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, sinon.match({}));
@@ -206,7 +213,7 @@ describe('Sto class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
-      const sto = new Sto({ id, ticker }, context);
+      const offering = new Offering({ id, ticker }, context);
 
       const args = {
         ticker,
@@ -220,7 +227,7 @@ describe('Sto class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await sto.close();
+      const queue = await offering.close();
 
       expect(queue).toBe(expectedQueue);
     });
@@ -230,7 +237,7 @@ describe('Sto class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
-      const sto = new Sto({ id, ticker }, context);
+      const offering = new Offering({ id, ticker }, context);
 
       const now = new Date();
       const start = new Date(now.getTime() + 100000);
@@ -250,7 +257,7 @@ describe('Sto class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await sto.modifyTimes({
+      const queue = await offering.modifyTimes({
         start,
         end,
       });
@@ -263,7 +270,7 @@ describe('Sto class', () => {
     test('should return a list of investors', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
-      const sto = new Sto({ id, ticker }, context);
+      const offering = new Offering({ id, ticker }, context);
       const did = 'someDid';
       const offeringToken = 'TICKER';
       const raiseToken = 'USD';
@@ -302,7 +309,7 @@ describe('Sto class', () => {
         }
       );
 
-      let result = await sto.getInvestments({
+      let result = await offering.getInvestments({
         size: 5,
         start: 0,
       });
@@ -328,7 +335,7 @@ describe('Sto class', () => {
         }
       );
 
-      result = await sto.getInvestments();
+      result = await offering.getInvestments();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
@@ -338,16 +345,16 @@ describe('Sto class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
-      const sto = new Sto({ id, ticker }, context);
+      const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Sto>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, id, freeze: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await sto.freeze();
+      const queue = await offering.freeze();
 
       expect(queue).toBe(expectedQueue);
     });
@@ -357,16 +364,16 @@ describe('Sto class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
-      const sto = new Sto({ id, ticker }, context);
+      const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Sto>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, id, freeze: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await sto.unfreeze();
+      const queue = await offering.unfreeze();
 
       expect(queue).toBe(expectedQueue);
     });
@@ -376,7 +383,7 @@ describe('Sto class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
-      const sto = new Sto({ id, ticker }, context);
+      const offering = new Offering({ id, ticker }, context);
       const did = 'someDid';
 
       const purchasePortfolio = entityMockUtils.getDefaultPortfolioInstance({ did });
@@ -398,7 +405,7 @@ describe('Sto class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await sto.invest({
+      const queue = await offering.invest({
         purchasePortfolio,
         fundingPortfolio,
         purchaseAmount,
@@ -410,29 +417,29 @@ describe('Sto class', () => {
 
   describe('method: exists', () => {
     test('should return whether the Offering exists', async () => {
-      const sto = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+      const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockFundraiser()),
       });
 
-      let result = await sto.exists();
+      let result = await offering.exists();
       expect(result).toBe(true);
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      result = await sto.exists();
+      result = await offering.exists();
       expect(result).toBe(false);
     });
   });
 
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
-      const sto = new Sto({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
+      const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
-      expect(sto.toJson()).toEqual({
+      expect(offering.toJson()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
       });

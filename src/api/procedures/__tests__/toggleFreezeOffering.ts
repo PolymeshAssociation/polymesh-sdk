@@ -5,13 +5,13 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  prepareToggleFreezeSto,
-  ToggleFreezeStoParams,
-} from '~/api/procedures/toggleFreezeSto';
-import { Context, Sto } from '~/internal';
+  prepareToggleFreezeOffering,
+  ToggleFreezeOfferingParams,
+} from '~/api/procedures/toggleFreezeOffering';
+import { Context, Offering } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { StoBalanceStatus, StoSaleStatus, StoTimingStatus } from '~/types';
+import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -19,11 +19,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 
-describe('toggleFreezeSto procedure', () => {
+describe('toggleFreezeOffering procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
@@ -31,7 +31,7 @@ describe('toggleFreezeSto procedure', () => {
   let rawTicker: Ticker;
   let id: BigNumber;
   let rawId: u64;
-  let sto: Sto;
+  let offering: Offering;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -43,7 +43,7 @@ describe('toggleFreezeSto procedure', () => {
     id = new BigNumber(1);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawId = dsMockUtils.createMockU64(id.toNumber());
-    sto = new Sto({ ticker, id }, mockContext);
+    offering = new Offering({ ticker, id }, mockContext);
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -67,104 +67,104 @@ describe('toggleFreezeSto procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the STO has reached its end date', () => {
+  test('should throw an error if the Offering has reached its end date', () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            timing: StoTimingStatus.Expired,
-            balance: StoBalanceStatus.Available,
-            sale: StoSaleStatus.Closed,
+            timing: OfferingTimingStatus.Expired,
+            balance: OfferingBalanceStatus.Available,
+            sale: OfferingSaleStatus.Closed,
           },
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     return expect(
-      prepareToggleFreezeSto.call(proc, {
+      prepareToggleFreezeOffering.call(proc, {
         ticker,
         id,
         freeze: true,
       })
-    ).rejects.toThrow('The STO has already ended');
+    ).rejects.toThrow('The Offering has already ended');
   });
 
-  test('should throw an error if freeze is set to true and the STO is already frozen', () => {
+  test('should throw an error if freeze is set to true and the Offering is already frozen', () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Frozen,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Frozen,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     return expect(
-      prepareToggleFreezeSto.call(proc, {
+      prepareToggleFreezeOffering.call(proc, {
         ticker,
         id,
         freeze: true,
       })
-    ).rejects.toThrow('The STO is already frozen');
+    ).rejects.toThrow('The Offering is already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the STO status is live or close', async () => {
-    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
+  test('should throw an error if freeze is set to false and the Offering status is live or close', async () => {
+    const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
     });
 
     await expect(
-      prepareToggleFreezeSto.call(proc, {
+      prepareToggleFreezeOffering.call(proc, {
         ticker,
         id,
         freeze: false,
       })
-    ).rejects.toThrow('The STO is already unfrozen');
+    ).rejects.toThrow('The Offering is already unfrozen');
 
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Closed,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Closed,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
     });
 
     return expect(
-      prepareToggleFreezeSto.call(proc, {
+      prepareToggleFreezeOffering.call(proc, {
         ticker,
         id,
         freeze: false,
       })
-    ).rejects.toThrow('The STO is already closed');
+    ).rejects.toThrow('The Offering is already closed');
   });
 
   test('should add a freeze transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('sto', 'freezeFundraiser');
 
-    const result = await prepareToggleFreezeSto.call(proc, {
+    const result = await prepareToggleFreezeOffering.call(proc, {
       ticker,
       id,
       freeze: true,
@@ -172,27 +172,27 @@ describe('toggleFreezeSto procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
 
-    expect(sto.asset.ticker).toBe(result.asset.ticker);
+    expect(offering.asset.ticker).toBe(result.asset.ticker);
   });
 
   test('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
-            sale: StoSaleStatus.Frozen,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
+            sale: OfferingSaleStatus.Frozen,
           },
         },
       },
     });
 
-    const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
+    const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('sto', 'unfreezeFundraiser');
 
-    const result = await prepareToggleFreezeSto.call(proc, {
+    const result = await prepareToggleFreezeOffering.call(proc, {
       ticker,
       id,
       freeze: false,
@@ -200,12 +200,14 @@ describe('toggleFreezeSto procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
 
-    expect(sto.asset.ticker).toBe(result.asset.ticker);
+    expect(offering.asset.ticker).toBe(result.asset.ticker);
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<ToggleFreezeStoParams, Sto>(mockContext);
+      const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(
+        mockContext
+      );
       const boundFunc = getAuthorization.bind(proc);
 
       const asset = entityMockUtils.getAssetInstance({ ticker });

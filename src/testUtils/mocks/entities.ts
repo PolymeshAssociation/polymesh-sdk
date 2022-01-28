@@ -21,8 +21,8 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
+  Offering,
   PermissionGroup,
-  Sto,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -53,6 +53,10 @@ import {
   InstructionStatus,
   InstructionType,
   Leg,
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
   PercentageTransferRestriction,
   PermissionGroups,
   PermissionGroupType,
@@ -63,10 +67,6 @@ import {
   SecondaryAccount,
   SecurityIdentifier,
   SignerType,
-  StoBalanceStatus,
-  StoDetails,
-  StoSaleStatus,
-  StoTimingStatus,
   TargetTreatment,
   TaxWithholding,
   TickerReservationDetails,
@@ -86,7 +86,7 @@ type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
-type MockSto = Mocked<Sto>;
+type MockOffering = Mocked<Offering>;
 type MockCheckpoint = Mocked<Checkpoint>;
 type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
 type MockCorporateAction = Mocked<CorporateAction>;
@@ -107,7 +107,7 @@ const mockInstanceContainer = {
   defaultPortfolio: {} as MockDefaultPortfolio,
   customPermissionGroup: {} as MockCustomPermissionGroup,
   knownPermissionGroup: {} as MockKnownPermissionGroup,
-  sto: {} as MockSto,
+  offering: {} as MockOffering,
   checkpoint: {} as MockCheckpoint,
   checkpointSchedule: {} as MockCheckpointSchedule,
   corporateAction: {} as MockCorporateAction,
@@ -248,10 +248,10 @@ interface InstructionOptions {
   exists?: boolean;
 }
 
-interface StoOptions {
+interface OfferingOptions {
   id?: BigNumber;
   ticker?: string;
-  details?: Partial<StoDetails>;
+  details?: Partial<OfferingDetails>;
   exists?: boolean;
 }
 
@@ -319,7 +319,7 @@ type MockOptions = {
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
-  stoOptions?: StoOptions;
+  offeringOptions?: OfferingOptions;
   checkpointOptions?: CheckpointOptions;
   checkpointScheduleOptions?: CheckpointScheduleOptions;
   corporateActionOptions?: CorporateActionOptions;
@@ -339,7 +339,7 @@ let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
-let stoConstructorStub: SinonStub;
+let offeringConstructorStub: SinonStub;
 let checkpointConstructorStub: SinonStub;
 let checkpointScheduleConstructorStub: SinonStub;
 let corporateActionConstructorStub: SinonStub;
@@ -413,8 +413,8 @@ let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
 let defaultPortfolioIsEqualStub: SinonStub;
 let defaultPortfolioExistsStub: SinonStub;
-let stoDetailsStub: SinonStub;
-let stoExistsStub: SinonStub;
+let offeringsDetailsStub: SinonStub;
+let offeringExistsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
@@ -533,12 +533,12 @@ const MockInstructionClass = class {
   }
 };
 
-const MockStoClass = class {
+const MockOfferingClass = class {
   /**
    * @hidden
    */
   constructor(...args: unknown[]) {
-    return stoConstructorStub(...args);
+    return offeringConstructorStub(...args);
   }
 };
 
@@ -660,9 +660,9 @@ export const mockDefaultPortfolioModule = (path: string) => (): Record<string, u
   DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
-export const mockStoModule = (path: string) => (): Record<string, unknown> => ({
+export const mockOfferingModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  Sto: MockStoClass,
+  Offering: MockOfferingClass,
 });
 
 export const mockCheckpointModule = (path: string) => (): Record<string, unknown> => ({
@@ -879,14 +879,14 @@ const defaultInstructionOptions: InstructionOptions = {
   exists: true,
 };
 let instructionOptions = defaultInstructionOptions;
-const defaultStoOptions: StoOptions = {
+const defaultStoOptions: OfferingOptions = {
   details: {
     end: null,
     start: new Date('10/14/1987'),
     status: {
-      timing: StoTimingStatus.Started,
-      balance: StoBalanceStatus.Available,
-      sale: StoSaleStatus.Live,
+      timing: OfferingTimingStatus.Started,
+      balance: OfferingBalanceStatus.Available,
+      sale: OfferingSaleStatus.Live,
     },
     tiers: [
       {
@@ -1561,7 +1561,7 @@ function initAccount(opts?: AccountOptions): void {
  * @hidden
  * Configure the Asset Offering instance
  */
-function configureSto(opts: StoOptions): void {
+function configureOffering(opts: OfferingOptions): void {
   const details = {
     creator: mockInstanceContainer.identity,
     venue: mockInstanceContainer.venue,
@@ -1569,38 +1569,38 @@ function configureSto(opts: StoOptions): void {
     raisingPortfolio: mockInstanceContainer.numberedPortfolio,
     ...opts.details,
   };
-  const sto = {
+  const offering = {
     uuid: 'sto',
-    details: stoDetailsStub.resolves(details),
+    details: offeringsDetailsStub.resolves(details),
     asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     id: opts.id,
-    exists: stoExistsStub.resolves(opts.exists),
-  } as unknown as MockSto;
+    exists: offeringExistsStub.resolves(opts.exists),
+  } as unknown as MockOffering;
 
-  Object.assign(mockInstanceContainer.sto, sto);
+  Object.assign(mockInstanceContainer.offering, offering);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  stoConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, sto, args);
+  offeringConstructorStub.callsFake(({ ticker, ...args } = {}) => {
+    const value = merge({}, offering, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Sto.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Sto.prototype);
+    Object.setPrototypeOf(entities.Offering.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Offering.prototype);
     return value;
   });
 }
 
 /**
  * @hidden
- * Initialize the Sto instance
+ * Initialize the Offering instance
  */
-function initSto(opts?: StoOptions): void {
-  stoConstructorStub = sinon.stub();
-  stoDetailsStub = sinon.stub();
-  stoExistsStub = sinon.stub();
+function initOffering(opts?: OfferingOptions): void {
+  offeringConstructorStub = sinon.stub();
+  offeringsDetailsStub = sinon.stub();
+  offeringExistsStub = sinon.stub();
 
   stoOptions = merge({}, defaultStoOptions, opts);
 
-  configureSto(stoOptions);
+  configureOffering(stoOptions);
 }
 
 /**
@@ -1882,9 +1882,9 @@ export function configureMocks(opts?: MockOptions): void {
 
   const tempStoOptions = {
     ...stoOptions,
-    ...opts?.stoOptions,
+    ...opts?.offeringOptions,
   };
-  configureSto(tempStoOptions);
+  configureOffering(tempStoOptions);
 
   const tempCheckpointOptions = {
     ...checkpointOptions,
@@ -1953,8 +1953,8 @@ export function initMocks(opts?: MockOptions): void {
   // Instruction
   initInstruction(opts?.instructionOptions);
 
-  // Sto
-  initSto(opts?.stoOptions);
+  // Offering
+  initOffering(opts?.offeringOptions);
 
   // Checkpoint
   initCheckpoint(opts?.checkpointOptions);
@@ -1982,7 +1982,7 @@ export function cleanup(): void {
   mockInstanceContainer.permissionGroup = {} as MockPermissionGroup;
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
-  mockInstanceContainer.sto = {} as MockSto;
+  mockInstanceContainer.offering = {} as MockOffering;
   mockInstanceContainer.checkpoint = {} as MockCheckpoint;
   mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
   mockInstanceContainer.corporateAction = {} as MockCorporateAction;
@@ -2005,7 +2005,7 @@ export function reset(): void {
     instructionOptions,
     numberedPortfolioOptions,
     defaultPortfolioOptions,
-    stoOptions,
+    offeringOptions: stoOptions,
     checkpointOptions,
     checkpointScheduleOptions,
     corporateActionOptions,
@@ -2598,36 +2598,36 @@ export function getInstructionGetLegsStub(legs?: ResultSet<Leg>): SinonStub {
 
 /**
  * @hidden
- * Retrieve an Sto instance
+ * Retrieve an Offering instance
  */
-export function getStoInstance(opts?: StoOptions): MockSto {
+export function getOfferingInstance(opts?: OfferingOptions): MockOffering {
   if (opts) {
-    configureSto({ ...defaultStoOptions, ...opts });
+    configureOffering({ ...defaultStoOptions, ...opts });
   }
 
-  return new MockStoClass() as MockSto;
+  return new MockOfferingClass() as MockOffering;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `Sto.details` method
+ * Retrieve the stub of the `Offering.details` method
  */
-export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
+export function getOfferingDetailsStub(details?: Partial<OfferingDetails>): SinonStub {
   if (details) {
-    return stoDetailsStub.resolves({
+    return offeringsDetailsStub.resolves({
       ...defaultStoOptions.details,
       ...details,
     });
   }
-  return stoDetailsStub;
+  return offeringsDetailsStub;
 }
 
 /**
  * @hidden
- * Retrieve the Sto constructor stub
+ * Retrieve the Offering constructor stub
  */
 export function getStoConstructorStub(): SinonStub {
-  return stoConstructorStub;
+  return offeringConstructorStub;
 }
 
 /**

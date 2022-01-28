@@ -19,8 +19,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
   '~/api/entities/Asset',

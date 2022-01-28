@@ -3,7 +3,11 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
-import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
+import {
+  DividendDistributionDetails,
+  OfferingDetails,
+  ScheduleDetails,
+} from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 import {
   Account,
@@ -18,7 +22,7 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
-  Sto,
+  Offering,
   TransactionQueue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
@@ -1173,9 +1177,9 @@ export type TransactionArgument = {
 
 export type Signer = Identity | Account;
 
-export interface StoWithDetails {
-  sto: Sto;
-  details: StoDetails;
+export interface OfferingWithDetails {
+  offering: Offering;
+  details: OfferingDetails;
 }
 
 export interface CheckpointWithData {

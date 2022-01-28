@@ -14,7 +14,7 @@ import {
   Instruction as InstructionClass,
   KnownPermissionGroup as KnownPermissionGroupClass,
   NumberedPortfolio as NumberedPortfolioClass,
-  Sto as StoClass,
+  Offering as OfferingClass,
   TickerReservation as TickerReservationClass,
   Venue as VenueClass,
 } from '~/internal';
@@ -33,7 +33,7 @@ export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
 export type Asset = AssetClass;
-export type Sto = StoClass;
+export type Offering = OfferingClass;
 export type TickerReservation = TickerReservationClass;
 export type Venue = VenueClass;
 // export type Proposal = InstanceType<typeof ProposalClass>;
@@ -44,7 +44,7 @@ export * from './DividendDistribution/types';
 export * from './Instruction/types';
 export * from './Portfolio/types';
 export * from './Asset/types';
-export * from './Sto/types';
+export * from './Offering/types';
 export * from './TickerReservation/types';
 export * from './Venue/types';
 // export * from './Proposal/types';

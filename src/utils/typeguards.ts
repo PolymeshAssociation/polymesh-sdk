@@ -16,10 +16,10 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
+  Offering,
   PolymeshError,
   PolymeshTransaction,
   PolymeshTransactionBatch,
-  Sto,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -132,10 +132,10 @@ export function isAsset(value: unknown): value is Asset {
 }
 
 /**
- * Return whether value is an Sto
+ * Return whether value is an Offering
  */
-export function isSto(value: unknown): value is Sto {
-  return value instanceof Sto;
+export function isOffering(value: unknown): value is Offering {
+  return value instanceof Offering;
 }
 
 /**

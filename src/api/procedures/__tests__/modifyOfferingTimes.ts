@@ -2,17 +2,21 @@ import BigNumber from 'bignumber.js';
 import { Moment } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getAuthorization, Params, prepareModifyStoTimes } from '~/api/procedures/modifyStoTimes';
+import {
+  getAuthorization,
+  Params,
+  prepareModifyOfferingTimes,
+} from '~/api/procedures/modifyOfferingTimes';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { StoBalanceStatus, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
+import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
   '~/api/entities/Asset',
@@ -60,12 +64,12 @@ describe('modifyStoTimes procedure', () => {
 
   beforeEach(() => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.NotStarted,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.NotStarted,
+            balance: OfferingBalanceStatus.Available,
           },
           start,
           end,
@@ -97,28 +101,28 @@ describe('modifyStoTimes procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     modifyFundraiserWindowTransaction = dsMockUtils.createTxStub('sto', 'modifyFundraiserWindow');
 
-    await prepareModifyStoTimes.call(proc, args);
+    await prepareModifyOfferingTimes.call(proc, args);
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawNewStart, rawNewEnd],
     });
 
-    await prepareModifyStoTimes.call(proc, { ...args, start: undefined });
+    await prepareModifyOfferingTimes.call(proc, { ...args, start: undefined });
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawStart, rawNewEnd],
     });
 
-    await prepareModifyStoTimes.call(proc, { ...args, end: null });
+    await prepareModifyOfferingTimes.call(proc, { ...args, end: null });
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: modifyFundraiserWindowTransaction,
       args: [rawTicker, rawId, rawNewStart, null],
     });
 
-    await prepareModifyStoTimes.call(proc, { ...args, end: undefined });
+    await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: modifyFundraiserWindowTransaction,
@@ -126,20 +130,20 @@ describe('modifyStoTimes procedure', () => {
     });
 
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           start,
           end: null,
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.NotStarted,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.NotStarted,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
     });
 
-    await prepareModifyStoTimes.call(proc, { ...args, end: undefined });
+    await prepareModifyOfferingTimes.call(proc, { ...args, end: undefined });
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: modifyFundraiserWindowTransaction,
@@ -155,7 +159,7 @@ describe('modifyStoTimes procedure', () => {
     const message = 'Nothing to modify';
 
     try {
-      await prepareModifyStoTimes.call(proc, { ...args, start, end });
+      await prepareModifyOfferingTimes.call(proc, { ...args, start, end });
     } catch (error) {
       err = error;
     }
@@ -165,7 +169,7 @@ describe('modifyStoTimes procedure', () => {
     err = undefined;
 
     try {
-      await prepareModifyStoTimes.call(proc, { ...args, start: undefined, end });
+      await prepareModifyOfferingTimes.call(proc, { ...args, start: undefined, end });
     } catch (error) {
       err = error;
     }
@@ -173,7 +177,7 @@ describe('modifyStoTimes procedure', () => {
     expect(err?.message).toBe(message);
 
     try {
-      await prepareModifyStoTimes.call(proc, { ...args, start, end: undefined });
+      await prepareModifyOfferingTimes.call(proc, { ...args, start, end: undefined });
     } catch (error) {
       err = error;
     }
@@ -181,14 +185,14 @@ describe('modifyStoTimes procedure', () => {
     expect(err?.message).toBe(message);
   });
 
-  test('should throw an error if the sto is already closed', () => {
+  test('should throw an error if the Offering is already closed', () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Closed,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Closed,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
@@ -196,23 +200,23 @@ describe('modifyStoTimes procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareModifyStoTimes.call(proc, args)).rejects.toThrow(
-      'The STO is already closed'
+    return expect(prepareModifyOfferingTimes.call(proc, args)).rejects.toThrow(
+      'The Offering is already closed'
     );
   });
 
-  test('should throw an error if the STO has already ended', async () => {
+  test('should throw an error if the Offering has already ended', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           start: now,
           end: now,
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Expired,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Expired,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
@@ -221,26 +225,26 @@ describe('modifyStoTimes procedure', () => {
     let err: Error | undefined;
 
     try {
-      await prepareModifyStoTimes.call(proc, args);
+      await prepareModifyOfferingTimes.call(proc, args);
     } catch (error) {
       err = error;
     }
 
-    expect(err?.message).toBe('The STO has already ended');
+    expect(err?.message).toBe('The Offering has already ended');
   });
 
-  test('should throw an error if attempting to modify the start time of an STO that has already started', async () => {
+  test('should throw an error if attempting to modify the start time of an Offering that has already started', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           start: new Date(now.getTime() - 1000),
           end,
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
@@ -249,22 +253,22 @@ describe('modifyStoTimes procedure', () => {
     let err: Error | undefined;
 
     try {
-      await prepareModifyStoTimes.call(proc, args);
+      await prepareModifyOfferingTimes.call(proc, args);
     } catch (error) {
       err = error;
     }
 
-    expect(err?.message).toBe('Cannot modify the start time of an STO that already started');
+    expect(err?.message).toBe('Cannot modify the start time of an Offering that already started');
   });
 
   test('should throw an error if the new times are in the past', async () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            timing: StoTimingStatus.NotStarted,
-            balance: StoBalanceStatus.Available,
-            sale: StoSaleStatus.Live,
+            timing: OfferingTimingStatus.NotStarted,
+            balance: OfferingBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
           },
         },
       },
@@ -279,7 +283,7 @@ describe('modifyStoTimes procedure', () => {
     const message = 'New dates are in the past';
 
     try {
-      await prepareModifyStoTimes.call(proc, { ...args, start: past });
+      await prepareModifyOfferingTimes.call(proc, { ...args, start: past });
     } catch (error) {
       err = error;
     }
@@ -289,7 +293,7 @@ describe('modifyStoTimes procedure', () => {
     err = undefined;
 
     try {
-      await prepareModifyStoTimes.call(proc, { ...args, end: past });
+      await prepareModifyOfferingTimes.call(proc, { ...args, end: past });
     } catch (error) {
       err = error;
     }

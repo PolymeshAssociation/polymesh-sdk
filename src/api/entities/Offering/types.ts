@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
 
-export enum StoTimingStatus {
+export enum OfferingTimingStatus {
   /**
    * Start date not reached yet
    */
@@ -17,7 +17,7 @@ export enum StoTimingStatus {
   Expired = 'Expired',
 }
 
-export enum StoBalanceStatus {
+export enum OfferingBalanceStatus {
   /**
    * There still are Asset tokens available for purchase
    */
@@ -34,7 +34,7 @@ export enum StoBalanceStatus {
   Residual = 'Residual',
 }
 
-export enum StoSaleStatus {
+export enum OfferingSaleStatus {
   /**
    * Sale temporarily paused, can be resumed (unfrozen)
    */
@@ -53,22 +53,22 @@ export enum StoSaleStatus {
   Closed = 'Closed',
 }
 
-export interface StoStatus {
-  timing: StoTimingStatus;
-  balance: StoBalanceStatus;
-  sale: StoSaleStatus;
+export interface OfferingStatus {
+  timing: OfferingTimingStatus;
+  balance: OfferingBalanceStatus;
+  sale: OfferingSaleStatus;
 }
 
-export interface StoTier {
+export interface OfferingTier {
   amount: BigNumber;
   price: BigNumber;
 }
 
-export interface Tier extends StoTier {
+export interface Tier extends OfferingTier {
   remaining: BigNumber;
 }
 
-export interface StoDetails {
+export interface OfferingDetails {
   creator: Identity;
   name: string;
   offeringPortfolio: NumberedPortfolio | DefaultPortfolio;
@@ -78,7 +78,7 @@ export interface StoDetails {
   venue: Venue;
   start: Date;
   end: Date | null;
-  status: StoStatus;
+  status: OfferingStatus;
   minInvestment: BigNumber;
   totalAmount: BigNumber;
   totalRemaining: BigNumber;

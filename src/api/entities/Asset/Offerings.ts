@@ -4,14 +4,14 @@ import { remove } from 'lodash';
 import {
   Asset,
   Context,
-  launchSto,
-  LaunchStoParams,
+  launchOffering,
+  LaunchOfferingParams,
   Namespace,
+  Offering,
   PolymeshError,
-  Sto,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod, StoStatus, StoWithDetails } from '~/types';
-import { fundraiserToStoDetails, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import { ErrorCode, OfferingStatus, OfferingWithDetails, ProcedureMethod } from '~/types';
+import { fundraiserToOfferingDetails, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -27,7 +27,7 @@ export class Offerings extends Namespace<Asset> {
     const { ticker } = parent;
 
     this.launch = createProcedureMethod(
-      { getProcedureAndArgs: args => [launchSto, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [launchOffering, { ticker, ...args }] },
       context
     );
   }
@@ -39,20 +39,20 @@ export class Offerings extends Namespace<Asset> {
    *   - Offering Portfolio Custodian
    *   - Raising Portfolio Custodian
    */
-  public launch: ProcedureMethod<LaunchStoParams, Sto>;
+  public launch: ProcedureMethod<LaunchOfferingParams, Offering>;
 
   /**
    * Retrieve a single Offering associated to this Asset by its ID
    *
    * @throws if there is no Offering with the passed ID
    */
-  public async getOne(args: { id: BigNumber }): Promise<Sto> {
+  public async getOne(args: { id: BigNumber }): Promise<Offering> {
     const {
       parent: { ticker },
       context,
     } = this;
     const { id } = args;
-    const offering = new Sto({ ticker, id }, context);
+    const offering = new Offering({ ticker, id }, context);
 
     const exists = await offering.exists();
 
@@ -71,7 +71,9 @@ export class Offerings extends Namespace<Asset> {
    *
    * @param opts.status - status of the Offerings to fetch. If defined, only Offerings that have all passed statuses will be returned
    */
-  public async get(opts: { status?: Partial<StoStatus> } = {}): Promise<StoWithDetails[]> {
+  public async get(
+    opts: { status?: Partial<OfferingStatus> } = {}
+  ): Promise<OfferingWithDetails[]> {
     const {
       parent: { ticker },
       context: {
@@ -92,7 +94,7 @@ export class Offerings extends Namespace<Asset> {
       sto.fundraiserNames.entries(rawTicker),
     ]);
 
-    const stos = fundraiserEntries.map(
+    const offerings = fundraiserEntries.map(
       ([
         {
           args: [, rawFundraiserId],
@@ -110,13 +112,13 @@ export class Offerings extends Namespace<Asset> {
           ]) => u64ToBigNumber(rawId).eq(id)
         );
         return {
-          sto: new Sto({ id, ticker }, context),
-          details: fundraiserToStoDetails(fundraiser.unwrap(), name, context),
+          offering: new Offering({ id, ticker }, context),
+          details: fundraiserToOfferingDetails(fundraiser.unwrap(), name, context),
         };
       }
     );
 
-    return stos.filter(
+    return offerings.filter(
       ({
         details: {
           status: { timing, sale, balance },

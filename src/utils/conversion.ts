@@ -155,6 +155,11 @@ import {
   isSingleClaimCondition,
   KnownAssetType,
   MultiClaimCondition,
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTier,
+  OfferingTimingStatus,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -173,11 +178,6 @@ import {
   SignerType,
   SignerValue,
   SingleClaimCondition,
-  StoBalanceStatus,
-  StoDetails,
-  StoSaleStatus,
-  StoTier,
-  StoTimingStatus,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -2844,7 +2844,7 @@ export function granularCanTransferResultToTransferBreakdown(
 /**
  * @hidden
  */
-export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
+export function stoTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
   const { price, amount } = tier;
   return context.polymeshApi.createType('PriceTier', {
     total: numberToBalance(amount, context),
@@ -2958,11 +2958,11 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
 /**
  * @hidden
  */
-export function fundraiserToStoDetails(
+export function fundraiserToOfferingDetails(
   fundraiser: Fundraiser,
   name: FundraiserName,
   context: Context
-): StoDetails {
+): OfferingDetails {
   const {
     creator,
     offering_portfolio: offeringPortfolio,
@@ -3001,28 +3001,28 @@ export function fundraiserToStoDetails(
 
   const minInvestment = balanceToBigNumber(rawMinInvestment);
 
-  let timing: StoTimingStatus = StoTimingStatus.NotStarted;
-  let balance: StoBalanceStatus = StoBalanceStatus.Available;
-  let sale: StoSaleStatus = StoSaleStatus.Live;
+  let timing: OfferingTimingStatus = OfferingTimingStatus.NotStarted;
+  let balance: OfferingBalanceStatus = OfferingBalanceStatus.Available;
+  let sale: OfferingSaleStatus = OfferingSaleStatus.Live;
 
   if (isExpired) {
-    timing = StoTimingStatus.Expired;
+    timing = OfferingTimingStatus.Expired;
   } else if (isStarted) {
-    timing = StoTimingStatus.Started;
+    timing = OfferingTimingStatus.Started;
   }
 
   if (totalRemainingValue.isZero()) {
-    balance = StoBalanceStatus.SoldOut;
+    balance = OfferingBalanceStatus.SoldOut;
   } else if (totalRemainingValue.lt(minInvestment)) {
-    balance = StoBalanceStatus.Residual;
+    balance = OfferingBalanceStatus.Residual;
   }
 
   if (rawStatus.isClosedEarly) {
-    sale = StoSaleStatus.ClosedEarly;
+    sale = OfferingSaleStatus.ClosedEarly;
   } else if (rawStatus.isClosed) {
-    sale = StoSaleStatus.Closed;
+    sale = OfferingSaleStatus.Closed;
   } else if (rawStatus.isFrozen) {
-    sale = StoSaleStatus.Frozen;
+    sale = OfferingSaleStatus.Frozen;
   }
 
   return {

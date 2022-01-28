@@ -10,24 +10,24 @@ import {
   prepareInvestInSto,
   prepareStorage,
   Storage,
-} from '~/api/procedures/investInSto';
+} from '~/api/procedures/investInOffering';
 import { Context, DefaultPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  OfferingBalanceStatus,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
   PortfolioBalance,
   PortfolioLike,
   RoleType,
-  StoBalanceStatus,
-  StoSaleStatus,
-  StoTimingStatus,
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -36,7 +36,7 @@ jest.mock(
   )
 );
 
-describe('investInSto procedure', () => {
+describe('investInOffering procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
@@ -135,14 +135,14 @@ describe('investInSto procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the STO is not accepting investments', () => {
+  test('should throw an error if the Offering is not accepting investments', () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Frozen,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Frozen,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
@@ -153,18 +153,18 @@ describe('investInSto procedure', () => {
     });
 
     return expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
-      'The STO is not accepting investments at the moment'
+      'The Offering is not accepting investments at the moment'
     );
   });
 
   test('should throw an error if the minimum investment is not reached', async () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(10),
@@ -201,12 +201,12 @@ describe('investInSto procedure', () => {
 
   test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the Assets", async () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(25),
@@ -244,14 +244,14 @@ describe('investInSto procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(50));
   });
 
-  test('should throw an error if the STO does not have enough remaining Assets', async () => {
+  test('should throw an error if the Offering does not have enough remaining Assets', async () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(10),
@@ -280,22 +280,22 @@ describe('investInSto procedure', () => {
     });
 
     await expect(prepareInvestInSto.call(proc, args)).rejects.toThrow(
-      'The STO does not have enough remaining tokens'
+      'The Offering does not have enough remaining tokens'
     );
 
     return expect(prepareInvestInSto.call(proc, { ...args, maxPrice })).rejects.toThrow(
-      'The STO does not have enough remaining tokens below the stipulated max price'
+      'The Offering does not have enough remaining tokens below the stipulated max price'
     );
   });
 
   test('should add an invest transaction to the queue', async () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
           end: new Date('12/12/2030'),
           minInvestment: new BigNumber(10),

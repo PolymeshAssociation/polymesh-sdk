@@ -12,17 +12,17 @@ import {
 import sinon from 'sinon';
 
 import {
-  createStoResolver,
+  createOfferingResolver,
   getAuthorization,
   Params,
-  prepareLaunchSto,
+  prepareLaunchOffering,
   prepareStorage,
   Storage,
-} from '~/api/procedures/launchSto';
-import { Context, DefaultPortfolio, PostTransactionValue, Sto, Venue } from '~/internal';
+} from '~/api/procedures/launchOffering';
+import { Context, DefaultPortfolio, Offering, PostTransactionValue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioLike, RoleType, StoTier, VenueType } from '~/types';
+import { OfferingTier, PortfolioBalance, PortfolioLike, RoleType, VenueType } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -36,8 +36,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -46,7 +46,7 @@ jest.mock(
   )
 );
 
-describe('launchSto procedure', () => {
+describe('launchOffering procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
@@ -54,7 +54,7 @@ describe('launchSto procedure', () => {
   let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context, boolean?], Balance>;
-  let stoTierToPriceTierStub: sinon.SinonStub<[StoTier, Context], PriceTier>;
+  let stoTierToPriceTierStub: sinon.SinonStub<[OfferingTier, Context], PriceTier>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let portfolioIdToPortfolioStub: sinon.SinonStub;
   let ticker: string;
@@ -82,7 +82,7 @@ describe('launchSto procedure', () => {
   let rawTiers: PriceTier[];
   let rawMinInvestment: Balance;
 
-  let sto: PostTransactionValue<Sto>;
+  let offering: PostTransactionValue<Offering>;
 
   let args: Params;
 
@@ -141,7 +141,7 @@ describe('launchSto procedure', () => {
     ];
     rawMinInvestment = dsMockUtils.createMockBalance(minInvestment.toNumber());
 
-    sto = 'sto' as unknown as PostTransactionValue<Sto>;
+    offering = 'offering' as unknown as PostTransactionValue<Offering>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -153,7 +153,7 @@ describe('launchSto procedure', () => {
         type: VenueType.Sto,
       },
     });
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([sto]);
+    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([offering]);
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     stringToTickerStub.withArgs(raisingCurrency, mockContext).returns(rawRaisingCurrency);
@@ -210,7 +210,7 @@ describe('launchSto procedure', () => {
         assetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
-    const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
       raisingPortfolioId,
     });
@@ -218,7 +218,7 @@ describe('launchSto procedure', () => {
     let err: Error | undefined;
 
     try {
-      await prepareLaunchSto.call(proc, {
+      await prepareLaunchOffering.call(proc, {
         ...args,
         venue: entityMockUtils.getVenueInstance({ exists: false }),
       });
@@ -231,7 +231,7 @@ describe('launchSto procedure', () => {
     err = undefined;
 
     try {
-      await prepareLaunchSto.call(proc, { ...args, venue: undefined });
+      await prepareLaunchOffering.call(proc, { ...args, venue: undefined });
     } catch (error) {
       err = error;
     }
@@ -246,7 +246,7 @@ describe('launchSto procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
       raisingPortfolioId,
     });
@@ -254,7 +254,7 @@ describe('launchSto procedure', () => {
     let err: Error | undefined;
 
     try {
-      await prepareLaunchSto.call(proc, args);
+      await prepareLaunchOffering.call(proc, args);
     } catch (error) {
       err = error;
     }
@@ -269,14 +269,14 @@ describe('launchSto procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
       raisingPortfolioId,
     });
 
     const transaction = dsMockUtils.createTxStub('sto', 'createFundraiser');
 
-    let result = await prepareLaunchSto.call(proc, args);
+    let result = await prepareLaunchOffering.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -298,7 +298,7 @@ describe('launchSto procedure', () => {
       })
     );
 
-    expect(result).toBe(sto);
+    expect(result).toBe(offering);
 
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -314,7 +314,7 @@ describe('launchSto procedure', () => {
       },
     });
 
-    result = await prepareLaunchSto.call(proc, {
+    result = await prepareLaunchOffering.call(proc, {
       ...args,
       venue: undefined,
       start: undefined,
@@ -341,7 +341,7 @@ describe('launchSto procedure', () => {
       })
     );
 
-    expect(result).toEqual(sto);
+    expect(result).toEqual(offering);
   });
 
   describe('stoResolver', () => {
@@ -349,7 +349,7 @@ describe('launchSto procedure', () => {
     const stoId = new BigNumber(15);
 
     beforeAll(() => {
-      entityMockUtils.initMocks({ stoOptions: { ticker, id: stoId } });
+      entityMockUtils.initMocks({ offeringOptions: { ticker, id: stoId } });
     });
 
     beforeEach(() => {
@@ -362,17 +362,17 @@ describe('launchSto procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new Sto', () => {
-      const result = createStoResolver(ticker, mockContext)({} as ISubmittableResult);
+    test('should return the new Offering', () => {
+      const result = createOfferingResolver(ticker, mockContext)({} as ISubmittableResult);
 
-      const newSto = entityMockUtils.getStoInstance();
-      expect(result).toEqual(newSto);
+      const newOffering = entityMockUtils.getOfferingInstance();
+      expect(result).toEqual(newOffering);
     });
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
         offeringPortfolioId,
         raisingPortfolioId,
       });
@@ -404,7 +404,7 @@ describe('launchSto procedure', () => {
 
   describe('prepareStorage', () => {
     test('should return the offering and raising portfolio ids', async () => {
-      const proc = procedureMockUtils.getInstance<Params, Sto, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       const result = await boundFunc(args);

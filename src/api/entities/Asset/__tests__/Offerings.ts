@@ -2,9 +2,14 @@ import BigNumber from 'bignumber.js';
 import { Fundraiser, FundraiserName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Asset, Context, Namespace, Sto, TransactionQueue } from '~/internal';
+import { Asset, Context, Namespace, Offering, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { StoBalanceStatus, StoDetails, StoSaleStatus, StoTimingStatus } from '~/types';
+import {
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -15,8 +20,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
   '~/base/Procedure',
@@ -67,7 +72,7 @@ describe('Offerings class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Sto>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
       const args = {
         offeringPortfolio: 'otherDid',
         raisingCurrency: 'USD',
@@ -91,19 +96,19 @@ describe('Offerings class', () => {
   describe('method: getOne', () => {
     test('should return the requested Offering', async () => {
       entityMockUtils.configureMocks({
-        stoOptions: {
+        offeringOptions: {
           ticker,
         },
       });
       const id = new BigNumber(1);
       const result = await offerings.getOne({ id });
 
-      expect(result).toEqual(entityMockUtils.getStoInstance());
+      expect(result).toEqual(entityMockUtils.getOfferingInstance());
     });
 
     test('should throw an error if the Offering does not exist', () => {
       entityMockUtils.configureMocks({
-        stoOptions: {
+        offeringOptions: {
           exists: false,
         },
       });
@@ -118,18 +123,21 @@ describe('Offerings class', () => {
     let rawName: FundraiserName;
 
     let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-    let fundraiserToStoDetailsStub: sinon.SinonStub<
+    let fundraiserToOfferingDetailsStub: sinon.SinonStub<
       [Fundraiser, FundraiserName, Context],
-      StoDetails
+      OfferingDetails
     >;
 
-    let details: StoDetails[];
+    let details: OfferingDetails[];
     let fundraisers: Fundraiser[];
 
     beforeAll(() => {
       rawTicker = dsMockUtils.createMockTicker(ticker);
       stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-      fundraiserToStoDetailsStub = sinon.stub(utilsConversionModule, 'fundraiserToStoDetails');
+      fundraiserToOfferingDetailsStub = sinon.stub(
+        utilsConversionModule,
+        'fundraiserToOfferingDetails'
+      );
 
       const creator = entityMockUtils.getIdentityInstance();
       const name = 'someSto';
@@ -162,9 +170,9 @@ describe('Offerings class', () => {
           minInvestment,
           venue,
           status: {
-            sale: StoSaleStatus.Closed,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Closed,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
           totalAmount: tiers[0].amount,
           totalRemaining: tiers[0].remaining,
@@ -181,9 +189,9 @@ describe('Offerings class', () => {
           minInvestment,
           venue,
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
           totalAmount: tiers[0].amount,
           totalRemaining: tiers[0].remaining,
@@ -247,8 +255,12 @@ describe('Offerings class', () => {
 
     beforeEach(() => {
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
-      fundraiserToStoDetailsStub.withArgs(fundraisers[0], rawName, context).returns(details[0]);
-      fundraiserToStoDetailsStub.withArgs(fundraisers[1], rawName, context).returns(details[1]);
+      fundraiserToOfferingDetailsStub
+        .withArgs(fundraisers[0], rawName, context)
+        .returns(details[0]);
+      fundraiserToOfferingDetailsStub
+        .withArgs(fundraisers[1], rawName, context)
+        .returns(details[1]);
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         entries: [
@@ -277,9 +289,9 @@ describe('Offerings class', () => {
     test('should return all Offerings associated to the Asset', async () => {
       const result = await offerings.get();
 
-      expect(result[0].sto.id).toEqual(new BigNumber(1));
+      expect(result[0].offering.id).toEqual(new BigNumber(1));
       expect(result[0].details).toEqual(details[0]);
-      expect(result[1].sto.id).toEqual(new BigNumber(2));
+      expect(result[1].offering.id).toEqual(new BigNumber(2));
       expect(result[1].details).toEqual(details[1]);
 
       expect(result.length).toBe(2);
@@ -288,13 +300,13 @@ describe('Offerings class', () => {
     test('should return Offerings associated to the Asset filtered by status', async () => {
       const result = await offerings.get({
         status: {
-          sale: StoSaleStatus.Live,
-          timing: StoTimingStatus.Started,
-          balance: StoBalanceStatus.Available,
+          sale: OfferingSaleStatus.Live,
+          timing: OfferingTimingStatus.Started,
+          balance: OfferingBalanceStatus.Available,
         },
       });
 
-      expect(result[0].sto.id).toEqual(new BigNumber(2));
+      expect(result[0].offering.id).toEqual(new BigNumber(2));
       expect(result[0].details).toEqual(details[1]);
 
       expect(result.length).toBe(1);

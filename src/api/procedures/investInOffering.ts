@@ -1,12 +1,12 @@
 import BigNumber from 'bignumber.js';
 
-import { PolymeshError, Procedure, Sto } from '~/internal';
+import { Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
   PortfolioLike,
   RoleType,
-  StoSaleStatus,
-  StoTimingStatus,
   Tier,
   TxTags,
 } from '~/types';
@@ -20,7 +20,7 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 
-export interface InvestInStoParams {
+export interface InvestInOfferingParams {
   /**
    * portfolio in which the purchased Assets will be stored
    */
@@ -42,7 +42,7 @@ export interface InvestInStoParams {
 /**
  * @hidden
  */
-export type Params = InvestInStoParams & {
+export type Params = InvestInOfferingParams & {
   id: BigNumber;
   ticker: string;
 };
@@ -134,7 +134,7 @@ export async function prepareInvestInSto(
   } = this;
   const { ticker, id, purchaseAmount, maxPrice } = args;
 
-  const sto = new Sto({ ticker, id }, context);
+  const offering = new Offering({ ticker, id }, context);
 
   const portfolio = portfolioIdToPortfolio(fundingPortfolioId, context);
 
@@ -143,16 +143,16 @@ export async function prepareInvestInSto(
     minInvestment,
     tiers,
     raisingCurrency,
-  } = await sto.details();
+  } = await offering.details();
 
   const [{ free: freeAssetBalance }] = await portfolio.getAssetBalances({
     assets: [raisingCurrency],
   });
 
-  if (sale !== StoSaleStatus.Live || timing !== StoTimingStatus.Started) {
+  if (sale !== OfferingSaleStatus.Live || timing !== OfferingTimingStatus.Started) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The STO is not accepting investments at the moment',
+      message: 'The Offering is not accepting investments at the moment',
     });
   }
 
@@ -177,7 +177,7 @@ export async function prepareInvestInSto(
   if (remainingTotal.lt(purchaseAmount)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: `The STO does not have enough remaining tokens${
+      message: `The Offering does not have enough remaining tokens${
         maxPrice ? ' below the stipulated max price' : ''
       }`,
     });
@@ -238,5 +238,5 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const investInSto = (): Procedure<Params, void, Storage> =>
+export const investInOffering = (): Procedure<Params, void, Storage> =>
   new Procedure(prepareInvestInSto, getAuthorization, prepareStorage);

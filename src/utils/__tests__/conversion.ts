@@ -90,6 +90,10 @@ import {
   InputCondition,
   InstructionType,
   KnownAssetType,
+  OfferingBalanceStatus,
+  OfferingSaleStatus,
+  OfferingTier,
+  OfferingTimingStatus,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -101,10 +105,6 @@ import {
   Signer,
   SignerType,
   SignerValue,
-  StoBalanceStatus,
-  StoSaleStatus,
-  StoTier,
-  StoTimingStatus,
   TargetTreatment,
   TransferError,
   TransferRestrictionType,
@@ -157,7 +157,7 @@ import {
   extrinsicIdentifierToTxTag,
   fundingRoundNameToString,
   fundraiserTierToTier,
-  fundraiserToStoDetails,
+  fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identityIdToString,
@@ -5367,7 +5367,7 @@ describe('stoTierToPriceTier', () => {
     entityMockUtils.cleanup();
   });
 
-  test('stoTierToPriceTier should convert an Sto Tier into a polkadot PriceTier object', () => {
+  test('offeringTierToPriceTier should convert an Offering Tier into a polkadot PriceTier object', () => {
     const context = dsMockUtils.getContextInstance();
     const total = new BigNumber(100);
     const price = new BigNumber(1000);
@@ -5375,7 +5375,7 @@ describe('stoTierToPriceTier', () => {
     const rawPrice = dsMockUtils.createMockBalance(price.toNumber());
     const fakeResult = 'PriceTier' as unknown as PriceTier;
 
-    const stoTier: StoTier = {
+    const stoTier: OfferingTier = {
       price,
       amount: total,
     };
@@ -5646,9 +5646,9 @@ describe('fundraiserToStoDetails', () => {
       start: startDate,
       end: endDate,
       status: {
-        timing: StoTimingStatus.Started,
-        balance: StoBalanceStatus.Available,
-        sale: StoSaleStatus.Live,
+        timing: OfferingTimingStatus.Started,
+        balance: OfferingBalanceStatus.Available,
+        sale: OfferingSaleStatus.Live,
       },
       minInvestment: minInvestmentValue.shiftedBy(-6),
       totalAmount: amount.multipliedBy(2).shiftedBy(-6),
@@ -5699,7 +5699,7 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    let result = fundraiserToStoDetails(fundraiser, rawName, context);
+    let result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -5719,15 +5719,15 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       status: {
         ...fakeResult.status,
-        timing: StoTimingStatus.NotStarted,
-        sale: StoSaleStatus.Closed,
+        timing: OfferingTimingStatus.NotStarted,
+        sale: OfferingSaleStatus.Closed,
       },
       start: futureStart,
       end: null,
@@ -5747,15 +5747,15 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       status: {
         ...fakeResult.status,
-        timing: StoTimingStatus.Started,
-        sale: StoSaleStatus.ClosedEarly,
+        timing: OfferingTimingStatus.Started,
+        sale: OfferingSaleStatus.ClosedEarly,
       },
       end: null,
     });
@@ -5780,16 +5780,16 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       tiers: [{ ...tiers[0], remaining: new BigNumber(0) }],
       status: {
-        balance: StoBalanceStatus.SoldOut,
-        timing: StoTimingStatus.Started,
-        sale: StoSaleStatus.Frozen,
+        balance: OfferingBalanceStatus.SoldOut,
+        timing: OfferingTimingStatus.Started,
+        sale: OfferingSaleStatus.Frozen,
       },
       end: null,
       totalRemaining: new BigNumber(0),
@@ -5819,16 +5819,16 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       tiers: [{ ...tiers[0], remaining: new BigNumber(1).shiftedBy(-6) }],
       status: {
-        balance: StoBalanceStatus.Residual,
-        timing: StoTimingStatus.Expired,
-        sale: StoSaleStatus.Frozen,
+        balance: OfferingBalanceStatus.Residual,
+        timing: OfferingTimingStatus.Expired,
+        sale: OfferingSaleStatus.Frozen,
       },
       start: pastStart,
       end: pastEnd,

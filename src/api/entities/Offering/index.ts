@@ -4,7 +4,7 @@ import { Fundraiser, FundraiserName } from 'polymesh-types/types';
 
 import {
   Asset,
-  closeSto,
+  closeOffering,
   Context,
   Entity,
   Identity,
@@ -12,7 +12,7 @@ import {
   InvestInStoParams,
   modifyStoTimes,
   ModifyStoTimesParams,
-  toggleFreezeSto,
+  toggleFreezeOffering,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
@@ -24,10 +24,10 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured } from '~/types/utils';
-import { fundraiserToStoDetails, numberToU64, stringToTicker } from '~/utils/conversion';
+import { fundraiserToOfferingDetails, numberToU64, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
-import { Investment, StoDetails } from './types';
+import { Investment, OfferingDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -42,7 +42,7 @@ interface HumanReadable {
 /**
  * Represents an Asset Offering in the Polymesh blockchain
  */
-export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
+export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
@@ -76,20 +76,20 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
 
     this.freeze = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: true }],
+        getProcedureAndArgs: () => [toggleFreezeOffering, { ticker, id, freeze: true }],
         voidArgs: true,
       },
       context
     );
     this.unfreeze = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [toggleFreezeSto, { ticker, id, freeze: false }],
+        getProcedureAndArgs: () => [toggleFreezeOffering, { ticker, id, freeze: false }],
         voidArgs: true,
       },
       context
     );
     this.close = createProcedureMethod(
-      { getProcedureAndArgs: () => [closeSto, { ticker, id }], voidArgs: true },
+      { getProcedureAndArgs: () => [closeOffering, { ticker, id }], voidArgs: true },
       context
     );
     this.modifyTimes = createProcedureMethod(
@@ -103,15 +103,17 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Retrieve the STO's details
+   * Retrieve the Offering's details
    *
    * @note can be subscribed to
    */
-  public details(): Promise<StoDetails>;
-  public details(callback: SubCallback<StoDetails>): Promise<UnsubCallback>;
+  public details(): Promise<OfferingDetails>;
+  public details(callback: SubCallback<OfferingDetails>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async details(callback?: SubCallback<StoDetails>): Promise<StoDetails | UnsubCallback> {
+  public async details(
+    callback?: SubCallback<OfferingDetails>
+  ): Promise<OfferingDetails | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -126,7 +128,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
     const assembleResult = (
       rawFundraiser: Option<Fundraiser>,
       rawName: FundraiserName
-    ): StoDetails => fundraiserToStoDetails(rawFundraiser.unwrap(), rawName, context);
+    ): OfferingDetails => fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName, context);
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = numberToU64(id, context);
@@ -146,32 +148,32 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Close the STO
+   * Close the Offering
    */
   public close: NoArgsProcedureMethod<void>;
 
   /**
-   * Freeze the STO
+   * Freeze the Offering
    */
-  public freeze: NoArgsProcedureMethod<Sto>;
+  public freeze: NoArgsProcedureMethod<Offering>;
 
   /**
-   * Unfreeze the STO
+   * Unfreeze the Offering
    */
-  public unfreeze: NoArgsProcedureMethod<Sto>;
+  public unfreeze: NoArgsProcedureMethod<Offering>;
 
   /**
-   * Modify the start/end time of the STO
+   * Modify the start/end time of the Offering
    *
    * @throws if:
-   *   - Trying to modify the start time on an STO that already started
-   *   - Trying to modify anything on an STO that already ended
+   *   - Trying to modify the start time on an Offering that already started
+   *   - Trying to modify anything on an Offering that already ended
    *   - Trying to change start or end time to a past date
    */
   public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
 
   /**
-   * Invest in the STO
+   * Invest in the Offering
    *
    * @note required roles:
    *   - Purchase Portfolio Custodian
@@ -180,7 +182,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   public invest: ProcedureMethod<InvestInStoParams, void>;
 
   /**
-   * Retrieve all investments made on this STO
+   * Retrieve all investments made on this Offering
    *
    * @param opts.size - page size
    * @param opts.start - page offset
@@ -241,7 +243,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Determine whether this STO exists on chain
+   * Determine whether this Offering exists on chain
    */
   public async exists(): Promise<boolean> {
     const {
@@ -259,7 +261,7 @@ export class Sto extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Return the Sto's ID and Asset ticker
+   * Return the Offering's ID and Asset ticker
    */
   public toJson(): HumanReadable {
     const { asset, id } = this;

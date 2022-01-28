@@ -111,7 +111,7 @@ export {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
 } from '~/api/procedures/addTransferRestriction';
-export { launchSto, LaunchStoParams } from '~/api/procedures/launchSto';
+export { launchOffering, LaunchOfferingParams } from '~/api/procedures/launchOffering';
 export {
   setTransferRestrictions,
   SetTransferRestrictionsParams,
@@ -119,10 +119,19 @@ export {
   SetPercentageTransferRestrictionsParams,
   Storage as SetTransferRestrictionsStorage,
 } from '~/api/procedures/setTransferRestrictions';
-export { toggleFreezeSto, ToggleFreezeStoParams } from '~/api/procedures/toggleFreezeSto';
-export { closeSto } from '~/api/procedures/closeSto';
-export { modifyStoTimes, ModifyStoTimesParams } from '~/api/procedures/modifyStoTimes';
-export { investInSto, InvestInStoParams } from '~/api/procedures/investInSto';
+export {
+  toggleFreezeOffering,
+  ToggleFreezeOfferingParams,
+} from '~/api/procedures/toggleFreezeOffering';
+export { closeOffering } from '~/api/procedures/closeOffering';
+export {
+  modifyOfferingTimes as modifyStoTimes,
+  ModifyOfferingTimesParams as ModifyStoTimesParams,
+} from '~/api/procedures/modifyOfferingTimes';
+export {
+  investInOffering as investInSto,
+  InvestInOfferingParams as InvestInStoParams,
+} from '~/api/procedures/investInOffering';
 export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';
@@ -132,7 +141,7 @@ export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
-export { Sto } from '~/api/entities/Sto';
+export { Offering } from '~/api/entities/Offering';
 export { Venue, addInstructionTransformer } from '~/api/entities/Venue';
 export { Instruction } from '~/api/entities/Instruction';
 export { Portfolio } from '~/api/entities/Portfolio';

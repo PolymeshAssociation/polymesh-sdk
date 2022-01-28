@@ -7,13 +7,13 @@ import {
   Asset,
   Context,
   Identity,
+  Offering,
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  Sto,
   Venue,
 } from '~/internal';
-import { ErrorCode, PortfolioLike, RoleType, StoTier, TxTags, VenueType } from '~/types';
+import { ErrorCode, OfferingTier, PortfolioLike, RoleType, TxTags, VenueType } from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
   dateToMoment,
@@ -32,7 +32,7 @@ import { filterEventRecords } from '~/utils/internal';
 /**
  * @hidden
  */
-export interface LaunchStoParams {
+export interface LaunchOfferingParams {
   /**
    * portfolio in which the Assets to be sold are stored
    */
@@ -65,7 +65,7 @@ export interface LaunchStoParams {
    * array of sale tiers. Each tier consists of an amount of Assets to be sold at a certain price.
    *   Assets in a tier can only be bought when all Assets in previous tiers have been bought
    */
-  tiers: StoTier[];
+  tiers: OfferingTier[];
   /**
    * minimum amount that can be spent on this offering
    */
@@ -75,7 +75,7 @@ export interface LaunchStoParams {
 /**
  * @hidden
  */
-export type Params = LaunchStoParams & {
+export type Params = LaunchOfferingParams & {
   ticker: string;
 };
 
@@ -90,22 +90,22 @@ export interface Storage {
 /**
  * @hidden
  */
-export const createStoResolver =
+export const createOfferingResolver =
   (ticker: string, context: Context) =>
-  (receipt: ISubmittableResult): Sto => {
+  (receipt: ISubmittableResult): Offering => {
     const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
     const newFundraiserId = u64ToBigNumber(data[1]);
 
-    return new Sto({ id: newFundraiserId, ticker }, context);
+    return new Offering({ id: newFundraiserId, ticker }, context);
   };
 
 /**
  * @hidden
  */
-export async function prepareLaunchSto(
-  this: Procedure<Params, Sto, Storage>,
+export async function prepareLaunchOffering(
+  this: Procedure<Params, Offering, Storage>,
   args: Params
-): Promise<PostTransactionValue<Sto>> {
+): Promise<PostTransactionValue<Offering>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -172,7 +172,7 @@ export async function prepareLaunchSto(
 
   const [sto] = this.addTransaction({
     transaction: tx.sto.createFundraiser,
-    resolvers: [createStoResolver(ticker, context)],
+    resolvers: [createOfferingResolver(ticker, context)],
     args: [
       portfolioIdToMeshPortfolioId(offeringPortfolioId, context),
       stringToTicker(ticker, context),
@@ -194,7 +194,7 @@ export async function prepareLaunchSto(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, Sto, Storage>,
+  this: Procedure<Params, Offering, Storage>,
   { ticker }: Params
 ): ProcedureAuthorization {
   const {
@@ -222,7 +222,7 @@ export function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<Params, Sto, Storage>,
+  this: Procedure<Params, Offering, Storage>,
   { offeringPortfolio, raisingPortfolio }: Params
 ): Promise<Storage> {
   return {
@@ -234,5 +234,5 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const launchSto = (): Procedure<Params, Sto, Storage> =>
-  new Procedure(prepareLaunchSto, getAuthorization, prepareStorage);
+export const launchOffering = (): Procedure<Params, Offering, Storage> =>
+  new Procedure(prepareLaunchOffering, getAuthorization, prepareStorage);

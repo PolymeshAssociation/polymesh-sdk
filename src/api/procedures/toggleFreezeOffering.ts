@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, PolymeshError, Procedure, Sto } from '~/internal';
-import { ErrorCode, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
+import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker } from '~/utils/conversion';
 
-export interface ToggleFreezeStoParams {
+export interface ToggleFreezeOfferingParams {
   id: BigNumber;
   freeze: boolean;
   ticker: string;
@@ -14,10 +14,10 @@ export interface ToggleFreezeStoParams {
 /**
  * @hidden
  */
-export async function prepareToggleFreezeSto(
-  this: Procedure<ToggleFreezeStoParams, Sto>,
-  args: ToggleFreezeStoParams
-): Promise<Sto> {
+export async function prepareToggleFreezeOffering(
+  this: Procedure<ToggleFreezeOfferingParams, Offering>,
+  args: ToggleFreezeOfferingParams
+): Promise<Offering> {
   const {
     context: {
       polymeshApi: {
@@ -31,24 +31,24 @@ export async function prepareToggleFreezeSto(
   const rawTicker = stringToTicker(ticker, context);
   const rawId = numberToU64(id, context);
 
-  const sto = new Sto({ ticker, id }, context);
+  const offering = new Offering({ ticker, id }, context);
 
   const {
     status: { timing, sale },
-  } = await sto.details();
+  } = await offering.details();
 
-  if (timing === StoTimingStatus.Expired) {
+  if (timing === OfferingTimingStatus.Expired) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The STO has already ended',
+      message: 'The Offering has already ended',
     });
   }
 
   if (freeze) {
-    if (sale === StoSaleStatus.Frozen) {
+    if (sale === OfferingSaleStatus.Frozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The STO is already frozen',
+        message: 'The Offering is already frozen',
       });
     }
 
@@ -57,17 +57,17 @@ export async function prepareToggleFreezeSto(
       args: [rawTicker, rawId],
     });
   } else {
-    if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
+    if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'The STO is already closed',
+        message: 'The Offering is already closed',
       });
     }
 
-    if (sale !== StoSaleStatus.Frozen) {
+    if (sale !== OfferingSaleStatus.Frozen) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'The STO is already unfrozen',
+        message: 'The Offering is already unfrozen',
       });
     }
 
@@ -77,15 +77,15 @@ export async function prepareToggleFreezeSto(
     });
   }
 
-  return sto;
+  return offering;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<ToggleFreezeStoParams, Sto>,
-  { ticker, freeze }: ToggleFreezeStoParams
+  this: Procedure<ToggleFreezeOfferingParams, Offering>,
+  { ticker, freeze }: ToggleFreezeOfferingParams
 ): ProcedureAuthorization {
   return {
     permissions: {
@@ -99,5 +99,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const toggleFreezeSto = (): Procedure<ToggleFreezeStoParams, Sto> =>
-  new Procedure(prepareToggleFreezeSto, getAuthorization);
+export const toggleFreezeOffering = (): Procedure<ToggleFreezeOfferingParams, Offering> =>
+  new Procedure(prepareToggleFreezeOffering, getAuthorization);

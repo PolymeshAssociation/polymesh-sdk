@@ -1,24 +1,24 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { getAuthorization, Params, prepareCloseSto } from '~/api/procedures/closeSto';
+import { getAuthorization, Params, prepareCloseOffering } from '~/api/procedures/closeOffering';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { StoBalanceStatus, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
+import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
-describe('closeSto procedure', () => {
+describe('closeOffering procedure', () => {
   const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
 
@@ -31,12 +31,12 @@ describe('closeSto procedure', () => {
 
   beforeAll(() => {
     entityMockUtils.initMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Live,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Live,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
@@ -69,7 +69,7 @@ describe('closeSto procedure', () => {
   test('should add a stop sto transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareCloseSto.call(proc, { ticker, id });
+    await prepareCloseOffering.call(proc, { ticker, id });
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: stopStoTransaction,
@@ -77,14 +77,14 @@ describe('closeSto procedure', () => {
     });
   });
 
-  test('should throw an error if the STO is already closed', async () => {
+  test('should throw an error if the Offering is already closed', async () => {
     entityMockUtils.configureMocks({
-      stoOptions: {
+      offeringOptions: {
         details: {
           status: {
-            sale: StoSaleStatus.Closed,
-            timing: StoTimingStatus.Started,
-            balance: StoBalanceStatus.Available,
+            sale: OfferingSaleStatus.Closed,
+            timing: OfferingTimingStatus.Started,
+            balance: OfferingBalanceStatus.Available,
           },
         },
       },
@@ -92,8 +92,8 @@ describe('closeSto procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(prepareCloseSto.call(proc, { ticker, id })).rejects.toThrow(
-      'The STO is already closed'
+    return expect(prepareCloseOffering.call(proc, { ticker, id })).rejects.toThrow(
+      'The Offering is already closed'
     );
   });
 

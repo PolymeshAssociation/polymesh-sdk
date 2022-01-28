@@ -1,19 +1,19 @@
 import BigNumber from 'bignumber.js';
 import { Moment } from 'polymesh-types/types';
 
-import { Asset, PolymeshError, Procedure, Sto } from '~/internal';
-import { ErrorCode, StoSaleStatus, StoTimingStatus, TxTags } from '~/types';
+import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { dateToMoment, numberToU64, stringToTicker } from '~/utils/conversion';
 
-export type ModifyStoTimesParams =
+export type ModifyOfferingTimesParams =
   | {
       /**
        * new start time (optional, will be left the same if not passed)
        */
       start?: Date;
       /**
-       * new end time (optional, will be left th same if not passed). A null value means the STO doesn't end
+       * new end time (optional, will be left th same if not passed). A null value means the Offering doesn't end
        */
       end: Date | null;
     }
@@ -26,7 +26,7 @@ export type ModifyStoTimesParams =
 /**
  * @hidden
  */
-export type Params = ModifyStoTimesParams & {
+export type Params = ModifyOfferingTimesParams & {
   id: BigNumber;
   ticker: string;
 };
@@ -34,7 +34,7 @@ export type Params = ModifyStoTimesParams & {
 /**
  * @hidden
  */
-export async function prepareModifyStoTimes(
+export async function prepareModifyOfferingTimes(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
@@ -48,18 +48,18 @@ export async function prepareModifyStoTimes(
   } = this;
   const { ticker, id, start: newStart, end: newEnd } = args;
 
-  const sto = new Sto({ ticker, id }, context);
+  const offering = new Offering({ ticker, id }, context);
 
   const {
     status: { sale, timing },
     end,
     start,
-  } = await sto.details();
+  } = await offering.details();
 
-  if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
+  if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The STO is already closed',
+      message: 'The Offering is already closed',
     });
   }
 
@@ -75,17 +75,17 @@ export async function prepareModifyStoTimes(
 
   const now = new Date();
 
-  if (timing === StoTimingStatus.Expired) {
+  if (timing === OfferingTimingStatus.Expired) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The STO has already ended',
+      message: 'The Offering has already ended',
     });
   }
 
-  if (timing !== StoTimingStatus.NotStarted && newStart) {
+  if (timing !== OfferingTimingStatus.NotStarted && newStart) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Cannot modify the start time of an STO that already started',
+      message: 'Cannot modify the start time of an Offering that already started',
     });
   }
 
@@ -137,5 +137,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const modifyStoTimes = (): Procedure<Params, void> =>
-  new Procedure(prepareModifyStoTimes, getAuthorization);
+export const modifyOfferingTimes = (): Procedure<Params, void> =>
+  new Procedure(prepareModifyOfferingTimes, getAuthorization);
