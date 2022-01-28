@@ -168,8 +168,8 @@ describe('Checkpoint class', () => {
         multi: rawBalanceMulti,
       });
 
-      rawBalanceMulti.forEach((rawBlance, index) => {
-        balanceToBigNumberStub.withArgs(rawBlance).returns(balanceMulti[index]);
+      rawBalanceMulti.forEach((rawBalance, index) => {
+        balanceToBigNumberStub.withArgs(rawBalance).returns(balanceMulti[index]);
       });
 
       const { data } = await checkpoint.allBalances();

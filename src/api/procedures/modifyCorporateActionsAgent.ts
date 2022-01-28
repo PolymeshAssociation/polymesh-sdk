@@ -87,13 +87,10 @@ export async function prepareModifyCorporateActionsAgent(
     rawExpiry = dateToMoment(requestExpiry, context);
   }
 
-  this.addTransaction(
-    tx.identity.addAuthorization,
-    {},
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+  this.addTransaction({
+    transaction: tx.identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 }
 
 /**

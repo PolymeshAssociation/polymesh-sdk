@@ -332,36 +332,36 @@ describe('investInSto procedure', () => {
 
     await prepareInvestInSto.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawPurchasePortfolio,
-      rawFundingPortfolio,
-      rawTicker,
-      rawId,
-      rawPurchaseAmount,
-      null,
-      null
-    );
+      args: [
+        rawPurchasePortfolio,
+        rawFundingPortfolio,
+        rawTicker,
+        rawId,
+        rawPurchaseAmount,
+        null,
+        null,
+      ],
+    });
 
     await prepareInvestInSto.call(proc, {
       ...args,
       maxPrice,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawPurchasePortfolio,
-      rawFundingPortfolio,
-      rawTicker,
-      rawId,
-      rawPurchaseAmount,
-      rawMaxPrice,
-      null
-    );
+      args: [
+        rawPurchasePortfolio,
+        rawFundingPortfolio,
+        rawTicker,
+        rawId,
+        rawPurchaseAmount,
+        rawMaxPrice,
+        null,
+      ],
+    });
   });
 
   describe('getAuthorization', () => {

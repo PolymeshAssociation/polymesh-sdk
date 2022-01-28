@@ -179,18 +179,18 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Set,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub.firstCall,
-      removeDefaultTrustedClaimIssuerTransaction,
-      {},
-      currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
-    );
-    sinon.assert.calledWith(
-      addBatchTransactionStub.secondCall,
-      addDefaultTrustedClaimIssuerTransaction,
-      {},
-      rawClaimIssuers.map(issuer => [rawTicker, issuer])
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        ...currentClaimIssuers.map(({ issuer }) => ({
+          transaction: removeDefaultTrustedClaimIssuerTransaction,
+          args: [rawTicker, issuer],
+        })),
+        ...rawClaimIssuers.map(issuer => ({
+          transaction: addDefaultTrustedClaimIssuerTransaction,
+          args: [rawTicker, issuer],
+        })),
+      ],
+    });
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
@@ -206,12 +206,12 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Set,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub.firstCall,
-      addDefaultTrustedClaimIssuerTransaction,
-      {},
-      rawClaimIssuers.map(issuer => [rawTicker, issuer])
-    );
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: rawClaimIssuers.map(issuer => ({
+        transaction: addDefaultTrustedClaimIssuerTransaction,
+        args: [rawTicker, issuer],
+      })),
+    });
     sinon.assert.calledOnce(addBatchTransactionStub);
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
@@ -227,12 +227,12 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Set,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub.firstCall,
-      removeDefaultTrustedClaimIssuerTransaction,
-      {},
-      currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
-    );
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: currentClaimIssuers.map(({ issuer }) => ({
+        transaction: removeDefaultTrustedClaimIssuerTransaction,
+        args: [rawTicker, issuer],
+      })),
+    });
     sinon.assert.calledOnce(addBatchTransactionStub);
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
@@ -271,12 +271,12 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Remove,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      removeDefaultTrustedClaimIssuerTransaction,
-      {},
-      currentClaimIssuers.map(({ issuer }) => [rawTicker, issuer])
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: currentClaimIssuers.map(({ issuer }) => ({
+        transaction: removeDefaultTrustedClaimIssuerTransaction,
+        args: [rawTicker, issuer],
+      })),
+    });
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
@@ -314,12 +314,12 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Add,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      addDefaultTrustedClaimIssuerTransaction,
-      {},
-      rawClaimIssuers.map(issuer => [rawTicker, issuer])
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: rawClaimIssuers.map(issuer => ({
+        transaction: addDefaultTrustedClaimIssuerTransaction,
+        args: [rawTicker, issuer],
+      })),
+    });
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 

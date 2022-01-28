@@ -8,6 +8,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface TransferAssetOwnershipParams {
   target: string | Identity;
@@ -35,7 +36,7 @@ export async function prepareTransferAssetOwnership(
     },
     context,
   } = this;
-  const { ticker, target, expiry } = args;
+  const { ticker, target, expiry = null } = args;
   const issuer = await context.getCurrentIdentity();
   const targetIdentity = await context.getIdentity(target);
 
@@ -49,19 +50,13 @@ export async function prepareTransferAssetOwnership(
     value: ticker,
   };
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
+  const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction(
-    tx.identity.addAuthorization,
-    {
-      resolvers: [
-        createAuthorizationResolver(authRequest, issuer, targetIdentity, expiry || null, context),
-      ],
-    },
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+  const [auth] = this.addTransaction({
+    transaction: tx.identity.addAuthorization,
+    resolvers: [createAuthorizationResolver(authRequest, issuer, targetIdentity, expiry, context)],
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 
   return auth;
 }

@@ -276,14 +276,10 @@ describe('setPermissionGroup procedure', () => {
       },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsChangeGroupTransaction,
-      {},
-      rawTicker,
-      rawIdentityId,
-      rawAgentGroup
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsChangeGroupTransaction,
+      args: [rawTicker, rawIdentityId, rawAgentGroup],
+    });
 
     await prepareSetPermissionGroup.call(proc, {
       identity: entityMockUtils.getIdentityInstance({
@@ -301,14 +297,10 @@ describe('setPermissionGroup procedure', () => {
       },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsChangeGroupTransaction,
-      {},
-      rawTicker,
-      rawIdentityId,
-      rawAgentGroup
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsChangeGroupTransaction,
+      args: [rawTicker, rawIdentityId, rawAgentGroup],
+    });
 
     await prepareSetPermissionGroup.call(proc, {
       identity: entityMockUtils.getIdentityInstance({
@@ -325,14 +317,10 @@ describe('setPermissionGroup procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsChangeGroupTransaction,
-      {},
-      rawTicker,
-      rawIdentityId,
-      rawAgentGroup
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsChangeGroupTransaction,
+      args: [rawTicker, rawIdentityId, rawAgentGroup],
+    });
 
     const fakeCustomPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
       ticker,
@@ -351,14 +339,10 @@ describe('setPermissionGroup procedure', () => {
       group: fakeCustomPermissionGroup,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsChangeGroupTransaction,
-      {},
-      rawTicker,
-      rawIdentityId,
-      rawAgentGroup
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsChangeGroupTransaction,
+      args: [rawTicker, rawIdentityId, rawAgentGroup],
+    });
 
     expect(result).toEqual(fakeCustomPermissionGroup);
   });

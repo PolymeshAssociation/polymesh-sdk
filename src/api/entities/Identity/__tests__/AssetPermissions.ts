@@ -22,7 +22,7 @@ jest.mock(
 
 describe('AssetPermissions class', () => {
   const did = 'someDid';
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   let asset: Mocked<Asset>;
 
   let context: Mocked<Context>;

@@ -26,7 +26,7 @@ describe('removeCorporateAction procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let corporateActionsQueryStub: sinon.SinonStub;
 
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
@@ -144,7 +144,7 @@ describe('removeCorporateAction procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
 
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
@@ -171,7 +171,7 @@ describe('removeCorporateAction procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
 
     corporateActionsQueryStub.returns(
       dsMockUtils.createMockOption(dsMockUtils.createMockCorporateAction())
@@ -182,7 +182,7 @@ describe('removeCorporateAction procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
   });
 
   describe('getAuthorization', () => {

@@ -182,7 +182,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
-   *   by the destinatary
+   *   by the recipient
    *
    * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
    *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can

@@ -24,6 +24,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface InviteAccountParams {
   targetAccount: string | Account;
@@ -45,7 +46,7 @@ export async function prepareInviteAccount(
     context,
   } = this;
 
-  const { targetAccount, permissions: permissionsLike, expiry } = args;
+  const { targetAccount, permissions: permissionsLike, expiry = null } = args;
 
   const identity = await context.getCurrentIdentity();
 
@@ -111,19 +112,13 @@ export async function prepareInviteAccount(
     value: authorizationValue,
   };
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
+  const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction(
-    tx.identity.addAuthorization,
-    {
-      resolvers: [
-        createAuthorizationResolver(authRequest, identity, account, expiry || null, context),
-      ],
-    },
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+  const [auth] = this.addTransaction({
+    transaction: tx.identity.addAuthorization,
+    resolvers: [createAuthorizationResolver(authRequest, identity, account, expiry, context)],
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 
   return auth;
 }

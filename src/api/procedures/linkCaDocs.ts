@@ -73,7 +73,10 @@ export async function prepareLinkCaDocs(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
 
-  this.addTransaction(corporateAction.linkCaDoc, {}, rawCaId, docIdsToLink);
+  this.addTransaction({
+    transaction: corporateAction.linkCaDoc,
+    args: [rawCaId, docIdsToLink],
+  });
 }
 
 /**

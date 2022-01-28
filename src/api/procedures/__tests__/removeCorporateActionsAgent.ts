@@ -67,7 +67,7 @@ describe('removeCorporateActionsAgent procedure', () => {
 
     await prepareRemoveCorporateActionsAgent.call(proc, { ticker });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
   test('should throw an error if Corporate Actions Agent list has more than one identity', () => {

@@ -146,7 +146,10 @@ describe('linkCaDocs procedure', () => {
 
     await prepareLinkCaDocs.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, linkCaDocTransaction, {}, rawCaId, rawDocumentIds);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: linkCaDocTransaction,
+      args: [rawCaId, rawDocumentIds],
+    });
   });
 
   describe('getAuthorization', () => {

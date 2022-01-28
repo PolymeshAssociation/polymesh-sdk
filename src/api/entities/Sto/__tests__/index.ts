@@ -68,7 +68,7 @@ describe('Sto class', () => {
 
   describe('constructor', () => {
     test('should assign ticker and id to instance', () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
@@ -204,7 +204,7 @@ describe('Sto class', () => {
 
   describe('method: close', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
@@ -228,7 +228,7 @@ describe('Sto class', () => {
 
   describe('method: modifyTimes', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
@@ -261,7 +261,7 @@ describe('Sto class', () => {
 
   describe('method: getInvestments', () => {
     test('should return a list of investors', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
       const did = 'someDid';
@@ -336,7 +336,7 @@ describe('Sto class', () => {
 
   describe('method: freeze', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
@@ -355,7 +355,7 @@ describe('Sto class', () => {
 
   describe('method: unfreeze', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
 
@@ -374,7 +374,7 @@ describe('Sto class', () => {
 
   describe('method: invest', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const sto = new Sto({ id, ticker }, context);
       const did = 'someDid';

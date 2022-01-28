@@ -106,7 +106,7 @@ describe('togglePauseRequirements procedure', () => {
       pause: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
 
     expect(ticker).toBe(result.ticker);
   });
@@ -121,7 +121,7 @@ describe('togglePauseRequirements procedure', () => {
       pause: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
 
     expect(ticker).toBe(result.ticker);
   });

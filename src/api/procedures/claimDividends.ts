@@ -55,7 +55,10 @@ export async function prepareClaimDividends(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
-  this.addTransaction(tx.capitalDistribution.claim, {}, rawCaId);
+  this.addTransaction({
+    transaction: tx.capitalDistribution.claim,
+    args: [rawCaId],
+  });
 }
 
 /**

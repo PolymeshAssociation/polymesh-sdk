@@ -140,7 +140,7 @@ describe('issueAssets procedure', () => {
     });
 
     const result = await prepareIssueAsset.call(proc, args);
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
     expect(result.ticker).toBe(ticker);
   });
 

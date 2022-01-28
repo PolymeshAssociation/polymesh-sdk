@@ -32,7 +32,7 @@ export interface ClaimClassicTickerParams {
  *   `0x1230000000000000000000000000000000000000000000000000000000000000`, the message will be
  *   `classic_claim1230000000000000000000000000000000000000000000000000000000000000`
  */
-function generateClassicSigneableMessage(did: string): string {
+function generateClassicSignableMessage(did: string): string {
   const strippedDid = did.replace('0x', '');
 
   return stringToHex(`${CLASSIC_CLAIM_SIGNATURE_PREFIX}${strippedDid}`);
@@ -98,7 +98,7 @@ export async function prepareClaimClassicTicker(
 
   try {
     signerAddress = recoverPersonalSignature({
-      data: generateClassicSigneableMessage(did),
+      data: generateClassicSignableMessage(did),
       sig: ethereumSignature,
     }).toLowerCase();
   } catch (err) {
@@ -121,12 +121,10 @@ export async function prepareClaimClassicTicker(
     });
   }
 
-  this.addTransaction(
-    tx.asset.claimClassicTicker,
-    {},
-    rawTicker,
-    stringToEcdsaSignature(ethereumSignature, context)
-  );
+  this.addTransaction({
+    transaction: tx.asset.claimClassicTicker,
+    args: [rawTicker, stringToEcdsaSignature(ethereumSignature, context)],
+  });
 
   return new TickerReservation({ ticker }, context);
 }

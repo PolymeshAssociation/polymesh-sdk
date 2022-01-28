@@ -196,11 +196,11 @@ describe('inviteExternalAgent procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      null
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
     );
 
     await prepareInviteExternalAgent.call(proc, {
@@ -216,11 +216,11 @@ describe('inviteExternalAgent procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      null
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
     );
   });
 });

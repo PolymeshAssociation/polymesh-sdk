@@ -44,7 +44,7 @@ describe('removeExternalAgent procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    ticker = 'SOMETICKER';
+    ticker = 'SOME_TICKER';
     asset = entityMockUtils.getAssetInstance({ ticker });
     target = 'someDid';
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
@@ -178,7 +178,7 @@ describe('removeExternalAgent procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAgent);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAgent] });
 
     proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance({
@@ -206,6 +206,6 @@ describe('removeExternalAgent procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAgent);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAgent] });
   });
 });

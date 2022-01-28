@@ -118,14 +118,10 @@ describe('controllerTransfer procedure', () => {
       amount,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawTicker,
-      rawAmount,
-      rawPortfolioId
-    );
+      args: [rawTicker, rawAmount, rawPortfolioId],
+    });
   });
 
   describe('getAuthorization', () => {

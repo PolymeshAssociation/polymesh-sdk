@@ -13,7 +13,7 @@ import { DocumentNode } from 'graphql';
 
 import { Identity, PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CustomAssetTypeId } from '~/polkadot';
+import { CustomAssetTypeId, TxTag } from '~/polkadot';
 import {
   CalendarPeriod,
   KnownSecurityType,
@@ -44,23 +44,7 @@ export type Queries = QueryableStorage<'promise'>;
 export type Consts = QueryableConsts<'promise'>;
 
 /**
- * Low level transaction method in the polkadot API
- *
- * @param Args - arguments of the transaction
- */
-export type PolymeshTx<Args extends unknown[]> = AugmentedSubmittable<
-  (...args: Args) => SubmittableExtrinsic<'promise'>
->;
-
-/**
- * Transforms a tuple of types into an array of resolver functions. For each type in the tuple, the corresponding resolver function returns that type wrapped in a promise
- */
-export type ResolverFunctionArray<Values extends unknown[]> = {
-  [K in keyof Values]: (receipt: ISubmittableResult) => Promise<Values[K]> | Values[K];
-};
-
-/**
- * Transforms a tuple of types into an array of [[PostTransactionValue]].
+ * Transform a tuple of types into an array of [[PostTransactionValue]].
  * For each type in the tuple, the corresponding [[PostTransactionValue]] resolves to that type
  *
  * @param Values - types of the values to be wrapped
@@ -82,19 +66,99 @@ export type MapMaybePostTransactionValue<T extends unknown[]> = {
 };
 
 /**
+ * Low level transaction method in the polkadot API
+ *
+ * @param Args - arguments of the transaction
+ */
+export type PolymeshTx<Args extends unknown[] = unknown[]> = AugmentedSubmittable<
+  (...args: Args) => SubmittableExtrinsic<'promise'>
+>;
+
+interface BaseTx<Args extends unknown[] = unknown[]> {
+  /**
+   * underlying polkadot transaction object
+   */
+  transaction: PolymeshTx<Args>;
+  /**
+   * amount by which the protocol fees should be multiplied (only applicable to transactions where the input size impacts the total fees)
+   */
+  feeMultiplier?: number;
+}
+
+/**
+ * Object containing a low level transaction and its respective arguments
+ */
+export type TxWithArgs<Args extends unknown[] = unknown[]> = BaseTx<Args> &
+  (Args extends []
+    ? {
+        args?: undefined; // this ugly hack is so that tx args don't have to be passed for transactions that don't take args
+      }
+    : {
+        /**
+         * arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
+         */
+        args: MapMaybePostTransactionValue<Args>;
+      });
+
+/**
+ * Transaction data for display purposes
+ */
+export interface TxData<Args extends unknown[] = unknown[]> {
+  /**
+   * transaction string identifier
+   */
+  tag: TxTag;
+  /**
+   * arguments with which the transaction will be called
+   */
+  args: Args;
+}
+
+export type TxDataWithFees<Args extends unknown[] = unknown[]> = TxData<Args> &
+  Omit<TxWithArgs<Args>, 'args'>;
+
+/**
+ * Apply the [[PolymeshTx]] type to all args in an array
+ */
+export type MapPolymeshTx<ArgsArray extends unknown[][]> = {
+  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? PolymeshTx<ArgsArray[K]> : never;
+};
+
+/**
+ * Apply the [[TxWithArgs]] type to all args in an array
+ */
+export type MapTxWithArgs<ArgsArray extends unknown[][]> = {
+  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxWithArgs<ArgsArray[K]> : never;
+};
+
+/**
+ * Apply the [[TxData]] type to all args in an array
+ */
+export type MapTxData<ArgsArray extends unknown[][]> = {
+  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
+};
+
+/**
+ * Apply the [[TxDataWithFees]] type to all args in an array
+ */
+export type MapTxDataWithFees<ArgsArray extends unknown[][]> = {
+  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxDataWithFees<ArgsArray[K]> : never;
+};
+
+/**
+ * Transform a tuple of types into an array of resolver functions. For each type in the tuple, the corresponding resolver function returns that type wrapped in a promise
+ */
+export type ResolverFunctionArray<Values extends unknown[]> = {
+  [K in keyof Values]: (receipt: ISubmittableResult) => Promise<Values[K]> | Values[K];
+};
+
+/**
  * Base Transaction Schema
  *
  * @param Args - arguments of the transaction
  * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
  */
-export interface BaseTransactionSpec<
-  Args extends unknown[] = unknown[],
-  Values extends unknown[] = unknown[]
-> {
-  /**
-   * underlying polkadot transaction object
-   */
-  tx: PolymeshTx<Args>;
+export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
   /**
    * wrapped values that will be returned after this transaction is run
    */
@@ -110,7 +174,7 @@ export interface BaseTransactionSpec<
   /**
    * any protocol fees associated with running the transaction (not gas)
    */
-  fee: BigNumber | null;
+  fee?: BigNumber;
   /**
    * third party Identity that will pay for the transaction (for example when joining an identity/multisig as a secondary key).
    *   This is separate from a subsidy, and takes precedence over it. If the current Account is being subsidized and
@@ -126,13 +190,13 @@ export interface BaseTransactionSpec<
  * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
  */
 export interface BatchTransactionSpec<
-  Args extends unknown[] = unknown[],
+  ArgsArray extends unknown[][],
   Values extends unknown[] = unknown[]
-> extends BaseTransactionSpec<Args, Values> {
+> extends BaseTransactionSpec<Values> {
   /**
-   * arguments of each transaction in the batch (some of them can be [[PostTransactionValue]] from an earlier transaction)
+   * transactions in the batch with their respective arguments
    */
-  args: MapMaybePostTransactionValue<Args>[];
+  transactions: MapTxWithArgs<ArgsArray>;
 }
 
 /**
@@ -141,19 +205,54 @@ export interface BatchTransactionSpec<
  * @param Args - arguments of the transaction
  * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
  */
-export interface TransactionSpec<
-  Args extends unknown[] = unknown[],
+export type TransactionSpec<
+  Args extends unknown[],
   Values extends unknown[] = unknown[]
-> extends BaseTransactionSpec<Args, Values> {
+> = BaseTransactionSpec<Values> & TxWithArgs<Args>;
+
+/**
+ * Common args for `addTransaction` and `addBatchTransaction`
+ */
+export interface AddTransactionArgsBase<Values extends unknown[]> {
   /**
-   * arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
+   * value in POLYX of the transaction (should only be set manually in special cases,
+   *   otherwise it is fetched automatically from the chain). Fee multipliers have no effect on this value
    */
-  args: MapMaybePostTransactionValue<Args>;
+  fee?: BigNumber;
   /**
-   * number of elements in the batch (only applicable to batch transactions)
+   * asynchronous callbacks used to return runtime data after the transaction has finished successfully
    */
-  batchSize: number | null;
+  resolvers?: ResolverFunctionArray<Values>;
+  /**
+   * whether this transaction failing should make the entire queue fail or not. Defaults to true
+   */
+  isCritical?: boolean;
+  /**
+   * third party Identity that will pay for the transaction fees. No value means that the caller pays
+   */
+  paidForBy?: Identity;
 }
+
+/**
+ * Args for `addBatchTransaction`
+ */
+export interface AddBatchTransactionArgs<
+  Values extends unknown[],
+  ArgsArray extends (unknown[] | [])[]
+> extends AddTransactionArgsBase<Values> {
+  /**
+   * list of transactions to be added to the batch, with their respective arguments and fee multipliers
+   */
+  transactions: MapTxWithArgs<[...ArgsArray]>;
+}
+
+/**
+ * Args for `addTransaction`
+ */
+export type AddTransactionArgs<
+  TxArgs extends unknown[] | [],
+  Values extends unknown[]
+> = AddTransactionArgsBase<Values> & TxWithArgs<TxArgs>;
 
 export interface AuthTarget {
   target: SignerValue;
@@ -200,7 +299,7 @@ export interface ScheduleSpec {
 }
 
 export interface ScopeClaimProof {
-  proofScopeIdWellformed: string;
+  proofScopeIdWellFormed: string;
   proofScopeIdCddIdMatch: {
     challengeResponses: [string, string];
     subtractExpressionsRes: string;

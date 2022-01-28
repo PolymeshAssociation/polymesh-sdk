@@ -94,7 +94,10 @@ export async function prepareModifyPrimaryIssuanceAgent(
     rawExpiry = null;
   }
 
-  this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+  this.addTransaction({
+    transaction: identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 }
 
 /**

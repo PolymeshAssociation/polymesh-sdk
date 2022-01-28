@@ -133,7 +133,7 @@ describe('modifyAsset procedure', () => {
       makeDivisible: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, sinon.match({}), rawTicker);
+    sinon.assert.calledWith(addTransactionStub, sinon.match({ transaction, args: [rawTicker] }));
     expect(result.ticker).toBe(ticker);
   });
 
@@ -151,7 +151,7 @@ describe('modifyAsset procedure', () => {
       name: newName,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAssetName);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAssetName] });
     expect(result.ticker).toBe(ticker);
   });
 
@@ -169,7 +169,10 @@ describe('modifyAsset procedure', () => {
       fundingRound: newFundingRound,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawFundingRound);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawTicker, rawFundingRound],
+    });
     expect(result.ticker).toBe(ticker);
   });
 
@@ -188,7 +191,10 @@ describe('modifyAsset procedure', () => {
       identifiers,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, [rawIdentifier]);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawTicker, [rawIdentifier]],
+    });
     expect(result.ticker).toBe(ticker);
   });
 

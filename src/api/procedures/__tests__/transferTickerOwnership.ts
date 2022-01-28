@@ -123,29 +123,11 @@ describe('transferTickerOwnership procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
-  });
-
-  test('should add an add authorization transaction to the queue if the target is an Identity', async () => {
-    const identityArgs = Object.assign({}, args, {
-      target: entityMockUtils.getIdentityInstance({ did }),
-    });
-    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
-
-    await prepareTransferTickerOwnership.call(proc, identityArgs);
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      null
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
     );
   });
 
@@ -156,11 +138,11 @@ describe('transferTickerOwnership procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      rawMoment
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, rawMoment],
+      })
     );
   });
 

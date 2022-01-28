@@ -147,7 +147,10 @@ export async function prepareSetPermissionGroup(
   const rawTicker = stringToTicker(ticker, context);
   const rawIdentityId = stringToIdentityId(did, context);
 
-  this.addTransaction(externalAgents.changeGroup, {}, rawTicker, rawIdentityId, rawAgentGroup);
+  this.addTransaction({
+    transaction: externalAgents.changeGroup,
+    args: [rawTicker, rawIdentityId, rawAgentGroup],
+  });
 
   return returnValue;
 }

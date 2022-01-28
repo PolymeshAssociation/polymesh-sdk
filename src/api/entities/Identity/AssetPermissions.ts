@@ -316,6 +316,7 @@ export class AssetPermissions extends Namespace<Identity> {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
       eventByIndexedArgs({
+        // cSpell: disable-next-line
         moduleId: ModuleId.Externalagents,
         eventId: EventId.AgentAdded,
         eventArg1: padString(ticker, MAX_TICKER_LENGTH),

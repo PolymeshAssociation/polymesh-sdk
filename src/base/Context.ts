@@ -13,6 +13,7 @@ import { polymesh } from 'polymesh-types/definitions';
 import {
   CAId,
   Distribution,
+  ModuleName,
   ProtocolOp,
   Subsidy as MeshSubsidy,
   TxTag,
@@ -95,6 +96,8 @@ type AddPairParams = {
 };
 
 /**
+ * @hidden
+ *
  * Context in which the SDK is being used
  *
  * - Holds the current low level API
@@ -159,6 +162,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Create the Context instance
    */
   static async create(params: {
@@ -234,6 +239,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve a list of Accounts that can act as signers. The first Account in the array is the current Account (default signer)
    */
   public getAccounts(): Account[] {
@@ -257,6 +264,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Add a signing pair to the Keyring
    */
   public addPair(params: AddPairParams): KeyringPair {
@@ -299,6 +308,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Set a pair as the current Account keyring pair
    */
   public setPair(address: string): void {
@@ -320,6 +331,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve the Account POLYX balance
    *
    * @note can be subscribed to
@@ -379,7 +392,9 @@ export class Context {
   }
 
   /**
-   * Retrieve the Account level subsidizer relationship. If there is no such relationship, return null
+   * @hidden
+   *
+   * Retrieve the Account subsidizer relationship. If there is no such relationship, return null
    *
    * @note can be subscribed to
    */
@@ -435,7 +450,9 @@ export class Context {
   }
 
   /**
-   * Retrieve current Account
+   * @hidden
+   *
+   * Retrieve the current Account
    *
    * @throws if there is no current Account associated to the SDK instance
    */
@@ -446,7 +463,9 @@ export class Context {
   }
 
   /**
-   * Retrieve current Identity
+   * @hidden
+   *
+   * Retrieve the current Identity
    *
    * @throws if there is no Identity associated to the current Account (or there is no current Account associated to the SDK instance)
    */
@@ -466,7 +485,9 @@ export class Context {
   }
 
   /**
-   * Retrieve current Keyring Pair
+   * @hidden
+   *
+   * Retrieve the current Keyring Pair
    *
    * @throws if there is no Account associated to the SDK instance
    */
@@ -484,6 +505,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve the signer address (or keyring pair)
    */
   public getSigner(): AddressOrPair {
@@ -497,7 +520,9 @@ export class Context {
   }
 
   /**
-   * Check whether Identities exist
+   * @hidden
+   *
+   * Check whether a set of Identities exist
    */
   public async getInvalidDids(identities: (string | Identity)[]): Promise<string[]> {
     const {
@@ -524,6 +549,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Returns an Identity when given a did string
    *
    * @throws if the Identity does not exist
@@ -546,11 +573,13 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve the protocol fees associated with running a specific transaction
    *
    * @param tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
    */
-  public async getProtocolFees(tag: TxTag): Promise<BigNumber> {
+  public async getProtocolFees({ tag }: { tag: TxTag }): Promise<BigNumber> {
     const {
       polymeshApi: {
         query: { protocolFee },
@@ -573,17 +602,38 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
+   * Return whether the passed transaction can be subsidized
+   */
+  public supportsSubsidy({ tag }: { tag: TxTag }): boolean {
+    const moduleName = tag.split('.')[0] as ModuleName;
+
+    return [
+      ModuleName.Asset,
+      ModuleName.ComplianceManager,
+      ModuleName.CorporateAction,
+      ModuleName.ExternalAgents,
+      ModuleName.Portfolio,
+      ModuleName.Settlement,
+      ModuleName.Statistics,
+      ModuleName.Sto,
+      ModuleName.Relayer,
+    ].includes(moduleName);
+  }
+
+  /**
    * Retrieve the types of arguments that a certain transaction requires to be run
    *
    * @param args.tag - tag associated with the transaction that will be executed if the proposal passes
    */
-  public getTransactionArguments(args: { tag: TxTag }): TransactionArgument[] {
+  public getTransactionArguments({ tag }: { tag: TxTag }): TransactionArgument[] {
     const {
       polymeshApi: { tx },
     } = this;
     const { types } = polymesh;
 
-    const [section, method] = args.tag.split('.');
+    const [section, method] = tag.split('.');
 
     const getRootType = (
       type: string
@@ -872,14 +922,14 @@ export class Context {
       entries.forEach(
         ([
           key,
-          { claim_issuer: claimissuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
+          { claim_issuer: claimIssuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
         ]) => {
           const { target } = key.args[0];
           const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
           if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
             data.push({
               target: new Identity({ did: identityIdToString(target) }, this),
-              issuer: new Identity({ did: identityIdToString(claimissuer) }, this),
+              issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
               issuedAt: momentToDate(issuanceDate),
               expiry,
               claim: meshClaimToClaim(claim),
@@ -962,6 +1012,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve a list of claims. Can be filtered using parameters
    *
    * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
@@ -1020,6 +1072,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve the middleware client
    *
    * @throws if the middleware is not enabled
@@ -1038,6 +1092,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Make a query to the middleware server using the apollo client
    */
   public async queryMiddleware<Result extends Partial<Query>>(
@@ -1060,6 +1116,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Return whether the middleware was enabled at startup
    */
   public isMiddlewareEnabled(): boolean {
@@ -1067,6 +1125,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Return whether the middleware is enabled and online
    */
   public async isMiddlewareAvailable(): Promise<boolean> {
@@ -1080,6 +1140,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve the latest block number
    */
   public async getLatestBlock(): Promise<BigNumber> {
@@ -1089,6 +1151,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Retrieve the network version
    */
   public async getNetworkVersion(): Promise<string> {
@@ -1098,9 +1162,11 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Disconnect the Polkadot API, middleware, and render this instance unusable
    *
-   * @note after disconnecting, trying to access any property in this objecct will result
+   * @note after disconnecting, trying to access any property in this object will result
    *   in an error
    */
   public disconnect(): Promise<void> {
@@ -1118,6 +1184,8 @@ export class Context {
   }
 
   /**
+   * @hidden
+   *
    * Returns a (shallow) clone of this instance. Useful for providing a separate
    *   Context to Procedures with different signers
    */

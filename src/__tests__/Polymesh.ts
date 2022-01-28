@@ -164,8 +164,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should instantiate Context with a mnemonic and return a Polymesh instance', async () => {
-      const accountMnemonic =
-        'lorem ipsum dolor sit amet consectetur adipiscing elit nam hendrerit consectetur sagittis';
+      const accountMnemonic = 'lorem ipsum dolor sit';
       const createStub = dsMockUtils.getContextCreateStub();
 
       await Polymesh.connect({

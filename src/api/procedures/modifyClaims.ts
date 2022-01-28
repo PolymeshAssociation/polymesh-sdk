@@ -34,6 +34,7 @@ import {
   stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
+import { assembleBatchTransactions } from '~/utils/internal';
 
 interface AddClaimsParams {
   /**
@@ -272,11 +273,14 @@ export async function prepareModifyClaims(
       });
     }
 
-    this.addBatchTransaction(
-      identity.revokeClaim,
-      { groupByFn: groupByDid },
-      modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim))
+    const transactions = assembleBatchTransactions(
+      tuple({
+        transaction: identity.revokeClaim,
+        argsArray: modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim)),
+      })
     );
+
+    this.addBatchTransaction({ transactions });
 
     return;
   }
@@ -295,7 +299,14 @@ export async function prepareModifyClaims(
     }
   }
 
-  this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
+  const txs = assembleBatchTransactions(
+    tuple({
+      transaction: identity.addClaim,
+      argsArray: modifyClaimArgs,
+    })
+  );
+
+  this.addBatchTransaction({ transactions: txs });
 }
 
 /**

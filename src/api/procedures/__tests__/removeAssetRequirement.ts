@@ -125,13 +125,10 @@ describe('removeAssetRequirement procedure', () => {
 
     const result = await prepareRemoveAssetRequirement.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      removeComplianceRequirementTransaction,
-      {},
-      rawTicker,
-      rawId
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: removeComplianceRequirementTransaction,
+      args: [rawTicker, rawId],
+    });
 
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });

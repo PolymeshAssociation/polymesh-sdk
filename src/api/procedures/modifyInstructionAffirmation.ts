@@ -112,21 +112,17 @@ export async function prepareModifyInstructionAffirmation(
 
   // rejection works a bit different
   if (transaction) {
-    this.addTransaction(
+    this.addTransaction({
       transaction,
-      { batchSize: senderLegAmount },
-      rawInstructionId,
-      validPortfolioIds,
-      numberToU32(senderLegAmount, context)
-    );
+      feeMultiplier: senderLegAmount,
+      args: [rawInstructionId, validPortfolioIds, numberToU32(senderLegAmount, context)],
+    });
   } else {
-    this.addTransaction(
-      settlementTx.rejectInstruction,
-      { batchSize: totalLegAmount },
-      rawInstructionId,
-      validPortfolioIds[0],
-      numberToU32(totalLegAmount, context)
-    );
+    this.addTransaction({
+      transaction: settlementTx.rejectInstruction,
+      feeMultiplier: totalLegAmount,
+      args: [rawInstructionId, validPortfolioIds[0], numberToU32(totalLegAmount, context)],
+    });
   }
 
   return instruction;

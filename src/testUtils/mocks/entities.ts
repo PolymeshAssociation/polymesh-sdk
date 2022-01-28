@@ -399,7 +399,7 @@ let venueDetailsStub: SinonStub;
 let venueExistsStub: SinonStub;
 let instructionDetailsStub: SinonStub;
 let instructionGetLegsStub: SinonStub;
-let instructionIsPendigStub: SinonStub;
+let instructionIsPendingStub: SinonStub;
 let instructionExistsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
 let numberedPortfolioGetAssetBalancesStub: SinonStub;
@@ -1017,7 +1017,7 @@ function initVenue(opts?: VenueOptions): void {
  */
 function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
   const numberedPortfolio = {
-    uuid: 'numberedPorfolio',
+    uuid: 'numberedPortfolio',
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
     getAssetBalances: numberedPortfolioGetAssetBalancesStub.resolves(opts.assetBalances),
@@ -1474,7 +1474,7 @@ function configureInstruction(opts: InstructionOptions): void {
     id: opts.id,
     details: instructionDetailsStub.resolves(details),
     getLegs: instructionGetLegsStub.resolves(legs),
-    isPending: instructionIsPendigStub.resolves(opts.isPending),
+    isPending: instructionIsPendingStub.resolves(opts.isPending),
     exists: instructionExistsStub.resolves(opts.exists),
   } as unknown as MockInstruction;
 
@@ -1497,7 +1497,7 @@ function initInstruction(opts?: InstructionOptions): void {
   instructionConstructorStub = sinon.stub();
   instructionDetailsStub = sinon.stub();
   instructionGetLegsStub = sinon.stub();
-  instructionIsPendigStub = sinon.stub();
+  instructionIsPendingStub = sinon.stub();
   instructionExistsStub = sinon.stub();
 
   instructionOptions = { ...defaultInstructionOptions, ...opts };
@@ -1566,7 +1566,7 @@ function configureSto(opts: StoOptions): void {
     creator: mockInstanceContainer.identity,
     venue: mockInstanceContainer.venue,
     offeringPortfolio: mockInstanceContainer.defaultPortfolio,
-    raisingPorfolio: mockInstanceContainer.numberedPortfolio,
+    raisingPortfolio: mockInstanceContainer.numberedPortfolio,
     ...opts.details,
   };
   const sto = {
@@ -1833,9 +1833,9 @@ export function configureMocks(opts?: MockOptions): void {
 
   configureTickerReservation(tempTickerReservationOptions);
 
-  const tempAsssetOptions = merge({}, defaultAssetOptions, opts?.assetOptions);
+  const tempAssetOptions = merge({}, defaultAssetOptions, opts?.assetOptions);
 
-  configureAsset(tempAsssetOptions);
+  configureAsset(tempAssetOptions);
 
   const tempAuthorizationRequestOptions = {
     ...defaultAuthorizationRequestOptions,

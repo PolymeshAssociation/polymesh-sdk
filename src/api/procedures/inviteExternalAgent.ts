@@ -79,7 +79,7 @@ export async function prepareInviteExternalAgent(
     storage: { asset },
   } = this;
 
-  const { ticker, target, permissions, expiry } = args;
+  const { ticker, target, permissions, expiry = null } = args;
 
   const issuer = await context.getCurrentIdentity();
   const targetIdentity = await context.getIdentity(target);
@@ -131,23 +131,20 @@ export async function prepareInviteExternalAgent(
   }
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
-  const [auth] = this.addTransaction(
-    identity.addAuthorization,
-    {
-      resolvers: [
-        createAuthorizationResolver(
-          postTransactionAuthorization,
-          issuer,
-          targetIdentity,
-          expiry || null,
-          context
-        ),
-      ],
-    },
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+
+  const [auth] = this.addTransaction({
+    transaction: identity.addAuthorization,
+    resolvers: [
+      createAuthorizationResolver(
+        postTransactionAuthorization,
+        issuer,
+        targetIdentity,
+        expiry,
+        context
+      ),
+    ],
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 
   return auth;
 }

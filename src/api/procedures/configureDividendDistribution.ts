@@ -202,19 +202,19 @@ export async function prepareConfigureDividendDistribution(
   const rawPaymentAt = dateToMoment(paymentDate, context);
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
-  const [dividendDistribution] = this.addTransaction(
-    tx.capitalDistribution.distribute,
-    {
-      resolvers: [createDividendDistributionResolver(context)],
-    },
-    caId,
-    rawPortfolioNumber,
-    rawCurrency,
-    rawPerShare,
-    rawAmount,
-    rawPaymentAt,
-    rawExpiresAt
-  );
+  const [dividendDistribution] = this.addTransaction({
+    transaction: tx.capitalDistribution.distribute,
+    resolvers: [createDividendDistributionResolver(context)],
+    args: [
+      caId,
+      rawPortfolioNumber,
+      rawCurrency,
+      rawPerShare,
+      rawAmount,
+      rawPaymentAt,
+      rawExpiresAt,
+    ],
+  });
 
   return dividendDistribution;
 }

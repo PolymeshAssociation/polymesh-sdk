@@ -159,13 +159,10 @@ describe('modifyComplianceRequirement procedure', () => {
 
     await prepareModifyComplianceRequirement.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      modifyComplianceRequirementTransaction,
-      {},
-      rawTicker,
-      rawComplianceRequirement
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: modifyComplianceRequirementTransaction,
+      args: [rawTicker, rawComplianceRequirement],
+    });
   });
 
   describe('getAuthorization', () => {

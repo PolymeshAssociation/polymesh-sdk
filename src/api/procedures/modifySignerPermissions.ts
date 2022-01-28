@@ -61,7 +61,14 @@ export async function prepareModifySignerPermissions(
     return tuple(signerValueToSignatory(signer, context), rawPermissions);
   });
 
-  this.addBatchTransaction(tx.identity.setPermissionToSigner, {}, signersList);
+  const transaction = tx.identity.setPermissionToSigner;
+
+  this.addBatchTransaction({
+    transactions: signersList.map(params => ({
+      transaction,
+      args: params,
+    })),
+  });
 }
 
 /**

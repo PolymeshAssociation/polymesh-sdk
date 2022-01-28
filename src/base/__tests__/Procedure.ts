@@ -1,11 +1,10 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { range } from 'lodash';
 import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, PolymeshTransaction, PolymeshTransactionBatch, Procedure } from '~/internal';
+import { Context, PolymeshTransaction, Procedure } from '~/internal';
 import {
   dsMockUtils,
   entityMockUtils,
@@ -314,9 +313,9 @@ describe('Procedure class', () => {
         this: Procedure<typeof procArgs, string>,
         args: typeof procArgs
       ): Promise<string> {
-        this.addTransaction(tx1, {}, args.ticker);
+        this.addTransaction({ transaction: tx1, args: [args.ticker] });
 
-        this.addTransaction(tx2, {}, args.secondaryAccounts);
+        this.addTransaction({ transaction: tx2, args: [args.secondaryAccounts] });
 
         return returnValue;
       };
@@ -329,16 +328,16 @@ describe('Procedure class', () => {
 
       expect(queue).toMatchObject({
         transactions: [
-          { tx: tx1, args: [ticker] },
-          { tx: tx2, args: [secondaryAccounts] },
+          { transaction: tx1, args: [ticker] },
+          { transaction: tx2, args: [secondaryAccounts] },
         ],
       });
       sinon.assert.calledWith(
         constructorStub,
         sinon.match({
           transactions: sinon.match([
-            sinon.match({ tx: tx1, args: [ticker] }),
-            sinon.match({ tx: tx2, args: [secondaryAccounts] }),
+            sinon.match({ transaction: tx1, args: [ticker] }),
+            sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
         }),
         { ...context, currentPair: { address: 'something' } }
@@ -360,8 +359,8 @@ describe('Procedure class', () => {
       queue = await proc2.prepare({ args: procArgs }, context);
       expect(queue).toMatchObject({
         transactions: [
-          { tx: tx1, args: [ticker] },
-          { tx: tx2, args: [secondaryAccounts] },
+          { transaction: tx1, args: [ticker] },
+          { transaction: tx2, args: [secondaryAccounts] },
         ],
         procedureResult: returnValue,
       });
@@ -369,8 +368,8 @@ describe('Procedure class', () => {
         constructorStub,
         sinon.match({
           transactions: sinon.match([
-            sinon.match({ tx: tx1, args: [ticker] }),
-            sinon.match({ tx: tx2, args: [secondaryAccounts] }),
+            sinon.match({ transaction: tx1, args: [ticker] }),
+            sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
           procedureResult: returnValue,
         }),
@@ -493,25 +492,22 @@ describe('Procedure class', () => {
 
   describe('method: addTransaction', () => {
     test('should return an array of post transaction values corresponding to the resolver functions passed to it', async () => {
-      const ticker = 'MY_ASSET';
       const resolvedNum = 1;
       const resolvedStr = 'something';
-      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._context = context;
 
-      const values = proc.addTransaction(
-        tx,
-        {
-          resolvers: tuple(
-            async (): Promise<number> => resolvedNum,
-            async (): Promise<string> => resolvedStr
-          ),
-        },
-        ticker
-      );
+      const values = proc.addTransaction({
+        transaction,
+        resolvers: tuple(
+          async (): Promise<number> => resolvedNum,
+          async (): Promise<string> => resolvedStr
+        ),
+        args: [1],
+      });
 
       await Promise.all(values.map(value => value.run({} as ISubmittableResult)));
       const [num, str] = values;
@@ -532,16 +528,22 @@ describe('Procedure class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._context = context;
 
-      const values = proc.addBatchTransaction(
-        tx,
-        {
-          resolvers: tuple(
-            async (): Promise<number> => resolvedNum,
-            async (): Promise<string> => resolvedStr
-          ),
-        },
-        [[ticker]]
-      );
+      const values = proc.addBatchTransaction({
+        transactions: [
+          {
+            transaction: tx,
+            args: [ticker],
+          },
+          {
+            transaction: tx,
+            args: [ticker],
+          },
+        ],
+        resolvers: tuple(
+          async (): Promise<number> => resolvedNum,
+          async (): Promise<string> => resolvedStr
+        ),
+      });
 
       await Promise.all(values.map(value => value.run({} as ISubmittableResult)));
       const [num, str] = values;
@@ -550,7 +552,7 @@ describe('Procedure class', () => {
       expect(str.value).toBe(resolvedStr);
     });
 
-    test('should add a non-batch transaction to the queue if only one set of arguments is passed', async () => {
+    test('should add a non-batch transaction to the queue if only one transaction is passed', async () => {
       const ticker = 'MY_ASSET';
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
@@ -558,39 +560,12 @@ describe('Procedure class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._context = context;
 
-      proc.addBatchTransaction(tx, {}, [[ticker]]);
+      proc.addBatchTransaction({ transactions: [{ transaction: tx, args: [ticker] }] });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transactions = (proc as any).transactions;
       expect(transactions[0] instanceof PolymeshTransaction).toBe(true);
       expect(transactions.length).toBe(1);
-    });
-
-    test('should separate large argument lists into multiple batches', async () => {
-      const ticker = 'MY_ASSET';
-      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
-
-      const proc = new Procedure(async () => undefined);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (proc as any)._context = context;
-
-      let i = 0;
-
-      proc.addBatchTransaction(
-        tx,
-        {
-          fee: new BigNumber(100),
-          groupByFn: () => `${i++}`,
-        },
-        [...range(22).map(() => [ticker])]
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transactions = (proc as any).transactions;
-
-      expect(transactions.length).toBe(2);
-      expect(transactions[0] instanceof PolymeshTransactionBatch).toBe(true);
-      expect(transactions[1] instanceof PolymeshTransactionBatch).toBe(true);
     });
   });
 
@@ -636,7 +611,7 @@ describe('Procedure class', () => {
       expect(proc.storage).toEqual({ something: 'yeah' });
     });
 
-    test("should throw an error if the storage hasnt't been set", () => {
+    test("should throw an error if the storage hasn't been set", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._storage = null;
 
@@ -658,7 +633,7 @@ describe('Procedure class', () => {
       expect(proc.context).toBe('context');
     });
 
-    test("should throw an error if the context hasnt't been set", () => {
+    test("should throw an error if the context hasn't been set", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._context = null;
 

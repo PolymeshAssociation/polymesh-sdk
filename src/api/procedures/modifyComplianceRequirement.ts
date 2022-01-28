@@ -83,12 +83,10 @@ export async function prepareModifyComplianceRequirement(
     context
   );
 
-  this.addTransaction(
-    tx.complianceManager.changeComplianceRequirement,
-    {},
-    rawTicker,
-    rawComplianceRequirement
-  );
+  this.addTransaction({
+    transaction: tx.complianceManager.changeComplianceRequirement,
+    args: [rawTicker, rawComplianceRequirement],
+  });
 }
 
 /**

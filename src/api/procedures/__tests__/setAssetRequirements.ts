@@ -191,7 +191,10 @@ describe('setAssetRequirements procedure', () => {
 
     const result = await prepareSetAssetRequirements.call(proc, { ...args, requirements: [] });
 
-    sinon.assert.calledWith(addTransactionStub, resetAssetComplianceTransaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: resetAssetComplianceTransaction,
+      args: [rawTicker],
+    });
 
     sinon.assert.calledOnce(addTransactionStub);
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
@@ -210,13 +213,10 @@ describe('setAssetRequirements procedure', () => {
 
     const result = await prepareSetAssetRequirements.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      replaceAssetComplianceTransaction,
-      {},
-      rawTicker,
-      rawComplianceRequirements
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: replaceAssetComplianceTransaction,
+      args: [rawTicker, rawComplianceRequirements],
+    });
 
     expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });

@@ -120,10 +120,7 @@ describe('createCheckpointSchedule procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker,
-      rawSpec
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker, rawSpec] })
     );
 
     expect(result).toBe(schedule);

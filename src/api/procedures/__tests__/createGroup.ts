@@ -28,7 +28,7 @@ jest.mock(
 );
 
 describe('createGroup procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const transactions = {
     type: PermissionType.Include,
     values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
@@ -221,10 +221,11 @@ describe('createGroup procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      externalAgentsCreateGroupTransaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker,
-      rawExtrinsicPermissions
+      sinon.match({
+        transaction: externalAgentsCreateGroupTransaction,
+        resolvers: sinon.match.array,
+        args: [rawTicker, rawExtrinsicPermissions],
+      })
     );
 
     permissionsLikeToPermissionsStub
@@ -246,10 +247,11 @@ describe('createGroup procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      externalAgentsCreateGroupTransaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker,
-      rawExtrinsicPermissions
+      sinon.match({
+        transaction: externalAgentsCreateGroupTransaction,
+        resolvers: sinon.match.array,
+        args: [rawTicker, rawExtrinsicPermissions],
+      })
     );
   });
 

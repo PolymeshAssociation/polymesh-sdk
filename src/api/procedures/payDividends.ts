@@ -51,10 +51,10 @@ export async function preparePayDividends(
 
   const excluded: Identity[] = [];
   targets.forEach(target => {
-    const targetassertDistributionOpenDid = signerToString(target);
-    const found = !!identities.find(({ did }) => did === targetassertDistributionOpenDid);
+    const targetDid = signerToString(target);
+    const found = !!identities.find(({ did }) => did === targetDid);
     if (xor(found, treatment === TargetTreatment.Include)) {
-      excluded.push(new Identity({ did: targetassertDistributionOpenDid }, context));
+      excluded.push(new Identity({ did: targetDid }, context));
     }
   });
 
@@ -66,13 +66,15 @@ export async function preparePayDividends(
     });
   }
 
-  const rawDids = targets.map(target => stringToIdentityId(signerToString(target), context));
-
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+
+  const rawArgs = targets.map(target =>
+    tuple(rawCaId, stringToIdentityId(signerToString(target), context))
+  );
 
   const holderPaidList = await capitalDistribution.holderPaid.multi<
     QueryReturnType<typeof capitalDistribution.holderPaid>
-  >(rawDids.map(rawDid => tuple(rawCaId, rawDid)));
+  >(rawArgs);
 
   const alreadyClaimedList: Identity[] = [];
   holderPaidList.forEach((holderPaid, i) => {
@@ -92,11 +94,14 @@ export async function preparePayDividends(
     });
   }
 
-  this.addBatchTransaction(
-    tx.capitalDistribution.pushBenefit,
-    {},
-    rawDids.map(rawDid => tuple(rawCaId, rawDid))
-  );
+  const transaction = tx.capitalDistribution.pushBenefit;
+
+  this.addBatchTransaction({
+    transactions: rawArgs.map(txArgs => ({
+      transaction,
+      args: txArgs,
+    })),
+  });
 }
 
 /**

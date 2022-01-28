@@ -80,12 +80,11 @@ export async function prepareCreateCheckpointSchedule(
   const rawTicker = stringToTicker(ticker, context);
   const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
 
-  const [schedule] = this.addTransaction(
-    context.polymeshApi.tx.checkpoint.createSchedule,
-    { resolvers: [createCheckpointScheduleResolver(ticker, context)] },
-    rawTicker,
-    rawSchedule
-  );
+  const [schedule] = this.addTransaction({
+    transaction: context.polymeshApi.tx.checkpoint.createSchedule,
+    resolvers: [createCheckpointScheduleResolver(ticker, context)],
+    args: [rawTicker, rawSchedule],
+  });
 
   return schedule;
 }

@@ -53,12 +53,10 @@ export async function prepareRedeemAsset(
     });
   }
 
-  this.addTransaction(
-    tx.asset.redeem,
-    {},
-    rawTicker,
-    numberToBalance(amount, context, isDivisible)
-  );
+  this.addTransaction({
+    transaction: tx.asset.redeem,
+    args: [rawTicker, numberToBalance(amount, context, isDivisible)],
+  });
 }
 
 /**

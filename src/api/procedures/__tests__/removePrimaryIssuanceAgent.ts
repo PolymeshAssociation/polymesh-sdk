@@ -75,7 +75,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
     await prepareRemovePrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
   test('should throw an error if Primary Issuance Agent list has more than one identity', () => {

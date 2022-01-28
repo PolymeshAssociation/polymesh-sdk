@@ -149,9 +149,14 @@ describe('setTransferRestrictions procedure', () => {
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, addTransferManagerTransaction, {}, [
-      [rawTicker, rawCountTm],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: addTransferManagerTransaction,
+          args: [rawTicker, rawCountTm],
+        },
+      ],
+    });
 
     expect(result).toEqual(1);
   });
@@ -177,9 +182,14 @@ describe('setTransferRestrictions procedure', () => {
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, removeTransferManagerTransaction, {}, [
-      [rawTicker, rawCountTm],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: removeTransferManagerTransaction,
+          args: [rawTicker, rawCountTm],
+        },
+      ],
+    });
 
     expect(result).toEqual(0);
   });
@@ -199,9 +209,14 @@ describe('setTransferRestrictions procedure', () => {
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, addExemptedEntitiesTransaction, {}, [
-      [rawTicker, rawCountTm, [rawScopeId]],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: addExemptedEntitiesTransaction,
+          args: [rawTicker, rawCountTm, [rawScopeId]],
+        },
+      ],
+    });
 
     expect(result).toEqual(0);
   });
@@ -221,9 +236,14 @@ describe('setTransferRestrictions procedure', () => {
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, removeExemptedEntitiesTransaction, {}, [
-      [rawTicker, rawCountTm, [rawScopeId]],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: removeExemptedEntitiesTransaction,
+          args: [rawTicker, rawCountTm, [rawScopeId]],
+        },
+      ],
+    });
 
     expect(result).toEqual(0);
   });
@@ -457,6 +477,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictions: [],
         availableSlots: 1,
       });
+
       const getPercentageStub = entityMockUtils.getAssetTransferRestrictionsPercentageGetStub({
         restrictions: [{ percentage }],
         availableSlots: 1,
@@ -490,7 +511,7 @@ describe('setTransferRestrictions procedure', () => {
 
       args.restrictions = [];
 
-      getCountStub.resolves({ restrictions: [{ count }], avaliableSlots: 1 });
+      getCountStub.resolves({ restrictions: [{ count }], availableSlots: 1 });
 
       result = await boundFunc(args);
 
@@ -505,7 +526,7 @@ describe('setTransferRestrictions procedure', () => {
 
       getCountStub.resolves({
         restrictions: [{ count, exemptedScopeIds: [scopeId] }],
-        avaliableSlots: 1,
+        availableSlots: 1,
       });
 
       result = await boundFunc(args);
@@ -521,7 +542,7 @@ describe('setTransferRestrictions procedure', () => {
 
       getPercentageStub.resolves({
         restrictions: [{ percentage }],
-        avaliableSlots: 1,
+        availableSlots: 1,
       });
 
       args = {
@@ -548,7 +569,7 @@ describe('setTransferRestrictions procedure', () => {
 
       getPercentageStub.resolves({
         restrictions: [],
-        avaliableSlots: 1,
+        availableSlots: 1,
       });
 
       args = {
@@ -575,7 +596,7 @@ describe('setTransferRestrictions procedure', () => {
 
       getPercentageStub.resolves({
         restrictions: [{ percentage, exemptedScopeIds: [scopeId] }],
-        avaliableSlots: 1,
+        availableSlots: 1,
       });
 
       args = {
@@ -601,7 +622,7 @@ describe('setTransferRestrictions procedure', () => {
 
       getPercentageStub.resolves({
         restrictions: [{ percentage, exemptedScopeIds: [] }],
-        avaliableSlots: 1,
+        availableSlots: 1,
       });
 
       args = {

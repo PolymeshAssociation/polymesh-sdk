@@ -500,7 +500,7 @@ describe('Instruction class', () => {
       const identityConstructor = entityMockUtils.getIdentityConstructorStub();
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ assetOptions: { ticker } });

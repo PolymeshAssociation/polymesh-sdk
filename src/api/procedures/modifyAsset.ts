@@ -95,7 +95,10 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction(tx.asset.makeDivisible, {}, rawTicker);
+    this.addTransaction({
+      transaction: tx.asset.makeDivisible,
+      args: [rawTicker],
+    });
   }
 
   if (newName) {
@@ -106,7 +109,10 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction(tx.asset.renameAsset, {}, rawTicker, stringToAssetName(newName, context));
+    this.addTransaction({
+      transaction: tx.asset.renameAsset,
+      args: [rawTicker, stringToAssetName(newName, context)],
+    });
   }
 
   if (newFundingRound) {
@@ -117,12 +123,10 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction(
-      tx.asset.setFundingRound,
-      {},
-      rawTicker,
-      stringToFundingRoundName(newFundingRound, context)
-    );
+    this.addTransaction({
+      transaction: tx.asset.setFundingRound,
+      args: [rawTicker, stringToFundingRoundName(newFundingRound, context)],
+    });
   }
 
   if (newIdentifiers) {
@@ -135,14 +139,15 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction(
-      tx.asset.updateIdentifiers,
-      {},
-      rawTicker,
-      newIdentifiers.map(newIdentifier =>
-        securityIdentifierToAssetIdentifier(newIdentifier, context)
-      )
-    );
+    this.addTransaction({
+      transaction: tx.asset.updateIdentifiers,
+      args: [
+        rawTicker,
+        newIdentifiers.map(newIdentifier =>
+          securityIdentifierToAssetIdentifier(newIdentifier, context)
+        ),
+      ],
+    });
   }
 
   return asset;

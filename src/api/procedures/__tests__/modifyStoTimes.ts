@@ -20,7 +20,7 @@ jest.mock(
 );
 
 describe('modifyStoTimes procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
   const now = new Date();
   const newStart = new Date(now.getTime() + 700000);
@@ -99,51 +99,31 @@ describe('modifyStoTimes procedure', () => {
 
     await prepareModifyStoTimes.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      modifyFundraiserWindowTransaction,
-      {},
-      rawTicker,
-      rawId,
-      rawNewStart,
-      rawNewEnd
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: modifyFundraiserWindowTransaction,
+      args: [rawTicker, rawId, rawNewStart, rawNewEnd],
+    });
 
     await prepareModifyStoTimes.call(proc, { ...args, start: undefined });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      modifyFundraiserWindowTransaction,
-      {},
-      rawTicker,
-      rawId,
-      rawStart,
-      rawNewEnd
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: modifyFundraiserWindowTransaction,
+      args: [rawTicker, rawId, rawStart, rawNewEnd],
+    });
 
     await prepareModifyStoTimes.call(proc, { ...args, end: null });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      modifyFundraiserWindowTransaction,
-      {},
-      rawTicker,
-      rawId,
-      rawNewStart,
-      null
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: modifyFundraiserWindowTransaction,
+      args: [rawTicker, rawId, rawNewStart, null],
+    });
 
     await prepareModifyStoTimes.call(proc, { ...args, end: undefined });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      modifyFundraiserWindowTransaction,
-      {},
-      rawTicker,
-      rawId,
-      rawNewStart,
-      rawEnd
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: modifyFundraiserWindowTransaction,
+      args: [rawTicker, rawId, rawNewStart, rawEnd],
+    });
 
     entityMockUtils.configureMocks({
       stoOptions: {
@@ -161,15 +141,10 @@ describe('modifyStoTimes procedure', () => {
 
     await prepareModifyStoTimes.call(proc, { ...args, end: undefined });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      modifyFundraiserWindowTransaction,
-      {},
-      rawTicker,
-      rawId,
-      rawNewStart,
-      null
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: modifyFundraiserWindowTransaction,
+      args: [rawTicker, rawId, rawNewStart, null],
+    });
   });
 
   test('should throw an error if nothing is being modified', async () => {

@@ -415,7 +415,7 @@ describe('Asset class', () => {
 
   describe('method: createdAt', () => {
     test('should return the event identifier object of the Asset creation', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = 1;
@@ -444,7 +444,7 @@ describe('Asset class', () => {
     });
 
     test('should return null if the query result is empty', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const variables = {
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,

@@ -20,7 +20,7 @@ jest.mock(
 );
 
 describe('waivePermissions procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const did = 'someDid';
   const rawTicker = dsMockUtils.createMockTicker(ticker);
 
@@ -117,7 +117,10 @@ describe('waivePermissions procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, externalAgentsAbdicateTransaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsAbdicateTransaction,
+      args: [rawTicker],
+    });
   });
 
   describe('prepareStorage', () => {

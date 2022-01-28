@@ -107,7 +107,10 @@ describe('renamePortfolio procedure', () => {
 
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawPortfolioNumber, rawNewName);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawPortfolioNumber, rawNewName],
+    });
     expect(result.id).toBe(id);
   });
 

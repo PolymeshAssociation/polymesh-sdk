@@ -51,7 +51,10 @@ export async function prepareWaivePermissions(
 
   const rawTicker = stringToTicker(asset.ticker, context);
 
-  this.addTransaction(tx.externalAgents.abdicate, {}, rawTicker);
+  this.addTransaction({
+    transaction: tx.externalAgents.abdicate,
+    args: [rawTicker],
+  });
 }
 
 /**

@@ -114,7 +114,7 @@ describe('deletePortfolio procedure', () => {
 
     let addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -129,7 +129,7 @@ describe('deletePortfolio procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
   });
 
   describe('getAuthorization', () => {

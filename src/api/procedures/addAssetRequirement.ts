@@ -69,13 +69,10 @@ export async function prepareAddAssetRequirement(
   const { sender_conditions: senderConditions, receiver_conditions: receiverConditions } =
     requirementToComplianceRequirement({ conditions, id: 1 }, context);
 
-  this.addTransaction(
-    tx.complianceManager.addComplianceRequirement,
-    {},
-    rawTicker,
-    senderConditions,
-    receiverConditions
-  );
+  this.addTransaction({
+    transaction: tx.complianceManager.addComplianceRequirement,
+    args: [rawTicker, senderConditions, receiverConditions],
+  });
 
   return asset;
 }

@@ -89,7 +89,7 @@ describe('toggleFreezeTransfers procedure', () => {
       freeze: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
 
     expect(ticker).toBe(result.ticker);
   });
@@ -110,7 +110,7 @@ describe('toggleFreezeTransfers procedure', () => {
       freeze: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
 
     expect(ticker).toBe(result.ticker);
   });

@@ -50,7 +50,11 @@ export async function prepareIssueAsset(
 
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = numberToBalance(amount, context, isDivisible);
-  this.addTransaction(asset.issue, {}, rawTicker, rawValue);
+
+  this.addTransaction({
+    transaction: asset.issue,
+    args: [rawTicker, rawValue],
+  });
 
   return assetEntity;
 }

@@ -261,8 +261,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountMnemonic:
-          'lorem ipsum dolor sit amet consectetur adipiscing elit nam hendrerit consectetur sagittis',
+        accountMnemonic: 'lorem ipsum dolor',
       });
 
       expect(context.currentPair).toEqual(newPair);
@@ -917,11 +916,11 @@ describe('Context class', () => {
         returnValue: dsMockUtils.createMockBalance(500000000),
       });
 
-      let result = await context.getProtocolFees(TxTags.asset.CreateAsset);
+      let result = await context.getProtocolFees({ tag: TxTags.asset.CreateAsset });
 
       expect(result).toEqual(new BigNumber(250));
 
-      result = await context.getProtocolFees(TxTags.asset.Freeze);
+      result = await context.getProtocolFees({ tag: TxTags.asset.Freeze });
 
       expect(result).toEqual(new BigNumber(0));
     });
@@ -1521,7 +1520,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('methd: isMiddlewareEnabled', () => {
+  describe('method: isMiddlewareEnabled', () => {
     test('should return true if the middleware is enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1547,7 +1546,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('methd: isMiddlewareAvailable', () => {
+  describe('method: isMiddlewareAvailable', () => {
     test('should return true if the middleware is available', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1899,6 +1898,19 @@ describe('Context class', () => {
       const cloned = context.clone();
 
       expect(cloned).toEqual(context);
+    });
+  });
+
+  describe('method: supportsSubsidy', () => {
+    test('should return whether the specified transaction supports subsidies', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        accountSeed: '0x6'.padEnd(66, '0'),
+      });
+
+      expect(context.supportsSubsidy({ tag: TxTags.system.FillBlock })).toBe(false);
+      expect(context.supportsSubsidy({ tag: TxTags.asset.CreateAsset })).toBe(true);
     });
   });
 });

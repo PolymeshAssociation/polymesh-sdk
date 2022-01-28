@@ -67,7 +67,7 @@ describe('transferPolyx procedure', () => {
 
     return expect(
       prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow("The destination Account doesn't have an asssociated Identity");
+    ).rejects.toThrow("The destination Account doesn't have an associated Identity");
   });
 
   test("should throw an error if sender Identity doesn't have valid CDD", () => {
@@ -130,13 +130,10 @@ describe('transferPolyx procedure', () => {
       amount,
     });
 
-    sinon.assert.calledWith(
-      procedureMockUtils.getAddTransactionStub(),
-      tx,
-      {},
-      rawAccount,
-      rawAmount
-    );
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+      transaction: tx,
+      args: [rawAccount, rawAmount],
+    });
 
     tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
 
@@ -146,14 +143,10 @@ describe('transferPolyx procedure', () => {
       memo,
     });
 
-    sinon.assert.calledWith(
-      procedureMockUtils.getAddTransactionStub(),
-      tx,
-      {},
-      rawAccount,
-      rawAmount,
-      rawMemo
-    );
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+      transaction: tx,
+      args: [rawAccount, rawAmount, rawMemo],
+    });
   });
 
   describe('getAuthorization', () => {

@@ -45,7 +45,10 @@ export async function prepareQuitCustody(
 
   const rawPortfolioId = portfolioIdToMeshPortfolioId(portfolioId, context);
 
-  this.addTransaction(tx.portfolio.quitPortfolioCustody, {}, rawPortfolioId);
+  this.addTransaction({
+    transaction: tx.portfolio.quitPortfolioCustody,
+    args: [rawPortfolioId],
+  });
 }
 
 /**
