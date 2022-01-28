@@ -5,19 +5,19 @@ import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';
 
-export interface RedeemAssetParams {
+export interface RedeemTokensParams {
   amount: BigNumber;
 }
 
 /**
  * @hidden
  */
-export type Params = { ticker: string } & RedeemAssetParams;
+export type Params = { ticker: string } & RedeemTokensParams;
 
 /**
  * @hidden
  */
-export async function prepareRedeemAsset(
+export async function prepareRedeemTokens(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<void> {
@@ -82,5 +82,5 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const redeemAsset = (): Procedure<Params, void> =>
-  new Procedure(prepareRedeemAsset, getAuthorization);
+export const redeemTokens = (): Procedure<Params, void> =>
+  new Procedure(prepareRedeemTokens, getAuthorization);

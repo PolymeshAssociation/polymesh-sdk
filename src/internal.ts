@@ -21,23 +21,23 @@ export {
   AddInstructionParams,
   AddInstructionsParams,
 } from '~/api/procedures/addInstruction';
-// export { cancelProposal } from '~/api/procedures/cancelProposal';
 export {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
   ConsumeParams,
 } from '~/api/procedures/consumeAuthorizationRequests';
 export { createPortfolio } from '~/api/procedures/createPortfolio';
-// export { createProposal, CreateProposalParams } from '~/api/procedures/createProposal';
 export {
   createAsset,
   CreateAssetParams,
   CreateAssetWithTickerParams,
 } from '~/api/procedures/createAsset';
 export { createVenue, CreateVenueParams } from '~/api/procedures/createVenue';
-// export { editProposal, EditProposalParams } from '~/api/procedures/editProposal';
 export { inviteAccount, InviteAccountParams } from '~/api/procedures/inviteAccount';
-export { issueAsset, IssueAssetParams } from '~/api/procedures/issueAsset';
+export {
+  issueTokens as issueAsset,
+  IssueTokensParams as IssueAssetParams,
+} from '~/api/procedures/issueTokens';
 export { modifyClaims, ModifyClaimsParams } from '~/api/procedures/modifyClaims';
 export {
   modifyInstructionAffirmation,
@@ -94,7 +94,6 @@ export {
   transferAssetOwnership,
   TransferAssetOwnershipParams,
 } from '~/api/procedures/transferAssetOwnership';
-// export { voteOnProposal, VoteOnProposalParams } from '~/api/procedures/voteOnProposal';
 export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
 export { renamePortfolio, RenamePortfolioParams } from '~/api/procedures/renamePortfolio';
@@ -104,7 +103,10 @@ export {
   addInvestorUniquenessClaim,
   AddInvestorUniquenessClaimParams,
 } from '~/api/procedures/addInvestorUniquenessClaim';
-export { redeemAsset, RedeemAssetParams } from '~/api/procedures/redeemAsset';
+export {
+  redeemTokens as redeemAsset,
+  RedeemTokensParams as RedeemAssetParams,
+} from '~/api/procedures/redeemTokens';
 export {
   addTransferRestriction,
   AddTransferRestrictionParams,

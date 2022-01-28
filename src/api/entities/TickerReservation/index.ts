@@ -28,7 +28,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a reserved token symbol in the Polymesh chain. Ticker reservations expire
+ * Represents a reserved Asset symbol in the Polymesh blockchain. Ticker reservations expire
  *   after a set length of time, after which they can be reserved by another Identity.
  *   A Ticker must be previously reserved by an Identity for that Identity to be able create an Asset with it
  */
@@ -155,14 +155,14 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     }
 
     // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-    const [tickerRegistration, assetEntity] = await queryMulti<
+    const [tickerRegistration, meshAsset] = await queryMulti<
       [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
     >([
       [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
       [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
-    return assembleResult(tickerRegistration, assetEntity);
+    return assembleResult(tickerRegistration, meshAsset);
   }
 
   /**

@@ -173,7 +173,7 @@ export async function prepareCreateAsset(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  // we waive any protocol fees if the token is created in Ethereum. If not created and ticker is not yet reserved, set fee to the sum of protocol fees for ticker registration and asset creation.
+  // we waive any protocol fees if the Asset is created in Ethereum. If not created and ticker is not yet reserved, we set the fee to the sum of protocol fees for ticker registration and Asset creation.
 
   const classicTicker = await asset.classicTickers(rawTicker);
   const assetCreatedInEthereum =

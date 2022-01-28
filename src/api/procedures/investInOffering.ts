@@ -22,19 +22,19 @@ import {
 
 export interface InvestInOfferingParams {
   /**
-   * portfolio in which the purchased Assets will be stored
+   * portfolio in which the purchased Asset tokens will be stored
    */
   purchasePortfolio: PortfolioLike;
   /**
-   * portfolio from which funds will be withdrawn to pay for the Assets
+   * portfolio from which funds will be withdrawn to pay for the Asset tokens
    */
   fundingPortfolio: PortfolioLike;
   /**
-   * amount of Assets to purchase
+   * amount of Assets tokens to purchase
    */
   purchaseAmount: BigNumber;
   /**
-   * maximum average price to pay per Asset (optional)
+   * maximum average price to pay per Asset token (optional)
    */
   maxPrice?: BigNumber;
 }

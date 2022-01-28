@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { getAuthorization, Params, prepareRedeemAsset } from '~/api/procedures/redeemAsset';
+import { getAuthorization, Params, prepareRedeemTokens } from '~/api/procedures/redeemTokens';
 import { Asset, Context, DefaultPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -21,7 +21,7 @@ jest.mock(
   )
 );
 
-describe('redeemAsset procedure', () => {
+describe('redeemTokens procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let ticker: string;
@@ -86,7 +86,7 @@ describe('redeemAsset procedure', () => {
       },
     });
 
-    await prepareRedeemAsset.call(proc, {
+    await prepareRedeemTokens.call(proc, {
       ticker,
       amount,
     });
@@ -114,7 +114,7 @@ describe('redeemAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
-      prepareRedeemAsset.call(proc, {
+      prepareRedeemTokens.call(proc, {
         ticker,
         amount,
       })

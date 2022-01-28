@@ -9,6 +9,7 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
 } from '~/utils/conversion';
+import { getTicker } from '~/utils/internal';
 
 export interface MoveFundsParams {
   /**
@@ -16,7 +17,7 @@ export interface MoveFundsParams {
    */
   to?: BigNumber | DefaultPortfolio | NumberedPortfolio;
   /**
-   * list of Assets (and their corresponding amounts) that will be moved
+   * list of Assets (and the corresponding token amounts) that will be moved
    */
   items: PortfolioMovement[];
 }
@@ -89,9 +90,7 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
 
   portfolioBalances.forEach(({ asset: { ticker }, free }) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transferItem = items.find(
-      ({ asset: t }) => (typeof t === 'string' ? t : t.ticker) === ticker
-    )!;
+    const transferItem = items.find(({ asset: itemAsset }) => getTicker(itemAsset) === ticker)!;
 
     if (transferItem.amount.gt(free)) {
       balanceExceeded.push({ ...transferItem, free });

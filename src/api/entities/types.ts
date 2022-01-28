@@ -1,6 +1,5 @@
 import {
   Account as AccountClass,
-  // Proposal as ProposalClass,
   Asset as AssetClass,
   AuthorizationRequest as AuthorizationRequestClass,
   Checkpoint as CheckpointClass,
@@ -36,7 +35,6 @@ export type Asset = AssetClass;
 export type Offering = OfferingClass;
 export type TickerReservation = TickerReservationClass;
 export type Venue = VenueClass;
-// export type Proposal = InstanceType<typeof ProposalClass>;
 
 export * from './CheckpointSchedule/types';
 export * from './CorporateActionBase/types';
@@ -47,4 +45,3 @@ export * from './Asset/types';
 export * from './Offering/types';
 export * from './TickerReservation/types';
 export * from './Venue/types';
-// export * from './Proposal/types';

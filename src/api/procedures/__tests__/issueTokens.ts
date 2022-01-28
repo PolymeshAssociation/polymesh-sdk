@@ -5,11 +5,11 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  IssueAssetParams,
-  prepareIssueAsset,
+  IssueTokensParams,
+  prepareIssueTokens,
   prepareStorage,
   Storage,
-} from '~/api/procedures/issueAsset';
+} from '~/api/procedures/issueTokens';
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -64,7 +64,7 @@ describe('issueAssets procedure', () => {
 
   describe('prepareStorage', () => {
     test('should return the Asset', () => {
-      const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
@@ -94,14 +94,14 @@ describe('issueAssets procedure', () => {
       },
     });
 
-    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance(),
     });
 
     let error;
 
     try {
-      await prepareIssueAsset.call(proc, args);
+      await prepareIssueTokens.call(proc, args);
     } catch (err) {
       error = err;
     }
@@ -135,18 +135,18 @@ describe('issueAssets procedure', () => {
     numberToBalance.withArgs(amount, mockContext, isDivisible).returns(rawAmount);
 
     const transaction = dsMockUtils.createTxStub('asset', 'issue');
-    const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext, {
+    const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance(),
     });
 
-    const result = await prepareIssueAsset.call(proc, args);
+    const result = await prepareIssueTokens.call(proc, args);
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
     expect(result.ticker).toBe(ticker);
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<IssueAssetParams, Asset, Storage>(mockContext, {
+      const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
         asset: entityMockUtils.getAssetInstance({ ticker }),
       });
       const boundFunc = getAuthorization.bind(proc);

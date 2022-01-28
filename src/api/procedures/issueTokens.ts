@@ -6,7 +6,7 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
 import { numberToBalance, stringToTicker } from '~/utils/conversion';
 
-export interface IssueAssetParams {
+export interface IssueTokensParams {
   amount: BigNumber;
   ticker: string;
 }
@@ -18,9 +18,9 @@ export interface Storage {
 /**
  * @hidden
  */
-export async function prepareIssueAsset(
-  this: Procedure<IssueAssetParams, Asset, Storage>,
-  args: IssueAssetParams
+export async function prepareIssueTokens(
+  this: Procedure<IssueTokensParams, Asset, Storage>,
+  args: IssueTokensParams
 ): Promise<Asset> {
   const {
     context: {
@@ -63,7 +63,7 @@ export async function prepareIssueAsset(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<IssueAssetParams, Asset, Storage>
+  this: Procedure<IssueTokensParams, Asset, Storage>
 ): ProcedureAuthorization {
   const {
     storage: { asset },
@@ -81,8 +81,8 @@ export function getAuthorization(
  * @hidden
  */
 export function prepareStorage(
-  this: Procedure<IssueAssetParams, Asset, Storage>,
-  { ticker }: IssueAssetParams
+  this: Procedure<IssueTokensParams, Asset, Storage>,
+  { ticker }: IssueTokensParams
 ): Storage {
   const { context } = this;
 
@@ -94,5 +94,5 @@ export function prepareStorage(
 /**
  * @hidden
  */
-export const issueAsset = (): Procedure<IssueAssetParams, Asset, Storage> =>
-  new Procedure(prepareIssueAsset, getAuthorization, prepareStorage);
+export const issueTokens = (): Procedure<IssueTokensParams, Asset, Storage> =>
+  new Procedure(prepareIssueTokens, getAuthorization, prepareStorage);

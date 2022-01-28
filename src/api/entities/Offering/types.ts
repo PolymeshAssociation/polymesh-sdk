@@ -23,12 +23,12 @@ export enum OfferingBalanceStatus {
    */
   Available = 'Available',
   /**
-   * All Assets in the offering have been sold
+   * All Assets tokens in the Offering have been sold
    */
   SoldOut = 'SoldOut',
   /**
-   * There are remaining Assets, but their added value is lower than the Offering's
-   *   minimum investment, so they cannot be purchased. The offering should be manually closed
+   * There are remaining Asset tokens, but their added value is lower than the Offering's
+   *   minimum investment, so they cannot be purchased. The Offering should be manually closed
    *   to retrieve them
    */
   Residual = 'Residual',

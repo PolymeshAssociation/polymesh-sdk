@@ -34,7 +34,7 @@ import { filterEventRecords } from '~/utils/internal';
  */
 export interface LaunchOfferingParams {
   /**
-   * portfolio in which the Assets to be sold are stored
+   * portfolio in which the Assets tokens to be sold are stored
    */
   offeringPortfolio: PortfolioLike;
   /**
@@ -63,7 +63,7 @@ export interface LaunchOfferingParams {
   end?: Date;
   /**
    * array of sale tiers. Each tier consists of an amount of Assets to be sold at a certain price.
-   *   Assets in a tier can only be bought when all Assets in previous tiers have been bought
+   *   Tokens in a tier can only be bought when all tokens in previous tiers have been bought
    */
   tiers: OfferingTier[];
   /**
