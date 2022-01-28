@@ -479,7 +479,6 @@ describe('Requirements class', () => {
       dsMockUtils
         .createQueryStub('complianceManager', 'assetCompliances')
         .withArgs(rawTicker)
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         .resolves({ paused: mockBool });
 
       const result = await requirements.arePaused();

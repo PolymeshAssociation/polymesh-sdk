@@ -83,7 +83,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Class used to manage all the  Asset functionality
+ * Class used to manage all Asset functionality
  */
 export class Asset extends Entity<UniqueIdentifiers, string> {
   /**
@@ -97,7 +97,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * identity id of the Asset
+   * Identity ID of the Asset (used for Claims)
    */
   public did: string;
 
@@ -391,7 +391,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Freezes transfers and minting of the Asset
+   * Freeze transfers and minting of the Asset
    */
   public freeze: NoArgsProcedureMethod<Asset>;
 
@@ -454,9 +454,9 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public removePrimaryIssuanceAgent: NoArgsProcedureMethod<void>;
 
   /**
-   * Redeem (burn) an amount of this Asset
+   * Redeem (burn) an amount of this Asset's tokens
    *
-   * @note Assets are removed from the caller's Default Portfolio.
+   * @note tokens are removed from the caller's Default Portfolio
    */
   public redeem: ProcedureMethod<RedeemAssetParams, void>;
 
@@ -507,7 +507,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve this Asset's Operation History
    *
-   * @note Operations are grouped by the Agent Identity who performed them
+   * @note Operations are grouped by the agent Identity who performed them
    *
    * @note uses the middleware
    */

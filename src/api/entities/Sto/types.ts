@@ -19,7 +19,7 @@ export enum StoTimingStatus {
 
 export enum StoBalanceStatus {
   /**
-   * There still are Assets available for purchase
+   * There still are Asset tokens available for purchase
    */
   Available = 'Available',
   /**

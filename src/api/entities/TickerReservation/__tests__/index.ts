@@ -3,7 +3,7 @@ import sinon from 'sinon';
 
 import { Asset, Entity, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { KnownSecurityType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
+import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -231,7 +231,7 @@ describe('TickerReservation class', () => {
         name: 'TEST',
         totalSupply: new BigNumber(100),
         isDivisible: true,
-        assetType: KnownSecurityType.EquityCommon,
+        assetType: KnownAssetType.EquityCommon,
         securityIdentifiers: [{ type: SecurityIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
         requireInvestorUniqueness: false,

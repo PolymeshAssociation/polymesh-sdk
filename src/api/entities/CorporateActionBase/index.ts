@@ -85,8 +85,8 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   public description: string;
 
   /**
-   * Asset Holder identities related to this Corporate action. If the treatment is `Exclude`, the Identities
-   *   are not targeted by the Action, and any identities left out of the array will be targeted, and vice versa
+   * Asset Holder Identities related to this Corporate action. If the treatment is `Exclude`, the Identities
+   *   in the array will not be targeted by the Action, Identities not in the array will be targeted, and vice versa
    */
   public targets: CorporateActionTargets;
 

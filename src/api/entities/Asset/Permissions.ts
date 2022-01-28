@@ -60,19 +60,19 @@ export class Permissions extends Namespace<Asset> {
   }
 
   /**
-   * Create a Permission group for this Asset. Identities can then be assigned to said group as Agents. Agents assigned to a group have said group's permissions over this Asset
+   * Create a Permission Group for this Asset. Identities can be assigned to Permission Groups as agents. Agents assigned to a Permission Group have said group's permissions over the Asset
    */
   public createGroup: ProcedureMethod<CreateGroupParams, CustomPermissionGroup>;
 
   /**
-   * Invite an Identity to be an Agent with permissions over this Asset
+   * Invite an Identity to be an agent with permissions over this Asset
    *
    * @note this will create an AuthorizationRequest that will need to be accepted by the target
    */
   public inviteAgent: ProcedureMethod<InviteExternalAgentParams, AuthorizationRequest>;
 
   /**
-   * Revoke an Agent's permissions for this Asset
+   * Revoke an agent's permissions over this Asset
    */
   public removeAgent: ProcedureMethod<RemoveExternalAgentParams, void>;
 
@@ -146,7 +146,7 @@ export class Permissions extends Namespace<Asset> {
   }
 
   /**
-   * Retrieve a list of Agents (Identities which have permissions over the Asset) and
+   * Retrieve a list of agents (Identities which have permissions over the Asset) and
    *   their respective Permission Groups
    */
   public async getAgents(): Promise<AgentWithGroup[]> {

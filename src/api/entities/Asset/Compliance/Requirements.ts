@@ -99,7 +99,7 @@ export class Requirements extends Namespace<Asset> {
   public remove: ProcedureMethod<RemoveAssetRequirementParams, Asset>;
 
   /**
-   * Configure asset compliance requirements for the Asset. This operation will replace all existing requirements with a new requirement set
+   * Configure compliance requirements for the Asset. This operation will replace all existing requirements with a new requirement set
    *
    * @example Say A, B, C, D and E are requirements and we arrange them as `[[A, B], [C, D], [E]]`.
    * For a transfer to succeed, it must either comply with A AND B, C AND D, OR E.

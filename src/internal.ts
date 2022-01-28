@@ -209,3 +209,4 @@ export {
   RemoveExternalAgentParams,
 } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions, WaivePermissionsParams } from '~/api/procedures/waivePermissions';
+export { TransferRestrictionBase } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';

@@ -288,7 +288,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve a list of all assets which were held at one point by this Identity
+   * Retrieve a list of all Assets which were held at one point by this Identity
    *
    * @note uses the middleware
    * @note supports pagination

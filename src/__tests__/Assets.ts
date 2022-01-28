@@ -5,7 +5,7 @@ import { Assets } from '~/Assets';
 import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { KnownSecurityType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
+import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -79,7 +79,7 @@ describe('Assets Class', () => {
         name: 'TEST',
         totalSupply: new BigNumber(100),
         isDivisible: true,
-        assetType: KnownSecurityType.EquityCommon,
+        assetType: KnownAssetType.EquityCommon,
         securityIdentifier: [{ type: SecurityIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
         requireInvestorUniqueness: false,

@@ -89,7 +89,7 @@ import {
   DividendDistributionParams,
   InputCondition,
   InstructionType,
-  KnownSecurityType,
+  KnownAssetType,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -161,7 +161,7 @@ import {
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identityIdToString,
-  internalSecurityTypeToAssetType,
+  internalAssetTypeToAssetType,
   isCusipValid,
   isIsinValid,
   isLeiValid,
@@ -2183,79 +2183,79 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
   });
 
   test('internalSecurityTypeToAssetType should convert an AssetType to a polkadot AssetType object', () => {
-    const value = KnownSecurityType.Commodity;
+    const value = KnownAssetType.Commodity;
     const fakeResult = 'CommodityEnum' as unknown as AssetType;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
 
-    const result = internalSecurityTypeToAssetType(value, context);
+    const result = internalAssetTypeToAssetType(value, context);
 
     expect(result).toBe(fakeResult);
   });
 
   test('assetTypeToKnownOrId should convert a polkadot AssetType object to a string', () => {
-    let fakeResult = KnownSecurityType.Commodity;
+    let fakeResult = KnownAssetType.Commodity;
     let assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     let result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.EquityCommon;
+    fakeResult = KnownAssetType.EquityCommon;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.EquityPreferred;
+    fakeResult = KnownAssetType.EquityPreferred;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.Commodity;
+    fakeResult = KnownAssetType.Commodity;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.FixedIncome;
+    fakeResult = KnownAssetType.FixedIncome;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.Reit;
+    fakeResult = KnownAssetType.Reit;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.Fund;
+    fakeResult = KnownAssetType.Fund;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.RevenueShareAgreement;
+    fakeResult = KnownAssetType.RevenueShareAgreement;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.StructuredProduct;
+    fakeResult = KnownAssetType.StructuredProduct;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.Derivative;
+    fakeResult = KnownAssetType.Derivative;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownSecurityType.StableCoin;
+    fakeResult = KnownAssetType.StableCoin;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);

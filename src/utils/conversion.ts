@@ -153,7 +153,7 @@ import {
   InstructionType,
   isMultiClaimCondition,
   isSingleClaimCondition,
-  KnownSecurityType,
+  KnownAssetType,
   MultiClaimCondition,
   PermissionGroupType,
   Permissions,
@@ -194,7 +194,7 @@ import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
   InstructionStatus,
-  InternalSecurityType,
+  InternalAssetType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -1379,46 +1379,43 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
 /**
  * @hidden
  */
-export function internalSecurityTypeToAssetType(
-  type: InternalSecurityType,
-  context: Context
-): AssetType {
+export function internalAssetTypeToAssetType(type: InternalAssetType, context: Context): AssetType {
   return context.polymeshApi.createType('AssetType', type);
 }
 
 /**
  * @hidden
  */
-export function assetTypeToKnownOrId(assetType: AssetType): KnownSecurityType | BigNumber {
+export function assetTypeToKnownOrId(assetType: AssetType): KnownAssetType | BigNumber {
   if (assetType.isEquityCommon) {
-    return KnownSecurityType.EquityCommon;
+    return KnownAssetType.EquityCommon;
   }
   if (assetType.isEquityPreferred) {
-    return KnownSecurityType.EquityPreferred;
+    return KnownAssetType.EquityPreferred;
   }
   if (assetType.isCommodity) {
-    return KnownSecurityType.Commodity;
+    return KnownAssetType.Commodity;
   }
   if (assetType.isFixedIncome) {
-    return KnownSecurityType.FixedIncome;
+    return KnownAssetType.FixedIncome;
   }
   if (assetType.isReit) {
-    return KnownSecurityType.Reit;
+    return KnownAssetType.Reit;
   }
   if (assetType.isFund) {
-    return KnownSecurityType.Fund;
+    return KnownAssetType.Fund;
   }
   if (assetType.isRevenueShareAgreement) {
-    return KnownSecurityType.RevenueShareAgreement;
+    return KnownAssetType.RevenueShareAgreement;
   }
   if (assetType.isStructuredProduct) {
-    return KnownSecurityType.StructuredProduct;
+    return KnownAssetType.StructuredProduct;
   }
   if (assetType.isDerivative) {
-    return KnownSecurityType.Derivative;
+    return KnownAssetType.Derivative;
   }
   if (assetType.isStableCoin) {
-    return KnownSecurityType.StableCoin;
+    return KnownAssetType.StableCoin;
   }
 
   return u32ToBigNumber(assetType.asCustom);
@@ -1755,10 +1752,13 @@ export function assetDocumentToDocument(
 /**
  * @hidden
  */
-export function documentToAssetDocument(
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  { uri, content_hash: hash, name, doc_type: docType, filing_date: filingDate }: Document
-): AssetDocument {
+export function documentToAssetDocument({
+  uri,
+  content_hash: hash,
+  name,
+  doc_type: docType,
+  filing_date: filingDate,
+}: Document): AssetDocument {
   const filedAt = filingDate.unwrapOr(undefined);
   const type = docType.unwrapOr(undefined);
   const contentHash = documentHashToString(hash);

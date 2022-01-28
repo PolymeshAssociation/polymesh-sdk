@@ -22,7 +22,7 @@ import {
  */
 export class Settlements extends Namespace<Asset> {
   /**
-   * Check whether it is possible to create a settlement instruction to transfer a certain amount of this asset between two Portfolios.
+   * Check whether it is possible to create a settlement Instruction to transfer a certain amount of this Asset's tokens between two Portfolios.
    *
    * @note this takes locked tokens into account. For example, if portfolio A has 1000 tokens and this function is called to check if 700 of them can be
    *   transferred to portfolio B (assuming everything else checks out) the result will be success. If an instruction is created and authorized to transfer those 700 tokens,

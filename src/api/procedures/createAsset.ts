@@ -8,7 +8,7 @@ import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/i
 import {
   AssetDocument,
   ErrorCode,
-  KnownSecurityType,
+  KnownAssetType,
   RoleType,
   SecurityIdentifier,
   TickerReservationStatus,
@@ -18,7 +18,7 @@ import {
   assetDocumentToDocument,
   booleanToBool,
   boolToBoolean,
-  internalSecurityTypeToAssetType,
+  internalAssetTypeToAssetType,
   numberToBalance,
   securityIdentifierToAssetIdentifier,
   stringToAssetName,
@@ -36,7 +36,7 @@ export const createRegisterCustomAssetTypeResolver =
   (receipt: ISubmittableResult): AssetType => {
     const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
 
-    return internalSecurityTypeToAssetType({ Custom: data[1] }, context);
+    return internalAssetTypeToAssetType({ Custom: data[1] }, context);
   };
 
 export interface CreateAssetParams {
@@ -155,10 +155,10 @@ export async function prepareCreateAsset(
         args: [rawValue],
       });
     } else {
-      rawType = internalSecurityTypeToAssetType({ Custom: id }, context);
+      rawType = internalAssetTypeToAssetType({ Custom: id }, context);
     }
   } else {
-    rawType = internalSecurityTypeToAssetType(assetType as KnownSecurityType, context);
+    rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
   }
 
   const rawName = stringToAssetName(name, context);
@@ -277,7 +277,7 @@ export async function prepareStorage(
   const reservation = new TickerReservation({ ticker }, context);
   const { status } = await reservation.details();
 
-  const isCustomType = !values<string>(KnownSecurityType).includes(assetType);
+  const isCustomType = !values<string>(KnownAssetType).includes(assetType);
 
   if (isCustomType) {
     const rawValue = stringToBytes(assetType, context);

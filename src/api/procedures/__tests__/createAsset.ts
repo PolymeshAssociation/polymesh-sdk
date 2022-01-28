@@ -26,13 +26,13 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   AssetDocument,
-  KnownSecurityType,
+  KnownAssetType,
   RoleType,
   SecurityIdentifier,
   SecurityIdentifierType,
   TickerReservationStatus,
 } from '~/types';
-import { InternalSecurityType, PolymeshTx } from '~/types/internal';
+import { InternalAssetType, PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -53,10 +53,7 @@ describe('createAsset procedure', () => {
   let numberToBalanceStub: sinon.SinonStub;
   let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
-  let internalSecurityTypeToAssetTypeStub: sinon.SinonStub<
-    [InternalSecurityType, Context],
-    AssetType
-  >;
+  let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
   let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
     [SecurityIdentifier, Context],
     AssetIdentifier
@@ -100,9 +97,9 @@ describe('createAsset procedure', () => {
     numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
     stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
-    internalSecurityTypeToAssetTypeStub = sinon.stub(
+    internalAssetTypeToAssetTypeStub = sinon.stub(
       utilsConversionModule,
-      'internalSecurityTypeToAssetType'
+      'internalAssetTypeToAssetType'
     );
     securityIdentifierToAssetIdentifierStub = sinon.stub(
       utilsConversionModule,
@@ -114,7 +111,7 @@ describe('createAsset procedure', () => {
     name = 'someName';
     initialSupply = new BigNumber(100);
     isDivisible = true;
-    assetType = KnownSecurityType.EquityCommon;
+    assetType = KnownAssetType.EquityCommon;
     securityIdentifiers = [
       {
         type: SecurityIdentifierType.Isin,
@@ -134,7 +131,7 @@ describe('createAsset procedure', () => {
     rawName = dsMockUtils.createMockAssetName(name);
     rawInitialSupply = dsMockUtils.createMockBalance(initialSupply.toNumber());
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
-    rawType = dsMockUtils.createMockAssetType(assetType as KnownSecurityType);
+    rawType = dsMockUtils.createMockAssetType(assetType as KnownAssetType);
     rawIdentifiers = securityIdentifiers.map(({ type, value }) =>
       dsMockUtils.createMockAssetIdentifier({
         [type as 'Lei']: dsMockUtils.createMockU8aFixed(value),
@@ -197,8 +194,8 @@ describe('createAsset procedure', () => {
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
-    internalSecurityTypeToAssetTypeStub
-      .withArgs(assetType as KnownSecurityType, mockContext)
+    internalAssetTypeToAssetTypeStub
+      .withArgs(assetType as KnownAssetType, mockContext)
       .returns(rawType);
     securityIdentifierToAssetIdentifierStub
       .withArgs(securityIdentifiers[0], mockContext)
@@ -476,9 +473,7 @@ describe('createAsset procedure', () => {
 
     test('should return the new custom AssetType', () => {
       const fakeResult = 'assetType' as unknown as AssetType;
-      internalSecurityTypeToAssetTypeStub
-        .withArgs({ Custom: rawId }, mockContext)
-        .returns(fakeResult);
+      internalAssetTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
       const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
 
       expect(result).toBe(fakeResult);
@@ -584,7 +579,7 @@ describe('createAsset procedure', () => {
         status: TickerReservationStatus.Reserved,
       });
 
-      let result = await boundFunc({ assetType: KnownSecurityType.EquityCommon } as Params);
+      let result = await boundFunc({ assetType: KnownAssetType.EquityCommon } as Params);
 
       expect(result).toEqual({
         customTypeData: null,

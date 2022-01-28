@@ -180,7 +180,7 @@ export class Assets {
   /**
    * Retrieve all of the Assets owned by an Identity
    *
-   * @param args.owner - identity representation or Identity ID as stored in the blockchain
+   * @param args.owner - Identity representation or Identity ID as stored in the blockchain
    *
    * @note Assets with unreadable characters in their tickers will be left out
    */

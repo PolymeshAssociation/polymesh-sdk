@@ -23,9 +23,9 @@ export class Issuance extends Namespace<Asset> {
   }
 
   /**
-   * Issue a certain amount of Assets to the caller's default portfolio
+   * Issue a certain amount of Asset tokens to the caller's default portfolio
    *
-   * @param args.amount - amount of Assets to be issued
+   * @param args.amount - amount of Asset tokens to be issued
    */
   public issue: ProcedureMethod<{ amount: BigNumber }, Asset>;
 }

@@ -69,7 +69,7 @@ export class Offerings extends Namespace<Asset> {
   /**
    * Retrieve all of the Asset's Offerings and their details. Can be filtered using parameters
    *
-   * @param opts.status - status of the offerings to fetch. If defined, only STOs that have all passed statuses will be returned
+   * @param opts.status - status of the Offerings to fetch. If defined, only Offerings that have all passed statuses will be returned
    */
   public async get(opts: { status?: Partial<StoStatus> } = {}): Promise<StoWithDetails[]> {
     const {

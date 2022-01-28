@@ -158,7 +158,7 @@ export function isIdentityRole(role: Role): role is IdentityRole {
   return role.type === RoleType.Identity;
 }
 
-export enum KnownSecurityType {
+export enum KnownAssetType {
   EquityCommon = 'EquityCommon',
   EquityPreferred = 'EquityPreferred',
   Commodity = 'Commodity',
@@ -961,7 +961,7 @@ export interface Permissions {
 export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
- * This represents all Permission Groups of a specific Asset, separated by `known` and `custom`
+ * All Permission Groups of a specific Asset, separated by `known` and `custom`
  */
 export interface PermissionGroups {
   known: KnownPermissionGroup[];
@@ -975,7 +975,7 @@ export interface PermissionGroups {
  */
 export interface SimplePermissions {
   /**
-   * list of required Assets permissions
+   * list of required Asset permissions
    */
   assets?: Asset[] | null;
   /**

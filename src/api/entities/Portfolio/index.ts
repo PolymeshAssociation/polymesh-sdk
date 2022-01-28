@@ -135,7 +135,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Retrieve the balances of all assets in this Portfolio
+   * Retrieve the balances of all Assets in this Portfolio
    *
    * @param args.assets - array of Assets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
    */
