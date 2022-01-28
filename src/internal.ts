@@ -37,6 +37,7 @@ export {
 export { createVenue, CreateVenueParams } from '~/api/procedures/createVenue';
 // export { editProposal, EditProposalParams } from '~/api/procedures/editProposal';
 export { inviteAccount, InviteAccountParams } from '~/api/procedures/inviteAccount';
+export { subsidizeAccount, SubsidizeAccountParams } from '~/api/procedures/subsidizeAccount';
 export { issueTokens, IssueTokensParams } from '~/api/procedures/issueTokens';
 export { modifyClaims, ModifyClaimsParams } from '~/api/procedures/modifyClaims';
 export {
