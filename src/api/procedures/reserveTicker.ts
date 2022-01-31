@@ -25,14 +25,14 @@ export interface ReserveTickerParams {
  * @hidden
  * NOTE: this might seem redundant but it's done in case some mutation is done on the ticker on chain (e.g. upper case or truncating)
  */
-export const createTickerReservationResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): TickerReservation => {
-  const [{ data }] = filterEventRecords(receipt, 'asset', 'TickerRegistered');
-  const newTicker = tickerToString(data[1]);
+export const createTickerReservationResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): TickerReservation => {
+    const [{ data }] = filterEventRecords(receipt, 'asset', 'TickerRegistered');
+    const newTicker = tickerToString(data[1]);
 
-  return new TickerReservation({ ticker: newTicker }, context);
-};
+    return new TickerReservation({ ticker: newTicker }, context);
+  };
 
 /**
  * @hidden
@@ -79,13 +79,11 @@ export async function prepareReserveTicker(
     }
   }
 
-  const [newReservation] = this.addTransaction(
-    tx.asset.registerTicker,
-    {
-      resolvers: [createTickerReservationResolver(context)],
-    },
-    rawTicker
-  );
+  const [newReservation] = this.addTransaction({
+    transaction: tx.asset.registerTicker,
+    resolvers: [createTickerReservationResolver(context)],
+    args: [rawTicker],
+  });
 
   return newReservation;
 }

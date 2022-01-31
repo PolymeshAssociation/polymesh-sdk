@@ -39,7 +39,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
   describe('constructor', () => {
     test('should assign ticker and Identity to instance', () => {
       const did = 'someDid';
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
       expect(trustedClaimIssuer.token.ticker).toBe(ticker);
@@ -60,7 +60,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
   describe('method: addedAt', () => {
     const did = 'someDid';
-    const ticker = 'SOMETICKER';
+    const ticker = 'SOME_TICKER';
     const variables = {
       ticker: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       identityId: did,

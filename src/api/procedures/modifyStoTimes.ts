@@ -111,7 +111,10 @@ export async function prepareModifyStoTimes(
     rawEnd = dateToMoment(newEnd, context);
   }
 
-  this.addTransaction(txSto.modifyFundraiserWindow, {}, rawTicker, rawId, rawStart, rawEnd);
+  this.addTransaction({
+    transaction: txSto.modifyFundraiserWindow,
+    args: [rawTicker, rawId, rawStart, rawEnd],
+  });
 }
 
 /**
