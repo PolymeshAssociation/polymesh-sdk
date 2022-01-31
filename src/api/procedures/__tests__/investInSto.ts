@@ -332,36 +332,36 @@ describe('investInSto procedure', () => {
 
     await prepareInvestInSto.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawPurchasePortfolio,
-      rawFundingPortfolio,
-      rawTicker,
-      rawId,
-      rawPurchaseAmount,
-      null,
-      null
-    );
+      args: [
+        rawPurchasePortfolio,
+        rawFundingPortfolio,
+        rawTicker,
+        rawId,
+        rawPurchaseAmount,
+        null,
+        null,
+      ],
+    });
 
     await prepareInvestInSto.call(proc, {
       ...args,
       maxPrice,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawPurchasePortfolio,
-      rawFundingPortfolio,
-      rawTicker,
-      rawId,
-      rawPurchaseAmount,
-      rawMaxPrice,
-      null
-    );
+      args: [
+        rawPurchasePortfolio,
+        rawFundingPortfolio,
+        rawTicker,
+        rawId,
+        rawPurchaseAmount,
+        rawMaxPrice,
+        null,
+      ],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -377,8 +377,8 @@ describe('investInSto procedure', () => {
         'portfolioIdToPortfolio'
       );
       const portfolios = [
-        ('investment' as unknown) as DefaultPortfolio,
-        ('funding' as unknown) as DefaultPortfolio,
+        'investment' as unknown as DefaultPortfolio,
+        'funding' as unknown as DefaultPortfolio,
       ];
       portfolioIdToPortfolioStub.withArgs(purchasePortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(fundingPortfolioId, mockContext).returns(portfolios[1]);

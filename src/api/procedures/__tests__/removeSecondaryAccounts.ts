@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -80,7 +81,11 @@ describe('removeSecondaryAccounts procedure', () => {
 
     await prepareRemoveSecondaryAccounts.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, [rawSignatory]);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      feeMultiplier: new BigNumber(1),
+      args: [[rawSignatory]],
+    });
   });
 
   test('should throw an error if attempting to remove the primary Account', () => {

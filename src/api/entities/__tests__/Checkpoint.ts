@@ -110,7 +110,7 @@ describe('Checkpoint class', () => {
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     });
 
-    test("should return the Checkpoint's tokenholder balances", async () => {
+    test("should return the Checkpoint's token holder balances", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       const balanceOf = [
@@ -141,7 +141,7 @@ describe('Checkpoint class', () => {
       });
 
       const balanceOfEntries = rawBalanceOf.map(({ identityId, balance }) =>
-        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, balance)
+        tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, balance)
       );
 
       dsMockUtils.createQueryStub('asset', 'balanceOf');
@@ -169,8 +169,8 @@ describe('Checkpoint class', () => {
         multi: rawBalanceMulti,
       });
 
-      rawBalanceMulti.forEach((rawBlance, index) => {
-        balanceToBigNumberStub.withArgs(rawBlance).returns(balanceMulti[index]);
+      rawBalanceMulti.forEach((rawBalance, index) => {
+        balanceToBigNumberStub.withArgs(rawBalance).returns(balanceMulti[index]);
       });
 
       const { data } = await checkpoint.allBalances();

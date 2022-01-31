@@ -414,9 +414,9 @@ describe('Instruction class', () => {
       ];
       const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
         tuple(
-          ({
+          {
             args: [instructionId, portfolioId],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
       );
@@ -518,13 +518,13 @@ describe('Instruction class', () => {
       const identityConstructor = entityMockUtils.getIdentityConstructorStub();
       const fromDid = 'fromDid';
       const toDid = 'toDid';
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ securityTokenOptions: { ticker } });
 
       const entries = [
-        tuple((['instructionId', 'legId'] as unknown) as StorageKey, {
+        tuple(['instructionId', 'legId'] as unknown as StorageKey, {
           from: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(fromDid),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -575,7 +575,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -599,7 +599,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -624,7 +624,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -649,7 +649,7 @@ describe('Instruction class', () => {
     });
 
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()

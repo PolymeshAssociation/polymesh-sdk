@@ -145,7 +145,7 @@ describe('SecurityToken class', () => {
 
       expect(details.name).toBe(name);
       expect(details.totalSupply).toEqual(
-        utilsConversionModule.balanceToBigNumber((totalSupply as unknown) as Balance)
+        utilsConversionModule.balanceToBigNumber(totalSupply as unknown as Balance)
       );
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
@@ -234,7 +234,7 @@ describe('SecurityToken class', () => {
         expiry,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -258,7 +258,7 @@ describe('SecurityToken class', () => {
         makeDivisible,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -417,7 +417,7 @@ describe('SecurityToken class', () => {
 
   describe('method: createdAt', () => {
     test('should return the event identifier object of the token creation', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -446,7 +446,7 @@ describe('SecurityToken class', () => {
     });
 
     test('should return null if the query result is empty', async () => {
-      const ticker = 'SOMETICKER';
+      const ticker = 'SOME_TICKER';
       const variables = {
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
@@ -467,7 +467,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -486,7 +486,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -551,7 +551,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -570,7 +570,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -590,7 +590,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -659,7 +659,7 @@ describe('SecurityToken class', () => {
       const context = dsMockUtils.getContextInstance();
       const securityToken = new SecurityToken({ ticker }, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

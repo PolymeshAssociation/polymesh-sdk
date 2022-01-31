@@ -40,11 +40,12 @@ export async function prepareTogglePauseRequirements(
     });
   }
 
-  this.addTransaction(
-    pause ? tx.complianceManager.pauseAssetCompliance : tx.complianceManager.resumeAssetCompliance,
-    {},
-    rawTicker
-  );
+  this.addTransaction({
+    transaction: pause
+      ? tx.complianceManager.pauseAssetCompliance
+      : tx.complianceManager.resumeAssetCompliance,
+    args: [rawTicker],
+  });
 
   return new SecurityToken({ ticker }, context);
 }

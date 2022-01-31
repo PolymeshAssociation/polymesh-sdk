@@ -6,7 +6,7 @@ import { PostTransactionValue } from '~/internal';
 describe('Post Transaction Value class', () => {
   describe('method: run', () => {
     test('should run the provided resolver function with the receipt and assign the resulting value', async () => {
-      const receipt = (1 as unknown) as ISubmittableResult;
+      const receipt = 1 as unknown as ISubmittableResult;
       const resolverFunctionStub = sinon.stub().callsFake(r => Promise.resolve(r));
       const p = new PostTransactionValue<number>(resolverFunctionStub);
 
@@ -19,7 +19,7 @@ describe('Post Transaction Value class', () => {
 
   describe('method: transform', () => {
     test('should return a new PTV that runs its value through the callback', async () => {
-      const receipt = (1 as unknown) as ISubmittableResult;
+      const receipt = 1 as unknown as ISubmittableResult;
       const resolverFunctionStub = sinon.stub().callsFake(r => Promise.resolve(r));
       const p = new PostTransactionValue<number>(resolverFunctionStub);
       const transformed = p.transform(n => `${n}`);
@@ -33,8 +33,8 @@ describe('Post Transaction Value class', () => {
 
   describe('method: merge', () => {
     test('should return a new PTV that runs both underlying values through the callback', async () => {
-      const pReceipt = (1 as unknown) as ISubmittableResult;
-      const qReceipt = ('a' as unknown) as ISubmittableResult;
+      const pReceipt = 1 as unknown as ISubmittableResult;
+      const qReceipt = 'a' as unknown as ISubmittableResult;
       const pResolverFunctionStub = sinon.stub().callsFake(r => Promise.resolve(r));
       const qResolverFunctionStub = sinon.stub().callsFake(r => Promise.resolve(r));
       const p = new PostTransactionValue<number>(pResolverFunctionStub);
@@ -50,7 +50,7 @@ describe('Post Transaction Value class', () => {
     });
 
     test('should accept non PTV values', async () => {
-      const receipt = (1 as unknown) as ISubmittableResult;
+      const receipt = 1 as unknown as ISubmittableResult;
       const resolverFunctionStub = sinon.stub().callsFake(r => Promise.resolve(r));
       const p = new PostTransactionValue<number>(resolverFunctionStub);
       const merged = p.merge('a', (a, b) => `${a * 2}${b}`);

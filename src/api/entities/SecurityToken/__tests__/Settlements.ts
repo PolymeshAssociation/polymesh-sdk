@@ -284,14 +284,14 @@ describe('Settlements class', () => {
         .resolves(entityMockUtils.getIdentityInstance({ did: currentDid }));
       getCustodianStub.onSecondCall().resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
 
-      const response = ('rpcResponse' as unknown) as GranularCanTransferResult;
+      const response = 'rpcResponse' as unknown as GranularCanTransferResult;
 
       dsMockUtils
         .createRpcStub('asset', 'canTransferGranular')
         .withArgs(rawCurrentDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
         .returns(response);
 
-      const expected = ('breakdown' as unknown) as TransferBreakdown;
+      const expected = 'breakdown' as unknown as TransferBreakdown;
 
       granularCanTransferResultToTransferBreakdownStub
         .withArgs(response, mockContext)
@@ -303,7 +303,7 @@ describe('Settlements class', () => {
     });
 
     test('should return a transfer breakdown representing whether the transaction can be made from another Identity', async () => {
-      const response = ('rpcResponse' as unknown) as GranularCanTransferResult;
+      const response = 'rpcResponse' as unknown as GranularCanTransferResult;
 
       portfolioIdToMeshPortfolioIdStub
         .withArgs({ did: fromDid }, mockContext)
@@ -320,7 +320,7 @@ describe('Settlements class', () => {
         .withArgs(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
         .returns(response);
 
-      const expected = ('breakdown' as unknown) as TransferBreakdown;
+      const expected = 'breakdown' as unknown as TransferBreakdown;
 
       granularCanTransferResultToTransferBreakdownStub
         .withArgs(response, mockContext)

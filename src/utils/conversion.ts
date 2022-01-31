@@ -320,7 +320,7 @@ export function tickerToString(ticker: Ticker): string {
 export function stringToInvestorZKProofData(proof: string, context: Context): InvestorZKProofData {
   return context.polymeshApi.createType('InvestorZKProofData', proof);
 }
-/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-enable @typescript-eslint/naming-convention */
 
 /**
  * @hidden
@@ -1473,7 +1473,9 @@ export function isCusipValid(cusip: string): boolean {
 
   let sum = 0;
 
+  // cSpell: disable-next-line
   const cusipChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ*@#'.split('');
+
   const cusipLength = cusip.length - 1;
 
   range(cusipLength).forEach(i => {
@@ -3235,7 +3237,7 @@ export function scopeClaimProofToMeshScopeClaimProof(
 ): MeshScopeClaimProof {
   const { polymeshApi } = context;
   const {
-    proofScopeIdWellformed,
+    proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
   } = proof;
 
@@ -3249,7 +3251,7 @@ export function scopeClaimProofToMeshScopeClaimProof(
 
   return polymeshApi.createType('ScopeClaimProof', {
     /* eslint-disable @typescript-eslint/naming-convention */
-    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellformed, context),
+    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellFormed, context),
     proof_scope_id_cdd_id_match: zkProofData,
     scope_id: stringToRistrettoPoint(scopeId, context),
     /* eslint-enable @typescript-eslint/naming-convention */

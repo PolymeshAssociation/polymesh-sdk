@@ -96,7 +96,10 @@ export async function prepareAddTransferRestriction(
     context
   );
 
-  this.addTransaction(statistics.addTransferManager, {}, rawTicker, rawTransferManager);
+  this.addTransaction({
+    transaction: statistics.addTransferManager,
+    args: [rawTicker, rawTransferManager],
+  });
 
   const identityScopes = await P.map(exemptedIdentities, identityValue => {
     let identity: Identity;
@@ -126,13 +129,11 @@ export async function prepareAddTransferRestriction(
     const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
 
     batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).forEach(scopeIdBatch => {
-      this.addTransaction(
-        statistics.addExemptedEntities,
-        { batchSize: new BigNumber(scopeIdBatch.length) },
-        rawTicker,
-        rawTransferManager,
-        scopeIdBatch
-      );
+      this.addTransaction({
+        transaction: statistics.addExemptedEntities,
+        feeMultiplier: new BigNumber(scopeIdBatch.length),
+        args: [rawTicker, rawTransferManager, scopeIdBatch],
+      });
     });
   }
 

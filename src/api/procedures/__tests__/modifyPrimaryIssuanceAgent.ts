@@ -159,14 +159,10 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
 
     await prepareModifyPrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     entityMockUtils.configureMocks({
       securityTokenOptions: {
@@ -178,28 +174,20 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
 
     await prepareModifyPrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     await prepareModifyPrimaryIssuanceAgent.call(proc, {
       ...args,
       requestExpiry,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawExpiry
-    );
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+    });
   });
 
   describe('getAuthorization', () => {

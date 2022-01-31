@@ -22,7 +22,7 @@ jest.mock(
 
 describe('TokenPermissions class', () => {
   const did = 'someDid';
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   let token: Mocked<SecurityToken>;
 
   let context: Mocked<Context>;
@@ -136,7 +136,7 @@ describe('TokenPermissions class', () => {
         },
         token,
       };
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -385,7 +385,7 @@ describe('TokenPermissions class', () => {
         identity,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

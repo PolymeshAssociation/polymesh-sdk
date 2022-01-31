@@ -31,13 +31,13 @@ import { batchArguments, filterEventRecords } from '~/utils/internal';
 /**
  * @hidden
  */
-export const createRegisterCustomAssetTypeResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): AssetType => {
-  const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
+export const createRegisterCustomAssetTypeResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): AssetType => {
+    const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
 
-  return internalTokenTypeToAssetType({ Custom: data[1] }, context);
-};
+    return internalTokenTypeToAssetType({ Custom: data[1] }, context);
+  };
 
 export interface CreateSecurityTokenParams {
   name: string;
@@ -149,11 +149,11 @@ export async function prepareCreateSecurityToken(
 
     if (id.isEmpty) {
       // if the custom asset type doesn't exist, we create it
-      [rawType] = this.addTransaction(
-        tx.asset.registerCustomAssetType,
-        { resolvers: [createRegisterCustomAssetTypeResolver(context)] },
-        rawValue
-      );
+      [rawType] = this.addTransaction({
+        transaction: tx.asset.registerCustomAssetType,
+        resolvers: [createRegisterCustomAssetTypeResolver(context)],
+        args: [rawValue],
+      });
     } else {
       rawType = internalTokenTypeToAssetType({ Custom: id }, context);
     }
@@ -183,41 +183,44 @@ export async function prepareCreateSecurityToken(
     fee = new BigNumber(0);
   } else if (status === TickerReservationStatus.Free) {
     const [registerTickerFee, createAssetFee] = await Promise.all([
-      context.getProtocolFees(TxTags.asset.RegisterTicker),
-      context.getProtocolFees(TxTags.asset.CreateAsset),
+      context.getProtocolFees({ tag: TxTags.asset.RegisterTicker }),
+      context.getProtocolFees({ tag: TxTags.asset.CreateAsset }),
     ]);
     fee = registerTickerFee.plus(createAssetFee);
   }
 
-  // TODO @shuffledex: refactoring with batching mechanism
-
-  this.addTransaction(
-    tx.asset.createAsset,
-    { fee },
-    rawName,
-    rawTicker,
-    rawIsDivisible,
-    rawType,
-    rawIdentifiers,
-    rawFundingRound,
-    rawDisableIu
-  );
+  this.addTransaction({
+    transaction: tx.asset.createAsset,
+    fee,
+    args: [
+      rawName,
+      rawTicker,
+      rawIsDivisible,
+      rawType,
+      rawIdentifiers,
+      rawFundingRound,
+      rawDisableIu,
+    ],
+  });
 
   if (initialSupply && initialSupply.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
-    this.addTransaction(tx.asset.issue, {}, rawTicker, rawInitialSupply);
+    this.addTransaction({
+      transaction: tx.asset.issue,
+      args: [rawTicker, rawInitialSupply],
+    });
   }
 
   if (documents?.length) {
     const rawDocuments = documents.map(doc => tokenDocumentToDocument(doc, context));
     batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
-      this.addTransaction(
-        tx.asset.addDocuments,
-        { isCritical: false, batchSize: new BigNumber(rawDocumentBatch.length) },
-        rawDocumentBatch,
-        rawTicker
-      );
+      this.addTransaction({
+        transaction: tx.asset.addDocuments,
+        isCritical: false,
+        feeMultiplier: new BigNumber(rawDocumentBatch.length),
+        args: [rawDocumentBatch, rawTicker],
+      });
     });
   }
 

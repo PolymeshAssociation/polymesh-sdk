@@ -107,7 +107,7 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   test('should throw an error if the supplied requirement id does not belong to the Security Token', () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
     args = {
       ticker,
       id: new BigNumber(2),
@@ -134,9 +134,9 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   test('should add a modify compliance requirement transaction to the queue', async () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
-    const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
-    const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
     const rawComplianceRequirement = dsMockUtils.createMockComplianceRequirement({
       /* eslint-disable @typescript-eslint/naming-convention */
@@ -160,13 +160,10 @@ describe('modifyComplianceRequirement procedure', () => {
 
     await prepareModifyComplianceRequirement.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      modifyComplianceRequirementTransaction,
-      {},
-      rawTicker,
-      rawComplianceRequirement
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: modifyComplianceRequirementTransaction,
+      args: [rawTicker, rawComplianceRequirement],
+    });
   });
 
   describe('getAuthorization', () => {

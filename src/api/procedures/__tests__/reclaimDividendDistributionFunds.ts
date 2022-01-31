@@ -18,7 +18,7 @@ jest.mock(
 );
 
 describe('reclaimDividendDistributionFunds procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';
@@ -116,17 +116,20 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), transaction, {}, rawCaId);
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+      transaction,
+      args: [rawCaId],
+    });
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      const params = ({
+      const params = {
         distribution: {
           origin,
           token: { ticker },
         },
-      } as unknown) as Params;
+      } as unknown as Params;
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);

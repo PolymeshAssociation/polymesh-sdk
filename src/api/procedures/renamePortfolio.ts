@@ -53,7 +53,10 @@ export async function prepareRenamePortfolio(
     }
   }
 
-  this.addTransaction(portfolio.renamePortfolio, {}, bigNumberToU64(id, context), rawNewName);
+  this.addTransaction({
+    transaction: portfolio.renamePortfolio,
+    args: [bigNumberToU64(id, context), rawNewName],
+  });
 
   return new NumberedPortfolio({ did, id }, context);
 }

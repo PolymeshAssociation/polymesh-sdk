@@ -29,7 +29,7 @@ describe('createPortfolio procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    numberedPortfolio = ('numberedPortfolio' as unknown) as PostTransactionValue<NumberedPortfolio>;
+    numberedPortfolio = 'numberedPortfolio' as unknown as PostTransactionValue<NumberedPortfolio>;
 
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
     getPortfolioIdByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdByName');
@@ -74,11 +74,11 @@ describe('createPortfolio procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      createPortfolioTransaction,
       sinon.match({
+        transaction: createPortfolioTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawNewPortfolioName
+        args: [rawNewPortfolioName],
+      })
     );
     expect(result).toBe(numberedPortfolio);
   });

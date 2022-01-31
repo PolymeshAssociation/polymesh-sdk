@@ -19,7 +19,7 @@ jest.mock(
 );
 
 describe('modifyCaCheckpoint procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -134,13 +134,10 @@ describe('modifyCaCheckpoint procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -151,13 +148,10 @@ describe('modifyCaCheckpoint procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -166,13 +160,10 @@ describe('modifyCaCheckpoint procedure', () => {
       checkpoint: new Date(new Date().getTime() + 100000),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -181,7 +172,10 @@ describe('modifyCaCheckpoint procedure', () => {
       checkpoint: null,
     });
 
-    sinon.assert.calledWith(addTransactionStub, changeRecordDateTransaction, {}, rawCaId, null);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, null],
+    });
   });
 
   describe('getAuthorization', () => {

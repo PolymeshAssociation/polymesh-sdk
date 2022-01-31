@@ -69,7 +69,7 @@ export async function prepareTransferPolyx(
   if (!receiverIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: "The destination Account doesn't have an asssociated Identity",
+      message: "The destination Account doesn't have an associated Identity",
     });
   }
 
@@ -97,15 +97,15 @@ export async function prepareTransferPolyx(
   const rawAmount = bigNumberToBalance(amount, context);
 
   if (memo) {
-    this.addTransaction(
-      tx.balances.transferWithMemo,
-      {},
-      rawAccountId,
-      rawAmount,
-      stringToMemo(memo, context)
-    );
+    this.addTransaction({
+      transaction: tx.balances.transferWithMemo,
+      args: [rawAccountId, rawAmount, stringToMemo(memo, context)],
+    });
   } else {
-    this.addTransaction(tx.balances.transfer, {}, rawAccountId, rawAmount);
+    this.addTransaction({
+      transaction: tx.balances.transfer,
+      args: [rawAccountId, rawAmount],
+    });
   }
 }
 

@@ -108,7 +108,10 @@ export async function prepareRemoveCorporateAction(
     }
   }
 
-  this.addTransaction(tx.corporateAction.removeCa, {}, rawCaId);
+  this.addTransaction({
+    transaction: tx.corporateAction.removeCa,
+    args: [rawCaId],
+  });
 }
 
 /**

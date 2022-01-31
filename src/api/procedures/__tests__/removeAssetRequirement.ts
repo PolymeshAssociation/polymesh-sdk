@@ -69,12 +69,12 @@ describe('removeAssetRequirement procedure', () => {
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
 
     senderConditions = [
-      ('senderConditions0' as unknown) as MeshCondition[],
-      ('senderConditions1' as unknown) as MeshCondition[],
+      'senderConditions0' as unknown as MeshCondition[],
+      'senderConditions1' as unknown as MeshCondition[],
     ];
     receiverConditions = [
-      ('receiverConditions0' as unknown) as MeshCondition[],
-      ('receiverConditions1' as unknown) as MeshCondition[],
+      'receiverConditions0' as unknown as MeshCondition[],
+      'receiverConditions1' as unknown as MeshCondition[],
     ];
     rawComplianceRequirement = senderConditions.map(
       (sConditions, index) =>
@@ -126,13 +126,10 @@ describe('removeAssetRequirement procedure', () => {
 
     const result = await prepareRemoveAssetRequirement.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      removeComplianceRequirementTransaction,
-      {},
-      rawTicker,
-      rawId
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: removeComplianceRequirementTransaction,
+      args: [rawTicker, rawId],
+    });
 
     expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
   });

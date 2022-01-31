@@ -60,13 +60,14 @@ export async function prepareControllerTransfer(
     });
   }
 
-  this.addTransaction(
-    tx.asset.controllerTransfer,
-    {},
-    stringToTicker(ticker, context),
-    bigNumberToBalance(amount, context),
-    portfolioIdToMeshPortfolioId(originPortfolioId, context)
-  );
+  this.addTransaction({
+    transaction: tx.asset.controllerTransfer,
+    args: [
+      stringToTicker(ticker, context),
+      bigNumberToBalance(amount, context),
+      portfolioIdToMeshPortfolioId(originPortfolioId, context),
+    ],
+  });
 }
 
 /**

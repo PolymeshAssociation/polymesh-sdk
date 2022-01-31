@@ -47,7 +47,7 @@ describe('AccountManagement class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -74,7 +74,7 @@ describe('AccountManagement class', () => {
         },
       ];
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -96,7 +96,7 @@ describe('AccountManagement class', () => {
         },
       ];
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -115,7 +115,7 @@ describe('AccountManagement class', () => {
         targetAccount: 'someAccount',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -134,7 +134,7 @@ describe('AccountManagement class', () => {
         freeze: true,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -153,7 +153,7 @@ describe('AccountManagement class', () => {
         freeze: false,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -215,8 +215,9 @@ describe('AccountManagement class', () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
-      let accountBalanceStub = (dsMockUtils.getContextInstance().getCurrentAccount()
-        .getBalance as sinon.SinonStub).resolves(unsubCallback);
+      let accountBalanceStub = (
+        dsMockUtils.getContextInstance().getCurrentAccount().getBalance as sinon.SinonStub
+      ).resolves(unsubCallback);
 
       const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
       let result = await accountManagement.getAccountBalance(callback);

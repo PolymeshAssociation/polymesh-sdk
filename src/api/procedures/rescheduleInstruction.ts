@@ -42,7 +42,10 @@ export async function prepareRescheduleInstruction(
 
   const rawId = bigNumberToU64(id, context);
 
-  this.addTransaction(tx.settlement.rescheduleInstruction, {}, rawId);
+  this.addTransaction({
+    transaction: tx.settlement.rescheduleInstruction,
+    args: [rawId],
+  });
 
   return instruction;
 }

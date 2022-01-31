@@ -57,21 +57,17 @@ export async function prepareModifyVenue(
   }
 
   if (description) {
-    this.addTransaction(
-      tx.settlement.updateVenueDetails,
-      {},
-      bigNumberToU64(venueId, context),
-      stringToVenueDetails(description, context)
-    );
+    this.addTransaction({
+      transaction: tx.settlement.updateVenueDetails,
+      args: [bigNumberToU64(venueId, context), stringToVenueDetails(description, context)],
+    });
   }
 
   if (type) {
-    this.addTransaction(
-      tx.settlement.updateVenueType,
-      {},
-      bigNumberToU64(venueId, context),
-      venueTypeToMeshVenueType(type, context)
-    );
+    this.addTransaction({
+      transaction: tx.settlement.updateVenueType,
+      args: [bigNumberToU64(venueId, context), venueTypeToMeshVenueType(type, context)],
+    });
   }
 }
 

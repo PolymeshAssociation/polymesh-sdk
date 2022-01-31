@@ -42,10 +42,8 @@ export async function prepareSetAssetRequirements(
 
   const token = new SecurityToken({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await token.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await token.compliance.requirements.get();
 
   const currentConditions = map(currentRequirements, 'conditions');
 
@@ -70,7 +68,10 @@ export async function prepareSetAssetRequirements(
   }
 
   if (!requirements.length) {
-    this.addTransaction(tx.complianceManager.resetAssetCompliance, {}, rawTicker);
+    this.addTransaction({
+      transaction: tx.complianceManager.resetAssetCompliance,
+      args: [rawTicker],
+    });
   } else {
     const rawAssetCompliance = requirements.map((requirement, index) =>
       requirementToComplianceRequirement(
@@ -79,12 +80,10 @@ export async function prepareSetAssetRequirements(
       )
     );
 
-    this.addTransaction(
-      tx.complianceManager.replaceAssetCompliance,
-      {},
-      rawTicker,
-      rawAssetCompliance
-    );
+    this.addTransaction({
+      transaction: tx.complianceManager.replaceAssetCompliance,
+      args: [rawTicker, rawAssetCompliance],
+    });
   }
 
   return token;

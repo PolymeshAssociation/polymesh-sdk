@@ -155,11 +155,11 @@ export class Requirements extends Namespace<SecurityToken> {
       >(
         [
           [
-            (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+            complianceManager.assetCompliances as unknown as QueryableStorageEntry<'promise'>,
             rawTicker,
           ],
           [
-            (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+            complianceManager.trustedClaimIssuer as unknown as QueryableStorageEntry<'promise'>,
             rawTicker,
           ],
         ],
@@ -176,11 +176,11 @@ export class Requirements extends Namespace<SecurityToken> {
       ]
     >([
       [
-        (complianceManager.assetCompliances as unknown) as QueryableStorageEntry<'promise'>,
+        complianceManager.assetCompliances as unknown as QueryableStorageEntry<'promise'>,
         rawTicker,
       ],
       [
-        (complianceManager.trustedClaimIssuer as unknown) as QueryableStorageEntry<'promise'>,
+        complianceManager.trustedClaimIssuer as unknown as QueryableStorageEntry<'promise'>,
         rawTicker,
       ],
     ]);

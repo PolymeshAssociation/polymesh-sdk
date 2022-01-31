@@ -193,6 +193,9 @@ describe('claimClassicTicker procedure', () => {
 
     await prepareClaimClassicTicker.call(proc, { ticker, ethereumSignature });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawEthereumSignature);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawTicker, rawEthereumSignature],
+    });
   });
 });

@@ -183,17 +183,18 @@ export async function prepareInvestInSto(
     });
   }
 
-  this.addTransaction(
-    txSto.invest,
-    {},
-    portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
-    portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
-    stringToTicker(ticker, context),
-    bigNumberToU64(id, context),
-    bigNumberToBalance(purchaseAmount, context),
-    maxPrice ? bigNumberToBalance(maxPrice, context) : null,
-    null
-  );
+  this.addTransaction({
+    transaction: txSto.invest,
+    args: [
+      portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
+      portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
+      stringToTicker(ticker, context),
+      bigNumberToU64(id, context),
+      bigNumberToBalance(purchaseAmount, context),
+      maxPrice ? bigNumberToBalance(maxPrice, context) : null,
+      null,
+    ],
+  });
 }
 
 /**

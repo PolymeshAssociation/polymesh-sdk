@@ -36,11 +36,11 @@ export const MAX_BATCH_ELEMENTS: Record<string, number> = {
 };
 export const DEFAULT_MAX_BATCH_ELEMENTS = 20;
 /**
- * Whether or not to ingnore the checksum when encoding/decoding polkadot addresses
+ * Whether or not to ignore the checksum when encoding/decoding polkadot addresses
  */
 export const IGNORE_CHECKSUM = true;
 /**
- * Default format for Keyrings (used when the chain doesn't specify one)
+ * Default format for Keyring (used when the chain doesn't specify one)
  */
 export const DEFAULT_SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;

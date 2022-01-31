@@ -94,7 +94,7 @@ describe('IdentityAuthorizations class', () => {
       const authorizationsGivenEntries = authorizations.map(
         ({ authorized_by: issuer, auth_id: authId }, index) =>
           tuple(
-            ({ args: [issuer, authId] } as unknown) as StorageKey,
+            { args: [issuer, authId] } as unknown as StorageKey,
             dsMockUtils.createMockSignatory({
               Identity: dsMockUtils.createMockIdentityId(authParams[index].target.did),
             })

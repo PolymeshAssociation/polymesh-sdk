@@ -154,28 +154,20 @@ describe('modifyCorporateActionAgent procedure', () => {
 
     await prepareModifyCorporateActionsAgent.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     await prepareModifyCorporateActionsAgent.call(proc, {
       ...args,
       requestExpiry,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawExpiry
-    );
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+    });
   });
 
   describe('getAuthorization', () => {

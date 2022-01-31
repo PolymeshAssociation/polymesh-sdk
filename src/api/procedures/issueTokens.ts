@@ -48,7 +48,10 @@ export async function prepareIssueTokens(
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
 
-  this.addTransaction(asset.issue, {}, rawTicker, rawValue);
+  this.addTransaction({
+    transaction: asset.issue,
+    args: [rawTicker, rawValue],
+  });
 
   return securityToken;
 }

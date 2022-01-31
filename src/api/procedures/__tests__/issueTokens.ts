@@ -116,7 +116,7 @@ describe('issueTokens procedure', () => {
 
     const result = await prepareIssueTokens.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAmount);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
     expect(result.ticker).toBe(ticker);
   });
 

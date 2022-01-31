@@ -19,7 +19,7 @@ jest.mock(
 );
 
 describe('closeSto procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
 
   const rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -71,7 +71,10 @@ describe('closeSto procedure', () => {
 
     await prepareCloseSto.call(proc, { ticker, id });
 
-    sinon.assert.calledWith(addTransactionStub, stopStoTransaction, {}, rawTicker, rawId);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: stopStoTransaction,
+      args: [rawTicker, rawId],
+    });
   });
 
   test('should throw an error if the STO is already closed', async () => {

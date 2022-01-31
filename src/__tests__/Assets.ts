@@ -54,10 +54,10 @@ describe('Assets Class', () => {
   describe('method: reserveTicker', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
-        ticker: 'SOMETICKER',
+        ticker: 'SOME_TICKER',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -72,7 +72,7 @@ describe('Assets Class', () => {
 
   describe('method: createToken', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'FAKETICKER';
+      const ticker = 'FAKE_TICKER';
 
       const args = {
         ticker,
@@ -86,7 +86,7 @@ describe('Assets Class', () => {
         reservationRequired: false,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -102,11 +102,11 @@ describe('Assets Class', () => {
   describe('method: claimClassicTicker', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
-        ticker: 'SOMETICKER',
+        ticker: 'SOME_TICKER',
         ethereumSignature: 'someSig',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<TickerReservation>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()

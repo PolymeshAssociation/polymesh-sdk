@@ -20,6 +20,7 @@ import {
   transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
+import { assembleBatchTransactions } from '~/utils/internal';
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -119,21 +120,28 @@ export async function prepareSetTransferRestrictions(
     });
   }
 
-  if (restrictionsToRemoveAmount) {
-    this.addBatchTransaction(statistics.removeTransferManager, {}, restrictionsToRemove);
-  }
+  const transactions = assembleBatchTransactions(
+    tuple(
+      {
+        transaction: statistics.removeTransferManager,
+        argsArray: restrictionsToRemove,
+      },
+      {
+        transaction: statistics.addTransferManager,
+        argsArray: restrictionsToAdd,
+      },
+      {
+        transaction: statistics.removeExemptedEntities,
+        argsArray: exemptionsToRemove,
+      },
+      {
+        transaction: statistics.addExemptedEntities,
+        argsArray: exemptionsToAdd,
+      }
+    )
+  );
 
-  if (restrictionsToAddAmount) {
-    this.addBatchTransaction(statistics.addTransferManager, {}, restrictionsToAdd);
-  }
-
-  if (exemptionsToRemoveAmount) {
-    this.addBatchTransaction(statistics.removeExemptedEntities, {}, exemptionsToRemove);
-  }
-
-  if (exemptionsToAddAmount) {
-    this.addBatchTransaction(statistics.addExemptedEntities, {}, exemptionsToAdd);
-  }
+  this.addBatchTransaction({ transactions });
 
   return finalCount;
 }
@@ -145,12 +153,8 @@ export function getAuthorization(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   { ticker }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
-  const {
-    restrictionsToRemove,
-    restrictionsToAdd,
-    exemptionsToAdd,
-    exemptionsToRemove,
-  } = this.storage;
+  const { restrictionsToRemove, restrictionsToAdd, exemptionsToAdd, exemptionsToRemove } =
+    this.storage;
   const transactions: TxTag[] = [];
   if (restrictionsToAdd.length) {
     transactions.push(TxTags.statistics.AddTransferManager);

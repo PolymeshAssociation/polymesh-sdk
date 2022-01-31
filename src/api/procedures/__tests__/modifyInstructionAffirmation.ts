@@ -192,14 +192,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Affirm,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { batchSize: new BigNumber(2) },
-      rawInstructionId,
-      [rawPortfolioId, rawPortfolioId],
-      rawLegAmount
-    );
+      feeMultiplier: new BigNumber(2),
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+    });
 
     expect(result.id).toEqual(id);
   });
@@ -257,14 +254,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Withdraw,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { batchSize: new BigNumber(2) },
-      rawInstructionId,
-      [rawPortfolioId, rawPortfolioId],
-      rawLegAmount
-    );
+      feeMultiplier: new BigNumber(2),
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+    });
 
     expect(result.id).toEqual(id);
   });
@@ -301,14 +295,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Reject,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { batchSize: new BigNumber(2) },
-      rawInstructionId,
-      rawPortfolioId,
-      rawLegAmount
-    );
+      feeMultiplier: new BigNumber(2),
+      args: [rawInstructionId, rawPortfolioId, rawLegAmount],
+    });
 
     expect(result.id).toEqual(id);
   });

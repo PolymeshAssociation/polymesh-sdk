@@ -52,7 +52,10 @@ export async function prepareToggleFreezeSto(
       });
     }
 
-    this.addTransaction(txSto.freezeFundraiser, {}, rawTicker, rawId);
+    this.addTransaction({
+      transaction: txSto.freezeFundraiser,
+      args: [rawTicker, rawId],
+    });
   } else {
     if ([StoSaleStatus.Closed, StoSaleStatus.ClosedEarly].includes(sale)) {
       throw new PolymeshError({
@@ -68,7 +71,10 @@ export async function prepareToggleFreezeSto(
       });
     }
 
-    this.addTransaction(txSto.unfreezeFundraiser, {}, rawTicker, rawId);
+    this.addTransaction({
+      transaction: txSto.unfreezeFundraiser,
+      args: [rawTicker, rawId],
+    });
   }
 
   return sto;
