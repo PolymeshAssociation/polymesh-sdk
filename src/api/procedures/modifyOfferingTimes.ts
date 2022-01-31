@@ -56,47 +56,7 @@ export async function prepareModifyOfferingTimes(
     start,
   } = await offering.details();
 
-  if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Offering is already closed',
-    });
-  }
-
-  const areSameTimes =
-    (!newStart || start === newStart) && (newEnd === undefined || end === newEnd);
-
-  if (areSameTimes) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: 'Nothing to modify',
-    });
-  }
-
-  const now = new Date();
-
-  if (timing === OfferingTimingStatus.Expired) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Offering has already ended',
-    });
-  }
-
-  if (timing !== OfferingTimingStatus.NotStarted && newStart) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Cannot modify the start time of an Offering that already started',
-    });
-  }
-
-  const datesAreInThePast = (newStart && now > newStart) || (newEnd && now > newEnd);
-
-  if (datesAreInThePast) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'New dates are in the past',
-    });
-  }
+  validateInput(sale, newStart, start, newEnd, end, timing);
 
   const rawTicker = stringToTicker(ticker, context);
   const rawId = numberToU64(id, context);
@@ -139,3 +99,57 @@ export function getAuthorization(
  */
 export const modifyOfferingTimes = (): Procedure<Params, void> =>
   new Procedure(prepareModifyOfferingTimes, getAuthorization);
+
+/**
+ * @hidden
+ */
+function validateInput(
+  sale: OfferingSaleStatus,
+  newStart: Date | undefined,
+  start: Date,
+  newEnd: Date | null | undefined,
+  end: Date | null,
+  timing: OfferingTimingStatus
+) {
+  if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Offering is already closed',
+    });
+  }
+
+  const areSameTimes =
+    (!newStart || start === newStart) && (newEnd === undefined || end === newEnd);
+
+  if (areSameTimes) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'Nothing to modify',
+    });
+  }
+
+  const now = new Date();
+
+  if (timing === OfferingTimingStatus.Expired) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Offering has already ended',
+    });
+  }
+
+  if (timing !== OfferingTimingStatus.NotStarted && newStart) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Cannot modify the start time of an Offering that already started',
+    });
+  }
+
+  const datesAreInThePast = (newStart && now > newStart) || (newEnd && now > newEnd);
+
+  if (datesAreInThePast) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'New dates are in the past',
+    });
+  }
+}
