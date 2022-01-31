@@ -2,7 +2,7 @@ import { difference, intersection, isEqual, sortBy } from 'lodash';
 import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ClaimType, ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
+import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
 import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
