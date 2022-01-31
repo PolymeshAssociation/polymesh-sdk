@@ -2,7 +2,7 @@ import { difference, intersection, isEqual, sortBy } from 'lodash';
 import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ClaimType, ErrorCode, TrustedClaimIssuer } from '~/types';
+import { ClaimType, ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
 import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -15,13 +15,7 @@ import {
 import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
 
 export interface ModifyTokenTrustedClaimIssuersAddSetParams {
-  /**
-   * array of Identity IDs
-   */
-  claimIssuers: {
-    identity: string | Identity;
-    trustedFor: ClaimType[] | null;
-  }[];
+  claimIssuers: InputTrustedClaimIssuer[];
 }
 
 export interface ModifyTokenTrustedClaimIssuersRemoveParams {
