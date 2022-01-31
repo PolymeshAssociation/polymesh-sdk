@@ -10,6 +10,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { TrustedClaimIssuer } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -167,7 +168,7 @@ describe('TrustedClaimIssuers class', () => {
     let context: Context;
     let token: SecurityToken;
     let expectedDids: string[];
-    let expectedTrustedClaimIssuers: DefaultTrustedClaimIssuer[];
+    let expectedTrustedClaimIssuers: TrustedClaimIssuer<true>[];
     let claimIssuers: TrustedIssuer[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
@@ -187,7 +188,10 @@ describe('TrustedClaimIssuers class', () => {
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push(new DefaultTrustedClaimIssuer({ did, ticker }, context));
+        expectedTrustedClaimIssuers.push({
+          identity: new DefaultTrustedClaimIssuer({ did, ticker }, context),
+          trustedFor: null,
+        });
         claimIssuers.push(
           dsMockUtils.createMockTrustedIssuer({
             issuer: dsMockUtils.createMockIdentityId(did),

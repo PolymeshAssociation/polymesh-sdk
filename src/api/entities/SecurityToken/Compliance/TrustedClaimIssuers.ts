@@ -10,7 +10,7 @@ import {
   Namespace,
   SecurityToken,
 } from '~/internal';
-import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import { ProcedureMethod, SubCallback, TrustedClaimIssuer, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -90,13 +90,13 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
    *
    * @note can be subscribed to
    */
-  public get(): Promise<DefaultTrustedClaimIssuer[]>;
-  public get(callback: SubCallback<DefaultTrustedClaimIssuer[]>): Promise<UnsubCallback>;
+  public get(): Promise<TrustedClaimIssuer<true>[]>;
+  public get(callback: SubCallback<TrustedClaimIssuer<true>[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async get(
-    callback?: SubCallback<DefaultTrustedClaimIssuer[]>
-  ): Promise<DefaultTrustedClaimIssuer[] | UnsubCallback> {
+    callback?: SubCallback<TrustedClaimIssuer<true>[]>
+  ): Promise<TrustedClaimIssuer<true>[] | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -109,12 +109,16 @@ export class TrustedClaimIssuers extends Namespace<SecurityToken> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
+    const assembleResult = (issuers: TrustedIssuer[]): TrustedClaimIssuer<true>[] =>
       issuers.map(issuer => {
         const {
           identity: { did },
+          trustedFor,
         } = trustedIssuerToTrustedClaimIssuer(issuer, context);
-        return new DefaultTrustedClaimIssuer({ did, ticker }, context);
+        return {
+          identity: new DefaultTrustedClaimIssuer({ did, ticker }, context),
+          trustedFor,
+        };
       });
 
     if (callback) {

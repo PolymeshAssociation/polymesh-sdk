@@ -11,6 +11,7 @@ import {
   CheckpointSchedule,
   CustomPermissionGroup,
   DefaultPortfolio,
+  DefaultTrustedClaimIssuer,
   DividendDistribution,
   Identity,
   Instruction,
@@ -335,10 +336,14 @@ export interface ClaimScope {
   ticker?: string;
 }
 
-export interface TrustedClaimIssuer {
-  identity: Identity;
+/**
+ * @param IsDefault - whether the Identity is a default trusted claim issuer for an asset or just
+ * for a specific compliance condition. Defaults to false
+ */
+export interface TrustedClaimIssuer<IsDefault extends boolean = false> {
+  identity: IsDefault extends true ? DefaultTrustedClaimIssuer : Identity;
   /**
-   * a null value means that the issuer is trusted for all claim types.
+   * an undefined value means that the issuer is trusted for all claim types.
    */
   trustedFor: ClaimType[] | null;
 }
