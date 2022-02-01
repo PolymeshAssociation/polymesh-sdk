@@ -155,7 +155,7 @@ const findInvalidCddClaims = async (
         const { id: currentCddId } = issuedClaimsForTarget[0].claim as CddClaim;
         const { id: newCddId } = claim as CddClaim;
 
-        if (currentCddId !== DEFAULT_CDD_ID && newCddId !== currentCddId) {
+        if (newCddId !== currentCddId && ![currentCddId, newCddId].includes(DEFAULT_CDD_ID)) {
           invalidCddClaims.push({
             target: typeof target === 'string' ? new Identity({ did: target }, context) : target,
             currentCddId,

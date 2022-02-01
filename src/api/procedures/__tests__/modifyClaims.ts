@@ -33,6 +33,7 @@ describe('modifyClaims procedure', () => {
   let someDid: string;
   let otherDid: string;
   let cddId: string;
+  let defaultCddClaim: Claim;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
   let iuClaim: Claim;
@@ -42,6 +43,7 @@ describe('modifyClaims procedure', () => {
   let rawCddClaim: MeshClaim;
   let rawBuyLockupClaim: MeshClaim;
   let rawIuClaim: MeshClaim;
+  let rawDefaultCddClaim: MeshClaim;
   let rawSomeDid: IdentityId;
   let rawOtherDid: IdentityId;
   let rawExpiry: Moment;
@@ -66,6 +68,7 @@ describe('modifyClaims procedure', () => {
     otherDid = 'otherDid';
     cddId = 'cddId';
     cddClaim = { type: ClaimType.CustomerDueDiligence, id: cddId };
+    defaultCddClaim = { type: ClaimType.CustomerDueDiligence, id: DEFAULT_CDD_ID };
     iuClaim = {
       type: ClaimType.InvestorUniqueness,
       scope: {
@@ -106,6 +109,11 @@ describe('modifyClaims procedure', () => {
     rawCddClaim = dsMockUtils.createMockClaim({
       CustomerDueDiligence: dsMockUtils.createMockCddId(),
     });
+
+    rawDefaultCddClaim = dsMockUtils.createMockClaim({
+      CustomerDueDiligence: dsMockUtils.createMockCddId(DEFAULT_CDD_ID),
+    });
+
     rawBuyLockupClaim = dsMockUtils.createMockClaim({
       BuyLockup: dsMockUtils.createMockScope(),
     });
@@ -129,6 +137,7 @@ describe('modifyClaims procedure', () => {
     claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
     claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
     claimToMeshClaimStub.withArgs(iuClaim, mockContext).returns(rawIuClaim);
+    claimToMeshClaimStub.withArgs(defaultCddClaim, mockContext).returns(rawDefaultCddClaim);
     stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
     stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
@@ -181,7 +190,7 @@ describe('modifyClaims procedure', () => {
               issuer: ('issuerIdentity' as unknown) as Identity,
               issuedAt: new Date(),
               expiry: null,
-              claim: { type: ClaimType.CustomerDueDiligence, id: DEFAULT_CDD_ID },
+              claim: defaultCddClaim,
             },
           ],
           next: 1,
@@ -192,19 +201,16 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
 
-    await prepareModifyClaims.call(
-      procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext),
-      {
-        claims: [
-          {
-            target: someDid,
-            claim: buyLockupClaim,
-            expiry,
-          },
-        ],
-        operation: ClaimOperation.Add,
-      }
-    );
+    await prepareModifyClaims.call(proc, {
+      claims: [
+        {
+          target: someDid,
+          claim: buyLockupClaim,
+          expiry,
+        },
+      ],
+      operation: ClaimOperation.Add,
+    });
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
@@ -263,9 +269,45 @@ describe('modifyClaims procedure', () => {
       { groupByFn: sinon.match(sinon.match.func) },
       rawAddClaimItems
     );
+
+    dsMockUtils.configureMocks({
+      contextOptions: {
+        issuedClaims: {
+          data: [
+            {
+              target: new Identity({ did: someDid }, mockContext),
+              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuedAt: new Date(),
+              expiry: null,
+              claim: cddClaim,
+            },
+          ],
+          next: 1,
+          count: 1,
+        },
+      },
+    });
+
+    await prepareModifyClaims.call(proc, {
+      claims: [
+        {
+          target: someDid,
+          claim: defaultCddClaim,
+          expiry,
+        },
+      ],
+      operation: ClaimOperation.Add,
+    });
+
+    sinon.assert.calledWith(
+      addBatchTransactionStub,
+      addClaimTransaction,
+      { groupByFn: sinon.match(sinon.match.func) },
+      [[rawSomeDid, rawDefaultCddClaim, rawExpiry]]
+    );
   });
 
-  test('should throw an error if any of the CDD IDs of the claims that will be added are not equal to the CDD ID of current CDD claims', async () => {
+  test('should throw an error if any of the CDD IDs of the claims that will be added are neither equal to the CDD ID of current CDD claims nor equal to default CDD ID', async () => {
     const otherId = 'otherId';
     dsMockUtils.configureMocks({
       contextOptions: {
