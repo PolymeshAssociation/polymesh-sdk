@@ -1125,8 +1125,8 @@ export interface CheckpointWithData {
   totalSupply: BigNumber;
 }
 
-export interface SecondaryAccount {
-  signer: Signer;
+export interface PermissionedAccount {
+  account: Account;
   permissions: Permissions;
 }
 
