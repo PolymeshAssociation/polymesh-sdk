@@ -28,9 +28,9 @@ import {
   isTickerOwnerRole,
   isVenueOwnerRole,
   Order,
+  PermissionedAccount,
   ResultSet,
   Role,
-  SecondaryAccount,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -48,10 +48,10 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  signatoryToSignerValue,
-  signerValueToSigner,
+  signatoryToAccount,
   stringToIdentityId,
   stringToTicker,
+  transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
@@ -256,13 +256,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getPrimaryAccount(): Promise<Account>;
-  public async getPrimaryAccount(callback: SubCallback<Account>): Promise<UnsubCallback>;
+  public async getPrimaryAccount(): Promise<PermissionedAccount>;
+  public async getPrimaryAccount(
+    callback: SubCallback<PermissionedAccount>
+  ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getPrimaryAccount(
-    callback?: SubCallback<Account>
-  ): Promise<Account | UnsubCallback> {
+    callback?: SubCallback<PermissionedAccount>
+  ): Promise<PermissionedAccount | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -273,8 +275,16 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): Account => {
-      return new Account({ address: accountIdToString(primaryKey) }, context);
+    const assembleResult = ({ primary_key: primaryKey }: DidRecord): PermissionedAccount => {
+      return {
+        account: new Account({ address: accountIdToString(primaryKey) }, context),
+        permissions: {
+          tokens: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: transactionPermissionsToTxGroups(null),
+        },
+      };
     };
 
     const rawDid = stringToIdentityId(did, context);
@@ -651,15 +661,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getSecondaryAccounts(): Promise<SecondaryAccount[]>;
+  public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
-    callback: SubCallback<SecondaryAccount[]>
+    callback: SubCallback<PermissionedAccount[]>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getSecondaryAccounts(
-    callback?: SubCallback<SecondaryAccount[]>
-  ): Promise<SecondaryAccount[] | UnsubCallback> {
+    callback?: SubCallback<PermissionedAccount[]>
+  ): Promise<PermissionedAccount[] | UnsubCallback> {
     const {
       did,
       context,
@@ -672,9 +682,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = ({
       secondary_keys: secondaryAccounts,
-    }: DidRecord): SecondaryAccount[] => {
+    }: DidRecord): PermissionedAccount[] => {
       return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
-        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), context),
+        account: signatoryToAccount(rawSigner, context),
         permissions: meshPermissionsToPermissions(permissions, context),
       }));
     };

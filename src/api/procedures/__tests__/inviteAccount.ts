@@ -77,7 +77,7 @@ describe('inviteAccount procedure', () => {
   test('should add an add authorization transaction to the queue', async () => {
     const expiry = new Date('1/1/2040');
     const target = new Account({ address }, mockContext);
-    const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
+    const account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId('someAccountId'),
     });
@@ -119,7 +119,7 @@ describe('inviteAccount procedure', () => {
         sentAuthorizations,
         secondaryAccounts: [
           {
-            signer,
+            account,
             permissions: {
               tokens: null,
               portfolios: null,
@@ -133,7 +133,7 @@ describe('inviteAccount procedure', () => {
 
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
-    signerToStringStub.withArgs(signer).returns(signer.address);
+    signerToStringStub.withArgs(account).returns(account.address);
     signerToStringStub.withArgs(args.targetAccount).returns(address);
     signerToStringStub.withArgs(target).returns('someValue');
     signerValueToSignatoryStub
@@ -217,7 +217,7 @@ describe('inviteAccount procedure', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
     });
-    const signer = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
+    const account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
 
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
@@ -250,7 +250,7 @@ describe('inviteAccount procedure', () => {
         sentAuthorizations: sentAuthorizations,
         secondaryAccounts: [
           {
-            signer,
+            account,
             permissions: {
               tokens: null,
               portfolios: null,
@@ -264,7 +264,6 @@ describe('inviteAccount procedure', () => {
 
     entityMockUtils.getAccountGetIdentityStub().resolves(null);
 
-    signerToStringStub.withArgs(signer).returns(signer.address);
     signerToStringStub.withArgs(args.targetAccount).returns(address);
     signerToStringStub.withArgs(target).returns(address);
 

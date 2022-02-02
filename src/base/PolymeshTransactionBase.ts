@@ -269,7 +269,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
     }
 
     if (paidForBy) {
-      const primaryAccount = await paidForBy.getPrimaryAccount();
+      const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
 
       return {
         type: PayingAccountType.Other,

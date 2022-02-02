@@ -572,7 +572,15 @@ describe('Polymesh Transaction Base class', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = entityMockUtils.getAccountInstance();
       const paidForBy = entityMockUtils.getIdentityInstance({
-        getPrimaryAccount: account,
+        getPrimaryAccount: {
+          account,
+          permissions: {
+            tokens: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
       });
 
       const args = tuple('SOMETHING');
@@ -589,7 +597,7 @@ describe('Polymesh Transaction Base class', () => {
 
       const result = await tx.getPayingAccount();
 
-      expect(result?.account).toEqual(account);
+      expect(result?.account.address).toEqual(account.address);
       expect(result?.allowance).toBeNull();
     });
 

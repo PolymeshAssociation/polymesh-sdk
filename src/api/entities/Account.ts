@@ -47,7 +47,6 @@ import {
   extrinsicIdentifierToTxTag,
   identityIdToString,
   portfolioToPortfolioId,
-  signerToString,
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
@@ -281,7 +280,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           specVersionId: new BigNumber(spec_version_id),
           extrinsicHash: extrinsic_hash!,
         };
-        /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+        /* eslint-enable @typescript-eslint/no-non-null-assertion */
       }
     );
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -307,9 +306,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       return false;
     }
 
-    const primaryAccount = await identity.getPrimaryAccount();
+    const {
+      account: { address: primaryAccountAddress },
+    } = await identity.getPrimaryAccount();
 
-    if (address === primaryAccount.address) {
+    if (address === primaryAccountAddress) {
       return false;
     }
 
@@ -324,12 +325,17 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const currentIdentity = await context.getCurrentIdentity();
 
-    const [primaryAccount, secondaryAccount] = await Promise.all([
+    const [
+      {
+        account: { address: primaryAccountAddress },
+      },
+      secondaryAccounts,
+    ] = await Promise.all([
       currentIdentity.getPrimaryAccount(),
       currentIdentity.getSecondaryAccounts(),
     ]);
 
-    if (address === primaryAccount.address) {
+    if (address === primaryAccountAddress) {
       return {
         tokens: null,
         transactions: null,
@@ -339,7 +345,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const account = secondaryAccount.find(({ signer }) => address === signerToString(signer))!;
+    const account = secondaryAccounts.find(
+      ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
+    )!;
 
     return account.permissions;
   }
