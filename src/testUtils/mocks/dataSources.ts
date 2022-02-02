@@ -154,8 +154,8 @@ import {
   DistributionWithDetails,
   ExtrinsicData,
   KeyringPair,
+  PermissionedAccount,
   ResultSet,
-  SecondaryAccount,
   SignerType,
   Subsidy,
 } from '~/types';
@@ -318,7 +318,7 @@ interface ContextOptions {
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryAccount?: string;
-  secondaryAccounts?: SecondaryAccount[];
+  secondaryAccounts?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -660,7 +660,17 @@ function configureContext(opts: ContextOptions): void {
     checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
     getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryAccount: sinon.stub().resolves({ address: opts.primaryAccount }),
+    getPrimaryAccount: sinon.stub().resolves({
+      account: {
+        address: opts.primaryAccount,
+      },
+      permissions: {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      },
+    }),
     getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),

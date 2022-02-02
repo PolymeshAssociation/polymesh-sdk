@@ -15,7 +15,6 @@ import {
   NoArgsProcedureMethod,
   PermissionType,
   ProcedureMethod,
-  Signer,
   SubCallback,
   UnsubCallback,
 } from '~/types';
@@ -41,16 +40,16 @@ export class AccountManagement {
     );
 
     this.revokePermissions = createProcedureMethod<
-      { secondaryAccounts: Signer[] },
+      { secondaryAccounts: Account[] },
       ModifySignerPermissionsParams,
       void
     >(
       {
         getProcedureAndArgs: args => {
           const { secondaryAccounts } = args;
-          const signers = secondaryAccounts.map(signer => {
+          const accounts = secondaryAccounts.map(account => {
             return {
-              signer,
+              account,
               permissions: {
                 tokens: { type: PermissionType.Include, values: [] },
                 transactions: { type: PermissionType.Include, values: [] },
@@ -58,7 +57,7 @@ export class AccountManagement {
               },
             };
           });
-          return [modifySignerPermissions, { secondaryAccounts: signers }];
+          return [modifySignerPermissions, { secondaryAccounts: accounts }];
         },
       },
       context
@@ -95,7 +94,7 @@ export class AccountManagement {
   /**
    * Revoke all permissions of a list of secondary Accounts associated with the signing Identity
    */
-  public revokePermissions: ProcedureMethod<{ secondaryAccounts: Signer[] }, void>;
+  public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
