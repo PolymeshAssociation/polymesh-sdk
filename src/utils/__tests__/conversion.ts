@@ -201,6 +201,7 @@ import {
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
+  signatoryToAccount,
   signatoryToSignerValue,
   signerToSignerValue,
   signerToString,
@@ -877,6 +878,54 @@ describe('signerToSignerValue and signerValueToSigner', () => {
     result = signerValueToSigner(signerValue, context);
 
     expect((result as Identity).did).toBe(value);
+  });
+});
+
+describe('signatoryToAccount', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+    sinon.restore();
+  });
+
+  test('should convert a polkadot Signatory Account object to an Account', () => {
+    const fakeAccount = new Account({ address: 'someAccountId' }, context);
+    const signatory = dsMockUtils.createMockSignatory({
+      Account: dsMockUtils.createMockAccountId(fakeAccount.address),
+    });
+
+    const result = signatoryToAccount(signatory, context);
+    expect(result).toEqual(fakeAccount);
+  });
+
+  test('should throw an error while converting a polkadot Signatory Identity object', () => {
+    const signatory = dsMockUtils.createMockSignatory({
+      Identity: dsMockUtils.createMockIdentityId('someIdentity'),
+    });
+
+    let err;
+    try {
+      signatoryToAccount(signatory, context);
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe(
+      'Received an Identity where an Account was expected. Please report this issue to the Polymath team'
+    );
   });
 });
 
@@ -4607,7 +4656,7 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
     const address = 'someAccount';
     const context = dsMockUtils.getContextInstance();
     const secondaryAccount = {
-      signer: entityMockUtils.getAccountInstance(),
+      account: entityMockUtils.getAccountInstance(),
       permissions: {
         tokens: null,
         transactions: null,
