@@ -1,7 +1,7 @@
-import { TransferRestrictionBase } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 import {
   AddPercentageTransferRestrictionParams,
   SetPercentageTransferRestrictionsParams,
+  TransferRestrictionBase,
 } from '~/internal';
 import {
   ActiveTransferRestrictions,

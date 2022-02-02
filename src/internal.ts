@@ -8,6 +8,7 @@ export { Procedure } from '~/base/Procedure';
 export { Entity } from '~/api/entities/Entity';
 export { Namespace } from '~/api/entities/Namespace';
 export { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
+export { TransferRestrictionBase } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 export {
   consumeAddMultiSigSignerAuthorization,
   ConsumeAddMultiSigSignerAuthorizationParams,
@@ -220,4 +221,3 @@ export {
   RemoveExternalAgentParams,
 } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions, WaivePermissionsParams } from '~/api/procedures/waivePermissions';
-export { TransferRestrictionBase } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';

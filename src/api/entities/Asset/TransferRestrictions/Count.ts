@@ -1,5 +1,8 @@
-import { TransferRestrictionBase } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
-import { AddCountTransferRestrictionParams, SetCountTransferRestrictionsParams } from '~/internal';
+import {
+  AddCountTransferRestrictionParams,
+  SetCountTransferRestrictionsParams,
+  TransferRestrictionBase,
+} from '~/internal';
 import {
   ActiveTransferRestrictions,
   CountTransferRestriction,
