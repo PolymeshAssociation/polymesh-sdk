@@ -38,6 +38,9 @@ export class Polymesh {
 
   // Namespaces
 
+  /**
+   * A set of methods to deal with Claims
+   */
   public claims: Claims;
   /**
    * A set of methods to interact with the Polymesh network. This includes transferring POLYX, reading network properties and querying for historical events
