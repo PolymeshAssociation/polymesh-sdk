@@ -216,37 +216,67 @@ export enum ClaimType {
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
-export type AccreditedClaim = { type: ClaimType.Accredited; scope: Scope };
+export interface AccreditedClaim {
+  type: ClaimType.Accredited;
+  scope: Scope;
+}
 
-export type AffiliateClaim = { type: ClaimType.Affiliate; scope: Scope };
+export interface AffiliateClaim {
+  type: ClaimType.Affiliate;
+  scope: Scope;
+}
 
-export type BuyLockupClaim = { type: ClaimType.BuyLockup; scope: Scope };
+export interface BuyLockupClaim {
+  type: ClaimType.BuyLockup;
+  scope: Scope;
+}
 
-export type SellLockupClaim = { type: ClaimType.SellLockup; scope: Scope };
+export interface SellLockupClaim {
+  type: ClaimType.SellLockup;
+  scope: Scope;
+}
 
-export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+export interface CddClaim {
+  type: ClaimType.CustomerDueDiligence;
+  id: string;
+}
 
-export type KycClaim = { type: ClaimType.KnowYourCustomer; scope: Scope };
+export interface KycClaim {
+  type: ClaimType.KnowYourCustomer;
+  scope: Scope;
+}
 
-export type JurisdictionClaim = { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope };
+export interface JurisdictionClaim {
+  type: ClaimType.Jurisdiction;
+  code: CountryCode;
+  scope: Scope;
+}
 
-export type ExemptedClaim = { type: ClaimType.Exempted; scope: Scope };
+export interface ExemptedClaim {
+  type: ClaimType.Exempted;
+  scope: Scope;
+}
 
-export type BlockedClaim = { type: ClaimType.Blocked; scope: Scope };
+export interface BlockedClaim {
+  type: ClaimType.Blocked;
+  scope: Scope;
+}
 
-export type InvestorUniquenessClaim = {
+export interface InvestorUniquenessClaim {
   type: ClaimType.InvestorUniqueness;
   scope: Scope;
   cddId: string;
   scopeId: string;
-};
+}
 
-export type NoDataClaim = { type: ClaimType.NoData };
+export interface NoDataClaim {
+  type: ClaimType.NoData;
+}
 
-export type InvestorUniquenessV2Claim = {
+export interface InvestorUniquenessV2Claim {
   type: ClaimType.InvestorUniquenessV2;
   cddId: string;
-};
+}
 
 export type ScopedClaim =
   | JurisdictionClaim
