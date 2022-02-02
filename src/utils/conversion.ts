@@ -70,7 +70,6 @@ import {
   ModuleName,
   MovePortfolioItem,
   Permissions as MeshPermissions,
-  PipId,
   PortfolioId as MeshPortfolioId,
   PosRatio,
   PriceTier,
@@ -2469,15 +2468,6 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
   }
 
   return `${moduleName}.${camelCase(callId)}` as TxTag;
-}
-
-/**
- * @hidden
- */
-export function numberToPipId(id: BigNumber, context: Context): PipId {
-  assertIsInteger(id);
-  assertIsPositive(id);
-  return context.polymeshApi.createType('PipId', id.toString());
 }
 
 /**

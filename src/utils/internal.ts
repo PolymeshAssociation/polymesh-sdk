@@ -702,7 +702,7 @@ function secondsInUnit(unit: CalendarUnit): BigNumber {
 
 /**
  * @hidden
- * Transform a conversion util into a version that returns null if the input is falsy
+ * Calculate the numeric complexity of a calendar period
  */
 export function periodComplexity(period: CalendarPeriod): BigNumber {
   const secsInYear = secondsInUnit(CalendarUnit.Year);

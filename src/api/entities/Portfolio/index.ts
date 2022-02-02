@@ -341,9 +341,10 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     items!.forEach(item => {
       const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
 
-      multiParams.push(bigNumberToU32(new BigNumber(blockId), context));
+      const blockNumber = new BigNumber(blockId);
+      multiParams.push(bigNumberToU32(blockNumber, context));
       data.push({
-        blockNumber: new BigNumber(blockId),
+        blockNumber,
         status,
         accounts: addresses!.map(
           address => new Account({ address: keyToAddress('0x' + address, context) }, context)

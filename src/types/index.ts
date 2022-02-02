@@ -321,7 +321,13 @@ export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;
   extrinsicIdx: BigNumber;
+  /**
+   * public key of the signer. Unsigned transactions have no signer, in which case this value is null (example: an enacted governance proposal)
+   */
   address: string | null;
+  /**
+   * nonce of the transaction. Null for unsigned transactions where address is null
+   */
   nonce: BigNumber | null;
   txTag: TxTag;
   params: Record<string, unknown>[];

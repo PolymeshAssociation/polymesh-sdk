@@ -27,7 +27,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -180,8 +180,8 @@ export async function prepareLaunchSto(
       stringToTicker(raisingCurrency, context),
       tiers.map(tier => stoTierToPriceTier(tier, context)),
       bigNumberToU64(venueId, context),
-      start ? dateToMoment(start, context) : null,
-      end ? dateToMoment(end, context) : null,
+      optionize(dateToMoment)(start, context),
+      optionize(dateToMoment)(end, context),
       bigNumberToBalance(minInvestment, context),
       stringToText(name, context),
     ],

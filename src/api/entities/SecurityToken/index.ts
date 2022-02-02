@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
   AssetName,
-  Counter,
   FundingRoundName,
   IdentityId,
   SecurityToken as MeshSecurityToken,
@@ -488,11 +487,9 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (value: Counter): BigNumber => u64ToBigNumber(value);
-
     if (callback) {
       return statistics.investorCountPerAsset(rawTicker, count => {
-        callback(assembleResult(count));
+        callback(u64ToBigNumber(count));
       });
     }
 
@@ -542,10 +539,11 @@ export class SecurityToken extends Entity<UniqueIdentifiers, string> {
 
     tickerExternalAgentHistoryResult.forEach(({ did, history }) => {
       const historyResult: Omit<EventIdentifier, 'blockHash'>[] = [];
-      history.forEach(({ block_id: blockNumber, datetime, event_idx: eventIndex }) => {
-        multiParams.push(bigNumberToU32(new BigNumber(blockNumber), context));
+      history.forEach(({ block_id: blockId, datetime, event_idx: eventIndex }) => {
+        const blockNumber = new BigNumber(blockId);
+        multiParams.push(bigNumberToU32(blockNumber, context));
         historyResult.push({
-          blockNumber: new BigNumber(blockNumber),
+          blockNumber,
           blockDate: new Date(datetime),
           eventIndex: new BigNumber(eventIndex),
         });

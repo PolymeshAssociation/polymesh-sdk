@@ -109,7 +109,7 @@ export async function prepareSetTransferRestrictions(
   }
 
   const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
-  const finalCount = occupiedSlots.plus(new BigNumber(newRestrictionAmount));
+  const finalCount = occupiedSlots.plus(newRestrictionAmount);
   if (finalCount.gte(maxTransferManagers)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,

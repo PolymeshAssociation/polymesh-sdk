@@ -19,6 +19,7 @@ import {
   portfolioLikeToPortfolioId,
   stringToTicker,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface InvestInStoParams {
   /**
@@ -191,7 +192,7 @@ export async function prepareInvestInSto(
       stringToTicker(ticker, context),
       bigNumberToU64(id, context),
       bigNumberToBalance(purchaseAmount, context),
-      maxPrice ? bigNumberToBalance(maxPrice, context) : null,
+      optionize(bigNumberToBalance)(maxPrice, context),
       null,
     ],
   });

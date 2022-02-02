@@ -14,7 +14,6 @@ import {
   InvestorZKProofData,
   Memo,
   MovePortfolioItem,
-  PipId,
   PortfolioId,
   PriceTier,
   RecordDateSpec,
@@ -183,7 +182,6 @@ import {
   // middlewareProposalToProposalDetails,
   moduleAddressToString,
   momentToDate,
-  numberToPipId,
   percentageToPermill,
   permillToBigNumber,
   permissionGroupIdentifierToAgentGroup,
@@ -3965,32 +3963,6 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
     });
 
     expect(result).toEqual(TxTags.babe.ReportEquivocation);
-  });
-});
-
-describe('numberToPipId', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  test('numberToPipId should convert a number to a polkadot pipId object', () => {
-    const value = new BigNumber(100);
-    const fakeResult = '100' as unknown as PipId;
-    const context = dsMockUtils.getContextInstance();
-
-    dsMockUtils.getCreateTypeStub().withArgs('PipId', value.toString()).returns(fakeResult);
-
-    const result = numberToPipId(value, context);
-
-    expect(result).toBe(fakeResult);
   });
 });
 

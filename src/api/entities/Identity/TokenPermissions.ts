@@ -400,9 +400,10 @@ export class TokenPermissions extends Namespace<Identity> {
     items.forEach(item => {
       const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
-      multiParams.push(bigNumberToU32(new BigNumber(blockId), context));
+      const blockNumber = new BigNumber(blockId);
+      multiParams.push(bigNumberToU32(blockNumber, context));
       data.push({
-        blockNumber: new BigNumber(blockId),
+        blockNumber,
         blockDate: new Date(`${datetime}Z`),
         eventIndex: new BigNumber(eventIndex),
       });

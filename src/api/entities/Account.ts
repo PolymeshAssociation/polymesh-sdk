@@ -274,7 +274,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           blockHash: block!.hash!,
           extrinsicIdx: new BigNumber(extrinsic_idx),
           address: rawAddress ?? null,
-          nonce: new BigNumber(nonce!),
+          nonce: nonce ? new BigNumber(nonce) : null,
           txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
           params,
           success: !!txSuccess,

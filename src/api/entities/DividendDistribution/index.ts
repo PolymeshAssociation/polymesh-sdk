@@ -500,9 +500,10 @@ export class DividendDistribution extends CorporateActionBase {
     items!.forEach(item => {
       const { blockId, datetime, eventDid: did, balance, tax } = item!;
 
-      multiParams.push(bigNumberToU32(new BigNumber(blockId), context));
+      const blockNumber = new BigNumber(blockId);
+      multiParams.push(bigNumberToU32(blockNumber, context));
       data.push({
-        blockNumber: new BigNumber(blockId),
+        blockNumber,
         date: new Date(datetime),
         target: new Identity({ did }, context),
         amount: new BigNumber(balance),

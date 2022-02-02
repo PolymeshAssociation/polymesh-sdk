@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
 import {
   Account,
   AuthorizationRequest,
@@ -174,14 +173,6 @@ interface AuthorizationRequestOptions {
   isExpired?: boolean;
 }
 
-interface ProposalOptions {
-  pipId?: BigNumber;
-  getDetails?: ProposalDetails;
-  getStage?: ProposalStage;
-  identityHasVoted?: boolean;
-  exists?: boolean;
-}
-
 interface AccountOptions {
   address?: string;
   key?: string;
@@ -312,7 +303,6 @@ type MockOptions = {
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
-  proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;

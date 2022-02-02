@@ -201,6 +201,7 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber1.toNumber(),
             address,
+            nonce: 1,
             success: 0,
             signedby_address: 1,
             block: {
@@ -263,6 +264,8 @@ describe('Account class', () => {
       expect(result.data[1].blockHash).toEqual(blockHash2);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
+      expect(result.data[0].nonce).toEqual(new BigNumber(1));
+      expect(result.data[1].nonce).toBeNull();
       expect(result.data[0].success).toBeFalsy();
       expect(result.data[1].success).toBeTruthy();
       expect(result.count).toEqual(new BigNumber(20));

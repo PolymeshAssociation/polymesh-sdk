@@ -424,8 +424,8 @@ const otherFailReceipt = createFailReceipt({ isOther: true });
 const moduleFailReceipt = createFailReceipt({
   isModule: true,
   asModule: {
-    error: { toNumber: (): BigNumber => new BigNumber(1) },
-    index: { toNumber: (): BigNumber => new BigNumber(1) },
+    error: { toNumber: (): number => 1 },
+    index: { toNumber: (): number => 1 },
     registry: {
       findMetaError: (): { section: string; name: string; docs: string[] } => ({
         section: 'someModule',
@@ -1472,7 +1472,7 @@ const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
 /**
  * @hidden
  */
-const createMockBigNumberCodec = (value?: BigNumber): Codec =>
+const createNumberCodec = (value?: BigNumber): Codec =>
   createMockCodec(
     {
       toNumber: () => value?.toNumber(),
@@ -1556,7 +1556,7 @@ export const createMockBalance = (balance?: BigNumber | Balance): Balance => {
     return balance;
   }
 
-  return createMockBigNumberCodec(balance) as Balance;
+  return createNumberCodec(balance) as Balance;
 };
 
 /**
@@ -1650,7 +1650,7 @@ export const createMockMoment = (millis?: BigNumber | Moment): Moment => {
     return millis;
   }
 
-  return createMockBigNumberCodec(millis) as Moment;
+  return createNumberCodec(millis) as Moment;
 };
 
 /**
@@ -1682,7 +1682,7 @@ export const createMockTickerRegistration = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU8 = (value?: BigNumber): u8 => createMockBigNumberCodec(value) as u8;
+export const createMockU8 = (value?: BigNumber): u8 => createNumberCodec(value) as u8;
 
 /**
  * @hidden
@@ -1692,7 +1692,7 @@ export const createMockU32 = (value?: BigNumber | u32): u32 => {
   if (isCodec<u32>(value)) {
     return value;
   }
-  return createMockBigNumberCodec(value) as u32;
+  return createNumberCodec(value) as u32;
 };
 
 /**
@@ -1703,7 +1703,7 @@ export const createMockU64 = (value?: BigNumber | u64): u64 => {
   if (isCodec<u64>(value)) {
     return value;
   }
-  return createMockBigNumberCodec(value) as u64;
+  return createNumberCodec(value) as u64;
 };
 
 /**
@@ -1714,7 +1714,7 @@ export const createMockPermill = (value?: BigNumber | Permill): Permill => {
   if (isCodec<Permill>(value)) {
     return value;
   }
-  return createMockBigNumberCodec(value) as Permill;
+  return createNumberCodec(value) as Permill;
 };
 
 /**
@@ -1978,15 +1978,14 @@ export const createMockAccountData = (accountData?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockIndex = (value?: BigNumber): Index =>
-  createMockBigNumberCodec(value) as Index;
+export const createMockIndex = (value?: BigNumber): Index => createNumberCodec(value) as Index;
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockRefCount = (value?: BigNumber): RefCount =>
-  createMockBigNumberCodec(value) as RefCount;
+  createNumberCodec(value) as RefCount;
 
 /**
  * @hidden
