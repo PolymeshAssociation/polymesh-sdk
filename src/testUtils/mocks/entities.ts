@@ -56,13 +56,13 @@ import {
   OfferingSaleStatus,
   OfferingTimingStatus,
   PercentageTransferRestriction,
+  PermissionedAccount,
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
-  SecondaryAccount,
   SecurityIdentifier,
   SignerType,
   TargetTreatment,
@@ -121,7 +121,7 @@ interface IdentityOptions {
   assetPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   isCddProvider?: boolean;
-  getPrimaryAccount?: Account;
+  getPrimaryAccount?: PermissionedAccount;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
@@ -129,7 +129,7 @@ interface IdentityOptions {
   getVenues?: Venue[];
   getScopeId?: string;
   getAssetBalance?: BigNumber;
-  getSecondaryAccounts?: SecondaryAccount[];
+  getSecondaryAccounts?: PermissionedAccount[];
   areSecondaryAccountsFrozen?: boolean;
   isEqual?: boolean;
   assetPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;

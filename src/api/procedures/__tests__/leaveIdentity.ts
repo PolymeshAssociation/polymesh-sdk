@@ -9,14 +9,14 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryAccount } from '~/types';
+import { PermissionedAccount } from '~/types';
 
 jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
-describe('modifyCaCheckpoint procedure', () => {
+describe('leaveIdentity procedure', () => {
   let mockContext: Mocked<Context>;
 
   beforeAll(() => {
@@ -85,8 +85,8 @@ describe('modifyCaCheckpoint procedure', () => {
       getIdentity: entityMockUtils.getIdentityInstance({
         getSecondaryAccounts: [
           {
-            signer: entityMockUtils.getAccountInstance({ address }),
-          } as unknown as SecondaryAccount,
+            account: entityMockUtils.getAccountInstance({ address }),
+          } as unknown as PermissionedAccount,
         ],
       }),
     });

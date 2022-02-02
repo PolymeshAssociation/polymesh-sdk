@@ -70,7 +70,7 @@ describe('Account class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Account.isUniqueIdentifiers({ address: 'someAdddress' })).toBe(true);
+      expect(Account.isUniqueIdentifiers({ address: 'someAddress' })).toBe(true);
       expect(Account.isUniqueIdentifiers({})).toBe(false);
       expect(Account.isUniqueIdentifiers({ address: 3 })).toBe(false);
     });
@@ -379,7 +379,9 @@ describe('Account class', () => {
 
   describe('method: getPermissions', () => {
     test('should return full permissions if the Account is the primary Account', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
       account = new Account({ address }, context);
 
@@ -400,11 +402,12 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       };
+
       context = dsMockUtils.getContextInstance({
         secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+          { account: entityMockUtils.getAccountInstance({ address }), permissions },
           {
-            signer: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
             permissions: {
               assets: null,
               transactions: {
@@ -428,7 +431,9 @@ describe('Account class', () => {
 
   describe('method: checkPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
       account = new Account({ address }, context);
 
@@ -444,13 +449,17 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       };
-      context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+      const secondaryAccountAddress = 'secondaryAccount';
+      const secondaryAccount = entityMockUtils.getAccountInstance({
+        address: secondaryAccountAddress,
       });
 
-      account = new Account({ address }, context);
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
+      });
+
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
         assets: null,
@@ -472,12 +481,11 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
         assets: [asset],
@@ -502,12 +510,11 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
         assets: [asset],
@@ -568,12 +575,11 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
         assets: [],
@@ -603,12 +609,11 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
         assets: [],
@@ -626,7 +631,9 @@ describe('Account class', () => {
     });
 
     test('should exempt certain transactions from requiring permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
       account = new Account({ address }, context);
 
@@ -650,9 +657,12 @@ describe('Account class', () => {
 
   describe('method: hasPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      const mockAccount = entityMockUtils.getAccountInstance({ address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
-      account = new Account({ address }, context);
+      account = new Account(mockAccount, context);
 
       const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
 

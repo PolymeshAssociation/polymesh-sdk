@@ -8,7 +8,7 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionType, SecondaryAccount, Signer, SignerType, SignerValue } from '~/types';
+import { PermissionedAccount, PermissionType, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {
@@ -44,7 +44,7 @@ describe('modifySignerPermissions procedure', () => {
     identity = entityMockUtils.getIdentityInstance({
       getSecondaryAccounts: [
         {
-          signer: account,
+          account,
           permissions: {
             assets: {
               type: PermissionType.Include,
@@ -78,9 +78,9 @@ describe('modifySignerPermissions procedure', () => {
   });
 
   test('should add a batch of Set Permission To Signer transactions to the queue', async () => {
-    let secondaryAccounts: SecondaryAccount[] = [
+    let secondaryAccounts: PermissionedAccount[] = [
       {
-        signer: account,
+        account,
         permissions: {
           assets: null,
           transactions: null,
@@ -97,7 +97,7 @@ describe('modifySignerPermissions procedure', () => {
 
     const signerValue = {
       type: SignerType.Account,
-      value: (secondaryAccounts[0].signer as Account).address,
+      value: secondaryAccounts[0].account.address,
     };
     const rawSignatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId(signerValue.value),
@@ -129,7 +129,7 @@ describe('modifySignerPermissions procedure', () => {
 
     secondaryAccounts = [
       {
-        signer: account,
+        account,
         permissions: {
           assets: null,
           transactions: null,
@@ -157,10 +157,10 @@ describe('modifySignerPermissions procedure', () => {
     });
   });
 
-  test('should throw an error if at least one of the Signers for which to modify permissions is not a secondary Account for the Identity', () => {
+  test('should throw an error if at least one of the Accounts for which to modify permissions is not a secondary Account for the Identity', () => {
     const secondaryAccounts = [
       {
-        signer: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
+        account: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
         permissions: {
           assets: null,
           transactions: null,
@@ -171,10 +171,10 @@ describe('modifySignerPermissions procedure', () => {
 
     const signerValue = {
       type: SignerType.Account,
-      value: (secondaryAccounts[0].signer as Account).address,
+      value: secondaryAccounts[0].account.address,
     };
 
-    signerToSignerValueStub.withArgs(secondaryAccounts[0].signer).returns(signerValue);
+    signerToSignerValueStub.withArgs(secondaryAccounts[0].account).returns(signerValue);
 
     const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
 
@@ -183,6 +183,6 @@ describe('modifySignerPermissions procedure', () => {
         secondaryAccounts,
         identity: entityMockUtils.getIdentityInstance({ getSecondaryAccounts: [] }),
       })
-    ).rejects.toThrow('One of the Signers is not a secondary Account for the Identity');
+    ).rejects.toThrow('One of the Accounts is not a secondary Account for the Identity');
   });
 });

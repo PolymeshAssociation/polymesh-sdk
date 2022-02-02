@@ -102,7 +102,6 @@ export class Offerings extends Namespace<Asset> {
         fundraiser,
       ]) => {
         const id = u64ToBigNumber(rawFundraiserId);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const [[, name]] = remove(
           nameEntries,
           ([

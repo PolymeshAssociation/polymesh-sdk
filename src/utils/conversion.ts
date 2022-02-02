@@ -160,6 +160,7 @@ import {
   OfferingSaleStatus,
   OfferingTier,
   OfferingTimingStatus,
+  PermissionedAccount,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -170,7 +171,6 @@ import {
   RequirementCompliance,
   Scope,
   ScopeType,
-  SecondaryAccount,
   SectionPermissions,
   SecurityIdentifier,
   SecurityIdentifierType,
@@ -383,6 +383,21 @@ export function identityIdToString(identityId: IdentityId): string {
  */
 export function stringToEcdsaSignature(signature: string, context: Context): EcdsaSignature {
   return context.polymeshApi.createType('EcdsaSignature', signature);
+}
+
+/**
+ * @hidden
+ */
+export function signatoryToAccount(signatory: Signatory, context: Context): Account {
+  if (signatory.isAccount) {
+    return new Account({ address: accountIdToString(signatory.asAccount) }, context);
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message:
+      'Received an Identity where an Account was expected. Please report this issue to the Polymath team',
+  });
 }
 
 /**
@@ -2558,14 +2573,14 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
  * @hidden
  */
 export function secondaryAccountToMeshSecondaryKey(
-  secondaryKey: SecondaryAccount,
+  secondaryKey: PermissionedAccount,
   context: Context
 ): MeshSecondaryKey {
   const { polymeshApi } = context;
-  const { signer, permissions } = secondaryKey;
+  const { account, permissions } = secondaryKey;
 
   return polymeshApi.createType('SecondaryKey', {
-    signer: signerValueToSignatory(signerToSignerValue(signer), context),
+    signer: signerValueToSignatory(signerToSignerValue(account), context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
 }

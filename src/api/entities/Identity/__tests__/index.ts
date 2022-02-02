@@ -14,13 +14,10 @@ import {
   DistributionWithDetails,
   IdentityRole,
   Order,
+  PermissionedAccount,
   PortfolioCustodianRole,
   Role,
   RoleType,
-  SecondaryAccount,
-  Signer,
-  SignerType,
-  SignerValue,
   TickerOwnerRole,
   VenueOwnerRole,
 } from '~/types';
@@ -467,6 +464,7 @@ describe('Identity class', () => {
     let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
+    let fakeResult: PermissionedAccount;
 
     beforeAll(() => {
       accountIdToStringStub = sinon.stub(utilsConversionModule, 'accountIdToString');
@@ -482,6 +480,18 @@ describe('Identity class', () => {
         secondary_keys: [],
       });
       /* eslint-enabled @typescript-eslint/naming-convention */
+
+      const account = entityMockUtils.getAccountInstance({ address: accountId });
+
+      fakeResult = {
+        account,
+        permissions: {
+          assets: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: [],
+        },
+      };
     });
 
     test('should return a PrimaryAccount', async () => {
@@ -491,7 +501,7 @@ describe('Identity class', () => {
       didRecordsStub.returns(rawDidRecord);
 
       const result = await identity.getPrimaryAccount();
-      expect(result).toEqual(entityMockUtils.getAccountInstance({ address: accountId }));
+      expect(result).toEqual(fakeResult);
     });
 
     test('should allow subscription', async () => {
@@ -509,10 +519,7 @@ describe('Identity class', () => {
       const result = await identity.getPrimaryAccount(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(
-        callback,
-        entityMockUtils.getAccountInstance({ address: accountId })
-      );
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 
@@ -1127,51 +1134,27 @@ describe('Identity class', () => {
   });
 
   describe('method: getSecondaryAccounts', () => {
-    const did = 'someDid';
     const accountId = 'someAccountId';
-    const signerValues = [
-      { value: did, type: SignerType.Identity },
-      { value: accountId, type: SignerType.Account },
-    ];
-    const signerIdentityId = dsMockUtils.createMockSignatory({
-      Identity: dsMockUtils.createMockIdentityId(did),
-    });
     const signerAccountId = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId(accountId),
     });
 
     let account: Account;
-    let fakeIdentity: Identity;
-    let fakeResult: SecondaryAccount[];
+    let fakeResult: PermissionedAccount[];
 
-    let signatoryToSignerValueStub: sinon.SinonStub<[Signatory], SignerValue>;
-    let signerValueToSignerStub: sinon.SinonStub<[SignerValue, Context], Signer>;
+    let signatoryToAccountStub: sinon.SinonStub<[Signatory, Context], Account>;
     let didRecordsStub: sinon.SinonStub;
     let rawDidRecord: DidRecord;
 
     beforeAll(() => {
-      fakeIdentity = entityMockUtils.getIdentityInstance();
-      signatoryToSignerValueStub = sinon.stub(utilsConversionModule, 'signatoryToSignerValue');
-      signatoryToSignerValueStub.withArgs(signerIdentityId).returns(signerValues[0]);
-      signatoryToSignerValueStub.withArgs(signerAccountId).returns(signerValues[1]);
-
       account = entityMockUtils.getAccountInstance({ address: accountId });
-      signerValueToSignerStub = sinon.stub(utilsConversionModule, 'signerValueToSigner');
-      signerValueToSignerStub.withArgs(signerValues[0], sinon.match.object).returns(fakeIdentity);
-      signerValueToSignerStub.withArgs(signerValues[1], sinon.match.object).returns(account);
+
+      signatoryToAccountStub = sinon.stub(utilsConversionModule, 'signatoryToAccount');
+      signatoryToAccountStub.withArgs(signerAccountId, sinon.match.object).returns(account);
 
       fakeResult = [
         {
-          signer: fakeIdentity,
-          permissions: {
-            assets: null,
-            portfolios: null,
-            transactions: null,
-            transactionGroups: [],
-          },
-        },
-        {
-          signer: account,
+          account,
           permissions: {
             assets: null,
             portfolios: null,
@@ -1189,14 +1172,6 @@ describe('Identity class', () => {
         roles: [],
         primary_key: dsMockUtils.createMockAccountId(),
         secondary_keys: [
-          dsMockUtils.createMockSecondaryKey({
-            signer: signerIdentityId,
-            permissions: dsMockUtils.createMockPermissions({
-              asset: dsMockUtils.createMockAssetPermissions(),
-              extrinsic: dsMockUtils.createMockExtrinsicPermissions(),
-              portfolio: dsMockUtils.createMockPortfolioPermissions(),
-            }),
-          }),
           dsMockUtils.createMockSecondaryKey({
             signer: signerAccountId,
             permissions: dsMockUtils.createMockPermissions({

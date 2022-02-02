@@ -5,7 +5,7 @@ import {
   prepareRemoveSecondaryAccounts,
   RemoveSecondaryAccountsParams,
 } from '~/api/procedures/removeSecondaryAccounts';
-import { Account, Context } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Signer, SignerType, SignerValue } from '~/types';
@@ -31,9 +31,10 @@ describe('removeSecondaryAccounts procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
 
-    const signers = [entityMockUtils.getAccountInstance({ address: 'someFakeAccount' })];
+    const accounts = [entityMockUtils.getAccountInstance({ address: 'someFakeAccount' })];
+
     args = {
-      signers,
+      accounts,
     };
   });
 
@@ -50,17 +51,17 @@ describe('removeSecondaryAccounts procedure', () => {
   });
 
   test('should add a remove secondary items transaction to the queue', async () => {
-    const { signers } = args;
-    const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
+    const { accounts } = args;
+    const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
     const rawSignatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(signerValue.value),
+      Account: dsMockUtils.createMockAccountId(accounts[0].address),
     });
 
     dsMockUtils.configureMocks({
       contextOptions: {
-        secondaryAccounts: signers.map(signer => ({
-          signer,
+        secondaryAccounts: accounts.map(secondaryAccount => ({
+          account: secondaryAccount,
           permissions: {
             assets: null,
             transactions: null,
@@ -71,7 +72,7 @@ describe('removeSecondaryAccounts procedure', () => {
       },
     });
 
-    signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
+    signerToSignerValueStub.withArgs(accounts[0]).returns(signerValue);
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
@@ -89,36 +90,28 @@ describe('removeSecondaryAccounts procedure', () => {
 
   test('should throw an error if attempting to remove the primary Account', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
-    const signer = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
-
-    signerToSignerValueStub
-      .withArgs(signer)
-      .returns({ type: SignerType.Account, value: signer.address });
+    const account = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
 
     return expect(
       prepareRemoveSecondaryAccounts.call(proc, {
         ...args,
-        signers: [signer],
+        accounts: [account],
       })
     ).rejects.toThrow('You cannot remove the primary Account');
   });
 
   test('should throw an error if at least one of the secondary Accounts to remove is not present in the secondary Accounts list', () => {
-    const { signers } = args;
-    const signerValue = { type: SignerType.Account, value: (signers[0] as Account).address };
+    const { accounts } = args;
+    const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
-    signerToSignerValueStub.withArgs(signers[0]).returns(signerValue);
+    signerToSignerValueStub.withArgs(accounts[0]).returns(signerValue);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
 
     return expect(
       prepareRemoveSecondaryAccounts.call(proc, {
         ...args,
-        identity: entityMockUtils.getIdentityInstance({
-          getPrimaryAccount: entityMockUtils.getAccountInstance({ address: 'primaryAccount' }),
-          getSecondaryAccounts: [],
-        }),
       })
-    ).rejects.toThrow('One of the Signers is not a secondary Account for the Identity');
+    ).rejects.toThrow('One of the Accounts is not a secondary Account for the Identity');
   });
 });
