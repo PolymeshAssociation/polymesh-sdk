@@ -15,8 +15,8 @@ import { InputTargets, TargetTreatment } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyCaDefaultConfig procedure', () => {
@@ -86,7 +86,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       treatment: TargetTreatment.Exclude,
     };
     entityMockUtils.configureMocks({
-      securityTokenOptions: { corporateActionsGetDefaultConfig: { targets } },
+      assetOptions: { corporateActionsGetDefaultConfig: { targets } },
     });
 
     return expect(
@@ -102,7 +102,7 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     const defaultTaxWithholding = new BigNumber(10);
     entityMockUtils.configureMocks({
-      securityTokenOptions: { corporateActionsGetDefaultConfig: { defaultTaxWithholding } },
+      assetOptions: { corporateActionsGetDefaultConfig: { defaultTaxWithholding } },
     });
 
     return expect(
@@ -123,7 +123,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       },
     ];
     entityMockUtils.configureMocks({
-      securityTokenOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
+      assetOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
     });
 
     return expect(
@@ -145,7 +145,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetDefaultConfig: {
           targets: {
             identities: [entityMockUtils.getIdentityInstance({ did: 'someDid' })],
@@ -201,7 +201,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultWithholdingTax');
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetDefaultConfig: {
           defaultTaxWithholding: new BigNumber(10),
         },
@@ -228,7 +228,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDidWithholdingTax');
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetDefaultConfig: {
           taxWithholdings: [],
         },
@@ -275,7 +275,7 @@ describe('modifyCaDefaultConfig procedure', () => {
         permissions: {
           transactions: [],
           portfolios: [],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
 
@@ -294,7 +294,7 @@ describe('modifyCaDefaultConfig procedure', () => {
             TxTags.corporateAction.SetDidWithholdingTax,
           ],
           portfolios: [],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
     });

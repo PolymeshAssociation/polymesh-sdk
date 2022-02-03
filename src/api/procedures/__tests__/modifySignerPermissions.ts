@@ -46,7 +46,7 @@ describe('modifySignerPermissions procedure', () => {
         {
           account,
           permissions: {
-            tokens: {
+            assets: {
               type: PermissionType.Include,
               values: [],
             },
@@ -82,7 +82,7 @@ describe('modifySignerPermissions procedure', () => {
       {
         account,
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,
@@ -131,7 +131,7 @@ describe('modifySignerPermissions procedure', () => {
       {
         account,
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,
@@ -162,7 +162,7 @@ describe('modifySignerPermissions procedure', () => {
       {
         account: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           portfolios: null,
         },

@@ -1,5 +1,6 @@
 import {
   Account as AccountClass,
+  Asset as AssetClass,
   AuthorizationRequest as AuthorizationRequestClass,
   Checkpoint as CheckpointClass,
   CheckpointSchedule as CheckpointScheduleClass,
@@ -12,9 +13,7 @@ import {
   Instruction as InstructionClass,
   KnownPermissionGroup as KnownPermissionGroupClass,
   NumberedPortfolio as NumberedPortfolioClass,
-  // Proposal as ProposalClass,
-  SecurityToken as SecurityTokenClass,
-  Sto as StoClass,
+  Offering as OfferingClass,
   TickerReservation as TickerReservationClass,
   Venue as VenueClass,
 } from '~/internal';
@@ -32,19 +31,17 @@ export type Identity = IdentityClass;
 export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
-export type SecurityToken = SecurityTokenClass;
-export type Sto = StoClass;
+export type Asset = AssetClass;
+export type Offering = OfferingClass;
 export type TickerReservation = TickerReservationClass;
 export type Venue = VenueClass;
-// export type Proposal = InstanceType<typeof ProposalClass>;
 
 export * from './CheckpointSchedule/types';
 export * from './CorporateActionBase/types';
 export * from './DividendDistribution/types';
 export * from './Instruction/types';
 export * from './Portfolio/types';
-export * from './SecurityToken/types';
-export * from './Sto/types';
+export * from './Asset/types';
+export * from './Offering/types';
 export * from './TickerReservation/types';
 export * from './Venue/types';
-// export * from './Proposal/types';

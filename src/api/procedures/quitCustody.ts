@@ -64,7 +64,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.portfolio.QuitPortfolioCustody],
-      tokens: [],
+      assets: [],
       portfolios: [portfolio],
     },
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],

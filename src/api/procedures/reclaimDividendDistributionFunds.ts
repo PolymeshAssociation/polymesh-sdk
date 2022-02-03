@@ -1,4 +1,4 @@
-import { DividendDistribution, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, DividendDistribution, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { corporateActionIdentifierToCaId, portfolioToPortfolioId } from '~/utils/conversion';
@@ -27,7 +27,7 @@ export async function prepareReclaimDividendDistributionFunds(
   const {
     distribution: {
       id: localId,
-      token: { ticker },
+      asset: { ticker },
       expiryDate,
     },
     distribution,
@@ -68,7 +68,7 @@ export async function getAuthorization(
   {
     distribution: {
       origin,
-      token: { ticker },
+      asset: { ticker },
     },
   }: Params
 ): Promise<ProcedureAuthorization> {
@@ -78,7 +78,7 @@ export async function getAuthorization(
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(origin) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Reclaim],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [origin],
     },
   };

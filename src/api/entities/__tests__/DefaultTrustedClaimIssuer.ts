@@ -38,7 +38,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const ticker = 'SOME_TICKER';
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      expect(trustedClaimIssuer.token.ticker).toBe(ticker);
+      expect(trustedClaimIssuer.asset.ticker).toBe(ticker);
       expect(trustedClaimIssuer.did).toEqual(did);
     });
   });

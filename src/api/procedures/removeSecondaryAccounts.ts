@@ -62,7 +62,7 @@ export const removeSecondaryAccounts = (): Procedure<RemoveSecondaryAccountsPara
   new Procedure(prepareRemoveSecondaryAccounts, {
     permissions: {
       transactions: [TxTags.identity.RemoveSecondaryKeys],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });
