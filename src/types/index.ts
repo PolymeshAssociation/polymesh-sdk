@@ -3,10 +3,15 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
-import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
+import {
+  DividendDistributionDetails,
+  OfferingDetails,
+  ScheduleDetails,
+} from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 import {
   Account,
+  Asset,
   Checkpoint,
   CheckpointSchedule,
   CustomPermissionGroup,
@@ -16,9 +21,7 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
-  /*, Proposal */
-  SecurityToken,
-  Sto,
+  Offering,
   TransactionQueue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
@@ -158,7 +161,7 @@ export function isIdentityRole(role: Role): role is IdentityRole {
   return role.type === RoleType.Identity;
 }
 
-export enum KnownTokenType {
+export enum KnownAssetType {
   EquityCommon = 'EquityCommon',
   EquityPreferred = 'EquityPreferred',
   Commodity = 'Commodity',
@@ -171,7 +174,7 @@ export enum KnownTokenType {
   StableCoin = 'StableCoin',
 }
 
-export enum TokenIdentifierType {
+export enum SecurityIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',
   Cins = 'Cins',
@@ -184,15 +187,15 @@ export enum TokenIdentifierType {
 /**
  * Alphanumeric standardized security identifier
  */
-export interface TokenIdentifier {
-  type: TokenIdentifierType;
+export interface SecurityIdentifier {
+  type: SecurityIdentifierType;
   value: string;
 }
 
 /**
  * Document attached to a token
  */
-export interface TokenDocument {
+export interface AssetDocument {
   name: string;
   uri: string;
   /**
@@ -604,7 +607,7 @@ export enum TransferError {
    * translates to TransferStatus.ScopeClaimMissing
    *
    * occurs if one of the participants doesn't have a valid Investor Uniqueness Claim for
-   *   the Security Token
+   *   the Asset
    */
   ScopeClaimMissing = 'ScopeClaimMissing',
   /**
@@ -616,7 +619,7 @@ export enum TransferError {
   /**
    * translates to TransferStatus.TransfersHalted
    *
-   * occurs if the Security Token's transfers are frozen
+   * occurs if the Asset's transfers are frozen
    */
   TransfersFrozen = 'TransfersFrozen',
   /**
@@ -834,14 +837,14 @@ export enum TxGroup {
    * - TxTags.asset.AddDocuments
    * - TxTags.asset.RemoveDocuments
    */
-  TokenManagement = 'TokenManagement',
+  AssetManagement = 'AssetManagement',
   /**
    * - TxTags.asset.Freeze
    * - TxTags.asset.Unfreeze
    * - TxTags.identity.AddAuthorization
    * - TxTags.identity.RemoveAuthorization
    */
-  AdvancedTokenManagement = 'AdvancedTokenManagement',
+  AdvancedAssetManagement = 'AdvancedAssetManagement',
   /**
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.settlement.CreateVenue
@@ -903,7 +906,7 @@ export enum PermissionType {
 /**
  * Signer/agent permissions for a specific type
  *
- * @param T - type of Permissions (Security Token, Transaction, Portfolio, etc)
+ * @param T - type of Permissions (Asset, Transaction, Portfolio, etc)
  */
 export interface SectionPermissions<T> {
   /**
@@ -931,14 +934,14 @@ export interface TransactionPermissions extends SectionPermissions<TxTag | Modul
 
 /**
  * Permissions a Secondary Key has over the Identity. A null value means the key has
- *   all permissions of that type (i.e. if `tokens` is null, the key has permissions over all
- *   of the Identity's Security Tokens)
+ *   all permissions of that type (i.e. if `assets` is null, the key has permissions over all
+ *   of the Identity's Assets)
  */
 export interface Permissions {
   /**
-   * Security Tokens over which this key has permissions
+   * Assets over which this key has permissions
    */
-  tokens: SectionPermissions<SecurityToken> | null;
+  assets: SectionPermissions<Asset> | null;
   /**
    * Transactions this key can execute
    */
@@ -956,12 +959,12 @@ export interface Permissions {
 }
 
 /**
- * Security Token permissions shared by agents in a group
+ * Asset permissions shared by agents in a group
  */
 export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
- * This represents all Permission Groups of a specific Security Token, separated by `known` and `custom`
+ * All Permission Groups of a specific Asset, separated by `known` and `custom`
  */
 export interface PermissionGroups {
   known: KnownPermissionGroup[];
@@ -975,9 +978,9 @@ export interface PermissionGroups {
  */
 export interface SimplePermissions {
   /**
-   * list of required Security Tokens permissions
+   * list of required Asset permissions
    */
-  tokens?: SecurityToken[] | null;
+  assets?: Asset[] | null;
   /**
    * list of required Transaction permissions
    */
@@ -1173,9 +1176,9 @@ export type TransactionArgument = {
 
 export type Signer = Identity | Account;
 
-export interface StoWithDetails {
-  sto: Sto;
-  details: StoDetails;
+export interface OfferingWithDetails {
+  offering: Offering;
+  details: OfferingDetails;
 }
 
 export interface CheckpointWithData {
@@ -1184,8 +1187,8 @@ export interface CheckpointWithData {
   totalSupply: BigNumber;
 }
 
-export interface SecondaryAccount {
-  signer: Signer;
+export interface PermissionedAccount {
+  account: Account;
   permissions: Permissions;
 }
 
@@ -1205,9 +1208,9 @@ export type PortfolioLike =
  */
 export type PermissionsLike = {
   /**
-   * Security Tokens on which to grant permissions. A null value represents full permissions
+   * Assets on which to grant permissions. A null value represents full permissions
    */
-  tokens?: SectionPermissions<string | SecurityToken> | null;
+  assets?: SectionPermissions<string | Asset> | null;
   /**
    * Portfolios on which to grant permissions. A null value represents full permissions
    */
@@ -1225,7 +1228,7 @@ export type PermissionsLike = {
 );
 
 export interface PortfolioMovement {
-  token: string | SecurityToken;
+  asset: string | Asset;
   amount: BigNumber;
   /**
    * identifier string to help differentiate transfers
@@ -1281,21 +1284,21 @@ export interface CountTransferRestriction extends TransferRestrictionBase {
 
 export interface PercentageTransferRestriction extends TransferRestrictionBase {
   /**
-   * maximum percentage (0-100) of the total supply of the Security Token that can be held by a single investor at once
+   * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
    */
   percentage: BigNumber;
 }
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
-   * limit on the amount of different (unique) investors that can hold the Security Token at once
+   * limit on the amount of different (unique) investors that can hold the Asset at once
    */
   count: BigNumber;
 }
 
 export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
-   * maximum percentage (0-100) of the total supply of the Security Token that can be held by a single investor at once
+   * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
    */
   percentage: BigNumber;
 }
@@ -1400,8 +1403,8 @@ export interface GroupedInstructions {
   failed: Instruction[];
 }
 
-export interface TokenWithGroup {
-  token: SecurityToken;
+export interface AssetWithGroup {
+  asset: Asset;
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 

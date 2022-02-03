@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, SecurityToken } from '~/internal';
+import { Account, Asset } from '~/internal';
 import {
   SettlementDirectionEnum as SettlementDirection,
   SettlementResultEnum as SettlementResult,
@@ -8,7 +8,7 @@ import {
 import { Balance, Leg } from '~/types';
 
 export interface PortfolioBalance extends Balance {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 export interface SettlementLeg extends Leg {

@@ -59,10 +59,10 @@ export async function prepareTransferTickerOwnership(
 
   const { status } = await tickerReservation.details();
 
-  if (status === TickerReservationStatus.TokenCreated) {
+  if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'A Security Token with this ticker has already been created',
+      message: 'An Asset with this ticker has already been created',
     });
   }
 
@@ -96,7 +96,7 @@ export function getAuthorization(
   return {
     roles: [{ type: RoleType.TickerOwner, ticker }],
     permissions: {
-      tokens: [],
+      assets: [],
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
     },

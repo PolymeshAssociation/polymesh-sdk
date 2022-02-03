@@ -2,7 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { PermissionsLike, RoleType, SecondaryAccount } from '~/types';
+import { PermissionedAccount, PermissionsLike, RoleType } from '~/types';
 import { Modify } from '~/types/utils';
 import {
   identityIdToString,
@@ -15,7 +15,7 @@ import { filterEventRecords } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  secondaryAccounts?: Modify<SecondaryAccount, { permissions: PermissionsLike }>[];
+  secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
 }
 
 /**
@@ -71,7 +71,7 @@ export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> 
   new Procedure(prepareRegisterIdentity, {
     roles: [{ type: RoleType.CddProvider }],
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios: [],
       transactions: [TxTags.identity.CddRegisterDid],
     },
