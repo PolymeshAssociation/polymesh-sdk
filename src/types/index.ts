@@ -126,41 +126,6 @@ export type Role =
   | PortfolioCustodianRole
   | IdentityRole;
 
-/**
- * @hidden
- */
-export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
-  return role.type === RoleType.PortfolioCustodian;
-}
-
-/**
- * @hidden
- */
-export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
-  return role.type === RoleType.VenueOwner;
-}
-
-/**
- * @hidden
- */
-export function isCddProviderRole(role: Role): role is CddProviderRole {
-  return role.type === RoleType.CddProvider;
-}
-
-/**
- * @hidden
- */
-export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
-  return role.type === RoleType.TickerOwner;
-}
-
-/**
- * @hidden
- */
-export function isIdentityRole(role: Role): role is IdentityRole {
-  return role.type === RoleType.Identity;
-}
-
 export enum KnownAssetType {
   EquityCommon = 'EquityCommon',
   EquityPreferred = 'EquityPreferred',
@@ -254,58 +219,82 @@ export enum ClaimType {
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
-export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+export interface AccreditedClaim {
+  type: ClaimType.Accredited;
+  scope: Scope;
+}
 
-export type InvestorUniquenessClaim = {
+export interface AffiliateClaim {
+  type: ClaimType.Affiliate;
+  scope: Scope;
+}
+
+export interface BuyLockupClaim {
+  type: ClaimType.BuyLockup;
+  scope: Scope;
+}
+
+export interface SellLockupClaim {
+  type: ClaimType.SellLockup;
+  scope: Scope;
+}
+
+export interface CddClaim {
+  type: ClaimType.CustomerDueDiligence;
+  id: string;
+}
+
+export interface KycClaim {
+  type: ClaimType.KnowYourCustomer;
+  scope: Scope;
+}
+
+export interface JurisdictionClaim {
+  type: ClaimType.Jurisdiction;
+  code: CountryCode;
+  scope: Scope;
+}
+
+export interface ExemptedClaim {
+  type: ClaimType.Exempted;
+  scope: Scope;
+}
+
+export interface BlockedClaim {
+  type: ClaimType.Blocked;
+  scope: Scope;
+}
+
+export interface InvestorUniquenessClaim {
   type: ClaimType.InvestorUniqueness;
   scope: Scope;
   cddId: string;
   scopeId: string;
-};
+}
 
-export type InvestorUniquenessV2Claim = {
+export interface NoDataClaim {
+  type: ClaimType.NoData;
+}
+
+export interface InvestorUniquenessV2Claim {
   type: ClaimType.InvestorUniquenessV2;
   cddId: string;
-};
+}
 
 export type ScopedClaim =
-  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
+  | JurisdictionClaim
   | InvestorUniquenessClaim
-  | {
-      type: Exclude<
-        ClaimType,
-        | ClaimType.NoData
-        | ClaimType.Jurisdiction
-        | ClaimType.CustomerDueDiligence
-        | ClaimType.InvestorUniqueness
-        | ClaimType.InvestorUniquenessV2
-      >;
-      scope: Scope;
-    };
+  | AccreditedClaim
+  | AffiliateClaim
+  | BuyLockupClaim
+  | SellLockupClaim
+  | KycClaim
+  | ExemptedClaim
+  | BlockedClaim;
 
-export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = NoDataClaim | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
-
-/**
- * @hidden
- */
-export function isScopedClaim(claim: Claim): claim is ScopedClaim {
-  const { type } = claim;
-
-  return ![
-    ClaimType.NoData,
-    ClaimType.CustomerDueDiligence,
-    ClaimType.InvestorUniquenessV2,
-  ].includes(type);
-}
-
-/**
- * @hidden
- */
-export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
-  return claim.type === ClaimType.InvestorUniqueness;
-}
 
 export interface ClaimData<ClaimType = Claim> {
   target: Identity;
@@ -419,24 +408,6 @@ export type InputCondition = (
   | ExternalAgentCondition
 ) &
   InputConditionBase;
-
-/**
- * @hidden
- */
-export function isSingleClaimCondition(
-  condition: InputCondition
-): condition is InputConditionBase & SingleClaimCondition {
-  return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
-}
-
-/**
- * @hidden
- */
-export function isMultiClaimCondition(
-  condition: InputCondition
-): condition is InputConditionBase & MultiClaimCondition {
-  return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
-}
 
 export interface Requirement {
   id: number;

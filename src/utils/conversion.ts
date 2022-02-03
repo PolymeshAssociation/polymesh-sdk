@@ -151,8 +151,6 @@ import {
   InputRequirement,
   InputTrustedClaimIssuer,
   InstructionType,
-  isMultiClaimCondition,
-  isSingleClaimCondition,
   KnownAssetType,
   MultiClaimCondition,
   OfferingBalanceStatus,
@@ -224,6 +222,7 @@ import {
   padString,
   removePadding,
 } from '~/utils/internal';
+import { isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
