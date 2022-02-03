@@ -1,7 +1,7 @@
 import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
@@ -27,9 +27,9 @@ export type Params = AddAssetRequirementParams & {
  * @hidden
  */
 export async function prepareAddAssetRequirement(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   args: Params
-): Promise<SecurityToken> {
+): Promise<Asset> {
   const {
     context: {
       polymeshApi: { tx },
@@ -40,10 +40,10 @@ export async function prepareAddAssetRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const token = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
   const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
-    await token.compliance.requirements.get();
+    await asset.compliance.requirements.get();
 
   const currentConditions = map(currentRequirements, 'conditions');
 
@@ -55,8 +55,7 @@ export async function prepareAddAssetRequirement(
   ) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message:
-        'There already exists a Requirement with the same conditions for this Security Token',
+      message: 'There already exists a Requirement with the same conditions for this Asset',
     });
   }
 
@@ -75,20 +74,20 @@ export async function prepareAddAssetRequirement(
     args: [rawTicker, senderConditions, receiverConditions],
   });
 
-  return token;
+  return asset;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.complianceManager.AddComplianceRequirement],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -97,5 +96,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const addAssetRequirement = (): Procedure<Params, SecurityToken> =>
+export const addAssetRequirement = (): Procedure<Params, Asset> =>
   new Procedure(prepareAddAssetRequirement, getAuthorization);

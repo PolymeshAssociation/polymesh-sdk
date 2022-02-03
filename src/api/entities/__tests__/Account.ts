@@ -70,7 +70,7 @@ describe('Account class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(Account.isUniqueIdentifiers({ address: 'someAdddress' })).toBe(true);
+      expect(Account.isUniqueIdentifiers({ address: 'someAddress' })).toBe(true);
       expect(Account.isUniqueIdentifiers({})).toBe(false);
       expect(Account.isUniqueIdentifiers({ address: 3 })).toBe(false);
     });
@@ -379,14 +379,16 @@ describe('Account class', () => {
 
   describe('method: getPermissions', () => {
     test('should return full permissions if the Account is the primary Account', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
       account = new Account({ address }, context);
 
       const result = await account.getPermissions();
 
       expect(result).toEqual({
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -395,18 +397,19 @@ describe('Account class', () => {
 
     test("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
       };
+
       context = dsMockUtils.getContextInstance({
         secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
+          { account: entityMockUtils.getAccountInstance({ address }), permissions },
           {
-            signer: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
             permissions: {
-              tokens: null,
+              assets: null,
               transactions: {
                 values: [TxTags.identity.AcceptPrimaryKey],
                 type: PermissionType.Include,
@@ -428,32 +431,38 @@ describe('Account class', () => {
 
   describe('method: checkPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
       account = new Account({ address }, context);
 
-      let result = await account.checkPermissions({ tokens: [], portfolios: [], transactions: [] });
+      let result = await account.checkPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual({
         result: true,
       });
 
       let permissions: Permissions = {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
       };
-      context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+      const secondaryAccountAddress = 'secondaryAccount';
+      const secondaryAccount = entityMockUtils.getAccountInstance({
+        address: secondaryAccountAddress,
       });
 
-      account = new Account({ address }, context);
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
+      });
+
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: null,
+        assets: null,
         portfolios: null,
         transactions: null,
       });
@@ -461,9 +470,9 @@ describe('Account class', () => {
         result: true,
       });
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
       permissions = {
-        tokens: { values: [token], type: PermissionType.Include },
+        assets: { values: [asset], type: PermissionType.Include },
         transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Include },
         transactionGroups: [],
         portfolios: {
@@ -472,15 +481,14 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [token],
+        assets: [asset],
         portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
         transactions: [TxTags.asset.CreateAsset],
       });
@@ -493,7 +501,7 @@ describe('Account class', () => {
       });
 
       permissions = {
-        tokens: { values: [token], type: PermissionType.Exclude },
+        assets: { values: [asset], type: PermissionType.Exclude },
         transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Exclude },
         transactionGroups: [],
         portfolios: {
@@ -502,15 +510,14 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [token],
+        assets: [asset],
         portfolios: null,
         transactions: null,
       });
@@ -518,14 +525,14 @@ describe('Account class', () => {
       expect(result).toEqual({
         result: false,
         missingPermissions: {
-          tokens: [token],
+          assets: [asset],
           portfolios: null,
           transactions: null,
         },
       });
 
       result = await account.checkPermissions({
-        tokens: null,
+        assets: null,
         portfolios: [],
         transactions: [TxTags.asset.CreateAsset],
       });
@@ -533,13 +540,13 @@ describe('Account class', () => {
       expect(result).toEqual({
         result: false,
         missingPermissions: {
-          tokens: null,
+          assets: null,
           transactions: [TxTags.asset.CreateAsset],
         },
       });
 
       result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
         transactions: [],
       });
@@ -555,7 +562,7 @@ describe('Account class', () => {
       });
 
       permissions = {
-        tokens: { values: [token], type: PermissionType.Exclude },
+        assets: { values: [asset], type: PermissionType.Exclude },
         transactions: {
           values: [ModuleName.Identity, TxTags.identity.LeaveIdentityAsKey],
           type: PermissionType.Exclude,
@@ -568,15 +575,14 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: null,
         transactions: [TxTags.identity.AcceptPrimaryKey, TxTags.identity.LeaveIdentityAsKey],
       });
@@ -590,7 +596,7 @@ describe('Account class', () => {
       });
 
       permissions = {
-        tokens: { values: [token], type: PermissionType.Exclude },
+        assets: { values: [asset], type: PermissionType.Exclude },
         transactions: {
           values: [ModuleName.Identity],
           type: PermissionType.Include,
@@ -603,15 +609,14 @@ describe('Account class', () => {
         },
       };
       context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { signer: entityMockUtils.getAccountInstance({ address }), permissions },
-        ],
+        primaryAccount: address,
+        secondaryAccounts: [{ account: secondaryAccount, permissions }],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: null,
         transactions: [TxTags.identity.AddClaim],
       });
@@ -626,12 +631,14 @@ describe('Account class', () => {
     });
 
     test('should exempt certain transactions from requiring permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
       account = new Account({ address }, context);
 
       const result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: [],
         transactions: [
           TxTags.balances.Transfer,
@@ -650,11 +657,14 @@ describe('Account class', () => {
 
   describe('method: hasPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({ primaryAccount: address });
+      const mockAccount = entityMockUtils.getAccountInstance({ address });
+      context = dsMockUtils.getContextInstance({
+        primaryAccount: address,
+      });
 
-      account = new Account({ address }, context);
+      account = new Account(mockAccount, context);
 
-      const result = await account.hasPermissions({ tokens: [], portfolios: [], transactions: [] });
+      const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual(true);
     });

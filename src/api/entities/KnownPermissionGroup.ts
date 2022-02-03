@@ -14,7 +14,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a pre-defined group of permissions for a Security Token
+ * Represents a pre-defined group of permissions for an Asset
  */
 export class KnownPermissionGroup extends PermissionGroup {
   /**
@@ -95,11 +95,11 @@ export class KnownPermissionGroup extends PermissionGroup {
    * Return the KnownPermissionGroup's static data
    */
   public toJson(): HumanReadable {
-    const { type, token } = this;
+    const { type, asset } = this;
 
     return toHumanReadable({
       type,
-      ticker: token,
+      ticker: asset,
     });
   }
 }

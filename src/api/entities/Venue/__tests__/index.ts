@@ -231,13 +231,13 @@ describe('Venue class', () => {
           from: 'someDid',
           to: 'anotherDid',
           amount: new BigNumber(1000),
-          token: 'SOME_TOKEN',
+          asset: 'SOME_ASSET',
         },
         {
           from: 'anotherDid',
           to: 'aThirdDid',
           amount: new BigNumber(100),
-          token: 'ANOTHER_TOKEN',
+          asset: 'ANOTHER_ASSET',
         },
       ];
 
@@ -274,13 +274,13 @@ describe('Venue class', () => {
           from: 'someDid',
           to: 'anotherDid',
           amount: new BigNumber(1000),
-          token: 'SOME_TOKEN',
+          asset: 'SOME_ASSET',
         },
         {
           from: 'anotherDid',
           to: 'aThirdDid',
           amount: new BigNumber(100),
-          token: 'ANOTHER_TOKEN',
+          asset: 'ANOTHER_ASSET',
         },
       ];
 
@@ -343,9 +343,9 @@ describe('Venue class', () => {
 
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
-      const token = new Venue({ id: new BigNumber(1) }, context);
+      const venueEntity = new Venue({ id: new BigNumber(1) }, context);
 
-      expect(token.toJson()).toBe('1');
+      expect(venueEntity.toJson()).toBe('1');
     });
   });
 });

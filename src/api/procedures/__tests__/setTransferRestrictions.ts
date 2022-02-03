@@ -19,8 +19,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/Identity',
@@ -371,7 +371,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
         },
@@ -393,7 +393,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.AddExemptedEntities],
           portfolios: [],
         },
@@ -415,7 +415,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.RemoveTransferManager],
           portfolios: [],
         },
@@ -437,7 +437,7 @@ describe('setTransferRestrictions procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           transactions: [TxTags.statistics.RemoveExemptedEntities],
           portfolios: [],
         },
@@ -473,15 +473,15 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
-      const getCountStub = entityMockUtils.getSecurityTokenTransferRestrictionsCountGetStub({
+      const getCountStub = entityMockUtils.getAssetTransferRestrictionsCountGetStub({
         restrictions: [],
         availableSlots: 1,
       });
-      const getPercentageStub =
-        entityMockUtils.getSecurityTokenTransferRestrictionsPercentageGetStub({
-          restrictions: [{ percentage }],
-          availableSlots: 1,
-        });
+
+      const getPercentageStub = entityMockUtils.getAssetTransferRestrictionsPercentageGetStub({
+        restrictions: [{ percentage }],
+        availableSlots: 1,
+      });
 
       const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
         mockContext
