@@ -338,7 +338,7 @@ export interface ClaimScope {
 
 /**
  * @param IsDefault - whether the Identity is a default trusted claim issuer for an asset or just
- * for a specific compliance condition. Defaults to false
+ *   for a specific compliance condition. Defaults to false
  */
 export interface TrustedClaimIssuer<IsDefault extends boolean = false> {
   identity: IsDefault extends true ? DefaultTrustedClaimIssuer : Identity;
