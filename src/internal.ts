@@ -135,7 +135,7 @@ export { modifyVenue, ModifyVenueParams } from '~/api/procedures/modifyVenue';
 export { moveFunds, MoveFundsParams } from '~/api/procedures/moveFunds';
 export { payDividends, PayDividendsParams } from '~/api/procedures/payDividends';
 export { quitCustody } from '~/api/procedures/quitCustody';
-export { quitSubsidy } from '~/api/procedures/quitSubsidy';
+export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
 export { redeemToken, RedeemTokenParams } from '~/api/procedures/redeemToken';
 export { registerIdentity, RegisterIdentityParams } from '~/api/procedures/registerIdentity';
