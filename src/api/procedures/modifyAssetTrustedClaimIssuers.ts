@@ -2,7 +2,7 @@ import { difference, intersection, isEqual, sortBy } from 'lodash';
 import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { ClaimType, ErrorCode, TrustedClaimIssuer } from '~/types';
+import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
 import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -15,10 +15,7 @@ import {
 import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
 
 export interface ModifyAssetTrustedClaimIssuersAddSetParams {
-  /**
-   * array of Identity IDs
-   */
-  claimIssuers: { identity: string | Identity; trustedFor?: ClaimType[] }[];
+  claimIssuers: InputTrustedClaimIssuer[];
 }
 
 export interface ModifyAssetTrustedClaimIssuersRemoveParams {
@@ -81,7 +78,7 @@ const areSameClaimIssuers = (
       { identity: bIdentity, trustedFor: bTrustedFor }
     ) => {
       const sameClaimTypes =
-        (aTrustedFor === undefined && bTrustedFor === undefined) ||
+        (aTrustedFor === null && bTrustedFor === null) ||
         (aTrustedFor && bTrustedFor && isEqual(sortBy(aTrustedFor), sortBy(bTrustedFor)));
 
       return signerToString(aIdentity) === signerToString(bIdentity) && !!sameClaimTypes;

@@ -55,6 +55,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
     claimIssuers = claimIssuerDids.map(did => ({
       identity: entityMockUtils.getIdentityInstance({ did }),
+      trustedFor: null,
     }));
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawClaimIssuers = claimIssuerDids.map(did =>
