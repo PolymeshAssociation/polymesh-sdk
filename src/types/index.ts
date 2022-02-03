@@ -3,7 +3,12 @@ import { IKeyringPair, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
-import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
+import {
+  DividendDistributionDetails,
+  ScheduleDetails,
+  StoDetails,
+  SubsidyData,
+} from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 import {
   Account,
@@ -16,7 +21,6 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
-  /*, Proposal */
   SecurityToken,
   Sto,
   TransactionQueue,
@@ -1051,21 +1055,6 @@ export enum PermissionGroupType {
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
-export interface Subsidy {
-  /**
-   * Account whose transactions are being paid for
-   */
-  beneficiary: Account;
-  /**
-   * Account that is paying for the transactions
-   */
-  subsidizer: Account;
-  /**
-   * amount of POLYX to be subsidized. This can be increased/decreased later on
-   */
-  allowance: BigNumber;
-}
-
 export type RotatePrimaryKeyAuthorizationData = {
   type: AuthorizationType.RotatePrimaryKey;
 };
@@ -1087,7 +1076,7 @@ export type BecomeAgentAuthorizationData = {
 
 export type AddRelayerPayingKeyAuthorizationData = {
   type: AuthorizationType.AddRelayerPayingKey;
-  value: Subsidy;
+  value: SubsidyData;
 };
 
 export type GenericAuthorizationData = {

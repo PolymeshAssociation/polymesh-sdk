@@ -1,8 +1,9 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import sinon from 'sinon';
 
-import { prepareQuitSubsidy } from '~/api/procedures/quitSubsidy';
+import { getAuthorization, prepareQuitSubsidy } from '~/api/procedures/quitSubsidy';
 import { Account, Context, QuitSubsidyParams, Subsidy } from '~/internal';
+import { TxTags } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -13,6 +14,7 @@ describe('quitSubsidy procedure', () => {
   let subsidizer: Account;
   let subsidy: Subsidy;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
+  let args: QuitSubsidyParams;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -24,11 +26,12 @@ describe('quitSubsidy procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    // to be replaced by entity mock util instance
-    subsidy = new Subsidy(
-      { beneficiaryAddress: 'beneficiary', subsidizerAddress: 'subsidizer' },
-      mockContext
-    );
+    subsidy = entityMockUtils.getSubsidyInstance();
+
+    subsidizer = entityMockUtils.getAccountInstance({ address: 'subsidizer' });
+    beneficiary = entityMockUtils.getAccountInstance({ address: 'beneficiary' });
+
+    args = { subsidy };
   });
 
   afterEach(() => {
@@ -43,30 +46,15 @@ describe('quitSubsidy procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Account is neither the beneficiary nor the subsidizer', async () => {
-    const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
-
-    let error;
-
-    try {
-      await prepareQuitSubsidy.call(proc, { subsidy });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
-      'Only the subsidizer and the beneficiary are allowed to quit a Subsidy'
-    );
-  });
-
   test('should throw an error if the Subsidy does not exist', async () => {
     const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
-    // entityMockUtils.getSubsidyExistsStub().resolves(false);
+    entityMockUtils.getSubsidyExistsStub().resolves(false);
+    mockContext.getCurrentAccount.returns(beneficiary);
 
     let error;
 
     try {
-      await prepareQuitSubsidy.call(proc, { subsidy });
+      await prepareQuitSubsidy.call(proc, args);
     } catch (err) {
       error = err;
     }
@@ -87,7 +75,7 @@ describe('quitSubsidy procedure', () => {
 
     mockContext.getCurrentAccount.onFirstCall().returns(beneficiary);
 
-    await prepareQuitSubsidy.call(proc, { subsidy });
+    await prepareQuitSubsidy.call(proc, args);
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: removePayingKeyTransaction,
@@ -96,11 +84,47 @@ describe('quitSubsidy procedure', () => {
 
     mockContext.getCurrentAccount.onSecondCall().returns(subsidizer);
 
-    await prepareQuitSubsidy.call(proc, { subsidy });
+    await prepareQuitSubsidy.call(proc, args);
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction: removePayingKeyTransaction,
       args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
+    });
+  });
+
+  describe('getAuthorization', () => {
+    test('should return the appropriate roles and permissions', async () => {
+      const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
+
+      const boundFunc = getAuthorization.bind(proc);
+
+      let result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: 'Only the subsidizer and the beneficiary are allowed to quit a Subsidy',
+        permissions: {
+          transactions: [TxTags.relayer.RemovePayingKey],
+        },
+      });
+
+      mockContext.getCurrentAccount.onSecondCall().returns(subsidizer);
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: true,
+        permissions: {
+          transactions: [TxTags.relayer.RemovePayingKey],
+        },
+      });
+
+      mockContext.getCurrentAccount.onThirdCall().returns(beneficiary);
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: true,
+        permissions: {
+          transactions: [TxTags.relayer.RemovePayingKey],
+        },
+      });
     });
   });
 });

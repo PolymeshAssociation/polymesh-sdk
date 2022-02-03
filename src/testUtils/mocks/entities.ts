@@ -21,6 +21,7 @@ import {
   PermissionGroup,
   SecurityToken,
   Sto,
+  Subsidy,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -76,6 +77,7 @@ import {
 
 type MockIdentity = Mocked<Identity>;
 type MockAccount = Mocked<Account>;
+type MockSubsidy = Mocked<Subsidy>;
 type MockTickerReservation = Mocked<TickerReservation>;
 type MockSecurityToken = Mocked<SecurityToken>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
@@ -110,6 +112,7 @@ const mockInstanceContainer = {
   checkpointSchedule: {} as MockCheckpointSchedule,
   corporateAction: {} as MockCorporateAction,
   dividendDistribution: {} as MockDividendDistribution,
+  subsidy: {} as MockSubsidy,
 };
 
 interface IdentityOptions {
@@ -193,6 +196,13 @@ interface AccountOptions {
   exists?: boolean;
   hasPermissions?: boolean;
   checkPermissions?: CheckPermissionsResult<SignerType.Account>;
+}
+
+interface SubsidyOptions {
+  subsidizer?: string;
+  beneficiary?: string;
+  exists?: boolean;
+  toJson?: string;
 }
 
 interface VenueOptions {
@@ -309,6 +319,7 @@ interface DividendDistributionOptions {
 type MockOptions = {
   identityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
+  subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
   securityTokenOptions?: SecurityTokenOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
@@ -329,6 +340,7 @@ type MockOptions = {
 let identityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
+let subsidyConstructorStub: SinonStub;
 let securityTokenConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
 let permissionGroupConstructorStub: SinonStub;
@@ -391,6 +403,8 @@ let accountIsEqualStub: SinonStub;
 let accountExistsStub: SinonStub;
 let accountHasPermissionsStub: SinonStub;
 let accountCheckPermissionsStub: SinonStub;
+let subsidyExistsStub: SinonStub;
+let subsidyToJsonStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
 let tickerReservationExistsStub: SinonStub;
 let venueDetailsStub: SinonStub;
@@ -456,6 +470,15 @@ const MockTickerReservationClass = class {
    */
   constructor(...args: unknown[]) {
     return tickerReservationConstructorStub(...args);
+  }
+};
+
+const MockSubsidyClass = class {
+  /**
+   * @hidden
+   */
+  constructor(...args: unknown[]) {
+    return subsidyConstructorStub(...args);
   }
 };
 
@@ -613,6 +636,11 @@ export const mockAccountModule = (path: string) => (): Record<string, unknown> =
   Account: MockAccountClass,
 });
 
+export const mockSubsidyModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  Subsidy: MockSubsidyClass,
+});
+
 export const mockTickerReservationModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   TickerReservation: MockTickerReservationClass,
@@ -738,6 +766,15 @@ const defaultAccountOptions: AccountOptions = {
   },
 };
 let accountOptions: AccountOptions = defaultAccountOptions;
+
+const defaultSubsidyOptions: SubsidyOptions = {
+  subsidizer: 'subsidizer',
+  beneficiary: 'beneficiary',
+  exists: true,
+  toJson: 'subsidy',
+};
+let subsidyOptions: SubsidyOptions = defaultSubsidyOptions;
+
 const defaultTickerReservationOptions: TickerReservationOptions = {
   ticker: 'SOME_TICKER',
   details: {
@@ -1563,6 +1600,43 @@ function initAccount(opts?: AccountOptions): void {
 
 /**
  * @hidden
+ * Configure the Subsidy instance
+ */
+function configureSubsidy(opts: SubsidyOptions): void {
+  const subsidy = {
+    uuid: 'subsidy',
+    subsidizer: { ...mockInstanceContainer.account, address: opts.subsidizer },
+    beneficiary: { ...mockInstanceContainer.account, address: opts.beneficiary },
+    exists: subsidyExistsStub.resolves(opts.exists),
+    toJson: subsidyToJsonStub.resolves(opts.toJson),
+  } as unknown as MockSubsidy;
+
+  Object.assign(mockInstanceContainer.subsidy, subsidy);
+  subsidyConstructorStub.callsFake(args => {
+    const value = merge({}, subsidy, args);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const entities = require('~/internal');
+    Object.setPrototypeOf(entities.Subsidy.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Subsidy.prototype);
+    return value;
+  });
+}
+
+/**
+ * @hidden
+ * Initialize the Subsidy instance
+ */
+function initSubsidy(opts?: SubsidyOptions): void {
+  subsidyConstructorStub = sinon.stub();
+  subsidyExistsStub = sinon.stub();
+  subsidyToJsonStub = sinon.stub();
+
+  subsidyOptions = { ...defaultSubsidyOptions, ...opts };
+
+  configureSubsidy(subsidyOptions);
+}
+/**
+ * @hidden
  * Configure the Security Token Offering instance
  */
 function configureSto(opts: StoOptions): void {
@@ -1934,6 +2008,9 @@ export function initMocks(opts?: MockOptions): void {
   // Ticker Reservation
   initTickerReservation(opts?.tickerReservationOptions);
 
+  // Subsidy
+  initSubsidy(opts?.subsidyOptions);
+
   // Security Token
   initSecurityToken(opts?.securityTokenOptions);
 
@@ -1995,6 +2072,7 @@ export function cleanup(): void {
   mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
   mockInstanceContainer.corporateAction = {} as MockCorporateAction;
   mockInstanceContainer.dividendDistribution = {} as MockDividendDistribution;
+  mockInstanceContainer.subsidy = {} as MockSubsidy;
 }
 
 /**
@@ -2006,6 +2084,7 @@ export function reset(): void {
   initMocks({
     identityOptions,
     accountOptions,
+    subsidyOptions,
     tickerReservationOptions,
     securityTokenOptions,
     authorizationRequestOptions,
@@ -2146,6 +2225,29 @@ export function getAccountInstance(opts?: AccountOptions): MockAccount {
   }
 
   return new MockAccountClass() as MockAccount;
+}
+
+/**
+ * @hidden
+ * Retrieve an Subsidy instance
+ */
+export function getSubsidyInstance(opts?: SubsidyOptions): MockSubsidy {
+  if (opts) {
+    configureSubsidy({ ...defaultSubsidyOptions, ...opts });
+  }
+
+  return new MockSubsidyClass() as MockSubsidy;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Subsidy.exists` method
+ */
+export function getSubsidyExistsStub(exists?: boolean): SinonStub {
+  if (exists) {
+    return subsidyExistsStub.resolves(exists);
+  }
+  return subsidyExistsStub;
 }
 
 /**

@@ -3,14 +3,17 @@ import { NoArgsProcedureMethod } from '~/types';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
-  beneficiaryAddress: string;
-  subsidizerAddress: string;
-}
-
-interface HumanReadable {
+  /**
+   * beneficiary address
+   */
   beneficiary: string;
+  /**
+   * subsidizer address
+   */
   subsidizer: string;
 }
+
+type HumanReadable = UniqueIdentifiers;
 
 /**
  * Represents a Subsidy relationship on chain
@@ -21,9 +24,9 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
    * Check if a value is of type [[UniqueIdentifiers]]
    */
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
-    const { beneficiaryAddress, subsidizerAddress } = identifier as UniqueIdentifiers;
+    const { beneficiary, subsidizer } = identifier as UniqueIdentifiers;
 
-    return typeof beneficiaryAddress === 'string' && typeof subsidizerAddress === 'string';
+    return typeof beneficiary === 'string' && typeof subsidizer === 'string';
   }
 
   /**
@@ -39,7 +42,7 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
    * @hidden
    */
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
-    const { beneficiaryAddress, subsidizerAddress } = identifiers;
+    const { beneficiary: beneficiaryAddress, subsidizer: subsidizerAddress } = identifiers;
 
     super(identifiers, context);
 
@@ -53,9 +56,9 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Quit this Subsidy
+   * Terminate this Subsidy relationship. The beneficiary Account will be forced to pay for their own transactions
    *
-   * @note Both the beneficiary and the subsidizer are allowed to quit the Subsidy
+   * @note Both the beneficiary and the subsidizer are allowed to unilaterally quit the Subsidy
    */
   public quit: NoArgsProcedureMethod<void>;
 
@@ -65,13 +68,15 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
   public async exists(): Promise<boolean> {
     const {
       beneficiary: { address: beneficiaryAddress },
-      subsidizer: { address: subsidizerAddress },
+      subsidizer,
       context,
     } = this;
 
-    const subsidy = await context.accountSubsidy(beneficiaryAddress);
+    const subsidyWithAllowance = await context.accountSubsidy(beneficiaryAddress);
 
-    return subsidy !== null && subsidy.subsidizer.address === subsidizerAddress;
+    return (
+      subsidyWithAllowance !== null && subsidyWithAllowance.subsidy.subsidizer.isEqual(subsidizer)
+    );
   }
 
   /**

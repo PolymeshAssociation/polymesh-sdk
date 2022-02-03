@@ -528,7 +528,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the Account subsidizer and allowance if currentPair is set', async () => {
+    test('should return the Subsidy with allowance if currentPair is set', async () => {
       const allowance = dsMockUtils.createMockBalance(100);
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -548,12 +548,15 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy();
       expect(result).toEqual({
+        subsidy: entityMockUtils.getSubsidyInstance({
+          beneficiary: DUMMY_ACCOUNT_ID,
+          subsidizer: 'payingKey',
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
       });
     });
 
-    test('should return the Account subsidizer and allowance if accountId is set', async () => {
+    test('should return the Subsidy with allowance if accountId is set', async () => {
       const allowance = dsMockUtils.createMockBalance(100);
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -573,8 +576,11 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy('accountId');
       expect(result).toEqual({
+        subsidy: entityMockUtils.getSubsidyInstance({
+          beneficiary: 'accountId',
+          subsidizer: 'payingKey',
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
       });
     });
 
@@ -620,8 +626,11 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
+        subsidy: entityMockUtils.getSubsidyInstance({
+          beneficiary: 'accountId',
+          subsidizer: 'payingKey',
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
       });
     });
   });

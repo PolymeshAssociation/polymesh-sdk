@@ -278,13 +278,16 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       };
     }
 
-    const subsidy = await context.accountSubsidy();
+    const subsidyWithAllowance = await context.accountSubsidy();
 
-    if (!subsidy) {
+    if (!subsidyWithAllowance) {
       return null;
     }
 
-    const { subsidizer: account, allowance } = subsidy;
+    const {
+      subsidy: { subsidizer: account },
+      allowance,
+    } = subsidyWithAllowance;
 
     return {
       type: PayingAccountType.Subsidy,

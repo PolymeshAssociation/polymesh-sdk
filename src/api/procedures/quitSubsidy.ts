@@ -2,6 +2,7 @@ import { TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
 import { ErrorCode } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 
 export interface QuitSubsidyParams {
@@ -21,6 +22,7 @@ export async function prepareQuitSubsidy(
     },
     context,
   } = this;
+
   const {
     subsidy: {
       beneficiary: { address: beneficiaryAddress },
@@ -28,15 +30,6 @@ export async function prepareQuitSubsidy(
     },
     subsidy,
   } = args;
-
-  const { address } = await context.getCurrentAccount();
-
-  if (![beneficiaryAddress, subsidizerAddress].includes(address)) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Only the subsidizer and the beneficiary are allowed to quit a Subsidy',
-    });
-  }
 
   const exists = await subsidy.exists();
 
@@ -59,12 +52,35 @@ export async function prepareQuitSubsidy(
 
 /**
  * @hidden
+ *
+ * To quit a Subsidy, the caller should be either the beneficiary or the subsidizer
  */
-export const quitSubsidy = (): Procedure<QuitSubsidyParams, void> =>
-  new Procedure(prepareQuitSubsidy, {
+export async function getAuthorization(
+  this: Procedure<QuitSubsidyParams, void>,
+  args: QuitSubsidyParams
+): Promise<ProcedureAuthorization> {
+  const { context } = this;
+  const {
+    subsidy: {
+      beneficiary: { address: beneficiaryAddress },
+      subsidizer: { address: subsidizerAddress },
+    },
+  } = args;
+
+  const { address } = await context.getCurrentAccount();
+
+  const hasRoles = [beneficiaryAddress, subsidizerAddress].includes(address);
+
+  return {
+    roles: hasRoles || 'Only the subsidizer and the beneficiary are allowed to quit a Subsidy',
     permissions: {
       transactions: [TxTags.relayer.RemovePayingKey],
-      tokens: [],
-      portfolios: [],
     },
-  });
+  };
+}
+
+/**
+ * @hidden
+ */
+export const quitSubsidy = (): Procedure<QuitSubsidyParams, void> =>
+  new Procedure(prepareQuitSubsidy, getAuthorization);
