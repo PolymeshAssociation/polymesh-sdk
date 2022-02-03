@@ -136,6 +136,6 @@ export const SYSTEM_VERSION_RPC_CALL = {
 };
 
 /**
- * Default cdd_id associated with an Identity on chain
+ * Default CDD ID associated with an Identity on chain. Used for Identities onboarded without PUIS
  */
 export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
