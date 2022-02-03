@@ -164,7 +164,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       const txWithArgs = this.composeTx();
       let settingBlockData = Promise.resolve();
 
-      // nonce: -1 takes pending transactions into consideration. D
+      // nonce: -1 takes pending transactions into consideration.
       // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
       const gettingUnsub = txWithArgs.signAndSend(this.signer, { nonce: -1 }, receipt => {
         const { status } = receipt;
