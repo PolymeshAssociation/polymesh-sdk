@@ -1,4 +1,11 @@
-import { Context, Identity, registerIdentity, RegisterIdentityParams } from '~/internal';
+import {
+  Context,
+  createPortfolio,
+  Identity,
+  NumberedPortfolio,
+  registerIdentity,
+  RegisterIdentityParams,
+} from '~/internal';
 import { ProcedureMethod } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -18,6 +25,11 @@ export class Identities {
       { getProcedureAndArgs: args => [registerIdentity, args] },
       context
     );
+
+    this.createPortfolio = createProcedureMethod(
+      { getProcedureAndArgs: args => [createPortfolio, args] },
+      context
+    );
   }
 
   /**
@@ -32,6 +44,11 @@ export class Identities {
    *   - Customer Due Diligence Provider
    */
   public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
+
+  /**
+   * Create a new Portfolio under the ownership of the signing Identity
+   */
+  public createPortfolio: ProcedureMethod<{ name: string }, NumberedPortfolio>;
 
   /**
    * Create an Identity instance from a DID
