@@ -70,6 +70,8 @@ Here is an overview of the parameters passed to the `connect` function:
 
 **NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), there is no need to provide the account seed. Instead, you pass a Keyring object that contains the address, and a signer for that address (which you would typically get from the wallet extension)
 
+**NOTE** if using TypeScript the compiler option "skipLibCheck" should be set to true in your tsconfig.json file
+
 ```typescript
 import { Polymesh, Keyring } from '@polymathnetwork/polymesh-sdk';
 
