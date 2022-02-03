@@ -1064,7 +1064,7 @@ export function createTxStub<
   const transaction = sinon.stub().returns({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: sinon.stub().callsFake((_, cb: StatusCallback) => {
+    signAndSend: sinon.stub().callsFake((_, __, cb: StatusCallback) => {
       if (autoResolve === MockTxStatus.Rejected) {
         return Promise.reject(new Error('Cancelled'));
       }
