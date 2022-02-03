@@ -312,7 +312,7 @@ export function getAuthorization({
     transactions: [
       operation === ClaimOperation.Revoke ? TxTags.identity.RevokeClaim : TxTags.identity.AddClaim,
     ],
-    tokens: [],
+    assets: [],
     portfolios: [],
   };
   if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {

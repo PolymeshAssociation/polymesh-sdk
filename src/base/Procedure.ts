@@ -1,10 +1,10 @@
 import {
+  Asset,
   Context,
   PolymeshError,
   PolymeshTransaction,
   PolymeshTransactionBatch,
   PostTransactionValue,
-  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import {
@@ -187,18 +187,18 @@ export class Procedure<
     } else if (typeof agentPermissions === 'string') {
       agentPermissionsResult = { result: false, message: agentPermissions };
     } else {
-      const { tokens, transactions } = agentPermissions;
+      const { assets, transactions } = agentPermissions;
 
       agentPermissionsResult = { result: true };
 
-      if (tokens?.length && transactions?.length) {
-        assertOnlyOneToken(tokens);
+      if (assets?.length && transactions?.length) {
+        assertOnlyOneAsset(assets);
 
         identity = await fetchIdentity();
 
         noIdentity = !identity;
 
-        agentPermissionsResult = await getAgentPermissionsResult(identity, tokens[0], transactions);
+        agentPermissionsResult = await getAgentPermissionsResult(identity, assets[0], transactions);
       }
     }
 
@@ -501,12 +501,12 @@ export class Procedure<
 /**
  * @hidden
  */
-function assertOnlyOneToken(tokens: SecurityToken[]) {
-  if (tokens.length > 1) {
+function assertOnlyOneAsset(assets: Asset[]) {
+  if (assets.length > 1) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
       message:
-        'Procedures cannot require permissions for more than one Security Token. Please contact the Polymath team',
+        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team',
     });
   }
 }
@@ -516,12 +516,12 @@ function assertOnlyOneToken(tokens: SecurityToken[]) {
  */
 async function getAgentPermissionsResult(
   identity: Identity | null,
-  token: SecurityToken,
+  asset: Asset,
   transactions: TxTag[] | null
 ): Promise<CheckPermissionsResult<SignerType.Identity>> {
   return identity
-    ? identity.tokenPermissions.checkPermissions({
-        token,
+    ? identity.assetPermissions.checkPermissions({
+        asset,
         transactions,
       })
     : { result: false, missingPermissions: transactions };

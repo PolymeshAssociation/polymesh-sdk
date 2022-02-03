@@ -1,0 +1,131 @@
+import { TrustedIssuer } from 'polymesh-types/types';
+
+import {
+  Asset,
+  Context,
+  DefaultTrustedClaimIssuer,
+  modifyAssetTrustedClaimIssuers,
+  ModifyAssetTrustedClaimIssuersAddSetParams,
+  ModifyAssetTrustedClaimIssuersParams,
+  ModifyAssetTrustedClaimIssuersRemoveParams,
+  Namespace,
+} from '~/internal';
+import { ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import { TrustedClaimIssuerOperation } from '~/types/internal';
+import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
+
+/**
+ * Handles all Asset Default Trusted Claim Issuers related functionality
+ */
+export class TrustedClaimIssuers extends Namespace<Asset> {
+  /**
+   * @hidden
+   */
+  constructor(parent: Asset, context: Context) {
+    super(parent, context);
+
+    const { ticker } = parent;
+
+    this.set = createProcedureMethod<
+      ModifyAssetTrustedClaimIssuersAddSetParams,
+      ModifyAssetTrustedClaimIssuersParams,
+      Asset
+    >(
+      {
+        getProcedureAndArgs: args => [
+          modifyAssetTrustedClaimIssuers,
+          { ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
+        ],
+      },
+      context
+    );
+    this.add = createProcedureMethod<
+      ModifyAssetTrustedClaimIssuersAddSetParams,
+      ModifyAssetTrustedClaimIssuersParams,
+      Asset
+    >(
+      {
+        getProcedureAndArgs: args => [
+          modifyAssetTrustedClaimIssuers,
+          { ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
+        ],
+      },
+      context
+    );
+    this.remove = createProcedureMethod<
+      ModifyAssetTrustedClaimIssuersRemoveParams,
+      ModifyAssetTrustedClaimIssuersParams,
+      Asset
+    >(
+      {
+        getProcedureAndArgs: args => [
+          modifyAssetTrustedClaimIssuers,
+          { ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
+        ],
+      },
+      context
+    );
+  }
+
+  /**
+   * Assign a new default list of trusted claim issuers to the Asset by replacing the existing ones with the list passed as a parameter
+   *
+   * This requires two transactions
+   */
+  public set: ProcedureMethod<ModifyAssetTrustedClaimIssuersAddSetParams, Asset>;
+
+  /**
+   * Add the supplied Identities to the Asset's list of trusted claim issuers
+   */
+  public add: ProcedureMethod<ModifyAssetTrustedClaimIssuersAddSetParams, Asset>;
+
+  /**
+   * Remove the supplied Identities from the Asset's list of trusted claim issuers   *
+   */
+  public remove: ProcedureMethod<ModifyAssetTrustedClaimIssuersRemoveParams, Asset>;
+
+  /**
+   * Retrieve the current Default Trusted Claim Issuers of the Asset
+   *
+   * @note can be subscribed to
+   */
+  public get(): Promise<DefaultTrustedClaimIssuer[]>;
+  public get(callback: SubCallback<DefaultTrustedClaimIssuer[]>): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async get(
+    callback?: SubCallback<DefaultTrustedClaimIssuer[]>
+  ): Promise<DefaultTrustedClaimIssuer[] | UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { complianceManager },
+        },
+      },
+      context,
+      parent: { ticker },
+    } = this;
+
+    const rawTicker = stringToTicker(ticker, context);
+
+    const assembleResult = (issuers: TrustedIssuer[]): DefaultTrustedClaimIssuer[] =>
+      issuers.map(issuer => {
+        const {
+          identity: { did },
+          trustedFor,
+        } = trustedIssuerToTrustedClaimIssuer(issuer, context);
+        return new DefaultTrustedClaimIssuer({ did, ticker, trustedFor }, context);
+      });
+
+    if (callback) {
+      return complianceManager.trustedClaimIssuer(rawTicker, issuers => {
+        callback(assembleResult(issuers));
+      });
+    }
+
+    const claimIssuers = await complianceManager.trustedClaimIssuer(rawTicker);
+
+    return assembleResult(claimIssuers);
+  }
+}

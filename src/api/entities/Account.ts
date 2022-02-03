@@ -10,14 +10,7 @@ import {
   union,
 } from 'lodash';
 
-import {
-  Authorizations,
-  Context,
-  Entity,
-  Identity,
-  leaveIdentity,
-  SecurityToken,
-} from '~/internal';
+import { Asset, Authorizations, Context, Entity, Identity, leaveIdentity } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
@@ -335,7 +328,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     if (address === primaryAccountAddress) {
       return {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -358,21 +351,21 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public async checkPermissions(
     permissions: SimplePermissions
   ): Promise<CheckPermissionsResult<SignerType.Account>> {
-    const { tokens, transactions, portfolios } = permissions;
+    const { assets, transactions, portfolios } = permissions;
 
     const {
-      tokens: currentTokens,
+      assets: currentAssets,
       transactions: currentTransactions,
       portfolios: currentPortfolios,
     } = await this.getPermissions();
 
     const missingPermissions: SimplePermissions = {};
 
-    const missingTokenPermissions = getMissingTokenPermissions(tokens, currentTokens);
+    const missingAssetPermissions = getMissingAssetPermissions(assets, currentAssets);
 
-    const hasTokens = missingTokenPermissions === undefined;
-    if (!hasTokens) {
-      missingPermissions.tokens = missingTokenPermissions;
+    const hasAssets = missingAssetPermissions === undefined;
+    if (!hasAssets) {
+      missingPermissions.assets = missingAssetPermissions;
     }
 
     const missingTransactionPermissions = getMissingTransactionPermissions(
@@ -395,7 +388,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       missingPermissions.portfolios = missingPortfolioPermissions;
     }
 
-    const result = hasTokens && hasTransactions && hasPortfolios;
+    const result = hasAssets && hasTransactions && hasPortfolios;
 
     if (result) {
       return { result };
@@ -436,26 +429,26 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 /**
  * @hidden
  *
- * Calculate the difference between the required Token permissions and the current ones
+ * Calculate the difference between the required Asset permissions and the current ones
  */
-function getMissingTokenPermissions(
-  requiredPermissions: SecurityToken[] | null | undefined,
-  currentPermissions: SectionPermissions<SecurityToken> | null
-): SimplePermissions['tokens'] {
+function getMissingAssetPermissions(
+  requiredPermissions: Asset[] | null | undefined,
+  currentPermissions: SectionPermissions<Asset> | null
+): SimplePermissions['assets'] {
   if (currentPermissions === null) {
     return undefined;
   } else if (requiredPermissions === null) {
     return null;
   } else if (requiredPermissions) {
-    const { type: tokensType, values: tokensValues } = currentPermissions;
+    const { type: permissionType, values: assetValues } = currentPermissions;
 
     if (requiredPermissions.length) {
-      let missingPermissions: SecurityToken[];
+      let missingPermissions: Asset[];
 
-      if (tokensType === PermissionType.Include) {
-        missingPermissions = differenceBy(requiredPermissions, tokensValues, 'ticker');
+      if (permissionType === PermissionType.Include) {
+        missingPermissions = differenceBy(requiredPermissions, assetValues, 'ticker');
       } else {
-        missingPermissions = intersectionBy(requiredPermissions, tokensValues, 'ticker');
+        missingPermissions = intersectionBy(requiredPermissions, assetValues, 'ticker');
       }
 
       if (missingPermissions.length) {

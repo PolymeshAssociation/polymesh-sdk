@@ -305,10 +305,10 @@ interface ContextOptions {
   checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
   checkPermissions?: CheckPermissionsResult<SignerType.Account>;
-  hasTokenPermissions?: boolean;
-  checkTokenPermissions?: CheckPermissionsResult<SignerType.Identity>;
+  hasAssetPermissions?: boolean;
+  checkAssetPermissions?: CheckPermissionsResult<SignerType.Identity>;
   validCdd?: boolean;
-  tokenBalance?: BigNumber;
+  assetBalance?: BigNumber;
   invalidDids?: string[];
   transactionFee?: BigNumber;
   currentPairAddress?: string;
@@ -327,7 +327,7 @@ interface ContextOptions {
   isArchiveNode?: boolean;
   ss58Format?: number;
   areSecondaryAccountsFrozen?: boolean;
-  getDividendDistributionsForTokens?: DistributionWithDetails[];
+  getDividendDistributionsForAssets?: DistributionWithDetails[];
   isFrozen?: boolean;
   addPair?: Pair;
   getAccounts?: Account[];
@@ -540,12 +540,12 @@ const defaultContextOptions: ContextOptions = {
   checkPermissions: {
     result: true,
   },
-  hasTokenPermissions: true,
-  checkTokenPermissions: {
+  hasAssetPermissions: true,
+  checkAssetPermissions: {
     result: true,
   },
   validCdd: true,
-  tokenBalance: new BigNumber(1000),
+  assetBalance: new BigNumber(1000),
   invalidDids: [],
   transactionFee: new BigNumber(200),
   currentPairAddress: '0xdummy',
@@ -602,8 +602,8 @@ const defaultContextOptions: ContextOptions = {
   },
   isArchiveNode: true,
   ss58Format: 42,
+  getDividendDistributionsForAssets: [],
   areSecondaryAccountsFrozen: false,
-  getDividendDistributionsForTokens: [],
   isFrozen: false,
   addPair: {
     address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
@@ -659,7 +659,7 @@ function configureContext(opts: ContextOptions): void {
     hasRoles: sinon.stub().resolves(opts.hasRoles),
     checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
-    getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
+    getAssetBalance: sinon.stub().resolves(opts.assetBalance),
     getPrimaryAccount: sinon.stub().resolves({
       account: {
         address: opts.primaryAccount,
@@ -675,9 +675,9 @@ function configureContext(opts: ContextOptions): void {
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
-    tokenPermissions: {
-      hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
-      checkPermissions: sinon.stub().resolves(opts.checkTokenPermissions),
+    assetPermissions: {
+      hasPermissions: sinon.stub().resolves(opts.hasAssetPermissions),
+      checkPermissions: sinon.stub().resolves(opts.checkAssetPermissions),
     },
     areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
     isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
@@ -744,9 +744,9 @@ function configureContext(opts: ContextOptions): void {
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
-    getDividendDistributionsForTokens: sinon
+    getDividendDistributionsForAssets: sinon
       .stub()
-      .resolves(opts.getDividendDistributionsForTokens),
+      .resolves(opts.getDividendDistributionsForAssets),
     addPair: sinon.stub().returns(opts.addPair),
     getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
     supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),

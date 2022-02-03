@@ -2,6 +2,7 @@ import { TxTags } from 'polymesh-types/types';
 
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
+  Asset,
   AuthorizationRequest,
   createGroup,
   CustomPermissionGroup,
@@ -10,7 +11,6 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import {
   Authorization,
@@ -59,7 +59,7 @@ export type Params = InviteExternalAgentParams & {
  * @hidden
  */
 export interface Storage {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 /**
@@ -76,7 +76,7 @@ export async function prepareInviteExternalAgent(
       },
     },
     context,
-    storage: { token },
+    storage: { asset },
   } = this;
 
   const { ticker, target, permissions, expiry = null } = args;
@@ -85,7 +85,7 @@ export async function prepareInviteExternalAgent(
   const targetIdentity = await context.getIdentity(target);
 
   const [currentAgents, did] = await Promise.all([
-    token.permissions.getAgents(),
+    asset.permissions.getAgents(),
     getDid(target, context),
   ]);
 
@@ -156,12 +156,12 @@ export function getAuthorization(
   this: Procedure<Params, AuthorizationRequest, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { token },
+    storage: { asset },
   } = this;
   return {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
-      tokens: [token],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -177,7 +177,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    token: new SecurityToken({ ticker }, context),
+    asset: new Asset({ ticker }, context),
   };
 }
 

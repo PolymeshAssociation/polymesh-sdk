@@ -2,6 +2,7 @@
 
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -15,11 +16,10 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
+  Offering,
   PolymeshError,
   PolymeshTransaction,
   PolymeshTransactionBatch,
-  SecurityToken,
-  Sto,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -154,17 +154,17 @@ export function isNumberedPortfolio(value: unknown): value is NumberedPortfolio 
 }
 
 /**
- * Return whether value is a SecurityToken
+ * Return whether value is an Asset
  */
-export function isSecurityToken(value: unknown): value is SecurityToken {
-  return value instanceof SecurityToken;
+export function isAsset(value: unknown): value is Asset {
+  return value instanceof Asset;
 }
 
 /**
- * Return whether value is an Sto
+ * Return whether value is an Offering
  */
-export function isSto(value: unknown): value is Sto {
-  return value instanceof Sto;
+export function isOffering(value: unknown): value is Offering {
+  return value instanceof Offering;
 }
 
 /**
