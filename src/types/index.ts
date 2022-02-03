@@ -343,7 +343,7 @@ export interface ClaimScope {
 export interface TrustedClaimIssuer<IsDefault extends boolean = false> {
   identity: IsDefault extends true ? DefaultTrustedClaimIssuer : Identity;
   /**
-   * an undefined value means that the issuer is trusted for all claim types.
+   * a null value means that the issuer is trusted for all claim types
    */
   trustedFor: ClaimType[] | null;
 }
