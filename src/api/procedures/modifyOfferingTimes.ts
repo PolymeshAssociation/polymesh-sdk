@@ -80,29 +80,6 @@ export async function prepareModifyOfferingTimes(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params, void>,
-  { ticker }: Params
-): ProcedureAuthorization {
-  const { context } = this;
-  return {
-    permissions: {
-      transactions: [TxTags.sto.ModifyFundraiserWindow],
-      assets: [new Asset({ ticker }, context)],
-      portfolios: [],
-    },
-  };
-}
-
-/**
- * @hidden
- */
-export const modifyOfferingTimes = (): Procedure<Params, void> =>
-  new Procedure(prepareModifyOfferingTimes, getAuthorization);
-
-/**
- * @hidden
- */
 function validateInput(
   sale: OfferingSaleStatus,
   newStart: Date | undefined,
@@ -153,3 +130,26 @@ function validateInput(
     });
   }
 }
+
+/**
+ * @hidden
+ */
+export function getAuthorization(
+  this: Procedure<Params, void>,
+  { ticker }: Params
+): ProcedureAuthorization {
+  const { context } = this;
+  return {
+    permissions: {
+      transactions: [TxTags.sto.ModifyFundraiserWindow],
+      assets: [new Asset({ ticker }, context)],
+      portfolios: [],
+    },
+  };
+}
+
+/**
+ * @hidden
+ */
+export const modifyOfferingTimes = (): Procedure<Params, void> =>
+  new Procedure(prepareModifyOfferingTimes, getAuthorization);

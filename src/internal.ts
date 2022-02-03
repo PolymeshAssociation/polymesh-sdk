@@ -104,10 +104,7 @@ export {
   addInvestorUniquenessClaim,
   AddInvestorUniquenessClaimParams,
 } from '~/api/procedures/addInvestorUniquenessClaim';
-export {
-  redeemTokens as redeemAsset,
-  RedeemTokensParams as RedeemAssetParams,
-} from '~/api/procedures/redeemTokens';
+export { redeemTokens, RedeemTokensParams } from '~/api/procedures/redeemTokens';
 export {
   addTransferRestriction,
   AddTransferRestrictionParams,
@@ -131,10 +128,7 @@ export {
   modifyOfferingTimes as modifyStoTimes,
   ModifyOfferingTimesParams as ModifyStoTimesParams,
 } from '~/api/procedures/modifyOfferingTimes';
-export {
-  investInOffering as investInSto,
-  InvestInOfferingParams as InvestInStoParams,
-} from '~/api/procedures/investInOffering';
+export { investInOffering, InvestInOfferingParams } from '~/api/procedures/investInOffering';
 export { createCheckpoint } from '~/api/procedures/createCheckpoint';
 export { controllerTransfer, ControllerTransferParams } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs, LinkCaDocsParams } from '~/api/procedures/linkCaDocs';

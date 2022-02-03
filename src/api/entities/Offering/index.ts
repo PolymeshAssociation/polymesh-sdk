@@ -8,8 +8,8 @@ import {
   Context,
   Entity,
   Identity,
-  investInSto,
-  InvestInStoParams,
+  investInOffering,
+  InvestInOfferingParams,
   modifyStoTimes,
   ModifyStoTimesParams,
   toggleFreezeOffering,
@@ -97,7 +97,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       context
     );
     this.invest = createProcedureMethod(
-      { getProcedureAndArgs: args => [investInSto, { ticker, id, ...args }] },
+      { getProcedureAndArgs: args => [investInOffering, { ticker, id, ...args }] },
       context
     );
   }
@@ -179,7 +179,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    *   - Purchase Portfolio Custodian
    *   - Funding Portfolio Custodian
    */
-  public invest: ProcedureMethod<InvestInStoParams, void>;
+  public invest: ProcedureMethod<InvestInOfferingParams, void>;
 
   /**
    * Retrieve all investments made on this Offering

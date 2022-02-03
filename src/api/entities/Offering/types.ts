@@ -23,7 +23,7 @@ export enum OfferingBalanceStatus {
    */
   Available = 'Available',
   /**
-   * All Assets tokens in the Offering have been sold
+   * All Asset tokens in the Offering have been sold
    */
   SoldOut = 'SoldOut',
   /**

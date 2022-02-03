@@ -17,7 +17,7 @@ export interface ControllerTransferParams {
    */
   originPortfolio: PortfolioLike;
   /**
-   * amount of Assets tokens to transfer
+   * amount of Asset tokens to transfer
    */
   amount: BigNumber;
 }

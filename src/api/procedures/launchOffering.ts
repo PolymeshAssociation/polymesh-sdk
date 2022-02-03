@@ -34,7 +34,7 @@ import { filterEventRecords } from '~/utils/internal';
  */
 export interface LaunchOfferingParams {
   /**
-   * portfolio in which the Assets tokens to be sold are stored
+   * portfolio in which the Asset tokens to be sold are stored
    */
   offeringPortfolio: PortfolioLike;
   /**

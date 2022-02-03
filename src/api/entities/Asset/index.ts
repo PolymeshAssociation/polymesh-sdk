@@ -22,8 +22,8 @@ import {
   ModifyAssetParams,
   modifyPrimaryIssuanceAgent,
   ModifyPrimaryIssuanceAgentParams,
-  redeemAsset,
-  RedeemAssetParams,
+  redeemTokens,
+  RedeemTokensParams,
   removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferAssetOwnership,
@@ -171,7 +171,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       context
     );
     this.redeem = createProcedureMethod(
-      { getProcedureAndArgs: args => [redeemAsset, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [redeemTokens, { ticker, ...args }] },
       context
     );
     this.controllerTransfer = createProcedureMethod(
@@ -458,7 +458,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *
    * @note tokens are removed from the caller's Default Portfolio
    */
-  public redeem: ProcedureMethod<RedeemAssetParams, void>;
+  public redeem: ProcedureMethod<RedeemTokensParams, void>;
 
   /**
    * Retrieve the amount of unique investors that hold this Asset
