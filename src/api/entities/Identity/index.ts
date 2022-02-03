@@ -22,11 +22,6 @@ import {
   DistributionWithDetails,
   ErrorCode,
   GroupedInstructions,
-  isCddProviderRole,
-  isIdentityRole,
-  isPortfolioCustodianRole,
-  isTickerOwnerRole,
-  isVenueOwnerRole,
   Order,
   PermissionedAccount,
   ResultSet,
@@ -35,6 +30,13 @@ import {
   UnsubCallback,
 } from '~/types';
 import { Ensured, QueryReturnType, tuple } from '~/types/utils';
+import {
+  isCddProviderRole,
+  isIdentityRole,
+  isPortfolioCustodianRole,
+  isTickerOwnerRole,
+  isVenueOwnerRole,
+} from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
