@@ -134,25 +134,6 @@ export async function assertPortfolioExists(
 /**
  * @hidden
  */
-export async function assertVenueExists(id: BigNumber, context: Context): Promise<void> {
-  const venue = new Venue({ id }, context);
-
-  const exists = await venue.exists();
-
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: "The Venue doesn't exist",
-      data: {
-        venueId: id,
-      },
-    });
-  }
-}
-
-/**
- * @hidden
- */
 export function assertSecondaryAccounts(
   accounts: Account[],
   secondaryAccounts: PermissionedAccount[]

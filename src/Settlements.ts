@@ -112,7 +112,7 @@ export class Settlements {
   >;
 
   /**
-   * Affirm an instruction (authorize)
+   * Affirm an Instruction (authorize)
    */
   public affirmInstruction: ProcedureMethod<AffirmInstructionParams, Instruction>;
 }

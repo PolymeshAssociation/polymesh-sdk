@@ -173,34 +173,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The Instruction is already affirmed');
   });
 
-  test('should throw an error if the the Venue no longer exists', () => {
-    const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
-    dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
-      multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-
-    dsMockUtils.createQueryStub('settlement', 'venueInfo', {
-      returnValue: { isNone: true },
-    });
-
-    const proc = procedureMockUtils.getInstance<
-      ModifyInstructionAffirmationParams,
-      Instruction,
-      Storage
-    >(mockContext, {
-      portfolios: [portfolio, portfolio],
-      senderLegAmount: legAmount,
-      totalLegAmount: legAmount,
-    });
-
-    return expect(
-      prepareModifyInstructionAffirmation.call(proc, {
-        id,
-        operation: InstructionAffirmationOperation.Affirm,
-      })
-    ).rejects.toThrow("The Venue doesn't exist");
-  });
-
   test('should add an affirm instruction transaction to the queue', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
