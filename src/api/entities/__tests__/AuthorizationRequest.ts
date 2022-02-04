@@ -69,6 +69,35 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
+    test('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: { type: AuthorizationType.TransferTicker, value: 'TICKER' },
+        },
+        context
+      );
+
+      const args = {
+        accept: true,
+        authRequests: [authorizationRequest],
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await authorizationRequest.accept();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
     test('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
