@@ -107,7 +107,7 @@ export const subsidizeAccount = (): Procedure<SubsidizeAccountParams, Authorizat
   new Procedure(prepareSubsidizeAccount, {
     permissions: {
       transactions: [TxTags.relayer.SetPayingKey],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });
