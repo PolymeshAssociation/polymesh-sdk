@@ -1,5 +1,4 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import BigNumber from 'bignumber.js';
 
 import {
   Account,
@@ -16,7 +15,6 @@ import {
   PolymeshError,
   PostTransactionValue,
   TickerReservation,
-  Venue,
 } from '~/internal';
 import {
   AddRelayerPayingKeyAuthorizationData,
