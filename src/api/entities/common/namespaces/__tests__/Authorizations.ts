@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { AuthorizationType, SignerValue } from '~/types';
+import { AuthorizationType, Identity, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Authorizations } from '../Authorizations';
@@ -177,8 +177,7 @@ describe('Authorizations class', () => {
       expect(result.authId).toEqual(authId);
       expect(result.expiry).toBeNull();
       expect(result.data).toEqual(data);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((result.target as any).did).toEqual(did);
+      expect((result.target as Identity).did).toEqual(did);
       expect(result.issuer.did).toEqual(issuerDid);
     });
 

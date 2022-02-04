@@ -1553,7 +1553,7 @@ export const reset = function (): void {
  * @hidden
  * Retrieve an Identity instance
  */
-export const getIdentityInstance = function (opts?: IdentityOptions): MockIdentity {
+export const getIdentityInstance = (opts?: IdentityOptions): MockIdentity => {
   const instance = new MockIdentityClass();
 
   if (opts) {
@@ -1567,7 +1567,7 @@ export const getIdentityInstance = function (opts?: IdentityOptions): MockIdenti
  * @hidden
  * Retrieve an Account instance
  */
-export const getAccountInstance = function (opts?: AccountOptions): MockAccount {
+export const getAccountInstance = (opts?: AccountOptions): MockAccount => {
   const instance = new MockAccountClass();
 
   if (opts) {
@@ -1581,9 +1581,9 @@ export const getAccountInstance = function (opts?: AccountOptions): MockAccount 
  * @hidden
  * Retrieve a TickerReservation instance
  */
-export const getTickerReservationInstance = function (
+export const getTickerReservationInstance = (
   opts?: TickerReservationOptions
-): MockTickerReservation {
+): MockTickerReservation => {
   const instance = new MockTickerReservationClass();
 
   if (opts) {
@@ -1597,7 +1597,7 @@ export const getTickerReservationInstance = function (
  * @hidden
  * Retrieve a Asset instance
  */
-export const getAssetInstance = function (opts?: AssetOptions): MockAsset {
+export const getAssetInstance = (opts?: AssetOptions): MockAsset => {
   const instance = new MockAssetClass();
 
   if (opts) {
@@ -1611,9 +1611,9 @@ export const getAssetInstance = function (opts?: AssetOptions): MockAsset {
  * @hidden
  * Retrieve an AuthorizationRequest instance
  */
-export const getAuthorizationRequestInstance = function (
+export const getAuthorizationRequestInstance = (
   opts?: AuthorizationRequestOptions
-): MockAuthorizationRequest {
+): MockAuthorizationRequest => {
   const instance = new MockAuthorizationRequestClass();
 
   if (opts) {
@@ -1627,7 +1627,7 @@ export const getAuthorizationRequestInstance = function (
  * @hidden
  * Retrieve a Venue instance
  */
-export const getVenueInstance = function (opts?: VenueOptions): MockVenue {
+export const getVenueInstance = (opts?: VenueOptions): MockVenue => {
   const instance = new MockVenueClass();
 
   if (opts) {
@@ -1641,9 +1641,9 @@ export const getVenueInstance = function (opts?: VenueOptions): MockVenue {
  * @hidden
  * Retrieve a NumberedPortfolio instance
  */
-export const getNumberedPortfolioInstance = function (
+export const getNumberedPortfolioInstance = (
   opts?: NumberedPortfolioOptions
-): MockNumberedPortfolio {
+): MockNumberedPortfolio => {
   const instance = new MockNumberedPortfolioClass();
 
   if (opts) {
@@ -1657,9 +1657,9 @@ export const getNumberedPortfolioInstance = function (
  * @hidden
  * Retrieve a DefaultPortfolio instance
  */
-export const getDefaultPortfolioInstance = function (
+export const getDefaultPortfolioInstance = (
   opts?: DefaultPortfolioOptions
-): MockDefaultPortfolio {
+): MockDefaultPortfolio => {
   const instance = new MockDefaultPortfolioClass();
 
   if (opts) {
@@ -1673,9 +1673,9 @@ export const getDefaultPortfolioInstance = function (
  * @hidden
  * Retrieve a CustomPermissionGroup instance
  */
-export const getCustomPermissionGroupInstance = function (
+export const getCustomPermissionGroupInstance = (
   opts?: CustomPermissionGroupOptions
-): MockCustomPermissionGroup {
+): MockCustomPermissionGroup => {
   const instance = new MockCustomPermissionGroupClass();
 
   if (opts) {
@@ -1689,9 +1689,9 @@ export const getCustomPermissionGroupInstance = function (
  * @hidden
  * Retrieve a KnownPermissionGroup instance
  */
-export const getKnownPermissionGroupInstance = function (
+export const getKnownPermissionGroupInstance = (
   opts?: KnownPermissionGroupOptions
-): MockKnownPermissionGroup {
+): MockKnownPermissionGroup => {
   const instance = new MockKnownPermissionGroupClass();
 
   if (opts) {
@@ -1705,7 +1705,7 @@ export const getKnownPermissionGroupInstance = function (
  * @hidden
  * Retrieve an Instruction instance
  */
-export const getInstructionInstance = function (opts?: InstructionOptions): MockInstruction {
+export const getInstructionInstance = (opts?: InstructionOptions): MockInstruction => {
   const instance = new MockInstructionClass();
 
   if (opts) {
@@ -1719,7 +1719,7 @@ export const getInstructionInstance = function (opts?: InstructionOptions): Mock
  * @hidden
  * Retrieve an Offering instance
  */
-export const getOfferingInstance = function (opts?: OfferingOptions): MockOffering {
+export const getOfferingInstance = (opts?: OfferingOptions): MockOffering => {
   const instance = new MockOfferingClass();
 
   if (opts) {
@@ -1733,7 +1733,7 @@ export const getOfferingInstance = function (opts?: OfferingOptions): MockOfferi
  * @hidden
  * Retrieve a Checkpoint instance
  */
-export const getCheckpointInstance = function (opts?: CheckpointOptions): MockCheckpoint {
+export const getCheckpointInstance = (opts?: CheckpointOptions): MockCheckpoint => {
   const instance = new MockCheckpointClass();
 
   if (opts) {
@@ -1747,9 +1747,9 @@ export const getCheckpointInstance = function (opts?: CheckpointOptions): MockCh
  * @hidden
  * Retrieve a CheckpointSchedule instance
  */
-export const getCheckpointScheduleInstance = function (
+export const getCheckpointScheduleInstance = (
   opts?: CheckpointScheduleOptions
-): MockCheckpointSchedule {
+): MockCheckpointSchedule => {
   const instance = new MockCheckpointScheduleClass();
 
   if (opts) {
@@ -1763,9 +1763,7 @@ export const getCheckpointScheduleInstance = function (
  * @hidden
  * Retrieve a CorporateAction instance
  */
-export const getCorporateActionInstance = function (
-  opts?: CorporateActionOptions
-): MockCorporateAction {
+export const getCorporateActionInstance = (opts?: CorporateActionOptions): MockCorporateAction => {
   const instance = new MockCorporateActionClass();
 
   if (opts) {
@@ -1779,9 +1777,9 @@ export const getCorporateActionInstance = function (
  * @hidden
  * Retrieve a DividendDistribution instance
  */
-export const getDividendDistributionInstance = function (
+export const getDividendDistributionInstance = (
   opts?: DividendDistributionOptions
-): MockDividendDistribution {
+): MockDividendDistribution => {
   const instance = new MockDividendDistributionClass();
 
   if (opts) {
