@@ -290,7 +290,7 @@ describe('assertCaTargetsValid', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
-      returnValue: dsMockUtils.createMockU32(1),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
     });
   });
 
@@ -331,7 +331,7 @@ describe('assertCaTaxWithholdingsValid', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
-      returnValue: dsMockUtils.createMockU32(1),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
     });
   });
 
@@ -538,7 +538,7 @@ describe('assertRequirementsNotTooComplex', () => {
 
   test('should throw an error if the complexity sumatory is greater than max condition complexity', async () => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(2),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(2)),
     });
     expect(() =>
       assertRequirementsNotTooComplex(
@@ -554,7 +554,7 @@ describe('assertRequirementsNotTooComplex', () => {
             target: ConditionTarget.Sender,
           },
         ] as Condition[],
-        1,
+        new BigNumber(1),
         mockContext
       )
     ).toThrow('Compliance Requirement complexity limit exceeded');
@@ -562,12 +562,12 @@ describe('assertRequirementsNotTooComplex', () => {
 
   test('should not throw an error if the complexity is less than the max condition complexity', async () => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(10),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
     });
     expect(() =>
       assertRequirementsNotTooComplex(
         [{ type: ConditionType.IsPresent, target: ConditionTarget.Receiver }] as Condition[],
-        1,
+        new BigNumber(1),
         mockContext
       )
     ).not.toThrow();
@@ -589,7 +589,7 @@ describe('authorization request validations', () => {
         dsMockUtils.createMockAuthorization({
           /* eslint-disable @typescript-eslint/naming-convention */
           authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
-          auth_id: 1,
+          auth_id: new BigNumber(1),
           authorized_by: 'someDid',
           expiry: dsMockUtils.createMockOption(),
           /* eslint-enable @typescript-eslint/naming-convention */

@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import {
   ComplianceRequirement,
   Condition as MeshCondition,
@@ -26,7 +27,7 @@ describe('removeAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let ticker: string;
-  let requirement: number;
+  let requirement: BigNumber;
   let rawTicker: Ticker;
   let senderConditions: MeshCondition[][];
   let receiverConditions: MeshCondition[][];
@@ -39,7 +40,7 @@ describe('removeAssetRequirement procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'someTicker';
-    requirement = 2;
+    requirement = new BigNumber(2);
 
     args = {
       ticker,
@@ -53,7 +54,7 @@ describe('removeAssetRequirement procedure', () => {
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(50),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
@@ -82,7 +83,7 @@ describe('removeAssetRequirement procedure', () => {
           sender_conditions: sConditions,
           receiver_conditions: receiverConditions[index],
           /* eslint-enable @typescript-eslint/naming-convention */
-          id: dsMockUtils.createMockU32(index),
+          id: dsMockUtils.createMockU32(new BigNumber(index)),
         } as ComplianceRequirement)
     );
 
@@ -107,7 +108,7 @@ describe('removeAssetRequirement procedure', () => {
 
   test('should throw an error if the supplied id is not present in the current requirements', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
-    const complianceRequirementId = 1;
+    const complianceRequirementId = new BigNumber(1);
 
     return expect(
       prepareRemoveAssetRequirement.call(proc, {
@@ -119,7 +120,7 @@ describe('removeAssetRequirement procedure', () => {
 
   test('should add a remove compliance requirement transaction to the queue', async () => {
     const rawId = dsMockUtils.createMockU32(requirement);
-    sinon.stub(utilsConversionModule, 'numberToU32').returns(rawId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawId);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 

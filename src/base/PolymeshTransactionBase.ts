@@ -220,8 +220,8 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       gettingUnsub
         .then(() => {
           // tx approved by signer
-          this.updateStatus(TransactionStatus.Running);
           this.txHash = txWithArgs.hash.toString();
+          this.updateStatus(TransactionStatus.Running);
         })
         .catch((err: Error) => {
           let error;

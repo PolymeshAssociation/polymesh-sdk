@@ -54,7 +54,7 @@ export class PolymeshTransaction<
    * @hidden
    */
   constructor(transactionSpec: TransactionSpec<Args, Values>, context: Context) {
-    const { args = [], feeMultiplier = 1, transaction, ...rest } = transactionSpec;
+    const { args = [], feeMultiplier = new BigNumber(1), transaction, ...rest } = transactionSpec;
 
     super(rest, context);
 

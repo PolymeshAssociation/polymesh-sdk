@@ -12,11 +12,11 @@ import {
 import { DistributionWithDetails, ErrorCode, ProcedureMethod } from '~/types';
 import {
   balanceToBigNumber,
+  bigNumberToU32,
   boolToBoolean,
   corporateActionIdentifierToCaId,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
-  numberToU32,
   stringToTicker,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -66,7 +66,7 @@ export class Distributions extends Namespace<Asset> {
     const { id } = args;
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawLocalId = numberToU32(id, context);
+    const rawLocalId = bigNumberToU32(id, context);
     const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: id }, context);
     const [corporateAction, capitalDistribution, details] = await Promise.all([
       query.corporateAction.corporateActions(rawTicker, rawLocalId),

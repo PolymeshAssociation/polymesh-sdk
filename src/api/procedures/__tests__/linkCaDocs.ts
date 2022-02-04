@@ -62,7 +62,7 @@ describe('linkCaDocs procedure', () => {
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
         filing_date: dsMockUtils.createMockOption(
-          filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+          filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
         /* eslint-enabled @typescript-eslint/naming-convention */
       })
@@ -70,7 +70,7 @@ describe('linkCaDocs procedure', () => {
     documentEntries = [];
     rawDocumentIds = [];
     rawDocuments.forEach((doc, index) => {
-      const rawId = dsMockUtils.createMockU32(index);
+      const rawId = dsMockUtils.createMockU32(new BigNumber(index));
       documentEntries.push(tuple([rawTicker, rawId], doc));
       rawDocumentIds.push(rawId);
     });
@@ -80,7 +80,7 @@ describe('linkCaDocs procedure', () => {
       documents,
     };
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+    rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
     sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
   });
 

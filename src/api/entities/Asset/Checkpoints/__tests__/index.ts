@@ -127,8 +127,8 @@ describe('Checkpoints class', () => {
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
       const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
-        checkpointId: dsMockUtils.createMockU64(checkpointId.toNumber()),
-        balance: dsMockUtils.createMockBalance(balance.toNumber()),
+        checkpointId: dsMockUtils.createMockU64(checkpointId),
+        balance: dsMockUtils.createMockBalance(balance),
       }));
 
       const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
@@ -139,7 +139,9 @@ describe('Checkpoints class', () => {
 
       const timestampsStub = dsMockUtils.createQueryStub('checkpoint', 'timestamps');
       timestampsStub.multi.resolves(
-        totalSupply.map(({ moment }) => dsMockUtils.createMockMoment(moment.getTime()))
+        totalSupply.map(({ moment }) =>
+          dsMockUtils.createMockMoment(new BigNumber(moment.getTime()))
+        )
       );
 
       const result = await checkpoints.get();

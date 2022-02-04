@@ -84,16 +84,21 @@ describe('CorporateAction class', () => {
         dsMockUtils.createMockCorporateAction({
           kind,
           /* eslint-disable @typescript-eslint/naming-convention */
-          decl_date: declarationDate.getTime(),
+          decl_date: new BigNumber(declarationDate.getTime()),
           record_date: dsMockUtils.createMockRecordDate({
-            date: new Date('10/14/2019').getTime(),
-            checkpoint: { Scheduled: [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(1)] },
+            date: new BigNumber(new Date('10/14/2019').getTime()),
+            checkpoint: {
+              Scheduled: [
+                dsMockUtils.createMockU64(new BigNumber(1)),
+                dsMockUtils.createMockU64(new BigNumber(1)),
+              ],
+            },
           }),
           targets: {
             identities: [],
             treatment: TargetTreatment.Exclude,
           },
-          default_withholding_tax: 100000,
+          default_withholding_tax: new BigNumber(100000),
           withholding_tax: [],
           /* eslint-enable @typescript-eslint/naming-convention */
         })
@@ -201,15 +206,15 @@ describe('CorporateAction class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: {
-              start: new Date('10/14/1987').getTime(),
+              start: new BigNumber(new Date('10/14/1987').getTime()),
               period: {
                 unit: 'Month',
-                amount: 2,
+                amount: new BigNumber(2),
               },
             },
-            id: 1,
-            at: new Date('10/14/1987').getTime(),
-            remaining: 2,
+            id: new BigNumber(1),
+            at: new BigNumber(new Date('10/14/1987').getTime()),
+            remaining: new BigNumber(2),
           }),
         ],
       });
@@ -236,7 +241,7 @@ describe('CorporateAction class', () => {
       const result = (await corporateAction.checkpoint()) as CheckpointSchedule;
 
       expect(result.id).toEqual(new BigNumber(1));
-      expect(result.period).toEqual({ unit: CalendarUnit.Month, amount: 2 });
+      expect(result.period).toEqual({ unit: CalendarUnit.Month, amount: new BigNumber(2) });
       expect(result.start).toEqual(new Date('10/14/1987'));
     });
 
@@ -246,13 +251,13 @@ describe('CorporateAction class', () => {
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: declarationDate.getTime(),
+            decl_date: new BigNumber(declarationDate.getTime()),
             record_date: null,
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: 100000,
+            default_withholding_tax: new BigNumber(100000),
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
@@ -264,7 +269,10 @@ describe('CorporateAction class', () => {
     });
 
     test('should return null if the CA does not have a record date', async () => {
-      schedulePointsQueryStub.resolves(['someCheckpoint', dsMockUtils.createMockU64(1)]);
+      schedulePointsQueryStub.resolves([
+        'someCheckpoint',
+        dsMockUtils.createMockU64(new BigNumber(1)),
+      ]);
       let result = (await corporateAction.checkpoint()) as Checkpoint;
 
       expect(result.id).toEqual(new BigNumber(1));
@@ -275,16 +283,16 @@ describe('CorporateAction class', () => {
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: declarationDate.getTime(),
+            decl_date: new BigNumber(declarationDate.getTime()),
             record_date: dsMockUtils.createMockRecordDate({
-              date: new Date('10/14/1987').getTime(),
-              checkpoint: { Existing: dsMockUtils.createMockU64(1) },
+              date: new BigNumber(new Date('10/14/1987').getTime()),
+              checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(1)) },
             }),
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: 100000,
+            default_withholding_tax: new BigNumber(100000),
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })

@@ -6,10 +6,10 @@ import { AuthorizationType, ErrorCode, Signer, SignerValue } from '~/types';
 import {
   authorizationDataToAuthorization,
   authorizationTypeToMeshAuthorizationType,
+  bigNumberToU64,
   booleanToBool,
   identityIdToString,
   momentToDate,
-  numberToU64,
   signerToSignerValue,
   signerValueToSignatory,
   signerValueToSigner,
@@ -74,7 +74,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
 
     const signerValue = signerToSignerValue(parent);
     const signatory = signerValueToSignatory(signerValue, context);
-    const rawId = numberToU64(id, context);
+    const rawId = bigNumberToU64(id, context);
 
     const auth = await query.identity.authorizations(signatory, rawId);
 

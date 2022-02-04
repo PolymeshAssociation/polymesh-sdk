@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { ProposalDetails, ProposalStage } from '~/api/entities/Proposal/types';
 import {
   Account,
   Asset,
@@ -174,14 +173,6 @@ interface AuthorizationRequestOptions {
   isExpired?: boolean;
 }
 
-interface ProposalOptions {
-  pipId?: BigNumber;
-  getDetails?: ProposalDetails;
-  getStage?: ProposalStage;
-  identityHasVoted?: boolean;
-  exists?: boolean;
-}
-
 interface AccountOptions {
   address?: string;
   key?: string;
@@ -269,7 +260,7 @@ interface CheckpointScheduleOptions {
   start?: Date;
   period?: CalendarPeriod | null;
   expiryDate?: Date | null;
-  complexity?: number;
+  complexity?: BigNumber;
   details?: Partial<ScheduleDetails>;
   exists?: boolean;
 }
@@ -312,7 +303,6 @@ type MockOptions = {
   tickerReservationOptions?: TickerReservationOptions;
   assetOptions?: AssetOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
-  proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
@@ -762,11 +752,11 @@ const defaultAssetOptions: AssetOptions = {
   getIdentifiers: [],
   transferRestrictionsCountGet: {
     restrictions: [],
-    availableSlots: 3,
+    availableSlots: new BigNumber(3),
   },
   transferRestrictionsPercentageGet: {
     restrictions: [],
-    availableSlots: 3,
+    availableSlots: new BigNumber(3),
   },
   corporateActionsGetAgents: [],
   corporateActionsGetDefaultConfig: {
@@ -917,12 +907,12 @@ const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
   start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
   period: {
     unit: CalendarUnit.Month,
-    amount: 1,
+    amount: new BigNumber(1),
   },
   expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
-  complexity: 2,
+  complexity: new BigNumber(2),
   details: {
-    remainingCheckpoints: 1,
+    remainingCheckpoints: new BigNumber(1),
     nextCheckpointDate: new Date('10/10/2030'),
   },
   exists: true,

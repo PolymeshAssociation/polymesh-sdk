@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -83,7 +84,7 @@ describe('removeSecondaryAccounts procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      feeMultiplier: 1,
+      feeMultiplier: new BigNumber(1),
       args: [[rawSignatory]],
     });
   });

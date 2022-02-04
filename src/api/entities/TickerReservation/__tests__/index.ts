@@ -85,7 +85,9 @@ describe('TickerReservation class', () => {
       queryMultiStub.resolves([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
-          expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryDate.getTime())),
+          expiry: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
+          ),
         }),
         dsMockUtils.createMockSecurityToken(),
       ]);
@@ -131,7 +133,9 @@ describe('TickerReservation class', () => {
       queryMultiStub.resolves([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
-          expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryDate.getTime())),
+          expiry: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
+          ),
         }),
         dsMockUtils.createMockSecurityToken(),
       ]);
@@ -161,7 +165,7 @@ describe('TickerReservation class', () => {
           owner_did: dsMockUtils.createMockIdentityId(ownerDid),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
           divisible: dsMockUtils.createMockBool(true),
-          total_supply: dsMockUtils.createMockBalance(1000),
+          total_supply: dsMockUtils.createMockBalance(new BigNumber(1000)),
           /* eslint-enable @typescript-eslint/naming-convention */
         }),
       ]);
@@ -283,14 +287,14 @@ describe('TickerReservation class', () => {
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
       dsMockUtils.createQueryStub('asset', 'tickers', {
-        size: 10,
+        size: new BigNumber(10),
       });
 
       let result = await tickerRes.exists();
       expect(result).toBe(true);
 
       dsMockUtils.createQueryStub('asset', 'tickers', {
-        size: 0,
+        size: new BigNumber(0),
       });
 
       result = await tickerRes.exists();

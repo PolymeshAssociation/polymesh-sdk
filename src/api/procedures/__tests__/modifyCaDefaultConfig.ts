@@ -208,7 +208,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       },
     });
 
-    const rawPercentage = dsMockUtils.createMockPermill(150000);
+    const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(150000));
     percentageToPermillStub.withArgs(new BigNumber(15), mockContext).returns(rawPercentage);
 
     await prepareModifyCaDefaultConfig.call(proc, {
@@ -236,7 +236,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     });
 
     const rawDid = dsMockUtils.createMockIdentityId('someDid');
-    const rawPercentage = dsMockUtils.createMockPermill(250000);
+    const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(250000));
 
     stringToIdentityIdStub.withArgs('someDid', mockContext).returns(rawDid);
     percentageToPermillStub.withArgs(new BigNumber(25), mockContext).returns(rawPercentage);

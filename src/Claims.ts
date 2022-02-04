@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { filter, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import {
@@ -144,8 +145,8 @@ export class Claims {
     opts: {
       target?: string | Identity;
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
@@ -182,8 +183,8 @@ export class Claims {
       scope?: Scope;
       claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
@@ -207,17 +208,18 @@ export class Claims {
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
         includeExpired,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
     const {
       data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+        didsWithClaims: { items: didsWithClaimsList, totalCount },
       },
     } = result;
 
+    const count = new BigNumber(totalCount);
     const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
     const next = calculateNextKey(count, size, start);
 
@@ -341,8 +343,8 @@ export class Claims {
       scope?: Scope;
       trustedClaimIssuers?: (string | Identity)[];
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
@@ -362,20 +364,18 @@ export class Claims {
             signerToString(trustedClaimIssuer)
           ),
           includeExpired,
-          count: size,
-          skip: start,
+          count: size?.toNumber(),
+          skip: start?.toNumber(),
         })
       );
 
       const {
         data: {
-          issuerDidsWithClaimsByTarget: {
-            items: issuerDidsWithClaimsByTargetList,
-            totalCount: count,
-          },
+          issuerDidsWithClaimsByTarget: { items: issuerDidsWithClaimsByTargetList, totalCount },
         },
       } = result;
 
+      const count = new BigNumber(totalCount);
       const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
       const next = calculateNextKey(count, size, start);
 
@@ -412,7 +412,7 @@ export class Claims {
     return {
       data: identitiesWithClaims,
       next: null,
-      count: identitiesWithClaims.length,
+      count: new BigNumber(identitiesWithClaims.length),
     };
   }
 }

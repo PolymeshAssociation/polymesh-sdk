@@ -67,7 +67,7 @@ describe('Polymesh Transaction Batch class', () => {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
-              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(1)),
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(1))),
               parentHash: 'hash',
               stateRoot: 'hash',
               extrinsicsRoot: 'hash',

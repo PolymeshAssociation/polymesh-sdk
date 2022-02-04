@@ -94,12 +94,14 @@ describe('createCheckpointSchedule procedure', () => {
     const start = new Date(new Date().getTime() + 10000);
     const period = {
       unit: CalendarUnit.Month,
-      amount: 1,
+      amount: new BigNumber(1),
     };
-    const repetitions = 12;
+    const repetitions = new BigNumber(12);
 
     const rawSpec = dsMockUtils.createMockScheduleSpec({
-      start: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(start.getTime())),
+      start: dsMockUtils.createMockOption(
+        dsMockUtils.createMockMoment(new BigNumber(start.getTime()))
+      ),
       period: dsMockUtils.createMockCalendarPeriod({
         unit: dsMockUtils.createMockCalendarUnit('Month'),
         amount: dsMockUtils.createMockU64(period.amount),
@@ -132,9 +134,9 @@ describe('createCheckpointSchedule procedure', () => {
     const start = new Date('10/14/1987');
     const period = {
       unit: CalendarUnit.Month,
-      amount: 1,
+      amount: new BigNumber(1),
     };
-    const remaining = 10;
+    const remaining = new BigNumber(10);
     const at = new Date('10/10/2030');
 
     beforeAll(() => {
@@ -155,16 +157,16 @@ describe('createCheckpointSchedule procedure', () => {
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockTicker(ticker),
           dsMockUtils.createMockStoredSchedule({
-            id: dsMockUtils.createMockU64(id.toNumber()),
+            id: dsMockUtils.createMockU64(id),
             schedule: dsMockUtils.createMockCheckpointSchedule({
-              start: dsMockUtils.createMockMoment(start.getTime()),
+              start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
               period: dsMockUtils.createMockCalendarPeriod({
                 unit: dsMockUtils.createMockCalendarUnit('Month'),
                 amount: dsMockUtils.createMockU64(period.amount),
               }),
             }),
             remaining: dsMockUtils.createMockU32(remaining),
-            at: dsMockUtils.createMockMoment(at.getTime()),
+            at: dsMockUtils.createMockMoment(new BigNumber(at.getTime())),
           }),
         ]),
       ]);
@@ -194,9 +196,9 @@ describe('createCheckpointSchedule procedure', () => {
       const start = new Date('10/14/1987');
       const period = {
         unit: CalendarUnit.Month,
-        amount: 1,
+        amount: new BigNumber(1),
       };
-      const repetitions = 10;
+      const repetitions = new BigNumber(10);
 
       const asset = entityMockUtils.getAssetInstance({ ticker });
 
