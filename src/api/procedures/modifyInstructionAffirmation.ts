@@ -56,7 +56,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const instruction = new Instruction({ id }, context);
 
-  assertInstructionValid(instruction, context);
+  await assertInstructionValid(instruction, context);
 
   if (!portfolios.length) {
     throw new PolymeshError({
