@@ -27,7 +27,7 @@ export interface Storage {
 /**
  * @hidden
  *
- * Consumes JoinIdentity and RotatePrimaryKeyToSecondaryKey Authorizations
+ * Consumes JoinIdentity, RotatePrimaryKey and RotatePrimaryKeyToSecondaryKey Authorizations
  */
 export async function prepareConsumeJoinOrRotateAuthorization(
   this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
