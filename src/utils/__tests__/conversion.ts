@@ -1130,7 +1130,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     value = {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
       value: {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -1296,7 +1296,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     });
     fakeResult = {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
-      value: { tokens: null, portfolios: null, transactions: null, transactionGroups: [] },
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
     };
 
     result = authorizationDataToAuthorization(authorizationData, context);

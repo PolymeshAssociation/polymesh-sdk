@@ -52,7 +52,11 @@ export async function prepareConsumeJoinOrRotateAuthorization(
   } = authRequest;
 
   if (
-    ![AuthorizationType.JoinIdentity, AuthorizationType.RotatePrimaryKeyToSecondary].includes(type)
+    ![
+      AuthorizationType.JoinIdentity,
+      AuthorizationType.RotatePrimaryKeyToSecondary,
+      AuthorizationType.RotatePrimaryKey,
+    ].includes(type)
   ) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
@@ -89,6 +93,12 @@ export async function prepareConsumeJoinOrRotateAuthorization(
       transaction: identity.joinIdentityAsKey,
       paidForBy: issuer,
       args: [rawAuthId],
+    });
+  } else if (type === AuthorizationType.RotatePrimaryKey) {
+    this.addTransaction({
+      transaction: identity.acceptPrimaryKey,
+      paidForBy: issuer,
+      args: [rawAuthId, null],
     });
   } else {
     this.addTransaction({

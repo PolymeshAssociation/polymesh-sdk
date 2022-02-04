@@ -9,7 +9,14 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/consumeJoinOrRotateAuthorization';
-import { Account, AuthorizationRequest, Context, Identity, PolymeshError } from '~/internal';
+import {
+  Account,
+  AuthorizationRequest,
+  Context,
+  Identity,
+  KnownPermissionGroup,
+  PolymeshError,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, AuthorizationType, ErrorCode, Signer, TxTags } from '~/types';
@@ -231,7 +238,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
           data: {
             type: AuthorizationType.RotatePrimaryKeyToSecondary,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -250,7 +257,48 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
   });
 
-  test('should throw if called with an Authorization that is not JoinIdentity or RotatePrimaryKeyToSecondary', async () => {
+  test('should add an acceptPrimaryKey transaction to the queue if called with RotatePrimaryKey', async () => {
+    const proc = procedureMockUtils.getInstance<
+      ConsumeJoinOrRotateAuthorizationParams,
+      void,
+      Storage
+    >(mockContext, {
+      currentAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const transaction = dsMockUtils.createTxStub('identity', 'acceptPrimaryKey');
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
+
+    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer,
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.RotatePrimaryKey,
+          },
+        },
+        mockContext
+      ),
+      accept: true,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId, null],
+    });
+  });
+
+  test('should throw if called with an Authorization that is not JoinIdentity, RotatePrimaryKeyToSecondary or RotatePrimaryKey', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -276,7 +324,8 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
             authId,
             expiry: null,
             data: {
-              type: AuthorizationType.RotatePrimaryKey,
+              type: AuthorizationType.BecomeAgent,
+              value: {} as KnownPermissionGroup,
             },
           },
           mockContext
@@ -288,8 +337,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     }
     const expectedError = new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message:
-        'Unrecognized auth type: "RotatePrimaryKey" for consumeJoinOrRotateAuthorization method',
+      message: 'Unrecognized auth type: "BecomeAgent" for consumeJoinOrRotateAuthorization method',
     });
     expect(error).toEqual(expectedError);
   });

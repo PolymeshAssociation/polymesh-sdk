@@ -1233,7 +1233,7 @@ describe('authorization request validations', () => {
 
   describe('assertRotatePrimaryKeyToSecondaryAuthorization', () => {
     const permissions = {
-      tokens: null,
+      assets: null,
       transactions: null,
       transactionGroups: [],
       portfolios: null,

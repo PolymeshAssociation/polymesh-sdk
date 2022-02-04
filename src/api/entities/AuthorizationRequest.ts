@@ -123,9 +123,8 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       {
         getProcedureAndArgs: () => {
           switch (this.data.type) {
-            case AuthorizationType.JoinIdentity: {
-              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: true }];
-            }
+            case AuthorizationType.JoinIdentity:
+            case AuthorizationType.RotatePrimaryKey:
             case AuthorizationType.RotatePrimaryKeyToSecondary: {
               return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: true }];
             }
