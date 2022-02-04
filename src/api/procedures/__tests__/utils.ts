@@ -71,8 +71,8 @@ jest.mock(
 );
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 jest.mock(
@@ -238,7 +238,7 @@ describe('assertSecondaryAccounts', () => {
       {
         account,
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,
@@ -256,7 +256,7 @@ describe('assertSecondaryAccounts', () => {
       {
         account: entityMockUtils.getAccountInstance({ address }),
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,
@@ -796,7 +796,7 @@ describe('authorization request validations', () => {
 
     test('should throw with an already used ticker', async () => {
       entityMockUtils.configureMocks({
-        tickerReservationOptions: { details: { status: TickerReservationStatus.TokenCreated } },
+        tickerReservationOptions: { details: { status: TickerReservationStatus.AssetCreated } },
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
@@ -828,7 +828,7 @@ describe('authorization request validations', () => {
 
   describe('assertTransferAssetOwnershipAuthorizationValid', () => {
     test('should not throw with a valid request', async () => {
-      entityMockUtils.configureMocks({ securityTokenOptions: { exists: true } });
+      entityMockUtils.configureMocks({ assetOptions: { exists: true } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -853,7 +853,7 @@ describe('authorization request validations', () => {
     });
 
     test('should throw with a Asset that does not exist', async () => {
-      entityMockUtils.configureMocks({ securityTokenOptions: { exists: false } });
+      entityMockUtils.configureMocks({ assetOptions: { exists: false } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -911,7 +911,7 @@ describe('authorization request validations', () => {
 
   describe('assertJoinIdentityAuthorizationValid', () => {
     const permissions = {
-      tokens: null,
+      assets: null,
       transactions: null,
       transactionGroups: [],
       portfolios: null,

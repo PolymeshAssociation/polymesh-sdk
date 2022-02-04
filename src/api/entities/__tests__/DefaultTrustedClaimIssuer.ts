@@ -1,9 +1,13 @@
 import BigNumber from 'bignumber.js';
+import { Ticker, TrustedIssuer } from 'polymesh-types/types';
+import sinon from 'sinon';
 
 import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { ClaimType } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('DefaultTrustedClaimIssuer class', () => {
@@ -38,7 +42,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const ticker = 'SOME_TICKER';
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      expect(trustedClaimIssuer.token.ticker).toBe(ticker);
+      expect(trustedClaimIssuer.asset.ticker).toBe(ticker);
       expect(trustedClaimIssuer.did).toEqual(did);
     });
   });
@@ -90,6 +94,77 @@ describe('DefaultTrustedClaimIssuer class', () => {
       dsMockUtils.createApolloQueryStub(eventByAddedTrustedClaimIssuer(variables), {});
       const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: trustedFor', () => {
+    let ticker: string;
+    let rawTicker: Ticker;
+    let stringToTickerStub: sinon.SinonStub;
+    let claimIssuers: TrustedIssuer[];
+    let trustedClaimIssuerStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      ticker = 'SOME_TICKER';
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+      claimIssuers = [
+        dsMockUtils.createMockTrustedIssuer({
+          issuer: dsMockUtils.createMockIdentityId('someDid'),
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+        }),
+        dsMockUtils.createMockTrustedIssuer({
+          issuer: dsMockUtils.createMockIdentityId('otherDid'),
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          trusted_for: dsMockUtils.createMockTrustedFor({
+            Specific: [dsMockUtils.createMockClaimType(ClaimType.Exempted)],
+          }),
+        }),
+      ];
+    });
+
+    beforeEach(() => {
+      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+      trustedClaimIssuerStub = dsMockUtils.createQueryStub(
+        'complianceManager',
+        'trustedClaimIssuer'
+      );
+      trustedClaimIssuerStub.withArgs(rawTicker).resolves(claimIssuers);
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the claim types for which the Claim Issuer is trusted', async () => {
+      let trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'someDid', ticker }, context);
+
+      let result = await trustedClaimIssuer.trustedFor();
+
+      expect(result).toBeNull();
+
+      trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'otherDid', ticker }, context);
+
+      result = await trustedClaimIssuer.trustedFor();
+
+      expect(result).toEqual([ClaimType.Exempted]);
+    });
+
+    test('should throw an error if the Identity is no longer a trusted Claim Issuer', async () => {
+      const did = 'randomDid';
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+
+      let err;
+      try {
+        await trustedClaimIssuer.trustedFor();
+      } catch (error) {
+        err = error;
+      }
+
+      expect(err.message).toBe(
+        `The Identity with DID "${did}" is no longer a trusted issuer for "${ticker}"`
+      );
     });
   });
 });

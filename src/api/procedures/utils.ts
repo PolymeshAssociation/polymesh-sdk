@@ -2,6 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -13,7 +14,6 @@ import {
   NumberedPortfolio,
   PolymeshError,
   PostTransactionValue,
-  SecurityToken,
   TickerReservation,
 } from '~/internal';
 import {
@@ -438,7 +438,7 @@ export async function assertTransferTickerAuthorizationValid(
       message: 'The Ticker is not reserved',
     });
   }
-  if (status === TickerReservationStatus.TokenCreated) {
+  if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The Ticker has already been used to create an Asset',
@@ -455,8 +455,8 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
   data: GenericAuthorizationData,
   context: Context
 ): Promise<void> {
-  const token = new SecurityToken({ ticker: data.value }, context);
-  const exists = await token.exists();
+  const asset = new Asset({ ticker: data.value }, context);
+  const exists = await asset.exists();
   if (!exists)
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,

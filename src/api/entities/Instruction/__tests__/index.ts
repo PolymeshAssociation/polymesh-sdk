@@ -22,8 +22,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/Venue',
@@ -503,7 +503,7 @@ describe('Instruction class', () => {
       const ticker = 'SOME_TICKER';
       const amount = new BigNumber(1000);
 
-      entityMockUtils.configureMocks({ securityTokenOptions: { ticker } });
+      entityMockUtils.configureMocks({ assetOptions: { ticker } });
 
       const entries = [
         tuple(['instructionId', 'legId'] as unknown as StorageKey, {
@@ -528,7 +528,7 @@ describe('Instruction class', () => {
       sinon.assert.calledWithExactly(identityConstructor.firstCall, { did: fromDid }, context);
       sinon.assert.calledWithExactly(identityConstructor.secondCall, { did: toDid }, context);
       expect(leg[0].amount).toEqual(amount);
-      expect(leg[0].token).toEqual(entityMockUtils.getSecurityTokenInstance());
+      expect(leg[0].asset).toEqual(entityMockUtils.getAssetInstance());
     });
 
     test('should throw an error if the instruction is not pending', () => {

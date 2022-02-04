@@ -63,7 +63,7 @@ describe('removeSecondaryAccounts procedure', () => {
         secondaryAccounts: accounts.map(secondaryAccount => ({
           account: secondaryAccount,
           permissions: {
-            tokens: null,
+            assets: null,
             transactions: null,
             transactionGroups: [],
             portfolios: null,

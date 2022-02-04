@@ -97,7 +97,7 @@ export async function prepareInviteAccount(
   );
 
   let authorizationValue: Permissions = {
-    tokens: { type: PermissionType.Include, values: [] },
+    assets: { type: PermissionType.Include, values: [] },
     transactions: { type: PermissionType.Include, values: [] },
     transactionGroups: [],
     portfolios: { type: PermissionType.Include, values: [] },
@@ -130,7 +130,7 @@ export const inviteAccount = (): Procedure<InviteAccountParams, AuthorizationReq
   new Procedure(prepareInviteAccount, {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

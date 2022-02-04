@@ -1,4 +1,4 @@
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
@@ -30,15 +30,14 @@ export async function prepareRemovePrimaryIssuanceAgent(
 
   const { ticker } = args;
 
-  const securityToken = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
-  const { primaryIssuanceAgents } = await securityToken.details();
+  const { primaryIssuanceAgents } = await asset.details();
 
   if (primaryIssuanceAgents.length !== 1) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message:
-        'There must be one (and only one) Primary Issuance Agent assigned to this Security Token',
+      message: 'There must be one (and only one) Primary Issuance Agent assigned to this Asset',
     });
   }
 
@@ -61,7 +60,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.externalAgents.RemoveAgent],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };

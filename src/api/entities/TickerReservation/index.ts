@@ -2,14 +2,14 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
 
 import {
+  Asset,
   AuthorizationRequest,
   Context,
-  createSecurityToken,
-  CreateSecurityTokenParams,
+  createAsset,
+  CreateAssetParams,
   Entity,
   Identity,
   reserveTicker,
-  SecurityToken,
   transferTickerOwnership,
   TransferTickerOwnershipParams,
 } from '~/internal';
@@ -28,9 +28,9 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a reserved token symbol in the Polymesh chain. Ticker reservations expire
+ * Represents a reserved Asset symbol in the Polymesh blockchain. Ticker reservations expire
  *   after a set length of time, after which they can be reserved by another Identity.
- *   A Ticker must be previously reserved by an Identity for that Identity to be able create a Security Token with it
+ *   A Ticker must be previously reserved by an Identity for that Identity to be able create an Asset with it
  */
 export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   /**
@@ -66,12 +66,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       context
     );
 
-    this.createToken = createProcedureMethod(
+    this.createAsset = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [
-          createSecurityToken,
-          { ...args, ticker, reservationRequired: true },
-        ],
+        getProcedureAndArgs: args => [createAsset, { ...args, ticker, reservationRequired: true }],
       },
       context
     );
@@ -109,10 +106,10 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = (
       { owner: tickerOwner, expiry }: TickerRegistration,
-      { owner_did: tokenOwner }: MeshToken
+      { owner_did: assetOwner }: MeshToken
     ): TickerReservationDetails => {
       const tickerOwned = !tickerOwner.isEmpty;
-      const tokenOwned = !tokenOwner.isEmpty;
+      const assetOwned = !assetOwner.isEmpty;
 
       let status: TickerReservationStatus;
       let expiryDate: Date | null = null;
@@ -120,8 +117,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         ? new Identity({ did: identityIdToString(tickerOwner) }, context)
         : null;
 
-      if (tokenOwned) {
-        status = TickerReservationStatus.TokenCreated;
+      if (assetOwned) {
+        status = TickerReservationStatus.AssetCreated;
       } else if (tickerOwned) {
         status = TickerReservationStatus.Reserved;
         if (expiry.isSome) {
@@ -158,19 +155,19 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     }
 
     // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-    const [tickerRegistration, securityToken] = await queryMulti<
+    const [tickerRegistration, meshAsset] = await queryMulti<
       [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
     >([
       [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
       [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
     ]);
 
-    return assembleResult(tickerRegistration, securityToken);
+    return assembleResult(tickerRegistration, meshAsset);
   }
 
   /**
    * Extend the Reservation time period of the ticker for 60 days from now
-   * to later use it in the creation of a Security Token.
+   * to later use it in the creation of an Asset.
    *
    * @note required role:
    *   - Ticker Owner
@@ -178,12 +175,12 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   public extend: NoArgsProcedureMethod<TickerReservation>;
 
   /**
-   * Create a Security Token using the reserved ticker
+   * Create an Asset using the reserved ticker
    *
    * @note required role:
    *   - Ticker Owner
    */
-  public createToken: ProcedureMethod<CreateSecurityTokenParams, SecurityToken>;
+  public createAsset: ProcedureMethod<CreateAssetParams, Asset>;
 
   /**
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted
