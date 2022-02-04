@@ -18,7 +18,6 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
-import { VenueId } from '~/polkadot';
 import {
   AddRelayerPayingKeyAuthorizationData,
   Authorization,
