@@ -102,20 +102,20 @@ describe('transferTickerOwnership procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if a token with that ticker has already been launched', () => {
+  test('should throw an error if an Asset with that ticker has already been launched', () => {
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {
           owner: entityMockUtils.getIdentityInstance(),
           expiryDate: null,
-          status: TickerReservationStatus.TokenCreated,
+          status: TickerReservationStatus.AssetCreated,
         },
       },
     });
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     return expect(prepareTransferTickerOwnership.call(proc, args)).rejects.toThrow(
-      'A Security Token with this ticker has already been created'
+      'An Asset with this ticker has already been created'
     );
   });
 
@@ -126,29 +126,11 @@ describe('transferTickerOwnership procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
-  });
-
-  test('should add an add authorization transaction to the queue if the target is an Identity', async () => {
-    const identityArgs = Object.assign({}, args, {
-      target: entityMockUtils.getIdentityInstance({ did }),
-    });
-    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
-
-    await prepareTransferTickerOwnership.call(proc, identityArgs);
-
-    sinon.assert.calledWith(
-      addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      null
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
     );
   });
 
@@ -159,11 +141,11 @@ describe('transferTickerOwnership procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawSignatory,
-      rawAuthorizationData,
-      rawMoment
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, rawMoment],
+      })
     );
   });
 
@@ -175,7 +157,7 @@ describe('transferTickerOwnership procedure', () => {
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },

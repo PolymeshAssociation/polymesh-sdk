@@ -8,7 +8,7 @@ import { Context, PostTransactionValue, TransactionQueue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { fakePromise } from '~/testUtils';
 import { dsMockUtils, entityMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
-import { TransactionQueueStatus, TransactionStatus } from '~/types';
+import { PayingAccountType, TransactionQueueStatus, TransactionStatus } from '~/types';
 
 jest.mock(
   '~/base/PolymeshTransaction',
@@ -48,7 +48,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -64,12 +64,12 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: ['someArg'],
           isCritical: true,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
 
@@ -110,7 +110,7 @@ describe('Transaction Queue class', () => {
         {
           args: [12],
           isCritical: true,
-          autoresolve: false as const,
+          autoResolve: false as const,
         },
       ];
       let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -158,12 +158,12 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: ['someArg'],
           isCritical: true,
-          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+          autoResolve: TransactionStatus.Failed as TransactionStatus.Failed,
         },
       ];
 
@@ -186,12 +186,12 @@ describe('Transaction Queue class', () => {
             protocol: new BigNumber(200),
             gas: new BigNumber(200),
           },
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: ['someArg'],
           isCritical: true,
-          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+          autoResolve: TransactionStatus.Failed as TransactionStatus.Failed,
         },
       ];
 
@@ -238,10 +238,11 @@ describe('Transaction Queue class', () => {
             gas: new BigNumber(100),
           },
           payingAccount: {
+            type: PayingAccountType.Subsidy,
             account: account1,
             allowance: new BigNumber(500),
           },
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: ['someArg'],
@@ -251,10 +252,11 @@ describe('Transaction Queue class', () => {
             gas: new BigNumber(100),
           },
           payingAccount: {
+            type: PayingAccountType.Other,
             account: account2,
             allowance: null,
           },
-          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+          autoResolve: TransactionStatus.Failed as TransactionStatus.Failed,
         },
       ];
 
@@ -287,10 +289,11 @@ describe('Transaction Queue class', () => {
             gas: new BigNumber(100),
           },
           payingAccount: {
+            type: PayingAccountType.Subsidy,
             account,
             allowance: new BigNumber(100),
           },
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: ['someArg'],
@@ -300,10 +303,11 @@ describe('Transaction Queue class', () => {
             gas: new BigNumber(100),
           },
           payingAccount: {
+            type: PayingAccountType.Subsidy,
             account,
             allowance: new BigNumber(100),
           },
-          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+          autoResolve: TransactionStatus.Failed as TransactionStatus.Failed,
         },
       ];
 
@@ -319,17 +323,78 @@ describe('Transaction Queue class', () => {
       );
     });
 
+    test('should throw an error if the caller is subsidized but one or more transactions cannot be subsidized', () => {
+      const account1 = entityMockUtils.getAccountInstance({
+        address: 'account1',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+      const account2 = entityMockUtils.getAccountInstance({
+        address: 'account2',
+        getBalance: {
+          free: new BigNumber(100),
+          locked: new BigNumber(0),
+          total: new BigNumber(100),
+        },
+      });
+      const transactionSpecs = [
+        {
+          args: [1],
+          isCritical: false,
+          fees: {
+            protocol: new BigNumber(100),
+            gas: new BigNumber(100),
+          },
+          payingAccount: {
+            type: PayingAccountType.Subsidy,
+            account: account1,
+            allowance: new BigNumber(500),
+          },
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          supportsSubsidy: false,
+        },
+        {
+          args: ['someArg'],
+          isCritical: true,
+          fees: {
+            protocol: new BigNumber(100),
+            gas: new BigNumber(100),
+          },
+          payingAccount: {
+            type: PayingAccountType.Other,
+            account: account2,
+            allowance: null,
+          },
+          autoResolve: TransactionStatus.Failed as TransactionStatus.Failed,
+        },
+      ];
+
+      const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
+
+      const procedureResult = 3;
+      const queue = new TransactionQueue({ transactions, procedureResult }, context);
+
+      const runPromise = queue.run();
+
+      return expect(runPromise).rejects.toThrow(
+        'Some of the transactions in the queue cannot be run with a subsidized Account'
+      );
+    });
+
     test('should succeed if the only failures are from non-critical transactions', async () => {
       const transactionSpecs = [
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Failed as TransactionStatus.Failed,
+          autoResolve: TransactionStatus.Failed as TransactionStatus.Failed,
         },
         {
           args: ['someArg'],
           isCritical: true,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
 
@@ -354,12 +419,12 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: ['someArg'],
           isCritical: true,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
 
@@ -380,7 +445,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -401,7 +466,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: false as const,
+          autoResolve: false as const,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -433,7 +498,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: false as const,
+          autoResolve: false as const,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -467,7 +532,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: false as const,
+          autoResolve: false as const,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -516,7 +581,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -551,7 +616,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -583,7 +648,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -601,7 +666,7 @@ describe('Transaction Queue class', () => {
         {
           args: [1],
           isCritical: false,
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
       ];
       const transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
@@ -649,7 +714,7 @@ describe('Transaction Queue class', () => {
             protocol: new BigNumber(100),
             gas: new BigNumber(1),
           },
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: ['someArg'],
@@ -658,7 +723,7 @@ describe('Transaction Queue class', () => {
             protocol: new BigNumber(50),
             gas: new BigNumber(2),
           },
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
         },
         {
           args: [{ foo: 'bar' }],
@@ -667,8 +732,9 @@ describe('Transaction Queue class', () => {
             protocol: new BigNumber(10),
             gas: new BigNumber(5),
           },
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
           payingAccount: {
+            type: PayingAccountType.Subsidy,
             account,
             allowance: new BigNumber(100),
           },
@@ -680,8 +746,9 @@ describe('Transaction Queue class', () => {
             protocol: new BigNumber(10),
             gas: new BigNumber(5),
           },
-          autoresolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
+          autoResolve: TransactionStatus.Succeeded as TransactionStatus.Succeeded,
           payingAccount: {
+            type: PayingAccountType.Subsidy,
             account,
             allowance: new BigNumber(100),
           },
@@ -693,6 +760,7 @@ describe('Transaction Queue class', () => {
       const procedureResult = 3;
       const queue = new TransactionQueue({ transactions, procedureResult }, context);
       const balance = new BigNumber(500);
+
       dsMockUtils.setContextAccountBalance({
         free: balance,
         locked: new BigNumber(0),
@@ -711,6 +779,7 @@ describe('Transaction Queue class', () => {
             },
             allowance: new BigNumber(100),
             balance: new BigNumber(1000),
+            type: PayingAccountType.Subsidy,
           },
         ],
         accountFees: {

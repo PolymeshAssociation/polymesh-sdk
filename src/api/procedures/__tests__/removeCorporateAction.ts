@@ -13,8 +13,8 @@ import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/CorporateAction',
@@ -26,7 +26,7 @@ describe('removeCorporateAction procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let corporateActionsQueryStub: sinon.SinonStub;
 
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
@@ -143,7 +143,7 @@ describe('removeCorporateAction procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
 
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
@@ -170,7 +170,7 @@ describe('removeCorporateAction procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
 
     corporateActionsQueryStub.returns(
       dsMockUtils.createMockOption(dsMockUtils.createMockCorporateAction())
@@ -181,7 +181,7 @@ describe('removeCorporateAction procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawCaId] });
   });
 
   describe('getAuthorization', () => {
@@ -195,7 +195,7 @@ describe('removeCorporateAction procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.corporateAction.RemoveCa],
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

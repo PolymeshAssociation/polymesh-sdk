@@ -14,8 +14,8 @@ import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('removeCheckpointSchedule procedure', () => {
@@ -115,7 +115,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.createQueryStub('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(id.toNumber()),
+          id: rawId,
         } as StoredSchedule),
       ],
     });
@@ -127,7 +127,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
     await prepareRemoveCheckpointSchedule.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
 
     transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -139,7 +139,7 @@ describe('removeCheckpointSchedule procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
   });
 
   describe('getAuthorization', () => {
@@ -153,7 +153,7 @@ describe('removeCheckpointSchedule procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.RemoveSchedule],
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

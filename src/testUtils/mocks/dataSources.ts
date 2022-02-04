@@ -154,8 +154,8 @@ import {
   DistributionWithDetails,
   ExtrinsicData,
   KeyringPair,
+  PermissionedAccount,
   ResultSet,
-  SecondaryAccount,
   SignerType,
   Subsidy,
 } from '~/types';
@@ -305,10 +305,10 @@ interface ContextOptions {
   checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
   checkPermissions?: CheckPermissionsResult<SignerType.Account>;
-  hasTokenPermissions?: boolean;
-  checkTokenPermissions?: CheckPermissionsResult<SignerType.Identity>;
+  hasAssetPermissions?: boolean;
+  checkAssetPermissions?: CheckPermissionsResult<SignerType.Identity>;
   validCdd?: boolean;
-  tokenBalance?: BigNumber;
+  assetBalance?: BigNumber;
   invalidDids?: string[];
   transactionFee?: BigNumber;
   currentPairAddress?: string;
@@ -318,7 +318,7 @@ interface ContextOptions {
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryAccount?: string;
-  secondaryAccounts?: SecondaryAccount[];
+  secondaryAccounts?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -327,12 +327,13 @@ interface ContextOptions {
   isArchiveNode?: boolean;
   ss58Format?: number;
   areSecondaryAccountsFrozen?: boolean;
-  getDividendDistributionsForTokens?: DistributionWithDetails[];
+  getDividendDistributionsForAssets?: DistributionWithDetails[];
   isFrozen?: boolean;
   addPair?: Pair;
   getAccounts?: Account[];
   currentIdentityIsEqual?: boolean;
   networkVersion?: string;
+  supportsSubsidy?: boolean;
 }
 
 interface KeyringOptions {
@@ -539,12 +540,12 @@ const defaultContextOptions: ContextOptions = {
   checkPermissions: {
     result: true,
   },
-  hasTokenPermissions: true,
-  checkTokenPermissions: {
+  hasAssetPermissions: true,
+  checkAssetPermissions: {
     result: true,
   },
   validCdd: true,
-  tokenBalance: new BigNumber(1000),
+  assetBalance: new BigNumber(1000),
   invalidDids: [],
   transactionFee: new BigNumber(200),
   currentPairAddress: '0xdummy',
@@ -601,8 +602,8 @@ const defaultContextOptions: ContextOptions = {
   },
   isArchiveNode: true,
   ss58Format: 42,
+  getDividendDistributionsForAssets: [],
   areSecondaryAccountsFrozen: false,
-  getDividendDistributionsForTokens: [],
   isFrozen: false,
   addPair: {
     address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
@@ -613,6 +614,7 @@ const defaultContextOptions: ContextOptions = {
   getAccounts: [],
   currentIdentityIsEqual: true,
   networkVersion: '1.0.0',
+  supportsSubsidy: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
 const defaultKeyringOptions: KeyringOptions = {
@@ -657,15 +659,25 @@ function configureContext(opts: ContextOptions): void {
     hasRoles: sinon.stub().resolves(opts.hasRoles),
     checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
-    getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryAccount: sinon.stub().resolves({ address: opts.primaryAccount }),
+    getAssetBalance: sinon.stub().resolves(opts.assetBalance),
+    getPrimaryAccount: sinon.stub().resolves({
+      account: {
+        address: opts.primaryAccount,
+      },
+      permissions: {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      },
+    }),
     getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
-    tokenPermissions: {
-      hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
-      checkPermissions: sinon.stub().resolves(opts.checkTokenPermissions),
+    assetPermissions: {
+      hasPermissions: sinon.stub().resolves(opts.hasAssetPermissions),
+      checkPermissions: sinon.stub().resolves(opts.checkAssetPermissions),
     },
     areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
     isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
@@ -732,11 +744,12 @@ function configureContext(opts: ContextOptions): void {
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
-    getDividendDistributionsForTokens: sinon
+    getDividendDistributionsForAssets: sinon
       .stub()
-      .resolves(opts.getDividendDistributionsForTokens),
+      .resolves(opts.getDividendDistributionsForAssets),
     addPair: sinon.stub().returns(opts.addPair),
     getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
+    supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
   } as unknown as MockContext;
 
   contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
@@ -1019,7 +1032,7 @@ export function reset(): void {
  *
  * @param mod - name of the module
  * @param tx - name of the transaction function
- * @param autoresolve - if set to a status, the transaction will resolve immediately with that status.
+ * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
  *  If set to false, the transaction lifecycle will be controlled by [[updateTxStatus]]
  */
 export function createTxStub<
@@ -1029,7 +1042,7 @@ export function createTxStub<
   mod: ModuleName,
   tx: TransactionName,
   opts: {
-    autoresolve?: MockTxStatus | false;
+    autoResolve?: MockTxStatus | false;
     gas?: Balance;
     meta?: { args: Array<{ name: string; type: string }> };
   } = {}
@@ -1042,7 +1055,7 @@ export function createTxStub<
   }
 
   const {
-    autoresolve = MockTxStatus.Succeeded,
+    autoResolve = MockTxStatus.Succeeded,
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     gas = createMockBalance(1),
     meta = { args: [] },
@@ -1051,22 +1064,22 @@ export function createTxStub<
   const transaction = sinon.stub().returns({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: sinon.stub().callsFake((_, cback: StatusCallback) => {
-      if (autoresolve === MockTxStatus.Rejected) {
+    signAndSend: sinon.stub().callsFake((_, __, cb: StatusCallback) => {
+      if (autoResolve === MockTxStatus.Rejected) {
         return Promise.reject(new Error('Cancelled'));
       }
 
       const unsubCallback = sinon.stub();
 
       txMocksData.set(runtimeModule[tx], {
-        statusCallback: cback,
+        statusCallback: cb,
         unsubCallback,
-        resolved: !!autoresolve,
+        resolved: !!autoResolve,
         status: null as unknown as MockTxStatus,
       });
 
-      if (autoresolve) {
-        process.nextTick(() => cback(statusToReceipt(autoresolve)));
+      if (autoResolve) {
+        process.nextTick(() => cb(statusToReceipt(autoResolve)));
       }
 
       return Promise.resolve(unsubCallback);
@@ -1800,14 +1813,14 @@ export const createMockPortfolioKind = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioId = (
-  portfiolioId?:
+  portfolioId?:
     | PortfolioId
     | {
         did: IdentityId | Parameters<typeof createMockIdentityId>[0];
         kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
       }
 ): PortfolioId => {
-  const { did, kind } = portfiolioId || {
+  const { did, kind } = portfolioId || {
     did: createMockIdentityId(),
     kind: createMockPortfolioKind(),
   };
@@ -1816,7 +1829,7 @@ export const createMockPortfolioId = (
       did: createMockIdentityId(did),
       kind: createMockPortfolioKind(kind),
     },
-    !portfiolioId
+    !portfolioId
   ) as PortfolioId;
 };
 

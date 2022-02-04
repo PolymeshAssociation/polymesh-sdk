@@ -191,14 +191,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Affirm,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { batchSize: 2 },
-      rawInstructionId,
-      [rawPortfolioId, rawPortfolioId],
-      rawLegAmount
-    );
+      feeMultiplier: 2,
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+    });
 
     expect(result.id).toEqual(id);
   });
@@ -256,14 +253,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Withdraw,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { batchSize: 2 },
-      rawInstructionId,
-      [rawPortfolioId, rawPortfolioId],
-      rawLegAmount
-    );
+      feeMultiplier: 2,
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+    });
 
     expect(result.id).toEqual(id);
   });
@@ -306,14 +300,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Reject,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { batchSize: 2 },
-      rawInstructionId,
-      rawPortfolioId,
-      rawLegAmount
-    );
+      feeMultiplier: 2,
+      args: [rawInstructionId, rawPortfolioId, rawLegAmount],
+    });
 
     expect(result.id).toEqual(id);
   });
@@ -342,7 +333,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [from, to],
           transactions: [TxTags.settlement.AffirmInstruction],
         },
@@ -364,7 +355,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.RejectInstruction],
         },
@@ -374,7 +365,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.WithdrawAffirmation],
         },
@@ -397,11 +388,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
       let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
       const amount = new BigNumber(1);
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegs: { data: [{ from, to, amount, token }], next: null },
+          getLegs: { data: [{ from, to, amount, asset }], next: null },
         },
       });
 
@@ -424,7 +415,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegs: { data: [{ from, to, amount, token }], next: null },
+          getLegs: { data: [{ from, to, amount, asset }], next: null },
         },
       });
 

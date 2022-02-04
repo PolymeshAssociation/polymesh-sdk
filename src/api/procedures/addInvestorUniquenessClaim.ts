@@ -49,25 +49,22 @@ export async function prepareAddInvestorUniquenessClaim(
       { type: ClaimType.InvestorUniqueness, scope, cddId, scopeId },
       context
     );
-    this.addTransaction(
-      tx.identity.addInvestorUniquenessClaim,
-      {},
-      meshIdentityId,
-      meshClaim,
-      stringToInvestorZKProofData(proof, context),
-      meshExpiry
-    );
+    this.addTransaction({
+      transaction: tx.identity.addInvestorUniquenessClaim,
+      args: [meshIdentityId, meshClaim, stringToInvestorZKProofData(proof, context), meshExpiry],
+    });
   } else {
     const meshClaim = claimToMeshClaim({ type: ClaimType.InvestorUniquenessV2, cddId }, context);
-    this.addTransaction(
-      tx.identity.addInvestorUniquenessClaimV2,
-      {},
-      meshIdentityId,
-      scopeToMeshScope(scope, context),
-      meshClaim,
-      scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context),
-      meshExpiry
-    );
+    this.addTransaction({
+      transaction: tx.identity.addInvestorUniquenessClaimV2,
+      args: [
+        meshIdentityId,
+        scopeToMeshScope(scope, context),
+        meshClaim,
+        scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context),
+        meshExpiry,
+      ],
+    });
   }
 }
 
@@ -88,7 +85,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios: [],
       transactions,
     },

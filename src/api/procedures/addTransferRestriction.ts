@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { uniq } from 'lodash';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -98,7 +98,10 @@ export async function prepareAddTransferRestriction(
     context
   );
 
-  this.addTransaction(statistics.addTransferManager, {}, rawTicker, rawTransferManager);
+  this.addTransaction({
+    transaction: statistics.addTransferManager,
+    args: [rawTicker, rawTransferManager],
+  });
 
   const identityScopes = await P.map(exemptedIdentities, identityValue => {
     let identity: Identity;
@@ -108,7 +111,7 @@ export async function prepareAddTransferRestriction(
       identity = identityValue;
     }
 
-    return identity.getScopeId({ token: ticker });
+    return identity.getScopeId({ asset: ticker });
   });
 
   const exempted: string[] = [...exemptedScopeIds, ...identityScopes];
@@ -128,13 +131,11 @@ export async function prepareAddTransferRestriction(
     const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
 
     batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).forEach(scopeIdBatch => {
-      this.addTransaction(
-        statistics.addExemptedEntities,
-        { batchSize: scopeIdBatch.length },
-        rawTicker,
-        rawTransferManager,
-        scopeIdBatch
-      );
+      this.addTransaction({
+        transaction: statistics.addExemptedEntities,
+        feeMultiplier: scopeIdBatch.length,
+        args: [rawTicker, rawTransferManager, scopeIdBatch],
+      });
     });
   }
 
@@ -158,7 +159,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },

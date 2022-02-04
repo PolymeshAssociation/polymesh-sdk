@@ -5,7 +5,7 @@ import { range } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
+import { Asset, Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -154,7 +154,7 @@ describe('getDid', () => {
 });
 
 describe('unwrapValue', () => {
-  test('should unwrap a Post Transactin Value', async () => {
+  test('should unwrap a Post Transaction Value', async () => {
     const wrapped = new PostTransactionValue(async () => 1);
     await wrapped.run({} as ISubmittableResult);
 
@@ -614,13 +614,13 @@ describe('assertKeyringFormatValid', () => {
 });
 
 describe('getTicker', () => {
-  test('should return a token symbol', async () => {
-    const symbol = 'TOKEN';
+  test('should return an Asset symbol', async () => {
+    const symbol = 'ASSET';
     let result = getTicker(symbol);
 
     expect(result).toBe(symbol);
 
-    result = getTicker(new SecurityToken({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    result = getTicker(new Asset({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
   });
 });
@@ -716,16 +716,16 @@ describe('getCheckpointValue', () => {
 
   test('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
-    const mockToken = entityMockUtils.getSecurityTokenInstance();
-    let result = await getCheckpointValue(mockCheckpointSchedule, mockToken, context);
+    const mockAsset = entityMockUtils.getAssetInstance();
+    let result = await getCheckpointValue(mockCheckpointSchedule, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
 
     const mockCheckpoint = entityMockUtils.getCheckpointInstance();
-    result = await getCheckpointValue(mockCheckpoint, mockToken, context);
+    result = await getCheckpointValue(mockCheckpoint, mockAsset, context);
     expect(result).toEqual(mockCheckpoint);
 
     const mockCheckpointDate = new Date();
-    result = await getCheckpointValue(mockCheckpointDate, mockToken, context);
+    result = await getCheckpointValue(mockCheckpointDate, mockAsset, context);
     expect(result).toEqual(mockCheckpointDate);
   });
 
@@ -735,11 +735,11 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Existing,
     };
-    const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
+    const mockAsset = entityMockUtils.getAssetInstance({
       checkpointsGetOne: mockCheckpoint,
     });
 
-    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockSecurityToken, context);
+    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockAsset, context);
     expect(result).toEqual(mockCheckpoint);
   });
 
@@ -749,11 +749,11 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Schedule,
     };
-    const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
+    const mockAsset = entityMockUtils.getAssetInstance({
       checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
     });
 
-    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockSecurityToken, context);
+    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
   });
 });

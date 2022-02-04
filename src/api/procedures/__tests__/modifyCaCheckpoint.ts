@@ -14,12 +14,12 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyCaCheckpoint procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -133,13 +133,10 @@ describe('modifyCaCheckpoint procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -150,13 +147,10 @@ describe('modifyCaCheckpoint procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -165,13 +159,10 @@ describe('modifyCaCheckpoint procedure', () => {
       checkpoint: new Date(new Date().getTime() + 100000),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -180,7 +171,10 @@ describe('modifyCaCheckpoint procedure', () => {
       checkpoint: null,
     });
 
-    sinon.assert.calledWith(addTransactionStub, changeRecordDateTransaction, {}, rawCaId, null);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, null],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -189,13 +183,13 @@ describe('modifyCaCheckpoint procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         corporateAction: {
-          token: { ticker },
+          asset: { ticker },
         },
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },

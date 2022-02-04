@@ -6,16 +6,7 @@ import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import {
-  CddClaim,
-  Claim,
-  ClaimTarget,
-  ClaimType,
-  ErrorCode,
-  isInvestorUniquenessClaim,
-  isScopedClaim,
-  RoleType,
-} from '~/types';
+import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType } from '~/types';
 import {
   ClaimOperation,
   Extrinsics,
@@ -34,6 +25,8 @@ import {
   stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
+import { assembleBatchTransactions } from '~/utils/internal';
+import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
 
 interface AddClaimsParams {
   /**
@@ -272,11 +265,14 @@ export async function prepareModifyClaims(
       });
     }
 
-    this.addBatchTransaction(
-      identity.revokeClaim,
-      { groupByFn: groupByDid },
-      modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim))
+    const transactions = assembleBatchTransactions(
+      tuple({
+        transaction: identity.revokeClaim,
+        argsArray: modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim)),
+      })
     );
+
+    this.addBatchTransaction({ transactions });
 
     return;
   }
@@ -295,7 +291,14 @@ export async function prepareModifyClaims(
     }
   }
 
-  this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
+  const txs = assembleBatchTransactions(
+    tuple({
+      transaction: identity.addClaim,
+      argsArray: modifyClaimArgs,
+    })
+  );
+
+  this.addBatchTransaction({ transactions: txs });
 }
 
 /**
@@ -309,7 +312,7 @@ export function getAuthorization({
     transactions: [
       operation === ClaimOperation.Revoke ? TxTags.identity.RevokeClaim : TxTags.identity.AddClaim,
     ],
-    tokens: [],
+    assets: [],
     portfolios: [],
   };
   if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {

@@ -73,11 +73,11 @@ describe('createPortfolio procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      createPortfolioTransaction,
       sinon.match({
+        transaction: createPortfolioTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawNewPortfolioName
+        args: [rawNewPortfolioName],
+      })
     );
     expect(result).toBe(numberedPortfolio);
   });

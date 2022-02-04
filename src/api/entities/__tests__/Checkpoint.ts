@@ -13,8 +13,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('Checkpoint class', () => {
@@ -56,7 +56,7 @@ describe('Checkpoint class', () => {
     test('should assign ticker and id to instance', () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
-      expect(checkpoint.token.ticker).toBe(ticker);
+      expect(checkpoint.asset.ticker).toBe(ticker);
       expect(checkpoint.id).toEqual(id);
     });
   });
@@ -109,7 +109,7 @@ describe('Checkpoint class', () => {
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     });
 
-    test("should return the Checkpoint's tokenholder balances", async () => {
+    test("should return the Checkpoint's Asset Holder balances", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       const balanceOf = [
@@ -167,8 +167,8 @@ describe('Checkpoint class', () => {
         multi: rawBalanceMulti,
       });
 
-      rawBalanceMulti.forEach((rawBlance, index) => {
-        balanceToBigNumberStub.withArgs(rawBlance).returns(balanceMulti[index]);
+      rawBalanceMulti.forEach((rawBalance, index) => {
+        balanceToBigNumberStub.withArgs(rawBalance).returns(balanceMulti[index]);
       });
 
       const { data } = await checkpoint.allBalances();
@@ -215,17 +215,17 @@ describe('Checkpoint class', () => {
         returnValue: [],
       });
 
-      const tokenBalance = new BigNumber(10);
+      const assetBalance = new BigNumber(10);
 
       entityMockUtils.configureMocks({
         identityOptions: {
-          getTokenBalance: tokenBalance,
+          getAssetBalance: assetBalance,
         },
       });
 
       result = await checkpoint.balance();
 
-      expect(result).toEqual(tokenBalance);
+      expect(result).toEqual(assetBalance);
     });
   });
 

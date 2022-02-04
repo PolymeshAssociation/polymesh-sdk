@@ -78,6 +78,6 @@ describe('rescheduleInstruction procedure', () => {
 
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawId] });
   });
 });

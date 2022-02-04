@@ -176,7 +176,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId],
+    });
   });
 
   test('should add a acceptMultisigSignerAsIdentity transaction to the queue if the target is an Identity', async () => {
@@ -206,7 +210,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId],
+    });
   });
 
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
@@ -242,7 +250,10 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawSignatory, rawAuthId, rawFalse);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawSignatory, rawAuthId, rawFalse],
+    });
 
     target = entityMockUtils.getAccountInstance({ address: targetAddress });
 
@@ -263,14 +274,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { paidForBy: issuer },
-      rawSignatory,
-      rawAuthId,
-      rawTrue
-    );
+      paidForBy: issuer,
+      args: [rawSignatory, rawAuthId, rawTrue],
+    });
   });
 
   describe('getAuthorization', () => {

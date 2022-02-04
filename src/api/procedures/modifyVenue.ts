@@ -57,21 +57,17 @@ export async function prepareModifyVenue(
   }
 
   if (description) {
-    this.addTransaction(
-      tx.settlement.updateVenueDetails,
-      {},
-      numberToU64(venueId, context),
-      stringToVenueDetails(description, context)
-    );
+    this.addTransaction({
+      transaction: tx.settlement.updateVenueDetails,
+      args: [numberToU64(venueId, context), stringToVenueDetails(description, context)],
+    });
   }
 
   if (type) {
-    this.addTransaction(
-      tx.settlement.updateVenueType,
-      {},
-      numberToU64(venueId, context),
-      venueTypeToMeshVenueType(type, context)
-    );
+    this.addTransaction({
+      transaction: tx.settlement.updateVenueType,
+      args: [numberToU64(venueId, context), venueTypeToMeshVenueType(type, context)],
+    });
   }
 }
 
@@ -95,7 +91,7 @@ export function getAuthorization(
   return {
     roles: [{ type: RoleType.VenueOwner, venueId }],
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios: [],
       transactions,
     },

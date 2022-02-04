@@ -45,7 +45,7 @@ describe('reserveTicker procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOMETICKER';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       ticker,
@@ -145,13 +145,13 @@ describe('reserveTicker procedure', () => {
     expect(error.data).toMatchObject({ expiryDate: null });
   });
 
-  test('should throw an error if a token with that ticker has already been launched', () => {
+  test('should throw an error if an Asset with that ticker has already been launched', () => {
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {
           owner: entityMockUtils.getIdentityInstance({ did: 'someOtherDid' }),
           expiryDate: null,
-          status: TickerReservationStatus.TokenCreated,
+          status: TickerReservationStatus.AssetCreated,
         },
       },
     });
@@ -160,7 +160,7 @@ describe('reserveTicker procedure', () => {
     );
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `A Security Token with ticker "${ticker}" already exists`
+      `An Asset with ticker "${ticker}" already exists`
     );
   });
 
@@ -193,11 +193,11 @@ describe('reserveTicker procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
       sinon.match({
+        transaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker
+        args: [rawTicker],
+      })
     );
     expect(result).toBe(reservation);
 
@@ -215,11 +215,7 @@ describe('reserveTicker procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({
-        resolvers: sinon.match.array,
-      }),
-      rawTicker
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
     );
     expect(result).toBe(reservation);
   });
@@ -261,7 +257,7 @@ describe('getAuthorization', () => {
 
     const permissions = {
       transactions: [TxTags.asset.RegisterTicker],
-      tokens: [],
+      assets: [],
       portfolios: [],
     };
 

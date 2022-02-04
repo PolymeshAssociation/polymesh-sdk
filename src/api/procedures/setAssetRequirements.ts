@@ -1,7 +1,7 @@
 import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import { Condition, ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
@@ -26,9 +26,9 @@ export type Params = SetAssetRequirementsParams & {
  * @hidden
  */
 export async function prepareSetAssetRequirements(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   args: Params
-): Promise<SecurityToken> {
+): Promise<Asset> {
   const {
     context: {
       polymeshApi: { tx },
@@ -39,12 +39,10 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const token = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await token.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await asset.compliance.requirements.get();
 
   const currentConditions = map(currentRequirements, 'conditions');
 
@@ -69,28 +67,29 @@ export async function prepareSetAssetRequirements(
   }
 
   if (!requirements.length) {
-    this.addTransaction(tx.complianceManager.resetAssetCompliance, {}, rawTicker);
+    this.addTransaction({
+      transaction: tx.complianceManager.resetAssetCompliance,
+      args: [rawTicker],
+    });
   } else {
     const rawAssetCompliance = requirements.map((requirement, index) =>
       requirementToComplianceRequirement({ conditions: requirement, id: index }, context)
     );
 
-    this.addTransaction(
-      tx.complianceManager.replaceAssetCompliance,
-      {},
-      rawTicker,
-      rawAssetCompliance
-    );
+    this.addTransaction({
+      transaction: tx.complianceManager.replaceAssetCompliance,
+      args: [rawTicker, rawAssetCompliance],
+    });
   }
 
-  return token;
+  return asset;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   { ticker, requirements }: Params
 ): ProcedureAuthorization {
   return {
@@ -98,7 +97,7 @@ export function getAuthorization(
       transactions: requirements.length
         ? [TxTags.complianceManager.ReplaceAssetCompliance]
         : [TxTags.complianceManager.ResetAssetCompliance],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -107,5 +106,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setAssetRequirements = (): Procedure<Params, SecurityToken> =>
+export const setAssetRequirements = (): Procedure<Params, Asset> =>
   new Procedure(prepareSetAssetRequirements, getAuthorization);

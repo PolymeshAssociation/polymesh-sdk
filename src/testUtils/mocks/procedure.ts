@@ -57,7 +57,7 @@ export const mockTransactionQueueModule = (path: string) => (): Record<string, u
  */
 function initTransactionQueue(): void {
   transactionQueueConstructorStub = sinon.stub();
-  const transactionQueue = ({} as unknown) as MockTransactionQueue;
+  const transactionQueue = {} as unknown as MockTransactionQueue;
 
   Object.assign(mockInstanceContainer.transactionQueue, transactionQueue);
   transactionQueueConstructorStub.callsFake(args => {
@@ -77,12 +77,12 @@ function initProcedure(): void {
   addProcedureStub = sinon.stub();
   addBatchTransactionStub = sinon.stub();
   prepareStub = sinon.stub();
-  const procedure = ({
+  const procedure = {
     addTransaction: addTransactionStub.returns([]),
     addBatchTransaction: addBatchTransactionStub.returns([]),
     addProcedure: addProcedureStub.returns([]),
     prepare: prepareStub.returns({}),
-  } as unknown) as MockProcedure;
+  } as unknown as MockProcedure;
 
   Object.assign(mockInstanceContainer.procedure, procedure);
   procedureConstructorStub.callsFake(args => {
@@ -132,7 +132,7 @@ export function getInstance<T, U, S = Record<string, unknown>>(
   const value = merge({ context, storage }, procedure);
   Object.setPrototypeOf(value, require('~/internal').Procedure.prototype);
 
-  return (value as unknown) as Procedure<T, U, S>;
+  return value as unknown as Procedure<T, U, S>;
 }
 
 /**

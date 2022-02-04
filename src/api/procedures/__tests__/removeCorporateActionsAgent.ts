@@ -13,8 +13,8 @@ import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('removeCorporateActionsAgent procedure', () => {
@@ -50,7 +50,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     const did = 'someDid';
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did })],
       },
     });
@@ -66,7 +66,7 @@ describe('removeCorporateActionsAgent procedure', () => {
 
     await prepareRemoveCorporateActionsAgent.call(proc, { ticker });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
   test('should throw an error if Corporate Actions Agent list has more than one identity', () => {
@@ -76,7 +76,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetAgents: [
           entityMockUtils.getIdentityInstance({ did: 'did' }),
           entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
@@ -87,7 +87,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareRemoveCorporateActionsAgent.call(proc, args)).rejects.toThrow(
-      'There must be one (and only one) Corporate Actions Agent assigned to this Security Token'
+      'There must be one (and only one) Corporate Actions Agent assigned to this Asset'
     );
   });
 
@@ -102,7 +102,7 @@ describe('removeCorporateActionsAgent procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.RemoveAgent],
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

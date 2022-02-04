@@ -67,13 +67,11 @@ export async function prepareCreatePortfolio(
     });
   }
 
-  const [newNumberedPortfolio] = this.addTransaction(
-    tx.portfolio.createPortfolio,
-    {
-      resolvers: [createPortfolioResolver(context)],
-    },
-    rawName
-  );
+  const [newNumberedPortfolio] = this.addTransaction({
+    transaction: tx.portfolio.createPortfolio,
+    resolvers: [createPortfolioResolver(context)],
+    args: [rawName],
+  });
 
   return newNumberedPortfolio;
 }
@@ -85,7 +83,7 @@ export const createPortfolio = (): Procedure<Params, NumberedPortfolio> =>
   new Procedure(prepareCreatePortfolio, {
     permissions: {
       transactions: [TxTags.portfolio.CreatePortfolio],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

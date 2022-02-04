@@ -30,8 +30,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('initiateCorporateAction procedure', () => {
@@ -231,18 +231,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      rawRecordDate,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          rawRecordDate,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     expect(result).toEqual(rawCaId);
@@ -259,18 +261,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          null,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     await prepareInitiateCorporateAction.call(proc, {
@@ -284,18 +288,11 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      null
+        args: [rawTicker, rawKind, rawDeclDate, null, rawDetails, rawTargets, rawTax, null],
+      })
     );
   });
 
@@ -329,7 +326,7 @@ describe('initiateCorporateAction procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.corporateAction.InitiateCorporateAction],
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

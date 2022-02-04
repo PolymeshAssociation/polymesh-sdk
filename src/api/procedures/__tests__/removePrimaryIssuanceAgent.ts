@@ -12,8 +12,8 @@ import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('removePrimaryIssuanceAgent procedure', () => {
@@ -62,7 +62,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
         },
@@ -74,7 +74,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
     await prepareRemovePrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
   test('should throw an error if Primary Issuance Agent list has more than one identity', () => {
@@ -83,7 +83,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [
             entityMockUtils.getIdentityInstance({ did: 'did' }),
@@ -96,7 +96,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareRemovePrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
-      'There must be one (and only one) Primary Issuance Agent assigned to this Security Token'
+      'There must be one (and only one) Primary Issuance Agent assigned to this Asset'
     );
   });
 
@@ -111,7 +111,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.RemoveAgent],
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

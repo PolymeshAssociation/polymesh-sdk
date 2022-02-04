@@ -89,7 +89,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       freeze: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {});
+    sinon.assert.calledWith(addTransactionStub, { transaction });
   });
 
   test('should add a unfreeze secondary Accounts transaction to the queue', async () => {
@@ -109,7 +109,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       freeze: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {});
+    sinon.assert.calledWith(addTransactionStub, { transaction });
   });
 
   describe('getAuthorization', () => {
@@ -122,7 +122,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       expect(boundFunc({ freeze: true })).toEqual({
         permissions: {
           transactions: [TxTags.identity.FreezeSecondaryKeys],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });
@@ -130,7 +130,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       expect(boundFunc({ freeze: false })).toEqual({
         permissions: {
           transactions: [TxTags.identity.UnfreezeSecondaryKeys],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });

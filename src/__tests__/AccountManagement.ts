@@ -44,16 +44,16 @@ describe('AccountManagement class', () => {
 
   describe('method: removeSecondaryAccounts', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+      const accounts = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
-        .withArgs({ args: { signers }, transformer: undefined }, context)
+        .withArgs({ args: { accounts }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await accountManagement.removeSecondaryAccounts({ signers });
+      const queue = await accountManagement.removeSecondaryAccounts({ accounts });
 
       expect(queue).toBe(expectedQueue);
     });
@@ -61,10 +61,10 @@ describe('AccountManagement class', () => {
 
   describe('method: revokePermissions', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const signers = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
+      const account = entityMockUtils.getAccountInstance({ address: 'someAccount' });
       const secondaryAccounts = [
         {
-          signer: signers[0],
+          account,
           permissions: {
             tokens: { type: PermissionType.Include, values: [] },
             transactions: { type: PermissionType.Include, values: [] },
@@ -80,7 +80,7 @@ describe('AccountManagement class', () => {
         .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await accountManagement.revokePermissions({ secondaryAccounts: signers });
+      const queue = await accountManagement.revokePermissions({ secondaryAccounts: [account] });
 
       expect(queue).toBe(expectedQueue);
     });
@@ -90,7 +90,7 @@ describe('AccountManagement class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const secondaryAccounts = [
         {
-          signer: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
+          account: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
           permissions: { tokens: null, transactions: null, portfolios: null },
         },
       ];

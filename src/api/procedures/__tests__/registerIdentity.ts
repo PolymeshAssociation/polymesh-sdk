@@ -10,7 +10,7 @@ import {
 import { Context, Identity, PostTransactionValue, RegisterIdentityParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryAccount } from '~/types';
+import { PermissionedAccount } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -19,7 +19,7 @@ describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
   let secondaryAccountToMeshSecondaryKeyStub: sinon.SinonStub<
-    [SecondaryAccount, Context],
+    [PermissionedAccount, Context],
     MeshSecondaryKey
   >;
   let addTransactionStub: sinon.SinonStub;
@@ -59,9 +59,9 @@ describe('registerIdentity procedure', () => {
     const targetAccount = 'someAccount';
     const secondaryAccounts = [
       {
-        signer: new Identity({ did: 'someValue' }, mockContext),
+        account: entityMockUtils.getAccountInstance({ address: 'someValue' }),
         permissions: {
-          tokens: null,
+          assets: null,
           portfolios: null,
           transactions: null,
           transactionGroups: [],
@@ -75,7 +75,7 @@ describe('registerIdentity procedure', () => {
     const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
     const rawSecondaryAccount = dsMockUtils.createMockSecondaryKey({
       signer: dsMockUtils.createMockSignatory({
-        Identity: dsMockUtils.createMockIdentityId(secondaryAccounts[0].signer.did),
+        Account: dsMockUtils.createMockAccountId(secondaryAccounts[0].account.address),
       }),
       permissions: dsMockUtils.createMockPermissions(),
     });
@@ -91,12 +91,11 @@ describe('registerIdentity procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      registerIdentityTransaction,
       sinon.match({
+        transaction: registerIdentityTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawAccountId,
-      [rawSecondaryAccount]
+        args: [rawAccountId, [rawSecondaryAccount]],
+      })
     );
     expect(result).toBe(identity);
 
@@ -104,12 +103,11 @@ describe('registerIdentity procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      registerIdentityTransaction,
       sinon.match({
+        transaction: registerIdentityTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawAccountId,
-      []
+        args: [rawAccountId, []],
+      })
     );
     expect(result).toBe(identity);
   });

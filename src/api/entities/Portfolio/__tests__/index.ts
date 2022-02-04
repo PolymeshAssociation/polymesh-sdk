@@ -3,14 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Context,
-  Entity,
-  NumberedPortfolio,
-  Portfolio,
-  SecurityToken,
-  TransactionQueue,
-} from '~/internal';
+import { Asset, Context, Entity, NumberedPortfolio, Portfolio, TransactionQueue } from '~/internal';
 import { heartbeat, settlements } from '~/middleware/queries';
 import {
   SettlementDirectionEnum,
@@ -161,7 +154,7 @@ describe('Portfolio class', () => {
     });
   });
 
-  describe('method: getTokenBalances', () => {
+  describe('method: getAssetBalance', () => {
     let did: string;
     let id: BigNumber;
     let ticker0: string;
@@ -225,13 +218,13 @@ describe('Portfolio class', () => {
     test("should return all of the portfolio's assets and their balances", async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
-      const result = await portfolio.getTokenBalances();
+      const result = await portfolio.getAssetBalances();
 
-      expect(result[0].token.ticker).toBe(ticker0);
+      expect(result[0].asset.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
-      expect(result[1].token.ticker).toBe(ticker1);
+      expect(result[1].asset.ticker).toBe(ticker1);
       expect(result[1].total).toEqual(total1);
       expect(result[1].locked).toEqual(locked1);
       expect(result[1].free).toEqual(total1.minus(locked1));
@@ -241,16 +234,16 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
       const otherTicker = 'OTHER_TICKER';
-      const result = await portfolio.getTokenBalances({
-        tokens: [ticker0, new SecurityToken({ ticker: otherTicker }, context)],
+      const result = await portfolio.getAssetBalances({
+        assets: [ticker0, new Asset({ ticker: otherTicker }, context)],
       });
 
       expect(result.length).toBe(2);
-      expect(result[0].token.ticker).toBe(ticker0);
+      expect(result[0].asset.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
-      expect(result[1].token.ticker).toBe(otherTicker);
+      expect(result[1].asset.ticker).toBe(otherTicker);
       expect(result[1].total).toEqual(new BigNumber(0));
       expect(result[1].locked).toEqual(new BigNumber(0));
       expect(result[1].free).toEqual(new BigNumber(0));
@@ -260,8 +253,8 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      return expect(portfolio.getTokenBalances()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+      return expect(portfolio.getAssetBalances()).rejects.toThrow(
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });
@@ -309,7 +302,7 @@ describe('Portfolio class', () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
 
       return expect(portfolio.getCustodian()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });
@@ -318,7 +311,7 @@ describe('Portfolio class', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
       const args = {
         to: new NumberedPortfolio({ id: new BigNumber(1), did: 'someDid' }, context),
-        items: [{ token: 'someToken', amount: new BigNumber(100) }],
+        items: [{ asset: 'someAsset', amount: new BigNumber(100) }],
       };
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
@@ -502,8 +495,8 @@ describe('Portfolio class', () => {
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
       expect(result.data[0].blockHash).toBe(blockHash1);
       expect(result.data[1].blockHash).toBe(blockHash2);
-      expect(result.data[0].legs[0].token.ticker).toBe(ticker1);
-      expect(result.data[1].legs[0].token.ticker).toBe(ticker2);
+      expect(result.data[0].legs[0].asset.ticker).toBe(ticker1);
+      expect(result.data[1].legs[0].asset.ticker).toBe(ticker2);
       expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect(result.data[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
       expect(result.data[0].legs[0].from.owner.did).toBe(portfolioDid1);
@@ -563,7 +556,7 @@ describe('Portfolio class', () => {
       );
 
       return expect(portfolio.getTransactionHistory()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });

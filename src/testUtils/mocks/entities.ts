@@ -7,6 +7,7 @@ import sinon from 'sinon';
 
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -18,8 +19,7 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
-  SecurityToken,
-  Sto,
+  Offering,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -28,6 +28,8 @@ import {
   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
+  AssetDetails,
+  AssetWithGroup,
   Authorization,
   AuthorizationType,
   CalendarPeriod,
@@ -47,29 +49,27 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
-  KnownTokenType,
+  KnownAssetType,
   Leg,
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
   PercentageTransferRestriction,
+  PermissionedAccount,
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
-  SecondaryAccount,
-  SecurityTokenDetails,
+  SecurityIdentifier,
   Signer,
   SignerType,
-  StoBalanceStatus,
-  StoDetails,
-  StoSaleStatus,
-  StoTimingStatus,
   TargetTreatment,
   TaxWithholding,
   TickerReservationDetails,
   TickerReservationStatus,
-  TokenIdentifier,
-  TokenWithGroup,
   TransferStatus,
   VenueDetails,
   VenueType,
@@ -78,13 +78,13 @@ import {
 export type MockIdentity = Mocked<Identity>;
 export type MockAccount = Mocked<Account>;
 export type MockTickerReservation = Mocked<TickerReservation>;
-export type MockSecurityToken = Mocked<SecurityToken>;
+export type MockAsset = Mocked<Asset>;
 export type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 export type MockVenue = Mocked<Venue>;
 export type MockInstruction = Mocked<Instruction>;
 export type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 export type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
-export type MockSto = Mocked<Sto>;
+export type MockOffering = Mocked<Offering>;
 export type MockCheckpoint = Mocked<Checkpoint>;
 export type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
 export type MockCorporateAction = Mocked<CorporateAction>;
@@ -105,20 +105,20 @@ interface IdentityOptions extends EntityOptions {
   hasRoles?: EntityGetter<boolean>;
   hasRole?: EntityGetter<boolean>;
   checkRoles?: EntityGetter<CheckRolesResult>;
-  tokenPermissionsHasPermissions?: EntityGetter<boolean>;
-  tokenPermissionsCheckPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Identity>>;
+  assetPermissionsHasPermissions?: EntityGetter<boolean>;
+  assetPermissionsCheckPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Identity>>;
   hasValidCdd?: EntityGetter<boolean>;
   isCddProvider?: EntityGetter<boolean>;
-  getPrimaryAccount?: EntityGetter<Account>;
+  getPrimaryAccount?: EntityGetter<PermissionedAccount>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
   getVenues?: EntityGetter<Venue[]>;
   getScopeId?: EntityGetter<string>;
-  getTokenBalance?: EntityGetter<BigNumber>;
-  getSecondaryAccounts?: EntityGetter<SecondaryAccount[]>;
+  getAssetBalance?: EntityGetter<BigNumber>;
+  getSecondaryAccounts?: EntityGetter<PermissionedAccount[]>;
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
-  tokenPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
-  tokenPermissionsGet?: EntityGetter<TokenWithGroup[]>;
+  assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
+  assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
 }
 
 interface TickerReservationOptions extends EntityOptions {
@@ -126,14 +126,14 @@ interface TickerReservationOptions extends EntityOptions {
   details?: EntityGetter<TickerReservationDetails>;
 }
 
-interface SecurityTokenOptions extends EntityOptions {
+interface AssetOptions extends EntityOptions {
   ticker?: string;
   did?: string;
-  details?: EntityGetter<SecurityTokenDetails>;
+  details?: EntityGetter<AssetDetails>;
   currentFundingRound?: EntityGetter<string>;
   isFrozen?: EntityGetter<boolean>;
   transfersCanTransfer?: EntityGetter<TransferStatus>;
-  getIdentifiers?: EntityGetter<TokenIdentifier[]>;
+  getIdentifiers?: EntityGetter<SecurityIdentifier[]>;
   transferRestrictionsCountGet?: EntityGetter<ActiveTransferRestrictions<CountTransferRestriction>>;
   transferRestrictionsPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
@@ -176,7 +176,7 @@ interface NumberedPortfolioOptions extends EntityOptions {
   did?: string;
   id?: BigNumber;
   isOwnedBy?: EntityGetter<boolean>;
-  getTokenBalances?: EntityGetter<PortfolioBalance[]>;
+  getAssetBalances?: EntityGetter<PortfolioBalance[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -184,7 +184,7 @@ interface NumberedPortfolioOptions extends EntityOptions {
 interface DefaultPortfolioOptions extends EntityOptions {
   did?: string;
   isOwnedBy?: EntityGetter<boolean>;
-  getTokenBalances?: EntityGetter<PortfolioBalance[]>;
+  getAssetBalances?: EntityGetter<PortfolioBalance[]>;
   getCustodian?: EntityGetter<Identity>;
   isCustodiedBy?: EntityGetter<boolean>;
 }
@@ -208,10 +208,10 @@ interface InstructionOptions extends EntityOptions {
   isPending?: EntityGetter<boolean>;
 }
 
-interface StoOptions extends EntityOptions {
+interface OfferingOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
-  details?: EntityGetter<StoDetails>;
+  details?: EntityGetter<OfferingDetails>;
 }
 
 interface CheckpointOptions extends EntityOptions {
@@ -268,13 +268,13 @@ type MockOptions = {
   identityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
   tickerReservationOptions?: TickerReservationOptions;
-  securityTokenOptions?: SecurityTokenOptions;
+  assetOptions?: AssetOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
-  stoOptions?: StoOptions;
+  offeringOptions?: OfferingOptions;
   checkpointOptions?: CheckpointOptions;
   checkpointScheduleOptions?: CheckpointScheduleOptions;
   corporateActionOptions?: CorporateActionOptions;
@@ -467,7 +467,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       getSent: sinon.SinonStub;
     };
 
-    tokenPermissions = {} as {
+    assetPermissions = {} as {
       get: sinon.SinonStub;
       getGroup: sinon.SinonStub;
       hasPermissions: sinon.SinonStub;
@@ -476,7 +476,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
 
     getVenues!: sinon.SinonStub;
     getScopeId!: sinon.SinonStub;
-    getTokenBalance!: sinon.SinonStub;
+    getAssetBalance!: sinon.SinonStub;
     getSecondaryAccounts!: sinon.SinonStub;
     areSecondaryAccountsFrozen!: sinon.SinonStub;
     isCddProvider!: sinon.SinonStub;
@@ -501,17 +501,17 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
       this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
-      this.tokenPermissions.get = createEntityGetterStub(opts.tokenPermissionsGet);
-      this.tokenPermissions.getGroup = createEntityGetterStub(opts.tokenPermissionsGetGroup);
-      this.tokenPermissions.hasPermissions = createEntityGetterStub(
-        opts.tokenPermissionsHasPermissions
+      this.assetPermissions.get = createEntityGetterStub(opts.assetPermissionsGet);
+      this.assetPermissions.getGroup = createEntityGetterStub(opts.assetPermissionsGetGroup);
+      this.assetPermissions.hasPermissions = createEntityGetterStub(
+        opts.assetPermissionsHasPermissions
       );
-      this.tokenPermissions.checkPermissions = createEntityGetterStub(
-        opts.tokenPermissionsCheckPermissions
+      this.assetPermissions.checkPermissions = createEntityGetterStub(
+        opts.assetPermissionsCheckPermissions
       );
       this.getVenues = createEntityGetterStub(opts.getVenues);
       this.getScopeId = createEntityGetterStub(opts.getScopeId);
-      this.getTokenBalance = createEntityGetterStub(opts.getTokenBalance);
+      this.getAssetBalance = createEntityGetterStub(opts.getAssetBalance);
       this.getSecondaryAccounts = createEntityGetterStub(opts.getSecondaryAccounts);
       this.areSecondaryAccountsFrozen = createEntityGetterStub(opts.areSecondaryAccountsFrozen);
       this.isCddProvider = createEntityGetterStub(opts.isCddProvider);
@@ -525,16 +525,24 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     authorizationsGetSent: { data: [], next: null, count: 0 },
     getVenues: [],
     getScopeId: 'someScopeId',
-    getTokenBalance: new BigNumber(100),
+    getAssetBalance: new BigNumber(100),
     getSecondaryAccounts: [],
     areSecondaryAccountsFrozen: false,
-    getPrimaryAccount: getAccountInstance(),
-    tokenPermissionsGet: [],
-    tokenPermissionsGetGroup: getKnownPermissionGroupInstance(),
-    tokenPermissionsCheckPermissions: {
+    getPrimaryAccount: {
+      acccount: getAccountInstance(),
+      permissions: {
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      },
+    },
+    assetPermissionsGet: [],
+    assetPermissionsGetGroup: getKnownPermissionGroupInstance(),
+    assetPermissionsCheckPermissions: {
       result: true,
     },
-    tokenPermissionsHasPermissions: true,
+    assetPermissionsHasPermissions: true,
     hasRole: true,
     hasRoles: true,
     checkRoles: {
@@ -631,7 +639,7 @@ const MockTickerReservationClass = createMockEntityClass<TickerReservationOption
   ['TickerReservation']
 );
 
-const MockSecurityTokenClass = createMockEntityClass<SecurityTokenOptions>(
+const MockAssetClass = createMockEntityClass<AssetOptions>(
   class {
     uuid!: string;
     ticker!: string;
@@ -686,15 +694,15 @@ const MockSecurityTokenClass = createMockEntityClass<SecurityTokenOptions>(
     /**
      * @hidden
      */
-    public argsToOpts(...args: ConstructorParameters<typeof SecurityToken>) {
+    public argsToOpts(...args: ConstructorParameters<typeof Asset>) {
       return extractFromArgs(args, ['ticker']);
     }
 
     /**
      * @hidden
      */
-    public configure(opts: Required<SecurityTokenOptions>) {
-      this.uuid = 'securityToken';
+    public configure(opts: Required<AssetOptions>) {
+      this.uuid = 'asset';
       this.ticker = opts.ticker;
       this.details = createEntityGetterStub(opts.details);
       this.currentFundingRound = createEntityGetterStub(opts.currentFundingRound);
@@ -720,15 +728,15 @@ const MockSecurityTokenClass = createMockEntityClass<SecurityTokenOptions>(
   },
   () => ({
     ticker: 'SOME_TICKER',
-    did: 'tokenDid',
+    did: 'assetDid',
     details: {
       owner: getIdentityInstance(),
-      name: 'TOKEN_NAME',
+      name: 'ASSET_NAME',
       totalSupply: new BigNumber(1000000),
       isDivisible: false,
       primaryIssuanceAgents: [],
       fullAgents: [],
-      assetType: KnownTokenType.EquityCommon,
+      assetType: KnownAssetType.EquityCommon,
       requiresInvestorUniqueness: false,
     },
     currentFundingRound: 'Series A',
@@ -768,7 +776,7 @@ const MockSecurityTokenClass = createMockEntityClass<SecurityTokenOptions>(
     },
     toJson: 'SOME_TICKER',
   }),
-  ['SecurityToken']
+  ['Asset']
 );
 
 const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequestOptions>(
@@ -886,7 +894,7 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
         {
           from: getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(1) }),
           to: getNumberedPortfolioInstance({ did: 'otherDid', id: new BigNumber(1) }),
-          token: getSecurityTokenInstance(),
+          asset: getAssetInstance(),
           amount: new BigNumber(100),
         },
       ],
@@ -903,7 +911,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     id!: BigNumber;
     owner!: Identity;
     isOwnedBy!: sinon.SinonStub;
-    getTokenBalances!: sinon.SinonStub;
+    getAssetBalances!: sinon.SinonStub;
     getCustodian!: sinon.SinonStub;
     isCustodiedBy!: sinon.SinonStub;
 
@@ -922,7 +930,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
       this.id = opts.id;
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterStub(opts.isOwnedBy);
-      this.getTokenBalances = createEntityGetterStub(opts.getTokenBalances);
+      this.getAssetBalances = createEntityGetterStub(opts.getAssetBalances);
       this.getCustodian = createEntityGetterStub(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterStub(opts.isCustodiedBy);
     }
@@ -930,9 +938,9 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
   () => ({
     id: new BigNumber(1),
     isOwnedBy: true,
-    getTokenBalances: [
+    getAssetBalances: [
       {
-        token: getSecurityTokenInstance(),
+        asset: getAssetInstance(),
         total: new BigNumber(1),
         locked: new BigNumber(0),
         free: new BigNumber(1),
@@ -954,7 +962,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     uuid!: string;
     owner!: Identity;
     isOwnedBy!: sinon.SinonStub;
-    getTokenBalances!: sinon.SinonStub;
+    getAssetBalances!: sinon.SinonStub;
     getCustodian!: sinon.SinonStub;
     isCustodiedBy!: sinon.SinonStub;
 
@@ -972,16 +980,16 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
       this.uuid = 'defaultPortfolio';
       this.owner = getIdentityInstance({ did: opts.did });
       this.isOwnedBy = createEntityGetterStub(opts.isOwnedBy);
-      this.getTokenBalances = createEntityGetterStub(opts.getTokenBalances);
+      this.getAssetBalances = createEntityGetterStub(opts.getAssetBalances);
       this.getCustodian = createEntityGetterStub(opts.getCustodian);
       this.isCustodiedBy = createEntityGetterStub(opts.isCustodiedBy);
     }
   },
   () => ({
     isOwnedBy: true,
-    getTokenBalances: [
+    getAssetBalances: [
       {
-        token: getSecurityTokenInstance(),
+        asset: getAssetInstance(),
         total: new BigNumber(1),
         locked: new BigNumber(0),
         free: new BigNumber(1),
@@ -997,27 +1005,27 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
   ['Portfolio', 'DefaultPortfolio']
 );
 
-const MockStoClass = createMockEntityClass<StoOptions>(
+const MockOfferingClass = createMockEntityClass<OfferingOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    token!: SecurityToken;
+    asset!: Asset;
     details!: sinon.SinonStub;
 
     /**
      * @hidden
      */
-    public argsToOpts(...args: ConstructorParameters<typeof Sto>) {
+    public argsToOpts(...args: ConstructorParameters<typeof Offering>) {
       return extractFromArgs(args, ['id', 'ticker']);
     }
 
     /**
      * @hidden
      */
-    public configure(opts: Required<StoOptions>) {
+    public configure(opts: Required<OfferingOptions>) {
       this.uuid = 'sto';
       this.id = opts.id;
-      this.token = getSecurityTokenInstance({ ticker: opts.ticker });
+      this.asset = getAssetInstance({ ticker: opts.ticker });
       this.details = createEntityGetterStub(opts.details);
     }
   },
@@ -1025,15 +1033,15 @@ const MockStoClass = createMockEntityClass<StoOptions>(
     details: {
       creator: getIdentityInstance(),
       venue: getVenueInstance(),
-      name: 'MySto',
+      name: 'MyOffering',
       offeringPortfolio: getNumberedPortfolioInstance({ did: 'offeringDid', id: new BigNumber(1) }),
       raisingPortfolio: getNumberedPortfolioInstance({ did: 'offeringDid', id: new BigNumber(2) }),
       end: null,
       start: new Date('10/14/1987'),
       status: {
-        timing: StoTimingStatus.Started,
-        balance: StoBalanceStatus.Available,
-        sale: StoSaleStatus.Live,
+        timing: OfferingTimingStatus.Started,
+        balance: OfferingBalanceStatus.Available,
+        sale: OfferingSaleStatus.Live,
       },
       tiers: [
         {
@@ -1050,14 +1058,14 @@ const MockStoClass = createMockEntityClass<StoOptions>(
     ticker: 'SOME_TICKER',
     id: new BigNumber(1),
   }),
-  ['Sto']
+  ['Offering']
 );
 
 const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    token!: SecurityToken;
+    asset!: Asset;
     createdAt!: sinon.SinonStub;
     totalSupply!: sinon.SinonStub;
     allBalances!: sinon.SinonStub;
@@ -1076,7 +1084,7 @@ const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
     public configure(opts: Required<CheckpointOptions>) {
       this.uuid = 'checkpoint';
       this.id = opts.id;
-      this.token = getSecurityTokenInstance({ ticker: opts.ticker });
+      this.asset = getAssetInstance({ ticker: opts.ticker });
       this.createdAt = createEntityGetterStub(opts.createdAt);
       this.totalSupply = createEntityGetterStub(opts.totalSupply);
       this.allBalances = createEntityGetterStub(opts.allBalances);
@@ -1106,7 +1114,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
   class {
     uuid!: string;
     id!: BigNumber;
-    token!: SecurityToken;
+    asset!: Asset;
     start!: Date;
     period!: CalendarPeriod | null;
     expiryDate!: Date | null;
@@ -1126,7 +1134,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     public configure(opts: Required<CheckpointScheduleOptions>) {
       this.uuid = 'checkpointSchedule';
       this.id = opts.id;
-      this.token = getSecurityTokenInstance({ ticker: opts.ticker });
+      this.asset = getAssetInstance({ ticker: opts.ticker });
       this.start = opts.start;
       this.period = opts.period;
       this.expiryDate = opts.expiryDate;
@@ -1156,7 +1164,7 @@ const MockCorporateActionClass = createMockEntityClass<CorporateActionOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    token!: SecurityToken;
+    asset!: Asset;
     kind!: CorporateActionKind;
     declarationDate!: Date;
     description!: string;
@@ -1186,7 +1194,7 @@ const MockCorporateActionClass = createMockEntityClass<CorporateActionOptions>(
     public configure(opts: Required<CorporateActionOptions>) {
       this.uuid = 'corporateAction';
       this.id = opts.id;
-      this.token = getSecurityTokenInstance({ ticker: opts.ticker });
+      this.asset = getAssetInstance({ ticker: opts.ticker });
       this.kind = opts.kind;
       this.declarationDate = opts.declarationDate;
       this.description = opts.description;
@@ -1220,7 +1228,7 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
   class {
     uuid!: string;
     id!: BigNumber;
-    token!: SecurityToken;
+    asset!: Asset;
     kind!: CorporateActionKind.PredictableBenefit | CorporateActionKind.UnpredictableBenefit;
     declarationDate!: Date;
     description!: string;
@@ -1265,7 +1273,7 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
     public configure(opts: Required<DividendDistributionOptions>) {
       this.uuid = 'dividendDistribution';
       this.id = opts.id;
-      this.token = getSecurityTokenInstance({ ticker: opts.ticker });
+      this.asset = getAssetInstance({ ticker: opts.ticker });
       this.kind = opts.kind;
       this.origin = opts.origin;
       this.declarationDate = opts.declarationDate;
@@ -1324,7 +1332,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
   class {
     uuid!: string;
     id!: BigNumber;
-    token!: SecurityToken;
+    asset!: Asset;
     getPermissions!: sinon.SinonStub;
 
     /**
@@ -1340,7 +1348,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
     public configure(opts: Required<CustomPermissionGroupOptions>) {
       this.uuid = 'customPermissionGroup';
       this.id = opts.id;
-      this.token = getSecurityTokenInstance({ ticker: opts.ticker });
+      this.asset = getAssetInstance({ ticker: opts.ticker });
       this.getPermissions = createEntityGetterStub(opts.getPermissions);
     }
   },
@@ -1359,7 +1367,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
   class {
     uuid!: string;
     type!: PermissionGroupType;
-    token!: SecurityToken;
+    asset!: Asset;
     getPermissions!: sinon.SinonStub;
 
     /**
@@ -1375,7 +1383,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
     public configure(opts: Required<KnownPermissionGroupOptions>) {
       this.uuid = 'knownPermissionGroup';
       this.type = opts.type;
-      this.token = getSecurityTokenInstance({ ticker: opts.ticker });
+      this.asset = getAssetInstance({ ticker: opts.ticker });
       this.getPermissions = createEntityGetterStub(opts.getPermissions);
     }
   },
@@ -1405,9 +1413,9 @@ export const mockTickerReservationModule = (path: string) => (): Record<string, 
   TickerReservation: MockTickerReservationClass,
 });
 
-export const mockSecurityTokenModule = (path: string) => (): Record<string, unknown> => ({
+export const mockAssetModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  SecurityToken: MockSecurityTokenClass,
+  Asset: MockAssetClass,
 });
 
 export const mockAuthorizationRequestModule = (path: string) => (): Record<string, unknown> => ({
@@ -1435,9 +1443,9 @@ export const mockDefaultPortfolioModule = (path: string) => (): Record<string, u
   DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
-export const mockStoModule = (path: string) => (): Record<string, unknown> => ({
+export const mockOfferingModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  Sto: MockStoClass,
+  Offering: MockOfferingClass,
 });
 
 export const mockCheckpointModule = (path: string) => (): Record<string, unknown> => ({
@@ -1479,7 +1487,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockIdentityClass.init(opts?.identityOptions);
   MockAccountClass.init(opts?.accountOptions);
   MockTickerReservationClass.init(opts?.tickerReservationOptions);
-  MockSecurityTokenClass.init(opts?.securityTokenOptions);
+  MockAssetClass.init(opts?.assetOptions);
   MockAuthorizationRequestClass.init(opts?.authorizationRequestOptions);
   MockVenueClass.init(opts?.venueOptions);
   MockInstructionClass.init(opts?.instructionOptions);
@@ -1487,7 +1495,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockDefaultPortfolioClass.init(opts?.defaultPortfolioOptions);
   MockCustomPermissionGroupClass.init(opts?.customPermissionGroupOptions);
   MockKnownPermissionGroupClass.init(opts?.knownPermissionGroupOptions);
-  MockStoClass.init(opts?.stoOptions);
+  MockOfferingClass.init(opts?.offeringOptions);
   MockCheckpointClass.init(opts?.checkpointOptions);
   MockCheckpointScheduleClass.init(opts?.checkpointScheduleOptions);
   MockCorporateActionClass.init(opts?.corporateActionOptions);
@@ -1503,7 +1511,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockIdentityClass.setOptions(opts?.identityOptions);
   MockAccountClass.setOptions(opts?.accountOptions);
   MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
-  MockSecurityTokenClass.setOptions(opts?.securityTokenOptions);
+  MockAssetClass.setOptions(opts?.assetOptions);
   MockAuthorizationRequestClass.setOptions(opts?.authorizationRequestOptions);
   MockVenueClass.setOptions(opts?.venueOptions);
   MockInstructionClass.setOptions(opts?.instructionOptions);
@@ -1511,7 +1519,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockDefaultPortfolioClass.setOptions(opts?.defaultPortfolioOptions);
   MockCustomPermissionGroupClass.setOptions(opts?.customPermissionGroupOptions);
   MockKnownPermissionGroupClass.setOptions(opts?.knownPermissionGroupOptions);
-  MockStoClass.setOptions(opts?.stoOptions);
+  MockOfferingClass.setOptions(opts?.offeringOptions);
   MockCheckpointClass.setOptions(opts?.checkpointOptions);
   MockCheckpointScheduleClass.setOptions(opts?.checkpointScheduleOptions);
   MockCorporateActionClass.setOptions(opts?.corporateActionOptions);
@@ -1526,7 +1534,7 @@ export const reset = function (): void {
   MockIdentityClass.resetOptions();
   MockAccountClass.resetOptions();
   MockTickerReservationClass.resetOptions();
-  MockSecurityTokenClass.resetOptions();
+  MockAssetClass.resetOptions();
   MockAuthorizationRequestClass.resetOptions();
   MockVenueClass.resetOptions();
   MockInstructionClass.resetOptions();
@@ -1534,7 +1542,7 @@ export const reset = function (): void {
   MockDefaultPortfolioClass.resetOptions();
   MockCustomPermissionGroupClass.resetOptions();
   MockKnownPermissionGroupClass.resetOptions();
-  MockStoClass.resetOptions();
+  MockOfferingClass.resetOptions();
   MockCheckpointClass.resetOptions();
   MockCheckpointScheduleClass.resetOptions();
   MockCorporateActionClass.resetOptions();
@@ -1587,16 +1595,16 @@ export const getTickerReservationInstance = function (
 
 /**
  * @hidden
- * Retrieve a SecurityToken instance
+ * Retrieve a Asset instance
  */
-export const getSecurityTokenInstance = function (opts?: SecurityTokenOptions): MockSecurityToken {
-  const instance = new MockSecurityTokenClass();
+export const getAssetInstance = function (opts?: AssetOptions): MockAsset {
+  const instance = new MockAssetClass();
 
   if (opts) {
     instance.configure(opts);
   }
 
-  return instance as unknown as MockSecurityToken;
+  return instance as unknown as MockAsset;
 };
 
 /**
@@ -1709,16 +1717,16 @@ export const getInstructionInstance = function (opts?: InstructionOptions): Mock
 
 /**
  * @hidden
- * Retrieve an Sto instance
+ * Retrieve an Offering instance
  */
-export const getStoInstance = function (opts?: StoOptions): MockSto {
-  const instance = new MockStoClass();
+export const getOfferingInstance = function (opts?: OfferingOptions): MockOffering {
+  const instance = new MockOfferingClass();
 
   if (opts) {
     instance.configure(opts);
   }
 
-  return instance as unknown as MockSto;
+  return instance as unknown as MockOffering;
 };
 
 /**

@@ -31,7 +31,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let scope: Scope;
   let scopeId: string;
   let proof: string;
-  let proofScopeIdWellformed: string;
+  let proofScopeIdWellFormed: string;
   let firstChallengeResponse: string;
   let secondChallengeResponse: string;
   let subtractExpressionsRes: string;
@@ -65,18 +65,18 @@ describe('addInvestorUniquenessClaim procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    ticker = 'SOME_TOKEN';
+    ticker = 'SOME_ASSET';
     cddId = 'someCddId';
     scope = { type: ScopeType.Ticker, value: ticker };
     scopeId = 'someScopeId';
     proof = 'someProof';
-    proofScopeIdWellformed = 'someProofScopeIdWellformed';
+    proofScopeIdWellFormed = 'someProofScopeIdWellFormed';
     firstChallengeResponse = 'someFirstChallengeResponse';
     secondChallengeResponse = 'someSecondChallengeResponse';
     subtractExpressionsRes = 'someSubtractExpressionsRes';
     blindedScopeDidHash = 'someBlindedScopeDidHash';
     scopeClaimProof = {
-      proofScopeIdWellformed,
+      proofScopeIdWellFormed,
       proofScopeIdCddIdMatch: {
         challengeResponses: [firstChallengeResponse, secondChallengeResponse],
         subtractExpressionsRes,
@@ -115,7 +115,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     rawScopeId = dsMockUtils.createMockScopeId(scopeId);
     rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
     rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
-      proof_scope_id_wellformed: proofScopeIdWellformed,
+      proof_scope_id_wellformed: proofScopeIdWellFormed,
       proof_scope_id_cdd_id_match: {
         subtract_expressions_res: subtractExpressionsRes,
         challenge_responses: [firstChallengeResponse, secondChallengeResponse],
@@ -189,15 +189,10 @@ describe('addInvestorUniquenessClaim procedure', () => {
       expiry,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addInvestorUniquenessClaimTransaction,
-      {},
-      rawDid,
-      rawClaim,
-      rawProof,
-      rawExpiry
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addInvestorUniquenessClaimTransaction,
+      args: [rawDid, rawClaim, rawProof, rawExpiry],
+    });
 
     await prepareAddInvestorUniquenessClaim.call(proc, {
       scope,
@@ -206,15 +201,10 @@ describe('addInvestorUniquenessClaim procedure', () => {
       scopeId,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addInvestorUniquenessClaimTransaction,
-      {},
-      rawDid,
-      rawClaim,
-      rawProof,
-      null
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addInvestorUniquenessClaimTransaction,
+      args: [rawDid, rawClaim, rawProof, null],
+    });
   });
 
   test('should add an add investor uniqueness claim v2 transaction to the queue', async () => {
@@ -234,16 +224,10 @@ describe('addInvestorUniquenessClaim procedure', () => {
       expiry,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addInvestorUniquenessClaimV2Transaction,
-      {},
-      rawDid,
-      rawScope,
-      rawClaimV2,
-      rawScopeClaimProof,
-      rawExpiry
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addInvestorUniquenessClaimV2Transaction,
+      args: [rawDid, rawScope, rawClaimV2, rawScopeClaimProof, rawExpiry],
+    });
 
     await prepareAddInvestorUniquenessClaim.call(proc, {
       scope,
@@ -252,16 +236,10 @@ describe('addInvestorUniquenessClaim procedure', () => {
       scopeId,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addInvestorUniquenessClaimV2Transaction,
-      {},
-      rawDid,
-      rawScope,
-      rawClaimV2,
-      rawScopeClaimProof,
-      null
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addInvestorUniquenessClaimV2Transaction,
+      args: [rawDid, rawScope, rawClaimV2, rawScopeClaimProof, null],
+    });
   });
 
   test('should throw an error if the expiry date is in the past', async () => {
@@ -299,7 +277,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
       expect(boundFunc({ ...commonArgs, proof })).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.AddInvestorUniquenessClaim],
           portfolios: [],
         },
@@ -307,7 +285,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
       expect(boundFunc({ ...commonArgs, proof: scopeClaimProof })).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.AddInvestorUniquenessClaimV2],
           portfolios: [],
         },

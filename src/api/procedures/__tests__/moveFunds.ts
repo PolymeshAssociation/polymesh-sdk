@@ -118,28 +118,28 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
-  test('should throw an error if some of the amount token to move exceed its balance', async () => {
+  test('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const securityToken1 = entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER001' });
-    const securityToken2 = entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER002' });
+    const asset1 = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
+    const asset2 = entityMockUtils.getAssetInstance({ ticker: 'TICKER002' });
     const items: PortfolioMovement[] = [
       {
-        token: securityToken1.ticker,
+        asset: asset1.ticker,
         amount: new BigNumber(100),
       },
       {
-        token: securityToken2,
+        asset: asset2,
         amount: new BigNumber(20),
       },
     ];
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        getTokenBalances: [
-          { token: securityToken1, free: new BigNumber(50) },
-          { token: securityToken2, free: new BigNumber(10) },
+        getAssetBalances: [
+          { asset: asset1, free: new BigNumber(50) },
+          { asset: asset2, free: new BigNumber(10) },
         ] as unknown as PortfolioBalance[],
       },
     });
@@ -174,10 +174,10 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const securityToken = entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER001' });
+    const asset = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
     const items = [
       {
-        token: securityToken.ticker,
+        asset: asset.ticker,
         amount: new BigNumber(100),
       },
     ];
@@ -185,15 +185,11 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         did,
-        getTokenBalances: [
-          { token: securityToken, total: new BigNumber(150) },
-        ] as unknown as PortfolioBalance[],
+        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
       },
       defaultPortfolioOptions: {
         did,
-        getTokenBalances: [
-          { token: securityToken, total: new BigNumber(150) },
-        ] as unknown as PortfolioBalance[],
+        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
       },
     });
 
@@ -230,7 +226,7 @@ describe('moveFunds procedure', () => {
       .returns(rawToMeshPortfolioId);
 
     const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
-      ticker: dsMockUtils.createMockTicker(items[0].token),
+      ticker: dsMockUtils.createMockTicker(items[0].asset),
       amount: dsMockUtils.createMockBalance(items[0].amount.toNumber()),
     });
     portfolioMovementToMovePortfolioItemStub
@@ -249,14 +245,10 @@ describe('moveFunds procedure', () => {
 
     let addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawFromMeshPortfolioId,
-      rawToMeshPortfolioId,
-      [rawMovePortfolioItem]
-    );
+      args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+    });
 
     toPortfolioId = { did };
 
@@ -279,14 +271,10 @@ describe('moveFunds procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawFromMeshPortfolioId,
-      rawToMeshPortfolioId,
-      [rawMovePortfolioItem]
-    );
+      args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+    });
 
     const defaultFrom = entityMockUtils.getDefaultPortfolioInstance({ did });
 
@@ -322,14 +310,10 @@ describe('moveFunds procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawFromMeshPortfolioId,
-      rawToMeshPortfolioId,
-      [rawMovePortfolioItem]
-    );
+      args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -358,7 +342,7 @@ describe('moveFunds procedure', () => {
             expect.objectContaining({ owner: expect.objectContaining({ did }), id: fromId }),
             expect.objectContaining({ owner: expect.objectContaining({ did }) }),
           ],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -379,7 +363,7 @@ describe('moveFunds procedure', () => {
             expect.objectContaining({ owner: expect.objectContaining({ did }) }),
             expect.objectContaining({ owner: expect.objectContaining({ did }), id: toId }),
           ],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -398,7 +382,7 @@ describe('moveFunds procedure', () => {
             expect.objectContaining({ owner: expect.objectContaining({ did }) }),
             expect.objectContaining({ owner: expect.objectContaining({ did }), id: toId }),
           ],
-          tokens: [],
+          assets: [],
         },
       });
     });

@@ -69,7 +69,7 @@ describe('modifyClaims procedure', () => {
       type: ClaimType.InvestorUniqueness,
       scope: {
         type: ScopeType.Ticker,
-        value: 'SOMETICKER',
+        value: 'SOME_TICKER',
       },
       cddId: 'someCddId',
       scopeId: 'someScopeId',
@@ -204,12 +204,14 @@ describe('modifyClaims procedure', () => {
       }
     );
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      addClaimTransaction,
-      { groupByFn: sinon.match(sinon.match.func) },
-      [[rawSomeDid, rawBuyLockupClaim, rawExpiry]]
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: addClaimTransaction,
+          args: [rawSomeDid, rawBuyLockupClaim, rawExpiry],
+        },
+      ],
+    });
 
     await prepareModifyClaims.call(proc, args);
 
@@ -218,14 +220,14 @@ describe('modifyClaims procedure', () => {
       [rawOtherDid, rawCddClaim, null],
       [rawSomeDid, rawBuyLockupClaim, rawExpiry],
       [rawSomeDid, rawIuClaim, null],
-    ];
+    ] as const;
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      addClaimTransaction,
-      { groupByFn: sinon.match(sinon.match.func) },
-      rawAddClaimItems
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: rawAddClaimItems.map(item => ({
+        transaction: addClaimTransaction,
+        args: item,
+      })),
+    });
 
     sinon.resetHistory();
 
@@ -255,12 +257,12 @@ describe('modifyClaims procedure', () => {
 
     await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      addClaimTransaction,
-      { groupByFn: sinon.match(sinon.match.func) },
-      rawAddClaimItems
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: rawAddClaimItems.map(item => ({
+        transaction: addClaimTransaction,
+        args: item,
+      })),
+    });
   });
 
   test('should throw an error if any of the CDD IDs of the claims that will be added are not equal to the CDD ID of current CDD claims', async () => {
@@ -457,12 +459,12 @@ describe('modifyClaims procedure', () => {
       [rawSomeDid, rawIuClaim],
     ];
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      revokeClaimTransaction,
-      { groupByFn: sinon.match(sinon.match.func) },
-      rawRevokeClaimItems
-    );
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: rawRevokeClaimItems.map(item => ({
+        transaction: revokeClaimTransaction,
+        args: item,
+      })),
+    });
   });
 });
 
@@ -481,7 +483,7 @@ describe('getAuthorization', () => {
     expect(getAuthorization(args)).toEqual({
       roles: [{ type: RoleType.CddProvider }],
       permissions: {
-        tokens: [],
+        assets: [],
         portfolios: [],
         transactions: [TxTags.identity.AddClaim],
       },
@@ -502,7 +504,7 @@ describe('getAuthorization', () => {
 
     expect(getAuthorization(args)).toEqual({
       permissions: {
-        tokens: [],
+        assets: [],
         portfolios: [],
         transactions: [TxTags.identity.RevokeClaim],
       },

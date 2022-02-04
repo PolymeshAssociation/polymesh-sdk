@@ -49,7 +49,7 @@ describe('deletePortfolio procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,
-        getTokenBalances: [zeroBalance, zeroBalance],
+        getAssetBalances: [zeroBalance, zeroBalance],
       },
     });
   });
@@ -65,26 +65,10 @@ describe('deletePortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the portfolio does not exist', async () => {
+  test('should throw an error if the Portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        exists: false,
-      },
-    });
-    const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
-
-    return expect(
-      prepareDeletePortfolio.call(proc, {
-        id,
-        did,
-      })
-    ).rejects.toThrow("The Portfolio doesn't exist");
-  });
-
-  test('should throw an error if the portfolio has balance in it', () => {
-    entityMockUtils.configureMocks({
-      numberedPortfolioOptions: {
-        getTokenBalances: [
+        getAssetBalances: [
           { total: new BigNumber(1) },
           { total: new BigNumber(0) },
         ] as PortfolioBalance[],
@@ -101,6 +85,23 @@ describe('deletePortfolio procedure', () => {
     ).rejects.toThrow('Only empty Portfolios can be deleted');
   });
 
+  test('should throw an error if the Portfolio has balance in it', () => {
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        exists: false,
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
+
+    return expect(
+      prepareDeletePortfolio.call(proc, {
+        id,
+        did,
+      })
+    ).rejects.toThrow("The Portfolio doesn't exist");
+  });
+
   test('should add a delete portfolio transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
 
@@ -113,11 +114,11 @@ describe('deletePortfolio procedure', () => {
 
     let addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        getTokenBalances: [],
+        getAssetBalances: [],
       },
     });
 
@@ -128,7 +129,7 @@ describe('deletePortfolio procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
   });
 
   describe('getAuthorization', () => {
@@ -151,7 +152,7 @@ describe('deletePortfolio procedure', () => {
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [portfolio],
           transactions: [TxTags.portfolio.DeletePortfolio],
         },

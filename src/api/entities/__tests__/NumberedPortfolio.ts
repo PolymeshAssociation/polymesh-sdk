@@ -1,10 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, NumberedPortfolio, TransactionQueue } from '~/internal';
+import { Context, Entity, NumberedPortfolio, PolymeshError, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -87,13 +88,13 @@ describe('NumberedPortfolio class', () => {
   });
 
   describe('method: getName', () => {
+    const id = new BigNumber(1);
+    const did = 'someDid';
+    const portfolioName = 'someName';
     test('should return the name of the Portfolio', async () => {
-      const id = new BigNumber(1);
-      const did = 'someDid';
-      const portfolioName = 'someName';
-      const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-
+      const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
+      const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         returnValue: rawPortfolioName,
       });
@@ -101,6 +102,28 @@ describe('NumberedPortfolio class', () => {
       const result = await numberedPortfolio.getName();
 
       expect(result).toEqual(portfolioName);
+      spy.mockRestore();
+    });
+
+    test('should throw an error if the Portfolio no longer exists', async () => {
+      const emptyName = dsMockUtils.createMockText('');
+      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        returnValue: emptyName,
+      });
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+      const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(false);
+      let error;
+      try {
+        await numberedPortfolio.getName();
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The Portfolio doesn't exist",
+      });
+      expect(error).toEqual(expectedError);
+      spy.mockRestore();
     });
   });
 

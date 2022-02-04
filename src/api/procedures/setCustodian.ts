@@ -86,17 +86,14 @@ export async function prepareSetCustodian(
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
-  const [auth] = this.addTransaction(
-    identity.addAuthorization,
-    {
-      resolvers: [
-        createAuthorizationResolver(authRequest, issuerIdentity, target, expiry || null, context),
-      ],
-    },
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+
+  const [auth] = this.addTransaction({
+    transaction: identity.addAuthorization,
+    resolvers: [
+      createAuthorizationResolver(authRequest, issuerIdentity, target, expiry || null, context),
+    ],
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 
   return auth;
 }
@@ -115,7 +112,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [portfolioIdToPortfolio({ did, number: id }, context)],
-      tokens: [],
+      assets: [],
     },
   };
 }

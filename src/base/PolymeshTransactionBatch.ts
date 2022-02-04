@@ -2,55 +2,77 @@ import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { u32 } from '@polkadot/types';
 import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
-import { BatchTransactionSpec, MapMaybePostTransactionValue } from '~/types/internal';
-import { u32ToBigNumber } from '~/utils/conversion';
+import {
+  BatchTransactionSpec,
+  MapTxData,
+  MapTxDataWithFees,
+  MapTxWithArgs,
+} from '~/types/internal';
+import { transactionToTxTag, u32ToBigNumber } from '~/utils/conversion';
 import { unwrapValues } from '~/utils/internal';
 
 /**
  * Wrapper class for a batch of Polymesh Transactions
  */
 export class PolymeshTransactionBatch<
-  Args extends unknown[],
+  Args extends unknown[][] = unknown[][],
   Values extends unknown[] = unknown[]
-> extends PolymeshTransactionBase<Args, Values> {
+> extends PolymeshTransactionBase<Values> {
   /**
    * @hidden
    *
-   * unwrapped arguments (available right before execution)
+   * unwrapped transaction data (available right before execution)
    */
-  private unwrappedArgs?: Args[];
+  private unwrappedTransactions?: MapTxDataWithFees<Args>;
 
   /**
    * @hidden
    *
-   * arguments for each transaction in the batch. Available after the transaction starts running
-   * (may be Post Transaction Values from a previous transaction in the queue that haven't resolved yet)
+   * underlying transactions to be batched, together with their respective arguments
    */
-  private inputArgs: MapMaybePostTransactionValue<Args>[];
+  private inputTransactions: MapTxWithArgs<Args>;
 
   /**
    * @hidden
    */
   constructor(transactionSpec: BatchTransactionSpec<Args, Values>, context: Context) {
-    const { args, ...rest } = transactionSpec;
+    const { transactions, ...rest } = transactionSpec;
 
     super(rest, context);
 
-    this.inputArgs = args;
-    this.batchSize = args.length;
+    this.inputTransactions = transactions;
   }
 
   /**
-   * Arguments for each transaction in the batch
+   * @hidden
    */
-  public get args(): Args[] {
-    if (!this.unwrappedArgs) {
-      this.unwrappedArgs = this.inputArgs.map(arg => unwrapValues(arg));
+  private getUnwrappedTransactions(): MapTxDataWithFees<Args> {
+    if (!this.unwrappedTransactions) {
+      this.unwrappedTransactions = this.inputTransactions.map(
+        ({ transaction, args, feeMultiplier }) => ({
+          tag: transactionToTxTag(transaction),
+          args: unwrapValues(args),
+          feeMultiplier,
+          transaction,
+        })
+      ) as MapTxDataWithFees<Args>;
     }
 
-    return this.unwrappedArgs;
+    return this.unwrappedTransactions;
+  }
+
+  /**
+   * transactions in the batch with their respective arguments
+   */
+  get transactions(): MapTxData<Args> {
+    return this.getUnwrappedTransactions().map(({ tag, args }) => ({
+      tag,
+      args,
+    })) as MapTxData<Args>;
   }
 
   /**
@@ -58,16 +80,38 @@ export class PolymeshTransactionBatch<
    */
   protected composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult> {
     const {
-      tx,
       context: {
         polymeshApi: {
           tx: { utility },
         },
       },
-      args,
     } = this;
 
-    return utility.batchAtomic(args.map(arg => tx(...arg)));
+    return utility.batchAtomic(
+      this.getUnwrappedTransactions().map(({ transaction, args }) => transaction(...args))
+    );
+  }
+
+  /**
+   * @hidden
+   */
+  protected getProtocolFees(): Promise<BigNumber> {
+    return P.reduce(
+      this.getUnwrappedTransactions(),
+      async (total, { tag, feeMultiplier = 1 }) => {
+        const fee = await this.context.getProtocolFees({ tag });
+
+        return total.plus(fee.multipliedBy(feeMultiplier));
+      },
+      new BigNumber(0)
+    );
+  }
+
+  /**
+   * @note batches can't be subsidized
+   */
+  public supportsSubsidy(): boolean {
+    return false;
   }
 
   /**

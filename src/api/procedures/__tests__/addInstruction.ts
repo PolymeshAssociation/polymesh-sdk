@@ -23,7 +23,13 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionType, PortfolioLike, RoleType, TickerReservationStatus } from '~/types';
+import {
+  ErrorCode,
+  InstructionType,
+  PortfolioLike,
+  RoleType,
+  TickerReservationStatus,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -64,7 +70,7 @@ describe('addInstruction procedure', () => {
   let toDid: string;
   let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
-  let token: string;
+  let asset: string;
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
@@ -75,7 +81,7 @@ describe('addInstruction procedure', () => {
   let rawAmount: Balance;
   let rawFrom: PortfolioId;
   let rawTo: PortfolioId;
-  let rawToken: Ticker;
+  let rawTicker: Ticker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
@@ -130,7 +136,7 @@ describe('addInstruction procedure', () => {
       did: toDid,
       id: new BigNumber(2),
     });
-    token = 'SOME_TOKEN';
+    asset = 'SOME_ASSET';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
@@ -145,7 +151,7 @@ describe('addInstruction procedure', () => {
       did: dsMockUtils.createMockIdentityId(to),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    rawToken = dsMockUtils.createMockTicker(token);
+    rawTicker = dsMockUtils.createMockTicker(asset);
     rawTradeDate = dsMockUtils.createMockMoment(tradeDate.getTime());
     rawValueDate = dsMockUtils.createMockMoment(valueDate.getTime());
     rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
@@ -155,7 +161,7 @@ describe('addInstruction procedure', () => {
       from: rawFrom,
       to: rawTo,
       amount: rawAmount,
-      asset: rawToken,
+      asset: rawTicker,
     };
 
     instruction = ['instruction'] as unknown as PostTransactionValue<[Instruction]>;
@@ -217,7 +223,7 @@ describe('addInstruction procedure', () => {
         details: tickerReservationDetailsStub,
       },
     });
-    stringToTickerStub.withArgs(token, mockContext).returns(rawToken);
+    stringToTickerStub.withArgs(asset, mockContext).returns(rawTicker);
     numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
     numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     endConditionToSettlementTypeStub
@@ -238,7 +244,7 @@ describe('addInstruction procedure', () => {
             {
               from,
               to,
-              token,
+              asset,
               amount,
             },
           ],
@@ -259,6 +265,23 @@ describe('addInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  test('should throw an error if the instructions array is empty', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, { venue, instructions: [] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The Instructions array cannot be empty');
+    expect(error.code).toBe(ErrorCode.ValidationError);
+  });
+
   test('should throw an error if the legs array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
@@ -273,6 +296,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe("The legs array can't be empty");
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
@@ -293,7 +317,7 @@ describe('addInstruction procedure', () => {
       from,
       to,
       amount,
-      token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
     });
 
     try {
@@ -303,6 +327,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('The legs array exceeds the maximum allowed length');
+    expect(error.code).toBe(ErrorCode.LimitExceeded);
   });
 
   test('should throw an error if the end block is in the past', async () => {
@@ -330,7 +355,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -342,6 +367,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('End block must be a future block');
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
@@ -367,7 +393,7 @@ describe('addInstruction procedure', () => {
               {
                 from,
                 to,
-                token,
+                asset: asset,
                 amount,
               },
             ],
@@ -381,6 +407,7 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('Value date must be after trade date');
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
@@ -400,11 +427,15 @@ describe('addInstruction procedure', () => {
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
-      addAndAuthorizeInstructionTransaction,
       sinon.match({
+        transactions: [
+          {
+            transaction: addAndAuthorizeInstructionTransaction,
+            args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]],
+          },
+        ],
         resolvers: sinon.match.array,
-      }),
-      [[rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]]]
+      })
     );
     expect(result).toBe(instruction);
   });
@@ -430,7 +461,7 @@ describe('addInstruction procedure', () => {
               from,
               to,
               amount,
-              token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+              asset: entityMockUtils.getAssetInstance({ ticker: asset }),
             },
           ],
           tradeDate,
@@ -442,11 +473,15 @@ describe('addInstruction procedure', () => {
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
-      addInstructionTransaction,
       sinon.match({
+        transactions: [
+          {
+            transaction: addInstructionTransaction,
+            args: [rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]],
+          },
+        ],
         resolvers: sinon.match.array,
-      }),
-      [[rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]]]
+      })
     );
     expect(result).toBe(instruction);
   });
@@ -461,14 +496,14 @@ describe('addInstruction procedure', () => {
       let result = await boundFunc({
         venue,
         instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
       });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [fromPortfolio, toPortfolio],
           transactions: [TxTags.settlement.AddAndAffirmInstruction],
         },
@@ -482,14 +517,14 @@ describe('addInstruction procedure', () => {
       result = await boundFunc({
         venue,
         instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
       });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.AddInstruction],
         },

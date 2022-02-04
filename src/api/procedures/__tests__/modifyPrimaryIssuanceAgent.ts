@@ -14,8 +14,8 @@ import { Authorization, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyPrimaryIssuanceAgent procedure', () => {
@@ -83,7 +83,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [new Identity({ did: 'otherDid' }, mockContext)],
         },
@@ -120,7 +120,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [],
         },
@@ -145,7 +145,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [],
         },
@@ -157,17 +157,13 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
 
     await prepareModifyPrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [],
         },
@@ -176,28 +172,20 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
 
     await prepareModifyPrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     await prepareModifyPrimaryIssuanceAgent.call(proc, {
       ...args,
       requestExpiry,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawExpiry
-    );
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -212,7 +200,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
     });

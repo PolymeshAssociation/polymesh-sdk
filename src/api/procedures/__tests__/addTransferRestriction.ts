@@ -17,8 +17,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/Identity',
@@ -117,13 +117,10 @@ describe('addTransferRestriction procedure', () => {
 
     let result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addTransferManagerTransaction,
-      {},
-      rawTicker,
-      rawCountTm
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addTransferManagerTransaction,
+      args: [rawTicker, rawCountTm],
+    });
 
     expect(result).toEqual(1);
 
@@ -136,13 +133,10 @@ describe('addTransferRestriction procedure', () => {
 
     result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addTransferManagerTransaction,
-      {},
-      rawTicker,
-      rawPercentageTm
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addTransferManagerTransaction,
+      args: [rawTicker, rawPercentageTm],
+    });
 
     expect(result).toEqual(1);
   });
@@ -174,14 +168,11 @@ describe('addTransferRestriction procedure', () => {
 
     let result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addExemptedEntitiesTransaction,
-      { batchSize: 2 },
-      rawTicker,
-      rawCountTm,
-      [rawScopeId, rawIdentityScopeId]
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addExemptedEntitiesTransaction,
+      feeMultiplier: 2,
+      args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+    });
 
     expect(result).toEqual(1);
 
@@ -190,14 +181,11 @@ describe('addTransferRestriction procedure', () => {
       exemptedIdentities: [entityMockUtils.getIdentityInstance()],
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      addExemptedEntitiesTransaction,
-      { batchSize: 2 },
-      rawTicker,
-      rawCountTm,
-      [rawScopeId, rawIdentityScopeId]
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: addExemptedEntitiesTransaction,
+      feeMultiplier: 2,
+      args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+    });
 
     expect(result).toEqual(1);
   });
@@ -291,14 +279,14 @@ describe('addTransferRestriction procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
         },
       });
       expect(boundFunc({ ...args, exemptedScopeIds: ['someScopeId'] })).toEqual({
         permissions: {
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [
             TxTags.statistics.AddTransferManager,
             TxTags.statistics.AddExemptedEntities,

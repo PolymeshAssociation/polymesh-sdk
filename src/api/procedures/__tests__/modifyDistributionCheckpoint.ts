@@ -21,12 +21,12 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyDistributionCheckpoint procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
 
   let mockContext: Mocked<Context>;
   let addProcedureStub: sinon.SinonStub;
@@ -152,13 +152,13 @@ describe('modifyDistributionCheckpoint procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         distribution: {
-          token: { ticker },
+          asset: { ticker },
         },
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [expect.objectContaining({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },
