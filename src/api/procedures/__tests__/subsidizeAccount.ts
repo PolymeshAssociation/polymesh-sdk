@@ -96,7 +96,7 @@ describe('subsidizeAccount procedure', () => {
       mockContext
     );
 
-    return expect(prepareSubsidizeAccount.call(proc, args)).rejects.toThrow(
+    expect(prepareSubsidizeAccount.call(proc, args)).rejects.toThrow(
       'The Beneficiary Account already has a pending invitation to add this account as a subsidizer'
     );
   });
@@ -167,7 +167,7 @@ describe('subsidizeAccount procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('relayer', 'setPayingKey');
 
-    await prepareSubsidizeAccount.call(proc, args);
+    await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
 
     sinon.assert.calledWith(
       addTransactionStub,
