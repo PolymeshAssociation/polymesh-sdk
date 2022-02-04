@@ -117,9 +117,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    dsMockUtils.createQueryStub('settlement', 'venueInfo', {
-      returnValue: { isNone: false },
-    });
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Affirmed);
@@ -148,9 +145,6 @@ describe('modifyInstructionAffirmation procedure', () => {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
 
-    dsMockUtils.createQueryStub('settlement', 'venueInfo', {
-      returnValue: { isNone: false },
-    });
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Affirmed);
@@ -177,9 +171,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    dsMockUtils.createQueryStub('settlement', 'venueInfo', {
-      returnValue: { isNone: false },
     });
 
     meshAffirmationStatusToAffirmationStatusStub
@@ -217,9 +208,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    dsMockUtils.createQueryStub('settlement', 'venueInfo', {
-      returnValue: { isNone: false },
-    });
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Pending);
@@ -246,9 +234,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    dsMockUtils.createQueryStub('settlement', 'venueInfo', {
-      returnValue: { isNone: false },
     });
 
     meshAffirmationStatusToAffirmationStatusStub
@@ -285,9 +270,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
-    });
-    dsMockUtils.createQueryStub('settlement', 'venueInfo', {
-      returnValue: { isNone: false },
     });
 
     meshAffirmationStatusToAffirmationStatusStub
