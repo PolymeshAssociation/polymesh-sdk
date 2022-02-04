@@ -73,7 +73,6 @@ export async function prepareConsumeAuthorizationRequests(
     forEach(idsPerType, (ids, key) => {
       const type = key as AllowedAuthType;
 
-      // TODO @monitz87: include the attestation auth in the mix (should probably be a different procedure)
       const transactions = assembleBatchTransactions(
         tuple({
           transaction: typesToExtrinsics[type],
