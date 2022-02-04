@@ -126,14 +126,10 @@ describe('setGroupPermissions procedure', () => {
       permissions: fakePermissions,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsSetGroupPermissionsTransaction,
-      {},
-      rawTicker,
-      rawAgId,
-      rawExtrinsicPermissions
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsSetGroupPermissionsTransaction,
+      args: [rawTicker, rawAgId, rawExtrinsicPermissions],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -149,7 +145,7 @@ describe('setGroupPermissions procedure', () => {
       ).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.SetGroupPermissions],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

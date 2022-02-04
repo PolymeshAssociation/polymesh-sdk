@@ -45,12 +45,12 @@ describe('reserveTicker procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks({ identityOptions: { did: 'someOtherDid' } });
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOMETICKER';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       ticker,
     };
-    reservation = ('reservation' as unknown) as PostTransactionValue<TickerReservation>;
+    reservation = 'reservation' as unknown as PostTransactionValue<TickerReservation>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -134,18 +134,18 @@ describe('reserveTicker procedure', () => {
     expect(error.data).toMatchObject({ expiryDate: null });
   });
 
-  test('should throw an error if a token with that ticker has already been launched', () => {
+  test('should throw an error if an Asset with that ticker has already been launched', () => {
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
-      status: TickerReservationStatus.TokenCreated,
+      status: TickerReservationStatus.AssetCreated,
     });
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
     );
 
     return expect(prepareReserveTicker.call(proc, args)).rejects.toThrow(
-      `A Security Token with ticker "${ticker}" already exists`
+      `An Asset with ticker "${ticker}" already exists`
     );
   });
 
@@ -174,17 +174,17 @@ describe('reserveTicker procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
       sinon.match({
+        transaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker
+        args: [rawTicker],
+      })
     );
     expect(result).toBe(reservation);
 
     entityMockUtils.getTickerReservationDetailsStub().resolves({
       owner: entityMockUtils.getIdentityInstance(),
-      expriy: new Date(3000, 12, 12),
+      expiryDate: new Date(3000, 12, 12),
       status: TickerReservationStatus.Reserved,
     });
 
@@ -192,11 +192,7 @@ describe('reserveTicker procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({
-        resolvers: sinon.match.array,
-      }),
-      rawTicker
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
     );
     expect(result).toBe(reservation);
   });
@@ -238,7 +234,7 @@ describe('getAuthorization', () => {
 
     const permissions = {
       transactions: [TxTags.asset.RegisterTicker],
-      tokens: [],
+      assets: [],
       portfolios: [],
     };
 

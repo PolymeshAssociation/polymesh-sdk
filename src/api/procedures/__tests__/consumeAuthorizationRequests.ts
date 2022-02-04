@@ -15,8 +15,8 @@ import { Authorization, AuthorizationType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 jest.mock(
@@ -211,24 +211,54 @@ describe('consumeAuthorizationRequests procedure', () => {
       authRequests: auths,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, acceptAssetOwnershipTransferTransaction, {}, [
-      rawAuthIds[0],
-    ]);
-    sinon.assert.calledWith(addBatchTransactionStub, acceptPayingKeyTransaction, {}, [
-      rawAuthIds[1],
-    ]);
-    sinon.assert.calledWith(addBatchTransactionStub, acceptPrimaryKeyTransaction, {}, [
-      [rawAuthIds[2][0], null],
-    ]);
-    sinon.assert.calledWith(addBatchTransactionStub, acceptBecomeAgentTransaction, {}, [
-      rawAuthIds[3],
-    ]);
-    sinon.assert.calledWith(addBatchTransactionStub, acceptPortfolioCustodyTransaction, {}, [
-      rawAuthIds[4],
-    ]);
-    sinon.assert.calledWith(addBatchTransactionStub, acceptTickerTransferTransaction, {}, [
-      rawAuthIds[5],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: acceptAssetOwnershipTransferTransaction,
+          args: rawAuthIds[0],
+        },
+      ],
+    });
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: acceptPayingKeyTransaction,
+          args: rawAuthIds[1],
+        },
+      ],
+    });
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: acceptPrimaryKeyTransaction,
+          args: [rawAuthIds[2][0], null],
+        },
+      ],
+    });
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: acceptBecomeAgentTransaction,
+          args: rawAuthIds[3],
+        },
+      ],
+    });
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: acceptPortfolioCustodyTransaction,
+          args: rawAuthIds[4],
+        },
+      ],
+    });
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: acceptTickerTransferTransaction,
+          args: rawAuthIds[5],
+        },
+      ],
+    });
   });
 
   test('should add a batch of remove authorization transactions to the queue and ignore expired requests', async () => {
@@ -245,7 +275,9 @@ describe('consumeAuthorizationRequests procedure', () => {
 
     const authIds = rawAuthIdentifiers.slice(0, -1);
 
-    sinon.assert.calledWith(addBatchTransactionStub, transaction, {}, authIds);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: authIds.map(authId => ({ transaction, args: authId })),
+    });
   });
 
   describe('getAuthorization', () => {
@@ -286,7 +318,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       expect(result).toEqual({
         roles: true,
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [
             TxTags.externalAgents.AcceptBecomeAgent,
@@ -305,7 +337,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         roles:
           'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],
         },
@@ -318,7 +350,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         roles:
           'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],
         },

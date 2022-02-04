@@ -12,17 +12,17 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, differenceWith, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
+import { chunk, differenceWith, flatMap, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
 
 import {
+  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   Identity,
   PolymeshError,
   PostTransactionValue,
-  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -39,8 +39,6 @@ import {
   ErrorCode,
   InputCaCheckpoint,
   InputCondition,
-  isMultiClaimCondition,
-  isSingleClaimCondition,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
@@ -54,7 +52,9 @@ import {
   Events,
   Falsyable,
   MapMaybePostTransactionValue,
+  MapTxWithArgs,
   MaybePostTransactionValue,
+  PolymeshTx,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
@@ -63,7 +63,7 @@ import {
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
-import { isEntity } from '~/utils/typeguards';
+import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -238,8 +238,7 @@ export function filterEventRecords<
   }
 
   return eventRecords.map(
-    eventRecord =>
-      (eventRecord.event as unknown) as IEvent<EventData<Events[ModuleName][EventName]>>
+    eventRecord => eventRecord.event as unknown as IEvent<EventData<Events[ModuleName][EventName]>>
   );
 }
 
@@ -403,7 +402,7 @@ export function batchArguments<Args>(
  * Returns null if there is no next page.
  *
  * @param size - page size requested
- * @param start - start index requestd
+ * @param start - start index requested
  * @param totalCount - total amount of elements returned by query
  *
  * @hidden
@@ -642,15 +641,15 @@ export function assertKeyringFormatValid(keyring: CommonKeyring, ss58Format: num
 /**
  * @hidden
  */
-export function getTicker(token: string | SecurityToken): string {
-  return typeof token === 'string' ? token : token.ticker;
+export function getTicker(asset: string | Asset): string {
+  return typeof asset === 'string' ? asset : asset.ticker;
 }
 
 /**
  * @hidden
  */
-export function getToken(token: string | SecurityToken, context: Context): SecurityToken {
-  return typeof token === 'string' ? new SecurityToken({ ticker: token }, context) : token;
+export function getAsset(asset: string | Asset, context: Context): Asset {
+  return typeof asset === 'string' ? new Asset({ ticker: asset }, context) : asset;
 }
 
 /**
@@ -821,7 +820,7 @@ export function conditionsAreEqual(
  */
 export async function getCheckpointValue(
   checkpoint: InputCaCheckpoint,
-  token: string | SecurityToken,
+  asset: string | Asset,
   context: Context
 ): Promise<Checkpoint | CheckpointSchedule | Date> {
   if (
@@ -831,17 +830,51 @@ export async function getCheckpointValue(
   ) {
     return checkpoint;
   }
-  const securityToken = getToken(token, context);
+  const assetEntity = getAsset(asset, context);
   const { type, id } = checkpoint;
   if (type === CaCheckpointType.Existing) {
-    return securityToken.checkpoints.getOne({ id });
+    return assetEntity.checkpoints.getOne({ id });
   } else {
     return (
-      await securityToken.checkpoints.schedules.getOne({
+      await assetEntity.checkpoints.schedules.getOne({
         id,
       })
     ).schedule;
   }
+}
+
+interface TxAndArgsArray<Args extends unknown[] = unknown[]> {
+  transaction: PolymeshTx<Args>;
+  argsArray: Args[];
+}
+
+type MapTxAndArgsArray<Args extends unknown[][]> = {
+  [K in keyof Args]: Args[K] extends unknown[] ? TxAndArgsArray<Args[K]> : never;
+};
+
+// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
+/**
+ * @hidden
+ */
+function mapArgs<Args extends unknown[] | []>({
+  transaction,
+  argsArray,
+}: TxAndArgsArray<Args>): MapTxWithArgs<Args[]> {
+  return argsArray.map(args => ({
+    transaction,
+    args,
+  })) as unknown as MapTxWithArgs<Args[]>;
+}
+
+// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
+/**
+ * Assemble the `transactions` array that has to be passed to `addBatchTransaction` from a set of parameter arrays with their
+ *   respective transaction
+ */
+export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
+  txsAndArgs: MapTxAndArgsArray<ArgsArray>
+): MapTxWithArgs<unknown[][]> {
+  return flatMap(txsAndArgs, mapArgs) as unknown as MapTxWithArgs<unknown[][]>;
 }
 
 /**

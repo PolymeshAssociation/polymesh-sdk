@@ -2,6 +2,7 @@
 
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -15,12 +16,42 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
+  Offering,
   PolymeshError,
-  SecurityToken,
-  Sto,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
   TickerReservation,
   Venue,
 } from '~/internal';
+import {
+  AccreditedClaim,
+  AffiliateClaim,
+  BlockedClaim,
+  BuyLockupClaim,
+  CddClaim,
+  CddProviderRole,
+  Claim,
+  ClaimType,
+  ExemptedClaim,
+  IdentityRole,
+  InputCondition,
+  InputConditionBase,
+  InvestorUniquenessClaim,
+  InvestorUniquenessV2Claim,
+  JurisdictionClaim,
+  KycClaim,
+  MultiClaimCondition,
+  NoDataClaim,
+  PortfolioCustodianRole,
+  Role,
+  RoleType,
+  ScopedClaim,
+  SellLockupClaim,
+  SingleClaimCondition,
+  TickerOwnerRole,
+  UnscopedClaim,
+  VenueOwnerRole,
+} from '~/types';
 
 /**
  * Return whether value is an Entity
@@ -123,17 +154,17 @@ export function isNumberedPortfolio(value: unknown): value is NumberedPortfolio 
 }
 
 /**
- * Return whether value is a SecurityToken
+ * Return whether value is an Asset
  */
-export function isSecurityToken(value: unknown): value is SecurityToken {
-  return value instanceof SecurityToken;
+export function isAsset(value: unknown): value is Asset {
+  return value instanceof Asset;
 }
 
 /**
- * Return whether value is an Sto
+ * Return whether value is an Offering
  */
-export function isSto(value: unknown): value is Sto {
-  return value instanceof Sto;
+export function isOffering(value: unknown): value is Offering {
+  return value instanceof Offering;
 }
 
 /**
@@ -155,4 +186,168 @@ export function isVenue(value: unknown): value is Venue {
  */
 export function isPolymeshError(value: unknown): value is PolymeshError {
   return value instanceof PolymeshError;
+}
+
+/**
+ * Return whether a Claim is a ScopedClaim
+ */
+export function isScopedClaim(claim: Claim): claim is ScopedClaim {
+  return 'scope' in claim;
+}
+
+/**
+ * Return whether a Claim is an UnscopedClaim
+ */
+export function isUnscopedClaim(claim: Claim): claim is UnscopedClaim {
+  return !('scope' in claim);
+}
+
+/**
+ * Return whether Claim is an AccreditedClaim
+ */
+export function isAccreditedClaim(claim: Claim): claim is AccreditedClaim {
+  return claim.type === ClaimType.Accredited;
+}
+
+/**
+ * Return whether Claim is an AffiliateClaim
+ */
+export function isAffiliateClaim(claim: Claim): claim is AffiliateClaim {
+  return claim.type === ClaimType.Affiliate;
+}
+
+/**
+ * Return whether Claim is a BuyLockupClaim
+ */
+export function isBuyLockupClaim(claim: Claim): claim is BuyLockupClaim {
+  return claim.type === ClaimType.BuyLockup;
+}
+
+/**
+ * Return whether Claim is a SellLockupClaim
+ */
+export function isSellLockupClaim(claim: Claim): claim is SellLockupClaim {
+  return claim.type === ClaimType.SellLockup;
+}
+
+/**
+ * Return whether Claim is a CddClaim
+ */
+export function isCddClaim(claim: Claim): claim is CddClaim {
+  return claim.type === ClaimType.CustomerDueDiligence;
+}
+
+/**
+ * Return whether Claim is a KycClaim
+ */
+export function isKycClaim(claim: Claim): claim is KycClaim {
+  return claim.type === ClaimType.KnowYourCustomer;
+}
+
+/**
+ * Return whether Claim is a JurisdictionClaim
+ */
+export function isJurisdictionClaim(claim: Claim): claim is JurisdictionClaim {
+  return claim.type === ClaimType.Jurisdiction;
+}
+
+/**
+ * Return whether Claim is an ExemptedClaim
+ */
+export function isExemptedClaim(claim: Claim): claim is ExemptedClaim {
+  return claim.type === ClaimType.Exempted;
+}
+
+/**
+ * Return whether Claim is a BlockedClaim
+ */
+export function isBlockedClaim(claim: Claim): claim is BlockedClaim {
+  return claim.type === ClaimType.Blocked;
+}
+
+/**
+ * Return whether a Claim is an InvestorUniquenessClaim
+ */
+export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
+  return claim.type === ClaimType.InvestorUniqueness;
+}
+
+/**
+ * Return whether Claim is a NoDataClaim
+ */
+export function isNoDataClaim(claim: Claim): claim is NoDataClaim {
+  return claim.type === ClaimType.NoData;
+}
+
+/**
+ * Return whether a Claim is an InvestorUniquenessV2Claim
+ */
+export function isInvestorUniquenessV2Claim(claim: Claim): claim is InvestorUniquenessV2Claim {
+  return claim.type === ClaimType.InvestorUniquenessV2;
+}
+
+/**
+ * Return whether Condition has a single Claim
+ */
+export function isSingleClaimCondition(
+  condition: InputCondition
+): condition is InputConditionBase & SingleClaimCondition {
+  return 'claim' in condition;
+}
+
+/**
+ * Return whether Condition has multiple Claims
+ */
+export function isMultiClaimCondition(
+  condition: InputCondition
+): condition is InputConditionBase & MultiClaimCondition {
+  return 'claims' in condition;
+}
+
+/**
+ * Return whether Role is PortfolioCustodianRole
+ */
+export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
+  return role.type === RoleType.PortfolioCustodian;
+}
+
+/**
+ * Return whether Role is VenueOwnerRole
+ */
+export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
+  return role.type === RoleType.VenueOwner;
+}
+
+/**
+ * Return whether Role is CddProviderRole
+ */
+export function isCddProviderRole(role: Role): role is CddProviderRole {
+  return role.type === RoleType.CddProvider;
+}
+
+/**
+ * Return whether Role is TickerOwnerRole
+ */
+export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
+  return role.type === RoleType.TickerOwner;
+}
+
+/**
+ * Return whether Role is IdentityRole
+ */
+export function isIdentityRole(role: Role): role is IdentityRole {
+  return role.type === RoleType.Identity;
+}
+/**
+ * Return whether value is a PolymeshTransaction
+ */
+export function isPolymeshTransaction(value: unknown): value is PolymeshTransaction {
+  return value instanceof PolymeshTransaction;
+}
+
+/**
+ * Return whether value is a PolymeshTransactionBatch
+ */
+export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTransactionBatch {
+  return value instanceof PolymeshTransactionBatch;
 }

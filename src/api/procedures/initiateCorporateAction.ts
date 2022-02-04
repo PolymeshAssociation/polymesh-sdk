@@ -7,7 +7,7 @@ import {
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
 } from '~/api/procedures/utils';
-import { PolymeshError, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import {
   CorporateActionKind,
   CorporateActionTargets,
@@ -36,11 +36,13 @@ import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/inter
 /**
  * @hidden
  */
-export const createCaIdResolver = () => (receipt: ISubmittableResult): CAId => {
-  const [{ data }] = filterEventRecords(receipt, 'corporateAction', 'CAInitiated');
+export const createCaIdResolver =
+  () =>
+  (receipt: ISubmittableResult): CAId => {
+    const [{ data }] = filterEventRecords(receipt, 'corporateAction', 'CAInitiated');
 
-  return data[1];
-};
+    return data[1];
+  };
 
 /**
  * @hidden
@@ -57,8 +59,8 @@ export interface InitiateCorporateActionParams {
   checkpoint?: InputCaCheckpoint;
   description: string;
   /**
-   * tokenholder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
-   *   property. When the value is `Include`, all tokenholders not present in the array are excluded, and vice-versa
+   * Asset Holder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa
    */
   targets?: Modify<
     CorporateActionTargets,
@@ -71,7 +73,7 @@ export interface InitiateCorporateActionParams {
    */
   defaultTaxWithholding?: BigNumber;
   /**
-   * percentage (0-100) of the Benefits to be held for tax purposes from individual tokenholder Identities.
+   * percentage (0-100) of the Benefits to be held for tax purposes from individual Asset Holder Identities.
    *   This overrides the value of `defaultTaxWithholding`
    */
   taxWithholdings?: Modify<
@@ -159,20 +161,20 @@ export async function prepareInitiateCorporateAction(
       )
     );
 
-  const [caId] = this.addTransaction(
-    tx.corporateAction.initiateCorporateAction,
-    {
-      resolvers: [createCaIdResolver()],
-    },
-    rawTicker,
-    rawKind,
-    rawDeclDate,
-    rawRecordDate,
-    rawDetails,
-    rawTargets,
-    rawTax,
-    rawWithholdings
-  );
+  const [caId] = this.addTransaction({
+    transaction: tx.corporateAction.initiateCorporateAction,
+    resolvers: [createCaIdResolver()],
+    args: [
+      rawTicker,
+      rawKind,
+      rawDeclDate,
+      rawRecordDate,
+      rawDetails,
+      rawTargets,
+      rawTax,
+      rawWithholdings,
+    ],
+  });
 
   return caId;
 }
@@ -187,7 +189,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.InitiateCorporateAction],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };

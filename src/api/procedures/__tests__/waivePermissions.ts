@@ -15,12 +15,12 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('waivePermissions procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const did = 'someDid';
   const rawTicker = dsMockUtils.createMockTicker(ticker);
 
@@ -54,8 +54,8 @@ describe('waivePermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Identity is not an Agent for the Security Token', async () => {
-    const token = entityMockUtils.getSecurityTokenInstance({
+  test('should throw an error if the Identity is not an Agent for the Asset', async () => {
+    const asset = entityMockUtils.getAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -74,14 +74,14 @@ describe('waivePermissions procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token,
+      asset,
     });
 
     let error;
 
     try {
       await prepareWaivePermissions.call(proc, {
-        token,
+        asset,
         identity: entityMockUtils.getIdentityInstance({
           did,
         }),
@@ -90,11 +90,11 @@ describe('waivePermissions procedure', () => {
       error = err;
     }
 
-    expect(error.message).toBe('The Identity is not an Agent for the Security Token');
+    expect(error.message).toBe('The Identity is not an Agent for the Asset');
   });
 
   test('should add an abdicate transaction to the queue', async () => {
-    const token = entityMockUtils.getSecurityTokenInstance({
+    const asset = entityMockUtils.getAssetInstance({
       ticker,
       permissionsGetAgents: [
         {
@@ -107,22 +107,25 @@ describe('waivePermissions procedure', () => {
     });
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token,
+      asset,
     });
 
     await prepareWaivePermissions.call(proc, {
-      token,
+      asset,
       identity: entityMockUtils.getIdentityInstance({
         did,
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, externalAgentsAbdicateTransaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsAbdicateTransaction,
+      args: [rawTicker],
+    });
   });
 
   describe('prepareStorage', () => {
-    test('should return the security token', () => {
-      const token = entityMockUtils.getSecurityTokenInstance({
+    test('should return the Asset', () => {
+      const asset = entityMockUtils.getAssetInstance({
         ticker,
       });
 
@@ -133,23 +136,23 @@ describe('waivePermissions procedure', () => {
         identity: entityMockUtils.getIdentityInstance({
           did,
         }),
-        token,
+        asset,
       });
 
       expect(result).toEqual({
-        token,
+        asset,
       });
     });
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const token = entityMockUtils.getSecurityTokenInstance({
+      const asset = entityMockUtils.getAssetInstance({
         ticker,
       });
 
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        token,
+        asset,
       });
       const boundFunc = getAuthorization.bind(proc);
 
@@ -158,12 +161,12 @@ describe('waivePermissions procedure', () => {
           identity: entityMockUtils.getIdentityInstance({
             did,
           }),
-          token,
+          asset,
         })
       ).toEqual({
         signerPermissions: {
           transactions: [TxTags.externalAgents.Abdicate],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
         roles: [{ type: RoleType.Identity, did }],

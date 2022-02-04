@@ -120,7 +120,7 @@ describe('quitCustody procedure', () => {
 
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawMeshPortfolioId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawMeshPortfolioId] });
   });
 
   describe('getAuthorization', () => {
@@ -146,7 +146,7 @@ describe('quitCustody procedure', () => {
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
           portfolios: [portfolio],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -168,7 +168,7 @@ describe('quitCustody procedure', () => {
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
           portfolios: [portfolio],
-          tokens: [],
+          assets: [],
         },
       });
     });

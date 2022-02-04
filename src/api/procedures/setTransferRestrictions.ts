@@ -2,7 +2,7 @@ import P from 'bluebird';
 import { difference, differenceWith, isEqual, some, uniq } from 'lodash';
 import { ScopeId, Ticker, TransferManager, TxTag } from 'polymesh-types/types';
 
-import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -19,6 +19,7 @@ import {
   transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
+import { assembleBatchTransactions } from '~/utils/internal';
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -120,21 +121,28 @@ export async function prepareSetTransferRestrictions(
     });
   }
 
-  if (restrictionsToRemoveAmount) {
-    this.addBatchTransaction(statistics.removeTransferManager, {}, restrictionsToRemove);
-  }
+  const transactions = assembleBatchTransactions(
+    tuple(
+      {
+        transaction: statistics.removeTransferManager,
+        argsArray: restrictionsToRemove,
+      },
+      {
+        transaction: statistics.addTransferManager,
+        argsArray: restrictionsToAdd,
+      },
+      {
+        transaction: statistics.removeExemptedEntities,
+        argsArray: exemptionsToRemove,
+      },
+      {
+        transaction: statistics.addExemptedEntities,
+        argsArray: exemptionsToAdd,
+      }
+    )
+  );
 
-  if (restrictionsToAddAmount) {
-    this.addBatchTransaction(statistics.addTransferManager, {}, restrictionsToAdd);
-  }
-
-  if (exemptionsToRemoveAmount) {
-    this.addBatchTransaction(statistics.removeExemptedEntities, {}, exemptionsToRemove);
-  }
-
-  if (exemptionsToAddAmount) {
-    this.addBatchTransaction(statistics.addExemptedEntities, {}, exemptionsToAdd);
-  }
+  this.addBatchTransaction({ transactions });
 
   return finalCount;
 }
@@ -146,12 +154,8 @@ export function getAuthorization(
   this: Procedure<SetTransferRestrictionsParams, number, Storage>,
   { ticker }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
-  const {
-    restrictionsToRemove,
-    restrictionsToAdd,
-    exemptionsToAdd,
-    exemptionsToRemove,
-  } = this.storage;
+  const { restrictionsToRemove, restrictionsToAdd, exemptionsToAdd, exemptionsToRemove } =
+    this.storage;
   const transactions: TxTag[] = [];
   if (restrictionsToAdd.length) {
     transactions.push(TxTags.statistics.AddTransferManager);
@@ -171,7 +175,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },
@@ -200,7 +204,7 @@ const getScopeIds = async (
       identity = value;
     }
 
-    return identity.getScopeId({ token: ticker });
+    return identity.getScopeId({ asset: ticker });
   });
 
   return [...scopeIds, ...identityScopeIds];
@@ -220,7 +224,7 @@ export async function prepareStorage(
 
   const {
     transferRestrictions: { count, percentage },
-  } = new SecurityToken({ ticker }, context);
+  } = new Asset({ ticker }, context);
 
   const [
     { restrictions: currentCountRestrictions },

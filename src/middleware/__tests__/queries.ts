@@ -130,7 +130,7 @@ describe('proposals', () => {
   });
 });
 
-describe('tokensByTrustedClaimIssuer', () => {
+describe('assetsByTrustedClaimIssuer', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       claimIssuerDid: 'someDid',
@@ -143,7 +143,7 @@ describe('tokensByTrustedClaimIssuer', () => {
   });
 });
 
-describe('tokensHeldByDid', () => {
+describe('assetsHeldByDid', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       did: 'someDid',
@@ -216,7 +216,7 @@ describe('proposal', () => {
 describe('eventByAddedTrustedClaimIssuer', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
       identityId: 'someDid',
     };
 
@@ -244,7 +244,7 @@ describe('investments', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       stoId: 1,
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
     };
 
     const result = investments(variables);
@@ -257,7 +257,7 @@ describe('investments', () => {
 describe('getWithholdingTaxesOfCa', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
-      CAId: { ticker: 'SOMETICKER', localId: 1 },
+      CAId: { ticker: 'SOME_TICKER', localId: 1 },
     };
 
     const result = getWithholdingTaxesOfCa(variables);
@@ -270,7 +270,7 @@ describe('getWithholdingTaxesOfCa', () => {
 describe('getHistoryOfPaymentEventsForCa', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
-      CAId: { ticker: 'SOMETICKER', localId: 1 },
+      CAId: { ticker: 'SOME_TICKER', localId: 1 },
     };
 
     const result = getHistoryOfPaymentEventsForCa(variables);
@@ -283,7 +283,7 @@ describe('getHistoryOfPaymentEventsForCa', () => {
 describe('tickerExternalAgentHistory', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
     };
 
     const result = tickerExternalAgentHistory(variables);
@@ -296,7 +296,7 @@ describe('tickerExternalAgentHistory', () => {
 describe('tickerExternalAgentActions', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
       // eslint-disable-next-line @typescript-eslint/naming-convention
       caller_did: 'someDid',
     };

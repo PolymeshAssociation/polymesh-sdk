@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { CheckpointSchedule, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, CheckpointSchedule, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { numberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
@@ -62,7 +62,10 @@ export async function prepareRemoveCheckpointSchedule(
     });
   }
 
-  this.addTransaction(tx.checkpoint.removeSchedule, {}, rawTicker, rawScheduleId);
+  this.addTransaction({
+    transaction: tx.checkpoint.removeSchedule,
+    args: [rawTicker, rawScheduleId],
+  });
 }
 
 /**
@@ -76,7 +79,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.RemoveSchedule],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [],
     },
   };

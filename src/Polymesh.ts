@@ -38,6 +38,9 @@ export class Polymesh {
 
   // Namespaces
 
+  /**
+   * A set of methods to deal with Claims
+   */
   public claims: Claims;
   /**
    * A set of methods to interact with the Polymesh network. This includes transferring POLYX, reading network properties and querying for historical events
@@ -136,20 +139,13 @@ export class Polymesh {
       middleware?: MiddlewareConfig;
     }
   ): Promise<Polymesh> {
-    const {
-      nodeUrl,
-      accountSeed,
-      keyring,
-      accountUri,
-      accountMnemonic,
-      signer,
-      middleware,
-    } = params;
+    const { nodeUrl, accountSeed, keyring, accountUri, accountMnemonic, signer, middleware } =
+      params;
     let context: Context;
 
     /* istanbul ignore next: part of configuration, doesn't need to be tested */
     const wsp = new WebSocketAsPromised(nodeUrl, {
-      createWebSocket: url => (new W3CWebSocket(url) as unknown) as WebSocket,
+      createWebSocket: url => new W3CWebSocket(url) as unknown as WebSocket,
       packMessage: data => JSON.stringify(data),
       unpackMessage: data => JSON.parse(data.toString()),
       attachRequestId: (data, requestId) => Object.assign({ id: requestId }, data),

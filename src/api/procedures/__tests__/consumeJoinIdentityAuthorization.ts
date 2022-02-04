@@ -105,7 +105,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -142,7 +142,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -184,7 +184,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -196,7 +196,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, { paidForBy: issuer }, rawAuthId);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId],
+    });
   });
 
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
@@ -230,7 +234,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -242,7 +246,10 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawSignatory, rawAuthId, rawFalse);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawSignatory, rawAuthId, rawFalse],
+    });
 
     target = targetAccount;
     proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
@@ -263,7 +270,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -275,14 +282,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      { paidForBy: issuer },
-      rawSignatory,
-      rawAuthId,
-      rawTrue
-    );
+      paidForBy: issuer,
+      args: [rawSignatory, rawAuthId, rawTrue],
+    });
   });
 
   describe('prepareStorage', () => {
@@ -295,9 +299,9 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       const boundFunc = prepareStorage.bind(proc);
       const target = entityMockUtils.getAccountInstance({ getIdentity: null });
 
-      const result = await boundFunc(({
+      const result = await boundFunc({
         authRequest: { target },
-      } as unknown) as ConsumeJoinIdentityAuthorizationParams);
+      } as unknown as ConsumeJoinIdentityAuthorizationParams);
 
       expect(result).toEqual({
         currentAccount: mockContext.getCurrentAccount(),

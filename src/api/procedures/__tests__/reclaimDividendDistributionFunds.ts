@@ -13,12 +13,12 @@ import { DefaultPortfolio, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('reclaimDividendDistributionFunds procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';
@@ -116,17 +116,20 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), transaction, {}, rawCaId);
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+      transaction,
+      args: [rawCaId],
+    });
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
-      const params = ({
+      const params = {
         distribution: {
           origin,
-          token: { ticker },
+          asset: { ticker },
         },
-      } as unknown) as Params;
+      } as unknown as Params;
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
@@ -137,7 +140,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [origin],
         },
       });

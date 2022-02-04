@@ -24,8 +24,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('createCheckpointSchedule procedure', () => {
@@ -50,7 +50,7 @@ describe('createCheckpointSchedule procedure', () => {
     );
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    schedule = ('schedule' as unknown) as PostTransactionValue<CheckpointSchedule>;
+    schedule = 'schedule' as unknown as PostTransactionValue<CheckpointSchedule>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -120,10 +120,7 @@ describe('createCheckpointSchedule procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker,
-      rawSpec
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker, rawSpec] })
     );
 
     expect(result).toBe(schedule);
@@ -182,8 +179,7 @@ describe('createCheckpointSchedule procedure', () => {
         ticker,
         mockContext
       )({} as ISubmittableResult);
-
-      expect(result.token.ticker).toBe(ticker);
+      expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
       expect(result.start).toEqual(start);
       expect(result.period).toEqual(period);
@@ -202,12 +198,12 @@ describe('createCheckpointSchedule procedure', () => {
       };
       const repetitions = 10;
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       expect(boundFunc({ ticker, start, period, repetitions })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateSchedule],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
       });

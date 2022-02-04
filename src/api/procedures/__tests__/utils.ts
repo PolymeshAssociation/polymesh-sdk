@@ -71,8 +71,8 @@ jest.mock(
 );
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 jest.mock(
@@ -233,52 +233,50 @@ describe('assertSecondaryAccounts', () => {
 
   test('should not throw an error if all signers are secondary Accounts', async () => {
     const address = 'someAddress';
+    const account = entityMockUtils.getAccountInstance({ address });
     const secondaryAccounts = [
       {
-        signer: entityMockUtils.getAccountInstance({ address }),
+        account,
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,
         },
       },
     ];
-    const signerValues = [{ type: SignerType.Account, value: address }];
 
-    signerToSignerValueStub.returns(signerValues[0]);
-
-    const result = assertSecondaryAccounts(signerValues, secondaryAccounts);
+    const result = assertSecondaryAccounts([account], secondaryAccounts);
     expect(result).toBeUndefined();
   });
 
-  test('should throw an error if one of the Signers is not a secondary Account for the Identity', () => {
+  test('should throw an error if one of the Accounts is not a Secondary Account for the Identity', () => {
     const address = 'someAddress';
     const secondaryAccounts = [
       {
-        signer: entityMockUtils.getAccountInstance({ address }),
+        account: entityMockUtils.getAccountInstance({ address }),
         permissions: {
-          tokens: null,
+          assets: null,
           transactions: null,
           transactionGroups: [],
           portfolios: null,
         },
       },
     ];
-    const signerValues = [{ type: SignerType.Account, value: 'otherAddress' }];
+    const accounts = [entityMockUtils.getAccountInstance({ address: 'otherAddress' })];
 
     signerToSignerValueStub.returns({ type: SignerType.Account, value: address });
 
     let error;
 
     try {
-      assertSecondaryAccounts(signerValues, secondaryAccounts);
+      assertSecondaryAccounts(accounts, secondaryAccounts);
     } catch (err) {
       error = err;
     }
 
-    expect(error.message).toBe('One of the Signers is not a secondary Account for the Identity');
-    expect(error.data.missing).toEqual([signerValues[0].value]);
+    expect(error.message).toBe('One of the Accounts is not a secondary Account for the Identity');
+    expect(error.data.missing).toEqual([accounts[0].address]);
   });
 });
 
@@ -548,7 +546,7 @@ describe('assertRequirementsNotTooComplex', () => {
           {
             type: ConditionType.IsPresent,
             target: ConditionTarget.Both,
-            trustedClaimIssuers: [('issuer' as unknown) as TrustedClaimIssuer],
+            trustedClaimIssuers: ['issuer' as unknown as TrustedClaimIssuer],
           },
           {
             type: ConditionType.IsAnyOf,
@@ -798,7 +796,7 @@ describe('authorization request validations', () => {
 
     test('should throw with an already used ticker', async () => {
       entityMockUtils.configureMocks({
-        tickerReservationOptions: { details: { status: TickerReservationStatus.TokenCreated } },
+        tickerReservationOptions: { details: { status: TickerReservationStatus.AssetCreated } },
       });
       const data: Authorization = {
         type: AuthorizationType.TransferTicker,
@@ -830,7 +828,7 @@ describe('authorization request validations', () => {
 
   describe('assertTransferAssetOwnershipAuthorizationValid', () => {
     test('should not throw with a valid request', async () => {
-      entityMockUtils.configureMocks({ securityTokenOptions: { exists: true } });
+      entityMockUtils.configureMocks({ assetOptions: { exists: true } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -855,7 +853,7 @@ describe('authorization request validations', () => {
     });
 
     test('should throw with a Asset that does not exist', async () => {
-      entityMockUtils.configureMocks({ securityTokenOptions: { exists: false } });
+      entityMockUtils.configureMocks({ assetOptions: { exists: false } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
         value: 'TICKER',
@@ -913,7 +911,7 @@ describe('authorization request validations', () => {
 
   describe('assertJoinIdentityAuthorizationValid', () => {
     const permissions = {
-      tokens: null,
+      assets: null,
       transactions: null,
       transactionGroups: [],
       portfolios: null,
@@ -1112,11 +1110,11 @@ describe('authorization request validations', () => {
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
       // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
-      const subsidizer = ({
+      const subsidizer = {
         getIdentity: () => {
           return { hasValidCdd: () => false };
         },
-      } as unknown) as Account;
+      } as unknown as Account;
 
       const subsidy = {
         beneficiary,
@@ -1195,9 +1193,9 @@ describe('authorization request validations', () => {
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
       // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
-      const subsidizer = ({
+      const subsidizer = {
         getIdentity: () => null,
-      } as unknown) as Account;
+      } as unknown as Account;
 
       const subsidy = {
         beneficiary,
@@ -1285,9 +1283,9 @@ describe('createAuthorizationResolver', () => {
       null,
       mockContext
     );
-    const authRequest = resolver(({
+    const authRequest = resolver({
       filterRecords: filterRecords,
-    } as unknown) as ISubmittableResult);
+    } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });
 
@@ -1309,9 +1307,9 @@ describe('createAuthorizationResolver', () => {
       mockContext
     );
 
-    const authRequest = resolver(({
+    const authRequest = resolver({
       filterRecords: filterRecords,
-    } as unknown) as ISubmittableResult);
+    } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });
 });

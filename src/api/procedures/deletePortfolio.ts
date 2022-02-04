@@ -31,7 +31,17 @@ export async function prepareDeletePortfolio(
   const numberedPortfolio = new NumberedPortfolio({ did, id }, context);
   const rawPortfolioNumber = numberToU64(id, context);
 
-  const portfolioBalances = await numberedPortfolio.getTokenBalances();
+  const [exists, portfolioBalances] = await Promise.all([
+    numberedPortfolio.exists(),
+    numberedPortfolio.getAssetBalances(),
+  ]);
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Portfolio doesn't exist",
+    });
+  }
 
   if (portfolioBalances.some(({ total }) => total.gt(0))) {
     throw new PolymeshError({
@@ -40,7 +50,10 @@ export async function prepareDeletePortfolio(
     });
   }
 
-  this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);
+  this.addTransaction({
+    transaction: portfolio.deletePortfolio,
+    args: [rawPortfolioNumber],
+  });
 }
 
 /**
@@ -57,7 +70,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.portfolio.DeletePortfolio],
       portfolios: [portfolioLikeToPortfolio({ identity: did, id }, context)],
-      tokens: [],
+      assets: [],
     },
   };
 }

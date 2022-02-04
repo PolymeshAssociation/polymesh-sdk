@@ -324,7 +324,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -346,7 +346,7 @@ describe('Claims Class', () => {
     });
 
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'SOME_TOKEN';
+      const ticker = 'SOME_ASSET';
       const cddId = 'someId';
       const proof = 'someProof';
       const scopeId = 'someScopeId';
@@ -360,7 +360,7 @@ describe('Claims Class', () => {
         expiry,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -391,7 +391,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -425,7 +425,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

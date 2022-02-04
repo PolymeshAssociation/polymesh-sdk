@@ -51,8 +51,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('configureDividendDistribution procedure', () => {
@@ -106,9 +106,9 @@ describe('configureDividendDistribution procedure', () => {
     taxWithholdings = [{ identity: 'someDid', percentage: new BigNumber(30) }];
     originPortfolio = entityMockUtils.getNumberedPortfolioInstance({
       id: new BigNumber(2),
-      tokenBalances: [
+      assetBalances: [
         {
-          token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+          asset: entityMockUtils.getAssetInstance({ ticker: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
           free: new BigNumber(1000001),
@@ -128,8 +128,8 @@ describe('configureDividendDistribution procedure', () => {
     rawPaymentAt = dsMockUtils.createMockMoment(paymentDate.getTime());
     rawExpiresAt = dsMockUtils.createMockMoment(expiryDate.getTime());
 
-    rawCaId = ('caId' as unknown) as PostTransactionValue<CAId>;
-    distribution = ('distribution' as unknown) as PostTransactionValue<DividendDistribution>;
+    rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
+    distribution = 'distribution' as unknown as PostTransactionValue<DividendDistribution>;
 
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
@@ -164,7 +164,7 @@ describe('configureDividendDistribution procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Security Token is being used as the distribution currency', async () => {
+  test('should throw an error if the Asset is being used as the distribution currency', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -192,7 +192,7 @@ describe('configureDividendDistribution procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Cannot distribute Dividends using the Security Token as currency');
+    expect(err.message).toBe('Cannot distribute Dividends using the Asset as currency');
   });
 
   test('should throw an error if the payment date is in the past', async () => {
@@ -318,9 +318,9 @@ describe('configureDividendDistribution procedure', () => {
       mockContext,
       {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
-          tokenBalances: [
+          assetBalances: [
             {
-              token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+              asset: entityMockUtils.getAssetInstance({ ticker: currency }),
               total: new BigNumber(1),
               locked: new BigNumber(0),
               free: new BigNumber(1),
@@ -418,17 +418,19 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      rawPortfolioNumber,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      rawExpiresAt
+        args: [
+          rawCaId,
+          rawPortfolioNumber,
+          rawCurrency,
+          rawPerShare,
+          rawAmount,
+          rawPaymentAt,
+          rawExpiresAt,
+        ],
+      })
     );
 
     expect(result).toEqual(distribution);
@@ -451,25 +453,27 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      rawPortfolioNumber,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      rawExpiresAt
+        args: [
+          rawCaId,
+          rawPortfolioNumber,
+          rawCurrency,
+          rawPerShare,
+          rawAmount,
+          rawPaymentAt,
+          rawExpiresAt,
+        ],
+      })
     );
 
     proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: entityMockUtils.getDefaultPortfolioInstance({
         did: 'someDid',
-        tokenBalances: [
+        assetBalances: [
           {
-            token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+            asset: entityMockUtils.getAssetInstance({ ticker: currency }),
             total: new BigNumber(1000001),
             locked: new BigNumber(0),
             free: new BigNumber(1000001),
@@ -494,17 +498,11 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      null,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      null
+        args: [rawCaId, null, rawCurrency, rawPerShare, rawAmount, rawPaymentAt, null],
+      })
     );
   });
 
@@ -582,7 +580,7 @@ describe('configureDividendDistribution procedure', () => {
         {} as ISubmittableResult
       );
 
-      expect(result.token.ticker).toBe(ticker);
+      expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
       expect(result.declarationDate).toEqual(declarationDate);
       expect(result.description).toEqual(description);
@@ -630,7 +628,7 @@ describe('configureDividendDistribution procedure', () => {
         ],
         permissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [originPortfolio],
         },
       });

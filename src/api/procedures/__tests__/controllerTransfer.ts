@@ -16,8 +16,8 @@ import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -66,7 +66,7 @@ describe('controllerTransfer procedure', () => {
     });
     originPortfolio = entityMockUtils.getDefaultPortfolioInstance({
       did,
-      tokenBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
+      assetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
     });
     amount = new BigNumber(50);
     rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
@@ -118,14 +118,10 @@ describe('controllerTransfer procedure', () => {
       amount,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawTicker,
-      rawAmount,
-      rawPortfolioId
-    );
+      args: [rawTicker, rawAmount, rawPortfolioId],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -139,7 +135,7 @@ describe('controllerTransfer procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
       const roles = [
         {
           type: RoleType.PortfolioCustodian,
@@ -151,7 +147,7 @@ describe('controllerTransfer procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.asset.ControllerTransfer],
-          tokens: [token],
+          assets: [asset],
           portfolios: [entityMockUtils.getDefaultPortfolioInstance()],
         },
       });

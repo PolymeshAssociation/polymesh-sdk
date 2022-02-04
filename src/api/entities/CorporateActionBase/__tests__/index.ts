@@ -29,8 +29,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/base/Procedure',
@@ -134,7 +134,7 @@ describe('CorporateAction class', () => {
   describe('constructor', () => {
     test('should assign parameters to instance', () => {
       expect(corporateAction.id).toEqual(id);
-      expect(corporateAction.token.ticker).toBe(ticker);
+      expect(corporateAction.asset.ticker).toBe(ticker);
       expect(corporateAction.declarationDate).toEqual(declarationDate);
       expect(corporateAction.description).toEqual(description);
       expect(corporateAction.targets).toEqual(targets);
@@ -166,7 +166,7 @@ describe('CorporateAction class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

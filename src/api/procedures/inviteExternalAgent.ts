@@ -2,6 +2,7 @@ import { TxTags } from 'polymesh-types/types';
 
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
+  Asset,
   AuthorizationRequest,
   createGroup,
   CustomPermissionGroup,
@@ -10,7 +11,6 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import {
   Authorization,
@@ -59,7 +59,7 @@ export type Params = InviteExternalAgentParams & {
  * @hidden
  */
 export interface Storage {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 /**
@@ -76,16 +76,16 @@ export async function prepareInviteExternalAgent(
       },
     },
     context,
-    storage: { token },
+    storage: { asset },
   } = this;
 
-  const { ticker, target, permissions, expiry } = args;
+  const { ticker, target, permissions, expiry = null } = args;
 
   const issuer = await context.getCurrentIdentity();
   const targetIdentity = await context.getIdentity(target);
 
   const [currentAgents, did] = await Promise.all([
-    token.permissions.getAgents(),
+    asset.permissions.getAgents(),
     getDid(target, context),
   ]);
 
@@ -131,23 +131,20 @@ export async function prepareInviteExternalAgent(
   }
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
-  const [auth] = this.addTransaction(
-    identity.addAuthorization,
-    {
-      resolvers: [
-        createAuthorizationResolver(
-          postTransactionAuthorization,
-          issuer,
-          targetIdentity,
-          expiry || null,
-          context
-        ),
-      ],
-    },
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+
+  const [auth] = this.addTransaction({
+    transaction: identity.addAuthorization,
+    resolvers: [
+      createAuthorizationResolver(
+        postTransactionAuthorization,
+        issuer,
+        targetIdentity,
+        expiry,
+        context
+      ),
+    ],
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 
   return auth;
 }
@@ -159,12 +156,12 @@ export function getAuthorization(
   this: Procedure<Params, AuthorizationRequest, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { token },
+    storage: { asset },
   } = this;
   return {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
-      tokens: [token],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -180,7 +177,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    token: new SecurityToken({ ticker }, context),
+    asset: new Asset({ ticker }, context),
   };
 }
 

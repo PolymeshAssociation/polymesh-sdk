@@ -1,7 +1,7 @@
 import { flatMap, remove } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
@@ -44,12 +44,10 @@ export async function prepareModifyComplianceRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const token = new SecurityToken({ ticker }, context);
+  const token = new Asset({ ticker }, context);
 
-  const {
-    requirements: currentRequirements,
-    defaultTrustedClaimIssuers,
-  } = await token.compliance.requirements.get();
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await token.compliance.requirements.get();
 
   const existingRequirements = remove(
     currentRequirements,
@@ -85,12 +83,10 @@ export async function prepareModifyComplianceRequirement(
     context
   );
 
-  this.addTransaction(
-    tx.complianceManager.changeComplianceRequirement,
-    {},
-    rawTicker,
-    rawComplianceRequirement
-  );
+  this.addTransaction({
+    transaction: tx.complianceManager.changeComplianceRequirement,
+    args: [rawTicker, rawComplianceRequirement],
+  });
 }
 
 /**
@@ -103,7 +99,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };

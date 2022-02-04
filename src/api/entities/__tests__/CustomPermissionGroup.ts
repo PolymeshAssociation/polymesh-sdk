@@ -6,8 +6,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/base/Procedure',
@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'TOKENNAME';
+  const ticker = 'ASSETNAME';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -53,7 +53,7 @@ describe('CustomPermissionGroup class', () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       expect(customPermissionGroup.id).toBe(id);
-      expect(customPermissionGroup.token.ticker).toBe(ticker);
+      expect(customPermissionGroup.asset.ticker).toBe(ticker);
     });
   });
 
@@ -70,7 +70,7 @@ describe('CustomPermissionGroup class', () => {
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
-        securityTokenOptions: {
+        assetOptions: {
           toJson: ticker,
         },
       });
@@ -92,7 +92,7 @@ describe('CustomPermissionGroup class', () => {
         },
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

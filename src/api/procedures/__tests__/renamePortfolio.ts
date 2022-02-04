@@ -107,7 +107,10 @@ describe('renamePortfolio procedure', () => {
 
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawPortfolioNumber, rawNewName);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawPortfolioNumber, rawNewName],
+    });
     expect(result.id).toBe(id);
   });
 
@@ -124,7 +127,7 @@ describe('renamePortfolio procedure', () => {
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [portfolio],
           transactions: [TxTags.portfolio.RenamePortfolio],
         },

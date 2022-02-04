@@ -41,8 +41,8 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   'websocket-as-promised',
@@ -164,8 +164,7 @@ describe('Polymesh Class', () => {
     });
 
     test('should instantiate Context with a mnemonic and return a Polymesh instance', async () => {
-      const accountMnemonic =
-        'lorem ipsum dolor sit amet consectetur adipiscing elit nam hendrerit consectetur sagittis';
+      const accountMnemonic = 'lorem ipsum dolor sit';
       const createStub = dsMockUtils.getContextCreateStub();
 
       await Polymesh.connect({

@@ -122,34 +122,34 @@ describe('modifyVenue procedure', () => {
 
     await prepareModifyVenue.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      updateVenueDetailsTransaction,
-      {},
-      rawId,
-      rawDetails
-    );
-    sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: updateVenueDetailsTransaction,
+      args: [rawId, rawDetails],
+    });
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: updateVenueTypeTransaction,
+      args: [rawId, rawType],
+    });
 
     await prepareModifyVenue.call(proc, {
       venue,
       type,
     });
 
-    sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: updateVenueTypeTransaction,
+      args: [rawId, rawType],
+    });
 
     await prepareModifyVenue.call(proc, {
       venue,
       description,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      updateVenueDetailsTransaction,
-      {},
-      rawId,
-      rawDetails
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: updateVenueDetailsTransaction,
+      args: [rawId, rawDetails],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -166,7 +166,7 @@ describe('modifyVenue procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.settlement.UpdateVenueType],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -180,7 +180,7 @@ describe('modifyVenue procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.settlement.UpdateVenueDetails],
-          tokens: [],
+          assets: [],
         },
       });
     });

@@ -9,14 +9,14 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecondaryAccount } from '~/types';
+import { PermissionedAccount } from '~/types';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
-describe('modifyCaCheckpoint procedure', () => {
+describe('leaveIdentity procedure', () => {
   let mockContext: Mocked<Context>;
 
   beforeAll(() => {
@@ -84,9 +84,9 @@ describe('modifyCaCheckpoint procedure', () => {
       address,
       getIdentity: entityMockUtils.getIdentityInstance({
         getSecondaryAccounts: [
-          ({
-            signer: entityMockUtils.getAccountInstance({ address }),
-          } as unknown) as SecondaryAccount,
+          {
+            account: entityMockUtils.getAccountInstance({ address }),
+          } as unknown as PermissionedAccount,
         ],
       }),
     });
@@ -95,7 +95,7 @@ describe('modifyCaCheckpoint procedure', () => {
 
     await prepareLeaveIdentity.call(proc, { account });
 
-    sinon.assert.calledWith(addTransactionStub, leaveIdentityAsKeyTransaction, {});
+    sinon.assert.calledWith(addTransactionStub, { transaction: leaveIdentityAsKeyTransaction });
   });
 
   describe('getAuthorization', () => {
@@ -108,7 +108,7 @@ describe('modifyCaCheckpoint procedure', () => {
       expect(boundFunc({ account })).toEqual({
         roles: 'Only the current Account can leave its Identity',
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],
           portfolios: [],
         },
@@ -119,7 +119,7 @@ describe('modifyCaCheckpoint procedure', () => {
       expect(boundFunc({ account })).toEqual({
         roles: true,
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.LeaveIdentityAsKey],
           portfolios: [],
         },

@@ -28,8 +28,8 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('DividendDistribution class', () => {
@@ -135,7 +135,7 @@ describe('DividendDistribution class', () => {
   describe('constructor', () => {
     test('should assign parameters to instance', () => {
       expect(dividendDistribution.id).toEqual(id);
-      expect(dividendDistribution.token.ticker).toBe(ticker);
+      expect(dividendDistribution.asset.ticker).toBe(ticker);
       expect(dividendDistribution.declarationDate).toEqual(declarationDate);
       expect(dividendDistribution.description).toEqual(description);
       expect(dividendDistribution.targets).toEqual(targets);
@@ -146,7 +146,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: checkpoint', () => {
     test('should just pass the call down the line', async () => {
-      const fakeResult = ('checkpoint' as unknown) as Checkpoint;
+      const fakeResult = 'checkpoint' as unknown as Checkpoint;
       sinon.stub(CorporateActionBase.prototype, 'checkpoint').resolves(fakeResult);
 
       const result = await dividendDistribution.checkpoint();
@@ -183,7 +183,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: claim', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -198,7 +198,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: pay', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const identityTargets = ['identityDid'];
 
       procedureMockUtils
@@ -246,7 +246,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: modifyCheckpoint', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const args = {
         checkpoint: new Date(),
       };
@@ -474,7 +474,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: reclaimFunds', () => {
     test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

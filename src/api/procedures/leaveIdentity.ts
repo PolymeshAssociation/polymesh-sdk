@@ -3,7 +3,6 @@ import { TxTags } from 'polymesh-types/types';
 import { Account, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { signerToString } from '~/utils/conversion';
 
 export interface LeaveIdentityParams {
   account: Account;
@@ -35,7 +34,7 @@ export async function prepareLeaveIdentity(
   const secondaryAccounts = await currentIdentity.getSecondaryAccounts();
   const { address } = account;
   const isSecondaryAccount = secondaryAccounts.find(
-    ({ signer }) => address === signerToString(signer)
+    ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
   );
 
   if (!isSecondaryAccount) {
@@ -45,7 +44,7 @@ export async function prepareLeaveIdentity(
     });
   }
 
-  this.addTransaction(tx.identity.leaveIdentityAsKey, {});
+  this.addTransaction({ transaction: tx.identity.leaveIdentityAsKey });
 }
 
 /**
@@ -60,7 +59,7 @@ export function getAuthorization(
   const hasRoles = account.isEqual(currentAccount);
 
   const permissions = {
-    tokens: [],
+    assets: [],
     portfolios: [],
     transactions: [TxTags.identity.LeaveIdentityAsKey],
   };

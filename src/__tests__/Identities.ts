@@ -1,5 +1,5 @@
 import { Identities } from '~/Identities';
-import { Context, Identity, TransactionQueue } from '~/internal';
+import { Context, Identity, NumberedPortfolio, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 
@@ -58,7 +58,7 @@ describe('Identities Class', () => {
         targetAccount: 'someTarget',
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Identity>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -66,6 +66,23 @@ describe('Identities Class', () => {
         .resolves(expectedQueue);
 
       const queue = await identities.registerIdentity(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: createPortfolio', () => {
+    test('should prepare the procedure and return the resulting transaction queue', async () => {
+      const args = { name: 'someName' };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await identities.createPortfolio(args);
 
       expect(queue).toBe(expectedQueue);
     });

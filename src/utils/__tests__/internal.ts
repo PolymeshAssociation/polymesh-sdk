@@ -5,7 +5,7 @@ import { range } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, PostTransactionValue, Procedure, SecurityToken } from '~/internal';
+import { Asset, Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -154,7 +154,7 @@ describe('getDid', () => {
 });
 
 describe('unwrapValue', () => {
-  test('should unwrap a Post Transactin Value', async () => {
+  test('should unwrap a Post Transaction Value', async () => {
     const wrapped = new PostTransactionValue(async () => 1);
     await wrapped.run({} as ISubmittableResult);
 
@@ -182,9 +182,9 @@ describe('unwrapValues', () => {
 
 describe('filterEventRecords', () => {
   const filterRecordsStub = sinon.stub();
-  const mockReceipt = ({
+  const mockReceipt = {
     filterRecords: filterRecordsStub,
-  } as unknown) as ISubmittableResult;
+  } as unknown as ISubmittableResult;
 
   afterEach(() => {
     filterRecordsStub.reset();
@@ -497,10 +497,10 @@ describe('createProcedureMethod', () => {
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
     const fakeProcedure = (): Procedure<number, void> =>
-      (({
+      ({
         prepare,
         checkAuthorization,
-      } as unknown) as Procedure<number, void>);
+      } as unknown as Procedure<number, void>);
 
     const method: ProcedureMethod<number, void> = createProcedureMethod(
       { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
@@ -522,10 +522,10 @@ describe('createProcedureMethod', () => {
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
     const fakeProcedure = (): Procedure<void, void> =>
-      (({
+      ({
         prepare,
         checkAuthorization,
-      } as unknown) as Procedure<void, void>);
+      } as unknown as Procedure<void, void>);
 
     const method = createProcedureMethod(
       { getProcedureAndArgs: () => [fakeProcedure, undefined], transformer, voidArgs: true },
@@ -552,7 +552,7 @@ describe('assertIsInteger', () => {
   });
 
   test('assertIsInteger should throw an error if the argument is not an integer', async () => {
-    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+    expect(() => assertIsInteger('noInteger' as unknown as BigNumber)).toThrow(
       'The number must be an integer'
     );
 
@@ -571,7 +571,7 @@ describe('assertIsPositive', () => {
 
 describe('getCommonKeyring', () => {
   test('should return a common keyring', async () => {
-    const fakeKeyring = ('keyring' as unknown) as CommonKeyring;
+    const fakeKeyring = 'keyring' as unknown as CommonKeyring;
     let result = getCommonKeyring(fakeKeyring);
 
     expect(result).toBe(fakeKeyring);
@@ -614,13 +614,13 @@ describe('assertKeyringFormatValid', () => {
 });
 
 describe('getTicker', () => {
-  test('should return a token symbol', async () => {
-    const symbol = 'TOKEN';
+  test('should return an Asset symbol', async () => {
+    const symbol = 'ASSET';
     let result = getTicker(symbol);
 
     expect(result).toBe(symbol);
 
-    result = getTicker(new SecurityToken({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    result = getTicker(new Asset({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
   });
 });
@@ -716,16 +716,16 @@ describe('getCheckpointValue', () => {
 
   test('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
-    const mockToken = entityMockUtils.getSecurityTokenInstance();
-    let result = await getCheckpointValue(mockCheckpointSchedule, mockToken, context);
+    const mockAsset = entityMockUtils.getAssetInstance();
+    let result = await getCheckpointValue(mockCheckpointSchedule, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
 
     const mockCheckpoint = entityMockUtils.getCheckpointInstance();
-    result = await getCheckpointValue(mockCheckpoint, mockToken, context);
+    result = await getCheckpointValue(mockCheckpoint, mockAsset, context);
     expect(result).toEqual(mockCheckpoint);
 
     const mockCheckpointDate = new Date();
-    result = await getCheckpointValue(mockCheckpointDate, mockToken, context);
+    result = await getCheckpointValue(mockCheckpointDate, mockAsset, context);
     expect(result).toEqual(mockCheckpointDate);
   });
 
@@ -735,11 +735,11 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Existing,
     };
-    const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
+    const mockAsset = entityMockUtils.getAssetInstance({
       checkpointsGetOne: mockCheckpoint,
     });
 
-    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockSecurityToken, context);
+    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockAsset, context);
     expect(result).toEqual(mockCheckpoint);
   });
 
@@ -749,11 +749,11 @@ describe('getCheckpointValue', () => {
       id: new BigNumber(1),
       type: CaCheckpointType.Schedule,
     };
-    const mockSecurityToken = entityMockUtils.getSecurityTokenInstance({
+    const mockAsset = entityMockUtils.getAssetInstance({
       checkpointsSchedulesGetOne: { schedule: mockCheckpointSchedule },
     });
 
-    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockSecurityToken, context);
+    const result = await getCheckpointValue(mockCaCheckpointTypeParams, mockAsset, context);
     expect(result).toEqual(mockCheckpointSchedule);
   });
 });

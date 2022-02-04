@@ -2,11 +2,11 @@ import { find } from 'lodash';
 
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Signer, TxTags } from '~/types';
+import { Account, ErrorCode, TxTags } from '~/types';
 import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 
 export interface RemoveSecondaryAccountsParams {
-  signers: Signer[];
+  accounts: Account[];
 }
 
 /**
@@ -23,19 +23,20 @@ export async function prepareRemoveSecondaryAccounts(
     context,
   } = this;
 
-  const { signers } = args;
+  const { accounts } = args;
 
   const identity = await context.getCurrentIdentity();
 
-  const [primaryAccount, secondaryAccounts] = await Promise.all([
-    identity.getPrimaryAccount(),
-    identity.getSecondaryAccounts(),
-  ]);
+  const [
+    {
+      account: { address: primaryAccountAddress },
+    },
+    secondaryAccounts,
+  ] = await Promise.all([identity.getPrimaryAccount(), identity.getSecondaryAccounts()]);
 
-  const signerValues = signers.map(signer => signerToSignerValue(signer));
   const isPrimaryAccountPresent = find(
-    signerValues,
-    ({ value }) => value === primaryAccount.address
+    accounts,
+    ({ address }) => address === primaryAccountAddress
   );
 
   if (isPrimaryAccountPresent) {
@@ -45,13 +46,13 @@ export async function prepareRemoveSecondaryAccounts(
     });
   }
 
-  assertSecondaryAccounts(signerValues, secondaryAccounts);
+  assertSecondaryAccounts(accounts, secondaryAccounts);
 
-  this.addTransaction(
-    tx.identity.removeSecondaryKeys,
-    {},
-    signerValues.map(signer => signerValueToSignatory(signer, context))
-  );
+  this.addTransaction({
+    transaction: tx.identity.removeSecondaryKeys,
+    feeMultiplier: accounts.length,
+    args: [accounts.map(account => signerValueToSignatory(signerToSignerValue(account), context))],
+  });
 }
 
 /**
@@ -61,7 +62,7 @@ export const removeSecondaryAccounts = (): Procedure<RemoveSecondaryAccountsPara
   new Procedure(prepareRemoveSecondaryAccounts, {
     permissions: {
       transactions: [TxTags.identity.RemoveSecondaryKeys],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

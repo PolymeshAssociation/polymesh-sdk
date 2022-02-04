@@ -1,7 +1,7 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Procedure } from '~/internal';
-import { PermissionsLike, Signer, TxTags } from '~/types';
-import { tuple } from '~/types/utils';
+import { PermissionedAccount, PermissionsLike, TxTags } from '~/types';
+import { Modify, tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
@@ -13,13 +13,7 @@ export interface ModifySignerPermissionsParams {
   /**
    * list of secondary accounts
    */
-  secondaryAccounts: {
-    signer: Signer;
-    /**
-     * list of permissions
-     */
-    permissions: PermissionsLike;
-  }[];
+  secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
 }
 
 /**
@@ -36,32 +30,33 @@ export async function prepareModifySignerPermissions(
     context,
   } = this;
 
-  const { secondaryAccounts: signers } = args;
+  const { secondaryAccounts } = args;
 
   const identity = await context.getCurrentIdentity();
 
-  const secondaryAccounts = await identity.getSecondaryAccounts();
-  const signerValues = signers.map(({ signer, permissions }) => {
-    return {
-      signer: signerToSignerValue(signer),
-      permissions,
-    };
-  });
+  const existingSecondaryAccounts = await identity.getSecondaryAccounts();
 
   assertSecondaryAccounts(
-    signerValues.map(({ signer }) => signer),
-    secondaryAccounts
+    secondaryAccounts.map(({ account }) => account),
+    existingSecondaryAccounts
   );
 
-  const signersList = signerValues.map(({ signer, permissions: permissionsLike }) => {
+  const signersList = secondaryAccounts.map(({ account, permissions: permissionsLike }) => {
     const permissions = permissionsLikeToPermissions(permissionsLike, context);
 
     const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-    return tuple(signerValueToSignatory(signer, context), rawPermissions);
+    return tuple(signerValueToSignatory(signerToSignerValue(account), context), rawPermissions);
   });
 
-  this.addBatchTransaction(tx.identity.setPermissionToSigner, {}, signersList);
+  const transaction = tx.identity.setPermissionToSigner;
+
+  this.addBatchTransaction({
+    transactions: signersList.map(params => ({
+      transaction,
+      args: params,
+    })),
+  });
 }
 
 /**
@@ -71,7 +66,7 @@ export const modifySignerPermissions = (): Procedure<ModifySignerPermissionsPara
   new Procedure(prepareModifySignerPermissions, {
     permissions: {
       transactions: [TxTags.identity.SetPermissionToSigner],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

@@ -20,8 +20,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockCheckpointModule('~/api/entities/Checkpoint')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('createCheckpoint procedure', () => {
@@ -38,7 +38,7 @@ describe('createCheckpoint procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    checkpoint = ('checkpoint' as unknown) as PostTransactionValue<Checkpoint>;
+    checkpoint = 'checkpoint' as unknown as PostTransactionValue<Checkpoint>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -72,9 +72,7 @@ describe('createCheckpoint procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
     );
 
     expect(result).toBe(checkpoint);
@@ -98,8 +96,7 @@ describe('createCheckpoint procedure', () => {
 
     test('should return the new Checkpoint', () => {
       const result = createCheckpointResolver(ticker, mockContext)({} as ISubmittableResult);
-
-      expect(result.token.ticker).toBe(ticker);
+      expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
     });
   });
@@ -109,12 +106,12 @@ describe('createCheckpoint procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       expect(boundFunc({ ticker })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateCheckpoint],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
       });

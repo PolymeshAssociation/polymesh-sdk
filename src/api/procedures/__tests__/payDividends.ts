@@ -10,7 +10,7 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('payDividends procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
@@ -60,7 +60,7 @@ describe('payDividends procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a stop sto transaction to the queue', async () => {
+  test('should add a stop Offering transaction to the queue', async () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
 
@@ -86,9 +86,9 @@ describe('payDividends procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await preparePayDividends.call(proc, { targets, distribution });
-    sinon.assert.calledWith(addBatchTransactionStub, payDividendsTransaction, {}, [
-      [rawCaId, identityId],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [{ transaction: payDividendsTransaction, args: [rawCaId, identityId] }],
+    });
   });
 
   test('should throw an error if the Distribution is expired', async () => {
@@ -225,7 +225,7 @@ describe('payDividends procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.capitalDistribution.PushBenefit],
         },

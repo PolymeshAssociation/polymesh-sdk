@@ -27,7 +27,7 @@ export async function prepareClaimDividends(
     distribution,
     distribution: {
       id: localId,
-      token: { ticker },
+      asset: { ticker },
       paymentDate,
       expiryDate,
     },
@@ -55,7 +55,10 @@ export async function prepareClaimDividends(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
-  this.addTransaction(tx.capitalDistribution.claim, {}, rawCaId);
+  this.addTransaction({
+    transaction: tx.capitalDistribution.claim,
+    args: [rawCaId],
+  });
 }
 
 /**
@@ -65,7 +68,7 @@ export const claimDividends = (): Procedure<Params, void> =>
   new Procedure(prepareClaimDividends, {
     permissions: {
       transactions: [TxTags.capitalDistribution.Claim],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

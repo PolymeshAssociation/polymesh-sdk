@@ -3,12 +3,12 @@ import BigNumber from 'bignumber.js';
 import { CAId } from 'polymesh-types/polymesh';
 
 import {
+  Asset,
   Context,
   CorporateActionBase,
   DividendDistribution,
   PolymeshError,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -109,7 +109,10 @@ export async function prepareRemoveCorporateAction(
     }
   }
 
-  this.addTransaction(tx.corporateAction.removeCa, {}, rawCaId);
+  this.addTransaction({
+    transaction: tx.corporateAction.removeCa,
+    args: [rawCaId],
+  });
 }
 
 /**
@@ -122,7 +125,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.RemoveCa],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };

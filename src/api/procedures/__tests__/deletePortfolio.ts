@@ -49,7 +49,7 @@ describe('deletePortfolio procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,
-        tokenBalances: [zeroBalance, zeroBalance],
+        assetBalances: [zeroBalance, zeroBalance],
       },
     });
   });
@@ -69,7 +69,7 @@ describe('deletePortfolio procedure', () => {
   test('should throw an error if the portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        tokenBalances: [
+        assetBalances: [
           { total: new BigNumber(1) },
           { total: new BigNumber(0) },
         ] as PortfolioBalance[],
@@ -98,11 +98,11 @@ describe('deletePortfolio procedure', () => {
 
     let addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        tokenBalances: [],
+        assetBalances: [],
       },
     });
 
@@ -113,7 +113,7 @@ describe('deletePortfolio procedure', () => {
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, portfolioNumber);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
   });
 
   describe('getAuthorization', () => {
@@ -136,7 +136,7 @@ describe('deletePortfolio procedure', () => {
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [portfolio],
           transactions: [TxTags.portfolio.DeletePortfolio],
         },
