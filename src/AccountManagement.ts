@@ -127,7 +127,7 @@ export class AccountManagement {
   public unfreezeSecondaryAccounts: NoArgsProcedureMethod<void>;
 
   /**
-   * Send an authorization request to an Account to subsidize
+   * Send an Authorization Request to an Account to subsidize its transaction fees
    *
    * @note this will create an AuthorizationRequest which has to be accepted by
    *   the beneficiary Account. An Account can fetch its pending Authorization Requests by calling `authorizations.getReceived`

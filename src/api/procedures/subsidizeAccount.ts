@@ -16,11 +16,11 @@ export interface SubsidizeAccountParams {
   /**
    * Account to subsidize
    */
-  beneficiaryAccount: string | Account;
+  beneficiary: string | Account;
   /**
-   * Initial POLYX limit for this subsidy
+   * amount of POLYX to be subsidized. This can be increased/decreased later on
    */
-  polyxLimit: BigNumber;
+  allowance: BigNumber;
 }
 
 /**
@@ -37,41 +37,34 @@ export async function prepareSubsidizeAccount(
     context,
   } = this;
 
-  const { beneficiaryAccount, polyxLimit } = args;
-
-  const identity = await context.getCurrentIdentity();
+  const { beneficiary, allowance } = args;
 
   let account: Account;
 
-  if (beneficiaryAccount instanceof Account) {
-    account = beneficiaryAccount;
+  if (beneficiary instanceof Account) {
+    account = beneficiary;
   } else {
-    account = new Account({ address: beneficiaryAccount }, context);
-  }
-
-  const [authorizationRequests, beneficiaryIdentity] = await Promise.all([
-    identity.authorizations.getSent(),
-    account.getIdentity(),
-  ]);
-
-  if (!beneficiaryIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Beneficiary Account does not have an Identity',
-    });
+    account = new Account({ address: beneficiary }, context);
   }
 
   const { address: beneficiaryAddress } = account;
+
+  const identity = await context.getCurrentIdentity();
+
+  const authorizationRequests = await identity.authorizations.getSent();
 
   const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
     const {
       target,
       data: { type },
+      data,
     } = authorizationRequest;
+
     return (
       signerToString(target) === beneficiaryAddress &&
       !authorizationRequest.isExpired() &&
-      type === AuthorizationType.AddRelayerPayingKey
+      type === AuthorizationType.AddRelayerPayingKey &&
+      (data as AddRelayerPayingKeyAuthorizationData).value.allowance.isEqualTo(allowance)
     );
   });
 
@@ -79,27 +72,29 @@ export async function prepareSubsidizeAccount(
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message:
-        'The Beneficiary Account already has a pending invitation to add this account as a subsidizer',
+        'The Beneficiary Account already has a pending invitation to add this account as a subsidizer with the same allowance',
     });
   }
 
-  const rawBeneficiaryAccount = stringToAccountId(beneficiaryAddress, context);
+  const rawBeneficiary = stringToAccountId(beneficiaryAddress, context);
 
-  const rawPolyxLimit = numberToBalance(polyxLimit, context);
+  const rawAllowance = numberToBalance(allowance, context);
+
+  const { account: subsidizer } = await identity.getPrimaryAccount();
 
   const authRequest: AddRelayerPayingKeyAuthorizationData = {
     type: AuthorizationType.AddRelayerPayingKey,
     value: {
       beneficiary: account,
-      subsidizer: await identity.getPrimaryAccount(),
-      allowance: polyxLimit,
+      subsidizer,
+      allowance,
     },
   };
 
   const [auth] = this.addTransaction({
     transaction: tx.relayer.setPayingKey,
     resolvers: [createAuthorizationResolver(authRequest, identity, account, null, context)],
-    args: [rawBeneficiaryAccount, rawPolyxLimit],
+    args: [rawBeneficiary, rawAllowance],
   });
 
   return auth;

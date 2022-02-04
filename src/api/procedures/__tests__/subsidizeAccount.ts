@@ -24,11 +24,11 @@ describe('subsidizeAccount procedure', () => {
 
   let args: SubsidizeAccountParams;
   const authId = new BigNumber(1);
-  const address = 'beneficiaryAccount';
-  const polyxLimit = new BigNumber(1000);
-  let beneficiaryAccount: Account;
+  const address = 'beneficiary';
+  const allowance = new BigNumber(1000);
+  let beneficiary: Account;
   let rawBeneficiaryAccount: AccountId;
-  let rawPolyxLimit: Balance;
+  let rawAllowance: Balance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -43,8 +43,8 @@ describe('subsidizeAccount procedure', () => {
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    args = { beneficiaryAccount: address, polyxLimit };
-    beneficiaryAccount = entityMockUtils.getAccountInstance({ address });
+    args = { beneficiary: address, allowance };
+    beneficiary = entityMockUtils.getAccountInstance({ address });
   });
 
   afterEach(() => {
@@ -59,36 +59,21 @@ describe('subsidizeAccount procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the beneficiary Account does not have an Identity', () => {
-    const randomAccount = entityMockUtils.getAccountInstance({
-      address: 'randomAddress',
-      getIdentity: null,
-    });
-
-    const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
-      mockContext
-    );
-
-    return expect(
-      prepareSubsidizeAccount.call(proc, { beneficiaryAccount: randomAccount, polyxLimit })
-    ).rejects.toThrow('Beneficiary Account does not have an Identity');
-  });
-
-  test('should throw an error if the subsidizer has already sent a pending authorization to beneficiary Account to accept', () => {
+  test('should throw an error if the subsidizer has already sent a pending authorization to beneficiary Account with the same allowance to accept', () => {
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
         new AuthorizationRequest(
           {
-            target: beneficiaryAccount,
+            target: beneficiary,
             issuer: entityMockUtils.getIdentityInstance(),
             authId,
             expiry: null,
             data: {
               type: AuthorizationType.AddRelayerPayingKey,
               value: {
-                beneficiary: beneficiaryAccount,
+                beneficiary: beneficiary,
                 subsidizer: entityMockUtils.getAccountInstance(),
-                allowance: new BigNumber(100),
+                allowance: new BigNumber(1000),
               },
             },
           },
@@ -105,7 +90,7 @@ describe('subsidizeAccount procedure', () => {
       },
     });
 
-    signerToStringStub.withArgs(beneficiaryAccount).returns(address);
+    signerToStringStub.withArgs(beneficiary).returns(address);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext
@@ -117,9 +102,29 @@ describe('subsidizeAccount procedure', () => {
   });
 
   test('should add an add authorization transaction to the queue', async () => {
-    const randomBeneficiary = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+    const randomBeneficiary = entityMockUtils.getAccountInstance({ address: 'randomAddress' });
+    const issuer = entityMockUtils.getIdentityInstance();
+    const subsidizer = entityMockUtils.getAccountInstance();
+
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
+        new AuthorizationRequest(
+          {
+            target: randomBeneficiary,
+            issuer,
+            authId,
+            expiry: null,
+            data: {
+              type: AuthorizationType.AddRelayerPayingKey,
+              value: {
+                beneficiary: randomBeneficiary,
+                subsidizer,
+                allowance: new BigNumber(100),
+              },
+            },
+          },
+          mockContext
+        ),
         new AuthorizationRequest(
           {
             target: randomBeneficiary,
@@ -129,8 +134,8 @@ describe('subsidizeAccount procedure', () => {
             data: {
               type: AuthorizationType.AddRelayerPayingKey,
               value: {
-                beneficiary: randomBeneficiary,
-                subsidizer: entityMockUtils.getAccountInstance(),
+                beneficiary,
+                subsidizer,
                 allowance: new BigNumber(100),
               },
             },
@@ -150,11 +155,11 @@ describe('subsidizeAccount procedure', () => {
 
     rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
 
-    rawPolyxLimit = dsMockUtils.createMockBalance(polyxLimit.toNumber());
+    rawAllowance = dsMockUtils.createMockBalance(allowance.toNumber());
 
     stringToAccountIdStub.withArgs(address, mockContext).returns(rawBeneficiaryAccount);
 
-    numberToBalanceStub.withArgs(polyxLimit, mockContext).returns(rawPolyxLimit);
+    numberToBalanceStub.withArgs(allowance, mockContext).returns(rawAllowance);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext
@@ -169,7 +174,7 @@ describe('subsidizeAccount procedure', () => {
       sinon.match({
         transaction,
         resolvers: sinon.match.array,
-        args: [rawBeneficiaryAccount, rawPolyxLimit],
+        args: [rawBeneficiaryAccount, rawAllowance],
       })
     );
   });
