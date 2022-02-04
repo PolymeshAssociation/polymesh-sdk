@@ -45,7 +45,6 @@ describe('consumeAuthorizationRequests procedure', () => {
 
   let acceptAssetOwnershipTransferTransaction: sinon.SinonStub;
   let acceptPayingKeyTransaction: sinon.SinonStub;
-  let acceptPrimaryKeyTransaction: sinon.SinonStub;
   let acceptBecomeAgentTransaction: sinon.SinonStub;
   let acceptPortfolioCustodyTransaction: sinon.SinonStub;
   let acceptTickerTransferTransaction: sinon.SinonStub;
@@ -62,7 +61,9 @@ describe('consumeAuthorizationRequests procedure', () => {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           /* eslint-disable @typescript-eslint/naming-convention */
-          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          authorization_data: dsMockUtils.createMockAuthorizationData({
+            TransferTicker: dsMockUtils.createMockTicker('TICKER'),
+          }),
           auth_id: 1,
           authorized_by: 'someDid',
           expiry: dsMockUtils.createMockOption(),
@@ -106,15 +107,6 @@ describe('consumeAuthorizationRequests procedure', () => {
       {
         authId: new BigNumber(3),
         expiry: null,
-        target: entityMockUtils.getAccountInstance({ address: 'targetAddress3' }),
-        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid3' }),
-        data: {
-          type: AuthorizationType.RotatePrimaryKey,
-        },
-      },
-      {
-        authId: new BigNumber(4),
-        expiry: null,
         target: entityMockUtils.getIdentityInstance({ did: 'targetDid4' }),
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid4' }),
         data: {
@@ -123,7 +115,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       },
       {
-        authId: new BigNumber(5),
+        authId: new BigNumber(4),
         expiry: null,
         target: entityMockUtils.getIdentityInstance({ did: 'targetDid5' }),
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid5' }),
@@ -133,7 +125,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       },
       {
-        authId: new BigNumber(6),
+        authId: new BigNumber(5),
         expiry: null,
         target: entityMockUtils.getIdentityInstance({ did: 'targetDid6' }),
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid6' }),
@@ -143,7 +135,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       },
       {
-        authId: new BigNumber(7),
+        authId: new BigNumber(6),
         expiry: new Date('10/14/1987'), // expired
         target: entityMockUtils.getIdentityInstance({ did: 'targetDid7' }),
         issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid7' }),
@@ -180,7 +172,6 @@ describe('consumeAuthorizationRequests procedure', () => {
       'acceptAssetOwnershipTransfer'
     );
     acceptPayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'acceptPayingKey');
-    acceptPrimaryKeyTransaction = dsMockUtils.createTxStub('identity', 'acceptPrimaryKey');
     acceptBecomeAgentTransaction = dsMockUtils.createTxStub('externalAgents', 'acceptBecomeAgent');
     acceptPortfolioCustodyTransaction = dsMockUtils.createTxStub(
       'portfolio',
@@ -227,19 +218,12 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       ],
     });
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
-        {
-          transaction: acceptPrimaryKeyTransaction,
-          args: [rawAuthIds[2][0], null],
-        },
-      ],
-    });
+
     sinon.assert.calledWith(addBatchTransactionStub, {
       transactions: [
         {
           transaction: acceptBecomeAgentTransaction,
-          args: rawAuthIds[3],
+          args: rawAuthIds[2],
         },
       ],
     });
@@ -247,7 +231,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       transactions: [
         {
           transaction: acceptPortfolioCustodyTransaction,
-          args: rawAuthIds[4],
+          args: rawAuthIds[3],
         },
       ],
     });
@@ -255,7 +239,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       transactions: [
         {
           transaction: acceptTickerTransferTransaction,
-          args: rawAuthIds[5],
+          args: rawAuthIds[4],
         },
       ],
     });
