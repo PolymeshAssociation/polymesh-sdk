@@ -6,14 +6,14 @@ import {
   Params,
   prepareToggleFreezeTransfers,
 } from '~/api/procedures/toggleFreezeTransfers';
-import { Context, SecurityToken } from '~/internal';
+import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('toggleFreezeTransfers procedure', () => {
@@ -51,36 +51,36 @@ describe('toggleFreezeTransfers procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if freeze is set to true and the security token is already frozen', () => {
+  test('should throw an error if freeze is set to true and the Asset is already frozen', () => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         isFrozen: true,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
         ticker,
         freeze: true,
       })
-    ).rejects.toThrow('The Security Token is already frozen');
+    ).rejects.toThrow('The Asset is already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the security token is already unfrozen', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+  test('should throw an error if freeze is set to false and the Asset is already unfrozen', () => {
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
       prepareToggleFreezeTransfers.call(proc, {
         ticker,
         freeze: false,
       })
-    ).rejects.toThrow('The Security Token is already unfrozen');
+    ).rejects.toThrow('The Asset is already unfrozen');
   });
 
   test('should add a freeze transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'freeze');
 
@@ -96,12 +96,12 @@ describe('toggleFreezeTransfers procedure', () => {
 
   test('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         isFrozen: true,
       },
     });
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'unfreeze');
 
@@ -117,15 +117,15 @@ describe('toggleFreezeTransfers procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+      const asset = entityMockUtils.getAssetInstance({ ticker });
 
       expect(boundFunc({ ticker, freeze: true })).toEqual({
         permissions: {
           transactions: [TxTags.asset.Freeze],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
       });
@@ -133,7 +133,7 @@ describe('toggleFreezeTransfers procedure', () => {
       expect(boundFunc({ ticker, freeze: false })).toEqual({
         permissions: {
           transactions: [TxTags.asset.Unfreeze],
-          tokens: [token],
+          assets: [asset],
           portfolios: [],
         },
       });

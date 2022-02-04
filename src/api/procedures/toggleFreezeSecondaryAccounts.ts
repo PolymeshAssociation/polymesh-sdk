@@ -60,7 +60,7 @@ export function getAuthorization(
       transactions: [
         freeze ? TxTags.identity.FreezeSecondaryKeys : TxTags.identity.UnfreezeSecondaryKeys,
       ],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };

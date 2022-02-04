@@ -48,7 +48,7 @@ Or, if you're using yarn
 
 #### Initializing the client
 
-Before you can start registering Tickers and creating Security Tokens, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
+Before you can start registering Tickers and creating Assets, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
 
 ```typescript
 import { Polymesh } from '@polymathnetwork/polymesh-sdk';
@@ -69,6 +69,8 @@ Here is an overview of the parameters passed to the `connect` function:
 - `accountSeed` is the seed (akin to a private key) of the account that will be performing transactions
 
 **NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), there is no need to provide the account seed. Instead, you pass a Keyring object that contains the address, and a signer for that address (which you would typically get from the wallet extension)
+
+**NOTE** if using TypeScript the compiler option "skipLibCheck" should be set to true in your tsconfig.json file
 
 ```typescript
 import { Polymesh, Keyring } from '@polymathnetwork/polymesh-sdk';

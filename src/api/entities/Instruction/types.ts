@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, Identity, NumberedPortfolio, SecurityToken, Venue } from '~/internal';
+import { Asset, DefaultPortfolio, Identity, NumberedPortfolio, Venue } from '~/internal';
 import { EventIdentifier } from '~/types';
 
 export enum InstructionStatus {
@@ -40,7 +40,7 @@ export interface Leg {
   from: DefaultPortfolio | NumberedPortfolio;
   to: DefaultPortfolio | NumberedPortfolio;
   amount: BigNumber;
-  token: SecurityToken;
+  asset: Asset;
 }
 
 export enum AffirmationStatus {
