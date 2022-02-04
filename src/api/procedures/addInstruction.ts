@@ -13,7 +13,7 @@ import {
   TxTags,
 } from 'polymesh-types/types';
 
-import { assertPortfolioExists } from '~/api/procedures/utils';
+import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
 import {
   Asset,
   Context,
@@ -219,8 +219,9 @@ async function getTxArgsAndErrors(
         amount: Balance;
       }[] = [];
 
-      await Promise.all(
-        legs.map(async ({ from, to, amount, asset }) => {
+      await Promise.all([
+        assertVenueExists(venueId, context),
+        ...legs.map(async ({ from, to, amount, asset }) => {
           const fromId = portfolioLikeToPortfolioId(from);
           const toId = portfolioLikeToPortfolioId(to);
 
@@ -238,8 +239,8 @@ async function getTxArgsAndErrors(
             asset: stringToTicker(getTicker(asset), context),
             amount: numberToBalance(amount, context),
           });
-        })
-      );
+        }),
+      ]);
 
       if (portfoliosToAffirm[i].length) {
         addAndAffirmInstructionParams.push([

@@ -129,20 +129,20 @@ describe('Settlements Class', () => {
           from: 'someDid',
           to: 'anotherDid',
           amount: new BigNumber(1000),
-          token: 'SOME_ASSET',
+          asset: 'SOME_ASSET',
         },
         {
           from: 'anotherDid',
           to: 'aThirdDid',
           amount: new BigNumber(100),
-          token: 'ANOTHER_ASSET',
+          asset: 'ANOTHER_ASSET',
         },
       ];
 
       const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
       const endBlock = new BigNumber(10000);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -164,7 +164,7 @@ describe('Settlements Class', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const instructionId = new BigNumber(1);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Venue>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Venue>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -177,7 +177,7 @@ describe('Settlements Class', () => {
         )
         .resolves(expectedQueue);
 
-      const queue = await settlements.affirmInstruction(instructionId);
+      const queue = await settlements.affirmInstruction({ id: instructionId });
 
       expect(queue).toBe(expectedQueue);
     });

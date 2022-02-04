@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { PortfolioId, TxTag, TxTags } from 'polymesh-types/types';
 
-import { assertInstructionValid } from '~/api/procedures/utils';
+import { assertInstructionValid, assertVenueExists } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
 import { AffirmationStatus, DefaultPortfolio, ErrorCode, Leg, NumberedPortfolio } from '~/types';
 import {
@@ -20,6 +20,9 @@ import {
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
 
+export interface AffirmInstructionParams {
+  id: BigNumber;
+}
 export interface ModifyInstructionAffirmationParams {
   id: BigNumber;
   operation: InstructionAffirmationOperation;
@@ -52,8 +55,12 @@ export async function prepareModifyInstructionAffirmation(
   const { operation, id } = args;
 
   const instruction = new Instruction({ id }, context);
+  const { venue } = await instruction.details();
 
-  await assertInstructionValid(instruction, context);
+  await Promise.all([
+    assertVenueExists(venue.id, context),
+    assertInstructionValid(instruction, context),
+  ]);
 
   if (!portfolios.length) {
     throw new PolymeshError({

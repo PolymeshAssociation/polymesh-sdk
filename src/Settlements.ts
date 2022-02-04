@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { addInstruction, AddInstructionWithVenueIdParams } from '~/api/procedures/addInstruction';
+import { AffirmInstructionParams } from '~/api/procedures/modifyInstructionAffirmation';
 import {
   addInstructionTransformer,
   Context,
@@ -47,7 +48,7 @@ export class Settlements {
       {
         getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id: args, operation: InstructionAffirmationOperation.Affirm },
+          { id: args.id, operation: InstructionAffirmationOperation.Affirm },
         ],
       },
       context
@@ -113,5 +114,5 @@ export class Settlements {
   /**
    * Affirm an instruction (authorize)
    */
-  public affirmInstruction: ProcedureMethod<BigNumber, Instruction>;
+  public affirmInstruction: ProcedureMethod<AffirmInstructionParams, Instruction>;
 }
