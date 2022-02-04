@@ -130,7 +130,7 @@ describe('proposals', () => {
   });
 });
 
-describe('tokensByTrustedClaimIssuer', () => {
+describe('assetsByTrustedClaimIssuer', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       claimIssuerDid: 'someDid',
@@ -143,7 +143,7 @@ describe('tokensByTrustedClaimIssuer', () => {
   });
 });
 
-describe('tokensHeldByDid', () => {
+describe('assetsHeldByDid', () => {
   test('should pass the variables to the grapqhl query', () => {
     const variables = {
       did: 'someDid',

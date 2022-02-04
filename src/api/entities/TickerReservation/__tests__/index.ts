@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Entity, SecurityToken, TickerReservation, TransactionQueue } from '~/internal';
+import { Asset, Entity, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
+import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -145,7 +145,7 @@ describe('TickerReservation class', () => {
       });
     });
 
-    test('should return details for a ticker for which a token has already been created', async () => {
+    test('should return details for a ticker for which an Asset has already been created', async () => {
       const ownerDid = 'someDid';
       const expiryDate = null;
       const context = dsMockUtils.getContextInstance();
@@ -171,7 +171,7 @@ describe('TickerReservation class', () => {
       expect(details).toMatchObject({
         owner: { did: ownerDid },
         expiryDate,
-        status: TickerReservationStatus.TokenCreated,
+        status: TickerReservationStatus.AssetCreated,
       });
     });
 
@@ -221,7 +221,7 @@ describe('TickerReservation class', () => {
     });
   });
 
-  describe('method: createToken', () => {
+  describe('method: createAsset', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
@@ -231,21 +231,21 @@ describe('TickerReservation class', () => {
         name: 'TEST',
         totalSupply: new BigNumber(100),
         isDivisible: true,
-        tokenType: KnownTokenType.EquityCommon,
-        tokenIdentifiers: [{ type: TokenIdentifierType.Isin, value: '12345' }],
+        assetType: KnownAssetType.EquityCommon,
+        securityIdentifiers: [{ type: SecurityIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
         requireInvestorUniqueness: false,
         reservationRequired: true,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await tickerReservation.createToken(args);
+      const queue = await tickerReservation.createAsset(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -264,7 +264,7 @@ describe('TickerReservation class', () => {
         expiry,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()

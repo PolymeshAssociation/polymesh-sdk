@@ -43,8 +43,8 @@ export interface Params {
 
 /**
  * Represents a request made by an Identity to another Identity (or Account) for some sort of authorization. This has multiple uses. For example, if Alice
- *   wants to transfer ownership of her asset ALICETOKEN to Bob, an authorization request gets emitted to Bob,
- *   who then has to accept it in order for the ownership transfer to be complete
+ *   wants to transfer ownership of one of her Assets to Bob, this method emits an authorization request for Bob,
+ *   who then has to accept it in order to complete the ownership transfer
  */
 export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
@@ -75,12 +75,12 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
    * | Add Relayer Paying Key          | Beneficiary, Relayer, Allowance |
    * | Become Agent                    | Permission Group                |
    * | Attest Primary Key Rotation     | DID                             |
-   * | Rotate Primary Key              | DID                             |
-   * | Rotate Primary Key to Secondary | DID                             |
+   * | Rotate Primary Key              | N/A                             |
+   * | Rotate Primary Key to Secondary | Permissions                     |
    * | Transfer Ticker                 | Ticker                          |
    * | Add MultiSig Signer             | Account                         |
    * | Transfer Token Ownership        | Ticker                          |
-   * | Join Identity                   | DID                             |
+   * | Join Identity                   | Permissions                     |
    * | Portfolio Custody               | Portfolio                       |
    */
   public data: Authorization;

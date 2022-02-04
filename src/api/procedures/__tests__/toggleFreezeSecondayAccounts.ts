@@ -123,7 +123,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       expect(boundFunc({ freeze: true })).toEqual({
         permissions: {
           transactions: [TxTags.identity.FreezeSecondaryKeys],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });
@@ -131,7 +131,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       expect(boundFunc({ freeze: false })).toEqual({
         permissions: {
           transactions: [TxTags.identity.UnfreezeSecondaryKeys],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });

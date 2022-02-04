@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
+  Asset,
   Checkpoint,
   Context,
   DefaultPortfolio,
@@ -13,7 +14,6 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import { CorporateActionKind, ErrorCode, InputCaCheckpoint, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -76,7 +76,7 @@ export type ConfigureDividendDistributionParams = Omit<
    */
   currency: string;
   /**
-   * amount of `currency` to distribute per each share of the Security Token that a target holds
+   * amount of `currency` to distribute per each share of the Asset that a target holds
    */
   perShare: BigNumber;
   /**
@@ -84,7 +84,7 @@ export type ConfigureDividendDistributionParams = Omit<
    */
   maxAmount: BigNumber;
   /**
-   * date from which Token holders can claim their Dividends
+   * date from which Asset Holders can claim their Dividends
    */
   paymentDate: Date;
   /**
@@ -136,7 +136,7 @@ export async function prepareConfigureDividendDistribution(
   if (currency === ticker) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Cannot distribute Dividends using the Security Token as currency',
+      message: 'Cannot distribute Dividends using the Asset as currency',
     });
   }
 
@@ -171,7 +171,7 @@ export async function prepareConfigureDividendDistribution(
     }
   }
 
-  const [{ free }] = await portfolio.getTokenBalances({ tokens: [currency] });
+  const [{ free }] = await portfolio.getAssetBalances({ assets: [currency] });
 
   if (free.lt(maxAmount)) {
     throw new PolymeshError({
@@ -235,7 +235,7 @@ export function getAuthorization(
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(portfolio) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Distribute],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [portfolio],
     },
   };

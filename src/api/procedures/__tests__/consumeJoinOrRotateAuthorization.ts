@@ -105,7 +105,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -142,7 +142,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -184,7 +184,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -325,7 +325,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,
@@ -361,7 +361,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
           data: {
             type: AuthorizationType.JoinIdentity,
             value: {
-              tokens: null,
+              assets: null,
               transactions: null,
               transactionGroups: [],
               portfolios: null,

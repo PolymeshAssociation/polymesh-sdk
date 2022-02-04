@@ -101,6 +101,7 @@ import { meshCountryCodeToCountryCode } from '~/generated/utils';
 // import { ProposalDetails } from '~/api/types';
 import {
   Account,
+  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
@@ -111,7 +112,6 @@ import {
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
-  SecurityToken,
   Venue,
 } from '~/internal';
 import {
@@ -126,6 +126,7 @@ import {
 } from '~/middleware/types';
 import {
   AffirmationStatus,
+  AssetDocument,
   Authorization,
   AuthorizationType,
   CalendarPeriod,
@@ -150,10 +151,14 @@ import {
   InputRequirement,
   InputTrustedClaimIssuer,
   InstructionType,
-  isMultiClaimCondition,
-  isSingleClaimCondition,
-  KnownTokenType,
+  KnownAssetType,
   MultiClaimCondition,
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTier,
+  OfferingTimingStatus,
+  PermissionedAccount,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -164,22 +169,15 @@ import {
   RequirementCompliance,
   Scope,
   ScopeType,
-  SecondaryAccount,
   SectionPermissions,
+  SecurityIdentifier,
+  SecurityIdentifierType,
   Signer,
   SignerType,
   SignerValue,
   SingleClaimCondition,
-  StoBalanceStatus,
-  StoDetails,
-  StoSaleStatus,
-  StoTier,
-  StoTimingStatus,
   TargetTreatment,
   Tier,
-  TokenDocument,
-  TokenIdentifier,
-  TokenIdentifierType,
   TransactionPermissions,
   TransferBreakdown,
   TransferError,
@@ -194,7 +192,7 @@ import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
   InstructionStatus,
-  InternalTokenType,
+  InternalAssetType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -224,11 +222,12 @@ import {
   padString,
   removePadding,
 } from '~/utils/internal';
+import { isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
 /**
- * Generate a Security Token's DID from a ticker
+ * Generate an Asset's DID from a ticker
  */
 export function tickerToDid(ticker: string): string {
   return blake2AsHex(
@@ -383,6 +382,21 @@ export function identityIdToString(identityId: IdentityId): string {
  */
 export function stringToEcdsaSignature(signature: string, context: Context): EcdsaSignature {
   return context.polymeshApi.createType('EcdsaSignature', signature);
+}
+
+/**
+ * @hidden
+ */
+export function signatoryToAccount(signatory: Signatory, context: Context): Account {
+  if (signatory.isAccount) {
+    return new Account({ address: accountIdToString(signatory.asAccount) }, context);
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message:
+      'Received an Identity where an Account was expected. Please report this issue to the Polymath team',
+  });
 }
 
 /**
@@ -622,7 +636,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.settlement.CreateVenue,
       ];
     }
-    case TxGroup.TokenManagement: {
+    case TxGroup.AssetManagement: {
       return [
         TxTags.asset.MakeDivisible,
         TxTags.asset.RenameAsset,
@@ -631,7 +645,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.asset.RemoveDocuments,
       ];
     }
-    case TxGroup.AdvancedTokenManagement: {
+    case TxGroup.AdvancedAssetManagement: {
       return [
         TxTags.asset.Freeze,
         TxTags.asset.Unfreeze,
@@ -868,15 +882,15 @@ export function permissionsToMeshPermissions(
   permissions: Permissions,
   context: Context
 ): MeshPermissions {
-  const { tokens, transactions, portfolios } = permissions;
+  const { assets, transactions, portfolios } = permissions;
 
   const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
-  if (tokens) {
-    const { values: tokenValues, type } = tokens;
-    tokenValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
-    const tickers = tokenValues.map(({ ticker }) => stringToTicker(ticker, context));
+  if (assets) {
+    const { values: assetValues, type } = assets;
+    assetValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
+    const tickers = assetValues.map(({ ticker }) => stringToTicker(ticker, context));
     if (type === PermissionType.Include) {
       asset = {
         These: tickers,
@@ -987,27 +1001,27 @@ export function meshPermissionsToPermissions(
 ): Permissions {
   const { asset, extrinsic, portfolio } = permissions;
 
-  let tokens: SectionPermissions<SecurityToken> | null = null;
+  let assets: SectionPermissions<Asset> | null = null;
   let transactions: TransactionPermissions | null = null;
   let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
 
-  let tokensType: PermissionType;
-  let securityTokens;
+  let assetsType: PermissionType;
+  let assetsPermissions;
   if (asset.isThese) {
-    tokensType = PermissionType.Include;
-    securityTokens = asset.asThese;
+    assetsType = PermissionType.Include;
+    assetsPermissions = asset.asThese;
   } else if (asset.isExcept) {
-    tokensType = PermissionType.Exclude;
-    securityTokens = asset.asExcept;
+    assetsType = PermissionType.Exclude;
+    assetsPermissions = asset.asExcept;
   }
 
-  if (securityTokens) {
-    tokens = {
-      values: securityTokens.map(
-        ticker => new SecurityToken({ ticker: tickerToString(ticker) }, context)
+  if (assetsPermissions) {
+    assets = {
+      values: assetsPermissions.map(
+        ticker => new Asset({ ticker: tickerToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      type: tokensType!,
+      type: assetsType!,
     };
   }
 
@@ -1032,7 +1046,7 @@ export function meshPermissionsToPermissions(
   }
 
   return {
-    tokens,
+    assets,
     transactions,
     transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
@@ -1093,7 +1107,7 @@ export function authorizationToAuthorizationData(
   } else if (auth.type === AuthorizationType.RotatePrimaryKeyToSecondary) {
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (auth.type === AuthorizationType.BecomeAgent) {
-    const ticker = stringToTicker(auth.value.token.ticker, context);
+    const ticker = stringToTicker(auth.value.asset.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {
       const { id } = auth.value;
       value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
@@ -1251,7 +1265,7 @@ export function numberToBalance(
     if (rawValue.decimalPlaces()) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
-        message: 'The value has decimals but the token is indivisible',
+        message: 'The value has decimals but the Asset is indivisible',
       });
     }
   }
@@ -1388,43 +1402,43 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
 /**
  * @hidden
  */
-export function internalTokenTypeToAssetType(type: InternalTokenType, context: Context): AssetType {
+export function internalAssetTypeToAssetType(type: InternalAssetType, context: Context): AssetType {
   return context.polymeshApi.createType('AssetType', type);
 }
 
 /**
  * @hidden
  */
-export function assetTypeToKnownOrId(assetType: AssetType): KnownTokenType | BigNumber {
+export function assetTypeToKnownOrId(assetType: AssetType): KnownAssetType | BigNumber {
   if (assetType.isEquityCommon) {
-    return KnownTokenType.EquityCommon;
+    return KnownAssetType.EquityCommon;
   }
   if (assetType.isEquityPreferred) {
-    return KnownTokenType.EquityPreferred;
+    return KnownAssetType.EquityPreferred;
   }
   if (assetType.isCommodity) {
-    return KnownTokenType.Commodity;
+    return KnownAssetType.Commodity;
   }
   if (assetType.isFixedIncome) {
-    return KnownTokenType.FixedIncome;
+    return KnownAssetType.FixedIncome;
   }
   if (assetType.isReit) {
-    return KnownTokenType.Reit;
+    return KnownAssetType.Reit;
   }
   if (assetType.isFund) {
-    return KnownTokenType.Fund;
+    return KnownAssetType.Fund;
   }
   if (assetType.isRevenueShareAgreement) {
-    return KnownTokenType.RevenueShareAgreement;
+    return KnownAssetType.RevenueShareAgreement;
   }
   if (assetType.isStructuredProduct) {
-    return KnownTokenType.StructuredProduct;
+    return KnownAssetType.StructuredProduct;
   }
   if (assetType.isDerivative) {
-    return KnownTokenType.Derivative;
+    return KnownAssetType.Derivative;
   }
   if (assetType.isStableCoin) {
-    return KnownTokenType.StableCoin;
+    return KnownAssetType.StableCoin;
   }
 
   return u32ToBigNumber(assetType.asCustom);
@@ -1534,8 +1548,8 @@ export function isLeiValid(lei: string): boolean {
 /**
  * @hidden
  */
-export function tokenIdentifierToAssetIdentifier(
-  identifier: TokenIdentifier,
+export function securityIdentifierToAssetIdentifier(
+  identifier: SecurityIdentifier,
   context: Context
 ): AssetIdentifier {
   const { type, value } = identifier;
@@ -1543,13 +1557,13 @@ export function tokenIdentifierToAssetIdentifier(
   let error = false;
 
   switch (type) {
-    case TokenIdentifierType.Isin: {
+    case SecurityIdentifierType.Isin: {
       if (!isIsinValid(value)) {
         error = true;
       }
       break;
     }
-    case TokenIdentifierType.Lei: {
+    case SecurityIdentifierType.Lei: {
       if (!isLeiValid(value)) {
         error = true;
       }
@@ -1566,7 +1580,7 @@ export function tokenIdentifierToAssetIdentifier(
   if (error) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Invalid token identifier ${value} of type ${type}`,
+      message: `Invalid security identifier ${value} of type ${type}`,
     });
   }
 
@@ -1576,28 +1590,30 @@ export function tokenIdentifierToAssetIdentifier(
 /**
  * @hidden
  */
-export function assetIdentifierToTokenIdentifier(identifier: AssetIdentifier): TokenIdentifier {
+export function assetIdentifierToSecurityIdentifier(
+  identifier: AssetIdentifier
+): SecurityIdentifier {
   if (identifier.isCusip) {
     return {
-      type: TokenIdentifierType.Cusip,
+      type: SecurityIdentifierType.Cusip,
       value: u8aToString(identifier.asCusip),
     };
   }
   if (identifier.isIsin) {
     return {
-      type: TokenIdentifierType.Isin,
+      type: SecurityIdentifierType.Isin,
       value: u8aToString(identifier.asIsin),
     };
   }
   if (identifier.isCins) {
     return {
-      type: TokenIdentifierType.Cins,
+      type: SecurityIdentifierType.Cins,
       value: u8aToString(identifier.asCins),
     };
   }
 
   return {
-    type: TokenIdentifierType.Lei,
+    type: SecurityIdentifierType.Lei,
     value: u8aToString(identifier.asLei),
   };
 }
@@ -1741,8 +1757,8 @@ export function documentHashToString(docHash: DocumentHash): string | undefined 
 /**
  * @hidden
  */
-export function tokenDocumentToDocument(
-  { uri, contentHash, name, filedAt, type }: TokenDocument,
+export function assetDocumentToDocument(
+  { uri, contentHash, name, filedAt, type }: AssetDocument,
   context: Context
 ): Document {
   return context.polymeshApi.createType('Document', {
@@ -1759,15 +1775,18 @@ export function tokenDocumentToDocument(
 /**
  * @hidden
  */
-export function documentToTokenDocument(
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  { uri, content_hash: hash, name, doc_type: docType, filing_date: filingDate }: Document
-): TokenDocument {
+export function documentToAssetDocument({
+  uri,
+  content_hash: hash,
+  name,
+  doc_type: docType,
+  filing_date: filingDate,
+}: Document): AssetDocument {
   const filedAt = filingDate.unwrapOr(undefined);
   const type = docType.unwrapOr(undefined);
   const contentHash = documentHashToString(hash);
 
-  let doc: TokenDocument = {
+  let doc: AssetDocument = {
     uri: documentUriToString(uri),
     name: documentNameToString(name),
   };
@@ -2133,7 +2152,7 @@ export function trustedIssuerToTrustedClaimIssuer(
 
   const identity = new Identity({ did: identityIdToString(issuer) }, context);
 
-  let trustedFor: ClaimType[] | undefined;
+  let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
     trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
@@ -2562,14 +2581,14 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
  * @hidden
  */
 export function secondaryAccountToMeshSecondaryKey(
-  secondaryKey: SecondaryAccount,
+  secondaryKey: PermissionedAccount,
   context: Context
 ): MeshSecondaryKey {
   const { polymeshApi } = context;
-  const { signer, permissions } = secondaryKey;
+  const { account, permissions } = secondaryKey;
 
   return polymeshApi.createType('SecondaryKey', {
-    signer: signerValueToSignatory(signerToSignerValue(signer), context),
+    signer: signerValueToSignatory(signerToSignerValue(account), context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
 }
@@ -2707,9 +2726,9 @@ export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
 ): MovePortfolioItem {
-  const { token, amount, memo } = portfolioItem;
+  const { asset, amount, memo } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
-    ticker: stringToTicker(getTicker(token), context),
+    ticker: stringToTicker(getTicker(asset), context),
     amount: numberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),
   });
@@ -2848,7 +2867,7 @@ export function granularCanTransferResultToTransferBreakdown(
 /**
  * @hidden
  */
-export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
+export function stoTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
   const { price, amount } = tier;
   return context.polymeshApi.createType('PriceTier', {
     total: numberToBalance(amount, context),
@@ -2863,7 +2882,7 @@ export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
 ): Permissions {
-  let tokenPermissions: SectionPermissions<SecurityToken> | null = {
+  let assetPermissions: SectionPermissions<Asset> | null = {
     values: [],
     type: PermissionType.Include,
   };
@@ -2888,15 +2907,15 @@ export function permissionsLikeToPermissions(
     ({ transactionGroups } = permissionsLike);
   }
 
-  const { tokens, portfolios } = permissionsLike;
+  const { assets, portfolios } = permissionsLike;
 
-  if (tokens === null) {
-    tokenPermissions = null;
-  } else if (tokens) {
-    tokenPermissions = {
-      ...tokens,
-      values: tokens.values.map(ticker =>
-        typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+  if (assets === null) {
+    assetPermissions = null;
+  } else if (assets) {
+    assetPermissions = {
+      ...assets,
+      values: assets.values.map(ticker =>
+        typeof ticker !== 'string' ? ticker : new Asset({ ticker }, context)
       ),
     };
   }
@@ -2922,7 +2941,7 @@ export function permissionsLikeToPermissions(
   }
 
   return {
-    tokens: tokenPermissions,
+    assets: assetPermissions,
     transactions: transactionPermissions && {
       ...transactionPermissions,
       values: [...transactionPermissions.values].sort(),
@@ -2962,11 +2981,11 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
 /**
  * @hidden
  */
-export function fundraiserToStoDetails(
+export function fundraiserToOfferingDetails(
   fundraiser: Fundraiser,
   name: FundraiserName,
   context: Context
-): StoDetails {
+): OfferingDetails {
   const {
     creator,
     offering_portfolio: offeringPortfolio,
@@ -3005,28 +3024,28 @@ export function fundraiserToStoDetails(
 
   const minInvestment = balanceToBigNumber(rawMinInvestment);
 
-  let timing: StoTimingStatus = StoTimingStatus.NotStarted;
-  let balance: StoBalanceStatus = StoBalanceStatus.Available;
-  let sale: StoSaleStatus = StoSaleStatus.Live;
+  let timing: OfferingTimingStatus = OfferingTimingStatus.NotStarted;
+  let balance: OfferingBalanceStatus = OfferingBalanceStatus.Available;
+  let sale: OfferingSaleStatus = OfferingSaleStatus.Live;
 
   if (isExpired) {
-    timing = StoTimingStatus.Expired;
+    timing = OfferingTimingStatus.Expired;
   } else if (isStarted) {
-    timing = StoTimingStatus.Started;
+    timing = OfferingTimingStatus.Started;
   }
 
   if (totalRemainingValue.isZero()) {
-    balance = StoBalanceStatus.SoldOut;
+    balance = OfferingBalanceStatus.SoldOut;
   } else if (totalRemainingValue.lt(minInvestment)) {
-    balance = StoBalanceStatus.Residual;
+    balance = OfferingBalanceStatus.Residual;
   }
 
   if (rawStatus.isClosedEarly) {
-    sale = StoSaleStatus.ClosedEarly;
+    sale = OfferingSaleStatus.ClosedEarly;
   } else if (rawStatus.isClosed) {
-    sale = StoSaleStatus.Closed;
+    sale = OfferingSaleStatus.Closed;
   } else if (rawStatus.isFrozen) {
-    sale = StoSaleStatus.Frozen;
+    sale = OfferingSaleStatus.Frozen;
   }
 
   return {
