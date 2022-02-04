@@ -169,8 +169,8 @@ describe('AccountManagement class', () => {
   describe('method: subsidizeAccount', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
-        beneficiaryAccount: 'someAccount',
-        polyxLimit: new BigNumber(1000),
+        beneficiary: 'someAccount',
+        allowance: new BigNumber(1000),
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
