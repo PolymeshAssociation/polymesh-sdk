@@ -536,8 +536,7 @@ function assertIsAccount(target: Signer): asserts target is Account {
 async function assertJoinOrRotateAuthorizationValid(
   authRequest: AuthorizationRequest
 ): Promise<void> {
-  const issuer = authRequest.issuer;
-  const target = authRequest.target;
+  const { issuer, target } = authRequest;
   const hasValidCdd = await issuer.hasValidCdd();
   if (!hasValidCdd) {
     throw new PolymeshError({
