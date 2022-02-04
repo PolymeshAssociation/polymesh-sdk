@@ -144,7 +144,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Affirmed);
@@ -172,7 +171,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Pending);
@@ -235,7 +233,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Affirmed);
@@ -271,7 +268,6 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-
     meshAffirmationStatusToAffirmationStatusStub
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Pending);
