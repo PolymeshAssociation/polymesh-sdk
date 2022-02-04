@@ -196,6 +196,7 @@ interface AccountOptions {
   exists?: boolean;
   hasPermissions?: boolean;
   checkPermissions?: CheckPermissionsResult<SignerType.Account>;
+  toJson?: string;
 }
 
 interface SubsidyOptions {
@@ -403,6 +404,7 @@ let accountIsEqualStub: SinonStub;
 let accountExistsStub: SinonStub;
 let accountHasPermissionsStub: SinonStub;
 let accountCheckPermissionsStub: SinonStub;
+let accountToJsonStub: SinonStub;
 let subsidyExistsStub: SinonStub;
 let subsidyToJsonStub: SinonStub;
 let tickerReservationDetailsStub: SinonStub;
@@ -764,6 +766,7 @@ const defaultAccountOptions: AccountOptions = {
   checkPermissions: {
     result: true,
   },
+  toJson: 'someAddress',
 };
 let accountOptions: AccountOptions = defaultAccountOptions;
 
@@ -1559,6 +1562,7 @@ function configureAccount(opts: AccountOptions): void {
     exists: accountExistsStub.resolves(opts.exists),
     hasPermissions: accountHasPermissionsStub.returns(opts.hasPermissions),
     checkPermissions: accountCheckPermissionsStub.returns(opts.checkPermissions),
+    toJson: accountToJsonStub.returns(opts.toJson),
   } as unknown as MockAccount;
 
   Object.assign(mockInstanceContainer.account, account);
@@ -1586,6 +1590,7 @@ function initAccount(opts?: AccountOptions): void {
   accountExistsStub = sinon.stub();
   accountHasPermissionsStub = sinon.stub();
   accountCheckPermissionsStub = sinon.stub();
+  accountToJsonStub = sinon.stub();
 
   accountOptions = { ...defaultAccountOptions, ...opts };
 
@@ -1599,8 +1604,16 @@ function initAccount(opts?: AccountOptions): void {
 function configureSubsidy(opts: SubsidyOptions): void {
   const subsidy = {
     uuid: 'subsidy',
-    beneficiary: { ...mockInstanceContainer.account, address: opts.beneficiary },
-    subsidizer: { ...mockInstanceContainer.account, address: opts.subsidizer },
+    beneficiary: {
+      ...mockInstanceContainer.account,
+      address: opts.beneficiary,
+      toJson: opts.beneficiary,
+    },
+    subsidizer: {
+      ...mockInstanceContainer.account,
+      address: opts.subsidizer,
+      toJson: opts.subsidizer,
+    },
     exists: subsidyExistsStub.resolves(opts.exists),
     toJson: subsidyToJsonStub.resolves(opts.toJson),
   } as unknown as MockSubsidy;
@@ -2278,6 +2291,14 @@ export function getAccountGetTransactionHistoryStub(): SinonStub {
  */
 export function getAccountIsEqualStub(): SinonStub {
   return accountIsEqualStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the `Account.toJson` method
+ */
+export function getAccountToJsonStub(): SinonStub {
+  return accountToJsonStub;
 }
 
 /**

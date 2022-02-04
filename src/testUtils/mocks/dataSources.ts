@@ -157,7 +157,7 @@ import {
   PermissionedAccount,
   ResultSet,
   SignerType,
-  SubsidyData,
+  SubsidyWithAllowance,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
@@ -300,7 +300,7 @@ interface ContextOptions {
   did?: string;
   withSeed?: boolean;
   balance?: AccountBalance;
-  subsidy?: Omit<SubsidyData, 'beneficiary'>;
+  subsidyWithAllowance?: SubsidyWithAllowance;
   hasRoles?: boolean;
   checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
@@ -692,7 +692,7 @@ function configureContext(opts: ContextOptions): void {
     ? getCurrentAccount.returns({
         address: opts.currentPairAddress,
         getBalance: sinon.stub().resolves(opts.balance),
-        getSubsidy: sinon.stub().resolves(opts.subsidy),
+        getSubsidy: sinon.stub().resolves(opts.subsidyWithAllowance),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
@@ -719,7 +719,7 @@ function configureContext(opts: ContextOptions): void {
     getCurrentAccount,
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
-    accountSubsidy: sinon.stub().resolves(opts.subsidy),
+    accountSubsidy: sinon.stub().resolves(opts.subsidyWithAllowance),
     getAccounts: sinon.stub().returns(opts.getAccounts),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as KeyringPair;
