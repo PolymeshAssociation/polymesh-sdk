@@ -85,7 +85,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios: [],
       transactions,
     },

@@ -66,7 +66,7 @@ export const modifySignerPermissions = (): Procedure<ModifySignerPermissionsPara
   new Procedure(prepareModifySignerPermissions, {
     permissions: {
       transactions: [TxTags.identity.SetPermissionToSigner],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

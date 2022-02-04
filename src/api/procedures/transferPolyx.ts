@@ -116,7 +116,7 @@ export function getAuthorization({ memo }: TransferPolyxParams): ProcedureAuthor
   return {
     permissions: {
       transactions: [memo ? TxTags.balances.TransferWithMemo : TxTags.balances.Transfer],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };

@@ -60,7 +60,7 @@ describe('payDividends procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a stop sto transaction to the queue', async () => {
+  test('should add a stop Offering transaction to the queue', async () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
 
@@ -225,7 +225,7 @@ describe('payDividends procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.capitalDistribution.PushBenefit],
         },

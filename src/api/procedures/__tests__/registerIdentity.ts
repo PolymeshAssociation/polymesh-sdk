@@ -62,7 +62,7 @@ describe('registerIdentity procedure', () => {
       {
         account: entityMockUtils.getAccountInstance({ address: 'someValue' }),
         permissions: {
-          tokens: null,
+          assets: null,
           portfolios: null,
           transactions: null,
           transactionGroups: [],

@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
@@ -11,13 +11,17 @@ export interface IssueTokensParams {
   ticker: string;
 }
 
+export interface Storage {
+  asset: Asset;
+}
+
 /**
  * @hidden
  */
 export async function prepareIssueTokens(
-  this: Procedure<IssueTokensParams, SecurityToken>,
+  this: Procedure<IssueTokensParams, Asset, Storage>,
   args: IssueTokensParams
-): Promise<SecurityToken> {
+): Promise<Asset> {
   const {
     context: {
       polymeshApi: {
@@ -25,12 +29,11 @@ export async function prepareIssueTokens(
       },
     },
     context,
+    storage: { asset: assetEntity },
   } = this;
   const { ticker, amount } = args;
 
-  const securityToken = new SecurityToken({ ticker }, context);
-
-  const { isDivisible, totalSupply } = await securityToken.details();
+  const { isDivisible, totalSupply } = await assetEntity.details();
 
   const supplyAfterMint = amount.plus(totalSupply);
 
@@ -53,21 +56,22 @@ export async function prepareIssueTokens(
     args: [rawTicker, rawValue],
   });
 
-  return securityToken;
+  return assetEntity;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<IssueTokensParams, SecurityToken>,
-  { ticker }: IssueTokensParams
+  this: Procedure<IssueTokensParams, Asset, Storage>
 ): ProcedureAuthorization {
-  const { context } = this;
+  const {
+    storage: { asset },
+  } = this;
   return {
     permissions: {
       transactions: [TxTags.asset.Issue],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -76,5 +80,19 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const issueTokens = (): Procedure<IssueTokensParams, SecurityToken> =>
-  new Procedure(prepareIssueTokens, getAuthorization);
+export function prepareStorage(
+  this: Procedure<IssueTokensParams, Asset, Storage>,
+  { ticker }: IssueTokensParams
+): Storage {
+  const { context } = this;
+
+  return {
+    asset: new Asset({ ticker }, context),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const issueTokens = (): Procedure<IssueTokensParams, Asset, Storage> =>
+  new Procedure(prepareIssueTokens, getAuthorization, prepareStorage);

@@ -100,7 +100,7 @@ describe('inviteAccount procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -121,7 +121,7 @@ describe('inviteAccount procedure', () => {
           {
             account,
             permissions: {
-              tokens: null,
+              assets: null,
               portfolios: null,
               transactions: null,
               transactionGroups: [],
@@ -171,7 +171,7 @@ describe('inviteAccount procedure', () => {
     );
 
     permissionsLikeToPermissionsStub.resolves({
-      tokens: null,
+      assets: null,
       transactions: null,
       portfolios: null,
     });
@@ -179,7 +179,7 @@ describe('inviteAccount procedure', () => {
     await prepareInviteAccount.call(proc, {
       ...args,
       permissions: {
-        tokens: null,
+        assets: null,
         transactions: null,
         portfolios: null,
       },
@@ -230,7 +230,7 @@ describe('inviteAccount procedure', () => {
             data: {
               type: AuthorizationType.JoinIdentity,
               value: {
-                tokens: null,
+                assets: null,
                 transactions: null,
                 transactionGroups: [],
                 portfolios: null,
@@ -252,7 +252,7 @@ describe('inviteAccount procedure', () => {
           {
             account,
             permissions: {
-              tokens: null,
+              assets: null,
               portfolios: null,
               transactions: null,
               transactionGroups: [],

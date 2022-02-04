@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { DidRecord, IdentityId, ScopeId, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Context, Entity, Identity, SecurityToken } from '~/internal';
+import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
@@ -31,8 +31,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/Account',
@@ -300,7 +300,7 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getTokenBalance', () => {
+  describe('method: getAssetBalance', () => {
     let ticker: string;
     let did: string;
     let rawTicker: Ticker;
@@ -309,7 +309,7 @@ describe('Identity class', () => {
     let fakeBalance: Balance;
     let mockContext: Context;
     let balanceOfStub: sinon.SinonStub;
-    let tokensStub: sinon.SinonStub;
+    let assetStub: sinon.SinonStub;
 
     let identity: Identity;
 
@@ -322,7 +322,7 @@ describe('Identity class', () => {
       fakeBalance = dsMockUtils.createMockBalance(fakeValue);
       mockContext = dsMockUtils.getContextInstance();
       balanceOfStub = dsMockUtils.createQueryStub('asset', 'balanceOf');
-      tokensStub = dsMockUtils.createQueryStub('asset', 'tokens');
+      assetStub = dsMockUtils.createQueryStub('asset', 'tokens');
 
       stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
 
@@ -341,7 +341,7 @@ describe('Identity class', () => {
 
     beforeEach(() => {
       /* eslint-disable @typescript-eslint/naming-convention */
-      tokensStub.withArgs(rawTicker).resolves(
+      assetStub.withArgs(rawTicker).resolves(
         dsMockUtils.createMockSecurityToken({
           owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
           total_supply: dsMockUtils.createMockBalance(new BigNumber(3000)),
@@ -352,10 +352,10 @@ describe('Identity class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    test('should return the balance of a given token', async () => {
+    test('should return the balance of a given Asset', async () => {
       balanceOfStub.withArgs(rawTicker, rawIdentityId).resolves(fakeBalance);
 
-      const result = await identity.getTokenBalance({ ticker });
+      const result = await identity.getAssetBalance({ ticker });
 
       expect(result).toEqual(fakeValue);
     });
@@ -369,24 +369,24 @@ describe('Identity class', () => {
         return unsubCallback;
       });
 
-      const result = await identity.getTokenBalance({ ticker }, callback);
+      const result = await identity.getAssetBalance({ ticker }, callback);
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeValue);
     });
 
-    test("should throw an error if the token doesn't exist", async () => {
-      tokensStub.withArgs(rawTicker).resolves(dsMockUtils.createMockSecurityToken());
+    test("should throw an error if the Asset doesn't exist", async () => {
+      assetStub.withArgs(rawTicker).resolves(dsMockUtils.createMockSecurityToken());
 
       let error;
 
       try {
-        await identity.getTokenBalance({ ticker });
+        await identity.getAssetBalance({ ticker });
       } catch (err) {
         error = err;
       }
 
-      expect(error.message).toBe(`There is no Security Token with ticker "${ticker}"`);
+      expect(error.message).toBe(`There is no Asset with ticker "${ticker}"`);
     });
   });
 
@@ -486,7 +486,7 @@ describe('Identity class', () => {
       fakeResult = {
         account,
         permissions: {
-          tokens: null,
+          assets: null,
           portfolios: null,
           transactions: null,
           transactionGroups: [],
@@ -523,29 +523,29 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getTrustingTokens', () => {
+  describe('method: getTrustingAssets', () => {
     const did = 'someDid';
-    const tickers = ['TOKEN1\0\0', 'TOKEN2\0\0'];
+    const tickers = ['ASSET1\0\0', 'ASSET2\0\0'];
 
-    test('should return a list of security tokens', async () => {
+    test('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryStub(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
         tokensByTrustedClaimIssuer: tickers,
       });
 
-      const result = await identity.getTrustingTokens();
+      const result = await identity.getTrustingAssets();
 
-      expect(result[0].ticker).toBe('TOKEN1');
-      expect(result[1].ticker).toBe('TOKEN2');
+      expect(result[0].ticker).toBe('ASSET1');
+      expect(result[1].ticker).toBe('ASSET2');
     });
   });
 
-  describe('method: getHeldTokens', () => {
+  describe('method: getHeldAssets', () => {
     const did = 'someDid';
-    const tickers = ['TOKEN1', 'TOKEN2'];
+    const tickers = ['ASSET1', 'ASSET2'];
 
-    test('should return a list of security tokens', async () => {
+    test('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryStub(
@@ -555,7 +555,7 @@ describe('Identity class', () => {
         }
       );
 
-      let result = await identity.getHeldTokens();
+      let result = await identity.getHeldAssets();
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
@@ -567,7 +567,7 @@ describe('Identity class', () => {
         }
       );
 
-      result = await identity.getHeldTokens({
+      result = await identity.getHeldAssets({
         start: new BigNumber(0),
         size: new BigNumber(1),
         order: Order.Asc,
@@ -688,14 +688,14 @@ describe('Identity class', () => {
       sinon.restore();
     });
 
-    test("should return the Identity's scopeId associated to the token", async () => {
+    test("should return the Identity's scopeId associated to the Asset", async () => {
       const identity = new Identity({ did }, context);
 
-      let result = await identity.getScopeId({ token: ticker });
+      let result = await identity.getScopeId({ asset: ticker });
       expect(result).toEqual(scopeId);
 
       result = await identity.getScopeId({
-        token: entityMockUtils.getSecurityTokenInstance({ ticker }),
+        asset: entityMockUtils.getAssetInstance({ ticker }),
       });
       expect(result).toEqual(scopeId);
     });
@@ -1058,14 +1058,14 @@ describe('Identity class', () => {
   });
 
   describe('method: getPendingDistributions', () => {
-    let tokens: SecurityToken[];
+    let assets: Asset[];
     let distributions: DistributionWithDetails[];
     let expectedDistribution: DistributionWithDetails;
 
     beforeAll(() => {
-      tokens = [
-        entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER_1' }),
-        entityMockUtils.getSecurityTokenInstance({ ticker: 'TICKER_2' }),
+      assets = [
+        entityMockUtils.getAssetInstance({ ticker: 'TICKER_1' }),
+        entityMockUtils.getAssetInstance({ ticker: 'TICKER_2' }),
       ];
       const distributionTemplate = {
         expiryDate: null,
@@ -1111,7 +1111,7 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      context.getDividendDistributionsForTokens.withArgs({ tokens }).resolves(distributions);
+      context.getDividendDistributionsForAssets.withArgs({ assets }).resolves(distributions);
     });
 
     afterAll(() => {
@@ -1142,9 +1142,9 @@ describe('Identity class', () => {
 
       const identity = new Identity({ did: 'someDid' }, context);
 
-      const heldTokensStub = sinon.stub(identity, 'getHeldTokens');
-      heldTokensStub.onFirstCall().resolves({ data: [tokens[0]], next: new BigNumber(1) });
-      heldTokensStub.onSecondCall().resolves({ data: [tokens[1]], next: null });
+      const heldAssetsStub = sinon.stub(identity, 'getHeldAssets');
+      heldAssetsStub.onFirstCall().resolves({ data: [assets[0]], next: new BigNumber(1) });
+      heldAssetsStub.onSecondCall().resolves({ data: [assets[1]], next: null });
 
       const result = await identity.getPendingDistributions();
 
@@ -1175,10 +1175,10 @@ describe('Identity class', () => {
         {
           account,
           permissions: {
-            tokens: null,
+            assets: null,
+            portfolios: null,
             transactions: null,
             transactionGroups: [],
-            portfolios: null,
           },
         },
       ];

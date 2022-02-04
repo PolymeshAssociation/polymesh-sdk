@@ -328,7 +328,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [from, to],
           transactions: [TxTags.settlement.AffirmInstruction],
         },
@@ -350,7 +350,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.RejectInstruction],
         },
@@ -360,7 +360,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.WithdrawAffirmation],
         },
@@ -380,11 +380,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       let from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
       let to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: true });
       const amount = new BigNumber(1);
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegs: { data: [{ from, to, amount, token }], next: null },
+          getLegs: { data: [{ from, to, amount, asset }], next: null },
         },
       });
 
@@ -404,7 +404,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       entityMockUtils
         .getInstructionGetLegsStub()
-        .resolves({ data: [{ from, to, amount, token }], next: null });
+        .resolves({ data: [{ from, to, amount, asset }], next: null });
 
       result = await boundFunc({
         id: new BigNumber(1),

@@ -30,8 +30,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('initiateCorporateAction procedure', () => {
@@ -330,7 +330,7 @@ describe('initiateCorporateAction procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.corporateAction.InitiateCorporateAction],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

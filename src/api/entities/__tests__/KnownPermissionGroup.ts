@@ -3,12 +3,12 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType } from '~/types';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('KnownPermissionGroup class', () => {
-  const ticker = 'TOKENNAME';
+  const ticker = 'ASSETNAME';
 
   let context: Context;
 
@@ -40,7 +40,7 @@ describe('KnownPermissionGroup class', () => {
       const type = PermissionGroupType.Full;
       const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
 
-      expect(knownPermissionGroup.token.ticker).toBe(ticker);
+      expect(knownPermissionGroup.asset.ticker).toBe(ticker);
       expect(knownPermissionGroup.type).toBe(type);
     });
   });
@@ -61,7 +61,7 @@ describe('KnownPermissionGroup class', () => {
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
-        securityTokenOptions: {
+        assetOptions: {
           toJson: ticker,
         },
       });

@@ -16,7 +16,7 @@ import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { CustomAssetTypeId, TxTag } from '~/polkadot';
 import {
   CalendarPeriod,
-  KnownTokenType,
+  KnownAssetType,
   PermissionGroupType,
   Role,
   SignerValue,
@@ -360,8 +360,8 @@ export enum InstructionStatus {
 }
 
 /**
- * Determines the subset of permissions an Agent has over a Security Token
+ * Determines the subset of permissions an Agent has over an Asset
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
-export type InternalTokenType = KnownTokenType | { Custom: CustomAssetTypeId };
+export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };

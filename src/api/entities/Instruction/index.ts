@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  Asset,
   Context,
   Entity,
   Identity,
   modifyInstructionAffirmation,
   PolymeshError,
   rescheduleInstruction,
-  SecurityToken,
   Venue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
@@ -334,7 +334,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         from: fromPortfolio,
         to: toPortfolio,
         amount: balanceToBigNumber(amount),
-        token: new SecurityToken({ ticker }, context),
+        asset: new Asset({ ticker }, context),
       };
     });
 

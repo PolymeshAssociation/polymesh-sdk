@@ -575,7 +575,7 @@ describe('Polymesh Transaction Base class', () => {
         getPrimaryAccount: {
           account,
           permissions: {
-            tokens: null,
+            assets: null,
             portfolios: null,
             transactions: null,
             transactionGroups: [],

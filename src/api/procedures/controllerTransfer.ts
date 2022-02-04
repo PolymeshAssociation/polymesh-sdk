@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -13,11 +13,11 @@ import {
 
 export interface ControllerTransferParams {
   /**
-   * portfolio (or portfolio ID) from which tokens will be transferred
+   * portfolio (or portfolio ID) from which Assets will be transferred
    */
   originPortfolio: PortfolioLike;
   /**
-   * amount of tokens to transfer
+   * amount of Asset tokens to transfer
    */
   amount: BigNumber;
 }
@@ -42,14 +42,14 @@ export async function prepareControllerTransfer(
   } = this;
   const { ticker, originPortfolio, amount } = args;
 
-  const token = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
   const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
 
-  const [{ free }] = await fromPortfolio.getTokenBalances({
-    tokens: [token],
+  const [{ free }] = await fromPortfolio.getAssetBalances({
+    assets: [asset],
   });
 
   if (free.lt(amount)) {
@@ -79,7 +79,7 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  const token = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
   const { did } = await context.getCurrentIdentity();
   const portfolioId = { did };
@@ -87,7 +87,7 @@ export async function getAuthorization(
   return {
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     permissions: {
-      tokens: [token],
+      assets: [asset],
       transactions: [TxTags.asset.ControllerTransfer],
       portfolios: [new DefaultPortfolio({ did }, context)],
     },

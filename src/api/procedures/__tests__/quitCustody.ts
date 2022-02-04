@@ -146,7 +146,7 @@ describe('quitCustody procedure', () => {
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
           portfolios: [portfolio],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -168,7 +168,7 @@ describe('quitCustody procedure', () => {
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
           portfolios: [portfolio],
-          tokens: [],
+          assets: [],
         },
       });
     });

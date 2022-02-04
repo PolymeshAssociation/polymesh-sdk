@@ -19,12 +19,12 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('createGroup procedure', () => {
@@ -100,7 +100,7 @@ describe('createGroup procedure', () => {
       const result = createCreateGroupResolver(mockContext)({} as ISubmittableResult);
 
       expect(result.id).toEqual(agId);
-      expect(result.token.ticker).toEqual(ticker);
+      expect(result.asset.ticker).toEqual(ticker);
     });
   });
 
@@ -108,7 +108,7 @@ describe('createGroup procedure', () => {
     const customId = new BigNumber(1);
 
     let proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetGroups: {
           custom: [
@@ -143,7 +143,7 @@ describe('createGroup procedure', () => {
     expect(error.data.groupId).toEqual(customId);
 
     proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetGroups: {
           custom: [],
@@ -162,7 +162,7 @@ describe('createGroup procedure', () => {
     });
 
     permissionsLikeToPermissionsStub.returns({
-      tokens: null,
+      assets: null,
       portfolios: null,
       transactionGroups: [],
       transactions: null,
@@ -190,7 +190,7 @@ describe('createGroup procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
-        token: entityMockUtils.getSecurityTokenInstance({
+        asset: entityMockUtils.getAssetInstance({
           ticker,
           permissionsGetGroups: {
             custom: [
@@ -256,7 +256,7 @@ describe('createGroup procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the security token', () => {
+    test('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext
       );
@@ -265,7 +265,7 @@ describe('createGroup procedure', () => {
       const result = boundFunc({ ticker } as Params);
 
       expect(result).toEqual({
-        token: entityMockUtils.getSecurityTokenInstance({ ticker }),
+        asset: entityMockUtils.getAssetInstance({ ticker }),
       });
     });
   });
@@ -275,7 +275,7 @@ describe('createGroup procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext,
         {
-          token: entityMockUtils.getSecurityTokenInstance({
+          asset: entityMockUtils.getAssetInstance({
             ticker,
           }),
         }
@@ -285,7 +285,7 @@ describe('createGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.CreateGroup],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

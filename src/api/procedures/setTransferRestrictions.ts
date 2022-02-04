@@ -3,7 +3,7 @@ import P from 'bluebird';
 import { difference, differenceWith, isEqual, some, uniq } from 'lodash';
 import { ScopeId, Ticker, TransferManager, TxTag } from 'polymesh-types/types';
 
-import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -174,7 +174,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },
@@ -203,7 +203,7 @@ const getScopeIds = async (
       identity = value;
     }
 
-    return identity.getScopeId({ token: ticker });
+    return identity.getScopeId({ asset: ticker });
   });
 
   return [...scopeIds, ...identityScopeIds];
@@ -223,7 +223,7 @@ export async function prepareStorage(
 
   const {
     transferRestrictions: { count, percentage },
-  } = new SecurityToken({ ticker }, context);
+  } = new Asset({ ticker }, context);
 
   const [
     { restrictions: currentCountRestrictions },

@@ -27,7 +27,7 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a group of custom permissions for a Security Token
+ * Represents a group of custom permissions for an Asset
  */
 export class CustomPermissionGroup extends PermissionGroup {
   /**
@@ -74,7 +74,7 @@ export class CustomPermissionGroup extends PermissionGroup {
         },
       },
       context,
-      token: { ticker },
+      asset: { ticker },
       id,
     } = this;
 
@@ -98,7 +98,7 @@ export class CustomPermissionGroup extends PermissionGroup {
    */
   public async exists(): Promise<boolean> {
     const {
-      token: { ticker },
+      asset: { ticker },
       id,
       context,
     } = this;
@@ -115,11 +115,11 @@ export class CustomPermissionGroup extends PermissionGroup {
    * Return the Group's static data
    */
   public toJson(): HumanReadable {
-    const { id, token } = this;
+    const { id, asset } = this;
 
     return toHumanReadable({
       id,
-      ticker: token,
+      ticker: asset,
     });
   }
 }

@@ -389,7 +389,7 @@ describe('Account class', () => {
       const result = await account.getPermissions();
 
       expect(result).toEqual({
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -398,7 +398,7 @@ describe('Account class', () => {
 
     test("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -410,7 +410,7 @@ describe('Account class', () => {
           {
             account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
             permissions: {
-              tokens: null,
+              assets: null,
               transactions: {
                 values: [TxTags.identity.AcceptPrimaryKey],
                 type: PermissionType.Include,
@@ -438,14 +438,14 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
-      let result = await account.checkPermissions({ tokens: [], portfolios: [], transactions: [] });
+      let result = await account.checkPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual({
         result: true,
       });
 
       let permissions: Permissions = {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -463,7 +463,7 @@ describe('Account class', () => {
       account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: null,
+        assets: null,
         portfolios: null,
         transactions: null,
       });
@@ -471,9 +471,9 @@ describe('Account class', () => {
         result: true,
       });
 
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TOKEN' });
+      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
       permissions = {
-        tokens: { values: [token], type: PermissionType.Include },
+        assets: { values: [asset], type: PermissionType.Include },
         transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Include },
         transactionGroups: [],
         portfolios: {
@@ -489,7 +489,7 @@ describe('Account class', () => {
       account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [token],
+        assets: [asset],
         portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
         transactions: [TxTags.asset.CreateAsset],
       });
@@ -502,7 +502,7 @@ describe('Account class', () => {
       });
 
       permissions = {
-        tokens: { values: [token], type: PermissionType.Exclude },
+        assets: { values: [asset], type: PermissionType.Exclude },
         transactions: { values: [TxTags.asset.CreateAsset], type: PermissionType.Exclude },
         transactionGroups: [],
         portfolios: {
@@ -518,7 +518,7 @@ describe('Account class', () => {
       account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [token],
+        assets: [asset],
         portfolios: null,
         transactions: null,
       });
@@ -526,14 +526,14 @@ describe('Account class', () => {
       expect(result).toEqual({
         result: false,
         missingPermissions: {
-          tokens: [token],
+          assets: [asset],
           portfolios: null,
           transactions: null,
         },
       });
 
       result = await account.checkPermissions({
-        tokens: null,
+        assets: null,
         portfolios: [],
         transactions: [TxTags.asset.CreateAsset],
       });
@@ -541,13 +541,13 @@ describe('Account class', () => {
       expect(result).toEqual({
         result: false,
         missingPermissions: {
-          tokens: null,
+          assets: null,
           transactions: [TxTags.asset.CreateAsset],
         },
       });
 
       result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
         transactions: [],
       });
@@ -563,7 +563,7 @@ describe('Account class', () => {
       });
 
       permissions = {
-        tokens: { values: [token], type: PermissionType.Exclude },
+        assets: { values: [asset], type: PermissionType.Exclude },
         transactions: {
           values: [ModuleName.Identity, TxTags.identity.LeaveIdentityAsKey],
           type: PermissionType.Exclude,
@@ -583,7 +583,7 @@ describe('Account class', () => {
       account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: null,
         transactions: [TxTags.identity.AcceptPrimaryKey, TxTags.identity.LeaveIdentityAsKey],
       });
@@ -597,7 +597,7 @@ describe('Account class', () => {
       });
 
       permissions = {
-        tokens: { values: [token], type: PermissionType.Exclude },
+        assets: { values: [asset], type: PermissionType.Exclude },
         transactions: {
           values: [ModuleName.Identity],
           type: PermissionType.Include,
@@ -617,7 +617,7 @@ describe('Account class', () => {
       account = new Account({ address: secondaryAccountAddress }, context);
 
       result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: null,
         transactions: [TxTags.identity.AddClaim],
       });
@@ -639,7 +639,7 @@ describe('Account class', () => {
       account = new Account({ address }, context);
 
       const result = await account.checkPermissions({
-        tokens: [],
+        assets: [],
         portfolios: [],
         transactions: [
           TxTags.balances.Transfer,
@@ -665,7 +665,7 @@ describe('Account class', () => {
 
       account = new Account(mockAccount, context);
 
-      const result = await account.hasPermissions({ tokens: [], portfolios: [], transactions: [] });
+      const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual(true);
     });

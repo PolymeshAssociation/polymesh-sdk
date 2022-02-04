@@ -12,15 +12,15 @@ import {
   Params,
   prepareRemoveAssetRequirement,
 } from '~/api/procedures/removeAssetRequirement';
-import { Context, SecurityToken } from '~/internal';
+import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('removeAssetRequirement procedure', () => {
@@ -107,7 +107,7 @@ describe('removeAssetRequirement procedure', () => {
   });
 
   test('should throw an error if the supplied id is not present in the current requirements', () => {
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
     const complianceRequirementId = new BigNumber(1);
 
     return expect(
@@ -122,7 +122,7 @@ describe('removeAssetRequirement procedure', () => {
     const rawId = dsMockUtils.createMockU32(requirement);
     sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawId);
 
-    const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const result = await prepareRemoveAssetRequirement.call(proc, args);
 
@@ -131,12 +131,12 @@ describe('removeAssetRequirement procedure', () => {
       args: [rawTicker, rawId],
     });
 
-    expect(result).toMatchObject(entityMockUtils.getSecurityTokenInstance({ ticker }));
+    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, SecurityToken>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {
         ticker,
@@ -145,7 +145,7 @@ describe('removeAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.RemoveComplianceRequirement],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

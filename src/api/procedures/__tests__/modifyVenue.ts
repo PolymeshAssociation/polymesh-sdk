@@ -166,7 +166,7 @@ describe('modifyVenue procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.settlement.UpdateVenueType],
-          tokens: [],
+          assets: [],
         },
       });
 
@@ -180,7 +180,7 @@ describe('modifyVenue procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.settlement.UpdateVenueDetails],
-          tokens: [],
+          assets: [],
         },
       });
     });

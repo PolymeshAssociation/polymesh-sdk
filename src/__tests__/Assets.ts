@@ -2,10 +2,10 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Assets } from '~/Assets';
-import { Context, SecurityToken, TickerReservation, TransactionQueue } from '~/internal';
+import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { KnownTokenType, TickerReservationStatus, TokenIdentifierType } from '~/types';
+import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -20,8 +20,8 @@ jest.mock(
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('Assets Class', () => {
@@ -70,7 +70,7 @@ describe('Assets Class', () => {
     });
   });
 
-  describe('method: createToken', () => {
+  describe('method: createAsset', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'FAKE_TICKER';
 
@@ -79,21 +79,21 @@ describe('Assets Class', () => {
         name: 'TEST',
         totalSupply: new BigNumber(100),
         isDivisible: true,
-        tokenType: KnownTokenType.EquityCommon,
-        tokenIdentifiers: [{ type: TokenIdentifierType.Isin, value: '12345' }],
+        assetType: KnownAssetType.EquityCommon,
+        securityIdentifier: [{ type: SecurityIdentifierType.Isin, value: '12345' }],
         fundingRound: 'Series A',
         requireInvestorUniqueness: false,
         reservationRequired: false,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<SecurityToken>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await assets.createToken(args);
+      const queue = await assets.createAsset(args);
 
       expect(queue).toBe(expectedQueue);
     });
@@ -292,7 +292,7 @@ describe('Assets Class', () => {
       );
     });
 
-    test('should throw if ticker is already a token', async () => {
+    test('should throw if ticker is already an Asset', async () => {
       const ticker = 'TEST';
 
       dsMockUtils.createQueryStub('asset', 'tickers', {
@@ -303,30 +303,30 @@ describe('Assets Class', () => {
       });
 
       return expect(assets.getTickerReservation({ ticker })).rejects.toThrow(
-        `${ticker} token has been created`
+        `${ticker} Asset has been created`
       );
     });
   });
 
-  describe('method: getSecurityToken', () => {
-    test('should return a specific Security Token', async () => {
+  describe('method: getAsset', () => {
+    test('should return a specific Asset', async () => {
       const ticker = 'TEST';
 
-      const securityToken = await assets.getSecurityToken({ ticker });
-      expect(securityToken.ticker).toBe(ticker);
+      const asset = await assets.getAsset({ ticker });
+      expect(asset.ticker).toBe(ticker);
     });
 
-    test('should throw if the Security Token does not exist', async () => {
+    test('should throw if the Asset does not exist', async () => {
       const ticker = 'TEST';
-      entityMockUtils.configureMocks({ securityTokenOptions: { exists: false } });
+      entityMockUtils.configureMocks({ assetOptions: { exists: false } });
 
-      return expect(assets.getSecurityToken({ ticker })).rejects.toThrow(
-        `There is no Security Token with ticker "${ticker}"`
+      return expect(assets.getAsset({ ticker })).rejects.toThrow(
+        `There is no Asset with ticker "${ticker}"`
       );
     });
   });
 
-  describe('method: getSecurityTokens', () => {
+  describe('method: getAssets', () => {
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     });
@@ -335,7 +335,7 @@ describe('Assets Class', () => {
       sinon.restore();
     });
 
-    test('should return a list of security tokens owned by the supplied did', async () => {
+    test('should return a list of Assets owned by the supplied did', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
@@ -350,13 +350,13 @@ describe('Assets Class', () => {
         ],
       });
 
-      const securityTokens = await assets.getSecurityTokens({ owner: 'someDid' });
+      const asset = await assets.getAssets({ owner: 'someDid' });
 
-      expect(securityTokens).toHaveLength(1);
-      expect(securityTokens[0].ticker).toBe(fakeTicker);
+      expect(asset).toHaveLength(1);
+      expect(asset[0].ticker).toBe(fakeTicker);
     });
 
-    test('should return a list of security tokens owned by the current Identity if no did is supplied', async () => {
+    test('should return a list of Assets owned by the current Identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
@@ -371,13 +371,13 @@ describe('Assets Class', () => {
         ],
       });
 
-      const securityTokens = await assets.getSecurityTokens();
+      const assetResults = await assets.getAssets();
 
-      expect(securityTokens).toHaveLength(1);
-      expect(securityTokens[0].ticker).toBe(fakeTicker);
+      expect(assetResults).toHaveLength(1);
+      expect(assetResults[0].ticker).toBe(fakeTicker);
     });
 
-    test('should filter out tokens whose tickers have unreadable characters', async () => {
+    test('should filter out Assets whose tickers have unreadable characters', async () => {
       const fakeTicker = 'TEST';
       const unreadableTicker = String.fromCharCode(65533);
       const did = 'someDid';
@@ -401,10 +401,10 @@ describe('Assets Class', () => {
         ],
       });
 
-      const securityTokens = await assets.getSecurityTokens();
+      const assetResults = await assets.getAssets();
 
-      expect(securityTokens).toHaveLength(1);
-      expect(securityTokens[0].ticker).toBe(fakeTicker);
+      expect(assetResults).toHaveLength(1);
+      expect(assetResults[0].ticker).toBe(fakeTicker);
     });
   });
 });

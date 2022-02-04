@@ -54,11 +54,11 @@ import sinon from 'sinon';
 
 import {
   Account,
+  Asset,
   Context,
   DefaultPortfolio,
   Identity,
   NumberedPortfolio,
-  SecurityToken,
   Venue,
 } from '~/internal';
 // import { ProposalState } from '~/api/entities/types';
@@ -72,6 +72,7 @@ import {
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AffirmationStatus,
+  AssetDocument,
   Authorization,
   AuthorizationType,
   CalendarUnit,
@@ -87,7 +88,11 @@ import {
   DividendDistributionParams,
   InputCondition,
   InstructionType,
-  KnownTokenType,
+  KnownAssetType,
+  OfferingBalanceStatus,
+  OfferingSaleStatus,
+  OfferingTier,
+  OfferingTimingStatus,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -95,16 +100,11 @@ import {
   PortfolioMovement,
   Scope,
   ScopeType,
+  SecurityIdentifierType,
   Signer,
   SignerType,
   SignerValue,
-  StoBalanceStatus,
-  StoSaleStatus,
-  StoTier,
-  StoTimingStatus,
   TargetTreatment,
-  TokenDocument,
-  TokenIdentifierType,
   TransferError,
   TransferRestrictionType,
   TransferStatus,
@@ -123,7 +123,8 @@ import {
   agentGroupToPermissionGroup,
   agentGroupToPermissionGroupIdentifier,
   assetComplianceResultToCompliance,
-  assetIdentifierToTokenIdentifier,
+  assetDocumentToDocument,
+  assetIdentifierToSecurityIdentifier,
   assetNameToString,
   assetTypeToKnownOrId,
   authorizationDataToAuthorization,
@@ -151,18 +152,18 @@ import {
   distributionToDividendDistributionParams,
   documentHashToString,
   documentNameToString,
-  documentToTokenDocument,
+  documentToAssetDocument,
   documentTypeToString,
   documentUriToString,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
   fundingRoundNameToString,
   fundraiserTierToTier,
-  fundraiserToStoDetails,
+  fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identityIdToString,
-  internalTokenTypeToAssetType,
+  internalAssetTypeToAssetType,
   isCusipValid,
   isIsinValid,
   isLeiValid,
@@ -199,6 +200,7 @@ import {
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
+  securityIdentifierToAssetIdentifier,
   signatoryToAccount,
   signatoryToSignerValue,
   signerToSignerValue,
@@ -234,8 +236,6 @@ import {
   tickerToDid,
   tickerToString,
   toIdentityWithClaimsArray,
-  tokenDocumentToDocument,
-  tokenIdentifierToAssetIdentifier,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
@@ -260,8 +260,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/DefaultPortfolio',
@@ -461,17 +461,17 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
   test('portfolioMovementToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
     const context = dsMockUtils.getContextInstance();
-    const ticker = 'SOME_TOKEN';
+    const ticker = 'SOME_ASSET';
     const amount = new BigNumber(100);
     const memo = 'someMessage';
-    const token = entityMockUtils.getSecurityTokenInstance({ ticker });
+    const asset = entityMockUtils.getAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as Memo;
     const fakeResult = 'MovePortfolioItem' as unknown as MovePortfolioItem;
 
     let portfolioMovement: PortfolioMovement = {
-      token: ticker,
+      asset: ticker,
       amount,
     };
 
@@ -496,7 +496,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     expect(result).toBe(fakeResult);
 
     portfolioMovement = {
-      token,
+      asset,
       amount,
     };
 
@@ -516,7 +516,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .returns(fakeResult);
 
     portfolioMovement = {
-      token,
+      asset,
       amount,
       memo,
     };
@@ -1007,7 +1007,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     value = {
       type: AuthorizationType.JoinIdentity,
       value: {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -1213,7 +1213,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     fakeResult = {
       type: AuthorizationType.JoinIdentity,
-      value: { tokens: null, portfolios: null, transactions: null, transactionGroups: [] },
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
     };
     authorizationData = dsMockUtils.createMockAuthorizationData({
       JoinIdentity: dsMockUtils.createMockPermissions({
@@ -1392,7 +1392,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
   test('permissionsToMeshPermissions should convert a Permissions to a polkadot Permissions object (ordering tx alphabetically)', () => {
     let value: Permissions = {
-      tokens: null,
+      assets: null,
       transactions: null,
       transactionGroups: [],
       portfolios: null,
@@ -1447,8 +1447,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const ticker = 'SOME_TICKER';
     const did = 'someDid';
     value = {
-      tokens: {
-        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+      assets: {
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Include,
       },
       transactions: {
@@ -1501,7 +1501,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       .returns(fakeExtrinsicPermissionsResult);
 
     value = {
-      tokens: null,
+      assets: null,
       transactions: {
         values: [ModuleName.Sto],
         type: PermissionType.Include,
@@ -1539,8 +1539,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       .returns(fakeExtrinsicPermissionsResult);
 
     value = {
-      tokens: {
-        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+      assets: {
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Exclude,
       },
       transactions: {
@@ -1590,8 +1590,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
 
     value = {
-      tokens: {
-        values: tickers.map(t => entityMockUtils.getSecurityTokenInstance({ ticker: t })),
+      assets: {
+        values: tickers.map(t => entityMockUtils.getAssetInstance({ ticker: t })),
         type: PermissionType.Include,
       },
       transactions: {
@@ -1624,7 +1624,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
   test('permissionsToMeshPermissions should throw an error if attempting to add permissions for specific transactions as well as the entire module', () => {
     const value: Permissions = {
-      tokens: null,
+      assets: null,
       transactions: {
         values: [TxTags.sto.Invest, ModuleName.Sto],
         type: PermissionType.Include,
@@ -1641,7 +1641,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
   test('permissionsToMeshPermissions should throw an error if user simultaneously include and exclude transactions belonging to the same module', () => {
     const value: Permissions = {
-      tokens: null,
+      assets: null,
       transactions: {
         values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
         type: PermissionType.Exclude,
@@ -1659,7 +1659,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
   test('permissionsToMeshPermissions should throw an error if attempting to add a transaction permission exception without its corresponding module being included/excluded', () => {
     const value: Permissions = {
-      tokens: null,
+      assets: null,
       transactions: {
         values: [],
         type: PermissionType.Exclude,
@@ -1680,8 +1680,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const ticker = 'someTicker';
     const did = 'someDid';
     let fakeResult: Permissions = {
-      tokens: {
-        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+      assets: {
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Include,
       },
       transactions: {
@@ -1728,7 +1728,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      tokens: null,
+      assets: null,
       transactions: null,
       transactionGroups: [],
       portfolios: null,
@@ -1743,8 +1743,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
-      tokens: {
-        values: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+      assets: {
+        values: [entityMockUtils.getAssetInstance({ ticker })],
         type: PermissionType.Exclude,
       },
       transactions: {
@@ -2030,12 +2030,12 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
     expect(error.data).toMatchObject({ currentValue: value, decimalsLimit: MAX_DECIMALS });
   });
 
-  test('bigNumberToBalance should throw an error if the value has decimals and the token is indivisible', () => {
+  test('bigNumberToBalance should throw an error if the value has decimals and the Asset is indivisible', () => {
     const value = new BigNumber(50.1234567);
     const context = dsMockUtils.getContextInstance();
 
     expect(() => bigNumberToBalance(value, context, false)).toThrow(
-      'The value has decimals but the token is indivisible'
+      'The value has decimals but the Asset is indivisible'
     );
   });
 
@@ -2216,7 +2216,7 @@ describe('u8ToTransferStatus', () => {
   });
 });
 
-describe('internalTokenTypeToAssetType and assetTypeToKnownOrId', () => {
+describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2229,80 +2229,80 @@ describe('internalTokenTypeToAssetType and assetTypeToKnownOrId', () => {
     dsMockUtils.cleanup();
   });
 
-  test('internalTokenTypeToAssetType should convert a TokenType to a polkadot AssetType object', () => {
-    const value = KnownTokenType.Commodity;
+  test('internalSecurityTypeToAssetType should convert an AssetType to a polkadot AssetType object', () => {
+    const value = KnownAssetType.Commodity;
     const fakeResult = 'CommodityEnum' as unknown as AssetType;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
 
-    const result = internalTokenTypeToAssetType(value, context);
+    const result = internalAssetTypeToAssetType(value, context);
 
     expect(result).toBe(fakeResult);
   });
 
   test('assetTypeToKnownOrId should convert a polkadot AssetType object to a string', () => {
-    let fakeResult = KnownTokenType.Commodity;
+    let fakeResult = KnownAssetType.Commodity;
     let assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     let result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.EquityCommon;
+    fakeResult = KnownAssetType.EquityCommon;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.EquityPreferred;
+    fakeResult = KnownAssetType.EquityPreferred;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.Commodity;
+    fakeResult = KnownAssetType.Commodity;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.FixedIncome;
+    fakeResult = KnownAssetType.FixedIncome;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.Reit;
+    fakeResult = KnownAssetType.Reit;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.Fund;
+    fakeResult = KnownAssetType.Fund;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.RevenueShareAgreement;
+    fakeResult = KnownAssetType.RevenueShareAgreement;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.StructuredProduct;
+    fakeResult = KnownAssetType.StructuredProduct;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.Derivative;
+    fakeResult = KnownAssetType.Derivative;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownTokenType.StableCoin;
+    fakeResult = KnownAssetType.StableCoin;
     assetType = dsMockUtils.createMockAssetType(fakeResult);
 
     result = assetTypeToKnownOrId(assetType);
@@ -2340,7 +2340,7 @@ describe('posRatioToBigNumber', () => {
   });
 });
 
-describe('tokenIdentifierToAssetIdentifier and assetIdentifierToTokenIdentifier', () => {
+describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdentifier', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2353,102 +2353,101 @@ describe('tokenIdentifierToAssetIdentifier and assetIdentifierToTokenIdentifier'
     dsMockUtils.cleanup();
   });
 
-  test('tokenIdentifierToAssetIdentifier should convert a TokenIdentifier to a polkadot AssetIdentifier object', () => {
+  test('securityIdentifierToAssetIdentifier should convert a SecurityIdentifier to a polkadot AssetIdentifier object', () => {
     const isinValue = 'US0378331005';
     // cSpell: disable-next-line
     const leiValue = '724500VKKSH9QOLTFR81';
     const cusipValue = '037833100';
 
-    let value = { type: TokenIdentifierType.Isin, value: isinValue };
+    let value = { type: SecurityIdentifierType.Isin, value: isinValue };
     const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AssetIdentifier', { [TokenIdentifierType.Isin]: isinValue })
+      .withArgs('AssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
       .returns(fakeResult);
 
-    let result = tokenIdentifierToAssetIdentifier(value, context);
+    let result = securityIdentifierToAssetIdentifier(value, context);
 
     expect(result).toBe(fakeResult);
 
-    value = { type: TokenIdentifierType.Lei, value: leiValue };
+    value = { type: SecurityIdentifierType.Lei, value: leiValue };
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AssetIdentifier', { [TokenIdentifierType.Lei]: leiValue })
+      .withArgs('AssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
       .returns(fakeResult);
 
-    result = tokenIdentifierToAssetIdentifier(value, context);
+    result = securityIdentifierToAssetIdentifier(value, context);
 
     expect(result).toBe(fakeResult);
 
-    value = { type: TokenIdentifierType.Cusip, value: cusipValue };
+    value = { type: SecurityIdentifierType.Cusip, value: cusipValue };
 
     dsMockUtils
       .getCreateTypeStub()
-      .withArgs('AssetIdentifier', { [TokenIdentifierType.Cusip]: cusipValue })
+      .withArgs('AssetIdentifier', { [SecurityIdentifierType.Cusip]: cusipValue })
       .returns(fakeResult);
 
-    result = tokenIdentifierToAssetIdentifier(value, context);
+    result = securityIdentifierToAssetIdentifier(value, context);
 
     expect(result).toBe(fakeResult);
   });
 
-  test('tokenIdentifierToAssetIdentifier should throw an error if some identifier is invalid', () => {
+  test('securityIdentifierToAssetIdentifier should throw an error if some identifier is invalid', () => {
     const context = dsMockUtils.getContextInstance();
 
-    let identifier = { type: TokenIdentifierType.Isin, value: 'US0373431005' };
+    let identifier = { type: SecurityIdentifierType.Isin, value: 'US0373431005' };
 
-    expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Invalid token identifier ${identifier.value} of type Isin`
+    expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+      `Invalid security identifier ${identifier.value} of type Isin`
     );
 
-    // cSpell: disable-next-line
-    identifier = { type: TokenIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
+    identifier = { type: SecurityIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
 
-    expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Invalid token identifier ${identifier.value} of type Lei`
+    expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+      `Invalid security identifier ${identifier.value} of type Lei`
     );
 
-    identifier = { type: TokenIdentifierType.Cusip, value: '037831200' };
+    identifier = { type: SecurityIdentifierType.Cusip, value: '037831200' };
 
-    expect(() => tokenIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Invalid token identifier ${identifier.value} of type Cusip`
+    expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+      `Invalid security identifier ${identifier.value} of type Cusip`
     );
   });
 
-  test('assetIdentifierToTokenIdentifier should convert a polkadot AssetIdentifier object to a TokenIdentifier', () => {
-    let fakeResult = { type: TokenIdentifierType.Isin, value: 'someValue' };
+  test('assetIdentifierToSecurityIdentifier should convert a polkadot AssetIdentifier object to a SecurityIdentifier', () => {
+    let fakeResult = { type: SecurityIdentifierType.Isin, value: 'someValue' };
     let identifier = dsMockUtils.createMockAssetIdentifier({
-      [TokenIdentifierType.Isin]: dsMockUtils.createMockU8aFixed('someValue'),
+      [SecurityIdentifierType.Isin]: dsMockUtils.createMockU8aFixed('someValue'),
     });
 
-    let result = assetIdentifierToTokenIdentifier(identifier);
+    let result = assetIdentifierToSecurityIdentifier(identifier);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = { type: TokenIdentifierType.Cusip, value: 'someValue' };
+    fakeResult = { type: SecurityIdentifierType.Cusip, value: 'someValue' };
     identifier = dsMockUtils.createMockAssetIdentifier({
-      [TokenIdentifierType.Cusip]: dsMockUtils.createMockU8aFixed('someValue'),
+      [SecurityIdentifierType.Cusip]: dsMockUtils.createMockU8aFixed('someValue'),
     });
 
-    result = assetIdentifierToTokenIdentifier(identifier);
+    result = assetIdentifierToSecurityIdentifier(identifier);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = { type: TokenIdentifierType.Cins, value: 'someValue' };
+    fakeResult = { type: SecurityIdentifierType.Cins, value: 'someValue' };
     identifier = dsMockUtils.createMockAssetIdentifier({
-      [TokenIdentifierType.Cins]: dsMockUtils.createMockU8aFixed('someValue'),
+      [SecurityIdentifierType.Cins]: dsMockUtils.createMockU8aFixed('someValue'),
     });
 
-    result = assetIdentifierToTokenIdentifier(identifier);
+    result = assetIdentifierToSecurityIdentifier(identifier);
     expect(result).toEqual(fakeResult);
 
-    fakeResult = { type: TokenIdentifierType.Lei, value: 'someValue' };
+    fakeResult = { type: SecurityIdentifierType.Lei, value: 'someValue' };
     identifier = dsMockUtils.createMockAssetIdentifier({
-      [TokenIdentifierType.Lei]: dsMockUtils.createMockU8aFixed('someValue'),
+      [SecurityIdentifierType.Lei]: dsMockUtils.createMockU8aFixed('someValue'),
     });
 
-    result = assetIdentifierToTokenIdentifier(identifier);
+    result = assetIdentifierToSecurityIdentifier(identifier);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -2764,7 +2763,7 @@ describe('stringToDocumentType and documentTypeToString', () => {
   });
 });
 
-describe('tokenDocumentToDocument and documentToTokenDocument', () => {
+describe('assetDocumentToDocument and documentToAssetDocument', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -2777,7 +2776,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
     dsMockUtils.cleanup();
   });
 
-  test('tokenDocumentToDocument should convert a TokenDocument object to a polkadot Document object', () => {
+  test('assetDocumentToDocument should convert an AssetDocument object to a polkadot Document object', () => {
     const uri = 'someUri';
     const contentHash = '0x01';
     const name = 'someName';
@@ -2804,7 +2803,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       })
       .returns(fakeResult);
 
-    let result = tokenDocumentToDocument(value, context);
+    let result = assetDocumentToDocument(value, context);
     expect(result).toEqual(fakeResult);
 
     dsMockUtils
@@ -2820,17 +2819,17 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       })
       .returns(fakeResult);
 
-    result = tokenDocumentToDocument({ ...value, filedAt, type }, context);
+    result = assetDocumentToDocument({ ...value, filedAt, type }, context);
     expect(result).toEqual(fakeResult);
   });
 
-  test('documentToTokenDocument should convert a polkadot Document object to a TokenDocument object', () => {
+  test('documentToAssetDocument should convert a polkadot Document object to an AssetDocument object', () => {
     const name = 'someName';
     const uri = 'someUri';
     const contentHash = '0x111111';
     const filedAt = new Date();
     const type = 'someType';
-    let fakeResult: TokenDocument = {
+    let fakeResult: AssetDocument = {
       name,
       uri,
     };
@@ -2845,7 +2844,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    let result = documentToTokenDocument(doc);
+    let result = documentToAssetDocument(doc);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
@@ -2869,7 +2868,7 @@ describe('tokenDocumentToDocument and documentToTokenDocument', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    result = documentToTokenDocument(doc);
+    result = documentToAssetDocument(doc);
     expect(result).toEqual(fakeResult);
   });
 });
@@ -3663,8 +3662,8 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           scope: { type: ScopeType.Identity, value: 'someTickerDid' },
         },
         trustedClaimIssuers: [
-          { identity: new Identity({ did }, context) },
-          { identity: new Identity({ did: 'otherDid' }, context) },
+          { identity: new Identity({ did }, context), trustedFor: null },
+          { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
         ],
       },
       {
@@ -3746,12 +3745,12 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
 
   test('complianceRequirementToRequirement should convert a polkadot Compliance Requirement object to a Requirement', () => {
     const id = new BigNumber(1);
-    const tokenDid = 'someTokenDid';
+    const assetDid = 'someAssetDid';
     const cddId = 'someCddId';
     const context = dsMockUtils.getContextInstance();
     const issuerDids = [
-      { identity: new Identity({ did: 'someDid' }, context) },
-      { identity: new Identity({ did: 'otherDid' }, context) },
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
     ];
     const targetIdentityDid = 'someDid';
     const conditions: Condition[] = [
@@ -3760,7 +3759,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         target: ConditionTarget.Both,
         claim: {
           type: ClaimType.KnowYourCustomer,
-          scope: { type: ScopeType.Identity, value: tokenDid },
+          scope: { type: ScopeType.Identity, value: assetDid },
         },
         trustedClaimIssuers: issuerDids,
       },
@@ -3769,7 +3768,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         target: ConditionTarget.Receiver,
         claim: {
           type: ClaimType.BuyLockup,
-          scope: { type: ScopeType.Identity, value: tokenDid },
+          scope: { type: ScopeType.Identity, value: assetDid },
         },
         trustedClaimIssuers: issuerDids,
       },
@@ -3779,11 +3778,11 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         claims: [
           {
             type: ClaimType.Blocked,
-            scope: { type: ScopeType.Identity, value: tokenDid },
+            scope: { type: ScopeType.Identity, value: assetDid },
           },
           {
             type: ClaimType.SellLockup,
-            scope: { type: ScopeType.Identity, value: tokenDid },
+            scope: { type: ScopeType.Identity, value: assetDid },
           },
         ],
         trustedClaimIssuers: issuerDids,
@@ -3794,7 +3793,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         claims: [
           {
             type: ClaimType.Exempted,
-            scope: { type: ScopeType.Identity, value: tokenDid },
+            scope: { type: ScopeType.Identity, value: assetDid },
           },
           {
             type: ClaimType.CustomerDueDiligence,
@@ -3821,7 +3820,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     };
 
     const scope = dsMockUtils.createMockScope({
-      Identity: dsMockUtils.createMockIdentityId(tokenDid),
+      Identity: dsMockUtils.createMockIdentityId(assetDid),
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity }) =>
@@ -4117,12 +4116,12 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
 
   test('complianceRequirementResultToRequirementCompliance should convert a polkadot Compliance Requirement Result object to a RequirementCompliance', () => {
     const id = new BigNumber(1);
-    const tokenDid = 'someTokenDid';
+    const assetDid = 'someAssetDid';
     const cddId = 'someCddId';
     const context = dsMockUtils.getContextInstance();
     const issuerDids = [
-      { identity: new Identity({ did: 'someDid' }, context) },
-      { identity: new Identity({ did: 'otherDid' }, context) },
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
     ];
     const targetIdentityDid = 'someDid';
     const conditions: ConditionCompliance[] = [
@@ -4132,7 +4131,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
           target: ConditionTarget.Both,
           claim: {
             type: ClaimType.KnowYourCustomer,
-            scope: { type: ScopeType.Identity, value: tokenDid },
+            scope: { type: ScopeType.Identity, value: assetDid },
           },
           trustedClaimIssuers: issuerDids,
         },
@@ -4144,7 +4143,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
           target: ConditionTarget.Receiver,
           claim: {
             type: ClaimType.BuyLockup,
-            scope: { type: ScopeType.Identity, value: tokenDid },
+            scope: { type: ScopeType.Identity, value: assetDid },
           },
           trustedClaimIssuers: issuerDids,
         },
@@ -4157,11 +4156,11 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
           claims: [
             {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Identity, value: tokenDid },
+              scope: { type: ScopeType.Identity, value: assetDid },
             },
             {
               type: ClaimType.SellLockup,
-              scope: { type: ScopeType.Identity, value: tokenDid },
+              scope: { type: ScopeType.Identity, value: assetDid },
             },
           ],
           trustedClaimIssuers: issuerDids,
@@ -4175,7 +4174,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
           claims: [
             {
               type: ClaimType.Exempted,
-              scope: { type: ScopeType.Identity, value: tokenDid },
+              scope: { type: ScopeType.Identity, value: assetDid },
             },
             {
               type: ClaimType.CustomerDueDiligence,
@@ -4211,7 +4210,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     };
 
     const scope = dsMockUtils.createMockScope({
-      Identity: dsMockUtils.createMockIdentityId(tokenDid),
+      Identity: dsMockUtils.createMockIdentityId(assetDid),
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
@@ -4329,12 +4328,12 @@ describe('assetComplianceResultToCompliance', () => {
 
   test('assetComplianceResultToCompliance should convert a polkadot AssetComplianceResult object to a RequirementCompliance', () => {
     const id = new BigNumber(1);
-    const tokenDid = 'someTokenDid';
+    const assetDid = 'someAssetDid';
     const cddId = 'someCddId';
     const context = dsMockUtils.getContextInstance();
     const issuerDids = [
-      { identity: new Identity({ did: 'someDid' }, context) },
-      { identity: new Identity({ did: 'otherDid' }, context) },
+      { identity: new Identity({ did: 'someDid' }, context), trustedFor: null },
+      { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
     ];
     const conditions: ConditionCompliance[] = [
       {
@@ -4343,7 +4342,7 @@ describe('assetComplianceResultToCompliance', () => {
           target: ConditionTarget.Both,
           claim: {
             type: ClaimType.KnowYourCustomer,
-            scope: { type: ScopeType.Identity, value: tokenDid },
+            scope: { type: ScopeType.Identity, value: assetDid },
           },
           trustedClaimIssuers: issuerDids,
         },
@@ -4355,7 +4354,7 @@ describe('assetComplianceResultToCompliance', () => {
           target: ConditionTarget.Receiver,
           claim: {
             type: ClaimType.BuyLockup,
-            scope: { type: ScopeType.Identity, value: tokenDid },
+            scope: { type: ScopeType.Identity, value: assetDid },
           },
           trustedClaimIssuers: issuerDids,
         },
@@ -4368,11 +4367,11 @@ describe('assetComplianceResultToCompliance', () => {
           claims: [
             {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Identity, value: tokenDid },
+              scope: { type: ScopeType.Identity, value: assetDid },
             },
             {
               type: ClaimType.SellLockup,
-              scope: { type: ScopeType.Identity, value: tokenDid },
+              scope: { type: ScopeType.Identity, value: assetDid },
             },
           ],
           trustedClaimIssuers: issuerDids,
@@ -4386,7 +4385,7 @@ describe('assetComplianceResultToCompliance', () => {
           claims: [
             {
               type: ClaimType.Exempted,
-              scope: { type: ScopeType.Identity, value: tokenDid },
+              scope: { type: ScopeType.Identity, value: assetDid },
             },
             {
               type: ClaimType.CustomerDueDiligence,
@@ -4404,7 +4403,7 @@ describe('assetComplianceResultToCompliance', () => {
     };
 
     const scope = dsMockUtils.createMockScope({
-      Identity: dsMockUtils.createMockIdentityId(tokenDid),
+      Identity: dsMockUtils.createMockIdentityId(assetDid),
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
@@ -4632,7 +4631,7 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
     const secondaryAccount = {
       account: entityMockUtils.getAccountInstance(),
       permissions: {
-        tokens: null,
+        assets: null,
         transactions: null,
         transactionGroups: [],
         portfolios: null,
@@ -5078,6 +5077,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
 
     let issuer: TrustedClaimIssuer = {
       identity: entityMockUtils.getIdentityInstance({ did }),
+      trustedFor: null,
     };
 
     dsMockUtils
@@ -5113,6 +5113,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
     const context = dsMockUtils.getContextInstance();
     let fakeResult: TrustedClaimIssuer = {
       identity: new Identity({ did }, context),
+      trustedFor: null,
     };
     let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
       issuer: dsMockUtils.createMockIdentityId(did),
@@ -5153,23 +5154,23 @@ describe('permissionsLikeToPermissions', () => {
 
   test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', () => {
     const context = dsMockUtils.getContextInstance();
-    let args: PermissionsLike = { tokens: null, transactions: null, portfolios: null };
+    let args: PermissionsLike = { assets: null, transactions: null, portfolios: null };
     let result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
-      tokens: null,
+      assets: null,
       transactions: null,
       transactionGroups: [],
       portfolios: null,
     });
 
-    const firstToken = new SecurityToken({ ticker: 'TICKER' }, context);
-    const ticker = 'OTHER_TICKER';
-    const secondToken = new SecurityToken({ ticker: ticker }, context);
+    const firstAsset = new Asset({ ticker: 'TICKER' }, context);
+    const ticker = 'OTHERTICKER';
+    const secondAsset = new Asset({ ticker: ticker }, context);
     const portfolio = new DefaultPortfolio({ did: 'someDid' }, context);
 
     args = {
-      tokens: {
-        values: [firstToken, ticker],
+      assets: {
+        values: [firstAsset, ticker],
         type: PermissionType.Include,
       },
       transactions: {
@@ -5185,8 +5186,8 @@ describe('permissionsLikeToPermissions', () => {
 
     result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
-      tokens: {
-        values: [firstToken, secondToken],
+      assets: {
+        values: [firstAsset, secondAsset],
         type: PermissionType.Include,
       },
       transactions: {
@@ -5202,7 +5203,7 @@ describe('permissionsLikeToPermissions', () => {
 
     result = permissionsLikeToPermissions({}, context);
     expect(result).toEqual({
-      tokens: {
+      assets: {
         values: [],
         type: PermissionType.Include,
       },
@@ -5224,7 +5225,7 @@ describe('permissionsLikeToPermissions', () => {
       context
     );
     expect(result).toEqual({
-      tokens: {
+      assets: {
         values: [],
         type: PermissionType.Include,
       },
@@ -5243,7 +5244,7 @@ describe('permissionsLikeToPermissions', () => {
     });
 
     args = {
-      tokens: null,
+      assets: null,
       transactions: {
         values: [TxTags.balances.SetBalance, TxTags.asset.MakeDivisible],
         type: PermissionType.Include,
@@ -5254,7 +5255,7 @@ describe('permissionsLikeToPermissions', () => {
 
     result = permissionsLikeToPermissions(args, context);
     expect(result).toEqual({
-      tokens: null,
+      assets: null,
       transactions: {
         values: [TxTags.asset.MakeDivisible, TxTags.balances.SetBalance],
         type: PermissionType.Include,
@@ -5393,7 +5394,7 @@ describe('stoTierToPriceTier', () => {
     entityMockUtils.cleanup();
   });
 
-  test('stoTierToPriceTier should convert an Sto Tier into a polkadot PriceTier object', () => {
+  test('offeringTierToPriceTier should convert an Offering Tier into a polkadot PriceTier object', () => {
     const context = dsMockUtils.getContextInstance();
     const total = new BigNumber(100);
     const price = new BigNumber(1000);
@@ -5401,7 +5402,7 @@ describe('stoTierToPriceTier', () => {
     const rawPrice = dsMockUtils.createMockBalance(price);
     const fakeResult = 'PriceTier' as unknown as PriceTier;
 
-    const stoTier: StoTier = {
+    const stoTier: OfferingTier = {
       price,
       amount: total,
     };
@@ -5443,7 +5444,7 @@ describe('txGroupToTxTags', () => {
       TxTags.settlement.CreateVenue,
     ]);
 
-    result = txGroupToTxTags(TxGroup.TokenManagement);
+    result = txGroupToTxTags(TxGroup.AssetManagement);
 
     expect(result).toEqual([
       TxTags.asset.MakeDivisible,
@@ -5453,7 +5454,7 @@ describe('txGroupToTxTags', () => {
       TxTags.asset.RemoveDocuments,
     ]);
 
-    result = txGroupToTxTags(TxGroup.AdvancedTokenManagement);
+    result = txGroupToTxTags(TxGroup.AdvancedAssetManagement);
 
     expect(result).toEqual([
       TxTags.asset.Freeze,
@@ -5549,10 +5550,10 @@ describe('transactionPermissionsToTxGroups', () => {
         type: PermissionType.Include,
       })
     ).toEqual([
-      TxGroup.AdvancedTokenManagement,
+      TxGroup.AdvancedAssetManagement,
+      TxGroup.AssetManagement,
       TxGroup.Distribution,
       TxGroup.PortfolioManagement,
-      TxGroup.TokenManagement,
     ]);
 
     expect(
@@ -5672,9 +5673,9 @@ describe('fundraiserToStoDetails', () => {
       start: startDate,
       end: endDate,
       status: {
-        timing: StoTimingStatus.Started,
-        balance: StoBalanceStatus.Available,
-        sale: StoSaleStatus.Live,
+        timing: OfferingTimingStatus.Started,
+        balance: OfferingBalanceStatus.Available,
+        sale: OfferingSaleStatus.Live,
       },
       minInvestment: minInvestmentValue.shiftedBy(-6),
       totalAmount: amount.multipliedBy(2).shiftedBy(-6),
@@ -5727,7 +5728,7 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    let result = fundraiserToStoDetails(fundraiser, rawName, context);
+    let result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -5747,15 +5748,15 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       status: {
         ...fakeResult.status,
-        timing: StoTimingStatus.NotStarted,
-        sale: StoSaleStatus.Closed,
+        timing: OfferingTimingStatus.NotStarted,
+        sale: OfferingSaleStatus.Closed,
       },
       start: futureStart,
       end: null,
@@ -5775,15 +5776,15 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       status: {
         ...fakeResult.status,
-        timing: StoTimingStatus.Started,
-        sale: StoSaleStatus.ClosedEarly,
+        timing: OfferingTimingStatus.Started,
+        sale: OfferingSaleStatus.ClosedEarly,
       },
       end: null,
     });
@@ -5808,16 +5809,16 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       tiers: [{ ...tiers[0], remaining: new BigNumber(0) }],
       status: {
-        balance: StoBalanceStatus.SoldOut,
-        timing: StoTimingStatus.Started,
-        sale: StoSaleStatus.Frozen,
+        balance: OfferingBalanceStatus.SoldOut,
+        timing: OfferingTimingStatus.Started,
+        sale: OfferingSaleStatus.Frozen,
       },
       end: null,
       totalRemaining: new BigNumber(0),
@@ -5849,16 +5850,16 @@ describe('fundraiserToStoDetails', () => {
       minimum_investment: minInvestment,
     });
 
-    result = fundraiserToStoDetails(fundraiser, rawName, context);
+    result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
     expect(result).toEqual({
       ...fakeResult,
       name,
       tiers: [{ ...tiers[0], remaining: new BigNumber(1).shiftedBy(-6) }],
       status: {
-        balance: StoBalanceStatus.Residual,
-        timing: StoTimingStatus.Expired,
-        sale: StoSaleStatus.Frozen,
+        balance: OfferingBalanceStatus.Residual,
+        timing: OfferingTimingStatus.Expired,
+        sale: OfferingSaleStatus.Frozen,
       },
       start: pastStart,
       end: pastEnd,

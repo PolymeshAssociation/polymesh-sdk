@@ -15,8 +15,8 @@ import { Authorization, AuthorizationType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 jest.mock(
@@ -318,7 +318,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       expect(result).toEqual({
         roles: true,
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [
             TxTags.externalAgents.AcceptBecomeAgent,
@@ -337,7 +337,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         roles:
           'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],
         },
@@ -350,7 +350,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         roles:
           'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.identity.RemoveAuthorization],
         },

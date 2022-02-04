@@ -16,13 +16,13 @@ import { chunk, differenceWith, flatMap, groupBy, isEqual, map, mapValues, padEn
 import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
 
 import {
+  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
   Identity,
   PolymeshError,
   PostTransactionValue,
-  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -39,8 +39,6 @@ import {
   ErrorCode,
   InputCaCheckpoint,
   InputCondition,
-  isMultiClaimCondition,
-  isSingleClaimCondition,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
@@ -65,7 +63,7 @@ import {
   MAX_BATCH_ELEMENTS,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
-import { isEntity } from '~/utils/typeguards';
+import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -645,15 +643,15 @@ export function assertKeyringFormatValid(keyring: CommonKeyring, ss58Format: Big
 /**
  * @hidden
  */
-export function getTicker(token: string | SecurityToken): string {
-  return typeof token === 'string' ? token : token.ticker;
+export function getTicker(asset: string | Asset): string {
+  return typeof asset === 'string' ? asset : asset.ticker;
 }
 
 /**
  * @hidden
  */
-export function getToken(token: string | SecurityToken, context: Context): SecurityToken {
-  return typeof token === 'string' ? new SecurityToken({ ticker: token }, context) : token;
+export function getAsset(asset: string | Asset, context: Context): Asset {
+  return typeof asset === 'string' ? new Asset({ ticker: asset }, context) : asset;
 }
 
 /**
@@ -825,7 +823,7 @@ export function conditionsAreEqual(
  */
 export async function getCheckpointValue(
   checkpoint: InputCaCheckpoint,
-  token: string | SecurityToken,
+  asset: string | Asset,
   context: Context
 ): Promise<Checkpoint | CheckpointSchedule | Date> {
   if (
@@ -835,13 +833,13 @@ export async function getCheckpointValue(
   ) {
     return checkpoint;
   }
-  const securityToken = getToken(token, context);
+  const assetEntity = getAsset(asset, context);
   const { type, id } = checkpoint;
   if (type === CaCheckpointType.Existing) {
-    return securityToken.checkpoints.getOne({ id });
+    return assetEntity.checkpoints.getOne({ id });
   } else {
     return (
-      await securityToken.checkpoints.schedules.getOne({
+      await assetEntity.checkpoints.schedules.getOne({
         id,
       })
     ).schedule;

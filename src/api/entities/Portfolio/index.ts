@@ -4,6 +4,7 @@ import { values } from 'lodash';
 
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Context,
   Entity,
@@ -12,7 +13,6 @@ import {
   MoveFundsParams,
   PolymeshError,
   quitCustody,
-  SecurityToken,
   setCustodian,
   SetCustodianParams,
 } from '~/internal';
@@ -34,8 +34,8 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
+  getAsset,
   getDid,
-  getToken,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -135,12 +135,12 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Retrieve the balances of all assets in this Portfolio
+   * Retrieve the balances of all Assets in this Portfolio
    *
-   * @param args.tokens - array of Security Tokens (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
+   * @param args.assets - array of Assets (or tickers) for which to fetch balances (optional, all balances are retrieved if not passed)
    */
-  public async getTokenBalances(args?: {
-    tokens: (string | SecurityToken)[];
+  public async getAssetBalances(args?: {
+    assets: (string | Asset)[];
   }): Promise<PortfolioBalance[]> {
     const {
       owner: { did },
@@ -174,7 +174,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       const total = balanceToBigNumber(balance);
 
       assetBalances[ticker] = {
-        token: new SecurityToken({ ticker }, context),
+        asset: new Asset({ ticker }, context),
         total,
         locked: new BigNumber(0),
         free: total,
@@ -189,17 +189,17 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       assetBalances[ticker].free = assetBalances[ticker].total.minus(locked);
     });
 
-    const mask: PortfolioBalance[] | undefined = args?.tokens.map(token => ({
+    const mask: PortfolioBalance[] | undefined = args?.assets.map(asset => ({
       total: new BigNumber(0),
       locked: new BigNumber(0),
       free: new BigNumber(0),
-      token: getToken(token, context),
+      asset: getAsset(asset, context),
     }));
 
     if (mask) {
       return mask.map(portfolioBalance => {
         const {
-          token: { ticker },
+          asset: { ticker },
         } = portfolioBalance;
 
         return assetBalances[ticker] ?? portfolioBalance;
@@ -351,7 +351,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         ),
         legs: settlementLegs.map(leg => {
           return {
-            token: new SecurityToken({ ticker: leg!.ticker }, context),
+            asset: new Asset({ ticker: leg!.ticker }, context),
             amount: new BigNumber(leg!.amount).shiftedBy(-6),
             direction: leg!.direction,
             from: middlewarePortfolioToPortfolio(leg!.from, context),

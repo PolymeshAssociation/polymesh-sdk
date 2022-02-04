@@ -66,7 +66,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    ticker = 'SOME_TOKEN';
+    ticker = 'SOME_ASSET';
     cddId = 'someCddId';
     scope = { type: ScopeType.Ticker, value: ticker };
     scopeId = 'someScopeId';
@@ -279,7 +279,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
       expect(boundFunc({ ...commonArgs, proof })).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.AddInvestorUniquenessClaim],
           portfolios: [],
         },
@@ -287,7 +287,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
       expect(boundFunc({ ...commonArgs, proof: scopeClaimProof })).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [TxTags.identity.AddInvestorUniquenessClaimV2],
           portfolios: [],
         },
