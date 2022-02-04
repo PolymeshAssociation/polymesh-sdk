@@ -13,7 +13,7 @@ import {
   TxTags,
 } from 'polymesh-types/types';
 
-import { assertPortfolioExists } from '~/api/procedures/utils';
+import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
 import {
   Asset,
   Context,
@@ -294,7 +294,10 @@ export async function prepareAddInstruction(
   } = this;
   const { instructions, venueId } = args;
 
-  const latestBlock = await context.getLatestBlock();
+  const [latestBlock] = await Promise.all([
+    context.getLatestBlock(),
+    assertVenueExists(venueId, context),
+  ]);
 
   if (!instructions.length) {
     throw new PolymeshError({

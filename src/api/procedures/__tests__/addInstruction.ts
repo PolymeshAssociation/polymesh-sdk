@@ -276,6 +276,10 @@ describe('addInstruction procedure', () => {
       portfoliosToAffirm: [],
     });
 
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+    });
+
     let error;
 
     try {
@@ -287,6 +291,27 @@ describe('addInstruction procedure', () => {
     expect(error.message).toBe("The legs array can't be empty");
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
+  test("should throw an error if the Venue doesn't exist", async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: false },
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("The Venue doesn't exist");
+    expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 
   test('should throw an error if the legs array exceeds limit', async () => {

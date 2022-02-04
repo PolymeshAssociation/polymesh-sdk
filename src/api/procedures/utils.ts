@@ -1,4 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 
 import {
   Account,
@@ -15,6 +16,7 @@ import {
   PolymeshError,
   PostTransactionValue,
   TickerReservation,
+  Venue,
 } from '~/internal';
 import {
   AddRelayerPayingKeyAuthorizationData,
@@ -126,6 +128,24 @@ export async function assertPortfolioExists(
         },
       });
     }
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertVenueExists(venueId: BigNumber, context: Context): Promise<void> {
+  const venue = new Venue({ id: venueId }, context);
+  const exists = await venue.exists();
+
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "The Venue doesn't exist",
+      data: {
+        venueId,
+      },
+    });
   }
 }
 
