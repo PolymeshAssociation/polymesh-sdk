@@ -85,7 +85,7 @@ describe('Procedure class', () => {
         checkPermissions: {
           result: false,
           missingPermissions: {
-            tokens: null,
+            assets: null,
             portfolios: null,
             transactions: null,
           },
@@ -94,7 +94,7 @@ describe('Procedure class', () => {
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
-          tokens: null,
+          assets: null,
           portfolios: null,
           transactions: null,
         },
@@ -106,7 +106,7 @@ describe('Procedure class', () => {
         signerPermissions: {
           result: false,
           missingPermissions: {
-            tokens: null,
+            assets: null,
             portfolios: null,
             transactions: null,
           },
@@ -116,11 +116,11 @@ describe('Procedure class', () => {
         noIdentity: false,
       });
 
-      context = dsMockUtils.getContextInstance({ hasTokenPermissions: true });
+      context = dsMockUtils.getContextInstance({ hasAssetPermissions: true });
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
@@ -138,7 +138,7 @@ describe('Procedure class', () => {
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
@@ -161,12 +161,12 @@ describe('Procedure class', () => {
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         signerPermissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
         agentPermissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
           transactions: [TxTags.asset.Redeem],
         },
@@ -184,7 +184,7 @@ describe('Procedure class', () => {
       authFunc.resolves({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
           portfolios: null,
         },
       });
@@ -227,14 +227,14 @@ describe('Procedure class', () => {
       });
     });
 
-    test('should throw an error if the Procedure requires permissions over more than one token', () => {
+    test('should throw an error if the Procedure requires permissions over more than one Asset', () => {
       const prepareFunc = sinon.stub();
       const authFunc = sinon.stub();
       authFunc.resolves({
         permissions: {
-          tokens: [
-            entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' }),
-            entityMockUtils.getSecurityTokenInstance({ ticker: 'OTHER_TICKER' }),
+          assets: [
+            entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' }),
+            entityMockUtils.getAssetInstance({ ticker: 'OTHER_TICKER' }),
           ],
           transactions: [TxTags.asset.Freeze],
         },
@@ -244,7 +244,7 @@ describe('Procedure class', () => {
       const args = 'args';
 
       return expect(procedure.checkAuthorization(args, context)).rejects.toThrow(
-        'Procedures cannot require permissions for more than one Security Token. Please contact the Polymath team'
+        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team'
       );
     });
   });
@@ -298,7 +298,7 @@ describe('Procedure class', () => {
     });
 
     test('should prepare and return a transaction queue with the corresponding transactions, arguments, fees and return value', async () => {
-      const ticker = 'MY_TOKEN';
+      const ticker = 'MY_ASSET';
       const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
@@ -378,7 +378,7 @@ describe('Procedure class', () => {
     });
 
     test('should throw any errors encountered during preparation', () => {
-      const ticker = 'MY_TOKEN';
+      const ticker = 'MY_ASSET';
       const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
@@ -396,7 +396,7 @@ describe('Procedure class', () => {
     });
 
     test("should throw an error if the caller doesn't have the appropriate roles", async () => {
-      const ticker = 'MY_TOKEN';
+      const ticker = 'MY_ASSET';
       const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
         ticker,
@@ -419,7 +419,7 @@ describe('Procedure class', () => {
         checkPermissions: {
           result: false,
         },
-        checkTokenPermissions: {
+        checkAssetPermissions: {
           result: false,
         },
       });
@@ -430,7 +430,7 @@ describe('Procedure class', () => {
 
       proc = new Procedure(func, {
         permissions: {
-          tokens: [],
+          assets: [],
           transactions: [],
           portfolios: [],
         },
@@ -442,14 +442,14 @@ describe('Procedure class', () => {
 
       proc = new Procedure(func, {
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker: 'SOME_TICKER' })],
+          assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
           transactions: [TxTags.asset.Freeze],
           portfolios: [],
         },
       });
 
       context = dsMockUtils.getContextInstance({
-        checkTokenPermissions: { result: false, missingPermissions: [TxTags.asset.Freeze] },
+        checkAssetPermissions: { result: false, missingPermissions: [TxTags.asset.Freeze] },
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
@@ -519,7 +519,7 @@ describe('Procedure class', () => {
 
   describe('method: addBatchTransaction', () => {
     test('should return an array of post transaction values corresponding to the resolver functions passed to it', async () => {
-      const ticker = 'MY_TOKEN';
+      const ticker = 'MY_ASSET';
       const resolvedNum = 1;
       const resolvedStr = 'something';
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
@@ -553,7 +553,7 @@ describe('Procedure class', () => {
     });
 
     test('should add a non-batch transaction to the queue if only one transaction is passed', async () => {
-      const ticker = 'MY_TOKEN';
+      const ticker = 'MY_ASSET';
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const proc = new Procedure(async () => undefined);

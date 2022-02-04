@@ -1,4 +1,4 @@
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { boolToBoolean, stringToTicker } from '~/utils/conversion';
@@ -18,9 +18,9 @@ export type Params = TogglePauseRequirementsParams & {
  * @hidden
  */
 export async function prepareTogglePauseRequirements(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   args: Params
-): Promise<SecurityToken> {
+): Promise<Asset> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -47,14 +47,14 @@ export async function prepareTogglePauseRequirements(
     args: [rawTicker],
   });
 
-  return new SecurityToken({ ticker }, context);
+  return new Asset({ ticker }, context);
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   { ticker, pause }: Params
 ): ProcedureAuthorization {
   return {
@@ -64,7 +64,7 @@ export function getAuthorization(
           ? TxTags.complianceManager.PauseAssetCompliance
           : TxTags.complianceManager.ResumeAssetCompliance,
       ],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -73,5 +73,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const togglePauseRequirements = (): Procedure<Params, SecurityToken> =>
+export const togglePauseRequirements = (): Procedure<Params, Asset> =>
   new Procedure(prepareTogglePauseRequirements, getAuthorization);

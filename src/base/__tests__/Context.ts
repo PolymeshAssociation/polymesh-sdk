@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Context, Identity, PolymeshError } from '~/internal';
+import { Account, Context, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -49,6 +49,10 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
     '~/api/entities/NumberedPortfolio'
   )
+);
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
 );
 
 // TODO: refactor tests (too much repeated code)
@@ -548,10 +552,13 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy();
       expect(result).toEqual({
-        subsidy: entityMockUtils.getSubsidyInstance({
-          beneficiary: DUMMY_ACCOUNT_ID,
-          subsidizer: 'payingKey',
-        }),
+        subsidy: new Subsidy(
+          {
+            beneficiary: DUMMY_ACCOUNT_ID,
+            subsidizer: 'payingKey',
+          },
+          context
+        ),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
       });
     });
@@ -576,10 +583,13 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy('accountId');
       expect(result).toEqual({
-        subsidy: entityMockUtils.getSubsidyInstance({
-          beneficiary: 'accountId',
-          subsidizer: 'payingKey',
-        }),
+        subsidy: new Subsidy(
+          {
+            beneficiary: 'accountId',
+            subsidizer: 'payingKey',
+          },
+          context
+        ),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
       });
     });
@@ -626,10 +636,13 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
-        subsidy: entityMockUtils.getSubsidyInstance({
-          beneficiary: 'accountId',
-          subsidizer: 'payingKey',
-        }),
+        subsidy: new Subsidy(
+          {
+            beneficiary: 'accountId',
+            subsidizer: 'payingKey',
+          },
+          context
+        ),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
       });
     });
@@ -1726,12 +1739,12 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: getDividendDistributionsForTokens', () => {
+  describe('method: getDividendDistributionsForAssets', () => {
     afterAll(() => {
       sinon.restore();
     });
 
-    test('should return all distributions associated to the passed tokens', async () => {
+    test('should return all distributions associated to the passed assets', async () => {
       const tickers = ['TICKER_0', 'TICKER_1', 'TICKER_2'];
       const rawTickers = tickers.map(dsMockUtils.createMockTicker);
 
@@ -1867,8 +1880,8 @@ describe('Context class', () => {
         stringToTickerStub.withArgs(ticker, context).returns(rawTickers[index])
       );
 
-      const result = await context.getDividendDistributionsForTokens({
-        tokens: tickers.map(ticker => entityMockUtils.getSecurityTokenInstance({ ticker })),
+      const result = await context.getDividendDistributionsForAssets({
+        assets: tickers.map(ticker => entityMockUtils.getAssetInstance({ ticker })),
       });
 
       expect(result.length).toBe(2);

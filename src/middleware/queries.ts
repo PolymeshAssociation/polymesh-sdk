@@ -273,7 +273,7 @@ export function proposals(
 /**
  * @hidden
  *
- * Get the tickers of all the tokens for which the passed DID is a trusted claim issuer
+ * Get the tickers of all the Assets for which the passed DID is a trusted claim issuer
  */
 export function tokensByTrustedClaimIssuer(
   variables: QueryTokensByTrustedClaimIssuerArgs
@@ -293,7 +293,7 @@ export function tokensByTrustedClaimIssuer(
 /**
  * @hidden
  *
- * Get all tickers of tokens that were held at some point by the given did
+ * Get all tickers of Assets that were held at some point by the given did
  */
 export function tokensHeldByDid(
   variables: QueryTokensHeldByDidArgs
@@ -687,7 +687,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
- * Get the transaction history of each external agent of a token
+ * Get the transaction history of each external agent of an Asset
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
@@ -714,7 +714,7 @@ export function tickerExternalAgentHistory(
 /**
  * @hidden
  *
- * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Security Token
+ * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
  */
 export function tickerExternalAgentActions(
   variables: QueryTickerExternalAgentActionsArgs

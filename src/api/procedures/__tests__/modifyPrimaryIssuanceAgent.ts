@@ -14,8 +14,8 @@ import { Authorization, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyPrimaryIssuanceAgent procedure', () => {
@@ -84,7 +84,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [new Identity({ did: 'otherDid' }, mockContext)],
         },
@@ -121,7 +121,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [],
         },
@@ -146,7 +146,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [],
         },
@@ -164,7 +164,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     });
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [],
         },
@@ -201,7 +201,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
         },
       });
     });

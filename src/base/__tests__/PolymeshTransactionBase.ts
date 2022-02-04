@@ -572,7 +572,15 @@ describe('Polymesh Transaction Base class', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = entityMockUtils.getAccountInstance();
       const paidForBy = entityMockUtils.getIdentityInstance({
-        getPrimaryAccount: account,
+        getPrimaryAccount: {
+          account,
+          permissions: {
+            assets: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
       });
 
       const args = tuple('SOMETHING');
@@ -589,16 +597,16 @@ describe('Polymesh Transaction Base class', () => {
 
       const result = await tx.getPayingAccount();
 
-      expect(result?.account).toEqual(account);
+      expect(result?.account.address).toEqual(account.address);
       expect(result?.allowance).toBeNull();
     });
 
     test('should return the account and allowance if the transaction is being subsidized', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const account = entityMockUtils.getAccountInstance();
+      const account = entityMockUtils.getAccountInstance({ address: 'subsidizer' });
       const allowance = new BigNumber(100);
       context.accountSubsidy.resolves({
-        subsidizer: account,
+        subsidy: entityMockUtils.getSubsidyInstance(),
         allowance,
       });
 

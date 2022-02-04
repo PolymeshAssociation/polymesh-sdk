@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 
 import {
   Context,
-  createPortfolio,
   DefaultPortfolio,
   deletePortfolio,
   Identity,
@@ -26,10 +25,6 @@ export class Portfolios extends Namespace<Identity> {
 
     const { did } = parent;
 
-    this.create = createProcedureMethod(
-      { getProcedureAndArgs: args => [createPortfolio, args] },
-      context
-    );
     this.delete = createProcedureMethod(
       {
         getProcedureAndArgs: args => {
@@ -154,11 +149,6 @@ export class Portfolios extends Namespace<Identity> {
 
     return numberedPortfolio;
   }
-
-  /**
-   * Create a new Portfolio for the Identity
-   */
-  public create: ProcedureMethod<{ name: string }, NumberedPortfolio>;
 
   /**
    * Delete a Portfolio by ID

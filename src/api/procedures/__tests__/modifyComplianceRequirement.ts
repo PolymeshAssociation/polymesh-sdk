@@ -19,8 +19,8 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyComplianceRequirement procedure', () => {
@@ -79,7 +79,7 @@ describe('modifyComplianceRequirement procedure', () => {
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         complianceRequirementsGet: {
           requirements: [
             {
@@ -105,7 +105,7 @@ describe('modifyComplianceRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied requirement id does not belong to the Security Token', () => {
+  test('should throw an error if the supplied requirement id does not belong to the Asset', () => {
     const fakeConditions = ['condition'] as unknown as Condition[];
     args = {
       ticker,
@@ -133,7 +133,7 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   test('should add a modify compliance requirement transaction to the queue', async () => {
-    const fakeConditions = ['condition'] as unknown as Condition[];
+    const fakeConditions = [{ claim: '' }] as unknown as Condition[];
     const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
@@ -176,7 +176,7 @@ describe('modifyComplianceRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [entityMockUtils.getAssetInstance({ ticker })],
           portfolios: [],
         },
       });

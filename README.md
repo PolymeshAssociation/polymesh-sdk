@@ -48,7 +48,7 @@ Or, if you're using yarn
 
 #### Initializing the client
 
-Before you can start registering Tickers and creating Security Tokens, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
+Before you can start registering Tickers and creating Assets, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
 
 ```typescript
 import { Polymesh } from '@polymathnetwork/polymesh-sdk';

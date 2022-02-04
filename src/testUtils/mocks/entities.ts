@@ -4,9 +4,10 @@ import BigNumber from 'bignumber.js';
 import { merge } from 'lodash';
 import sinon, { SinonStub } from 'sinon';
 
-import { ProposalDetails, ProposalStage /*, ProposalState */ } from '~/api/entities/Proposal/types';
+import { ProposalDetails, ProposalStage } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -18,9 +19,8 @@ import {
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
+  Offering,
   PermissionGroup,
-  SecurityToken,
-  Sto,
   Subsidy,
   TickerReservation,
   Venue,
@@ -30,6 +30,8 @@ import {
   AccountBalance,
   ActiveTransferRestrictions,
   AgentWithGroup,
+  AssetDetails,
+  AssetWithGroup,
   Authorization,
   AuthorizationType,
   CalendarPeriod,
@@ -50,26 +52,24 @@ import {
   InstructionStatus,
   InstructionType,
   Leg,
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
   PercentageTransferRestriction,
+  PermissionedAccount,
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
-  SecondaryAccount,
-  SecurityTokenDetails,
+  SecurityIdentifier,
   SignerType,
-  StoBalanceStatus,
-  StoDetails,
-  StoSaleStatus,
-  StoTimingStatus,
   TargetTreatment,
   TaxWithholding,
   TickerReservationDetails,
   TickerReservationStatus,
-  TokenIdentifier,
-  TokenWithGroup,
   TransferStatus,
   VenueDetails,
   VenueType,
@@ -79,14 +79,14 @@ type MockIdentity = Mocked<Identity>;
 type MockAccount = Mocked<Account>;
 type MockSubsidy = Mocked<Subsidy>;
 type MockTickerReservation = Mocked<TickerReservation>;
-type MockSecurityToken = Mocked<SecurityToken>;
+type MockAsset = Mocked<Asset>;
 type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 type MockPermissionGroup = Mocked<PermissionGroup>;
 type MockVenue = Mocked<Venue>;
 type MockInstruction = Mocked<Instruction>;
 type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
 type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
-type MockSto = Mocked<Sto>;
+type MockOffering = Mocked<Offering>;
 type MockCheckpoint = Mocked<Checkpoint>;
 type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
 type MockCorporateAction = Mocked<CorporateAction>;
@@ -97,7 +97,7 @@ type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 const mockInstanceContainer = {
   identity: {} as MockIdentity,
   tickerReservation: {} as MockTickerReservation,
-  securityToken: {} as MockSecurityToken,
+  asset: {} as MockAsset,
   authorizationRequest: {} as MockAuthorizationRequest,
   permissionGroup: {} as MockPermissionGroup,
   account: {} as MockAccount,
@@ -107,7 +107,7 @@ const mockInstanceContainer = {
   defaultPortfolio: {} as MockDefaultPortfolio,
   customPermissionGroup: {} as MockCustomPermissionGroup,
   knownPermissionGroup: {} as MockKnownPermissionGroup,
-  sto: {} as MockSto,
+  offering: {} as MockOffering,
   checkpoint: {} as MockCheckpoint,
   checkpointSchedule: {} as MockCheckpointSchedule,
   corporateAction: {} as MockCorporateAction,
@@ -120,23 +120,23 @@ interface IdentityOptions {
   hasRoles?: boolean;
   hasRole?: boolean;
   checkRoles?: CheckRolesResult;
-  tokenPermissionsHasPermissions?: boolean;
-  tokenPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
+  assetPermissionsHasPermissions?: boolean;
+  assetPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
   hasValidCdd?: boolean;
   isCddProvider?: boolean;
-  getPrimaryAccount?: Account;
+  getPrimaryAccount?: PermissionedAccount;
   authorizations?: {
     getReceived?: AuthorizationRequest[];
     getSent?: ResultSet<AuthorizationRequest>;
   };
   getVenues?: Venue[];
   getScopeId?: string;
-  getTokenBalance?: BigNumber;
-  getSecondaryAccounts?: SecondaryAccount[];
+  getAssetBalance?: BigNumber;
+  getSecondaryAccounts?: PermissionedAccount[];
   areSecondaryAccountsFrozen?: boolean;
   isEqual?: boolean;
-  tokenPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;
-  tokenPermissionsGet?: TokenWithGroup[];
+  assetPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;
+  assetPermissionsGet?: AssetWithGroup[];
   exists?: boolean;
 }
 
@@ -146,13 +146,13 @@ interface TickerReservationOptions {
   exists?: boolean;
 }
 
-interface SecurityTokenOptions {
+interface AssetOptions {
   ticker?: string;
-  details?: Partial<SecurityTokenDetails>;
+  details?: Partial<AssetDetails>;
   currentFundingRound?: string;
   isFrozen?: boolean;
   transfersCanTransfer?: TransferStatus;
-  getIdentifiers?: TokenIdentifier[];
+  getIdentifiers?: SecurityIdentifier[];
   transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
   transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
   corporateActionsGetAgents?: Identity[];
@@ -214,7 +214,7 @@ interface VenueOptions {
 interface NumberedPortfolioOptions {
   id?: BigNumber;
   isOwnedBy?: boolean;
-  tokenBalances?: PortfolioBalance[];
+  assetBalances?: PortfolioBalance[];
   custodian?: Identity;
   did?: string;
   exists?: boolean;
@@ -224,7 +224,7 @@ interface NumberedPortfolioOptions {
 
 interface DefaultPortfolioOptions {
   isOwnedBy?: boolean;
-  tokenBalances?: PortfolioBalance[];
+  assetBalances?: PortfolioBalance[];
   did?: string;
   custodian?: Identity;
   isCustodiedBy?: boolean;
@@ -256,10 +256,10 @@ interface InstructionOptions {
   exists?: boolean;
 }
 
-interface StoOptions {
+interface OfferingOptions {
   id?: BigNumber;
   ticker?: string;
-  details?: Partial<StoDetails>;
+  details?: Partial<OfferingDetails>;
   exists?: boolean;
 }
 
@@ -321,14 +321,14 @@ type MockOptions = {
   accountOptions?: AccountOptions;
   subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
-  securityTokenOptions?: SecurityTokenOptions;
+  assetOptions?: AssetOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
   defaultPortfolioOptions?: DefaultPortfolioOptions;
-  stoOptions?: StoOptions;
+  offeringOptions?: OfferingOptions;
   checkpointOptions?: CheckpointOptions;
   checkpointScheduleOptions?: CheckpointScheduleOptions;
   corporateActionOptions?: CorporateActionOptions;
@@ -341,7 +341,7 @@ let identityConstructorStub: SinonStub;
 let accountConstructorStub: SinonStub;
 let tickerReservationConstructorStub: SinonStub;
 let subsidyConstructorStub: SinonStub;
-let securityTokenConstructorStub: SinonStub;
+let assetConstructorStub: SinonStub;
 let authorizationRequestConstructorStub: SinonStub;
 let permissionGroupConstructorStub: SinonStub;
 let proposalConstructorStub: SinonStub;
@@ -349,7 +349,7 @@ let venueConstructorStub: SinonStub;
 let instructionConstructorStub: SinonStub;
 let numberedPortfolioConstructorStub: SinonStub;
 let defaultPortfolioConstructorStub: SinonStub;
-let stoConstructorStub: SinonStub;
+let offeringConstructorStub: SinonStub;
 let checkpointConstructorStub: SinonStub;
 let checkpointScheduleConstructorStub: SinonStub;
 let corporateActionConstructorStub: SinonStub;
@@ -358,23 +358,23 @@ let customPermissionGroupConstructorStub: SinonStub;
 let knownPermissionGroupConstructorStub: SinonStub;
 let agentConstructorStub: SinonStub;
 
-let securityTokenDetailsStub: SinonStub;
-let securityTokenCurrentFundingRoundStub: SinonStub;
-let securityTokenIsFrozenStub: SinonStub;
-let securityTokenTransfersCanTransferStub: SinonStub;
-let securityTokenGetIdentifiersStub: SinonStub;
-let securityTokenTransferRestrictionsCountGetStub: SinonStub;
-let securityTokenTransferRestrictionsPercentageGetStub: SinonStub;
-let securityTokenCorporateActionsGetAgentsStub: SinonStub;
-let securityTokenCorporateActionsGetDefaultConfigStub: SinonStub;
-let securityTokenPermissionsGetGroupsStub: SinonStub;
-let securityTokenPermissionsGetAgentsStub: SinonStub;
-let securityTokenComplianceRequirementsGetStub: SinonStub;
-let securityTokenCheckpointsGetOneStub: SinonStub;
-let securityTokenCheckpointsSchedulesGetOneStub: SinonStub;
-let securityTokenIsEqualStub: SinonStub;
-let securityTokenExistsStub: SinonStub;
-let securityTokenToJsonStub: SinonStub;
+let assetDetailsStub: SinonStub;
+let assetCurrentFundingRoundStub: SinonStub;
+let assetIsFrozenStub: SinonStub;
+let assetTransfersCanTransferStub: SinonStub;
+let assetGetIdentifiersStub: SinonStub;
+let assetTransferRestrictionsCountGetStub: SinonStub;
+let assetTransferRestrictionsPercentageGetStub: SinonStub;
+let assetCorporateActionsGetAgentsStub: SinonStub;
+let assetCorporateActionsGetDefaultConfigStub: SinonStub;
+let assetPermissionsGetGroupsStub: SinonStub;
+let assetPermissionsGetAgentsStub: SinonStub;
+let assetComplianceRequirementsGetStub: SinonStub;
+let assetCheckpointsGetOneStub: SinonStub;
+let assetCheckpointsSchedulesGetOneStub: SinonStub;
+let assetIsEqualStub: SinonStub;
+let assetExistsStub: SinonStub;
+let assetToJsonStub: SinonStub;
 let authorizationRequestExistsStub: SinonStub;
 let identityHasRolesStub: SinonStub;
 let identityHasRoleStub: SinonStub;
@@ -385,14 +385,14 @@ let identityAuthorizationsGetReceivedStub: SinonStub;
 let identityAuthorizationsGetSentStub: SinonStub;
 let identityGetVenuesStub: SinonStub;
 let identityGetScopeIdStub: SinonStub;
-let identityGetTokenBalanceStub: SinonStub;
+let identityGetAssetBalanceStub: SinonStub;
 let identityGetSecondaryAccountsStub: SinonStub;
 let identityAreSecondaryAccountsFrozenStub: SinonStub;
 let identityIsEqualStub: SinonStub;
-let identityTokenPermissionsHasPermissionsStub: SinonStub;
-let identityTokenPermissionsCheckPermissionsStub: SinonStub;
-let identityTokenPermissionsGetStub: SinonStub;
-let identityTokenPermissionsGetGroupStub: SinonStub;
+let identityAssetPermissionsHasPermissionsStub: SinonStub;
+let identityAssetPermissionsCheckPermissionsStub: SinonStub;
+let identityAssetPermissionsGetStub: SinonStub;
+let identityAssetPermissionsGetGroupStub: SinonStub;
 let identityExistsStub: SinonStub;
 let identityIsCddProviderStub: SinonStub;
 let accountGetBalanceStub: SinonStub;
@@ -414,19 +414,19 @@ let instructionGetLegsStub: SinonStub;
 let instructionIsPendingStub: SinonStub;
 let instructionExistsStub: SinonStub;
 let numberedPortfolioIsOwnedByStub: SinonStub;
-let numberedPortfolioGetTokenBalancesStub: SinonStub;
+let numberedPortfolioGetAssetBalancesStub: SinonStub;
 let numberedPortfolioExistsStub: SinonStub;
 let numberedPortfolioGetCustodianStub: SinonStub;
 let numberedPortfolioIsCustodiedByStub: SinonStub;
 let numberedPortfolioIsEqualStub: SinonStub;
 let defaultPortfolioIsOwnedByStub: SinonStub;
-let defaultPortfolioGetTokenBalancesStub: SinonStub;
+let defaultPortfolioGetAssetBalancesStub: SinonStub;
 let defaultPortfolioGetCustodianStub: SinonStub;
 let defaultPortfolioIsCustodiedByStub: SinonStub;
 let defaultPortfolioIsEqualStub: SinonStub;
 let defaultPortfolioExistsStub: SinonStub;
-let stoDetailsStub: SinonStub;
-let stoExistsStub: SinonStub;
+let offeringsDetailsStub: SinonStub;
+let offeringExistsStub: SinonStub;
 let checkpointCreatedAtStub: SinonStub;
 let checkpointTotalSupplyStub: SinonStub;
 let checkpointExistsStub: SinonStub;
@@ -482,12 +482,12 @@ const MockSubsidyClass = class {
   }
 };
 
-const MockSecurityTokenClass = class {
+const MockAssetClass = class {
   /**
    * @hidden
    */
   constructor(...args: unknown[]) {
-    return securityTokenConstructorStub(...args);
+    return assetConstructorStub(...args);
   }
 };
 
@@ -554,12 +554,12 @@ const MockInstructionClass = class {
   }
 };
 
-const MockStoClass = class {
+const MockOfferingClass = class {
   /**
    * @hidden
    */
   constructor(...args: unknown[]) {
-    return stoConstructorStub(...args);
+    return offeringConstructorStub(...args);
   }
 };
 
@@ -646,9 +646,9 @@ export const mockTickerReservationModule = (path: string) => (): Record<string, 
   TickerReservation: MockTickerReservationClass,
 });
 
-export const mockSecurityTokenModule = (path: string) => (): Record<string, unknown> => ({
+export const mockAssetModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  SecurityToken: MockSecurityTokenClass,
+  Asset: MockAssetClass,
 });
 
 export const mockAuthorizationRequestModule = (path: string) => (): Record<string, unknown> => ({
@@ -686,9 +686,9 @@ export const mockDefaultPortfolioModule = (path: string) => (): Record<string, u
   DefaultPortfolio: MockDefaultPortfolioClass,
 });
 
-export const mockStoModule = (path: string) => (): Record<string, unknown> => ({
+export const mockOfferingModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
-  Sto: MockStoClass,
+  Offering: MockOfferingClass,
 });
 
 export const mockCheckpointModule = (path: string) => (): Record<string, unknown> => ({
@@ -736,15 +736,15 @@ const defaultIdentityOptions: IdentityOptions = {
   },
   getVenues: [],
   getScopeId: 'someScopeId',
-  getTokenBalance: new BigNumber(100),
+  getAssetBalance: new BigNumber(100),
   getSecondaryAccounts: [],
   areSecondaryAccountsFrozen: false,
   isEqual: true,
-  tokenPermissionsGet: [],
-  tokenPermissionsCheckPermissions: {
+  assetPermissionsGet: [],
+  assetPermissionsCheckPermissions: {
     result: true,
   },
-  tokenPermissionsHasPermissions: true,
+  assetPermissionsHasPermissions: true,
   exists: true,
 };
 let identityOptions: IdentityOptions = defaultIdentityOptions;
@@ -784,10 +784,10 @@ const defaultTickerReservationOptions: TickerReservationOptions = {
   exists: true,
 };
 let tickerReservationOptions = defaultTickerReservationOptions;
-const defaultSecurityTokenOptions: SecurityTokenOptions = {
+const defaultAssetOptions: AssetOptions = {
   ticker: 'SOME_TICKER',
   details: {
-    name: 'TOKEN_NAME',
+    name: 'ASSET_NAME',
     totalSupply: new BigNumber(1000000),
     isDivisible: false,
     primaryIssuanceAgents: [],
@@ -826,11 +826,11 @@ const defaultSecurityTokenOptions: SecurityTokenOptions = {
   exists: true,
   toJson: 'SOME_TICKER',
 };
-let securityTokenOptions = defaultSecurityTokenOptions;
+let assetOptions = defaultAssetOptions;
 const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
   target: { did: 'targetDid' } as Identity,
   issuer: { did: 'issuerDid' } as Identity,
-  data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
+  data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_ASSET' },
   expiry: null,
   exists: true,
 };
@@ -847,9 +847,9 @@ let venueOptions = defaultVenueOptions;
 const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
   id: new BigNumber(1),
   isOwnedBy: true,
-  tokenBalances: [
+  assetBalances: [
     {
-      token: 'someToken' as unknown as SecurityToken,
+      asset: 'someAsset' as unknown as Asset,
       total: new BigNumber(1),
       locked: new BigNumber(0),
       free: new BigNumber(1),
@@ -864,9 +864,9 @@ const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
 let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
 const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
   isOwnedBy: true,
-  tokenBalances: [
+  assetBalances: [
     {
-      token: 'someToken' as unknown as SecurityToken,
+      asset: 'someAsset' as unknown as Asset,
       total: new BigNumber(1),
       locked: new BigNumber(0),
       free: new BigNumber(1),
@@ -914,14 +914,14 @@ const defaultInstructionOptions: InstructionOptions = {
   exists: true,
 };
 let instructionOptions = defaultInstructionOptions;
-const defaultStoOptions: StoOptions = {
+const defaultStoOptions: OfferingOptions = {
   details: {
     end: null,
     start: new Date('10/14/1987'),
     status: {
-      timing: StoTimingStatus.Started,
-      balance: StoBalanceStatus.Available,
-      sale: StoSaleStatus.Live,
+      timing: OfferingTimingStatus.Started,
+      balance: OfferingBalanceStatus.Available,
+      sale: OfferingSaleStatus.Live,
     },
     tiers: [
       {
@@ -1055,7 +1055,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
     uuid: 'numberedPortfolio',
     id: opts.id,
     isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
-    getTokenBalances: numberedPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    getAssetBalances: numberedPortfolioGetAssetBalancesStub.resolves(opts.assetBalances),
     getCustodian: numberedPortfolioGetCustodianStub.resolves(opts.custodian),
     owner: { did: opts.did },
     exists: numberedPortfolioExistsStub.resolves(opts.exists),
@@ -1083,7 +1083,7 @@ function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
 function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
   numberedPortfolioConstructorStub = sinon.stub();
   numberedPortfolioIsOwnedByStub = sinon.stub();
-  numberedPortfolioGetTokenBalancesStub = sinon.stub();
+  numberedPortfolioGetAssetBalancesStub = sinon.stub();
   numberedPortfolioGetCustodianStub = sinon.stub();
   numberedPortfolioExistsStub = sinon.stub();
   numberedPortfolioGetCustodianStub = sinon.stub();
@@ -1103,7 +1103,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
   const defaultPortfolio = {
     uuid: 'defaultPortfolio',
     isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
-    getTokenBalances: defaultPortfolioGetTokenBalancesStub.resolves(opts.tokenBalances),
+    getAssetBalances: defaultPortfolioGetAssetBalancesStub.resolves(opts.assetBalances),
     owner: { did: opts.did },
     getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
     isCustodiedBy: defaultPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
@@ -1131,7 +1131,7 @@ function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
 function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
   defaultPortfolioConstructorStub = sinon.stub();
   defaultPortfolioIsOwnedByStub = sinon.stub();
-  defaultPortfolioGetTokenBalancesStub = sinon.stub();
+  defaultPortfolioGetAssetBalancesStub = sinon.stub();
   defaultPortfolioGetCustodianStub = sinon.stub();
   defaultPortfolioIsCustodiedByStub = sinon.stub();
   defaultPortfolioIsEqualStub = sinon.stub();
@@ -1150,7 +1150,7 @@ function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): voi
   const customPermissionGroup = {
     uuid: 'customPermissionGroup',
     id: opts.id,
-    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
+    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: customPermissionGroupIsEqualStub.returns(opts.isEqual),
     exists: customPermissionGroupExistsStub.resolves(opts.exists),
@@ -1194,7 +1194,7 @@ function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
 function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void {
   const knownPermissionGroup = {
     uuid: 'knownPermissionGroup',
-    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
+    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     type: opts.type,
     getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
     isEqual: knownPermissionGroupIsEqualStub.returns(opts.isEqual),
@@ -1274,100 +1274,94 @@ function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
 
 /**
  * @hidden
- * Configure the Security Token instance
+ * Configure the Asset instance
  */
-function configureSecurityToken(opts: SecurityTokenOptions): void {
+function configureAsset(opts: AssetOptions): void {
   const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const securityToken = {
-    uuid: 'securityToken',
+  const asset = {
+    uuid: 'asset',
     ticker: opts.ticker,
-    details: securityTokenDetailsStub.resolves(details),
-    currentFundingRound: securityTokenCurrentFundingRoundStub.resolves(opts.currentFundingRound),
-    isFrozen: securityTokenIsFrozenStub.resolves(opts.isFrozen),
+    details: assetDetailsStub.resolves(details),
+    currentFundingRound: assetCurrentFundingRoundStub.resolves(opts.currentFundingRound),
+    isFrozen: assetIsFrozenStub.resolves(opts.isFrozen),
     transfers: {
-      canTransfer: securityTokenTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
+      canTransfer: assetTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
     },
-    getIdentifiers: securityTokenGetIdentifiersStub.resolves(opts.getIdentifiers),
+    getIdentifiers: assetGetIdentifiersStub.resolves(opts.getIdentifiers),
     transferRestrictions: {
       count: {
-        get: securityTokenTransferRestrictionsCountGetStub.resolves(
-          opts.transferRestrictionsCountGet
-        ),
+        get: assetTransferRestrictionsCountGetStub.resolves(opts.transferRestrictionsCountGet),
       },
       percentage: {
-        get: securityTokenTransferRestrictionsPercentageGetStub.resolves(
+        get: assetTransferRestrictionsPercentageGetStub.resolves(
           opts.transferRestrictionsPercentageGet
         ),
       },
     },
     corporateActions: {
-      getAgents: securityTokenCorporateActionsGetAgentsStub.resolves(
-        opts.corporateActionsGetAgents
-      ),
-      getDefaultConfig: securityTokenCorporateActionsGetDefaultConfigStub.resolves(
+      getAgents: assetCorporateActionsGetAgentsStub.resolves(opts.corporateActionsGetAgents),
+      getDefaultConfig: assetCorporateActionsGetDefaultConfigStub.resolves(
         opts.corporateActionsGetDefaultConfig
       ),
     },
     permissions: {
-      getGroups: securityTokenPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
-      getAgents: securityTokenPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
+      getGroups: assetPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
+      getAgents: assetPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
     },
     compliance: {
       requirements: {
-        get: securityTokenComplianceRequirementsGetStub.resolves(opts.complianceRequirementsGet),
+        get: assetComplianceRequirementsGetStub.resolves(opts.complianceRequirementsGet),
       },
     },
     checkpoints: {
       schedules: {
-        getOne: securityTokenCheckpointsSchedulesGetOneStub.resolves(
-          opts.checkpointsSchedulesGetOne
-        ),
+        getOne: assetCheckpointsSchedulesGetOneStub.resolves(opts.checkpointsSchedulesGetOne),
       },
-      getOne: securityTokenCheckpointsGetOneStub.resolves(opts.checkpointsGetOne),
+      getOne: assetCheckpointsGetOneStub.resolves(opts.checkpointsGetOne),
     },
-    isEqual: securityTokenIsEqualStub.returns(opts.isEqual),
-    exists: securityTokenExistsStub.resolves(opts.exists),
-    toJson: securityTokenToJsonStub.returns(opts.toJson),
-  } as unknown as MockSecurityToken;
+    isEqual: assetIsEqualStub.returns(opts.isEqual),
+    exists: assetExistsStub.resolves(opts.exists),
+    toJson: assetToJsonStub.returns(opts.toJson),
+  } as unknown as MockAsset;
 
-  Object.assign(mockInstanceContainer.securityToken, securityToken);
-  securityTokenConstructorStub.callsFake(args => {
-    const value = merge({}, securityToken, args);
+  Object.assign(mockInstanceContainer.asset, asset);
+  assetConstructorStub.callsFake(args => {
+    const value = merge({}, asset, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
-    Object.setPrototypeOf(entities.SecurityToken.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.SecurityToken.prototype);
+    Object.setPrototypeOf(entities.Asset.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Asset.prototype);
     return value;
   });
 }
 
 /**
  * @hidden
- * Initialize the Security Token instance
+ * Initialize the Asset instance
  */
-function initSecurityToken(opts?: SecurityTokenOptions): void {
-  securityTokenConstructorStub = sinon.stub();
-  securityTokenDetailsStub = sinon.stub();
-  securityTokenCurrentFundingRoundStub = sinon.stub();
-  securityTokenIsFrozenStub = sinon.stub();
-  securityTokenTransfersCanTransferStub = sinon.stub();
-  securityTokenGetIdentifiersStub = sinon.stub();
-  securityTokenTransferRestrictionsCountGetStub = sinon.stub();
-  securityTokenTransferRestrictionsPercentageGetStub = sinon.stub();
-  securityTokenCorporateActionsGetAgentsStub = sinon.stub();
-  securityTokenCorporateActionsGetDefaultConfigStub = sinon.stub();
-  securityTokenPermissionsGetGroupsStub = sinon.stub();
-  securityTokenPermissionsGetAgentsStub = sinon.stub();
-  securityTokenComplianceRequirementsGetStub = sinon.stub();
-  securityTokenCheckpointsGetOneStub = sinon.stub();
-  securityTokenCheckpointsSchedulesGetOneStub = sinon.stub();
-  securityTokenIsEqualStub = sinon.stub();
-  securityTokenExistsStub = sinon.stub();
-  securityTokenToJsonStub = sinon.stub();
+function initAsset(opts?: AssetOptions): void {
+  assetConstructorStub = sinon.stub();
+  assetDetailsStub = sinon.stub();
+  assetCurrentFundingRoundStub = sinon.stub();
+  assetIsFrozenStub = sinon.stub();
+  assetTransfersCanTransferStub = sinon.stub();
+  assetGetIdentifiersStub = sinon.stub();
+  assetTransferRestrictionsCountGetStub = sinon.stub();
+  assetTransferRestrictionsPercentageGetStub = sinon.stub();
+  assetCorporateActionsGetAgentsStub = sinon.stub();
+  assetCorporateActionsGetDefaultConfigStub = sinon.stub();
+  assetPermissionsGetGroupsStub = sinon.stub();
+  assetPermissionsGetAgentsStub = sinon.stub();
+  assetComplianceRequirementsGetStub = sinon.stub();
+  assetCheckpointsGetOneStub = sinon.stub();
+  assetCheckpointsSchedulesGetOneStub = sinon.stub();
+  assetIsEqualStub = sinon.stub();
+  assetExistsStub = sinon.stub();
+  assetToJsonStub = sinon.stub();
 
-  securityTokenOptions = merge({}, defaultSecurityTokenOptions, opts);
+  assetOptions = merge({}, defaultAssetOptions, opts);
 
-  configureSecurityToken(securityTokenOptions);
+  configureAsset(assetOptions);
 }
 
 /**
@@ -1429,19 +1423,19 @@ function configureIdentity(opts: IdentityOptions): void {
       getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
       getSent: identityAuthorizationsGetSentStub.resolves(opts.authorizations?.getSent),
     },
-    tokenPermissions: {
-      get: identityTokenPermissionsGetStub.resolves(opts.tokenPermissionsGet),
-      getGroup: identityTokenPermissionsGetGroupStub.resolves(opts.tokenPermissionsGetGroup),
-      hasPermissions: identityTokenPermissionsHasPermissionsStub.resolves(
-        opts.tokenPermissionsHasPermissions
+    assetPermissions: {
+      get: identityAssetPermissionsGetStub.resolves(opts.assetPermissionsGet),
+      getGroup: identityAssetPermissionsGetGroupStub.resolves(opts.assetPermissionsGetGroup),
+      hasPermissions: identityAssetPermissionsHasPermissionsStub.resolves(
+        opts.assetPermissionsHasPermissions
       ),
-      checkPermissions: identityTokenPermissionsCheckPermissionsStub.resolves(
-        opts.tokenPermissionsCheckPermissions
+      checkPermissions: identityAssetPermissionsCheckPermissionsStub.resolves(
+        opts.assetPermissionsCheckPermissions
       ),
     },
     getVenues: identityGetVenuesStub.resolves(opts.getVenues),
     getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
-    getTokenBalance: identityGetTokenBalanceStub.resolves(opts.getTokenBalance),
+    getAssetBalance: identityGetAssetBalanceStub.resolves(opts.getAssetBalance),
     getSecondaryAccounts: identityGetSecondaryAccountsStub.resolves(opts.getSecondaryAccounts),
     areSecondaryAccountsFrozen: identityAreSecondaryAccountsFrozenStub.resolves(
       opts.areSecondaryAccountsFrozen
@@ -1477,14 +1471,14 @@ function initIdentity(opts?: IdentityOptions): void {
   identityAuthorizationsGetSentStub = sinon.stub();
   identityGetVenuesStub = sinon.stub();
   identityGetScopeIdStub = sinon.stub();
-  identityGetTokenBalanceStub = sinon.stub();
+  identityGetAssetBalanceStub = sinon.stub();
   identityGetSecondaryAccountsStub = sinon.stub();
   identityAreSecondaryAccountsFrozenStub = sinon.stub();
   identityIsEqualStub = sinon.stub();
-  identityTokenPermissionsGetStub = sinon.stub();
-  identityTokenPermissionsGetGroupStub = sinon.stub();
-  identityTokenPermissionsHasPermissionsStub = sinon.stub();
-  identityTokenPermissionsCheckPermissionsStub = sinon.stub();
+  identityAssetPermissionsGetStub = sinon.stub();
+  identityAssetPermissionsGetGroupStub = sinon.stub();
+  identityAssetPermissionsHasPermissionsStub = sinon.stub();
+  identityAssetPermissionsCheckPermissionsStub = sinon.stub();
   identityExistsStub = sinon.stub();
   identityIsCddProviderStub = sinon.stub();
 
@@ -1504,7 +1498,7 @@ function configureInstruction(opts: InstructionOptions): void {
       {
         from: mockInstanceContainer.numberedPortfolio,
         to: mockInstanceContainer.numberedPortfolio,
-        token: mockInstanceContainer.securityToken,
+        asset: mockInstanceContainer.asset,
         amount: new BigNumber(100),
       },
     ],
@@ -1605,8 +1599,8 @@ function initAccount(opts?: AccountOptions): void {
 function configureSubsidy(opts: SubsidyOptions): void {
   const subsidy = {
     uuid: 'subsidy',
-    subsidizer: { ...mockInstanceContainer.account, address: opts.subsidizer },
     beneficiary: { ...mockInstanceContainer.account, address: opts.beneficiary },
+    subsidizer: { ...mockInstanceContainer.account, address: opts.subsidizer },
     exists: subsidyExistsStub.resolves(opts.exists),
     toJson: subsidyToJsonStub.resolves(opts.toJson),
   } as unknown as MockSubsidy;
@@ -1637,9 +1631,9 @@ function initSubsidy(opts?: SubsidyOptions): void {
 }
 /**
  * @hidden
- * Configure the Security Token Offering instance
+ * Configure the Asset Offering instance
  */
-function configureSto(opts: StoOptions): void {
+function configureOffering(opts: OfferingOptions): void {
   const details = {
     creator: mockInstanceContainer.identity,
     venue: mockInstanceContainer.venue,
@@ -1647,38 +1641,38 @@ function configureSto(opts: StoOptions): void {
     raisingPortfolio: mockInstanceContainer.numberedPortfolio,
     ...opts.details,
   };
-  const sto = {
+  const offering = {
     uuid: 'sto',
-    details: stoDetailsStub.resolves(details),
-    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
+    details: offeringsDetailsStub.resolves(details),
+    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     id: opts.id,
-    exists: stoExistsStub.resolves(opts.exists),
-  } as unknown as MockSto;
+    exists: offeringExistsStub.resolves(opts.exists),
+  } as unknown as MockOffering;
 
-  Object.assign(mockInstanceContainer.sto, sto);
+  Object.assign(mockInstanceContainer.offering, offering);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  stoConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, sto, args);
+  offeringConstructorStub.callsFake(({ ticker, ...args } = {}) => {
+    const value = merge({}, offering, args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Sto.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Sto.prototype);
+    Object.setPrototypeOf(entities.Offering.prototype, entities.Entity.prototype);
+    Object.setPrototypeOf(value, entities.Offering.prototype);
     return value;
   });
 }
 
 /**
  * @hidden
- * Initialize the Sto instance
+ * Initialize the Offering instance
  */
-function initSto(opts?: StoOptions): void {
-  stoConstructorStub = sinon.stub();
-  stoDetailsStub = sinon.stub();
-  stoExistsStub = sinon.stub();
+function initOffering(opts?: OfferingOptions): void {
+  offeringConstructorStub = sinon.stub();
+  offeringsDetailsStub = sinon.stub();
+  offeringExistsStub = sinon.stub();
 
   stoOptions = merge({}, defaultStoOptions, opts);
 
-  configureSto(stoOptions);
+  configureOffering(stoOptions);
 }
 
 /**
@@ -1699,7 +1693,7 @@ function configureCheckpoint(opts: CheckpointOptions): void {
     uuid: 'checkpoint',
     createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
     totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
-    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
+    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     id: opts.id,
     exists: checkpointExistsStub.resolves(opts.exists),
     allBalances: checkpointAllBalancesStub.resolves(allBalances),
@@ -1743,7 +1737,7 @@ function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
   const checkpointSchedule = {
     uuid: 'checkpointSchedule',
     id: opts.id,
-    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
+    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     start: opts.start,
     period: opts.period,
     expiryDate: opts.expiryDate,
@@ -1786,7 +1780,7 @@ function configureCorporateAction(opts: CorporateActionOptions): void {
   const corporateAction = {
     uuid: 'corporateAction',
     id: opts.id,
-    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
+    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     kind: opts.kind,
     declarationDate: opts.declarationDate,
     description: opts.description,
@@ -1839,7 +1833,7 @@ function configureDividendDistribution(opts: DividendDistributionOptions): void 
   const dividendDistribution = {
     uuid: 'dividendDistribution',
     id: opts.id,
-    token: { ...mockInstanceContainer.securityToken, ticker: opts.ticker },
+    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
     kind: CorporateActionKind.UnpredictableBenefit,
     declarationDate: opts.declarationDate,
     description: opts.description,
@@ -1911,13 +1905,9 @@ export function configureMocks(opts?: MockOptions): void {
 
   configureTickerReservation(tempTickerReservationOptions);
 
-  const tempSecurityTokenOptions = merge(
-    {},
-    defaultSecurityTokenOptions,
-    opts?.securityTokenOptions
-  );
+  const tempAssetOptions = merge({}, defaultAssetOptions, opts?.assetOptions);
 
-  configureSecurityToken(tempSecurityTokenOptions);
+  configureAsset(tempAssetOptions);
 
   const tempAuthorizationRequestOptions = {
     ...defaultAuthorizationRequestOptions,
@@ -1964,9 +1954,9 @@ export function configureMocks(opts?: MockOptions): void {
 
   const tempStoOptions = {
     ...stoOptions,
-    ...opts?.stoOptions,
+    ...opts?.offeringOptions,
   };
-  configureSto(tempStoOptions);
+  configureOffering(tempStoOptions);
 
   const tempCheckpointOptions = {
     ...checkpointOptions,
@@ -2011,8 +2001,8 @@ export function initMocks(opts?: MockOptions): void {
   // Subsidy
   initSubsidy(opts?.subsidyOptions);
 
-  // Security Token
-  initSecurityToken(opts?.securityTokenOptions);
+  // Asset
+  initAsset(opts?.assetOptions);
 
   // Authorization Request
   initAuthorizationRequest(opts?.authorizationRequestOptions);
@@ -2038,8 +2028,8 @@ export function initMocks(opts?: MockOptions): void {
   // Instruction
   initInstruction(opts?.instructionOptions);
 
-  // Sto
-  initSto(opts?.stoOptions);
+  // Offering
+  initOffering(opts?.offeringOptions);
 
   // Checkpoint
   initCheckpoint(opts?.checkpointOptions);
@@ -2062,12 +2052,12 @@ export function cleanup(): void {
   mockInstanceContainer.identity = {} as MockIdentity;
   mockInstanceContainer.account = {} as MockAccount;
   mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
-  mockInstanceContainer.securityToken = {} as MockSecurityToken;
+  mockInstanceContainer.asset = {} as MockAsset;
   mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
   mockInstanceContainer.permissionGroup = {} as MockPermissionGroup;
   mockInstanceContainer.venue = {} as MockVenue;
   mockInstanceContainer.instruction = {} as MockInstruction;
-  mockInstanceContainer.sto = {} as MockSto;
+  mockInstanceContainer.offering = {} as MockOffering;
   mockInstanceContainer.checkpoint = {} as MockCheckpoint;
   mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
   mockInstanceContainer.corporateAction = {} as MockCorporateAction;
@@ -2086,13 +2076,13 @@ export function reset(): void {
     accountOptions,
     subsidyOptions,
     tickerReservationOptions,
-    securityTokenOptions,
+    assetOptions: assetOptions,
     authorizationRequestOptions,
     venueOptions,
     instructionOptions,
     numberedPortfolioOptions,
     defaultPortfolioOptions,
-    stoOptions,
+    offeringOptions: stoOptions,
     checkpointOptions,
     checkpointScheduleOptions,
     corporateActionOptions,
@@ -2140,10 +2130,10 @@ export function getIdentityHasRoleStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.tokenPermissions.hasPermissions` method
+ * Retrieve the stub of the `Identity.assetPermissions.hasPermissions` method
  */
-export function getIdentityTokenPermissionsHasPermissionsStub(): SinonStub {
-  return identityTokenPermissionsHasPermissionsStub;
+export function getIdentityAssetPermissionsHasPermissionsStub(): SinonStub {
+  return identityAssetPermissionsHasPermissionsStub;
 }
 
 /**
@@ -2196,15 +2186,15 @@ export function getIdentityGetScopeIdStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve the stub of the `Identity.tokenPermissions.getGroup` method
+ * Retrieve the stub of the `Identity.assetPermissions.getGroup` method
  */
-export function getIdentityTokenPermissionsGetGroupStub(
+export function getIdentityAssetPermissionsGetGroupStub(
   group?: CustomPermissionGroup | KnownPermissionGroup
 ): SinonStub {
   if (group) {
-    return identityTokenPermissionsGetGroupStub.resolves(group);
+    return identityAssetPermissionsGetGroupStub.resolves(group);
   }
-  return identityTokenPermissionsGetGroupStub;
+  return identityAssetPermissionsGetGroupStub;
 }
 
 /**
@@ -2378,158 +2368,156 @@ export function getTickerReservationDetailsStub(
 
 /**
  * @hidden
- * Retrieve a Security Token instance
+ * Retrieve an Asset instance
  */
-export function getSecurityTokenInstance(opts?: SecurityTokenOptions): MockSecurityToken {
+export function getAssetInstance(opts?: AssetOptions): MockAsset {
   if (opts) {
-    configureSecurityToken({ ...defaultSecurityTokenOptions, ...opts });
+    configureAsset({ ...defaultAssetOptions, ...opts });
   }
 
-  return new MockSecurityTokenClass() as MockSecurityToken;
+  return new MockAssetClass() as MockAsset;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.details` method
+ * Retrieve the stub of the `Asset.details` method
  */
-export function getSecurityTokenDetailsStub(details?: Partial<SecurityTokenDetails>): SinonStub {
+export function getAssetDetailsStub(details?: Partial<AssetDetails>): SinonStub {
   if (details) {
-    return securityTokenDetailsStub.resolves({
-      ...defaultSecurityTokenOptions.details,
+    return assetDetailsStub.resolves({
+      ...defaultAssetOptions.details,
       ...details,
     });
   }
-  return securityTokenDetailsStub;
+  return assetDetailsStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.currentFundingRound` method
+ * Retrieve the stub of the `Asset.currentFundingRound` method
  */
-export function getSecurityTokenCurrentFundingRoundStub(currentFundingRound?: string): SinonStub {
+export function getAssetCurrentFundingRoundStub(currentFundingRound?: string): SinonStub {
   if (currentFundingRound) {
-    return securityTokenCurrentFundingRoundStub.resolves(currentFundingRound);
+    return assetCurrentFundingRoundStub.resolves(currentFundingRound);
   }
 
-  return securityTokenCurrentFundingRoundStub;
+  return assetCurrentFundingRoundStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.isFrozen` method
+ * Retrieve the stub of the `Asset.isFrozen` method
  */
-export function getSecurityTokenIsFrozenStub(frozen?: boolean): SinonStub {
+export function getAssetIsFrozenStub(frozen?: boolean): SinonStub {
   if (frozen !== undefined) {
-    return securityTokenIsFrozenStub.resolves(frozen);
+    return assetIsFrozenStub.resolves(frozen);
   }
 
-  return securityTokenIsFrozenStub;
+  return assetIsFrozenStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.getIdentifiers` method
+ * Retrieve the stub of the `Asset.getIdentifiers` method
  */
-export function getSecurityTokenGetIdentifiersStub(identifiers?: TokenIdentifier): SinonStub {
+export function getAssetGetIdentifiersStub(identifiers?: SecurityIdentifier): SinonStub {
   if (identifiers !== undefined) {
-    return securityTokenGetIdentifiersStub.resolves(identifiers);
+    return assetGetIdentifiersStub.resolves(identifiers);
   }
 
-  return securityTokenGetIdentifiersStub;
+  return assetGetIdentifiersStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.Transfers.canTransfer` method
+ * Retrieve the stub of the `Asset.Transfers.canTransfer` method
  */
-export function getSecurityTokenTransfersCanTransferStub(status?: TransferStatus): SinonStub {
+export function getAssetTransfersCanTransferStub(status?: TransferStatus): SinonStub {
   if (status) {
-    return securityTokenTransfersCanTransferStub.resolves(status);
+    return assetTransfersCanTransferStub.resolves(status);
   }
 
-  return securityTokenTransfersCanTransferStub;
+  return assetTransfersCanTransferStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.transferRestrictions.count.get` method
+ * Retrieve the stub of the `Asset.transferRestrictions.count.get` method
  */
-export function getSecurityTokenTransferRestrictionsCountGetStub(
+export function getAssetTransferRestrictionsCountGetStub(
   restrictions?: ActiveTransferRestrictions<CountTransferRestriction>
 ): SinonStub {
   if (restrictions) {
-    return securityTokenTransferRestrictionsCountGetStub.resolves(restrictions);
+    return assetTransferRestrictionsCountGetStub.resolves(restrictions);
   }
 
-  return securityTokenTransferRestrictionsCountGetStub;
+  return assetTransferRestrictionsCountGetStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.transferRestrictions.percentage.get` method
+ * Retrieve the stub of the `Asset.transferRestrictions.percentage.get` method
  */
-export function getSecurityTokenTransferRestrictionsPercentageGetStub(
+export function getAssetTransferRestrictionsPercentageGetStub(
   restrictions?: ActiveTransferRestrictions<PercentageTransferRestriction>
 ): SinonStub {
   if (restrictions) {
-    return securityTokenTransferRestrictionsPercentageGetStub.resolves(restrictions);
+    return assetTransferRestrictionsPercentageGetStub.resolves(restrictions);
   }
 
-  return securityTokenTransferRestrictionsPercentageGetStub;
+  return assetTransferRestrictionsPercentageGetStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.corporateActions.getAgents` method
+ * Retrieve the stub of the `Asset.corporateActions.getAgents` method
  */
-export function getSecurityTokenCorporateActionsGetAgentsStub(agent?: Identity): SinonStub {
+export function getAssetCorporateActionsGetAgentsStub(agent?: Identity): SinonStub {
   if (agent) {
-    return securityTokenCorporateActionsGetAgentsStub.resolves(agent);
+    return assetCorporateActionsGetAgentsStub.resolves(agent);
   }
 
-  return securityTokenCorporateActionsGetAgentsStub;
+  return assetCorporateActionsGetAgentsStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.corporateActions.getDefaultConfig` method
+ * Retrieve the stub of the `Asset.corporateActions.getDefaultConfig` method
  */
-export function getSecurityTokenCorporateActionsGetDefaultConfigStub(
+export function getAssetCorporateActionsGetDefaultConfigStub(
   defaults?: Partial<CorporateActionDefaultConfig>
 ): SinonStub {
   if (defaults) {
-    return securityTokenCorporateActionsGetDefaultConfigStub.resolves(defaults);
+    return assetCorporateActionsGetDefaultConfigStub.resolves(defaults);
   }
 
-  return securityTokenCorporateActionsGetDefaultConfigStub;
+  return assetCorporateActionsGetDefaultConfigStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.permissions.getGroups` method
+ * Retrieve the stub of the `Asset.permissions.getGroups` method
  */
-export function getSecurityTokenPermissionsGetGroupsStub(
+export function getAssetPermissionsGetGroupsStub(
   groups?: Partial<ResultSet<PermissionGroup>>
 ): SinonStub {
   if (groups) {
-    return securityTokenPermissionsGetGroupsStub.resolves(groups);
+    return assetPermissionsGetGroupsStub.resolves(groups);
   }
 
-  return securityTokenPermissionsGetGroupsStub;
+  return assetPermissionsGetGroupsStub;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `SecurityToken.permissions.getAgents` method
+ * Retrieve the stub of the `Asset.permissions.getAgents` method
  */
-export function getSecurityTokenPermissionsGetAgentsStub(
-  agents?: Partial<AgentWithGroup>[]
-): SinonStub {
+export function getAssetPermissionsGetAgentsStub(agents?: Partial<AgentWithGroup>[]): SinonStub {
   if (agents) {
-    return securityTokenPermissionsGetAgentsStub.resolves(agents);
+    return assetPermissionsGetAgentsStub.resolves(agents);
   }
 
-  return securityTokenPermissionsGetAgentsStub;
+  return assetPermissionsGetAgentsStub;
 }
 
 /**
@@ -2710,36 +2698,36 @@ export function getInstructionGetLegsStub(legs?: ResultSet<Leg>): SinonStub {
 
 /**
  * @hidden
- * Retrieve an Sto instance
+ * Retrieve an Offering instance
  */
-export function getStoInstance(opts?: StoOptions): MockSto {
+export function getOfferingInstance(opts?: OfferingOptions): MockOffering {
   if (opts) {
-    configureSto({ ...defaultStoOptions, ...opts });
+    configureOffering({ ...defaultStoOptions, ...opts });
   }
 
-  return new MockStoClass() as MockSto;
+  return new MockOfferingClass() as MockOffering;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the `Sto.details` method
+ * Retrieve the stub of the `Offering.details` method
  */
-export function getStoDetailsStub(details?: Partial<StoDetails>): SinonStub {
+export function getOfferingDetailsStub(details?: Partial<OfferingDetails>): SinonStub {
   if (details) {
-    return stoDetailsStub.resolves({
+    return offeringsDetailsStub.resolves({
       ...defaultStoOptions.details,
       ...details,
     });
   }
-  return stoDetailsStub;
+  return offeringsDetailsStub;
 }
 
 /**
  * @hidden
- * Retrieve the Sto constructor stub
+ * Retrieve the Offering constructor stub
  */
 export function getStoConstructorStub(): SinonStub {
-  return stoConstructorStub;
+  return offeringConstructorStub;
 }
 
 /**

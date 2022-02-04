@@ -135,7 +135,7 @@ export async function prepareClaimClassicTicker(
 export const claimClassicTicker = (): Procedure<ClaimClassicTickerParams, TickerReservation> =>
   new Procedure(prepareClaimClassicTicker, {
     permissions: {
-      tokens: [],
+      assets: [],
       transactions: [TxTags.asset.ClaimClassicTicker],
       portfolios: [],
     },

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { uniq } from 'lodash';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -111,7 +111,7 @@ export async function prepareAddTransferRestriction(
       identity = identityValue;
     }
 
-    return identity.getScopeId({ token: ticker });
+    return identity.getScopeId({ asset: ticker });
   });
 
   const exempted: string[] = [...exemptedScopeIds, ...identityScopes];
@@ -159,7 +159,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },

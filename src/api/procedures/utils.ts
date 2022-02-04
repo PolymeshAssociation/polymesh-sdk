@@ -2,6 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import {
   Account,
+  Asset,
   AuthorizationRequest,
   Checkpoint,
   CheckpointSchedule,
@@ -13,7 +14,6 @@ import {
   NumberedPortfolio,
   PolymeshError,
   PostTransactionValue,
-  SecurityToken,
   TickerReservation,
 } from '~/internal';
 import {
@@ -30,14 +30,13 @@ import {
   InputTaxWithholding,
   InstructionStatus,
   InstructionType,
+  PermissionedAccount,
   PermissionGroupType,
-  SecondaryAccount,
   Signer,
-  SignerValue,
   TickerReservationStatus,
 } from '~/types';
 import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
-import { signerToSignerValue, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 // import { Proposal } from '~/internal';
@@ -134,23 +133,23 @@ export async function assertPortfolioExists(
  * @hidden
  */
 export function assertSecondaryAccounts(
-  signerValues: SignerValue[],
-  secondaryAccounts: SecondaryAccount[]
+  accounts: Account[],
+  secondaryAccounts: PermissionedAccount[]
 ): void {
   const notInTheList: string[] = [];
-  signerValues.forEach(({ value: itemValue }) => {
-    const isPresent = secondaryAccounts
-      .map(({ signer }) => signerToSignerValue(signer))
-      .find(({ value }) => value === itemValue);
+  accounts.forEach(({ address }) => {
+    const isPresent = secondaryAccounts.find(
+      ({ account: { address: existingAddress } }) => existingAddress === address
+    );
     if (!isPresent) {
-      notInTheList.push(itemValue);
+      notInTheList.push(address);
     }
   });
 
   if (notInTheList.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'One of the Signers is not a secondary Account for the Identity',
+      message: 'One of the Accounts is not a secondary Account for the Identity',
       data: {
         missing: notInTheList,
       },
@@ -439,7 +438,7 @@ export async function assertTransferTickerAuthorizationValid(
       message: 'The Ticker is not reserved',
     });
   }
-  if (status === TickerReservationStatus.TokenCreated) {
+  if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The Ticker has already been used to create an Asset',
@@ -456,8 +455,8 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
   data: GenericAuthorizationData,
   context: Context
 ): Promise<void> {
-  const token = new SecurityToken({ ticker: data.value }, context);
-  const exists = await token.exists();
+  const asset = new Asset({ ticker: data.value }, context);
+  const exists = await asset.exists();
   if (!exists)
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
