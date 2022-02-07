@@ -192,14 +192,14 @@ describe('Portfolio class', () => {
       locked1 = new BigNumber(25);
       rawTicker0 = dsMockUtils.createMockTicker(ticker0);
       rawTicker1 = dsMockUtils.createMockTicker(ticker1);
-      rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6).toNumber());
-      rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6).toNumber());
-      rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6).toNumber());
-      rawLocked1 = dsMockUtils.createMockBalance(locked1.shiftedBy(6).toNumber());
+      rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6));
+      rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6));
+      rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6));
+      rawLocked1 = dsMockUtils.createMockBalance(locked1.shiftedBy(6));
       rawPortfolioId = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(id.toNumber()),
+          User: dsMockUtils.createMockU64(id),
         }),
       });
       sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
@@ -499,8 +499,8 @@ describe('Portfolio class', () => {
 
       let result = await portfolio.getTransactionHistory({
         account,
-        size: 5,
-        start: 0,
+        size: new BigNumber(5),
+        start: new BigNumber(0),
       });
 
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
@@ -516,8 +516,8 @@ describe('Portfolio class', () => {
       expect(result.data[0].legs[0].to).toEqual(portfolio2);
       expect(result.data[1].legs[0].from).toEqual(portfolio2);
       expect(result.data[1].legs[0].to).toEqual(portfolio1);
-      expect(result.count).toEqual(20);
-      expect(result.next).toEqual(5);
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(5));
       /* eslint-enabled @typescript-eslint/no-non-null-assertion */
 
       dsMockUtils.createApolloQueryStub(

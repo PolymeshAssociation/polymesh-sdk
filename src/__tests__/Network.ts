@@ -80,7 +80,7 @@ describe('Network Class', () => {
   describe('method: getNetworkProperties', () => {
     test('should return current network information', async () => {
       const name = 'someName';
-      const version = 1;
+      const version = new BigNumber(1);
       const fakeResult = {
         name,
         version,
@@ -173,7 +173,7 @@ describe('Network Class', () => {
     test('should return a single event', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
@@ -223,7 +223,7 @@ describe('Network Class', () => {
     test('should return a list of events', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const fakeResult = [{ blockNumber, blockDate, eventIndex: eventIdx }];
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
@@ -234,8 +234,8 @@ describe('Network Class', () => {
           eventArg0: undefined,
           eventArg1: undefined,
           eventArg2: undefined,
-          count: undefined,
-          skip: undefined,
+          count: 1,
+          skip: 0,
         }),
         {
           /* eslint-disable @typescript-eslint/naming-convention */
@@ -243,14 +243,18 @@ describe('Network Class', () => {
             {
               block_id: blockNumber.toNumber(),
               block: { datetime: blockDate },
-              event_idx: eventIdx,
+              event_idx: eventIdx.toNumber(),
             },
           ],
           /* eslint-enable @typescript-eslint/naming-convention */
         }
       );
 
-      const result = await network.getEventsByIndexedArgs(variables);
+      const result = await network.getEventsByIndexedArgs({
+        ...variables,
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+      });
       expect(result).toEqual(fakeResult);
     });
 
@@ -280,9 +284,9 @@ describe('Network Class', () => {
     test('should return a transaction', async () => {
       const blockNumber = new BigNumber(1);
       const blockHash = 'someHash';
-      const extrinsicIdx = 2;
+      const extrinsicIdx = new BigNumber(2);
       const address = 'someAddress';
-      const specVersionId = 2006;
+      const specVersionId = new BigNumber(2006);
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
 
@@ -291,8 +295,8 @@ describe('Network Class', () => {
         transactionByHash: {
           module_id: ModuleIdEnum.Asset,
           call_id: CallIdEnum.RegisterTicker,
-          extrinsic_idx: extrinsicIdx,
-          spec_version_id: specVersionId,
+          extrinsic_idx: extrinsicIdx.toNumber(),
+          spec_version_id: specVersionId.toNumber(),
           params: [],
           block_id: blockNumber.toNumber(),
           address,
@@ -310,7 +314,7 @@ describe('Network Class', () => {
         blockHash,
         extrinsicIdx: extrinsicIdx,
         address,
-        nonce: undefined,
+        nonce: null,
         txTag: 'asset.registerTicker',
         params: [],
         success: false,
@@ -326,6 +330,7 @@ describe('Network Class', () => {
           extrinsic_idx: extrinsicIdx,
           spec_version_id: specVersionId,
           params: [],
+          nonce: 12345,
           block_id: blockNumber.toNumber(),
           address: null,
           success: 0,
@@ -342,7 +347,7 @@ describe('Network Class', () => {
         blockHash,
         extrinsicIdx: extrinsicIdx,
         address: null,
-        nonce: undefined,
+        nonce: new BigNumber(12345),
         txTag: 'asset.registerTicker',
         params: [],
         success: false,

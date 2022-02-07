@@ -43,7 +43,7 @@ describe('Venue class', () => {
     procedureMockUtils.initMocks();
 
     id = new BigNumber(1);
-    rawId = dsMockUtils.createMockU64(id.toNumber());
+    rawId = dsMockUtils.createMockU64(id);
   });
 
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe('Venue class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
+      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
@@ -108,7 +108,7 @@ describe('Venue class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
+      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
@@ -147,7 +147,7 @@ describe('Venue class', () => {
       const id2 = new BigNumber(2);
 
       const detailsStub = entityMockUtils.getInstructionDetailsStub();
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
+      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
@@ -155,9 +155,9 @@ describe('Venue class', () => {
 
       dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
         entries: [
-          [tuple(rawId, dsMockUtils.createMockU64(id1.toNumber())), []],
-          [tuple(rawId, dsMockUtils.createMockU64(id2.toNumber())), []],
-          [tuple(rawId, dsMockUtils.createMockU64(3)), []],
+          [tuple(rawId, dsMockUtils.createMockU64(id1)), []],
+          [tuple(rawId, dsMockUtils.createMockU64(id2)), []],
+          [tuple(rawId, dsMockUtils.createMockU64(new BigNumber(3))), []],
         ],
       });
 
@@ -191,14 +191,14 @@ describe('Venue class', () => {
       entityMockUtils.configureMocks({
         instructionOptions: { id: instructionId, isPending: true },
       });
-      sinon.stub(utilsConversionModule, 'numberToU64').withArgs(id, context).returns(rawId);
+      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
         .resolves(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
 
       dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
-        entries: [[tuple(rawId, dsMockUtils.createMockU64(instructionId.toNumber())), []]],
+        entries: [[tuple(rawId, dsMockUtils.createMockU64(instructionId)), []]],
       });
 
       let result = await venue.getPendingInstructions();
@@ -250,7 +250,7 @@ describe('Venue class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { instructions: [{ legs, tradeDate, endBlock }], venue },
+            args: { instructions: [{ legs, tradeDate, endBlock }], venueId: venue.id },
             transformer: addInstructionTransformer,
           },
           context
@@ -301,7 +301,7 @@ describe('Venue class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { venue, instructions },
+            args: { venueId: venue.id, instructions },
             transformer: undefined,
           },
           context

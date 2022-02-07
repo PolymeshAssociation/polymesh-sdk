@@ -124,12 +124,12 @@ describe('setCustodian procedure', () => {
     });
     const rawDid = dsMockUtils.createMockIdentityId(did);
     const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(id.toNumber()),
+      User: dsMockUtils.createMockU64(id),
     });
     const rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       PortfolioCustody: dsMockUtils.createMockPortfolioId({ did: rawDid, kind: rawPortfolioKind }),
     });
-    const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
+    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
     const fakePortfolio = entityMockUtils.getNumberedPortfolioInstance({ isEqual: false });
     const receivedAuthorizations: AuthorizationRequest[] = [
       entityMockUtils.getAuthorizationRequestInstance({

@@ -117,7 +117,7 @@ describe('modifyClaims procedure', () => {
     });
     rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
     rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
-    rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
+    rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
   });
 
   beforeEach(() => {
@@ -183,8 +183,8 @@ describe('modifyClaims procedure', () => {
               claim: cddClaim,
             },
           ],
-          next: 1,
-          count: 1,
+          next: new BigNumber(1),
+          count: new BigNumber(1),
         },
       },
     });
@@ -280,8 +280,8 @@ describe('modifyClaims procedure', () => {
               claim: { type: ClaimType.CustomerDueDiligence, id: otherId },
             },
           ],
-          next: 1,
-          count: 1,
+          next: new BigNumber(1),
+          count: new BigNumber(1),
         },
       },
     });

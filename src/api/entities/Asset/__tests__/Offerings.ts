@@ -211,17 +211,19 @@ describe('Offerings class', () => {
           }),
           offering_asset: rawTicker,
           raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
-          venue_id: dsMockUtils.createMockU64(venue.id.toNumber()),
+          venue_id: dsMockUtils.createMockU64(venue.id),
           tiers: [
             dsMockUtils.createMockFundraiserTier({
-              total: dsMockUtils.createMockBalance(tiers[0].amount.toNumber()),
-              price: dsMockUtils.createMockBalance(tiers[0].price.toNumber()),
-              remaining: dsMockUtils.createMockBalance(tiers[0].remaining.toNumber()),
+              total: dsMockUtils.createMockBalance(tiers[0].amount),
+              price: dsMockUtils.createMockBalance(tiers[0].price),
+              remaining: dsMockUtils.createMockBalance(tiers[0].remaining),
             }),
           ],
-          start: dsMockUtils.createMockMoment(start.getTime()),
-          end: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(end.getTime())),
-          minimum_investment: dsMockUtils.createMockBalance(minInvestment.toNumber()),
+          start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
+          end: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(end.getTime()))
+          ),
+          minimum_investment: dsMockUtils.createMockBalance(minInvestment),
           status: dsMockUtils.createMockFundraiserStatus('Closed'),
         }),
         dsMockUtils.createMockFundraiser({
@@ -237,17 +239,19 @@ describe('Offerings class', () => {
           }),
           offering_asset: rawTicker,
           raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
-          venue_id: dsMockUtils.createMockU64(venue.id.toNumber()),
+          venue_id: dsMockUtils.createMockU64(venue.id),
           tiers: [
             dsMockUtils.createMockFundraiserTier({
-              total: dsMockUtils.createMockBalance(tiers[0].amount.toNumber()),
-              price: dsMockUtils.createMockBalance(tiers[0].price.toNumber()),
-              remaining: dsMockUtils.createMockBalance(tiers[0].remaining.toNumber()),
+              total: dsMockUtils.createMockBalance(tiers[0].amount),
+              price: dsMockUtils.createMockBalance(tiers[0].price),
+              remaining: dsMockUtils.createMockBalance(tiers[0].remaining),
             }),
           ],
-          start: dsMockUtils.createMockMoment(start.getTime()),
-          end: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(end.getTime())),
-          minimum_investment: dsMockUtils.createMockBalance(minInvestment.toNumber()),
+          start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
+          end: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(end.getTime()))
+          ),
+          minimum_investment: dsMockUtils.createMockBalance(minInvestment),
           status: dsMockUtils.createMockFundraiserStatus('Live'),
         }),
       ];
@@ -265,19 +269,19 @@ describe('Offerings class', () => {
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         entries: [
           tuple(
-            [rawTicker, dsMockUtils.createMockU64(1)],
+            [rawTicker, dsMockUtils.createMockU64(new BigNumber(1))],
             dsMockUtils.createMockOption(fundraisers[0])
           ),
           tuple(
-            [rawTicker, dsMockUtils.createMockU64(2)],
+            [rawTicker, dsMockUtils.createMockU64(new BigNumber(2))],
             dsMockUtils.createMockOption(fundraisers[1])
           ),
         ],
       });
       dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
         entries: [
-          tuple([rawTicker, dsMockUtils.createMockU64(1)], rawName),
-          tuple([rawTicker, dsMockUtils.createMockU64(2)], rawName),
+          tuple([rawTicker, dsMockUtils.createMockU64(new BigNumber(1))], rawName),
+          tuple([rawTicker, dsMockUtils.createMockU64(new BigNumber(2))], rawName),
         ],
       });
     });

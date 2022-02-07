@@ -20,7 +20,7 @@ describe('subsidizeAccount procedure', () => {
 
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context, boolean?], Balance>;
+  let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
 
   let args: SubsidizeAccountParams;
   const authId = new BigNumber(1);
@@ -37,7 +37,7 @@ describe('subsidizeAccount procedure', () => {
 
     signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
     stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
@@ -71,7 +71,7 @@ describe('subsidizeAccount procedure', () => {
             data: {
               type: AuthorizationType.AddRelayerPayingKey,
               value: {
-                beneficiary: beneficiary,
+                beneficiary,
                 subsidizer: entityMockUtils.getAccountInstance(),
                 allowance: new BigNumber(1000),
               },
@@ -80,8 +80,8 @@ describe('subsidizeAccount procedure', () => {
           mockContext
         ),
       ],
-      next: 1,
-      count: 1,
+      next: new BigNumber(1),
+      count: new BigNumber(1),
     };
 
     dsMockUtils.configureMocks({
@@ -143,8 +143,8 @@ describe('subsidizeAccount procedure', () => {
           mockContext
         ),
       ],
-      next: 1,
-      count: 1,
+      next: new BigNumber(1),
+      count: new BigNumber(1),
     };
 
     dsMockUtils.configureMocks({
@@ -155,11 +155,11 @@ describe('subsidizeAccount procedure', () => {
 
     rawBeneficiaryAccount = dsMockUtils.createMockAccountId(address);
 
-    rawAllowance = dsMockUtils.createMockBalance(allowance.toNumber());
+    rawAllowance = dsMockUtils.createMockBalance(allowance);
 
     stringToAccountIdStub.withArgs(address, mockContext).returns(rawBeneficiaryAccount);
 
-    numberToBalanceStub.withArgs(allowance, mockContext).returns(rawAllowance);
+    bigNumberToBalanceStub.withArgs(allowance, mockContext).returns(rawAllowance);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext

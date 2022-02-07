@@ -10,7 +10,7 @@ import {
   Procedure,
 } from '~/internal';
 import { AddRelayerPayingKeyAuthorizationData, AuthorizationType, ErrorCode } from '~/types';
-import { numberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
+import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
 
 export interface SubsidizeAccountParams {
   /**
@@ -78,7 +78,7 @@ export async function prepareSubsidizeAccount(
 
   const rawBeneficiary = stringToAccountId(beneficiaryAddress, context);
 
-  const rawAllowance = numberToBalance(allowance, context);
+  const rawAllowance = bigNumberToBalance(allowance, context);
 
   const { account: subsidizer } = await identity.getPrimaryAccount();
 

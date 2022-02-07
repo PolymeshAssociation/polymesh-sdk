@@ -267,7 +267,9 @@ describe('Assets Class', () => {
       dsMockUtils.createQueryStub('asset', 'tickers', {
         returnValue: dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId('someDid'),
-          expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiry.getTime())),
+          expiry: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()))
+          ),
         }),
       });
 

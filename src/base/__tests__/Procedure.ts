@@ -254,11 +254,11 @@ describe('Procedure class', () => {
     let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
     let txTagToProtocolOpStub: sinon.SinonStub<[TxTag, Context], ProtocolOp>;
     let txTags: TxTag[];
-    let fees: number[];
+    let fees: BigNumber[];
     let rawCoefficient: PosRatio;
     let rawFees: Balance[];
-    let numerator: number;
-    let denominator: number;
+    let numerator: BigNumber;
+    let denominator: BigNumber;
     let coefficient: BigNumber;
 
     beforeAll(() => {
@@ -266,9 +266,9 @@ describe('Procedure class', () => {
       balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
       txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
       txTags = [TxTags.asset.RegisterTicker, TxTags.identity.CddRegisterDid];
-      fees = [250, 0];
-      numerator = 7;
-      denominator = 3;
+      fees = [new BigNumber(250), new BigNumber(0)];
+      numerator = new BigNumber(7);
+      denominator = new BigNumber(3);
       rawCoefficient = dsMockUtils.createMockPosRatio(numerator, denominator);
       rawFees = fees.map(dsMockUtils.createMockBalance);
       coefficient = new BigNumber(numerator).dividedBy(new BigNumber(denominator));

@@ -29,7 +29,7 @@ describe('removeCorporateAction procedure', () => {
   const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -99,10 +99,10 @@ describe('removeCorporateAction procedure', () => {
             did: 'someDid',
           },
           currency: 'USD',
-          per_share: 20000000,
-          amount: 50000000000,
-          remaining: 40000000000,
-          payment_at: new Date('1/1/2020').getTime(),
+          per_share: new BigNumber(20000000),
+          amount: new BigNumber(50000000000),
+          remaining: new BigNumber(40000000000),
+          payment_at: new BigNumber(new Date('1/1/2020').getTime()),
           expires_at: null,
           reclaimed: false,
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -155,10 +155,10 @@ describe('removeCorporateAction procedure', () => {
             did: 'someDid',
           },
           currency: 'USD',
-          per_share: 20000000,
-          amount: 50000000000,
-          remaining: 40000000000,
-          payment_at: new Date('10/10/2030').getTime(),
+          per_share: new BigNumber(20000000),
+          amount: new BigNumber(50000000000),
+          remaining: new BigNumber(40000000000),
+          payment_at: new BigNumber(new Date('10/10/2030').getTime()),
           expires_at: null,
           reclaimed: false,
           /* eslint-enable @typescript-eslint/naming-convention */

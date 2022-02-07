@@ -112,7 +112,7 @@ export class Schedules extends Namespace<Asset> {
   /**
    * Calculate an abstract measure of the complexity of a given Calendar Period
    */
-  public complexityOf(period: CalendarPeriod): number {
+  public complexityOf(period: CalendarPeriod): BigNumber {
     return periodComplexity(period);
   }
 
@@ -120,20 +120,20 @@ export class Schedules extends Namespace<Asset> {
    * Calculate the sum of the complexity of all current Checkpoint Schedules for this Asset.
    *   The number cannot exceed the Asset's maximum complexity (obtained via [[maxComplexity]])
    */
-  public async currentComplexity(): Promise<number> {
+  public async currentComplexity(): Promise<BigNumber> {
     const schedules = await this.get();
 
-    return schedules.reduce((prev, next) => prev + next.schedule.complexity, 0);
+    return schedules.reduce((prev, next) => prev.plus(next.schedule.complexity), new BigNumber(0));
   }
 
   /**
    * Retrieve the maximum allowed Schedule complexity for this Asset
    */
-  public async maxComplexity(): Promise<number> {
+  public async maxComplexity(): Promise<BigNumber> {
     const { context } = this;
 
     const complexity = await context.polymeshApi.query.checkpoint.schedulesMaxComplexity();
 
-    return u64ToBigNumber(complexity).toNumber();
+    return u64ToBigNumber(complexity);
   }
 }

@@ -70,7 +70,6 @@ import {
   ModuleName,
   MovePortfolioItem,
   Permissions as MeshPermissions,
-  PipId,
   PortfolioId as MeshPortfolioId,
   PosRatio,
   PriceTier,
@@ -474,28 +473,26 @@ export function u64ToBigNumber(value: u64): BigNumber {
 /**
  * @hidden
  */
-export function numberToU64(value: number | BigNumber, context: Context): u64 {
+export function bigNumberToU64(value: BigNumber, context: Context): u64 {
   assertIsInteger(value);
   assertIsPositive(value);
-  return context.polymeshApi.createType('u64', new BigNumber(value).toString());
+  return context.polymeshApi.createType('u64', value.toString());
 }
 
 /**
  * @hidden
  */
-export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
+export function percentageToPermill(value: BigNumber, context: Context): Permill {
   assertIsPositive(value);
 
-  const val = new BigNumber(value);
-
-  if (val.gt(100)) {
+  if (value.gt(100)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "Percentage shouldn't exceed 100",
     });
   }
 
-  return context.polymeshApi.createType('Permill', val.shiftedBy(4).toString()); // (value : 100) * 10^6
+  return context.polymeshApi.createType('Permill', value.shiftedBy(4).toString()); // (value : 100) * 10^6
 }
 
 /**
@@ -602,7 +599,7 @@ export function portfolioIdToMeshPortfolioId(
   return context.polymeshApi.createType('PortfolioId', {
     did: stringToIdentityId(did, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    kind: number ? { User: numberToU64(number, context) } : 'Default',
+    kind: number ? { User: bigNumberToU64(number, context) } : 'Default',
   });
 }
 
@@ -1064,7 +1061,7 @@ export function permissionGroupIdentifierToAgentGroup(
     'AgentGroup',
     typeof permissionGroup !== 'object'
       ? permissionGroup
-      : { Custom: numberToU32(permissionGroup.custom, context) }
+      : { Custom: bigNumberToU32(permissionGroup.custom, context) }
   );
 }
 
@@ -1221,39 +1218,33 @@ export function authorizationDataToAuthorization(
 /**
  * @hidden
  */
-export function numberToBalance(
-  value: number | BigNumber,
-  context: Context,
-  divisible = true
-): Balance {
-  const rawValue = new BigNumber(value);
-
+export function bigNumberToBalance(value: BigNumber, context: Context, divisible = true): Balance {
   assertIsPositive(value);
 
-  if (rawValue.isGreaterThan(MAX_BALANCE)) {
+  if (value.isGreaterThan(MAX_BALANCE)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The value exceeds the maximum possible balance',
       data: {
-        currentValue: rawValue,
+        currentValue: value,
         amountLimit: MAX_BALANCE,
       },
     });
   }
 
   if (divisible) {
-    if (rawValue.decimalPlaces() > MAX_DECIMALS) {
+    if (value.decimalPlaces() > MAX_DECIMALS) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The value has more decimal places than allowed',
         data: {
-          currentValue: rawValue,
+          currentValue: value,
           decimalsLimit: MAX_DECIMALS,
         },
       });
     }
   } else {
-    if (rawValue.decimalPlaces()) {
+    if (value.decimalPlaces()) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The value has decimals but the Asset is indivisible',
@@ -1261,7 +1252,7 @@ export function numberToBalance(
     }
   }
 
-  return context.polymeshApi.createType('Balance', rawValue.shiftedBy(6).toString());
+  return context.polymeshApi.createType('Balance', value.shiftedBy(6).toString());
 }
 
 /**
@@ -1291,10 +1282,10 @@ export function stringToMemo(value: string, context: Context): Memo {
 /**
  * @hidden
  */
-export function numberToU32(value: number | BigNumber, context: Context): u32 {
+export function bigNumberToU32(value: BigNumber, context: Context): u32 {
   assertIsInteger(value);
   assertIsPositive(value);
-  return context.polymeshApi.createType('u32', new BigNumber(value).toString());
+  return context.polymeshApi.createType('u32', value.toString());
 }
 
 /**
@@ -1983,7 +1974,7 @@ export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventI
     blockDate: new Date(block!.datetime),
     blockHash: block!.hash!,
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
-    eventIndex,
+    eventIndex: new BigNumber(eventIndex),
   };
 }
 
@@ -2235,7 +2226,7 @@ export function requirementToComplianceRequirement(
     /* eslint-disable @typescript-eslint/naming-convention */
     sender_conditions: senderConditions,
     receiver_conditions: receiverConditions,
-    id: numberToU32(requirement.id, context),
+    id: bigNumberToU32(requirement.id, context),
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 }
@@ -2372,7 +2363,7 @@ export function complianceRequirementResultToRequirementCompliance(
   );
 
   return {
-    id: u32ToBigNumber(complianceRequirement.id).toNumber(),
+    id: u32ToBigNumber(complianceRequirement.id),
     conditions,
     complies: boolToBoolean(complianceRequirement.result),
   };
@@ -2434,7 +2425,7 @@ export function complianceRequirementToRequirement(
   );
 
   return {
-    id: u32ToBigNumber(complianceRequirement.id).toNumber(),
+    id: u32ToBigNumber(complianceRequirement.id),
     conditions,
   };
 }
@@ -2501,15 +2492,6 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
 /**
  * @hidden
  */
-export function numberToPipId(id: number | BigNumber, context: Context): PipId {
-  assertIsInteger(id);
-  assertIsPositive(id);
-  return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
-}
-
-/**
- * @hidden
- */
 export function assetComplianceResultToCompliance(
   assetComplianceResult: AssetComplianceResult,
   context: Context
@@ -2531,7 +2513,7 @@ export function assetComplianceResultToCompliance(
 export function moduleAddressToString(moduleAddress: string, context: Context): string {
   return encodeAddress(
     stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)),
-    context.ss58Format
+    context.ss58Format.toNumber()
   );
 }
 
@@ -2539,14 +2521,14 @@ export function moduleAddressToString(moduleAddress: string, context: Context): 
  * @hidden
  */
 export function keyToAddress(key: string, context: Context): string {
-  return encodeAddress(key, context.ss58Format);
+  return encodeAddress(key, context.ss58Format.toNumber());
 }
 
 /**
  * @hidden
  */
 export function addressToKey(address: string, context: Context): string {
-  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, context.ss58Format));
+  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, context.ss58Format.toNumber()));
 }
 
 /**
@@ -2673,7 +2655,7 @@ export function endConditionToSettlementType(
     value = InstructionType.SettleOnAffirmation;
   } else {
     value = {
-      [InstructionType.SettleOnBlock]: numberToU32(endCondition.value, context),
+      [InstructionType.SettleOnBlock]: bigNumberToU32(endCondition.value, context),
     };
   }
 
@@ -2720,7 +2702,7 @@ export function portfolioMovementToMovePortfolioItem(
   const { asset, amount, memo } = portfolioItem;
   return context.polymeshApi.createType('MovePortfolioItem', {
     ticker: stringToTicker(getTicker(asset), context),
-    amount: numberToBalance(amount, context),
+    amount: bigNumberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),
   });
 }
@@ -2745,7 +2727,7 @@ export function transferRestrictionToTransferManager(
 
   if (type === TransferRestrictionType.Count) {
     tmType = 'CountTransferManager';
-    tmValue = numberToU64(value, context);
+    tmValue = bigNumberToU64(value, context);
   } else {
     tmType = 'PercentageTransferManager';
     tmValue = percentageToPermill(value, context);
@@ -2861,8 +2843,8 @@ export function granularCanTransferResultToTransferBreakdown(
 export function stoTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
   const { price, amount } = tier;
   return context.polymeshApi.createType('PriceTier', {
-    total: numberToBalance(amount, context),
-    price: numberToBalance(price, context),
+    total: bigNumberToBalance(amount, context),
+    price: bigNumberToBalance(price, context),
   });
 }
 
@@ -3069,7 +3051,7 @@ export function calendarPeriodToMeshCalendarPeriod(
 ): MeshCalendarPeriod {
   const { unit, amount } = period;
 
-  if (amount < 0) {
+  if (amount.isNegative()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Calendar period cannot have a negative amount',
@@ -3078,7 +3060,7 @@ export function calendarPeriodToMeshCalendarPeriod(
 
   return context.polymeshApi.createType('CalendarPeriod', {
     unit: stringUpperFirst(unit),
-    amount: numberToU64(amount, context),
+    amount: bigNumberToU64(amount, context),
   });
 }
 
@@ -3108,7 +3090,7 @@ export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): 
 
   return {
     unit,
-    amount: u64ToBigNumber(amount).toNumber(),
+    amount: u64ToBigNumber(amount),
   };
 }
 
@@ -3124,10 +3106,10 @@ export function scheduleSpecToMeshScheduleSpec(
   return context.polymeshApi.createType('ScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
-      period || { unit: CalendarUnit.Month, amount: 0 },
+      period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
       context
     ),
-    remaining: numberToU64(repetitions || 0, context),
+    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
   });
 }
 
@@ -3147,7 +3129,7 @@ export function storedScheduleToCheckpointScheduleParams(
     id: u64ToBigNumber(id),
     period: meshCalendarPeriodToCalendarPeriod(period),
     start: momentToDate(start),
-    remaining: u32ToBigNumber(remaining).toNumber(),
+    remaining: u32ToBigNumber(remaining),
     nextCheckpointDate: momentToDate(at),
   };
 }
@@ -3243,11 +3225,11 @@ export function checkpointToRecordDateSpec(
 
   if (checkpoint instanceof Checkpoint) {
     /* eslint-disable @typescript-eslint/naming-convention */
-    value = { Existing: numberToU64(checkpoint.id, context) };
+    value = { Existing: bigNumberToU64(checkpoint.id, context) };
   } else if (checkpoint instanceof Date) {
     value = { Scheduled: dateToMoment(checkpoint, context) };
   } else {
-    value = { ExistingSchedule: numberToU64(checkpoint.id, context) };
+    value = { ExistingSchedule: bigNumberToU64(checkpoint.id, context) };
     /* eslint-enable @typescript-eslint/naming-convention */
   }
 
@@ -3357,7 +3339,7 @@ export function corporateActionIdentifierToCaId(
   return context.polymeshApi.createType('CAId', {
     ticker: stringToTicker(ticker, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    local_id: numberToU32(localId, context),
+    local_id: bigNumberToU32(localId, context),
   });
 }
 

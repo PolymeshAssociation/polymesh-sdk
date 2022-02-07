@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
   AssetName,
-  Counter,
   FundingRoundName,
   IdentityId,
   SecurityToken as MeshSecurityToken,
@@ -46,13 +45,13 @@ import {
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
   balanceToBigNumber,
+  bigNumberToU32,
   boolToBoolean,
   bytesToString,
   fundingRoundNameToString,
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
-  numberToU32,
   stringToTicker,
   textToString,
   tickerToDid,
@@ -247,7 +246,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       if (typeof type === 'string') {
         assetType = type;
       } else {
-        const customType = await asset.customTypes(numberToU32(type, context));
+        const customType = await asset.customTypes(bigNumberToU32(type, context));
         assetType = bytesToString(customType);
       }
 
@@ -469,11 +468,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public investorCount(): Promise<number>;
-  public investorCount(callback: SubCallback<number>): Promise<UnsubCallback>;
+  public investorCount(): Promise<BigNumber>;
+  public investorCount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async investorCount(callback?: SubCallback<number>): Promise<number | UnsubCallback> {
+  public async investorCount(
+    callback?: SubCallback<BigNumber>
+  ): Promise<BigNumber | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -486,17 +487,15 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (value: Counter): number => u64ToBigNumber(value).toNumber();
-
     if (callback) {
       return statistics.investorCountPerAsset(rawTicker, count => {
-        callback(assembleResult(count));
+        callback(u64ToBigNumber(count));
       });
     }
 
     const result = await statistics.investorCountPerAsset(stringToTicker(ticker, context));
 
-    return u64ToBigNumber(result).toNumber();
+    return u64ToBigNumber(result);
   }
 
   /**
@@ -540,12 +539,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     tickerExternalAgentHistoryResult.forEach(({ did, history }) => {
       const historyResult: Omit<EventIdentifier, 'blockHash'>[] = [];
-      history.forEach(({ block_id: blockNumber, datetime, event_idx: eventIndex }) => {
-        multiParams.push(numberToU32(blockNumber, context));
+      history.forEach(({ block_id: blockId, datetime, event_idx: eventIndex }) => {
+        const blockNumber = new BigNumber(blockId);
+        multiParams.push(bigNumberToU32(blockNumber, context));
         historyResult.push({
-          blockNumber: new BigNumber(blockNumber),
+          blockNumber,
           blockDate: new Date(datetime),
-          eventIndex,
+          eventIndex: new BigNumber(eventIndex),
         });
       });
       results.push({

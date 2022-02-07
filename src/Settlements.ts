@@ -1,14 +1,19 @@
 import BigNumber from 'bignumber.js';
 
+import { addInstruction, AddInstructionWithVenueIdParams } from '~/api/procedures/addInstruction';
+import { AffirmInstructionParams } from '~/api/procedures/modifyInstructionAffirmation';
 import {
+  addInstructionTransformer,
   Context,
   createVenue,
   CreateVenueParams,
   Instruction,
+  modifyInstructionAffirmation,
   PolymeshError,
   Venue,
 } from '~/internal';
 import { ErrorCode, ProcedureMethod } from '~/types';
+import { InstructionAffirmationOperation } from '~/types/internal';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -25,6 +30,27 @@ export class Settlements {
 
     this.createVenue = createProcedureMethod(
       { getProcedureAndArgs: args => [createVenue, args] },
+      context
+    );
+
+    this.addInstruction = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => {
+          const { venueId, ...instruction } = args;
+          return [addInstruction, { instructions: [instruction], venueId }];
+        },
+        transformer: addInstructionTransformer,
+      },
+      context
+    );
+
+    this.affirmInstruction = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [
+          modifyInstructionAffirmation,
+          { id: args.id, operation: InstructionAffirmationOperation.Affirm },
+        ],
+      },
       context
     );
   }
@@ -75,4 +101,18 @@ export class Settlements {
    * Create a Venue under the ownership of the Current Identity
    */
   public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
+
+  /**
+   * Create an Instruction to exchange Assets
+   */
+  public addInstruction: ProcedureMethod<
+    AddInstructionWithVenueIdParams,
+    Instruction[],
+    Instruction
+  >;
+
+  /**
+   * Affirm an Instruction (authorize)
+   */
+  public affirmInstruction: ProcedureMethod<AffirmInstructionParams, Instruction>;
 }

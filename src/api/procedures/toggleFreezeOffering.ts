@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToTicker } from '~/utils/conversion';
+import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
 
 export interface ToggleFreezeOfferingParams {
   id: BigNumber;
@@ -29,7 +29,7 @@ export async function prepareToggleFreezeOffering(
   const { ticker, id, freeze } = args;
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawId = numberToU64(id, context);
+  const rawId = bigNumberToU64(id, context);
 
   const offering = new Offering({ ticker, id }, context);
 
