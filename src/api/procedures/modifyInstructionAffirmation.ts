@@ -20,6 +20,9 @@ import {
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
 
+export interface AffirmInstructionParams {
+  id: BigNumber;
+}
 export interface ModifyInstructionAffirmationParams {
   id: BigNumber;
   operation: InstructionAffirmationOperation;

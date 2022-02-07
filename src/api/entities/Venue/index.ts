@@ -66,14 +66,14 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     this.addInstruction = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venue: this }],
+        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venueId: this.id }],
         transformer: addInstructionTransformer,
       },
       context
     );
 
     this.addInstructions = createProcedureMethod(
-      { getProcedureAndArgs: args => [addInstruction, { ...args, venue: this }] },
+      { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: this.id }] },
       context
     );
 
