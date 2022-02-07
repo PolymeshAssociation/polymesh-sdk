@@ -84,6 +84,7 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Get amount of POLYX subsidized for this Subsidy relationship
    *
+   * @throws if the Subsidy does not exist
    */
   public async getAllowance(): Promise<BigNumber> {
     const {
