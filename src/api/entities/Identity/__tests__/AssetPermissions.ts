@@ -90,7 +90,7 @@ describe('AssetPermissions class', () => {
     test('should return the event identifier object of the agent added', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const variables = {
         moduleId: ModuleIdEnum.Externalagents,
         eventId: EventIdEnum.AgentAdded,
@@ -103,7 +103,7 @@ describe('AssetPermissions class', () => {
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
-          event_idx: eventIdx,
+          event_idx: eventIdx.toNumber(),
         },
         /* eslint-enable @typescript-eslint/naming-convention */
       });
@@ -264,7 +264,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(1) })
+          dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(new BigNumber(1)) })
         ),
       });
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
@@ -441,7 +441,7 @@ describe('AssetPermissions class', () => {
     test('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
-      const eventIndex = 1;
+      const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
       dsMockUtils.createQueryStub('system', 'blockHash', {
@@ -454,8 +454,8 @@ describe('AssetPermissions class', () => {
           caller_did: did,
           pallet_name: undefined,
           event_id: undefined,
-          count: undefined,
-          skip: undefined,
+          count: 1,
+          skip: 0,
         }),
         {
           tickerExternalAgentActions: {
@@ -464,7 +464,7 @@ describe('AssetPermissions class', () => {
               {
                 block_id: blockId.toNumber(),
                 datetime,
-                event_idx: eventIndex,
+                event_idx: eventIndex.toNumber(),
               },
             ],
           },
@@ -474,10 +474,12 @@ describe('AssetPermissions class', () => {
 
       let result = await assetPermissions.getOperationHistory({
         asset: ticker,
+        start: new BigNumber(0),
+        size: new BigNumber(1),
       });
 
       expect(result.next).toEqual(null);
-      expect(result.count).toEqual(1);
+      expect(result.count).toEqual(new BigNumber(1));
       expect(result.data).toEqual([
         {
           blockNumber: blockId,
@@ -511,7 +513,7 @@ describe('AssetPermissions class', () => {
       });
 
       expect(result.next).toEqual(null);
-      expect(result.count).toEqual(0);
+      expect(result.count).toEqual(new BigNumber(0));
       expect(result.data).toEqual([]);
     });
   });

@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, CheckpointSchedule, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { bigNumberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface RemoveCheckpointScheduleParams {
   /**
@@ -47,7 +47,7 @@ export async function prepareRemoveCheckpointSchedule(
     });
   }
 
-  const rawScheduleId = numberToU64(id, context);
+  const rawScheduleId = bigNumberToU64(id, context);
 
   const scheduleRefCount = await query.checkpoint.scheduleRefCount(rawTicker, rawScheduleId);
   const referenceCount = u32ToBigNumber(scheduleRefCount);

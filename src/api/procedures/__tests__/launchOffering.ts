@@ -51,9 +51,9 @@ describe('launchOffering procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context, boolean?], Balance>;
+  let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
   let stoTierToPriceTierStub: sinon.SinonStub<[OfferingTier, Context], PriceTier>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let portfolioIdToPortfolioStub: sinon.SinonStub;
@@ -101,9 +101,9 @@ describe('launchOffering procedure', () => {
       'portfolioLikeToPortfolioId'
     );
     stoTierToPriceTierStub = sinon.stub(utilsConversionModule, 'stoTierToPriceTier');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
     portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
     ticker = 'tickerFrozen';
@@ -130,17 +130,17 @@ describe('launchOffering procedure', () => {
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     rawRaisingCurrency = dsMockUtils.createMockTicker(raisingCurrency);
-    rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
+    rawVenueId = dsMockUtils.createMockU64(venueId);
     rawName = dsMockUtils.createMockText(name);
-    rawStart = dsMockUtils.createMockMoment(start.getTime());
-    rawEnd = dsMockUtils.createMockMoment(end.getTime());
+    rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
+    rawEnd = dsMockUtils.createMockMoment(new BigNumber(end.getTime()));
     rawTiers = [
       dsMockUtils.createMockPriceTier({
-        total: dsMockUtils.createMockBalance(amount.toNumber()),
-        price: dsMockUtils.createMockBalance(price.toNumber()),
+        total: dsMockUtils.createMockBalance(amount),
+        price: dsMockUtils.createMockBalance(price),
       }),
     ];
-    rawMinInvestment = dsMockUtils.createMockBalance(minInvestment.toNumber());
+    rawMinInvestment = dsMockUtils.createMockBalance(minInvestment);
 
     offering = 'offering' as unknown as PostTransactionValue<Offering>;
   });
@@ -167,11 +167,11 @@ describe('launchOffering procedure', () => {
       .withArgs(raisingPortfolioId, mockContext)
       .returns(rawRaisingPortfolio);
     stoTierToPriceTierStub.withArgs({ amount, price }, mockContext).returns(rawTiers[0]);
-    numberToU64Stub.withArgs(venue.id, mockContext).returns(rawVenueId);
+    bigNumberToU64Stub.withArgs(venue.id, mockContext).returns(rawVenueId);
     dateToMomentStub.withArgs(start, mockContext).returns(rawStart);
     dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
     stringToTextStub.withArgs(name, mockContext).returns(rawName);
-    numberToBalanceStub.withArgs(minInvestment, mockContext).returns(rawMinInvestment);
+    bigNumberToBalanceStub.withArgs(minInvestment, mockContext).returns(rawMinInvestment);
     portfolio = entityMockUtils.getDefaultPortfolioInstance(offeringPortfolioId);
     portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolio);
 
@@ -343,7 +343,7 @@ describe('launchOffering procedure', () => {
 
     beforeEach(() => {
       filterEventRecordsStub.returns([
-        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId.toNumber())]),
+        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId)]),
       ]);
     });
 

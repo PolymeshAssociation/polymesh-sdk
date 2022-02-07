@@ -189,8 +189,13 @@ describe('CorporateActions class', () => {
           identities: dids,
           treatment: 'Include',
         }),
-        dsMockUtils.createMockPermill(10 * 10000),
-        [[dsMockUtils.createMockIdentityId(dids[0]), dsMockUtils.createMockPermill(15 * 10000)]],
+        dsMockUtils.createMockPermill(new BigNumber(10 * 10000)),
+        [
+          [
+            dsMockUtils.createMockIdentityId(dids[0]),
+            dsMockUtils.createMockPermill(new BigNumber(15 * 10000)),
+          ],
+        ],
       ]);
 
       const result = await corporateActions.getDefaultConfig();

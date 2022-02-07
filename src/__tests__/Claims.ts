@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Claims } from '~/Claims';
@@ -67,8 +68,8 @@ describe('Claims Class', () => {
             claim: { type: ClaimType.NoData },
           },
         ],
-        next: 1,
-        count: 1,
+        next: new BigNumber(1),
+        count: new BigNumber(1),
       };
 
       dsMockUtils.configureMocks({
@@ -160,7 +161,7 @@ describe('Claims Class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -172,12 +173,13 @@ describe('Claims Class', () => {
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
         includeExpired: false,
-        size: 1,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -197,7 +199,7 @@ describe('Claims Class', () => {
       result = await claims.getIdentitiesWithClaims();
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
-      expect(result.count).toEqual(25);
+      expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(null);
     });
 
@@ -283,7 +285,7 @@ describe('Claims Class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -296,12 +298,13 @@ describe('Claims Class', () => {
         scope,
         claimTypes: [ClaimType.Accredited],
         includeExpired: false,
-        size: 1,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
-      expect(result.count).toBe(25);
-      expect(result.next).toBe(1);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
     });
   });
 
@@ -593,7 +596,7 @@ describe('Claims Class', () => {
           trustedClaimIssuers: [did],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
@@ -604,12 +607,13 @@ describe('Claims Class', () => {
         target: did,
         trustedClaimIssuers: [did],
         includeExpired: false,
-        size: 1,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
 
       dsMockUtils.createApolloQueryStub(
         issuerDidsWithClaimsByTarget({
@@ -628,7 +632,7 @@ describe('Claims Class', () => {
       result = await claims.getTargetingClaims();
 
       expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
+      expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toBeNull();
     });
 
@@ -823,11 +827,11 @@ describe('Claims Class', () => {
       trustedClaimIssuers: [did],
       scope,
       includeExpired: false,
-      size: 1,
+      size: new BigNumber(1),
     });
 
     expect(result.data).toEqual(fakeClaims);
-    expect(result.count).toEqual(25);
-    expect(result.next).toEqual(1);
+    expect(result.count).toEqual(new BigNumber(25));
+    expect(result.next).toEqual(new BigNumber(1));
   });
 });

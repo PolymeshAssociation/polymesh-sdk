@@ -81,7 +81,7 @@ describe('setTransferRestrictions procedure', () => {
 
   beforeEach(() => {
     dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
-      returnValue: dsMockUtils.createMockU32(3),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
 
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
@@ -100,8 +100,8 @@ describe('setTransferRestrictions procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawCount = dsMockUtils.createMockU64(count.toNumber());
-    rawPercentage = dsMockUtils.createMockPermill(percentage.toNumber() * 10000);
+    rawCount = dsMockUtils.createMockU64(count);
+    rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
     rawCountTm = dsMockUtils.createMockTransferManager({ CountTransferManager: rawCount });
     rawPercentageTm = dsMockUtils.createMockTransferManager({
       PercentageTransferManager: rawPercentage,
@@ -128,14 +128,14 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   test('should add a batch of add transfer manager transactions to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [],
         restrictionsToAdd: [[rawTicker, rawCountTm]],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 0,
+        occupiedSlots: new BigNumber(0),
         exemptionsRepeated: false,
       }
     );
@@ -151,7 +151,7 @@ describe('setTransferRestrictions procedure', () => {
       ],
     });
 
-    expect(result).toEqual(1);
+    expect(result).toEqual(new BigNumber(1));
   });
 
   test('should add a batch of remove transfer manager transactions to the queue', async () => {
@@ -161,14 +161,14 @@ describe('setTransferRestrictions procedure', () => {
       ticker,
     };
 
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [[rawTicker, rawCountTm]],
         restrictionsToAdd: [],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 0,
+        occupiedSlots: new BigNumber(0),
         exemptionsRepeated: false,
       }
     );
@@ -184,18 +184,18 @@ describe('setTransferRestrictions procedure', () => {
       ],
     });
 
-    expect(result).toEqual(0);
+    expect(result).toEqual(new BigNumber(0));
   });
 
   test('should add a batch of add exempted entities transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [],
         restrictionsToAdd: [],
         exemptionsToAdd: [[rawTicker, rawCountTm, [rawScopeId]]],
         exemptionsToRemove: [],
-        occupiedSlots: 0,
+        occupiedSlots: new BigNumber(0),
         exemptionsRepeated: false,
       }
     );
@@ -211,18 +211,18 @@ describe('setTransferRestrictions procedure', () => {
       ],
     });
 
-    expect(result).toEqual(0);
+    expect(result).toEqual(new BigNumber(0));
   });
 
   test('should add a batch of remove exempted entities transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [],
         restrictionsToAdd: [],
         exemptionsToAdd: [],
         exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
-        occupiedSlots: 0,
+        occupiedSlots: new BigNumber(0),
         exemptionsRepeated: false,
       }
     );
@@ -238,18 +238,18 @@ describe('setTransferRestrictions procedure', () => {
       ],
     });
 
-    expect(result).toEqual(0);
+    expect(result).toEqual(new BigNumber(0));
   });
 
   test('should throw an error if attempting to add restrictions that already exist', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [],
         restrictionsToAdd: [],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 0,
+        occupiedSlots: new BigNumber(0),
         exemptionsRepeated: false,
       }
     );
@@ -270,14 +270,14 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   test('should throw an error if attempting to remove an empty restriction list', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [],
         restrictionsToAdd: [],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 0,
+        occupiedSlots: new BigNumber(0),
         exemptionsRepeated: false,
       }
     );
@@ -294,14 +294,14 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   test('should throw an error if attempting to add more restrictions than there are slots available', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [],
         restrictionsToAdd: [[rawTicker, rawCountTm]],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 3,
+        occupiedSlots: new BigNumber(3),
         exemptionsRepeated: false,
       }
     );
@@ -317,18 +317,18 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.message).toBe(
       'Cannot set more Transfer Restrictions than there are slots available'
     );
-    expect(err.data).toEqual({ availableSlots: 0 });
+    expect(err.data).toEqual({ availableSlots: new BigNumber(0) });
   });
 
   test('should throw an error if exempted scope IDs are repeated for a restriction', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         restrictionsToRemove: [],
         restrictionsToAdd: [],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 0,
+        occupiedSlots: new BigNumber(0),
         exemptionsRepeated: true,
       }
     );
@@ -348,14 +348,14 @@ describe('setTransferRestrictions procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+      let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
           restrictionsToRemove: [],
           restrictionsToAdd: [[rawTicker, rawCountTm]],
           exemptionsToAdd: [],
           exemptionsToRemove: [],
-          occupiedSlots: 0,
+          occupiedSlots: new BigNumber(0),
           exemptionsRepeated: false,
         }
       );
@@ -370,14 +370,14 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
-      proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+      proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
           restrictionsToRemove: [],
           restrictionsToAdd: [],
           exemptionsToAdd: [[rawTicker, rawCountTm, [rawScopeId]]],
           exemptionsToRemove: [],
-          occupiedSlots: 0,
+          occupiedSlots: new BigNumber(0),
           exemptionsRepeated: false,
         }
       );
@@ -392,14 +392,14 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
-      proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+      proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
           restrictionsToRemove: [[rawTicker, rawCountTm]],
           restrictionsToAdd: [],
           exemptionsToAdd: [],
           exemptionsToRemove: [],
-          occupiedSlots: 0,
+          occupiedSlots: new BigNumber(0),
           exemptionsRepeated: false,
         }
       );
@@ -414,14 +414,14 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
-      proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
+      proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
           restrictionsToRemove: [],
           restrictionsToAdd: [],
           exemptionsToAdd: [],
           exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
-          occupiedSlots: 0,
+          occupiedSlots: new BigNumber(0),
           exemptionsRepeated: false,
         }
       );
@@ -463,12 +463,12 @@ describe('setTransferRestrictions procedure', () => {
       const getCountStub = sinon.stub();
       getCountStub.resolves({
         restrictions: [],
-        availableSlots: 1,
+        availableSlots: new BigNumber(1),
       });
       const getPercentageStub = sinon.stub();
       getPercentageStub.resolves({
         restrictions: [{ percentage }],
-        availableSlots: 1,
+        availableSlots: new BigNumber(1),
       });
 
       entityMockUtils.configureMocks({
@@ -481,9 +481,11 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
-      const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, number, Storage>(
-        mockContext
-      );
+      const proc = procedureMockUtils.getInstance<
+        SetTransferRestrictionsParams,
+        BigNumber,
+        Storage
+      >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
       args = {
@@ -503,7 +505,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -518,7 +520,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [[rawTicker, rawCountTm]],
         exemptionsToAdd: [],
         exemptionsToRemove: [],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -534,7 +536,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [[rawTicker, rawCountTm]],
         exemptionsToAdd: [],
         exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -561,7 +563,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [],
         exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId]]],
         exemptionsToRemove: [],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -588,7 +590,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [],
         exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId]]],
         exemptionsToRemove: [],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -614,7 +616,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [],
         exemptionsToAdd: [],
         exemptionsToRemove: [[rawTicker, rawPercentageTm, [rawScopeId]]],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -641,7 +643,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [],
         exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId]]],
         exemptionsToRemove: [],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -664,7 +666,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictionsToRemove: [],
         exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId, rawIdentityScopeId]]],
         exemptionsToRemove: [],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: false,
       });
 
@@ -689,7 +691,7 @@ describe('setTransferRestrictions procedure', () => {
           [rawTicker, rawPercentageTm, [rawScopeId, rawScopeId, rawIdentityScopeId]],
         ],
         exemptionsToRemove: [],
-        occupiedSlots: 1,
+        occupiedSlots: new BigNumber(1),
         exemptionsRepeated: true,
       });
     });

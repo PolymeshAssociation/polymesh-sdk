@@ -70,7 +70,7 @@ describe('Schedules class', () => {
         start: null,
         period: {
           unit: CalendarUnit.Month,
-          amount: 1,
+          amount: new BigNumber(1),
         },
         repetitions: null,
       };
@@ -159,7 +159,7 @@ describe('Schedules class', () => {
       const remaining = new BigNumber(2);
       const period = {
         unit: CalendarUnit.Month,
-        amount: 1,
+        amount: new BigNumber(1),
       };
 
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
@@ -168,7 +168,7 @@ describe('Schedules class', () => {
         id,
         period,
         start,
-        remaining: remaining.toNumber(),
+        remaining,
         nextCheckpointDate,
       });
 
@@ -176,15 +176,15 @@ describe('Schedules class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: dsMockUtils.createMockCheckpointSchedule({
-              start: dsMockUtils.createMockMoment(start.getTime()),
+              start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
               period: dsMockUtils.createMockCalendarPeriod({
                 unit: dsMockUtils.createMockCalendarUnit('Month'),
-                amount: dsMockUtils.createMockU64(1),
+                amount: dsMockUtils.createMockU64(new BigNumber(1)),
               }),
             }),
-            id: dsMockUtils.createMockU64(id.toNumber()),
-            at: dsMockUtils.createMockMoment(nextCheckpointDate.getTime()),
-            remaining: dsMockUtils.createMockU32(remaining.toNumber()),
+            id: dsMockUtils.createMockU64(id),
+            at: dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
+            remaining: dsMockUtils.createMockU32(remaining),
           }),
         ],
       });
@@ -192,7 +192,7 @@ describe('Schedules class', () => {
       const result = await schedules.get();
 
       expect(result[0].details).toEqual({
-        remainingCheckpoints: remaining.toNumber(),
+        remainingCheckpoints: remaining,
         nextCheckpointDate,
       });
       expect(result[0].schedule.id).toEqual(id);
@@ -210,9 +210,9 @@ describe('Schedules class', () => {
     test('should return the complexity of the passed period', () => {
       const period = {
         unit: CalendarUnit.Month,
-        amount: 7,
+        amount: new BigNumber(7),
       };
-      const expected = 2;
+      const expected = new BigNumber(2);
       sinon.stub(utilsInternalModule, 'periodComplexity').withArgs(period).returns(expected);
 
       expect(schedules.complexityOf(period)).toBe(expected);
@@ -227,20 +227,28 @@ describe('Schedules class', () => {
     test('should return the sum of the complexity of all schedules', async () => {
       const getStub = sinon.stub(schedules, 'get');
       getStub.resolves([
-        { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 1 }) },
-        { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 2 }) },
-        { schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: 2.5 }) },
+        {
+          schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: new BigNumber(1) }),
+        },
+        {
+          schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: new BigNumber(2) }),
+        },
+        {
+          schedule: entityMockUtils.getCheckpointScheduleInstance({
+            complexity: new BigNumber(2.5),
+          }),
+        },
       ] as unknown as ScheduleWithDetails[]);
 
       let result = await schedules.currentComplexity();
 
-      expect(result).toBe(5.5);
+      expect(result).toEqual(new BigNumber(5.5));
 
       getStub.resolves([]);
 
       result = await schedules.currentComplexity();
 
-      expect(result).toBe(0);
+      expect(result).toEqual(new BigNumber(0));
     });
   });
 
@@ -251,12 +259,12 @@ describe('Schedules class', () => {
 
     test('should return the maximum complexity from the chain', async () => {
       dsMockUtils.createQueryStub('checkpoint', 'schedulesMaxComplexity', {
-        returnValue: dsMockUtils.createMockU64(20),
+        returnValue: dsMockUtils.createMockU64(new BigNumber(20)),
       });
 
       const result = await schedules.maxComplexity();
 
-      expect(result).toBe(20);
+      expect(result).toEqual(new BigNumber(20));
     });
   });
 });

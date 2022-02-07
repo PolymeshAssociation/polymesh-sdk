@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { EcdsaSignature, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -100,7 +101,7 @@ describe('claimClassicTicker procedure', () => {
     dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         expiry: dsMockUtils.createMockOption(
-          dsMockUtils.createMockMoment(new Date('10/14/1987').getTime())
+          dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
         ),
         owner: CLASSIC_TICKER_OWNER_DID,
       }),

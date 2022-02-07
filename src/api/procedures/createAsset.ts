@@ -16,10 +16,10 @@ import {
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
+  bigNumberToBalance,
   booleanToBool,
   boolToBoolean,
   internalAssetTypeToAssetType,
-  numberToBalance,
   securityIdentifierToAssetIdentifier,
   stringToAssetName,
   stringToBytes,
@@ -204,7 +204,7 @@ export async function prepareCreateAsset(
   });
 
   if (initialSupply && initialSupply.gt(0)) {
-    const rawInitialSupply = numberToBalance(initialSupply, context, isDivisible);
+    const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
     this.addTransaction({
       transaction: tx.asset.issue,
@@ -218,7 +218,7 @@ export async function prepareCreateAsset(
       this.addTransaction({
         transaction: tx.asset.addDocuments,
         isCritical: false,
-        feeMultiplier: rawDocumentBatch.length,
+        feeMultiplier: new BigNumber(rawDocumentBatch.length),
         args: [rawDocumentBatch, rawTicker],
       });
     });

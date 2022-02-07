@@ -229,7 +229,7 @@ interface CheckpointScheduleOptions extends EntityOptions {
   start?: Date;
   period?: CalendarPeriod | null;
   expiryDate?: Date | null;
-  complexity?: number;
+  complexity?: BigNumber;
   details?: EntityGetter<ScheduleDetails>;
 }
 
@@ -522,7 +522,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     hasValidCdd: true,
     isCddProvider: false,
     authorizationsGetReceived: [],
-    authorizationsGetSent: { data: [], next: null, count: 0 },
+    authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
     getVenues: [],
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
@@ -745,11 +745,11 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     getIdentifiers: [],
     transferRestrictionsCountGet: {
       restrictions: [],
-      availableSlots: 3,
+      availableSlots: new BigNumber(3),
     },
     transferRestrictionsPercentageGet: {
       restrictions: [],
-      availableSlots: 3,
+      availableSlots: new BigNumber(3),
     },
     corporateActionsGetAgents: [],
     corporateActionsGetDefaultConfig: {
@@ -770,7 +770,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     checkpointsSchedulesGetOne: {
       schedule: getCheckpointScheduleInstance(),
       details: {
-        remainingCheckpoints: 3,
+        remainingCheckpoints: new BigNumber(3),
         nextCheckpointDate: new Date(new Date().getTime() + 1000 * 60 * 60),
       },
     },
@@ -1118,7 +1118,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     start!: Date;
     period!: CalendarPeriod | null;
     expiryDate!: Date | null;
-    complexity!: number;
+    complexity!: BigNumber;
     details!: sinon.SinonStub;
 
     /**
@@ -1148,12 +1148,12 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     period: {
       unit: CalendarUnit.Month,
-      amount: 1,
+      amount: new BigNumber(1),
     },
     expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
-    complexity: 2,
+    complexity: new BigNumber(2),
     details: {
-      remainingCheckpoints: 1,
+      remainingCheckpoints: new BigNumber(1),
       nextCheckpointDate: new Date('10/10/2030'),
     },
   }),

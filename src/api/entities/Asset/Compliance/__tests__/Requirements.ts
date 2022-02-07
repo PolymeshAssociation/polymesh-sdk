@@ -1,4 +1,5 @@
 import { Vec } from '@polkadot/types/codec';
+import BigNumber from 'bignumber.js';
 import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -151,7 +152,7 @@ describe('Requirements class', () => {
       const requirements = new Requirements(asset, context);
 
       const args = {
-        requirement: 10,
+        requirement: new BigNumber(10),
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
@@ -217,7 +218,7 @@ describe('Requirements class', () => {
     });
 
     beforeEach(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance({ ticker });
       requirements = new Requirements(asset, context);
@@ -282,7 +283,7 @@ describe('Requirements class', () => {
                 }),
               ],
               receiver_conditions: [],
-              id: dsMockUtils.createMockU32(1),
+              id: dsMockUtils.createMockU32(new BigNumber(1)),
             }),
             dsMockUtils.createMockComplianceRequirement({
               sender_conditions: [conditionForBoth],
@@ -297,7 +298,7 @@ describe('Requirements class', () => {
                   issuers: [],
                 }),
               ],
-              id: dsMockUtils.createMockU32(2),
+              id: dsMockUtils.createMockU32(new BigNumber(2)),
               /* eslint-enable @typescript-eslint/naming-convention */
             }),
           ],
@@ -308,7 +309,7 @@ describe('Requirements class', () => {
       expected = {
         requirements: [
           {
-            id: 1,
+            id: new BigNumber(1),
             conditions: [
               {
                 target: ConditionTarget.Sender,
@@ -327,7 +328,7 @@ describe('Requirements class', () => {
             ],
           },
           {
-            id: 2,
+            id: new BigNumber(2),
             conditions: [
               {
                 target: ConditionTarget.Both,
@@ -386,7 +387,7 @@ describe('Requirements class', () => {
         sinon.match({
           requirements: [
             {
-              id: 1,
+              id: new BigNumber(1),
               conditions: [
                 {
                   ...expected.requirements[0].conditions[0],
@@ -400,7 +401,7 @@ describe('Requirements class', () => {
               ],
             },
             {
-              id: 2,
+              id: new BigNumber(2),
               conditions: expected.requirements[1].conditions,
             },
           ],
@@ -472,7 +473,7 @@ describe('Requirements class', () => {
       const requirements = new Requirements(asset, context);
 
       const args = {
-        id: 1,
+        id: new BigNumber(1),
         conditions: [
           {
             type: ConditionType.IsIdentity,

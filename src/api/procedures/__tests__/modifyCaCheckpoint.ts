@@ -114,12 +114,12 @@ describe('modifyCaCheckpoint procedure', () => {
     const id = new BigNumber(1);
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+    const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
 
     sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
 
     const rawRecordDateSpec = dsMockUtils.createMockRecordDateSpec({
-      Scheduled: dsMockUtils.createMockMoment(new Date().getTime()),
+      Scheduled: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime())),
     });
 
     sinon.stub(utilsConversionModule, 'checkpointToRecordDateSpec').returns(rawRecordDateSpec);

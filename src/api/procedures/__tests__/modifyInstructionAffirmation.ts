@@ -35,20 +35,20 @@ jest.mock(
 
 describe('modifyInstructionAffirmation procedure', () => {
   const id = new BigNumber(1);
-  const rawInstructionId = dsMockUtils.createMockU64(1);
+  const rawInstructionId = dsMockUtils.createMockU64(new BigNumber(1));
   const rawPortfolioId = dsMockUtils.createMockPortfolioId({
     did: dsMockUtils.createMockIdentityId('someDid'),
     kind: dsMockUtils.createMockPortfolioKind('Default'),
   });
   const did = 'someDid';
   let portfolio: DefaultPortfolio;
-  let legAmount: number;
+  let legAmount: BigNumber;
   let rawLegAmount: u32;
   const portfolioId: PortfolioId = { did };
   const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let numberToU32Stub: sinon.SinonStub<[number | BigNumber, Context], u32>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let bigNumberToU32Stub: sinon.SinonStub<[BigNumber, Context], u32>;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let meshAffirmationStatusToAffirmationStatusStub: sinon.SinonStub<
@@ -66,9 +66,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     entityMockUtils.initMocks();
 
     portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid ' });
-    legAmount = 2;
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
-    numberToU32Stub = sinon.stub(utilsConversionModule, 'numberToU32');
+    legAmount = new BigNumber(2);
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToU32Stub = sinon.stub(utilsConversionModule, 'bigNumberToU32');
     portfolioLikeToPortfolioIdStub = sinon.stub(
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
@@ -88,14 +88,14 @@ describe('modifyInstructionAffirmation procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
-    rawLegAmount = dsMockUtils.createMockU32(2);
+    rawLegAmount = dsMockUtils.createMockU32(new BigNumber(2));
     dsMockUtils.createTxStub('settlement', 'affirmInstruction');
     dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
     dsMockUtils.createTxStub('settlement', 'rejectInstruction');
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    numberToU64Stub.returns(rawInstructionId);
-    numberToU32Stub.returns(rawLegAmount);
+    bigNumberToU64Stub.returns(rawInstructionId);
+    bigNumberToU32Stub.returns(rawLegAmount);
     portfolioLikeToPortfolioIdStub.withArgs(portfolio).returns(portfolioId);
     portfolioIdToMeshPortfolioIdStub.withArgs(portfolioId, mockContext).returns(rawPortfolioId);
   });
@@ -193,7 +193,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      feeMultiplier: 2,
+      feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
     });
 
@@ -255,7 +255,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      feeMultiplier: 2,
+      feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
     });
 
@@ -302,7 +302,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      feeMultiplier: 2,
+      feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, rawPortfolioId, rawLegAmount],
     });
 
@@ -406,8 +406,8 @@ describe('modifyInstructionAffirmation procedure', () => {
           expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
           expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
         ],
-        senderLegAmount: 1,
-        totalLegAmount: 1,
+        senderLegAmount: new BigNumber(1),
+        totalLegAmount: new BigNumber(1),
       });
 
       from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
@@ -426,8 +426,8 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         portfolios: [],
-        senderLegAmount: 0,
-        totalLegAmount: 1,
+        senderLegAmount: new BigNumber(0),
+        totalLegAmount: new BigNumber(1),
       });
     });
   });

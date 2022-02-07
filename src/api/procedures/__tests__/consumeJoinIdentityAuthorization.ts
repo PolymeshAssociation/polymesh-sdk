@@ -18,7 +18,7 @@ import * as utilsConversionModule from '~/utils/conversion';
 describe('consumeJoinSignerAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let rawTrue: bool;
   let rawFalse: bool;
@@ -36,10 +36,10 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     authId = new BigNumber(1);
-    rawAuthId = dsMockUtils.createMockU64(authId.toNumber());
+    rawAuthId = dsMockUtils.createMockU64(authId);
     rawTrue = dsMockUtils.createMockBool(true);
     rawFalse = dsMockUtils.createMockBool(false);
 
@@ -54,7 +54,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         dsMockUtils.createMockAuthorization({
           /* eslint-disable @typescript-eslint/naming-convention */
           authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
-          auth_id: 1,
+          auth_id: new BigNumber(1),
           authorized_by: 'someDid',
           expiry: dsMockUtils.createMockOption(),
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -63,7 +63,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     });
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
-    numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
+    bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
     booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
     booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
 

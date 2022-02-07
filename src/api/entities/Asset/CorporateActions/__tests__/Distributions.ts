@@ -85,7 +85,7 @@ describe('Distributions class', () => {
   describe('method: getOne', () => {
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'stringToTicker');
-      sinon.stub(utilsConversionModule, 'numberToU32');
+      sinon.stub(utilsConversionModule, 'bigNumberToU32');
     });
     afterAll(() => {
       sinon.restore();
@@ -104,9 +104,9 @@ describe('Distributions class', () => {
               treatment: 'Exclude',
             },
             /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: 0,
+            decl_date: new BigNumber(0),
             record_date: null,
-            default_withholding_tax: 3,
+            default_withholding_tax: new BigNumber(3),
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
@@ -121,11 +121,11 @@ describe('Distributions class', () => {
             from: { did: 'someDid', kind: 'Default' },
             currency: 'CLP',
             /* eslint-disable @typescript-eslint/naming-convention */
-            per_share: 1000000000,
-            amount: 100000000000,
-            remaining: 5000000000,
+            per_share: new BigNumber(1000000000),
+            amount: new BigNumber(100000000000),
+            remaining: new BigNumber(5000000000),
             reclaimed: false,
-            payment_at: 10000000000,
+            payment_at: new BigNumber(10000000000),
             expires_at: null,
             /* eslint-enable @typescript-eslint/naming-convention */
           })
@@ -159,9 +159,9 @@ describe('Distributions class', () => {
               treatment: 'Exclude',
             },
             /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: 0,
+            decl_date: new BigNumber(0),
             record_date: null,
-            default_withholding_tax: 3,
+            default_withholding_tax: new BigNumber(3),
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
@@ -192,11 +192,11 @@ describe('Distributions class', () => {
             from: { did: 'someDid', kind: 'Default' },
             currency: 'CLP',
             /* eslint-disable @typescript-eslint/naming-convention */
-            per_share: 1000,
-            amount: 100000,
-            remaining: 5000,
+            per_share: new BigNumber(1000),
+            amount: new BigNumber(100000),
+            remaining: new BigNumber(5000),
             reclaimed: false,
-            payment_at: 100000000,
+            payment_at: new BigNumber(100000000),
             expires_at: null,
             /* eslint-enable @typescript-eslint/naming-convention */
           })

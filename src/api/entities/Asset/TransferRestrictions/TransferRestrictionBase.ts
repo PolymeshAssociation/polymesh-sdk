@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
@@ -65,7 +67,7 @@ export abstract class TransferRestrictionBase<
     this.addRestriction = createProcedureMethod<
       AddRestrictionParams<T>,
       AddTransferRestrictionParams,
-      number
+      BigNumber
     >(
       {
         getProcedureAndArgs: args => [
@@ -79,7 +81,7 @@ export abstract class TransferRestrictionBase<
     this.setRestrictions = createProcedureMethod<
       SetRestrictionsParams<T>,
       SetTransferRestrictionsParams,
-      number,
+      BigNumber,
       SetTransferRestrictionsStorage
     >(
       {
@@ -93,7 +95,7 @@ export abstract class TransferRestrictionBase<
 
     this.removeRestrictions = createProcedureMethod<
       SetTransferRestrictionsParams,
-      number,
+      BigNumber,
       SetTransferRestrictionsStorage
     >(
       {
@@ -116,21 +118,21 @@ export abstract class TransferRestrictionBase<
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public addRestriction: ProcedureMethod<AddRestrictionParams<T>, number>;
+  public addRestriction: ProcedureMethod<AddRestrictionParams<T>, BigNumber>;
 
   /**
    * Sets all Transfer Restrictions of the corresponding type on this Asset
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public setRestrictions: ProcedureMethod<SetRestrictionsParams<T>, number>;
+  public setRestrictions: ProcedureMethod<SetRestrictionsParams<T>, BigNumber>;
 
   /**
    * Removes all Transfer Restrictions of the corresponding type from this Asset
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions: NoArgsProcedureMethod<number>;
+  public removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type
@@ -195,13 +197,11 @@ export abstract class TransferRestrictionBase<
       return restriction;
     });
 
-    const maxTransferManagers = u32ToBigNumber(
-      consts.statistics.maxTransferManagersPerAsset
-    ).toNumber();
+    const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
 
     return {
       restrictions,
-      availableSlots: maxTransferManagers - activeTms.length,
+      availableSlots: maxTransferManagers.minus(activeTms.length),
     } as GetReturnType<T>;
   }
 }

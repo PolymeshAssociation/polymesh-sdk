@@ -208,7 +208,7 @@ describe('moveFunds procedure', () => {
     let rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind({
-        User: dsMockUtils.createMockU64(fromId.toNumber()),
+        User: dsMockUtils.createMockU64(fromId),
       }),
     });
     portfolioIdToMeshPortfolioIdStub
@@ -218,7 +218,7 @@ describe('moveFunds procedure', () => {
     let rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind({
-        User: dsMockUtils.createMockU64(toId.toNumber()),
+        User: dsMockUtils.createMockU64(toId),
       }),
     });
     portfolioIdToMeshPortfolioIdStub
@@ -227,7 +227,7 @@ describe('moveFunds procedure', () => {
 
     const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
       ticker: dsMockUtils.createMockTicker(items[0].asset),
-      amount: dsMockUtils.createMockBalance(items[0].amount.toNumber()),
+      amount: dsMockUtils.createMockBalance(items[0].amount),
     });
     portfolioMovementToMovePortfolioItemStub
       .withArgs(items[0], mockContext)
@@ -295,7 +295,7 @@ describe('moveFunds procedure', () => {
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind({
-        User: dsMockUtils.createMockU64(toId.toNumber()),
+        User: dsMockUtils.createMockU64(toId),
       }),
     });
     portfolioIdToMeshPortfolioIdStub

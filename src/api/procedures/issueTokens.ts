@@ -4,7 +4,7 @@ import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
-import { numberToBalance, stringToTicker } from '~/utils/conversion';
+import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
 
 export interface IssueTokensParams {
   amount: BigNumber;
@@ -49,7 +49,7 @@ export async function prepareIssueTokens(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawValue = numberToBalance(amount, context, isDivisible);
+  const rawValue = bigNumberToBalance(amount, context, isDivisible);
 
   this.addTransaction({
     transaction: asset.issue,

@@ -75,13 +75,13 @@ describe('setAssetDocuments procedure', () => {
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
         filing_date: dsMockUtils.createMockOption(
-          filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+          filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
         /* eslint-enabled @typescript-eslint/naming-convention */
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>
-      tuple([rawTicker, dsMockUtils.createMockU32(index)], doc)
+      tuple([rawTicker, dsMockUtils.createMockU32(new BigNumber(index))], doc)
     );
     args = {
       ticker,
@@ -145,12 +145,12 @@ describe('setAssetDocuments procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub.firstCall, {
       transaction: removeDocumentsTransaction,
-      feeMultiplier: 1,
+      feeMultiplier: new BigNumber(1),
       args: [docIds, rawTicker],
     });
     sinon.assert.calledWith(addTransactionStub.secondCall, {
       transaction: addDocumentsTransaction,
-      feeMultiplier: rawDocuments.length,
+      feeMultiplier: new BigNumber(rawDocuments.length),
       args: [rawDocuments, rawTicker],
     });
     expect(result).toEqual(expect.objectContaining({ ticker }));
@@ -166,7 +166,7 @@ describe('setAssetDocuments procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub.firstCall, {
       transaction: addDocumentsTransaction,
-      feeMultiplier: rawDocuments.length,
+      feeMultiplier: new BigNumber(rawDocuments.length),
       args: [rawDocuments, rawTicker],
     });
     sinon.assert.calledOnce(addTransactionStub);
@@ -184,7 +184,7 @@ describe('setAssetDocuments procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub.firstCall, {
       transaction: removeDocumentsTransaction,
-      feeMultiplier: 1,
+      feeMultiplier: new BigNumber(1),
       args: [docIds, rawTicker],
     });
     sinon.assert.calledOnce(addTransactionStub);

@@ -22,12 +22,12 @@ describe('renamePortfolio procedure', () => {
   const id = new BigNumber(1);
   const did = 'someDid';
   const identityId = dsMockUtils.createMockIdentityId(did);
-  const rawPortfolioNumber = dsMockUtils.createMockU64(id.toNumber());
+  const rawPortfolioNumber = dsMockUtils.createMockU64(id);
   const newName = 'newName';
   const rawNewName = dsMockUtils.createMockText(newName);
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let getPortfolioIdByNameStub: sinon.SinonStub;
 
@@ -36,7 +36,7 @@ describe('renamePortfolio procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
     getPortfolioIdByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdByName');
   });
@@ -44,7 +44,7 @@ describe('renamePortfolio procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToIdentityIdStub.withArgs(did, mockContext).returns(identityId);
-    numberToU64Stub.withArgs(id, mockContext).returns(rawPortfolioNumber);
+    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawPortfolioNumber);
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,

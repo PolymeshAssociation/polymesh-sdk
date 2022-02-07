@@ -114,7 +114,7 @@ describe('transferPolyx procedure', () => {
     const amount = new BigNumber(99);
     const memo = 'someMessage';
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
-    const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
@@ -122,7 +122,7 @@ describe('transferPolyx procedure', () => {
       .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
-    sinon.stub(utilsConversionModule, 'numberToBalance').returns(rawAmount);
+    sinon.stub(utilsConversionModule, 'bigNumberToBalance').returns(rawAmount);
     sinon.stub(utilsConversionModule, 'stringToMemo').returns(rawMemo);
 
     let tx = dsMockUtils.createTxStub('balances', 'transfer');

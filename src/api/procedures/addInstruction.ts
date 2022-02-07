@@ -30,10 +30,10 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
+  bigNumberToBalance,
+  bigNumberToU64,
   dateToMoment,
   endConditionToSettlementType,
-  numberToBalance,
-  numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
@@ -205,7 +205,7 @@ async function getTxArgsAndErrors(
       !endBlockErrIndexes.length &&
       !datesErrIndexes.length
     ) {
-      const rawVenueId = numberToU64(venueId, context);
+      const rawVenueId = bigNumberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
@@ -233,7 +233,7 @@ async function getTxArgsAndErrors(
             from: rawFromPortfolio,
             to: rawToPortfolio,
             asset: stringToTicker(getTicker(asset), context),
-            amount: numberToBalance(amount, context),
+            amount: bigNumberToBalance(amount, context),
           });
         })
       );

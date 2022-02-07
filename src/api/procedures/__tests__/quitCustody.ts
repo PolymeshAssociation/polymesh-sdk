@@ -99,7 +99,7 @@ describe('quitCustody procedure', () => {
     const rawMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind({
-        User: dsMockUtils.createMockU64(id.toNumber()),
+        User: dsMockUtils.createMockU64(id),
       }),
     });
 

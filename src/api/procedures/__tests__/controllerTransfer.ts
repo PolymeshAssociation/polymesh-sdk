@@ -32,8 +32,8 @@ describe('controllerTransfer procedure', () => {
     [PortfolioId, Context],
     DefaultPortfolio | NumberedPortfolio
   >;
-  let numberToBalanceStub: sinon.SinonStub<
-    [number | BigNumber, Context, (boolean | undefined)?],
+  let bigNumberToBalanceStub: sinon.SinonStub<
+    [BigNumber, Context, (boolean | undefined)?],
     Balance
   >;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub;
@@ -51,7 +51,7 @@ describe('controllerTransfer procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     portfolioIdToMeshPortfolioIdStub = sinon.stub(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
@@ -69,7 +69,7 @@ describe('controllerTransfer procedure', () => {
       getAssetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
     });
     amount = new BigNumber(50);
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawAmount = dsMockUtils.createMockBalance(amount);
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -79,7 +79,7 @@ describe('controllerTransfer procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
     portfolioIdToPortfolioStub.returns(originPortfolio);
-    numberToBalanceStub.returns(rawAmount);
+    bigNumberToBalanceStub.returns(rawAmount);
     portfolioIdToMeshPortfolioIdStub.returns(rawPortfolioId);
   });
 
