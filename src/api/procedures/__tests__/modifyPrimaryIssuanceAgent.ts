@@ -72,7 +72,6 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -202,7 +201,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
     });

@@ -111,7 +111,7 @@ describe('addInstruction procedure', () => {
       'portfolioLikeToPortfolioId'
     );
     portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
-    getCustodianStub = entityMockUtils.getNumberedPortfolioGetCustodianStub();
+    getCustodianStub = sinon.stub();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
@@ -188,7 +188,8 @@ describe('addInstruction procedure', () => {
       .getAddBatchTransactionStub()
       .returns([instruction]);
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
+    const tickerReservationDetailsStub = sinon.stub();
+    tickerReservationDetailsStub.resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.Free,
@@ -212,6 +213,14 @@ describe('addInstruction procedure', () => {
     portfolioIdToMeshPortfolioIdStub.withArgs({ did: toDid }, mockContext).returns(rawTo);
     getCustodianStub.onCall(0).returns({ did: fromDid });
     getCustodianStub.onCall(1).returns({ did: toDid });
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        getCustodian: getCustodianStub,
+      },
+      tickerReservationOptions: {
+        details: tickerReservationDetailsStub,
+      },
+    });
     stringToTickerStub.withArgs(asset, mockContext).returns(rawTicker);
     bigNumberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
     bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
@@ -249,7 +258,6 @@ describe('addInstruction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

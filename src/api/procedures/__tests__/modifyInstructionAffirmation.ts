@@ -107,7 +107,6 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -272,11 +271,17 @@ describe('modifyInstructionAffirmation procedure', () => {
       .withArgs(rawAffirmationStatus)
       .returns(AffirmationStatus.Pending);
 
-    const isCustodiedByStub = entityMockUtils.getDefaultPortfolioIsCustodiedByStub();
+    const isCustodiedByStub = sinon.stub();
     isCustodiedByStub.onCall(0).returns(true);
     isCustodiedByStub.onCall(1).returns(true);
     isCustodiedByStub.onCall(2).returns(false);
     isCustodiedByStub.onCall(3).returns(false);
+
+    entityMockUtils.configureMocks({
+      defaultPortfolioOptions: {
+        isCustodiedBy: isCustodiedByStub,
+      },
+    });
 
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
@@ -377,8 +382,11 @@ describe('modifyInstructionAffirmation procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      let from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
-      let to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: true });
+      const fromDid = 'fromDid';
+      const toDid = 'toDid';
+
+      let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
+      let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
       const amount = new BigNumber(1);
       const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
 
@@ -394,17 +402,22 @@ describe('modifyInstructionAffirmation procedure', () => {
       });
 
       expect(result).toEqual({
-        portfolios: [from, to],
+        portfolios: [
+          expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
+          expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
+        ],
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(1),
       });
 
-      from = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
-      to = entityMockUtils.getDefaultPortfolioInstance({ isCustodiedBy: false });
+      from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
+      to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
 
-      entityMockUtils
-        .getInstructionGetLegsStub()
-        .resolves({ data: [{ from, to, amount, asset }], next: null });
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          getLegs: { data: [{ from, to, amount, asset }], next: null },
+        },
+      });
 
       result = await boundFunc({
         id: new BigNumber(1),

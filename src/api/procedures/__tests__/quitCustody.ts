@@ -65,7 +65,6 @@ describe('quitCustody procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -132,10 +131,8 @@ describe('quitCustody procedure', () => {
       });
       let boundFunc = getAuthorization.bind(proc);
 
-      let portfolio: DefaultPortfolio | NumberedPortfolio = new NumberedPortfolio(
-        { id, did },
-        mockContext
-      );
+      let portfolio: DefaultPortfolio | NumberedPortfolio =
+        entityMockUtils.getNumberedPortfolioInstance({ id, did });
 
       let args = {
         portfolio,
@@ -145,7 +142,7 @@ describe('quitCustody procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
-          portfolios: [portfolio],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }), id })],
           assets: [],
         },
       });
@@ -157,7 +154,7 @@ describe('quitCustody procedure', () => {
       });
       boundFunc = getAuthorization.bind(proc);
 
-      portfolio = new DefaultPortfolio(portfolioId, mockContext);
+      portfolio = entityMockUtils.getDefaultPortfolioInstance(portfolioId);
 
       args = {
         portfolio,
@@ -167,7 +164,7 @@ describe('quitCustody procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
-          portfolios: [portfolio],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
           assets: [],
         },
       });

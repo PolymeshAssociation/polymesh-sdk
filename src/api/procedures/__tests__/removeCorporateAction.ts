@@ -52,7 +52,6 @@ describe('removeCorporateAction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -196,7 +195,7 @@ describe('removeCorporateAction procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.corporateAction.RemoveCa],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

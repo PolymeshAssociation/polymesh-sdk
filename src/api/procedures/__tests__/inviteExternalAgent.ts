@@ -91,7 +91,6 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -110,7 +109,7 @@ describe('inviteExternalAgent procedure', () => {
       });
 
       expect(result).toEqual({
-        asset,
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
@@ -128,7 +127,7 @@ describe('inviteExternalAgent procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          assets: [asset],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

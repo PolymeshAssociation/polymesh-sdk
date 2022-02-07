@@ -65,7 +65,6 @@ describe('modifyCaDefaultConfig procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -275,7 +274,7 @@ describe('modifyCaDefaultConfig procedure', () => {
         permissions: {
           transactions: [],
           portfolios: [],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
 
@@ -294,7 +293,7 @@ describe('modifyCaDefaultConfig procedure', () => {
             TxTags.corporateAction.SetDidWithholdingTax,
           ],
           portfolios: [],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
     });

@@ -25,7 +25,6 @@ describe('issueAssets procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let bigNumberToBalance: sinon.SinonStub;
   let ticker: string;
-  let asset: Asset;
   let rawTicker: Ticker;
   let amount: BigNumber;
   let rawAmount: Balance;
@@ -38,7 +37,6 @@ describe('issueAssets procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToBalance = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     ticker = 'someTicker';
-    asset = entityMockUtils.getAssetInstance({ ticker });
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);
@@ -57,7 +55,6 @@ describe('issueAssets procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -73,7 +70,7 @@ describe('issueAssets procedure', () => {
       });
 
       expect(result).toEqual({
-        asset,
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
@@ -154,7 +151,7 @@ describe('issueAssets procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.asset.Issue],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

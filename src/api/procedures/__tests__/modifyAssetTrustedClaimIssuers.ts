@@ -118,7 +118,6 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -192,7 +191,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
         })),
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should not add a remove claim issuers transaction if there are no default claim issuers set on the Asset (set)', async () => {
@@ -214,7 +213,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       })),
     });
     sinon.assert.calledOnce(addBatchTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should not add an add claim issuers transaction if there are no claim issuers passed as arguments (set)', async () => {
@@ -235,7 +234,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       })),
     });
     sinon.assert.calledOnce(addBatchTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should throw an error if trying to remove an Identity that is not a trusted claim issuer', async () => {
@@ -278,7 +277,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
         args: [rawTicker, issuer],
       })),
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should throw an error if trying to add an Identity that is already a Trusted Claim Issuer', async () => {
@@ -321,14 +320,14 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
         args: [rawTicker, issuer],
       })),
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
-      const asset = entityMockUtils.getAssetInstance({ ticker });
+      const asset = expect.objectContaining({ ticker });
 
       expect(
         boundFunc({ ticker, operation: TrustedClaimIssuerOperation.Add, claimIssuers: [] })

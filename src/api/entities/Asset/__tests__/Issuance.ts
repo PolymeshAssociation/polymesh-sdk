@@ -25,7 +25,6 @@ describe('Issuance class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });

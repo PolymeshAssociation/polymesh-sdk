@@ -84,7 +84,6 @@ describe('createGroup procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -265,7 +264,7 @@ describe('createGroup procedure', () => {
       const result = boundFunc({ ticker } as Params);
 
       expect(result).toEqual({
-        asset: entityMockUtils.getAssetInstance({ ticker }),
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
@@ -285,7 +284,7 @@ describe('createGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.CreateGroup],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

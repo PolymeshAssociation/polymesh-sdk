@@ -34,7 +34,6 @@ describe('IdentityAuthorizations class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 

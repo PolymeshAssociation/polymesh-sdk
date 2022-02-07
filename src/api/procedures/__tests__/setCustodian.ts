@@ -71,7 +71,6 @@ describe('setCustodian procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -95,9 +94,7 @@ describe('setCustodian procedure', () => {
 
     entityMockUtils.configureMocks({
       identityOptions: {
-        authorizations: {
-          getReceived: receivedAuthorizations,
-        },
+        authorizationsGetReceived: receivedAuthorizations,
       },
     });
 
@@ -143,9 +140,7 @@ describe('setCustodian procedure', () => {
 
     entityMockUtils.configureMocks({
       identityOptions: {
-        authorizations: {
-          getReceived: receivedAuthorizations,
-        },
+        authorizationsGetReceived: receivedAuthorizations,
       },
       defaultPortfolioOptions: {
         isEqual: false,
@@ -208,7 +203,7 @@ describe('setCustodian procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          portfolios: [entityMockUtils.getNumberedPortfolioInstance({ did, id })],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }), id })],
           assets: [],
         },
       });
@@ -223,7 +218,7 @@ describe('setCustodian procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
           assets: [],
         },
       });

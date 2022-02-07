@@ -43,7 +43,6 @@ describe('modifyVenue procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -52,17 +51,13 @@ describe('modifyVenue procedure', () => {
     const description = 'someDetails';
 
     const args = {
-      venue,
-      description,
-    };
-
-    entityMockUtils.configureMocks({
-      venueOptions: {
+      venue: entityMockUtils.getVenueInstance({
         details: {
           description,
         },
-      },
-    });
+      }),
+      description,
+    };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -75,18 +70,14 @@ describe('modifyVenue procedure', () => {
     const type = VenueType.Exchange;
 
     const args = {
-      venue,
-      type,
-    };
-
-    entityMockUtils.configureMocks({
-      venueOptions: {
+      venue: entityMockUtils.getVenueInstance({
         details: {
           description: 'someDescription',
           type,
         },
-      },
-    });
+      }),
+      type,
+    };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 

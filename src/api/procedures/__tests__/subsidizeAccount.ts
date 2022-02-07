@@ -54,7 +54,6 @@ describe('subsidizeAccount procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -80,7 +79,7 @@ describe('subsidizeAccount procedure', () => {
           mockContext
         ),
       ],
-      next: new BigNumber(1),
+      next: null,
       count: new BigNumber(1),
     };
 
@@ -143,8 +142,8 @@ describe('subsidizeAccount procedure', () => {
           mockContext
         ),
       ],
-      next: new BigNumber(1),
-      count: new BigNumber(1),
+      next: null,
+      count: new BigNumber(2),
     };
 
     dsMockUtils.configureMocks({

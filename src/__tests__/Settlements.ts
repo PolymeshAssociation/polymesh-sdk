@@ -45,21 +45,20 @@ describe('Settlements Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
   describe('method: getVenue', () => {
     test('should return a Venue by its id', async () => {
       const venueId = new BigNumber(1);
-      const matchingVenue = entityMockUtils.getVenueInstance({ id: venueId });
 
       entityMockUtils.configureMocks({
         venueOptions: { exists: true },
       });
 
       const result = await settlements.getVenue({ id: venueId });
-      expect(result).toMatchObject(matchingVenue);
+
+      expect(result.id).toEqual(venueId);
     });
 
     test('should throw if the Venue does not exist', async () => {
@@ -78,14 +77,14 @@ describe('Settlements Class', () => {
   describe('method: getInstruction', () => {
     test('should return an Instruction by its id', async () => {
       const instructionId = new BigNumber(1);
-      const matchingInstruction = entityMockUtils.getInstructionInstance({ id: instructionId });
 
       entityMockUtils.configureMocks({
         instructionOptions: { exists: true },
       });
 
       const result = await settlements.getInstruction({ id: instructionId });
-      expect(result).toMatchObject(matchingInstruction);
+
+      expect(result.id).toEqual(instructionId);
     });
 
     test('should throw if the Instruction does not exist', async () => {

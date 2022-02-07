@@ -44,7 +44,6 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -190,7 +189,7 @@ describe('modifyCaCheckpoint procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },

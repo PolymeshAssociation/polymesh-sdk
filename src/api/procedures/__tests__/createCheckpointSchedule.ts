@@ -68,7 +68,6 @@ describe('createCheckpointSchedule procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -200,12 +199,10 @@ describe('createCheckpointSchedule procedure', () => {
       };
       const repetitions = new BigNumber(10);
 
-      const asset = entityMockUtils.getAssetInstance({ ticker });
-
       expect(boundFunc({ ticker, start, period, repetitions })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateSchedule],
-          assets: [asset],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

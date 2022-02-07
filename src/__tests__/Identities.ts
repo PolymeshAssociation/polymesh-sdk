@@ -35,7 +35,6 @@ describe('Identities Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 

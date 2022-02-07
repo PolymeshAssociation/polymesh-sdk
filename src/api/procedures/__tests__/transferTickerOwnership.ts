@@ -99,16 +99,19 @@ describe('transferTickerOwnership procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should throw an error if an Asset with that ticker has already been launched', () => {
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
-      owner: entityMockUtils.getIdentityInstance(),
-      expiryDate: null,
-      status: TickerReservationStatus.AssetCreated,
+    entityMockUtils.configureMocks({
+      tickerReservationOptions: {
+        details: {
+          owner: entityMockUtils.getIdentityInstance(),
+          expiryDate: null,
+          status: TickerReservationStatus.AssetCreated,
+        },
+      },
     });
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 

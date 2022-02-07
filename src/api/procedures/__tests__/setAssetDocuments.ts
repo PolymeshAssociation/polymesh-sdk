@@ -119,7 +119,6 @@ describe('setAssetDocuments procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -154,7 +153,7 @@ describe('setAssetDocuments procedure', () => {
       feeMultiplier: new BigNumber(rawDocuments.length),
       args: [rawDocuments, rawTicker],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
@@ -171,7 +170,7 @@ describe('setAssetDocuments procedure', () => {
       args: [rawDocuments, rawTicker],
     });
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
@@ -189,7 +188,7 @@ describe('setAssetDocuments procedure', () => {
       args: [docIds, rawTicker],
     });
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -202,7 +201,7 @@ describe('setAssetDocuments procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.asset.AddDocuments, TxTags.asset.RemoveDocuments],
           portfolios: [],
         },
@@ -216,7 +215,7 @@ describe('setAssetDocuments procedure', () => {
 
       expect(boundFunc({ ...args, documents: [] })).toEqual({
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [],
           portfolios: [],
         },

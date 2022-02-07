@@ -106,7 +106,7 @@ describe('configureDividendDistribution procedure', () => {
     taxWithholdings = [{ identity: 'someDid', percentage: new BigNumber(30) }];
     originPortfolio = entityMockUtils.getNumberedPortfolioInstance({
       id: new BigNumber(2),
-      assetBalances: [
+      getAssetBalances: [
         {
           asset: entityMockUtils.getAssetInstance({ ticker: currency }),
           total: new BigNumber(1000001),
@@ -159,7 +159,6 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -318,7 +317,7 @@ describe('configureDividendDistribution procedure', () => {
       mockContext,
       {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
-          assetBalances: [
+          getAssetBalances: [
             {
               asset: entityMockUtils.getAssetInstance({ ticker: currency }),
               total: new BigNumber(1),
@@ -471,7 +470,7 @@ describe('configureDividendDistribution procedure', () => {
     proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: entityMockUtils.getDefaultPortfolioInstance({
         did: 'someDid',
-        assetBalances: [
+        getAssetBalances: [
           {
             asset: entityMockUtils.getAssetInstance({ ticker: currency }),
             total: new BigNumber(1000001),
@@ -589,7 +588,7 @@ describe('configureDividendDistribution procedure', () => {
       expect(result.description).toEqual(description);
       expect(result.targets).toEqual({
         identities: targets.identities.map(targetDid =>
-          entityMockUtils.getIdentityInstance({ did: targetDid })
+          expect.objectContaining({ did: targetDid })
         ),
 
         treatment: targets.treatment,
@@ -597,12 +596,15 @@ describe('configureDividendDistribution procedure', () => {
       expect(result.defaultTaxWithholding).toEqual(defaultTaxWithholding);
       expect(result.taxWithholdings).toEqual([
         {
-          identity: entityMockUtils.getIdentityInstance({ did: taxWithholdings[0].identity }),
+          identity: expect.objectContaining({ did: taxWithholdings[0].identity }),
           percentage: taxWithholdings[0].percentage,
         },
       ]);
       expect(result.origin).toEqual(
-        entityMockUtils.getNumberedPortfolioInstance({ did, id: new BigNumber(portfolioNumber) })
+        expect.objectContaining({
+          owner: expect.objectContaining({ did }),
+          id: new BigNumber(portfolioNumber),
+        })
       );
       expect(result.currency).toEqual(currency);
       expect(result.maxAmount).toEqual(maxAmount);
@@ -631,7 +633,7 @@ describe('configureDividendDistribution procedure', () => {
         ],
         permissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [originPortfolio],
         },
       });
@@ -661,7 +663,8 @@ describe('configureDividendDistribution procedure', () => {
       result = await boundFunc({ originPortfolio: portfolioId } as Params);
 
       expect(result).toEqual({
-        portfolio: entityMockUtils.getNumberedPortfolioInstance({
+        portfolio: expect.objectContaining({
+          owner: expect.objectContaining({ did }),
           id: portfolioId,
         }),
       });
@@ -669,7 +672,7 @@ describe('configureDividendDistribution procedure', () => {
       result = await boundFunc({} as Params);
 
       expect(result).toEqual({
-        portfolio: entityMockUtils.getDefaultPortfolioInstance({ did }),
+        portfolio: expect.objectContaining({ owner: expect.objectContaining({ did }) }),
       });
     });
   });

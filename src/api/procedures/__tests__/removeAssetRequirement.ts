@@ -101,7 +101,6 @@ describe('removeAssetRequirement procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -131,7 +130,7 @@ describe('removeAssetRequirement procedure', () => {
       args: [rawTicker, rawId],
     });
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -145,7 +144,7 @@ describe('removeAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.RemoveComplianceRequirement],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

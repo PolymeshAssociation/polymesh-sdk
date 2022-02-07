@@ -98,7 +98,6 @@ describe('addTransferRestriction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -290,14 +289,14 @@ describe('addTransferRestriction procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.AddTransferManager],
           portfolios: [],
         },
       });
       expect(boundFunc({ ...args, exemptedScopeIds: ['someScopeId'] })).toEqual({
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [
             TxTags.statistics.AddTransferManager,
             TxTags.statistics.AddExemptedEntities,
