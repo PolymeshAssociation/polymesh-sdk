@@ -57,7 +57,6 @@ describe('Offerings class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -103,7 +102,7 @@ describe('Offerings class', () => {
       const id = new BigNumber(1);
       const result = await offerings.getOne({ id });
 
-      expect(result).toEqual(entityMockUtils.getOfferingInstance());
+      expect(result.id).toEqual(id);
     });
 
     test('should throw an error if the Offering does not exist', () => {

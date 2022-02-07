@@ -29,7 +29,6 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {

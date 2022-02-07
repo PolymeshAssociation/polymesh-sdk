@@ -56,7 +56,6 @@ describe('CorporateActions class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -157,8 +156,6 @@ describe('CorporateActions class', () => {
       const otherDid = 'otherDid';
       const fakeTicker = 'TEST';
 
-      const identity = entityMockUtils.getIdentityInstance({ did });
-
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
@@ -174,22 +171,14 @@ describe('CorporateActions class', () => {
 
       const result = await corporateActions.getAgents();
 
-      expect(result).toEqual([identity]);
+      expect(result).toEqual([expect.objectContaining({ did })]);
     });
   });
 
   describe('method: getDefaultConfig', () => {
     test("should retrieve the Asset's Corporate Actions Default Config", async () => {
       const dids = ['someDid', 'otherDid'];
-      const targets = {
-        identities: [
-          entityMockUtils.getIdentityInstance({ did: dids[0] }),
-          entityMockUtils.getIdentityInstance({ did: dids[1] }),
-        ],
-        treatment: TargetTreatment.Include,
-      };
       const defaultTaxWithholding = new BigNumber(10);
-      const taxWithholdings = [{ identity: targets.identities[0], percentage: new BigNumber(15) }];
 
       dsMockUtils.createQueryStub('corporateAction', 'defaultTargetIdentities');
       dsMockUtils.createQueryStub('corporateAction', 'defaultWithholdingTax');
@@ -212,9 +201,17 @@ describe('CorporateActions class', () => {
       const result = await corporateActions.getDefaultConfig();
 
       expect(result).toEqual({
-        targets,
+        targets: {
+          identities: dids.map(did => expect.objectContaining({ did })),
+          treatment: TargetTreatment.Include,
+        },
         defaultTaxWithholding,
-        taxWithholdings,
+        taxWithholdings: [
+          {
+            identity: expect.objectContaining({ did: dids[0] }),
+            percentage: new BigNumber(15),
+          },
+        ],
       });
     });
   });

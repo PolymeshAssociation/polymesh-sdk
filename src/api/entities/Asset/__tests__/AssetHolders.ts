@@ -62,7 +62,6 @@ describe('AssetHolder class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -97,7 +96,7 @@ describe('AssetHolder class', () => {
         );
 
         expectedHolders.push({
-          identity: entityMockUtils.getIdentityInstance({ did: identity }),
+          identity: expect.objectContaining({ did: identity }),
           balance,
         });
       });
@@ -109,7 +108,7 @@ describe('AssetHolder class', () => {
 
       const result = await assetHolders.get();
 
-      expect(JSON.stringify(result.data)).toBe(JSON.stringify(expectedHolders));
+      expect(result.data).toEqual(expectedHolders);
       expect(result.next).toBeNull();
     });
 
@@ -135,7 +134,7 @@ describe('AssetHolder class', () => {
       );
 
       expectedHolders.push({
-        identity: entityMockUtils.getIdentityInstance({ did: identity }),
+        identity: expect.objectContaining({ did: identity }),
         balance,
       });
 
@@ -146,7 +145,8 @@ describe('AssetHolder class', () => {
 
       const result = await assetHolders.get({ size: new BigNumber(1) });
 
-      expect(result).toEqual({ data: expectedHolders, next: 'someKey' });
+      expect(result.data).toEqual(expectedHolders);
+      expect(result.next).toBe('someKey');
     });
   });
 });

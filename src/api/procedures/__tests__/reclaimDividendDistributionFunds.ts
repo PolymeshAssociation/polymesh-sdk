@@ -59,7 +59,6 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -140,8 +139,8 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
-          portfolios: [origin],
+          assets: [expect.objectContaining({ ticker })],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
         },
       });
     });

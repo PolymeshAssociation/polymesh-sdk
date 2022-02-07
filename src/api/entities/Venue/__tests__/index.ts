@@ -12,7 +12,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionStatus, VenueType } from '~/types';
+import { InstructionStatus, InstructionType, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -59,7 +59,6 @@ describe('Venue class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -130,7 +129,7 @@ describe('Venue class', () => {
       const result = await venue.details();
 
       expect(result).toEqual({
-        owner: entityMockUtils.getIdentityInstance(),
+        owner: expect.objectContaining({ did: owner }),
         description,
         type,
       });
@@ -146,7 +145,24 @@ describe('Venue class', () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
 
-      const detailsStub = entityMockUtils.getInstructionDetailsStub();
+      const detailsStub = sinon.stub();
+
+      detailsStub.onFirstCall().resolves({
+        status: InstructionStatus.Pending,
+      });
+      detailsStub.onSecondCall().resolves({
+        status: InstructionStatus.Failed,
+      });
+      detailsStub.onThirdCall().resolves({
+        status: InstructionStatus.Executed,
+      });
+
+      entityMockUtils.configureMocks({
+        instructionOptions: {
+          details: detailsStub,
+        },
+      });
+
       sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
 
       dsMockUtils
@@ -159,16 +175,6 @@ describe('Venue class', () => {
           [tuple(rawId, dsMockUtils.createMockU64(id2)), []],
           [tuple(rawId, dsMockUtils.createMockU64(new BigNumber(3))), []],
         ],
-      });
-
-      detailsStub.onFirstCall().resolves({
-        status: InstructionStatus.Pending,
-      });
-      detailsStub.onSecondCall().resolves({
-        status: InstructionStatus.Failed,
-      });
-      detailsStub.onThirdCall().resolves({
-        status: InstructionStatus.Executed,
       });
 
       const result = await venue.getInstructions();
@@ -211,6 +217,11 @@ describe('Venue class', () => {
           exists: true,
           details: {
             status: InstructionStatus.Failed,
+            createdAt: new Date('10/14/1987'),
+            tradeDate: null,
+            valueDate: null,
+            venue,
+            type: InstructionType.SettleOnAffirmation,
           },
         },
       });

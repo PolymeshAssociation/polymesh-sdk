@@ -56,7 +56,6 @@ describe('modifyAsset procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -70,8 +69,10 @@ describe('modifyAsset procedure', () => {
   });
 
   test('should throw an error if makeDivisible is set to true and the Asset is already divisible', () => {
-    entityMockUtils.getAssetDetailsStub({
-      isDivisible: true,
+    entityMockUtils.configureMocks({
+      assetOptions: {
+        details: { isDivisible: true },
+      },
     });
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
@@ -211,7 +212,7 @@ describe('modifyAsset procedure', () => {
         permissions: {
           transactions: [],
           portfolios: [],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
 
@@ -224,7 +225,7 @@ describe('modifyAsset procedure', () => {
             TxTags.asset.UpdateIdentifiers,
           ],
           portfolios: [],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
     });

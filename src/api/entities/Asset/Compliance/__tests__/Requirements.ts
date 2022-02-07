@@ -43,7 +43,6 @@ describe('Requirements class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -219,13 +218,13 @@ describe('Requirements class', () => {
     });
 
     beforeEach(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance({ ticker });
       requirements = new Requirements(asset, context);
       defaultClaimIssuers = [
         {
-          identity: entityMockUtils.getIdentityInstance({ did: 'defaultissuer' }),
+          identity: entityMockUtils.getIdentityInstance({ did: 'defaultIssuer' }),
           trustedFor: null,
         },
       ];
@@ -319,7 +318,12 @@ describe('Requirements class', () => {
                   type: ClaimType.Exempted,
                   scope: { type: ScopeType.Identity, value: assetDid },
                 },
-                trustedClaimIssuers: [notDefaultClaimIssuer],
+                trustedClaimIssuers: [
+                  {
+                    identity: expect.objectContaining({ did: notDefaultClaimIssuer.identity.did }),
+                    trustedFor: null,
+                  },
+                ],
               },
             ],
           },
@@ -348,7 +352,9 @@ describe('Requirements class', () => {
             ],
           },
         ],
-        defaultTrustedClaimIssuers: defaultClaimIssuers,
+        defaultTrustedClaimIssuers: [
+          { identity: expect.objectContaining({ did: 'defaultIssuer' }), trustedFor: null },
+        ],
       };
     });
 
@@ -356,7 +362,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should return all requirements attached to the Asset, using the default trusted claim issuers where none are set', async () => {
+    test('should return all requirements attached to the Asset, along with the default trusted claim issuers', async () => {
       queryMultiStub.resolves(queryMultiResult);
       const result = await requirements.get();
 
@@ -376,7 +382,37 @@ describe('Requirements class', () => {
 
       expect(result).toBe(unsubCallback);
 
-      sinon.assert.calledWithExactly(callback, expected);
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match({
+          requirements: [
+            {
+              id: new BigNumber(1),
+              conditions: [
+                {
+                  ...expected.requirements[0].conditions[0],
+                  trustedClaimIssuers: [
+                    {
+                      identity: sinon.match({ did: notDefaultClaimIssuer.identity.did }),
+                      trustedFor: null,
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              id: new BigNumber(2),
+              conditions: expected.requirements[1].conditions,
+            },
+          ],
+          defaultTrustedClaimIssuers: [
+            {
+              identity: sinon.match({ did: 'defaultIssuer' }),
+              trustedFor: null,
+            },
+          ],
+        })
+      );
     });
   });
 

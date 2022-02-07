@@ -4,13 +4,11 @@ import sinon from 'sinon';
 import {
   Asset,
   Context,
-  DefaultTrustedClaimIssuer,
   ModifyAssetTrustedClaimIssuersAddSetParams,
   Namespace,
   TransactionQueue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { TrustedClaimIssuer } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -168,7 +166,6 @@ describe('TrustedClaimIssuers class', () => {
     let context: Context;
     let asset: Asset;
     let expectedDids: string[];
-    let expectedTrustedClaimIssuers: TrustedClaimIssuer<true>[];
     let claimIssuers: TrustedIssuer[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
@@ -184,14 +181,9 @@ describe('TrustedClaimIssuers class', () => {
 
       expectedDids = ['someDid', 'otherDid', 'yetAnotherDid'];
 
-      expectedTrustedClaimIssuers = [];
       claimIssuers = [];
 
       expectedDids.forEach(did => {
-        expectedTrustedClaimIssuers.push({
-          identity: new DefaultTrustedClaimIssuer({ did, ticker }, context),
-          trustedFor: null,
-        });
         claimIssuers.push(
           dsMockUtils.createMockTrustedIssuer({
             issuer: dsMockUtils.createMockIdentityId(did),
@@ -219,7 +211,9 @@ describe('TrustedClaimIssuers class', () => {
 
       const result = await trustedClaimIssuers.get();
 
-      expect(result).toEqual(expectedTrustedClaimIssuers);
+      expect(result).toEqual(
+        expectedDids.map(did => ({ identity: expect.objectContaining({ did }), trustedFor: null }))
+      );
     });
 
     test('should allow subscription', async () => {
@@ -235,7 +229,10 @@ describe('TrustedClaimIssuers class', () => {
       const result = await trustedClaimIssuers.get(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, expectedTrustedClaimIssuers);
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match(expectedDids.map(did => ({ identity: sinon.match({ did }), trustedFor: null })))
+      );
     });
   });
 });

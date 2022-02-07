@@ -174,7 +174,6 @@ describe('setAssetRequirements procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -198,7 +197,7 @@ describe('setAssetRequirements procedure', () => {
     });
 
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a replace asset compliance transactions to the queue', async () => {
@@ -219,7 +218,7 @@ describe('setAssetRequirements procedure', () => {
       args: [rawTicker, rawComplianceRequirements],
     });
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -234,7 +233,7 @@ describe('setAssetRequirements procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ResetAssetCompliance],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });
@@ -242,7 +241,7 @@ describe('setAssetRequirements procedure', () => {
       expect(boundFunc({ ...params, requirements: [1] as unknown as InputCondition[][] })).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ReplaceAssetCompliance],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

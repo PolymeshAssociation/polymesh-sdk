@@ -90,7 +90,6 @@ describe('transferAssetOwnership procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -132,7 +131,7 @@ describe('transferAssetOwnership procedure', () => {
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.identity.AddAuthorization],
           portfolios: [],
         },

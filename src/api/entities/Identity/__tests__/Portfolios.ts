@@ -62,7 +62,6 @@ describe('Portfolios class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -94,7 +93,7 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: getCustodiedPortfolos', () => {
+  describe('method: getCustodiedPortfolios', () => {
     test('should retrieve all the Portfolios custodied by the Identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody');
 

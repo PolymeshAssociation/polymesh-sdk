@@ -48,7 +48,6 @@ describe('claimDividends procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -131,6 +130,8 @@ describe('claimDividends procedure', () => {
       paymentDate,
       getParticipant: {
         paid: true,
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: new BigNumber(100),
       },
     });
 
@@ -152,6 +153,8 @@ describe('claimDividends procedure', () => {
       paymentDate,
       getParticipant: {
         paid: false,
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: new BigNumber(100),
       },
     });
 

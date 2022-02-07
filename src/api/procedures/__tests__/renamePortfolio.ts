@@ -60,7 +60,6 @@ describe('renamePortfolio procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -122,13 +121,12 @@ describe('renamePortfolio procedure', () => {
         did,
         id,
       } as Params;
-      const portfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id });
 
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
         permissions: {
           assets: [],
-          portfolios: [portfolio],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }), id })],
           transactions: [TxTags.portfolio.RenamePortfolio],
         },
       });

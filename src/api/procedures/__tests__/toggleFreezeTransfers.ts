@@ -46,7 +46,6 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -120,7 +119,7 @@ describe('toggleFreezeTransfers procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = entityMockUtils.getAssetInstance({ ticker });
+      const asset = expect.objectContaining({ ticker });
 
       expect(boundFunc({ ticker, freeze: true })).toEqual({
         permissions: {

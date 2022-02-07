@@ -823,7 +823,6 @@ describe('getPortfolioIdByName', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should return null if no portfolio with given name is found', async () => {

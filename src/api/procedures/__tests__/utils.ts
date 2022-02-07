@@ -106,7 +106,6 @@ describe('assertInstructionValid', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -605,7 +604,6 @@ describe('authorization request validations', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   describe('assertAuthorizationRequestValid', () => {
