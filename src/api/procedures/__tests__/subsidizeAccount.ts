@@ -102,7 +102,7 @@ describe('subsidizeAccount procedure', () => {
   });
 
   test('should add an add authorization transaction to the queue', async () => {
-    const randomBeneficiary = entityMockUtils.getAccountInstance({ address: 'randomAddress' });
+    const mockBeneficiary = entityMockUtils.getAccountInstance({ address: 'mockAddress' });
     const issuer = entityMockUtils.getIdentityInstance();
     const subsidizer = entityMockUtils.getAccountInstance();
 
@@ -110,14 +110,14 @@ describe('subsidizeAccount procedure', () => {
       data: [
         new AuthorizationRequest(
           {
-            target: randomBeneficiary,
+            target: mockBeneficiary,
             issuer,
             authId,
             expiry: null,
             data: {
               type: AuthorizationType.AddRelayerPayingKey,
               value: {
-                beneficiary: randomBeneficiary,
+                beneficiary: mockBeneficiary,
                 subsidizer,
                 allowance: new BigNumber(100),
               },
@@ -127,7 +127,7 @@ describe('subsidizeAccount procedure', () => {
         ),
         new AuthorizationRequest(
           {
-            target: randomBeneficiary,
+            target: beneficiary,
             issuer: entityMockUtils.getIdentityInstance(),
             authId,
             expiry: null,

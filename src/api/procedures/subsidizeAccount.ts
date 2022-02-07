@@ -54,17 +54,13 @@ export async function prepareSubsidizeAccount(
   const authorizationRequests = await identity.authorizations.getSent();
 
   const hasPendingAuth = !!authorizationRequests.data.find(authorizationRequest => {
-    const {
-      target,
-      data: { type },
-      data,
-    } = authorizationRequest;
+    const { target, data } = authorizationRequest;
 
     return (
       signerToString(target) === beneficiaryAddress &&
       !authorizationRequest.isExpired() &&
-      type === AuthorizationType.AddRelayerPayingKey &&
-      (data as AddRelayerPayingKeyAuthorizationData).value.allowance.isEqualTo(allowance)
+      data.type === AuthorizationType.AddRelayerPayingKey &&
+      data.value.allowance.isEqualTo(allowance)
     );
   });
 
@@ -80,13 +76,11 @@ export async function prepareSubsidizeAccount(
 
   const rawAllowance = bigNumberToBalance(allowance, context);
 
-  const { account: subsidizer } = await identity.getPrimaryAccount();
-
   const authRequest: AddRelayerPayingKeyAuthorizationData = {
     type: AuthorizationType.AddRelayerPayingKey,
     value: {
       beneficiary: account,
-      subsidizer,
+      subsidizer: context.getCurrentAccount(),
       allowance,
     },
   };

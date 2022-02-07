@@ -36,10 +36,7 @@ export {
 export { createVenue, CreateVenueParams } from '~/api/procedures/createVenue';
 export { inviteAccount, InviteAccountParams } from '~/api/procedures/inviteAccount';
 export { subsidizeAccount, SubsidizeAccountParams } from '~/api/procedures/subsidizeAccount';
-export {
-  issueTokens as issueAsset,
-  IssueTokensParams as IssueAssetParams,
-} from '~/api/procedures/issueTokens';
+export { issueAssets, IssueAssetsParams } from '~/api/procedures/issueAssets';
 export { modifyClaims, ModifyClaimsParams } from '~/api/procedures/modifyClaims';
 export {
   modifyInstructionAffirmation,
