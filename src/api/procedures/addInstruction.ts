@@ -13,7 +13,7 @@ import {
   TxTags,
 } from 'polymesh-types/types';
 
-import { assertPortfolioExists } from '~/api/procedures/utils';
+import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
 import {
   Asset,
   Context,
@@ -23,7 +23,6 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  Venue,
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -78,11 +77,15 @@ export interface AddInstructionsParams {
   instructions: AddInstructionParams[];
 }
 
+export interface AddInstructionWithVenueIdParams extends AddInstructionParams {
+  venueId: BigNumber;
+}
+
 /**
  * @hidden
  */
 export type Params = AddInstructionsParams & {
-  venue: Venue;
+  venueId: BigNumber;
 };
 
 /**
@@ -289,12 +292,12 @@ export async function prepareAddInstruction(
     context,
     storage: { portfoliosToAffirm },
   } = this;
-  const {
-    instructions,
-    venue: { id: venueId },
-  } = args;
+  const { instructions, venueId } = args;
 
-  const latestBlock = await context.getLatestBlock();
+  const [latestBlock] = await Promise.all([
+    context.getLatestBlock(),
+    assertVenueExists(venueId, context),
+  ]);
 
   if (!instructions.length) {
     throw new PolymeshError({
@@ -379,7 +382,7 @@ export async function prepareAddInstruction(
  */
 export async function getAuthorization(
   this: Procedure<Params, Instruction[], Storage>,
-  { venue: { id: venueId } }: Params
+  { venueId }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { portfoliosToAffirm },

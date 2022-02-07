@@ -250,7 +250,7 @@ describe('Venue class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { instructions: [{ legs, tradeDate, endBlock }], venue },
+            args: { instructions: [{ legs, tradeDate, endBlock }], venueId: venue.id },
             transformer: addInstructionTransformer,
           },
           context
@@ -301,7 +301,7 @@ describe('Venue class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { venue, instructions },
+            args: { venueId: venue.id, instructions },
             transformer: undefined,
           },
           context

@@ -19,7 +19,6 @@ import {
   Instruction,
   NumberedPortfolio,
   PostTransactionValue,
-  Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -75,7 +74,6 @@ describe('addInstruction procedure', () => {
   let valueDate: Date;
   let endBlock: BigNumber;
   let args: Params;
-  let venue: Mocked<Venue>;
 
   let rawVenueId: u64;
   let rawAmount: Balance;
@@ -226,9 +224,8 @@ describe('addInstruction procedure', () => {
     dateToMomentStub.withArgs(tradeDate, mockContext).returns(rawTradeDate);
     dateToMomentStub.withArgs(valueDate, mockContext).returns(rawValueDate);
 
-    venue = entityMockUtils.getVenueInstance({ id: venueId });
     args = {
-      venue,
+      venueId,
       instructions: [
         {
           legs: [
@@ -265,7 +262,7 @@ describe('addInstruction procedure', () => {
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [] });
     } catch (err) {
       error = err;
     }
@@ -279,10 +276,14 @@ describe('addInstruction procedure', () => {
       portfoliosToAffirm: [],
     });
 
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+    });
+
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs: [] }] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
     } catch (err) {
       error = err;
     }
@@ -290,6 +291,27 @@ describe('addInstruction procedure', () => {
     expect(error.message).toBe("The legs array can't be empty");
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
+  test("should throw an error if the Venue doesn't exist", async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: false },
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("The Venue doesn't exist");
+    expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 
   test('should throw an error if the legs array exceeds limit', async () => {
@@ -313,7 +335,7 @@ describe('addInstruction procedure', () => {
     });
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs }] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
     } catch (err) {
       error = err;
     }
@@ -339,7 +361,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venue,
+        venueId,
         instructions: [
           {
             legs: [
@@ -378,7 +400,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venue,
+        venueId,
         instructions: [
           {
             legs: [
@@ -445,7 +467,7 @@ describe('addInstruction procedure', () => {
     });
 
     const result = await prepareAddInstruction.call(proc, {
-      venue,
+      venueId,
       instructions: [
         {
           legs: [
@@ -486,7 +508,7 @@ describe('addInstruction procedure', () => {
       let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc({
-        venue,
+        venueId,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
@@ -507,7 +529,7 @@ describe('addInstruction procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({
-        venue,
+        venueId,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
