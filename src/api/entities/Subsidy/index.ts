@@ -1,5 +1,7 @@
-import { Account, Context, Entity, quitSubsidy } from '~/internal';
-import { NoArgsProcedureMethod } from '~/types';
+import BigNumber from 'bignumber.js';
+
+import { Account, Context, Entity, PolymeshError, quitSubsidy } from '~/internal';
+import { ErrorCode, NoArgsProcedureMethod } from '~/types';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -77,6 +79,29 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
     return (
       subsidyWithAllowance !== null && subsidyWithAllowance.subsidy.subsidizer.isEqual(subsidizer)
     );
+  }
+
+  /**
+   * Get amount of POLYX subsidized for this Subsidy relationship
+   *
+   */
+  public async getAllowance(): Promise<BigNumber> {
+    const {
+      beneficiary: { address: beneficiaryAddress },
+      subsidizer,
+      context,
+    } = this;
+
+    const subsidyWithAllowance = await context.accountSubsidy(beneficiaryAddress);
+
+    if (!subsidyWithAllowance || !subsidyWithAllowance.subsidy.subsidizer.isEqual(subsidizer)) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'The Subsidy no longer exists',
+      });
+    }
+
+    return subsidyWithAllowance.allowance;
   }
 
   /**

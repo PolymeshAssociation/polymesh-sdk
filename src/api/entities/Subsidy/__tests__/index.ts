@@ -126,6 +126,55 @@ describe('Subsidy class', () => {
     });
   });
 
+  describe('method: getAllowance', () => {
+    let subsidy: Subsidy;
+
+    beforeEach(() => {
+      subsidy = new Subsidy({ beneficiary: 'beneficiary', subsidizer: 'subsidizer' }, context);
+    });
+
+    test('should throw an error if the Subsidy relationship does not exist', async () => {
+      context.accountSubsidy.onFirstCall().returns(null);
+
+      let error;
+
+      try {
+        await subsidy.getAllowance();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('The Subsidy no longer exists');
+
+      context.accountSubsidy.onSecondCall().returns({
+        subsidy: entityMockUtils.getSubsidyInstance({ subsidizer: 'otherAddress' }),
+        allowance: new BigNumber(1),
+      });
+
+      entityMockUtils.getAccountIsEqualStub().returns(false);
+
+      try {
+        await subsidy.getAllowance();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('The Subsidy no longer exists');
+    });
+
+    test('should return allowance of the Subsidy relationship', async () => {
+      const allowance = new BigNumber(100);
+      context.accountSubsidy.returns({
+        subsidy: entityMockUtils.getSubsidyInstance(),
+        allowance,
+      });
+
+      entityMockUtils.getAccountIsEqualStub().returns(true);
+
+      await expect(subsidy.getAllowance()).resolves.toBe(allowance);
+    });
+  });
+
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
       const subsidy = new Subsidy(

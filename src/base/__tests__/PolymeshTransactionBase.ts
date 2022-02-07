@@ -603,7 +603,7 @@ describe('Polymesh Transaction Base class', () => {
 
     test('should return the account and allowance if the transaction is being subsidized', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const account = entityMockUtils.getAccountInstance({ address: 'subsidizer' });
+      const account = expect.objectContaining({ address: 'subsidizer' });
       const allowance = new BigNumber(100);
       context.accountSubsidy.resolves({
         subsidy: entityMockUtils.getSubsidyInstance(),
