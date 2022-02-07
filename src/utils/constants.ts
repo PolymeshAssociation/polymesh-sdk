@@ -49,7 +49,7 @@ export const DEFAULT_GQL_PAGE_SIZE = 25;
 /**
  * Limit to the page size used when fetching large amounts of data from the chain (same goes for `.multi` calls)
  */
-export const MAX_PAGE_SIZE = 1000;
+export const MAX_PAGE_SIZE = new BigNumber(1000);
 /**
  * Prefix for the data that must be signed in Ethereum by a classic Ticker owner in order
  *   to claim their Ticker

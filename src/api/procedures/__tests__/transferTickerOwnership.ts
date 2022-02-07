@@ -1,5 +1,6 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -64,7 +65,7 @@ describe('transferTickerOwnership procedure', () => {
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       TransferTicker: dsMockUtils.createMockTicker(ticker),
     });
-    rawMoment = dsMockUtils.createMockMoment(expiry.getTime());
+    rawMoment = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
     args = {
       ticker,
       target: did,

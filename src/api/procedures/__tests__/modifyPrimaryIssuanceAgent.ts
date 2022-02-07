@@ -1,4 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -141,7 +142,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
       ticker,
     };
     const requestExpiry = new Date('12/12/2050');
-    const rawExpiry = dsMockUtils.createMockMoment(requestExpiry.getTime());
+    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(requestExpiry.getTime()));
 
     dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
 

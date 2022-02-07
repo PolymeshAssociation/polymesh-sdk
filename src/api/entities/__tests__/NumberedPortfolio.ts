@@ -1,10 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, NumberedPortfolio, TransactionQueue } from '~/internal';
+import { Context, Entity, NumberedPortfolio, PolymeshError, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -89,13 +90,13 @@ describe('NumberedPortfolio class', () => {
   });
 
   describe('method: getName', () => {
+    const id = new BigNumber(1);
+    const did = 'someDid';
+    const portfolioName = 'someName';
     test('should return the name of the Portfolio', async () => {
-      const id = new BigNumber(1);
-      const did = 'someDid';
-      const portfolioName = 'someName';
-      const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-
+      const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
+      const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         returnValue: rawPortfolioName,
       });
@@ -103,6 +104,28 @@ describe('NumberedPortfolio class', () => {
       const result = await numberedPortfolio.getName();
 
       expect(result).toEqual(portfolioName);
+      spy.mockRestore();
+    });
+
+    test('should throw an error if the Portfolio no longer exists', async () => {
+      const emptyName = dsMockUtils.createMockText('');
+      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+        returnValue: emptyName,
+      });
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+      const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(false);
+      let error;
+      try {
+        await numberedPortfolio.getName();
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The Portfolio doesn't exist",
+      });
+      expect(error).toEqual(expectedError);
+      spy.mockRestore();
     });
   });
 
@@ -119,7 +142,7 @@ describe('NumberedPortfolio class', () => {
     test('should return the event identifier object of the portfolio creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
@@ -128,7 +151,7 @@ describe('NumberedPortfolio class', () => {
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
-          event_idx: eventIdx,
+          event_idx: eventIdx.toNumber(),
         },
         /* eslint-enable @typescript-eslint/naming-convention */
       });
@@ -154,22 +177,22 @@ describe('NumberedPortfolio class', () => {
       const portfolioId = new BigNumber(0);
 
       const portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-        size: 0,
+        size: new BigNumber(0),
       });
 
       sinon
         .stub(utilsConversionModule, 'stringToIdentityId')
         .returns(dsMockUtils.createMockIdentityId(did));
       sinon
-        .stub(utilsConversionModule, 'numberToU64')
-        .returns(dsMockUtils.createMockU64(portfolioId.toNumber()));
+        .stub(utilsConversionModule, 'bigNumberToU64')
+        .returns(dsMockUtils.createMockU64(portfolioId));
 
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       let result = await numberedPortfolio.exists();
       expect(result).toBe(false);
 
-      portfoliosStub.size.resolves(dsMockUtils.createMockU64(10));
+      portfoliosStub.size.resolves(dsMockUtils.createMockU64(new BigNumber(10)));
 
       result = await numberedPortfolio.exists();
       expect(result).toBe(true);

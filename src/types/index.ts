@@ -314,13 +314,19 @@ export interface IdentityWithClaims {
 export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;
-  extrinsicIdx: number;
+  extrinsicIdx: BigNumber;
+  /**
+   * public key of the signer. Unsigned transactions have no signer, in which case this value is null (example: an enacted governance proposal)
+   */
   address: string | null;
-  nonce: number;
+  /**
+   * nonce of the transaction. Null for unsigned transactions where address is null
+   */
+  nonce: BigNumber | null;
   txTag: TxTag;
   params: Record<string, unknown>[];
   success: boolean;
-  specVersionId: number;
+  specVersionId: BigNumber;
   extrinsicHash: string;
 }
 
@@ -416,7 +422,7 @@ export type InputCondition = (
   InputConditionBase;
 
 export interface Requirement {
-  id: number;
+  id: BigNumber;
   conditions: Condition[];
 }
 
@@ -436,7 +442,7 @@ export interface ConditionCompliance {
 }
 
 export interface RequirementCompliance {
-  id: number;
+  id: BigNumber;
   conditions: ConditionCompliance[];
   complies: boolean;
 }
@@ -653,7 +659,7 @@ export interface EventIdentifier {
   blockNumber: BigNumber;
   blockHash: string;
   blockDate: Date;
-  eventIndex: number;
+  eventIndex: BigNumber;
 }
 
 export interface KeyringPair extends IKeyringPair {
@@ -678,21 +684,21 @@ export interface Balance {
 export type AccountBalance = Balance;
 
 export interface PaginationOptions {
-  size: number;
+  size: BigNumber;
   start?: string;
 }
 
-export type NextKey = string | number | null;
+export type NextKey = string | BigNumber | null;
 
 export interface ResultSet<T> {
   data: T[];
   next: NextKey;
-  count?: number;
+  count?: BigNumber;
 }
 
 export interface NetworkProperties {
   name: string;
-  version: number;
+  version: BigNumber;
 }
 
 export interface Fees {
@@ -1272,7 +1278,7 @@ export interface ActiveTransferRestrictions<
   /**
    * amount of restrictions that can be added before reaching the shared limit
    */
-  availableSlots: number;
+  availableSlots: BigNumber;
 }
 
 export enum TransferRestrictionType {
@@ -1300,7 +1306,7 @@ export enum CalendarUnit {
  */
 export interface CalendarPeriod {
   unit: CalendarUnit;
-  amount: number;
+  amount: BigNumber;
 }
 
 export interface ScheduleWithDetails {

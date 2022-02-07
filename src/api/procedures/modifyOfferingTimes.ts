@@ -4,7 +4,7 @@ import { Moment } from 'polymesh-types/types';
 import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { dateToMoment, numberToU64, stringToTicker } from '~/utils/conversion';
+import { bigNumberToU64, dateToMoment, stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -113,7 +113,7 @@ export async function prepareModifyOfferingTimes(
   validateInput(sale, newStart, start, newEnd, end, timing);
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawId = numberToU64(id, context);
+  const rawId = bigNumberToU64(id, context);
   const rawStart = newStart ? dateToMoment(newStart, context) : dateToMoment(start, context);
   let rawEnd: Moment | null;
 

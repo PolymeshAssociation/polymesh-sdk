@@ -1,4 +1,5 @@
 import { StorageKey } from '@polkadot/types';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Asset, Namespace, TransactionQueue } from '~/internal';
@@ -95,7 +96,10 @@ describe('Documents class', () => {
       const entries = expectedDocuments.map(({ name, uri, contentHash, type, filedAt }, index) =>
         tuple(
           {
-            args: [dsMockUtils.createMockTicker(asset.ticker), dsMockUtils.createMockU32(index)],
+            args: [
+              dsMockUtils.createMockTicker(asset.ticker),
+              dsMockUtils.createMockU32(new BigNumber(index)),
+            ],
           } as unknown as StorageKey,
           dsMockUtils.createMockDocument({
             uri: dsMockUtils.createMockDocumentUri(uri),
@@ -108,7 +112,7 @@ describe('Documents class', () => {
               type ? dsMockUtils.createMockDocumentType(type) : null
             ),
             filing_date: dsMockUtils.createMockOption(
-              filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+              filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
             ),
             /* eslint-enable @typescript-eslint/naming-convention */
           })

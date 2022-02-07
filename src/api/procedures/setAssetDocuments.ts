@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
@@ -60,7 +61,7 @@ export async function prepareSetAssetDocuments(
     batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
       this.addTransaction({
         transaction: tx.asset.removeDocuments,
-        feeMultiplier: docIdBatch.length,
+        feeMultiplier: new BigNumber(docIdBatch.length),
         args: [docIdBatch, rawTicker],
       });
     });
@@ -70,7 +71,7 @@ export async function prepareSetAssetDocuments(
     batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
       this.addTransaction({
         transaction: tx.asset.addDocuments,
-        feeMultiplier: rawDocumentBatch.length,
+        feeMultiplier: new BigNumber(rawDocumentBatch.length),
         args: [rawDocumentBatch, rawTicker],
       });
     });

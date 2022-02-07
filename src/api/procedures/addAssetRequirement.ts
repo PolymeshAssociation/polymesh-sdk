@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
@@ -62,12 +63,12 @@ export async function prepareAddAssetRequirement(
   // check that the new requirement won't cause the current ones to exceed the max complexity
   assertRequirementsNotTooComplex(
     [...flatten(currentConditions), ...conditions],
-    defaultTrustedClaimIssuers.length,
+    new BigNumber(defaultTrustedClaimIssuers.length),
     context
   );
 
   const { sender_conditions: senderConditions, receiver_conditions: receiverConditions } =
-    requirementToComplianceRequirement({ conditions, id: 1 }, context);
+    requirementToComplianceRequirement({ conditions, id: new BigNumber(1) }, context);
 
   this.addTransaction({
     transaction: tx.complianceManager.addComplianceRequirement,

@@ -82,7 +82,7 @@ interface BaseTx<Args extends unknown[] = unknown[]> {
   /**
    * amount by which the protocol fees should be multiplied (only applicable to transactions where the input size impacts the total fees)
    */
-  feeMultiplier?: number;
+  feeMultiplier?: BigNumber;
 }
 
 /**
@@ -295,7 +295,7 @@ export enum InstructionAffirmationOperation {
 export interface ScheduleSpec {
   start: Date | null;
   period: CalendarPeriod | null;
-  repetitions: number | null;
+  repetitions: BigNumber | null;
 }
 
 export interface ScopeClaimProof {

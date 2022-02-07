@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToBalance, stringToTicker } from '~/utils/conversion';
+import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
 
 export interface RedeemTokensParams {
   amount: BigNumber;
@@ -55,7 +55,7 @@ export async function prepareRedeemTokens(
 
   this.addTransaction({
     transaction: tx.asset.redeem,
-    args: [rawTicker, numberToBalance(amount, context, isDivisible)],
+    args: [rawTicker, bigNumberToBalance(amount, context, isDivisible)],
   });
 }
 
