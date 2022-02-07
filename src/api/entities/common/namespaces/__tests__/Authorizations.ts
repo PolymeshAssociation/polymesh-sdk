@@ -92,9 +92,9 @@ describe('Authorizations class', () => {
 
       const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
         dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+          auth_id: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
-            expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
+            expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
           authorization_data: dsMockUtils.createMockAuthorizationData({
             TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
@@ -144,7 +144,7 @@ describe('Authorizations class', () => {
 
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-      sinon.stub(utilsConversionModule, 'numberToU64');
+      sinon.stub(utilsConversionModule, 'bigNumberToU64');
     });
 
     test('should return the requested Authorization Request', async () => {
@@ -172,7 +172,7 @@ describe('Authorizations class', () => {
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
-            auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+            auth_id: dsMockUtils.createMockU64(authId),
             authorization_data: dsMockUtils.createMockAuthorizationData({
               TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),

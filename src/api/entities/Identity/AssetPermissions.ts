@@ -34,10 +34,10 @@ import { Ensured, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
+  bigNumberToU32,
   extrinsicPermissionsToTransactionPermissions,
   hashToString,
   middlewareEventToEventIdentifier,
-  numberToU32,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -354,8 +354,8 @@ export class AssetPermissions extends Namespace<Identity> {
     asset: string | Asset;
     moduleId?: ModuleId;
     eventId?: EventId;
-    size?: number;
-    start?: number;
+    size?: BigNumber;
+    start?: BigNumber;
   }): Promise<ResultSet<EventIdentifier>> {
     const {
       context: {
@@ -378,8 +378,8 @@ export class AssetPermissions extends Namespace<Identity> {
         caller_did: did,
         pallet_name,
         event_id,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -388,7 +388,7 @@ export class AssetPermissions extends Namespace<Identity> {
       data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
     } = result;
 
-    const { items, totalCount: count } = tickerExternalAgentActionsResult;
+    const { items, totalCount } = tickerExternalAgentActionsResult;
 
     const multiParams: BlockNumber[] = [];
     const data: Omit<EventIdentifier, 'blockHash'>[] = [];
@@ -396,11 +396,12 @@ export class AssetPermissions extends Namespace<Identity> {
     items.forEach(item => {
       const { block_id: blockId, datetime, event_idx: eventIndex } = item;
 
-      multiParams.push(numberToU32(blockId, context));
+      const blockNumber = new BigNumber(blockId);
+      multiParams.push(bigNumberToU32(blockNumber, context));
       data.push({
-        blockNumber: new BigNumber(blockId),
+        blockNumber,
         blockDate: new Date(`${datetime}Z`),
-        eventIndex,
+        eventIndex: new BigNumber(eventIndex),
       });
     });
 
@@ -410,6 +411,7 @@ export class AssetPermissions extends Namespace<Identity> {
       hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
     }
 
+    const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, size, start);
 
     return {

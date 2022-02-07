@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { difference, differenceWith, isEqual, some, uniq } from 'lodash';
 import { ScopeId, Ticker, TransferManager, TxTag } from 'polymesh-types/types';
@@ -50,7 +51,7 @@ export interface Storage {
   restrictionsToRemove: [Ticker, TransferManager][];
   exemptionsToAdd: [Ticker, TransferManager, ScopeId[]][];
   exemptionsToRemove: [Ticker, TransferManager, ScopeId[]][];
-  occupiedSlots: number;
+  occupiedSlots: BigNumber;
   exemptionsRepeated: boolean;
 }
 
@@ -58,9 +59,9 @@ export interface Storage {
  * @hidden
  */
 export async function prepareSetTransferRestrictions(
-  this: Procedure<SetTransferRestrictionsParams, number, Storage>,
+  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   args: SetTransferRestrictionsParams
-): Promise<number> {
+): Promise<BigNumber> {
   const {
     context: {
       polymeshApi: {
@@ -107,16 +108,14 @@ export async function prepareSetTransferRestrictions(
     });
   }
 
-  const maxTransferManagers = u32ToBigNumber(
-    consts.statistics.maxTransferManagersPerAsset
-  ).toNumber();
-  const finalCount = occupiedSlots + newRestrictionAmount;
-  if (finalCount >= maxTransferManagers) {
+  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
+  const finalCount = occupiedSlots.plus(newRestrictionAmount);
+  if (finalCount.gte(maxTransferManagers)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
       message: 'Cannot set more Transfer Restrictions than there are slots available',
       data: {
-        availableSlots: maxTransferManagers - occupiedSlots,
+        availableSlots: maxTransferManagers.minus(occupiedSlots),
       },
     });
   }
@@ -151,7 +150,7 @@ export async function prepareSetTransferRestrictions(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<SetTransferRestrictionsParams, number, Storage>,
+  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   { ticker }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
   const { restrictionsToRemove, restrictionsToAdd, exemptionsToAdd, exemptionsToRemove } =
@@ -214,7 +213,7 @@ const getScopeIds = async (
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<SetTransferRestrictionsParams, number, Storage>,
+  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   args: SetTransferRestrictionsParams
 ): Promise<Storage> {
   const { context } = this;
@@ -351,7 +350,7 @@ export async function prepareStorage(
     restrictionsToAdd,
     exemptionsToAdd,
     exemptionsToRemove,
-    occupiedSlots,
+    occupiedSlots: new BigNumber(occupiedSlots),
     exemptionsRepeated,
   };
 }
@@ -361,6 +360,6 @@ export async function prepareStorage(
  */
 export const setTransferRestrictions = (): Procedure<
   SetTransferRestrictionsParams,
-  number,
+  BigNumber,
   Storage
 > => new Procedure(prepareSetTransferRestrictions, getAuthorization, prepareStorage);

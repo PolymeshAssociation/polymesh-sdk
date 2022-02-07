@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, OfferingSaleStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToTicker } from '~/utils/conversion';
+import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -44,7 +44,7 @@ export async function prepareCloseOffering(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawId = numberToU64(id, context);
+  const rawId = bigNumberToU64(id, context);
 
   this.addTransaction({
     transaction: txSto.stop,

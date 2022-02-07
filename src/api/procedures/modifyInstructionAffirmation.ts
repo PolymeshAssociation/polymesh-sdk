@@ -13,9 +13,9 @@ import {
 } from '~/types/internal';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
+  bigNumberToU32,
+  bigNumberToU64,
   meshAffirmationStatusToAffirmationStatus,
-  numberToU32,
-  numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
@@ -30,8 +30,8 @@ export interface ModifyInstructionAffirmationParams {
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
-  senderLegAmount: number;
-  totalLegAmount: number;
+  senderLegAmount: BigNumber;
+  totalLegAmount: BigNumber;
 }
 
 /**
@@ -65,7 +65,7 @@ export async function prepareModifyInstructionAffirmation(
     });
   }
 
-  const rawInstructionId = numberToU64(id, context);
+  const rawInstructionId = bigNumberToU64(id, context);
   const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
@@ -118,13 +118,13 @@ export async function prepareModifyInstructionAffirmation(
     this.addTransaction({
       transaction,
       feeMultiplier: senderLegAmount,
-      args: [rawInstructionId, validPortfolioIds, numberToU32(senderLegAmount, context)],
+      args: [rawInstructionId, validPortfolioIds, bigNumberToU32(senderLegAmount, context)],
     });
   } else {
     this.addTransaction({
       transaction: settlementTx.rejectInstruction,
       feeMultiplier: totalLegAmount,
-      args: [rawInstructionId, validPortfolioIds[0], numberToU32(totalLegAmount, context)],
+      args: [rawInstructionId, validPortfolioIds[0], bigNumberToU32(totalLegAmount, context)],
     });
   }
 
@@ -187,7 +187,7 @@ export async function prepareStorage(
 
   const [portfolios, senderLegAmount] = await P.reduce<
     Leg,
-    [(DefaultPortfolio | NumberedPortfolio)[], number]
+    [(DefaultPortfolio | NumberedPortfolio)[], BigNumber]
   >(
     legs,
     async (result, { from, to }) => {
@@ -203,7 +203,7 @@ export async function prepareStorage(
 
       if (fromIsCustodied) {
         res = [...res, from];
-        legAmount += 1;
+        legAmount = legAmount.plus(1);
       }
 
       if (toIsCustodied) {
@@ -212,10 +212,10 @@ export async function prepareStorage(
 
       return tuple(res, legAmount);
     },
-    [[], 0]
+    [[], new BigNumber(0)]
   );
 
-  return { portfolios, senderLegAmount, totalLegAmount: legs.length };
+  return { portfolios, senderLegAmount, totalLegAmount: new BigNumber(legs.length) };
 }
 
 /**

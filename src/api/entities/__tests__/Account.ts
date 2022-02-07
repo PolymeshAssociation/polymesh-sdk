@@ -201,6 +201,7 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber1.toNumber(),
             address,
+            nonce: 1,
             success: 0,
             signedby_address: 1,
             block: {
@@ -253,8 +254,8 @@ describe('Account class', () => {
       let result = await account.getTransactionHistory({
         blockNumber: blockNumber1,
         tag,
-        size: 2,
-        start: 1,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
       });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
@@ -263,19 +264,19 @@ describe('Account class', () => {
       expect(result.data[1].blockHash).toEqual(blockHash2);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
+      expect(result.data[0].nonce).toEqual(new BigNumber(1));
+      expect(result.data[1].nonce).toBeNull();
       expect(result.data[0].success).toBeFalsy();
       expect(result.data[1].success).toBeTruthy();
-      expect(result.count).toEqual(20);
-      expect(result.next).toEqual(3);
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
 
       dsMockUtils.createRpcStub('chain', 'getBlock', {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
               parentHash: 'hash',
-              number: dsMockUtils.createMockCompact(
-                dsMockUtils.createMockU32(blockNumber1.toNumber())
-              ),
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber1)),
               extrinsicsRoot: 'hash',
               stateRoot: 'hash',
             },
@@ -286,8 +287,8 @@ describe('Account class', () => {
       result = await account.getTransactionHistory({
         blockHash: blockHash1,
         tag,
-        size: 2,
-        start: 1,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
       });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
@@ -298,8 +299,8 @@ describe('Account class', () => {
       expect(result.data[1].address).toBeNull();
       expect(result.data[0].success).toBeFalsy();
       expect(result.data[1].success).toBeTruthy();
-      expect(result.count).toEqual(20);
-      expect(result.next).toEqual(3);
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
 
       dsMockUtils.createApolloQueryStub(
         transactions({
@@ -322,7 +323,7 @@ describe('Account class', () => {
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[0].success).toBeFalsy();
-      expect(result.count).toEqual(20);
+      expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toBeNull();
     });
   });

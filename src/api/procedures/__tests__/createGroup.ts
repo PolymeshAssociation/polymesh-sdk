@@ -91,7 +91,7 @@ describe('createGroup procedure', () => {
 
   describe('createCreateGroupResolver', () => {
     const agId = new BigNumber(1);
-    const rawAgId = dsMockUtils.createMockU64(agId.toNumber());
+    const rawAgId = dsMockUtils.createMockU64(agId);
     sinon
       .stub(utilsInternalModule, 'filterEventRecords')
       .returns([dsMockUtils.createMockIEvent(['someDid', rawTicker, rawAgId])]);

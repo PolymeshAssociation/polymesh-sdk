@@ -273,11 +273,11 @@ describe('TransferRestrictionBase class', () => {
         percentage: new BigNumber(49),
       };
       rawCountRestriction = dsMockUtils.createMockTransferManager({
-        CountTransferManager: dsMockUtils.createMockU64(countRestriction.count.toNumber()),
+        CountTransferManager: dsMockUtils.createMockU64(countRestriction.count),
       });
       rawPercentageRestriction = dsMockUtils.createMockTransferManager({
         PercentageTransferManager: dsMockUtils.createMockPermill(
-          percentageRestriction.percentage.toNumber() * 10000
+          percentageRestriction.percentage.multipliedBy(10000)
         ),
       });
     });
@@ -286,7 +286,7 @@ describe('TransferRestrictionBase class', () => {
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance();
       dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
-        returnValue: dsMockUtils.createMockU32(3),
+        returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
       });
       dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
         returnValue: [rawCountRestriction, rawPercentageRestriction],
@@ -307,7 +307,7 @@ describe('TransferRestrictionBase class', () => {
 
       expect(result).toEqual({
         restrictions: [countRestriction],
-        availableSlots: 1,
+        availableSlots: new BigNumber(1),
       });
     });
 
@@ -318,7 +318,7 @@ describe('TransferRestrictionBase class', () => {
 
       expect(result).toEqual({
         restrictions: [percentageRestriction],
-        availableSlots: 1,
+        availableSlots: new BigNumber(1),
       });
 
       dsMockUtils.createQueryStub('statistics', 'exemptEntities', {
@@ -333,7 +333,7 @@ describe('TransferRestrictionBase class', () => {
             percentage: new BigNumber(49),
           },
         ],
-        availableSlots: 1,
+        availableSlots: new BigNumber(1),
       });
     });
   });

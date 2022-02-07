@@ -1,7 +1,9 @@
+import BigNumber from 'bignumber.js';
+
 import { Params, UniqueIdentifiers } from '.';
 
 export interface ScheduleDetails {
-  remainingCheckpoints: number;
+  remainingCheckpoints: BigNumber;
   nextCheckpointDate: Date;
 }
 

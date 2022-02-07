@@ -4,7 +4,7 @@ import { CustomPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  numberToU32,
+  bigNumberToU32,
   permissionsLikeToPermissions,
   stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
@@ -58,7 +58,7 @@ export async function prepareSetGroupPermissions(
     id,
   } = group;
   const rawTicker = stringToTicker(ticker, context);
-  const rawAgId = numberToU32(id, context);
+  const rawAgId = bigNumberToU32(id, context);
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
     transactions,
     context

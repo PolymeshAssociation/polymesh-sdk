@@ -53,7 +53,7 @@ describe('Polymesh Transaction Base class', () => {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
-              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(1)),
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(1))),
               parentHash: 'hash',
               stateRoot: 'hash',
               extrinsicsRoot: 'hash',
@@ -388,13 +388,13 @@ describe('Polymesh Transaction Base class', () => {
   describe('method: getFees', () => {
     let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
     let protocolFees: BigNumber[];
-    let gasFees: number[];
+    let gasFees: BigNumber[];
     let rawGasFees: Balance[];
 
     beforeAll(() => {
       balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
       protocolFees = [new BigNumber(250), new BigNumber(150)];
-      gasFees = [5, 10];
+      gasFees = [new BigNumber(5), new BigNumber(10)];
       rawGasFees = gasFees.map(dsMockUtils.createMockBalance);
     });
 
@@ -436,7 +436,7 @@ describe('Polymesh Transaction Base class', () => {
           transaction: tx1,
           args,
           fee: undefined,
-          feeMultiplier: 2,
+          feeMultiplier: new BigNumber(2),
         },
         context
       );

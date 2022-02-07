@@ -33,11 +33,11 @@ describe('AssetHolder class', () => {
   const fakeData = [
     {
       identity: 'someIdentity',
-      value: 1000,
+      value: new BigNumber(1000),
     },
     {
       identity: 'otherIdentity',
-      value: 2000,
+      value: new BigNumber(2000),
     },
   ];
 
@@ -144,7 +144,7 @@ describe('AssetHolder class', () => {
       const asset = entityMockUtils.getAssetInstance();
       const assetHolders = new AssetHolders(asset, context);
 
-      const result = await assetHolders.get({ size: 1 });
+      const result = await assetHolders.get({ size: new BigNumber(1) });
 
       expect(result).toEqual({ data: expectedHolders, next: 'someKey' });
     });

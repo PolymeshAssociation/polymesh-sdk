@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { find } from 'lodash';
 
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
@@ -50,7 +51,7 @@ export async function prepareRemoveSecondaryAccounts(
 
   this.addTransaction({
     transaction: tx.identity.removeSecondaryKeys,
-    feeMultiplier: accounts.length,
+    feeMultiplier: new BigNumber(accounts.length),
     args: [accounts.map(account => signerValueToSignatory(signerToSignerValue(account), context))],
   });
 }

@@ -24,7 +24,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   const did = 'someDid';
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
 
   let origin: DefaultPortfolio;
   let distribution: DividendDistribution;
