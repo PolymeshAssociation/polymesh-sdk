@@ -79,7 +79,7 @@ export async function assertInstructionValid(
   context: Context
 ): Promise<void> {
   const details = await instruction.details();
-  const { status } = await instruction.details();
+  const { status } = details;
 
   if (status !== InstructionStatus.Pending) {
     throw new PolymeshError({
