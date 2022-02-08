@@ -94,15 +94,14 @@ export async function prepareConsumeJoinOrRotateAuthorization(
       paidForBy: issuer,
       args: [rawAuthId],
     });
-  } else if (type === AuthorizationType.RotatePrimaryKey) {
-    this.addTransaction({
-      transaction: identity.acceptPrimaryKey,
-      paidForBy: issuer,
-      args: [rawAuthId, null],
-    });
   } else {
+    const transaction =
+      type === AuthorizationType.RotatePrimaryKey
+        ? identity.acceptPrimaryKey
+        : identity.rotatePrimaryKeyToSecondary;
+
     this.addTransaction({
-      transaction: identity.rotatePrimaryKeyToSecondary,
+      transaction,
       paidForBy: issuer,
       args: [rawAuthId, null],
     });
