@@ -215,3 +215,4 @@ export {
 } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions, WaivePermissionsParams } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
+export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
