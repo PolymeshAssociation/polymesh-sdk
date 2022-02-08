@@ -300,7 +300,7 @@ interface ContextOptions {
   did?: string;
   withSeed?: boolean;
   balance?: AccountBalance;
-  subsidyWithAllowance?: SubsidyWithAllowance;
+  subsidy?: SubsidyWithAllowance;
   hasRoles?: boolean;
   checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
@@ -692,7 +692,7 @@ function configureContext(opts: ContextOptions): void {
     ? getCurrentAccount.returns({
         address: opts.currentPairAddress,
         getBalance: sinon.stub().resolves(opts.balance),
-        getSubsidy: sinon.stub().resolves(opts.subsidyWithAllowance),
+        getSubsidy: sinon.stub().resolves(opts.subsidy),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
@@ -719,7 +719,7 @@ function configureContext(opts: ContextOptions): void {
     getCurrentAccount,
     getCurrentPair,
     accountBalance: sinon.stub().resolves(opts.balance),
-    accountSubsidy: sinon.stub().resolves(opts.subsidyWithAllowance),
+    accountSubsidy: sinon.stub().resolves(opts.subsidy),
     getAccounts: sinon.stub().returns(opts.getAccounts),
     setPair: sinon.stub().callsFake(address => {
       contextInstance.currentPair = { address } as KeyringPair;

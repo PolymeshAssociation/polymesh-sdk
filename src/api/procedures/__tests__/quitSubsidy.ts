@@ -96,7 +96,7 @@ describe('quitSubsidy procedure', () => {
 
       let result = await boundFunc(args);
       expect(result).toEqual({
-        roles: 'Only the subsidizer and the beneficiary are allowed to quit a Subsidy',
+        roles: 'Only the subsidizer or the beneficiary are allowed to quit a Subsidy',
         permissions: {
           transactions: [TxTags.relayer.RemovePayingKey],
         },

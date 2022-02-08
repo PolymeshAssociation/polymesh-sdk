@@ -74,7 +74,7 @@ export async function getAuthorization(
   const hasRoles = [beneficiaryAddress, subsidizerAddress].includes(address);
 
   return {
-    roles: hasRoles || 'Only the subsidizer and the beneficiary are allowed to quit a Subsidy',
+    roles: hasRoles || 'Only the subsidizer or the beneficiary are allowed to quit a Subsidy',
     permissions: {
       transactions: [TxTags.relayer.RemovePayingKey],
     },

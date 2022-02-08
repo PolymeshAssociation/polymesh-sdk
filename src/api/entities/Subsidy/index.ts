@@ -44,12 +44,12 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
    * @hidden
    */
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
-    const { beneficiary: beneficiaryAddress, subsidizer: subsidizerAddress } = identifiers;
+    const { beneficiary, subsidizer } = identifiers;
 
     super(identifiers, context);
 
-    this.beneficiary = new Account({ address: beneficiaryAddress }, context);
-    this.subsidizer = new Account({ address: subsidizerAddress }, context);
+    this.beneficiary = new Account({ address: beneficiary }, context);
+    this.subsidizer = new Account({ address: subsidizer }, context);
 
     this.quit = createProcedureMethod(
       { getProcedureAndArgs: () => [quitSubsidy, { subsidy: this }], voidArgs: true },
@@ -60,7 +60,7 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Terminate this Subsidy relationship. The beneficiary Account will be forced to pay for their own transactions
    *
-   * @note Both the beneficiary and the subsidizer are allowed to unilaterally quit the Subsidy
+   * @note both the beneficiary and the subsidizer are allowed to unilaterally quit the Subsidy
    */
   public quit: NoArgsProcedureMethod<void>;
 
