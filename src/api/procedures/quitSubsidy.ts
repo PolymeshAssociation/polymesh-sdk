@@ -33,7 +33,6 @@ export async function prepareQuitSubsidy(
 
   const exists = await subsidy.exists();
 
-  console.log(exists);
 
   if (!exists) {
     throw new PolymeshError({
