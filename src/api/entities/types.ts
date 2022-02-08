@@ -14,6 +14,7 @@ import {
   KnownPermissionGroup as KnownPermissionGroupClass,
   NumberedPortfolio as NumberedPortfolioClass,
   Offering as OfferingClass,
+  Subsidy as SubsidyClass,
   TickerReservation as TickerReservationClass,
   Venue as VenueClass,
 } from '~/internal';
@@ -35,6 +36,7 @@ export type Asset = AssetClass;
 export type Offering = OfferingClass;
 export type TickerReservation = TickerReservationClass;
 export type Venue = VenueClass;
+export type Subsidy = SubsidyClass;
 
 export * from './CheckpointSchedule/types';
 export * from './CorporateActionBase/types';
@@ -45,3 +47,4 @@ export * from './Asset/types';
 export * from './Offering/types';
 export * from './TickerReservation/types';
 export * from './Venue/types';
+export * from './Subsidy/types';

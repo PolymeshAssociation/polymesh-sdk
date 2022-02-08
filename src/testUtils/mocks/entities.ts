@@ -20,6 +20,7 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   Offering,
+  Subsidy,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -77,6 +78,7 @@ import {
 
 export type MockIdentity = Mocked<Identity>;
 export type MockAccount = Mocked<Account>;
+export type MockSubsidy = Mocked<Subsidy>;
 export type MockTickerReservation = Mocked<TickerReservation>;
 export type MockAsset = Mocked<Asset>;
 export type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
@@ -165,6 +167,11 @@ interface AccountOptions extends EntityOptions {
   getTransactionHistory?: EntityGetter<ExtrinsicData[]>;
   hasPermissions?: EntityGetter<boolean>;
   checkPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Account>>;
+}
+
+interface SubsidyOptions extends EntityOptions {
+  beneficiary?: string;
+  subsidizer?: string;
 }
 
 interface VenueOptions extends EntityOptions {
@@ -267,6 +274,7 @@ interface DividendDistributionOptions extends EntityOptions {
 type MockOptions = {
   identityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
+  subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
   assetOptions?: AssetOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
@@ -604,6 +612,39 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     },
   }),
   ['Account']
+);
+
+const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
+  class {
+    uuid!: string;
+    beneficiary!: Account;
+    subsidizer!: Account;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Subsidy>) {
+      return extractFromArgs(args, ['beneficiary', 'subsidizer']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<SubsidyOptions>) {
+      this.uuid = 'subsidy';
+      this.beneficiary = getAccountInstance({ address: opts.beneficiary });
+      this.subsidizer = getAccountInstance({ address: opts.subsidizer });
+    }
+  },
+  () => ({
+    beneficiary: 'beneficiary',
+    subsidizer: 'subsidizer',
+    toJson: {
+      beneficiary: 'beneficiary',
+      subsidizer: 'subsidizer',
+    },
+  }),
+  ['Subsidy']
 );
 
 const MockTickerReservationClass = createMockEntityClass<TickerReservationOptions>(
@@ -1408,6 +1449,11 @@ export const mockAccountModule = (path: string) => (): Record<string, unknown> =
   Account: MockAccountClass,
 });
 
+export const mockSubsidyModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  Subsidy: MockSubsidyClass,
+});
+
 export const mockTickerReservationModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   TickerReservation: MockTickerReservationClass,
@@ -1486,6 +1532,7 @@ export const mockKnownPermissionGroupModule = (path: string) => (): Record<strin
 export const initMocks = function (opts?: MockOptions): void {
   MockIdentityClass.init(opts?.identityOptions);
   MockAccountClass.init(opts?.accountOptions);
+  MockSubsidyClass.init(opts?.subsidyOptions);
   MockTickerReservationClass.init(opts?.tickerReservationOptions);
   MockAssetClass.init(opts?.assetOptions);
   MockAuthorizationRequestClass.init(opts?.authorizationRequestOptions);
@@ -1510,6 +1557,7 @@ export const initMocks = function (opts?: MockOptions): void {
 export const configureMocks = function (opts?: MockOptions): void {
   MockIdentityClass.setOptions(opts?.identityOptions);
   MockAccountClass.setOptions(opts?.accountOptions);
+  MockSubsidyClass.setOptions(opts?.subsidyOptions);
   MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
   MockAssetClass.setOptions(opts?.assetOptions);
   MockAuthorizationRequestClass.setOptions(opts?.authorizationRequestOptions);
@@ -1533,6 +1581,7 @@ export const configureMocks = function (opts?: MockOptions): void {
 export const reset = function (): void {
   MockIdentityClass.resetOptions();
   MockAccountClass.resetOptions();
+  MockSubsidyClass.resetOptions();
   MockTickerReservationClass.resetOptions();
   MockAssetClass.resetOptions();
   MockAuthorizationRequestClass.resetOptions();
@@ -1575,6 +1624,20 @@ export const getAccountInstance = (opts?: AccountOptions): MockAccount => {
   }
 
   return instance as unknown as MockAccount;
+};
+
+/**
+ * @hidden
+ * Retrieve an Subsidy instance
+ */
+export const getSubsidyInstance = (opts?: SubsidyOptions): MockSubsidy => {
+  const instance = new MockSubsidyClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockSubsidy;
 };
 
 /**

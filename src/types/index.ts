@@ -7,6 +7,7 @@ import {
   DividendDistributionDetails,
   OfferingDetails,
   ScheduleDetails,
+  SubsidyData,
 } from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
 import {
@@ -1036,21 +1037,6 @@ export enum PermissionGroupType {
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
-export interface Subsidy {
-  /**
-   * Account whose transactions are being paid for
-   */
-  beneficiary: Account;
-  /**
-   * Account that is paying for the transactions
-   */
-  subsidizer: Account;
-  /**
-   * amount of POLYX to be subsidized. This can be increased/decreased later on
-   */
-  allowance: BigNumber;
-}
-
 export type RotatePrimaryKeyAuthorizationData = {
   type: AuthorizationType.RotatePrimaryKey;
 };
@@ -1072,7 +1058,7 @@ export type BecomeAgentAuthorizationData = {
 
 export type AddRelayerPayingKeyAuthorizationData = {
   type: AuthorizationType.AddRelayerPayingKey;
-  value: Subsidy;
+  value: SubsidyData;
 };
 
 export type GenericAuthorizationData = {

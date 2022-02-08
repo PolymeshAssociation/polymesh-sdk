@@ -157,7 +157,7 @@ import {
   PermissionedAccount,
   ResultSet,
   SignerType,
-  Subsidy,
+  SubsidyWithAllowance,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
@@ -300,7 +300,7 @@ interface ContextOptions {
   did?: string;
   withSeed?: boolean;
   balance?: AccountBalance;
-  subsidy?: Omit<Subsidy, 'beneficiary'>;
+  subsidy?: SubsidyWithAllowance;
   hasRoles?: boolean;
   checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;

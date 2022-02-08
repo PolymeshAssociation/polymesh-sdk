@@ -28,7 +28,7 @@ import {
   SignerType,
   SimplePermissions,
   SubCallback,
-  Subsidy,
+  SubsidyWithAllowance,
   TransactionPermissions,
   TxTag,
   TxTags,
@@ -136,15 +136,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public getSubsidy(): Promise<Omit<Subsidy, 'beneficiary'> | null>;
-  public getSubsidy(
-    callback: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
-  ): Promise<UnsubCallback>;
+  public getSubsidy(): Promise<SubsidyWithAllowance | null>;
+  public getSubsidy(callback: SubCallback<SubsidyWithAllowance | null>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public getSubsidy(
-    callback?: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
-  ): Promise<Omit<Subsidy, 'beneficiary'> | null | UnsubCallback> {
+    callback?: SubCallback<SubsidyWithAllowance | null>
+  ): Promise<SubsidyWithAllowance | null | UnsubCallback> {
     const { context, address } = this;
 
     if (callback) {

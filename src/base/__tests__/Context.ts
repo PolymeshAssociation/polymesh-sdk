@@ -50,6 +50,10 @@ jest.mock(
     '~/api/entities/NumberedPortfolio'
   )
 );
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
+);
 
 // TODO: refactor tests (too much repeated code)
 describe('Context class', () => {
@@ -529,7 +533,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the Account subsidizer and allowance if currentPair is set', async () => {
+    test('should return the Subsidy with allowance if currentPair is set', async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -549,12 +553,15 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy();
       expect(result).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: DUMMY_ACCOUNT_ID }),
+          subsidizer: expect.objectContaining({ address: 'payingKey' }),
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: expect.objectContaining({ address: 'payingKey' }),
       });
     });
 
-    test('should return the Account subsidizer and allowance if accountId is set', async () => {
+    test('should return the Subsidy with allowance if accountId is set', async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -574,8 +581,11 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy('accountId');
       expect(result).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: 'accountId' }),
+          subsidizer: expect.objectContaining({ address: 'payingKey' }),
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: expect.objectContaining({ address: 'payingKey' }),
       });
     });
 
@@ -620,10 +630,16 @@ describe('Context class', () => {
       const result = await context.accountSubsidy('accountId', callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, {
-        allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: sinon.match({ address: 'payingKey' }),
-      });
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match({
+          subsidy: sinon.match({
+            beneficiary: sinon.match({ address: 'accountId' }),
+            subsidizer: sinon.match({ address: 'payingKey' }),
+          }),
+          allowance: utilsConversionModule.balanceToBigNumber(allowance),
+        })
+      );
     });
   });
 

@@ -148,6 +148,7 @@ export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 export { PermissionGroup } from '~/api/entities/PermissionGroup';
 export { KnownPermissionGroup } from '~/api/entities/KnownPermissionGroup';
 export { CustomPermissionGroup } from '~/api/entities/CustomPermissionGroup';
+export { Subsidy } from '~/api/entities/Subsidy';
 export {
   createCheckpointSchedule,
   CreateCheckpointScheduleParams,
@@ -213,3 +214,4 @@ export {
   RemoveExternalAgentParams,
 } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions, WaivePermissionsParams } from '~/api/procedures/waivePermissions';
+export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
