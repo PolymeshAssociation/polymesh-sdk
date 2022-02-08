@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, Context, issueAsset, Namespace } from '~/internal';
+import { Asset, Context, issueTokens, Namespace } from '~/internal';
 import { ProcedureMethod } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -17,7 +17,7 @@ export class Issuance extends Namespace<Asset> {
     const { ticker } = parent;
 
     this.issue = createProcedureMethod(
-      { getProcedureAndArgs: args => [issueAsset, { ticker, ...args }] },
+      { getProcedureAndArgs: args => [issueTokens, { ticker, ...args }] },
       context
     );
   }
