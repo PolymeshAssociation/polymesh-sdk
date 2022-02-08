@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'ASSETNAME';
+  const ticker = 'ASSET_NAME';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -40,7 +40,6 @@ describe('CustomPermissionGroup class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -112,7 +111,7 @@ describe('CustomPermissionGroup class', () => {
     test('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      sinon.stub(utilsConversionModule, 'numberToU32');
+      sinon.stub(utilsConversionModule, 'bigNumberToU32');
 
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
@@ -151,13 +150,13 @@ describe('CustomPermissionGroup class', () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
-        returnValue: dsMockUtils.createMockU32(0),
+        returnValue: dsMockUtils.createMockU32(new BigNumber(0)),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(false);
 
       dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
-        returnValue: dsMockUtils.createMockU32(10),
+        returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(true);

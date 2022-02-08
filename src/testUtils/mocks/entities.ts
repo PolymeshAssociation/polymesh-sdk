@@ -1,10 +1,10 @@
 /* istanbul ignore file */
 /* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import BigNumber from 'bignumber.js';
-import { merge } from 'lodash';
-import sinon, { SinonStub } from 'sinon';
+import { pick } from 'lodash';
+import sinon from 'sinon';
 
-import { ProposalDetails, ProposalStage } from '~/api/entities/Proposal/types';
 import {
   Account,
   Asset,
@@ -20,7 +20,7 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   Offering,
-  PermissionGroup,
+  Subsidy,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -50,6 +50,7 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  KnownAssetType,
   Leg,
   OfferingBalanceStatus,
   OfferingDetails,
@@ -64,6 +65,7 @@ import {
   ScheduleDetails,
   ScheduleWithDetails,
   SecurityIdentifier,
+  Signer,
   SignerType,
   TargetTreatment,
   TaxWithholding,
@@ -74,207 +76,171 @@ import {
   VenueType,
 } from '~/types';
 
-type MockIdentity = Mocked<Identity>;
-type MockAccount = Mocked<Account>;
-type MockTickerReservation = Mocked<TickerReservation>;
-type MockAsset = Mocked<Asset>;
-type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
-type MockPermissionGroup = Mocked<PermissionGroup>;
-type MockVenue = Mocked<Venue>;
-type MockInstruction = Mocked<Instruction>;
-type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
-type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
-type MockOffering = Mocked<Offering>;
-type MockCheckpoint = Mocked<Checkpoint>;
-type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
-type MockCorporateAction = Mocked<CorporateAction>;
-type MockDividendDistribution = Mocked<DividendDistribution>;
-type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
-type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
+export type MockIdentity = Mocked<Identity>;
+export type MockAccount = Mocked<Account>;
+export type MockSubsidy = Mocked<Subsidy>;
+export type MockTickerReservation = Mocked<TickerReservation>;
+export type MockAsset = Mocked<Asset>;
+export type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
+export type MockVenue = Mocked<Venue>;
+export type MockInstruction = Mocked<Instruction>;
+export type MockNumberedPortfolio = Mocked<NumberedPortfolio>;
+export type MockDefaultPortfolio = Mocked<DefaultPortfolio>;
+export type MockOffering = Mocked<Offering>;
+export type MockCheckpoint = Mocked<Checkpoint>;
+export type MockCheckpointSchedule = Mocked<CheckpointSchedule>;
+export type MockCorporateAction = Mocked<CorporateAction>;
+export type MockDividendDistribution = Mocked<DividendDistribution>;
+export type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
+export type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 
-const mockInstanceContainer = {
-  identity: {} as MockIdentity,
-  tickerReservation: {} as MockTickerReservation,
-  asset: {} as MockAsset,
-  authorizationRequest: {} as MockAuthorizationRequest,
-  permissionGroup: {} as MockPermissionGroup,
-  account: {} as MockAccount,
-  venue: {} as MockVenue,
-  instruction: {} as MockInstruction,
-  numberedPortfolio: {} as MockNumberedPortfolio,
-  defaultPortfolio: {} as MockDefaultPortfolio,
-  customPermissionGroup: {} as MockCustomPermissionGroup,
-  knownPermissionGroup: {} as MockKnownPermissionGroup,
-  offering: {} as MockOffering,
-  checkpoint: {} as MockCheckpoint,
-  checkpointSchedule: {} as MockCheckpointSchedule,
-  corporateAction: {} as MockCorporateAction,
-  dividendDistribution: {} as MockDividendDistribution,
-};
+interface EntityOptions {
+  exists?: boolean;
+  isEqual?: boolean;
+  toJson?: any;
+}
 
-interface IdentityOptions {
+type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | sinon.SinonStub;
+
+interface IdentityOptions extends EntityOptions {
   did?: string;
-  hasRoles?: boolean;
-  hasRole?: boolean;
-  checkRoles?: CheckRolesResult;
-  assetPermissionsHasPermissions?: boolean;
-  assetPermissionsCheckPermissions?: CheckPermissionsResult<SignerType.Identity>;
-  hasValidCdd?: boolean;
-  isCddProvider?: boolean;
-  getPrimaryAccount?: PermissionedAccount;
-  authorizations?: {
-    getReceived?: AuthorizationRequest[];
-    getSent?: ResultSet<AuthorizationRequest>;
-  };
-  getVenues?: Venue[];
-  getScopeId?: string;
-  getAssetBalance?: BigNumber;
-  getSecondaryAccounts?: PermissionedAccount[];
-  areSecondaryAccountsFrozen?: boolean;
-  isEqual?: boolean;
-  assetPermissionsGetGroup?: CustomPermissionGroup | KnownPermissionGroup;
-  assetPermissionsGet?: AssetWithGroup[];
-  exists?: boolean;
+  hasRoles?: EntityGetter<boolean>;
+  hasRole?: EntityGetter<boolean>;
+  checkRoles?: EntityGetter<CheckRolesResult>;
+  assetPermissionsHasPermissions?: EntityGetter<boolean>;
+  assetPermissionsCheckPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Identity>>;
+  hasValidCdd?: EntityGetter<boolean>;
+  isCddProvider?: EntityGetter<boolean>;
+  getPrimaryAccount?: EntityGetter<PermissionedAccount>;
+  authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
+  authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
+  getVenues?: EntityGetter<Venue[]>;
+  getScopeId?: EntityGetter<string>;
+  getAssetBalance?: EntityGetter<BigNumber>;
+  getSecondaryAccounts?: EntityGetter<PermissionedAccount[]>;
+  areSecondaryAccountsFrozen?: EntityGetter<boolean>;
+  assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
+  assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
 }
 
-interface TickerReservationOptions {
+interface TickerReservationOptions extends EntityOptions {
   ticker?: string;
-  details?: Partial<TickerReservationDetails>;
-  exists?: boolean;
+  details?: EntityGetter<TickerReservationDetails>;
 }
 
-interface AssetOptions {
+interface AssetOptions extends EntityOptions {
   ticker?: string;
-  details?: Partial<AssetDetails>;
-  currentFundingRound?: string;
-  isFrozen?: boolean;
-  transfersCanTransfer?: TransferStatus;
-  getIdentifiers?: SecurityIdentifier[];
-  transferRestrictionsCountGet?: ActiveTransferRestrictions<CountTransferRestriction>;
-  transferRestrictionsPercentageGet?: ActiveTransferRestrictions<PercentageTransferRestriction>;
-  corporateActionsGetAgents?: Identity[];
-  corporateActionsGetDefaultConfig?: Partial<CorporateActionDefaultConfig>;
-  permissionsGetAgents?: AgentWithGroup[];
-  permissionsGetGroups?: PermissionGroups;
-  complianceRequirementsGet?: ComplianceRequirements;
-  checkpointsGetOne?: Partial<Checkpoint>;
-  checkpointsSchedulesGetOne?: Partial<ScheduleWithDetails>;
-  isEqual?: boolean;
-  exists?: boolean;
-  toJson?: string;
+  did?: string;
+  details?: EntityGetter<AssetDetails>;
+  currentFundingRound?: EntityGetter<string>;
+  isFrozen?: EntityGetter<boolean>;
+  transfersCanTransfer?: EntityGetter<TransferStatus>;
+  getIdentifiers?: EntityGetter<SecurityIdentifier[]>;
+  transferRestrictionsCountGet?: EntityGetter<ActiveTransferRestrictions<CountTransferRestriction>>;
+  transferRestrictionsPercentageGet?: EntityGetter<
+    ActiveTransferRestrictions<PercentageTransferRestriction>
+  >;
+  corporateActionsGetAgents?: EntityGetter<Identity[]>;
+  corporateActionsGetDefaultConfig?: EntityGetter<CorporateActionDefaultConfig>;
+  permissionsGetAgents?: EntityGetter<AgentWithGroup[]>;
+  permissionsGetGroups?: EntityGetter<PermissionGroups>;
+  complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
+  checkpointsGetOne?: EntityGetter<Checkpoint>;
+  checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
 }
 
-interface AuthorizationRequestOptions {
+interface AuthorizationRequestOptions extends EntityOptions {
   authId?: BigNumber;
-  target?: Identity;
+  target?: Signer;
   issuer?: Identity;
   expiry?: Date | null;
   data?: Authorization;
-  exists?: boolean;
-  isExpired?: boolean;
+  isExpired?: EntityGetter<boolean>;
 }
 
-interface ProposalOptions {
-  pipId?: BigNumber;
-  getDetails?: ProposalDetails;
-  getStage?: ProposalStage;
-  identityHasVoted?: boolean;
-  exists?: boolean;
-}
-
-interface AccountOptions {
+interface AccountOptions extends EntityOptions {
   address?: string;
   key?: string;
-  isFrozen?: boolean;
-  getBalance?: AccountBalance;
-  getIdentity?: Identity | null;
-  getTransactionHistory?: ExtrinsicData[];
-  isEqual?: boolean;
-  exists?: boolean;
-  hasPermissions?: boolean;
-  checkPermissions?: CheckPermissionsResult<SignerType.Account>;
+  isFrozen?: EntityGetter<boolean>;
+  getBalance?: EntityGetter<AccountBalance>;
+  getIdentity?: EntityGetter<Identity | null>;
+  getTransactionHistory?: EntityGetter<ExtrinsicData[]>;
+  hasPermissions?: EntityGetter<boolean>;
+  checkPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Account>>;
 }
 
-interface VenueOptions {
+interface SubsidyOptions extends EntityOptions {
+  beneficiary?: string;
+  subsidizer?: string;
+}
+
+interface VenueOptions extends EntityOptions {
   id?: BigNumber;
-  details?: Partial<VenueDetails>;
-  exists?: boolean;
+  details?: EntityGetter<VenueDetails>;
 }
 
-interface NumberedPortfolioOptions {
+interface NumberedPortfolioOptions extends EntityOptions {
+  did?: string;
   id?: BigNumber;
-  isOwnedBy?: boolean;
-  assetBalances?: PortfolioBalance[];
-  custodian?: Identity;
-  did?: string;
-  exists?: boolean;
-  isCustodiedBy?: boolean;
-  isEqual?: boolean;
+  isOwnedBy?: EntityGetter<boolean>;
+  getAssetBalances?: EntityGetter<PortfolioBalance[]>;
+  getCustodian?: EntityGetter<Identity>;
+  isCustodiedBy?: EntityGetter<boolean>;
 }
 
-interface DefaultPortfolioOptions {
-  isOwnedBy?: boolean;
-  assetBalances?: PortfolioBalance[];
+interface DefaultPortfolioOptions extends EntityOptions {
   did?: string;
-  custodian?: Identity;
-  isCustodiedBy?: boolean;
-  isEqual?: boolean;
-  exists?: boolean;
+  isOwnedBy?: EntityGetter<boolean>;
+  getAssetBalances?: EntityGetter<PortfolioBalance[]>;
+  getCustodian?: EntityGetter<Identity>;
+  isCustodiedBy?: EntityGetter<boolean>;
 }
 
-interface CustomPermissionGroupOptions {
+interface CustomPermissionGroupOptions extends EntityOptions {
   ticker?: string;
   id?: BigNumber;
-  getPermissions?: GroupPermissions;
-  isEqual?: boolean;
-  exists?: boolean;
+  getPermissions?: EntityGetter<GroupPermissions>;
 }
 
-interface KnownPermissionGroupOptions {
+interface KnownPermissionGroupOptions extends EntityOptions {
   ticker?: string;
   type?: PermissionGroupType;
-  getPermissions?: GroupPermissions;
-  isEqual?: boolean;
-  exists?: boolean;
+  getPermissions?: EntityGetter<GroupPermissions>;
 }
 
-interface InstructionOptions {
+interface InstructionOptions extends EntityOptions {
   id?: BigNumber;
-  details?: Partial<InstructionDetails>;
-  getLegs?: ResultSet<Leg>;
-  isPending?: boolean;
-  exists?: boolean;
+  details?: EntityGetter<InstructionDetails>;
+  getLegs?: EntityGetter<ResultSet<Leg>>;
+  isPending?: EntityGetter<boolean>;
 }
 
-interface OfferingOptions {
+interface OfferingOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
-  details?: Partial<OfferingDetails>;
-  exists?: boolean;
+  details?: EntityGetter<OfferingDetails>;
 }
 
-interface CheckpointOptions {
+interface CheckpointOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
-  createdAt?: Date;
-  totalSupply?: BigNumber;
-  exists?: boolean;
-  allBalances?: ResultSet<IdentityBalance>;
-  balance?: BigNumber;
+  createdAt?: EntityGetter<Date>;
+  totalSupply?: EntityGetter<BigNumber>;
+  allBalances?: EntityGetter<ResultSet<IdentityBalance>>;
+  balance?: EntityGetter<BigNumber>;
 }
 
-interface CheckpointScheduleOptions {
+interface CheckpointScheduleOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
   start?: Date;
   period?: CalendarPeriod | null;
   expiryDate?: Date | null;
-  complexity?: number;
-  details?: Partial<ScheduleDetails>;
-  exists?: boolean;
+  complexity?: BigNumber;
+  details?: EntityGetter<ScheduleDetails>;
 }
 
-interface CorporateActionOptions {
+interface CorporateActionOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
   kind?: CorporateActionKind;
@@ -283,15 +249,14 @@ interface CorporateActionOptions {
   targets?: CorporateActionTargets;
   defaultTaxWithholding?: BigNumber;
   taxWithholdings?: TaxWithholding[];
-  exists?: boolean;
 }
 
-interface DividendDistributionOptions {
+interface DividendDistributionOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
+  kind?: CorporateActionKind.PredictableBenefit | CorporateActionKind.UnpredictableBenefit;
   declarationDate?: Date;
   description?: string;
-  checkpoint?: Checkpoint | CheckpointSchedule;
   targets?: CorporateActionTargets;
   defaultTaxWithholding?: BigNumber;
   taxWithholdings?: TaxWithholding[];
@@ -301,18 +266,18 @@ interface DividendDistributionOptions {
   maxAmount?: BigNumber;
   expiryDate?: null | Date;
   paymentDate?: Date;
-  details?: Partial<DividendDistributionDetails>;
-  getParticipant?: Partial<DistributionParticipant> | null;
-  exists?: boolean;
+  checkpoint?: EntityGetter<Checkpoint | CheckpointSchedule>;
+  details?: EntityGetter<DividendDistributionDetails>;
+  getParticipant?: EntityGetter<DistributionParticipant | null>;
 }
 
 type MockOptions = {
   identityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
+  subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
   assetOptions?: AssetOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
-  proposalOptions?: ProposalOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
   numberedPortfolioOptions?: NumberedPortfolioOptions;
@@ -326,282 +291,1153 @@ type MockOptions = {
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
 };
 
-let identityConstructorStub: SinonStub;
-let accountConstructorStub: SinonStub;
-let tickerReservationConstructorStub: SinonStub;
-let assetConstructorStub: SinonStub;
-let authorizationRequestConstructorStub: SinonStub;
-let permissionGroupConstructorStub: SinonStub;
-let proposalConstructorStub: SinonStub;
-let venueConstructorStub: SinonStub;
-let instructionConstructorStub: SinonStub;
-let numberedPortfolioConstructorStub: SinonStub;
-let defaultPortfolioConstructorStub: SinonStub;
-let offeringConstructorStub: SinonStub;
-let checkpointConstructorStub: SinonStub;
-let checkpointScheduleConstructorStub: SinonStub;
-let corporateActionConstructorStub: SinonStub;
-let dividendDistributionConstructorStub: SinonStub;
-let customPermissionGroupConstructorStub: SinonStub;
-let knownPermissionGroupConstructorStub: SinonStub;
-let agentConstructorStub: SinonStub;
-
-let assetDetailsStub: SinonStub;
-let assetCurrentFundingRoundStub: SinonStub;
-let assetIsFrozenStub: SinonStub;
-let assetTransfersCanTransferStub: SinonStub;
-let assetGetIdentifiersStub: SinonStub;
-let assetTransferRestrictionsCountGetStub: SinonStub;
-let assetTransferRestrictionsPercentageGetStub: SinonStub;
-let assetCorporateActionsGetAgentsStub: SinonStub;
-let assetCorporateActionsGetDefaultConfigStub: SinonStub;
-let assetPermissionsGetGroupsStub: SinonStub;
-let assetPermissionsGetAgentsStub: SinonStub;
-let assetComplianceRequirementsGetStub: SinonStub;
-let assetCheckpointsGetOneStub: SinonStub;
-let assetCheckpointsSchedulesGetOneStub: SinonStub;
-let assetIsEqualStub: SinonStub;
-let assetExistsStub: SinonStub;
-let assetToJsonStub: SinonStub;
-let authorizationRequestExistsStub: SinonStub;
-let identityHasRolesStub: SinonStub;
-let identityHasRoleStub: SinonStub;
-let identityCheckRolesStub: SinonStub;
-let identityHasValidCddStub: SinonStub;
-let identityGetPrimaryAccountStub: SinonStub;
-let identityAuthorizationsGetReceivedStub: SinonStub;
-let identityAuthorizationsGetSentStub: SinonStub;
-let identityGetVenuesStub: SinonStub;
-let identityGetScopeIdStub: SinonStub;
-let identityGetAssetBalanceStub: SinonStub;
-let identityGetSecondaryAccountsStub: SinonStub;
-let identityAreSecondaryAccountsFrozenStub: SinonStub;
-let identityIsEqualStub: SinonStub;
-let identityAssetPermissionsHasPermissionsStub: SinonStub;
-let identityAssetPermissionsCheckPermissionsStub: SinonStub;
-let identityAssetPermissionsGetStub: SinonStub;
-let identityAssetPermissionsGetGroupStub: SinonStub;
-let identityExistsStub: SinonStub;
-let identityIsCddProviderStub: SinonStub;
-let accountGetBalanceStub: SinonStub;
-let accountGetIdentityStub: SinonStub;
-let accountGetTransactionHistoryStub: SinonStub;
-let accountIsFrozenStub: SinonStub;
-let accountIsEqualStub: SinonStub;
-let accountExistsStub: SinonStub;
-let accountHasPermissionsStub: SinonStub;
-let accountCheckPermissionsStub: SinonStub;
-let tickerReservationDetailsStub: SinonStub;
-let tickerReservationExistsStub: SinonStub;
-let venueDetailsStub: SinonStub;
-let venueExistsStub: SinonStub;
-let instructionDetailsStub: SinonStub;
-let instructionGetLegsStub: SinonStub;
-let instructionIsPendingStub: SinonStub;
-let instructionExistsStub: SinonStub;
-let numberedPortfolioIsOwnedByStub: SinonStub;
-let numberedPortfolioGetAssetBalancesStub: SinonStub;
-let numberedPortfolioExistsStub: SinonStub;
-let numberedPortfolioGetCustodianStub: SinonStub;
-let numberedPortfolioIsCustodiedByStub: SinonStub;
-let numberedPortfolioIsEqualStub: SinonStub;
-let defaultPortfolioIsOwnedByStub: SinonStub;
-let defaultPortfolioGetAssetBalancesStub: SinonStub;
-let defaultPortfolioGetCustodianStub: SinonStub;
-let defaultPortfolioIsCustodiedByStub: SinonStub;
-let defaultPortfolioIsEqualStub: SinonStub;
-let defaultPortfolioExistsStub: SinonStub;
-let offeringsDetailsStub: SinonStub;
-let offeringExistsStub: SinonStub;
-let checkpointCreatedAtStub: SinonStub;
-let checkpointTotalSupplyStub: SinonStub;
-let checkpointExistsStub: SinonStub;
-let checkpointAllBalancesStub: SinonStub;
-let checkpointBalanceStub: SinonStub;
-let corporateActionExistsStub: SinonStub;
-let checkpointScheduleDetailsStub: SinonStub;
-let checkpointScheduleExistsStub: SinonStub;
-let dividendDistributionDetailsStub: SinonStub;
-let dividendDistributionGetParticipantStub: SinonStub;
-let dividendDistributionCheckpointStub: SinonStub;
-let dividendDistributionExistsStub: SinonStub;
-let customPermissionGroupGetPermissionsStub: SinonStub;
-let customPermissionGroupIsEqualStub: SinonStub;
-let customPermissionGroupExistsStub: SinonStub;
-let knownPermissionGroupGetPermissionsStub: SinonStub;
-let knownPermissionGroupIsEqualStub: SinonStub;
-let knownPermissionGroupExistsStub: SinonStub;
-
-const MockIdentityClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return identityConstructorStub(...args);
-  }
+type Class<T = any> = new (...args: any[]) => T;
+type Configurable<Options> = {
+  configure(opts: Required<Options>): void;
+  argsToOpts?(...args: any[]): Partial<Options>;
 };
 
-const MockAccountClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return accountConstructorStub(...args);
+/* eslint-disable @typescript-eslint/ban-types */
+/**
+ * @hidden
+ */
+function extractFromArgs<ArgsType extends object[], Props extends keyof ArgsType[0]>(
+  args: ArgsType,
+  properties: Props[]
+): Pick<ArgsType[0], Props> | Record<string, never> {
+  if (args.length) {
+    return pick<ArgsType[0], Props>(args[0], properties);
   }
-};
 
-const MockTickerReservationClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return tickerReservationConstructorStub(...args);
-  }
-};
+  return {};
+}
+/* eslint-enable @typescript-eslint/ban-types */
 
-const MockAssetClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return assetConstructorStub(...args);
-  }
-};
+/**
+ * @hidden
+ *
+ * @param prototypeChain - inheritance chain of the entity, from broad to specific.
+ *   For example, if creating a mock for class A, where A extends B, B extends C and C extends Entity,
+ *   the prototypeChain would be [C, B, A]
+ */
+function createMockEntityClass<Options extends EntityOptions>(
+  Class: Class<Configurable<Options>>,
+  defaultOptions: () => Required<Omit<Options, keyof EntityOptions>> & EntityOptions,
+  prototypeChain: string[]
+) {
+  const initialOptions = (options?: Partial<Options>) =>
+    ({
+      isEqual: true,
+      exists: true,
+      toJson: 'DEFAULT_JSON_STRING_PLEASE_OVERRIDE',
+      ...defaultOptions(),
+      ...options,
+    } as Required<Options>);
+  return class MockClass extends Class {
+    isEqual = sinon.stub();
+    exists = sinon.stub();
+    toJson = sinon.stub();
 
-const MockAuthorizationRequestClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return authorizationRequestConstructorStub(...args);
-  }
-};
+    private static constructorStub = sinon.stub();
 
-const MockPermissionGroupClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return permissionGroupConstructorStub(...args);
-  }
-};
+    private static options = {} as Required<Options>;
 
-const MockProposalClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return proposalConstructorStub(...args);
-  }
-};
+    public static isMockEntity = true;
 
-const MockVenueClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return venueConstructorStub(...args);
-  }
-};
+    /**
+     * @hidden
+     */
+    private static mergeOptions(options?: Partial<Options>) {
+      return { ...this.options, ...options };
+    }
 
-const MockNumberedPortfolioClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return numberedPortfolioConstructorStub(...args);
-  }
-};
+    /**
+     * @hidden
+     */
+    public static init(opts?: Partial<Options>) {
+      const entities = require('~/internal');
+      const classProto = Class.prototype;
 
-const MockDefaultPortfolioClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return defaultPortfolioConstructorStub(...args);
-  }
-};
+      prototypeChain.forEach((className, index) => {
+        const entity = entities[className];
 
-const MockInstructionClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return instructionConstructorStub(...args);
-  }
-};
+        /*
+         * NOTE @monitz87: This is the only way I managed to spoof "instanceof"
+         *  without breaking everything else:
+         *
+         * - If the Entity in question isn't being mocked as an import (entity.isMockEntity === false),
+         *   then we only have to set its prototype as the new Class's prototype and the entire chain is
+         *   reproduced
+         * - Otherwise, we only need to append the previous classes in the chain, since the mocked class is already an
+         *   instance of itself, and trying to set it as its own prototype results in an error
+         *
+         */
+        if (entity.isMockEntity) {
+          if (index === 0) {
+            Object.setPrototypeOf(classProto, entities.Entity.prototype);
+          } else {
+            Object.setPrototypeOf(classProto, entities[prototypeChain[index - 1]].prototype);
+          }
+        } else if (index === prototypeChain.length - 1) {
+          Object.setPrototypeOf(classProto, entity.prototype);
+        }
+      });
 
-const MockOfferingClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return offeringConstructorStub(...args);
-  }
-};
+      this.options = initialOptions(opts);
+    }
 
-const MockCheckpointClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return checkpointConstructorStub(...args);
-  }
-};
+    /**
+     * @hidden
+     */
+    public static setOptions(options?: Partial<Options>) {
+      this.options = this.mergeOptions(options);
+    }
 
-const MockCheckpointScheduleClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return checkpointScheduleConstructorStub(...args);
-  }
-};
+    /**
+     * @hidden
+     */
+    public static resetOptions() {
+      this.options = initialOptions();
+    }
 
-const MockCorporateActionClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return corporateActionConstructorStub(...args);
-  }
-};
+    /**
+     * @hidden
+     */
+    public static getConstructorStub() {
+      return this.constructorStub;
+    }
 
-const MockDividendDistributionClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return dividendDistributionConstructorStub(...args);
-  }
-};
+    /**
+     * @hidden
+     */
+    public configure(opts: Partial<Options>) {
+      const fullOpts = MockClass.mergeOptions(opts);
 
-const MockCustomPermissionGroupClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return customPermissionGroupConstructorStub(...args);
-  }
-};
+      super.configure(fullOpts);
 
-const MockKnownPermissionGroupClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return knownPermissionGroupConstructorStub(...args);
-  }
-};
+      this.exists.returns(fullOpts.exists);
+      this.isEqual.returns(fullOpts.isEqual);
+      this.toJson.returns(fullOpts.toJson);
+    }
 
-const MockAgentClass = class {
-  /**
-   * @hidden
-   */
-  constructor(...args: unknown[]) {
-    return agentConstructorStub(...args);
+    /**
+     * @hidden
+     */
+    public constructor(...args: any[]) {
+      super(...args);
+
+      let opts: Partial<Options> = {};
+
+      if (this.argsToOpts) {
+        opts = this.argsToOpts(...args);
+      }
+
+      MockClass.constructorStub(...args);
+
+      this.configure(opts);
+    }
+  };
+}
+
+/**
+ * Make an entity getter stub that returns a value or calls a specific function
+ */
+function createEntityGetterStub<Result>(args: EntityGetter<Result>, isAsync = true) {
+  if (typeof args === 'function' && 'withArgs' in args) {
+    return args;
   }
-};
+
+  const newStub = sinon.stub();
+
+  if (typeof args === 'function') {
+    newStub.callsFake(args as (...fnArgs: any[]) => any);
+  } else if (isAsync) {
+    newStub.resolves(args);
+  } else {
+    newStub.returns(args);
+  }
+
+  return newStub;
+}
+
+const MockIdentityClass = createMockEntityClass<IdentityOptions>(
+  class {
+    uuid!: string;
+    did!: string;
+    hasRoles!: sinon.SinonStub;
+    checkRoles!: sinon.SinonStub;
+    hasRole!: sinon.SinonStub;
+    hasValidCdd!: sinon.SinonStub;
+    getPrimaryAccount!: sinon.SinonStub;
+    portfolios = {};
+    authorizations = {} as {
+      getReceived: sinon.SinonStub;
+      getSent: sinon.SinonStub;
+    };
+
+    assetPermissions = {} as {
+      get: sinon.SinonStub;
+      getGroup: sinon.SinonStub;
+      hasPermissions: sinon.SinonStub;
+      checkPermissions: sinon.SinonStub;
+    };
+
+    getVenues!: sinon.SinonStub;
+    getScopeId!: sinon.SinonStub;
+    getAssetBalance!: sinon.SinonStub;
+    getSecondaryAccounts!: sinon.SinonStub;
+    areSecondaryAccountsFrozen!: sinon.SinonStub;
+    isCddProvider!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Identity>) {
+      return extractFromArgs(args, ['did']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<IdentityOptions>) {
+      this.uuid = 'identity';
+      this.did = opts.did;
+      this.hasRoles = createEntityGetterStub(opts.hasRoles);
+      this.checkRoles = createEntityGetterStub(opts.checkRoles);
+      this.hasRole = createEntityGetterStub(opts.hasRole);
+      this.hasValidCdd = createEntityGetterStub(opts.hasValidCdd);
+      this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
+      this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
+      this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
+      this.assetPermissions.get = createEntityGetterStub(opts.assetPermissionsGet);
+      this.assetPermissions.getGroup = createEntityGetterStub(opts.assetPermissionsGetGroup);
+      this.assetPermissions.hasPermissions = createEntityGetterStub(
+        opts.assetPermissionsHasPermissions
+      );
+      this.assetPermissions.checkPermissions = createEntityGetterStub(
+        opts.assetPermissionsCheckPermissions
+      );
+      this.getVenues = createEntityGetterStub(opts.getVenues);
+      this.getScopeId = createEntityGetterStub(opts.getScopeId);
+      this.getAssetBalance = createEntityGetterStub(opts.getAssetBalance);
+      this.getSecondaryAccounts = createEntityGetterStub(opts.getSecondaryAccounts);
+      this.areSecondaryAccountsFrozen = createEntityGetterStub(opts.areSecondaryAccountsFrozen);
+      this.isCddProvider = createEntityGetterStub(opts.isCddProvider);
+    }
+  },
+  () => ({
+    did: 'someDid',
+    hasValidCdd: true,
+    isCddProvider: false,
+    authorizationsGetReceived: [],
+    authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    getVenues: [],
+    getScopeId: 'someScopeId',
+    getAssetBalance: new BigNumber(100),
+    getSecondaryAccounts: [],
+    areSecondaryAccountsFrozen: false,
+    getPrimaryAccount: {
+      acccount: getAccountInstance(),
+      permissions: {
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      },
+    },
+    assetPermissionsGet: [],
+    assetPermissionsGetGroup: getKnownPermissionGroupInstance(),
+    assetPermissionsCheckPermissions: {
+      result: true,
+    },
+    assetPermissionsHasPermissions: true,
+    hasRole: true,
+    hasRoles: true,
+    checkRoles: {
+      result: true,
+    },
+    toJson: 'someDid',
+  }),
+  ['Identity']
+);
+
+const MockAccountClass = createMockEntityClass<AccountOptions>(
+  class {
+    uuid!: string;
+    address!: string;
+    key!: string;
+    isFrozen!: sinon.SinonStub;
+    getBalance!: sinon.SinonStub;
+    getIdentity!: sinon.SinonStub;
+    getTransactionHistory!: sinon.SinonStub;
+    hasPermissions!: sinon.SinonStub;
+    checkPermissions!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Account>) {
+      return extractFromArgs(args, ['address']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<AccountOptions>) {
+      this.uuid = 'account';
+      this.address = opts.address;
+      this.key = opts.key;
+      this.isFrozen = createEntityGetterStub(opts.isFrozen);
+      this.getBalance = createEntityGetterStub(opts.getBalance);
+      this.getIdentity = createEntityGetterStub(opts.getIdentity);
+      this.getTransactionHistory = createEntityGetterStub(opts.getTransactionHistory);
+      this.hasPermissions = createEntityGetterStub(opts.hasPermissions);
+      this.checkPermissions = createEntityGetterStub(opts.checkPermissions);
+    }
+  },
+  () => ({
+    address: 'someAddress',
+    key: 'someKey',
+    getBalance: {
+      free: new BigNumber(100),
+      locked: new BigNumber(10),
+      total: new BigNumber(110),
+    },
+    getTransactionHistory: [],
+    getIdentity: getIdentityInstance(),
+    isFrozen: false,
+    hasPermissions: true,
+    checkPermissions: {
+      result: true,
+    },
+  }),
+  ['Account']
+);
+
+const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
+  class {
+    uuid!: string;
+    beneficiary!: Account;
+    subsidizer!: Account;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Subsidy>) {
+      return extractFromArgs(args, ['beneficiary', 'subsidizer']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<SubsidyOptions>) {
+      this.uuid = 'subsidy';
+      this.beneficiary = getAccountInstance({ address: opts.beneficiary });
+      this.subsidizer = getAccountInstance({ address: opts.subsidizer });
+    }
+  },
+  () => ({
+    beneficiary: 'beneficiary',
+    subsidizer: 'subsidizer',
+    toJson: {
+      beneficiary: 'beneficiary',
+      subsidizer: 'subsidizer',
+    },
+  }),
+  ['Subsidy']
+);
+
+const MockTickerReservationClass = createMockEntityClass<TickerReservationOptions>(
+  class {
+    uuid!: string;
+    ticker!: string;
+    details!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof TickerReservation>) {
+      return extractFromArgs(args, ['ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<TickerReservationOptions>) {
+      this.uuid = 'tickerReservation';
+      this.ticker = opts.ticker;
+      this.details = createEntityGetterStub(opts.details);
+    }
+  },
+  () => ({
+    ticker: 'SOME_TICKER',
+    details: {
+      owner: getIdentityInstance(),
+      expiryDate: new Date(),
+      status: TickerReservationStatus.Reserved,
+    },
+  }),
+  ['TickerReservation']
+);
+
+const MockAssetClass = createMockEntityClass<AssetOptions>(
+  class {
+    uuid!: string;
+    ticker!: string;
+    did!: string;
+    details!: sinon.SinonStub;
+    currentFundingRound!: sinon.SinonStub;
+    isFrozen!: sinon.SinonStub;
+    transfers = {} as {
+      canTransfer: sinon.SinonStub;
+    };
+
+    getIdentifiers!: sinon.SinonStub;
+    transferRestrictions = {
+      count: {},
+      percentage: {},
+    } as {
+      count: {
+        get: sinon.SinonStub;
+      };
+      percentage: {
+        get: sinon.SinonStub;
+      };
+    };
+
+    corporateActions = {} as {
+      getAgents: sinon.SinonStub;
+      getDefaultConfig: sinon.SinonStub;
+    };
+
+    permissions = {} as {
+      getGroups: sinon.SinonStub;
+      getAgents: sinon.SinonStub;
+    };
+
+    compliance = {
+      requirements: {},
+    } as {
+      requirements: {
+        get: sinon.SinonStub;
+      };
+    };
+
+    checkpoints = {
+      schedules: {},
+    } as {
+      schedules: {
+        getOne: sinon.SinonStub;
+      };
+      getOne: sinon.SinonStub;
+    };
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Asset>) {
+      return extractFromArgs(args, ['ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<AssetOptions>) {
+      this.uuid = 'asset';
+      this.ticker = opts.ticker;
+      this.details = createEntityGetterStub(opts.details);
+      this.currentFundingRound = createEntityGetterStub(opts.currentFundingRound);
+      this.isFrozen = createEntityGetterStub(opts.isFrozen);
+      this.transfers.canTransfer = createEntityGetterStub(opts.transfersCanTransfer);
+      this.getIdentifiers = createEntityGetterStub(opts.getIdentifiers);
+      this.transferRestrictions.count.get = createEntityGetterStub(
+        opts.transferRestrictionsCountGet
+      );
+      this.transferRestrictions.percentage.get = createEntityGetterStub(
+        opts.transferRestrictionsPercentageGet
+      );
+      this.corporateActions.getAgents = createEntityGetterStub(opts.corporateActionsGetAgents);
+      this.corporateActions.getDefaultConfig = createEntityGetterStub(
+        opts.corporateActionsGetDefaultConfig
+      );
+      this.permissions.getGroups = createEntityGetterStub(opts.permissionsGetGroups);
+      this.permissions.getAgents = createEntityGetterStub(opts.permissionsGetAgents);
+      this.compliance.requirements.get = createEntityGetterStub(opts.complianceRequirementsGet);
+      this.checkpoints.schedules.getOne = createEntityGetterStub(opts.checkpointsSchedulesGetOne);
+      this.checkpoints.getOne = createEntityGetterStub(opts.checkpointsGetOne);
+    }
+  },
+  () => ({
+    ticker: 'SOME_TICKER',
+    did: 'assetDid',
+    details: {
+      owner: getIdentityInstance(),
+      name: 'ASSET_NAME',
+      totalSupply: new BigNumber(1000000),
+      isDivisible: false,
+      primaryIssuanceAgents: [],
+      fullAgents: [],
+      assetType: KnownAssetType.EquityCommon,
+      requiresInvestorUniqueness: false,
+    },
+    currentFundingRound: 'Series A',
+    isFrozen: false,
+    transfersCanTransfer: TransferStatus.Success,
+    getIdentifiers: [],
+    transferRestrictionsCountGet: {
+      restrictions: [],
+      availableSlots: new BigNumber(3),
+    },
+    transferRestrictionsPercentageGet: {
+      restrictions: [],
+      availableSlots: new BigNumber(3),
+    },
+    corporateActionsGetAgents: [],
+    corporateActionsGetDefaultConfig: {
+      targets: { identities: [], treatment: TargetTreatment.Exclude },
+      defaultTaxWithholding: new BigNumber(10),
+      taxWithholdings: [],
+    },
+    permissionsGetAgents: [],
+    permissionsGetGroups: {
+      known: [],
+      custom: [],
+    },
+    complianceRequirementsGet: {
+      requirements: [],
+      defaultTrustedClaimIssuers: [],
+    },
+    checkpointsGetOne: getCheckpointInstance(),
+    checkpointsSchedulesGetOne: {
+      schedule: getCheckpointScheduleInstance(),
+      details: {
+        remainingCheckpoints: new BigNumber(3),
+        nextCheckpointDate: new Date(new Date().getTime() + 1000 * 60 * 60),
+      },
+    },
+    toJson: 'SOME_TICKER',
+  }),
+  ['Asset']
+);
+
+const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequestOptions>(
+  class {
+    uuid!: string;
+    authId!: BigNumber;
+    issuer!: Identity;
+    target!: Signer;
+    expiry!: Date | null;
+    data!: Authorization;
+    isExpired!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof AuthorizationRequest>) {
+      return extractFromArgs(args, ['authId', 'target', 'issuer', 'expiry', 'data']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<AuthorizationRequestOptions>) {
+      this.uuid = 'authorizationRequest';
+      this.authId = opts.authId;
+      this.issuer = opts.issuer;
+      this.target = opts.target;
+      this.expiry = opts.expiry;
+      this.data = opts.data;
+      this.isExpired = createEntityGetterStub(opts.isExpired, false);
+    }
+  },
+  () => ({
+    authId: new BigNumber(1),
+    isExpired: false,
+    target: getIdentityInstance({ did: 'targetDid' }),
+    issuer: getIdentityInstance({ did: 'issuerDid' }),
+    data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_TOKEN' },
+    expiry: null,
+  }),
+  ['AuthorizationRequest']
+);
+
+const MockVenueClass = createMockEntityClass<VenueOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    details!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Venue>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<VenueOptions>) {
+      this.uuid = 'venue';
+      this.id = opts.id;
+      this.details = createEntityGetterStub(opts.details);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    details: {
+      owner: getIdentityInstance(),
+      type: VenueType.Distribution,
+      description: 'someDescription',
+    },
+  }),
+  ['Venue']
+);
+
+const MockInstructionClass = createMockEntityClass<InstructionOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    details!: sinon.SinonStub;
+    getLegs!: sinon.SinonStub;
+    isPending!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Instruction>) {
+      return extractFromArgs(args, ['id']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<InstructionOptions>) {
+      this.uuid = 'instruction';
+      this.id = opts.id;
+      this.details = createEntityGetterStub(opts.details);
+      this.getLegs = createEntityGetterStub(opts.getLegs);
+      this.isPending = createEntityGetterStub(opts.isPending);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    details: {
+      status: InstructionStatus.Pending,
+      createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
+      tradeDate: null,
+      valueDate: null,
+      venue: getVenueInstance(),
+      type: InstructionType.SettleOnAffirmation,
+    },
+    getLegs: {
+      data: [
+        {
+          from: getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(1) }),
+          to: getNumberedPortfolioInstance({ did: 'otherDid', id: new BigNumber(1) }),
+          asset: getAssetInstance(),
+          amount: new BigNumber(100),
+        },
+      ],
+      next: null,
+    },
+    isPending: false,
+  }),
+  ['Instruction']
+);
+
+const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    owner!: Identity;
+    isOwnedBy!: sinon.SinonStub;
+    getAssetBalances!: sinon.SinonStub;
+    getCustodian!: sinon.SinonStub;
+    isCustodiedBy!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof NumberedPortfolio>) {
+      return extractFromArgs(args, ['id', 'did']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<NumberedPortfolioOptions>) {
+      this.uuid = 'numberedPortfolio';
+      this.id = opts.id;
+      this.owner = getIdentityInstance({ did: opts.did });
+      this.isOwnedBy = createEntityGetterStub(opts.isOwnedBy);
+      this.getAssetBalances = createEntityGetterStub(opts.getAssetBalances);
+      this.getCustodian = createEntityGetterStub(opts.getCustodian);
+      this.isCustodiedBy = createEntityGetterStub(opts.isCustodiedBy);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    isOwnedBy: true,
+    getAssetBalances: [
+      {
+        asset: getAssetInstance(),
+        total: new BigNumber(1),
+        locked: new BigNumber(0),
+        free: new BigNumber(1),
+      },
+    ],
+    did: 'someDid',
+    getCustodian: getIdentityInstance(),
+    isCustodiedBy: true,
+    toJson: {
+      did: 'someDid',
+      id: '1',
+    },
+  }),
+  ['Portfolio', 'NumberedPortfolio']
+);
+
+const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>(
+  class {
+    uuid!: string;
+    owner!: Identity;
+    isOwnedBy!: sinon.SinonStub;
+    getAssetBalances!: sinon.SinonStub;
+    getCustodian!: sinon.SinonStub;
+    isCustodiedBy!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof DefaultPortfolio>) {
+      return extractFromArgs(args, ['did']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<DefaultPortfolioOptions>) {
+      this.uuid = 'defaultPortfolio';
+      this.owner = getIdentityInstance({ did: opts.did });
+      this.isOwnedBy = createEntityGetterStub(opts.isOwnedBy);
+      this.getAssetBalances = createEntityGetterStub(opts.getAssetBalances);
+      this.getCustodian = createEntityGetterStub(opts.getCustodian);
+      this.isCustodiedBy = createEntityGetterStub(opts.isCustodiedBy);
+    }
+  },
+  () => ({
+    isOwnedBy: true,
+    getAssetBalances: [
+      {
+        asset: getAssetInstance(),
+        total: new BigNumber(1),
+        locked: new BigNumber(0),
+        free: new BigNumber(1),
+      },
+    ],
+    did: 'someDid',
+    getCustodian: getIdentityInstance(),
+    isCustodiedBy: true,
+    toJson: {
+      did: 'someDid',
+    },
+  }),
+  ['Portfolio', 'DefaultPortfolio']
+);
+
+const MockOfferingClass = createMockEntityClass<OfferingOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    details!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Offering>) {
+      return extractFromArgs(args, ['id', 'ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<OfferingOptions>) {
+      this.uuid = 'sto';
+      this.id = opts.id;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.details = createEntityGetterStub(opts.details);
+    }
+  },
+  () => ({
+    details: {
+      creator: getIdentityInstance(),
+      venue: getVenueInstance(),
+      name: 'MyOffering',
+      offeringPortfolio: getNumberedPortfolioInstance({ did: 'offeringDid', id: new BigNumber(1) }),
+      raisingPortfolio: getNumberedPortfolioInstance({ did: 'offeringDid', id: new BigNumber(2) }),
+      end: null,
+      start: new Date('10/14/1987'),
+      status: {
+        timing: OfferingTimingStatus.Started,
+        balance: OfferingBalanceStatus.Available,
+        sale: OfferingSaleStatus.Live,
+      },
+      tiers: [
+        {
+          price: new BigNumber(100000000),
+          remaining: new BigNumber(700000000),
+          amount: new BigNumber(1000000000),
+        },
+      ],
+      totalAmount: new BigNumber(1000000000),
+      totalRemaining: new BigNumber(700000000),
+      raisingCurrency: 'USD',
+      minInvestment: new BigNumber(100000000),
+    },
+    ticker: 'SOME_TICKER',
+    id: new BigNumber(1),
+  }),
+  ['Offering']
+);
+
+const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    createdAt!: sinon.SinonStub;
+    totalSupply!: sinon.SinonStub;
+    allBalances!: sinon.SinonStub;
+    balance!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof Checkpoint>) {
+      return extractFromArgs(args, ['id', 'ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<CheckpointOptions>) {
+      this.uuid = 'checkpoint';
+      this.id = opts.id;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.createdAt = createEntityGetterStub(opts.createdAt);
+      this.totalSupply = createEntityGetterStub(opts.totalSupply);
+      this.allBalances = createEntityGetterStub(opts.allBalances);
+      this.balance = createEntityGetterStub(opts.balance);
+    }
+  },
+  () => ({
+    totalSupply: new BigNumber(10000),
+    createdAt: new Date('10/14/1987'),
+    ticker: 'SOME_TICKER',
+    id: new BigNumber(1),
+    balance: new BigNumber(1000),
+    allBalances: {
+      data: [
+        {
+          identity: getIdentityInstance(),
+          balance: new BigNumber(1000),
+        },
+      ],
+      next: null,
+    },
+  }),
+  ['Checkpoint']
+);
+
+const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    start!: Date;
+    period!: CalendarPeriod | null;
+    expiryDate!: Date | null;
+    complexity!: BigNumber;
+    details!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof CheckpointSchedule>) {
+      return extractFromArgs(args, ['id', 'ticker', 'start', 'period']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<CheckpointScheduleOptions>) {
+      this.uuid = 'checkpointSchedule';
+      this.id = opts.id;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.start = opts.start;
+      this.period = opts.period;
+      this.expiryDate = opts.expiryDate;
+      this.complexity = opts.complexity;
+      this.details = createEntityGetterStub(opts.details);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    ticker: 'SOME_TICKER',
+    start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+    period: {
+      unit: CalendarUnit.Month,
+      amount: new BigNumber(1),
+    },
+    expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+    complexity: new BigNumber(2),
+    details: {
+      remainingCheckpoints: new BigNumber(1),
+      nextCheckpointDate: new Date('10/10/2030'),
+    },
+  }),
+  ['CheckpointSchedule']
+);
+
+const MockCorporateActionClass = createMockEntityClass<CorporateActionOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    kind!: CorporateActionKind;
+    declarationDate!: Date;
+    description!: string;
+    targets!: CorporateActionTargets;
+    defaultTaxWithholding!: BigNumber;
+    taxWithholdings!: TaxWithholding[];
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof CorporateAction>) {
+      return extractFromArgs(args, [
+        'id',
+        'ticker',
+        'kind',
+        'declarationDate',
+        'targets',
+        'description',
+        'defaultTaxWithholding',
+        'taxWithholdings',
+      ]);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<CorporateActionOptions>) {
+      this.uuid = 'corporateAction';
+      this.id = opts.id;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.kind = opts.kind;
+      this.declarationDate = opts.declarationDate;
+      this.description = opts.description;
+      this.targets = opts.targets;
+      this.defaultTaxWithholding = opts.defaultTaxWithholding;
+      this.taxWithholdings = opts.taxWithholdings;
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    ticker: 'SOME_TICKER',
+    kind: CorporateActionKind.UnpredictableBenefit,
+    declarationDate: new Date('10/14/1987'),
+    description: 'someDescription',
+    targets: {
+      identities: [getIdentityInstance()],
+      treatment: TargetTreatment.Include,
+    },
+    defaultTaxWithholding: new BigNumber(10),
+    taxWithholdings: [
+      {
+        identity: getIdentityInstance(),
+        percentage: new BigNumber(40),
+      },
+    ],
+  }),
+  ['CorporateActionBase', 'CorporateAction']
+);
+
+const MockDividendDistributionClass = createMockEntityClass<DividendDistributionOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    kind!: CorporateActionKind.PredictableBenefit | CorporateActionKind.UnpredictableBenefit;
+    declarationDate!: Date;
+    description!: string;
+    targets!: CorporateActionTargets;
+    defaultTaxWithholding!: BigNumber;
+    taxWithholdings!: TaxWithholding[];
+    origin!: DefaultPortfolio | NumberedPortfolio;
+    currency!: string;
+    perShare!: BigNumber;
+    maxAmount!: BigNumber;
+    expiryDate!: Date | null;
+    paymentDate!: Date;
+    details!: sinon.SinonStub;
+    getParticipant!: sinon.SinonStub;
+    checkpoint!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof DividendDistribution>) {
+      return extractFromArgs(args, [
+        'id',
+        'ticker',
+        'declarationDate',
+        'targets',
+        'kind',
+        'description',
+        'defaultTaxWithholding',
+        'taxWithholdings',
+        'origin',
+        'currency',
+        'perShare',
+        'maxAmount',
+        'expiryDate',
+        'paymentDate',
+      ]) as Partial<DividendDistributionOptions>;
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<DividendDistributionOptions>) {
+      this.uuid = 'dividendDistribution';
+      this.id = opts.id;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.kind = opts.kind;
+      this.origin = opts.origin;
+      this.declarationDate = opts.declarationDate;
+      this.description = opts.description;
+      this.targets = opts.targets;
+      this.defaultTaxWithholding = opts.defaultTaxWithholding;
+      this.taxWithholdings = opts.taxWithholdings;
+      this.currency = opts.currency;
+      this.perShare = opts.perShare;
+      this.maxAmount = opts.maxAmount;
+      this.expiryDate = opts.expiryDate;
+      this.paymentDate = opts.paymentDate;
+      this.details = createEntityGetterStub(opts.details);
+      this.getParticipant = createEntityGetterStub(opts.getParticipant);
+      this.checkpoint = createEntityGetterStub(opts.checkpoint);
+    }
+  },
+  () => ({
+    id: new BigNumber(1),
+    ticker: 'SOME_TICKER',
+    kind: CorporateActionKind.UnpredictableBenefit,
+    origin: getDefaultPortfolioInstance(),
+    declarationDate: new Date('10/14/1987'),
+    description: 'someDescription',
+    targets: {
+      identities: [getIdentityInstance()],
+      treatment: TargetTreatment.Include,
+    },
+    defaultTaxWithholding: new BigNumber(10),
+    taxWithholdings: [
+      {
+        identity: getIdentityInstance(),
+        percentage: new BigNumber(40),
+      },
+    ],
+    currency: 'USD',
+    perShare: new BigNumber(100),
+    maxAmount: new BigNumber(1000000),
+    expiryDate: null,
+    paymentDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
+    details: {
+      remainingFunds: new BigNumber(100),
+      fundsReclaimed: false,
+    },
+    getParticipant: {
+      identity: getIdentityInstance(),
+      amount: new BigNumber(100),
+      paid: false,
+    },
+    checkpoint: getCheckpointInstance(),
+  }),
+  ['CorporateActionBase', 'DividendDistribution']
+);
+
+const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGroupOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    getPermissions!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof CustomPermissionGroup>) {
+      return extractFromArgs(args, ['id', 'ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<CustomPermissionGroupOptions>) {
+      this.uuid = 'customPermissionGroup';
+      this.id = opts.id;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.getPermissions = createEntityGetterStub(opts.getPermissions);
+    }
+  },
+  () => ({
+    ticker: 'SOME_TICKER',
+    id: new BigNumber(1),
+    getPermissions: {
+      transactions: null,
+      transactionGroups: [],
+    },
+  }),
+  ['PermissionGroup', 'CustomPermissionGroup']
+);
+
+const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroupOptions>(
+  class {
+    uuid!: string;
+    type!: PermissionGroupType;
+    asset!: Asset;
+    getPermissions!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof KnownPermissionGroup>) {
+      return extractFromArgs(args, ['type', 'ticker']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<KnownPermissionGroupOptions>) {
+      this.uuid = 'knownPermissionGroup';
+      this.type = opts.type;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.getPermissions = createEntityGetterStub(opts.getPermissions);
+    }
+  },
+  () => ({
+    ticker: 'SOME_TICKER',
+    type: PermissionGroupType.Full,
+    getPermissions: {
+      transactions: null,
+      transactionGroups: [],
+    },
+  }),
+  ['PermissionGroup', 'KnownPermissionGroup']
+);
 
 export const mockIdentityModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
@@ -611,6 +1447,11 @@ export const mockIdentityModule = (path: string) => (): Record<string, unknown> 
 export const mockAccountModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Account: MockAccountClass,
+});
+
+export const mockSubsidyModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  Subsidy: MockSubsidyClass,
 });
 
 export const mockTickerReservationModule = (path: string) => (): Record<string, unknown> => ({
@@ -626,16 +1467,6 @@ export const mockAssetModule = (path: string) => (): Record<string, unknown> => 
 export const mockAuthorizationRequestModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   AuthorizationRequest: MockAuthorizationRequestClass,
-});
-
-export const mockPermissionGroupModule = (path: string) => (): Record<string, unknown> => ({
-  ...jest.requireActual(path),
-  PermissionGroup: MockPermissionGroupClass,
-});
-
-export const mockProposalModule = (path: string) => (): Record<string, unknown> => ({
-  ...jest.requireActual(path),
-  Proposal: MockProposalClass,
 });
 
 export const mockVenueModule = (path: string) => (): Record<string, unknown> => ({
@@ -693,2131 +1524,330 @@ export const mockKnownPermissionGroupModule = (path: string) => (): Record<strin
   KnownPermissionGroup: MockKnownPermissionGroupClass,
 });
 
-export const mockAgentModule = (path: string) => (): Record<string, unknown> => ({
-  ...jest.requireActual(path),
-  Agent: MockAgentClass,
-});
-
-const defaultIdentityOptions: IdentityOptions = {
-  did: 'someDid',
-  hasValidCdd: true,
-  isCddProvider: false,
-  authorizations: {
-    getReceived: [],
-    getSent: { data: [], next: null },
-  },
-  getVenues: [],
-  getScopeId: 'someScopeId',
-  getAssetBalance: new BigNumber(100),
-  getSecondaryAccounts: [],
-  areSecondaryAccountsFrozen: false,
-  isEqual: true,
-  assetPermissionsGet: [],
-  assetPermissionsCheckPermissions: {
-    result: true,
-  },
-  assetPermissionsHasPermissions: true,
-  exists: true,
-};
-let identityOptions: IdentityOptions = defaultIdentityOptions;
-const defaultAccountOptions: AccountOptions = {
-  address: 'someAddress',
-  key: 'someKey',
-  getBalance: {
-    free: new BigNumber(100),
-    locked: new BigNumber(10),
-    total: new BigNumber(110),
-  },
-  getTransactionHistory: [],
-  isEqual: true,
-  exists: true,
-  isFrozen: false,
-  hasPermissions: true,
-  checkPermissions: {
-    result: true,
-  },
-};
-let accountOptions: AccountOptions = defaultAccountOptions;
-const defaultTickerReservationOptions: TickerReservationOptions = {
-  ticker: 'SOME_TICKER',
-  details: {
-    expiryDate: new Date(),
-    status: TickerReservationStatus.Reserved,
-  },
-  exists: true,
-};
-let tickerReservationOptions = defaultTickerReservationOptions;
-const defaultAssetOptions: AssetOptions = {
-  ticker: 'SOME_TICKER',
-  details: {
-    name: 'ASSET_NAME',
-    totalSupply: new BigNumber(1000000),
-    isDivisible: false,
-    primaryIssuanceAgents: [],
-    fullAgents: [],
-  },
-  currentFundingRound: 'Series A',
-  isFrozen: false,
-  transfersCanTransfer: TransferStatus.Success,
-  getIdentifiers: [],
-  transferRestrictionsCountGet: {
-    restrictions: [],
-    availableSlots: 3,
-  },
-  transferRestrictionsPercentageGet: {
-    restrictions: [],
-    availableSlots: 3,
-  },
-  corporateActionsGetAgents: [],
-  corporateActionsGetDefaultConfig: {
-    targets: { identities: [], treatment: TargetTreatment.Exclude },
-    defaultTaxWithholding: new BigNumber(10),
-    taxWithholdings: [],
-  },
-  permissionsGetAgents: [],
-  permissionsGetGroups: {
-    known: [],
-    custom: [],
-  },
-  complianceRequirementsGet: {
-    requirements: [],
-    defaultTrustedClaimIssuers: [],
-  },
-  checkpointsGetOne: {},
-  checkpointsSchedulesGetOne: {},
-  isEqual: false,
-  exists: true,
-  toJson: 'SOME_TICKER',
-};
-let assetOptions = defaultAssetOptions;
-const defaultAuthorizationRequestOptions: AuthorizationRequestOptions = {
-  target: { did: 'targetDid' } as Identity,
-  issuer: { did: 'issuerDid' } as Identity,
-  data: { type: AuthorizationType.TransferAssetOwnership, value: 'UNWANTED_ASSET' },
-  expiry: null,
-  exists: true,
-};
-let authorizationRequestOptions = defaultAuthorizationRequestOptions;
-const defaultVenueOptions: VenueOptions = {
-  id: new BigNumber(1),
-  details: {
-    type: VenueType.Distribution,
-    description: 'someDescription',
-  },
-  exists: true,
-};
-let venueOptions = defaultVenueOptions;
-const defaultNumberedPortfolioOptions: NumberedPortfolioOptions = {
-  id: new BigNumber(1),
-  isOwnedBy: true,
-  assetBalances: [
-    {
-      asset: 'someAsset' as unknown as Asset,
-      total: new BigNumber(1),
-      locked: new BigNumber(0),
-      free: new BigNumber(1),
-    },
-  ],
-  did: 'someDid',
-  exists: true,
-  custodian: 'identity' as unknown as Identity,
-  isCustodiedBy: true,
-  isEqual: true,
-};
-let numberedPortfolioOptions = defaultNumberedPortfolioOptions;
-const defaultDefaultPortfolioOptions: DefaultPortfolioOptions = {
-  isOwnedBy: true,
-  assetBalances: [
-    {
-      asset: 'someAsset' as unknown as Asset,
-      total: new BigNumber(1),
-      locked: new BigNumber(0),
-      free: new BigNumber(1),
-    },
-  ],
-  did: 'someDid',
-  custodian: 'identity' as unknown as Identity,
-  isCustodiedBy: true,
-  isEqual: true,
-  exists: true,
-};
-let defaultPortfolioOptions = defaultDefaultPortfolioOptions;
-const defaultCustomPermissionGroupOptions: CustomPermissionGroupOptions = {
-  ticker: 'SOME_TICKER',
-  id: new BigNumber(1),
-  getPermissions: {
-    transactions: null,
-    transactionGroups: [],
-  },
-  isEqual: true,
-  exists: true,
-};
-let customPermissionGroupOptions = defaultCustomPermissionGroupOptions;
-const defaultKnownPermissionGroupOptions: KnownPermissionGroupOptions = {
-  ticker: 'SOME_TICKER',
-  type: 'someType' as unknown as PermissionGroupType,
-  getPermissions: {
-    transactions: null,
-    transactionGroups: [],
-  },
-  isEqual: true,
-  exists: true,
-};
-let knownPermissionGroupOptions = defaultKnownPermissionGroupOptions;
-const defaultInstructionOptions: InstructionOptions = {
-  id: new BigNumber(1),
-  details: {
-    status: InstructionStatus.Pending,
-    createdAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000),
-    tradeDate: null,
-    valueDate: null,
-    type: InstructionType.SettleOnAffirmation,
-  },
-  isPending: false,
-  exists: true,
-};
-let instructionOptions = defaultInstructionOptions;
-const defaultStoOptions: OfferingOptions = {
-  details: {
-    end: null,
-    start: new Date('10/14/1987'),
-    status: {
-      timing: OfferingTimingStatus.Started,
-      balance: OfferingBalanceStatus.Available,
-      sale: OfferingSaleStatus.Live,
-    },
-    tiers: [
-      {
-        price: new BigNumber(100000000),
-        remaining: new BigNumber(700000000),
-        amount: new BigNumber(1000000000),
-      },
-    ],
-    totalAmount: new BigNumber(1000000000),
-    totalRemaining: new BigNumber(700000000),
-    raisingCurrency: 'USD',
-    minInvestment: new BigNumber(100000000),
-  },
-  ticker: 'SOME_TICKER',
-  id: new BigNumber(1),
-  exists: true,
-};
-let stoOptions = defaultStoOptions;
-const defaultCheckpointOptions: CheckpointOptions = {
-  totalSupply: new BigNumber(10000),
-  createdAt: new Date('10/14/1987'),
-  ticker: 'SOME_TICKER',
-  id: new BigNumber(1),
-  exists: true,
-};
-let checkpointOptions = defaultCheckpointOptions;
-const defaultCheckpointScheduleOptions: CheckpointScheduleOptions = {
-  id: new BigNumber(1),
-  ticker: 'SOME_TICKER',
-  start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-  period: {
-    unit: CalendarUnit.Month,
-    amount: 1,
-  },
-  expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
-  complexity: 2,
-  details: {
-    remainingCheckpoints: 1,
-    nextCheckpointDate: new Date('10/10/2030'),
-  },
-  exists: true,
-};
-let checkpointScheduleOptions = defaultCheckpointScheduleOptions;
-const defaultCorporateActionOptions: CorporateActionOptions = {
-  id: new BigNumber(1),
-  ticker: 'SOME_TICKER',
-  kind: CorporateActionKind.UnpredictableBenefit,
-  declarationDate: new Date('10/14/1987'),
-  description: 'someDescription',
-  targets: {
-    identities: [],
-    treatment: TargetTreatment.Include,
-  },
-  defaultTaxWithholding: new BigNumber(10),
-  taxWithholdings: [],
-  exists: true,
-};
-let corporateActionOptions = defaultCorporateActionOptions;
-const defaultDividendDistributionOptions: DividendDistributionOptions = {
-  id: new BigNumber(1),
-  ticker: 'SOME_TICKER',
-  declarationDate: new Date('10/14/1987'),
-  description: 'someDescription',
-  targets: {
-    identities: [],
-    treatment: TargetTreatment.Include,
-  },
-  defaultTaxWithholding: new BigNumber(10),
-  taxWithholdings: [],
-  currency: 'USD',
-  perShare: new BigNumber(100),
-  maxAmount: new BigNumber(1000000),
-  expiryDate: null,
-  paymentDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
-  details: {
-    remainingFunds: new BigNumber(100),
-    fundsReclaimed: false,
-  },
-  getParticipant: {
-    amount: new BigNumber(100),
-    paid: false,
-  },
-  exists: true,
-};
-let dividendDistributionOptions = defaultDividendDistributionOptions;
-
-/**
- * @hidden
- * Configure the Authorization Request instance
- */
-function configureVenue(opts: VenueOptions): void {
-  const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const venue = {
-    uuid: 'venue',
-    id: opts.id,
-    details: venueDetailsStub.resolves(details),
-    exists: venueExistsStub.resolves(opts.exists),
-  } as unknown as MockVenue;
-
-  Object.assign(mockInstanceContainer.venue, venue);
-  venueConstructorStub.callsFake(args => {
-    const value = merge({}, venue, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Venue.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Venue.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Venue instance
- */
-function initVenue(opts?: VenueOptions): void {
-  venueConstructorStub = sinon.stub();
-  venueDetailsStub = sinon.stub();
-  venueExistsStub = sinon.stub();
-
-  venueOptions = { ...defaultVenueOptions, ...opts };
-
-  configureVenue(venueOptions);
-}
-
-/**
- * @hidden
- * Configure the Numbered Portfolio instance
- */
-function configureNumberedPortfolio(opts: NumberedPortfolioOptions): void {
-  const numberedPortfolio = {
-    uuid: 'numberedPortfolio',
-    id: opts.id,
-    isOwnedBy: numberedPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
-    getAssetBalances: numberedPortfolioGetAssetBalancesStub.resolves(opts.assetBalances),
-    getCustodian: numberedPortfolioGetCustodianStub.resolves(opts.custodian),
-    owner: { did: opts.did },
-    exists: numberedPortfolioExistsStub.resolves(opts.exists),
-    isCustodiedBy: numberedPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
-    isEqual: numberedPortfolioIsEqualStub.returns(opts.isEqual),
-  } as unknown as MockNumberedPortfolio;
-
-  Object.assign(mockInstanceContainer.numberedPortfolio, numberedPortfolio);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  numberedPortfolioConstructorStub.callsFake(({ did, ...args } = {}) => {
-    const value = merge({}, numberedPortfolio, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Portfolio.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(entities.NumberedPortfolio.prototype, entities.Portfolio.prototype);
-    Object.setPrototypeOf(value, entities.NumberedPortfolio.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the NumberedPortfolio instance
- */
-function initNumberedPortfolio(opts?: NumberedPortfolioOptions): void {
-  numberedPortfolioConstructorStub = sinon.stub();
-  numberedPortfolioIsOwnedByStub = sinon.stub();
-  numberedPortfolioGetAssetBalancesStub = sinon.stub();
-  numberedPortfolioGetCustodianStub = sinon.stub();
-  numberedPortfolioExistsStub = sinon.stub();
-  numberedPortfolioGetCustodianStub = sinon.stub();
-  numberedPortfolioIsCustodiedByStub = sinon.stub();
-  numberedPortfolioIsEqualStub = sinon.stub();
-
-  numberedPortfolioOptions = { ...defaultNumberedPortfolioOptions, ...opts };
-
-  configureNumberedPortfolio(numberedPortfolioOptions);
-}
-
-/**
- * @hidden
- * Configure the Default Portfolio instance
- */
-function configureDefaultPortfolio(opts: DefaultPortfolioOptions): void {
-  const defaultPortfolio = {
-    uuid: 'defaultPortfolio',
-    isOwnedBy: defaultPortfolioIsOwnedByStub.resolves(opts.isOwnedBy),
-    getAssetBalances: defaultPortfolioGetAssetBalancesStub.resolves(opts.assetBalances),
-    owner: { did: opts.did },
-    getCustodian: defaultPortfolioGetCustodianStub.resolves(opts.custodian),
-    isCustodiedBy: defaultPortfolioIsCustodiedByStub.resolves(opts.isCustodiedBy),
-    isEqual: defaultPortfolioIsEqualStub.returns(opts.isEqual),
-    exists: defaultPortfolioExistsStub.resolves(opts.exists),
-  } as unknown as MockDefaultPortfolio;
-
-  Object.assign(mockInstanceContainer.defaultPortfolio, defaultPortfolio);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  defaultPortfolioConstructorStub.callsFake(({ did, ...args } = {}) => {
-    const value = merge({}, defaultPortfolio, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Portfolio.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(entities.DefaultPortfolio.prototype, entities.Portfolio.prototype);
-    Object.setPrototypeOf(value, entities.DefaultPortfolio.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the DefaultPortfolio instance
- */
-function initDefaultPortfolio(opts?: DefaultPortfolioOptions): void {
-  defaultPortfolioConstructorStub = sinon.stub();
-  defaultPortfolioIsOwnedByStub = sinon.stub();
-  defaultPortfolioGetAssetBalancesStub = sinon.stub();
-  defaultPortfolioGetCustodianStub = sinon.stub();
-  defaultPortfolioIsCustodiedByStub = sinon.stub();
-  defaultPortfolioIsEqualStub = sinon.stub();
-  defaultPortfolioExistsStub = sinon.stub();
-
-  defaultPortfolioOptions = { ...defaultDefaultPortfolioOptions, ...opts };
-
-  configureDefaultPortfolio(defaultPortfolioOptions);
-}
-
-/**
- * @hidden
- * Configure the Custom Permission Group instance
- */
-function configureCustomPermissionGroup(opts: CustomPermissionGroupOptions): void {
-  const customPermissionGroup = {
-    uuid: 'customPermissionGroup',
-    id: opts.id,
-    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
-    getPermissions: customPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
-    isEqual: customPermissionGroupIsEqualStub.returns(opts.isEqual),
-    exists: customPermissionGroupExistsStub.resolves(opts.exists),
-  } as unknown as MockCustomPermissionGroup;
-
-  Object.assign(mockInstanceContainer.customPermissionGroup, customPermissionGroup);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  customPermissionGroupConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, customPermissionGroup, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.PermissionGroup.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(
-      entities.CustomPermissionGroup.prototype,
-      entities.PermissionGroup.prototype
-    );
-    Object.setPrototypeOf(value, entities.CustomPermissionGroup.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the CustomPermissionGroup instance
- */
-function initCustomPermissionGroup(opts?: CustomPermissionGroupOptions): void {
-  customPermissionGroupConstructorStub = sinon.stub();
-  customPermissionGroupGetPermissionsStub = sinon.stub();
-  customPermissionGroupIsEqualStub = sinon.stub();
-  customPermissionGroupExistsStub = sinon.stub();
-
-  customPermissionGroupOptions = { ...defaultCustomPermissionGroupOptions, ...opts };
-
-  configureCustomPermissionGroup(customPermissionGroupOptions);
-}
-
-/**
- * @hidden
- * Configure the Known Permission Group instance
- */
-function configureKnownPermissionGroup(opts: KnownPermissionGroupOptions): void {
-  const knownPermissionGroup = {
-    uuid: 'knownPermissionGroup',
-    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
-    type: opts.type,
-    getPermissions: knownPermissionGroupGetPermissionsStub.resolves(opts.getPermissions),
-    isEqual: knownPermissionGroupIsEqualStub.returns(opts.isEqual),
-    exists: knownPermissionGroupExistsStub.resolves(opts.exists),
-  } as unknown as MockKnownPermissionGroup;
-
-  Object.assign(mockInstanceContainer.knownPermissionGroup, knownPermissionGroup);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  knownPermissionGroupConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, knownPermissionGroup, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.PermissionGroup.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(
-      entities.KnownPermissionGroup.prototype,
-      entities.PermissionGroup.prototype
-    );
-    Object.setPrototypeOf(value, entities.KnownPermissionGroup.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the KnownPermissionGroup instance
- */
-function initKnownPermissionGroup(opts?: KnownPermissionGroupOptions): void {
-  knownPermissionGroupConstructorStub = sinon.stub();
-  knownPermissionGroupGetPermissionsStub = sinon.stub();
-  knownPermissionGroupIsEqualStub = sinon.stub();
-  knownPermissionGroupExistsStub = sinon.stub();
-
-  knownPermissionGroupOptions = { ...defaultKnownPermissionGroupOptions, ...opts };
-
-  configureKnownPermissionGroup(knownPermissionGroupOptions);
-}
-
-/**
- * @hidden
- * Configure the Authorization Request instance
- */
-function configureAuthorizationRequest(opts: AuthorizationRequestOptions): void {
-  const authorizationRequest = {
-    uuid: 'authorizationRequest',
-    authId: opts.authId,
-    issuer: opts.issuer,
-    target: opts.target,
-    expiry: opts.expiry,
-    data: opts.data,
-    exists: authorizationRequestExistsStub.resolves(opts.data),
-    isExpired: authorizationRequestExistsStub.resolves(opts.isExpired),
-  } as unknown as MockAuthorizationRequest;
-
-  Object.assign(mockInstanceContainer.authorizationRequest, authorizationRequest);
-  authorizationRequestConstructorStub.callsFake(args => {
-    const value = merge({}, authorizationRequest, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.AuthorizationRequest.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.AuthorizationRequest.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Authorization Request instance
- */
-function initAuthorizationRequest(opts?: AuthorizationRequestOptions): void {
-  authorizationRequestConstructorStub = sinon.stub();
-  authorizationRequestExistsStub = sinon.stub();
-
-  authorizationRequestOptions = { ...defaultAuthorizationRequestOptions, ...opts };
-
-  configureAuthorizationRequest(authorizationRequestOptions);
-}
-
-/**
- * @hidden
- * Configure the Asset instance
- */
-function configureAsset(opts: AssetOptions): void {
-  const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const asset = {
-    uuid: 'asset',
-    ticker: opts.ticker,
-    details: assetDetailsStub.resolves(details),
-    currentFundingRound: assetCurrentFundingRoundStub.resolves(opts.currentFundingRound),
-    isFrozen: assetIsFrozenStub.resolves(opts.isFrozen),
-    transfers: {
-      canTransfer: assetTransfersCanTransferStub.resolves(opts.transfersCanTransfer),
-    },
-    getIdentifiers: assetGetIdentifiersStub.resolves(opts.getIdentifiers),
-    transferRestrictions: {
-      count: {
-        get: assetTransferRestrictionsCountGetStub.resolves(opts.transferRestrictionsCountGet),
-      },
-      percentage: {
-        get: assetTransferRestrictionsPercentageGetStub.resolves(
-          opts.transferRestrictionsPercentageGet
-        ),
-      },
-    },
-    corporateActions: {
-      getAgents: assetCorporateActionsGetAgentsStub.resolves(opts.corporateActionsGetAgents),
-      getDefaultConfig: assetCorporateActionsGetDefaultConfigStub.resolves(
-        opts.corporateActionsGetDefaultConfig
-      ),
-    },
-    permissions: {
-      getGroups: assetPermissionsGetGroupsStub.resolves(opts.permissionsGetGroups),
-      getAgents: assetPermissionsGetAgentsStub.resolves(opts.permissionsGetAgents),
-    },
-    compliance: {
-      requirements: {
-        get: assetComplianceRequirementsGetStub.resolves(opts.complianceRequirementsGet),
-      },
-    },
-    checkpoints: {
-      schedules: {
-        getOne: assetCheckpointsSchedulesGetOneStub.resolves(opts.checkpointsSchedulesGetOne),
-      },
-      getOne: assetCheckpointsGetOneStub.resolves(opts.checkpointsGetOne),
-    },
-    isEqual: assetIsEqualStub.returns(opts.isEqual),
-    exists: assetExistsStub.resolves(opts.exists),
-    toJson: assetToJsonStub.returns(opts.toJson),
-  } as unknown as MockAsset;
-
-  Object.assign(mockInstanceContainer.asset, asset);
-  assetConstructorStub.callsFake(args => {
-    const value = merge({}, asset, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Asset.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Asset.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Asset instance
- */
-function initAsset(opts?: AssetOptions): void {
-  assetConstructorStub = sinon.stub();
-  assetDetailsStub = sinon.stub();
-  assetCurrentFundingRoundStub = sinon.stub();
-  assetIsFrozenStub = sinon.stub();
-  assetTransfersCanTransferStub = sinon.stub();
-  assetGetIdentifiersStub = sinon.stub();
-  assetTransferRestrictionsCountGetStub = sinon.stub();
-  assetTransferRestrictionsPercentageGetStub = sinon.stub();
-  assetCorporateActionsGetAgentsStub = sinon.stub();
-  assetCorporateActionsGetDefaultConfigStub = sinon.stub();
-  assetPermissionsGetGroupsStub = sinon.stub();
-  assetPermissionsGetAgentsStub = sinon.stub();
-  assetComplianceRequirementsGetStub = sinon.stub();
-  assetCheckpointsGetOneStub = sinon.stub();
-  assetCheckpointsSchedulesGetOneStub = sinon.stub();
-  assetIsEqualStub = sinon.stub();
-  assetExistsStub = sinon.stub();
-  assetToJsonStub = sinon.stub();
-
-  assetOptions = merge({}, defaultAssetOptions, opts);
-
-  configureAsset(assetOptions);
-}
-
-/**
- * @hidden
- * Configure the Ticker Reservation instance
- */
-function configureTickerReservation(opts: TickerReservationOptions): void {
-  const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const tickerReservation = {
-    uuid: 'tickerReservation',
-    ticker: opts.ticker,
-    details: tickerReservationDetailsStub.resolves(details),
-    exists: tickerReservationExistsStub.resolves(opts.exists),
-  } as unknown as MockTickerReservation;
-
-  Object.assign(mockInstanceContainer.tickerReservation, tickerReservation);
-  tickerReservationConstructorStub.callsFake(args => {
-    const value = merge({}, tickerReservation, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.TickerReservation.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.TickerReservation.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Ticker Reservation instance
- */
-function initTickerReservation(opts?: TickerReservationOptions): void {
-  tickerReservationConstructorStub = sinon.stub();
-  tickerReservationDetailsStub = sinon.stub();
-  tickerReservationExistsStub = sinon.stub();
-
-  tickerReservationOptions = {
-    ...defaultTickerReservationOptions,
-    ...opts,
-  };
-
-  configureTickerReservation(tickerReservationOptions);
-}
-
-/**
- * @hidden
- * Configure the identity instance
- */
-function configureIdentity(opts: IdentityOptions): void {
-  const identity = {
-    uuid: 'identity',
-    did: opts.did,
-    hasRoles: identityHasRolesStub.resolves(opts.hasRoles),
-    checkRoles: identityCheckRolesStub.resolves(opts.checkRoles),
-    hasRole: identityHasRoleStub.resolves(opts.hasRole),
-    hasValidCdd: identityHasValidCddStub.resolves(opts.hasValidCdd),
-    getPrimaryAccount: identityGetPrimaryAccountStub.resolves(opts.getPrimaryAccount),
-    portfolios: {},
-    authorizations: {
-      getReceived: identityAuthorizationsGetReceivedStub.resolves(opts.authorizations?.getReceived),
-      getSent: identityAuthorizationsGetSentStub.resolves(opts.authorizations?.getSent),
-    },
-    assetPermissions: {
-      get: identityAssetPermissionsGetStub.resolves(opts.assetPermissionsGet),
-      getGroup: identityAssetPermissionsGetGroupStub.resolves(opts.assetPermissionsGetGroup),
-      hasPermissions: identityAssetPermissionsHasPermissionsStub.resolves(
-        opts.assetPermissionsHasPermissions
-      ),
-      checkPermissions: identityAssetPermissionsCheckPermissionsStub.resolves(
-        opts.assetPermissionsCheckPermissions
-      ),
-    },
-    getVenues: identityGetVenuesStub.resolves(opts.getVenues),
-    getScopeId: identityGetScopeIdStub.resolves(opts.getScopeId),
-    getAssetBalance: identityGetAssetBalanceStub.resolves(opts.getAssetBalance),
-    getSecondaryAccounts: identityGetSecondaryAccountsStub.resolves(opts.getSecondaryAccounts),
-    areSecondaryAccountsFrozen: identityAreSecondaryAccountsFrozenStub.resolves(
-      opts.areSecondaryAccountsFrozen
-    ),
-    isEqual: identityIsEqualStub.returns(opts.isEqual),
-    exists: identityExistsStub.resolves(opts.exists),
-    isCddProvider: identityIsCddProviderStub.resolves(opts.isCddProvider),
-  } as unknown as MockIdentity;
-
-  Object.assign(mockInstanceContainer.identity, identity);
-  identityConstructorStub.callsFake(args => {
-    const value = merge({}, identity, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Identity.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Identity.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Identity instance
- */
-function initIdentity(opts?: IdentityOptions): void {
-  identityConstructorStub = sinon.stub();
-  identityHasRolesStub = sinon.stub();
-  identityHasRoleStub = sinon.stub();
-  identityCheckRolesStub = sinon.stub();
-  identityHasValidCddStub = sinon.stub();
-  identityGetPrimaryAccountStub = sinon.stub();
-  identityAuthorizationsGetReceivedStub = sinon.stub();
-  identityAuthorizationsGetSentStub = sinon.stub();
-  identityGetVenuesStub = sinon.stub();
-  identityGetScopeIdStub = sinon.stub();
-  identityGetAssetBalanceStub = sinon.stub();
-  identityGetSecondaryAccountsStub = sinon.stub();
-  identityAreSecondaryAccountsFrozenStub = sinon.stub();
-  identityIsEqualStub = sinon.stub();
-  identityAssetPermissionsGetStub = sinon.stub();
-  identityAssetPermissionsGetGroupStub = sinon.stub();
-  identityAssetPermissionsHasPermissionsStub = sinon.stub();
-  identityAssetPermissionsCheckPermissionsStub = sinon.stub();
-  identityExistsStub = sinon.stub();
-  identityIsCddProviderStub = sinon.stub();
-
-  identityOptions = { ...defaultIdentityOptions, ...opts };
-
-  configureIdentity(identityOptions);
-}
-
-/**
- * @hidden
- * Configure the Instruction instance
- */
-function configureInstruction(opts: InstructionOptions): void {
-  const details = { venue: mockInstanceContainer.venue, ...opts.details };
-  const legs = opts.getLegs || {
-    data: [
-      {
-        from: mockInstanceContainer.numberedPortfolio,
-        to: mockInstanceContainer.numberedPortfolio,
-        asset: mockInstanceContainer.asset,
-        amount: new BigNumber(100),
-      },
-    ],
-    next: null,
-  };
-  const instruction = {
-    uuid: 'instruction',
-    id: opts.id,
-    details: instructionDetailsStub.resolves(details),
-    getLegs: instructionGetLegsStub.resolves(legs),
-    isPending: instructionIsPendingStub.resolves(opts.isPending),
-    exists: instructionExistsStub.resolves(opts.exists),
-  } as unknown as MockInstruction;
-
-  Object.assign(mockInstanceContainer.instruction, instruction);
-  instructionConstructorStub.callsFake(args => {
-    const value = merge({}, instruction, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Instruction.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Instruction.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Instruction instance
- */
-function initInstruction(opts?: InstructionOptions): void {
-  instructionConstructorStub = sinon.stub();
-  instructionDetailsStub = sinon.stub();
-  instructionGetLegsStub = sinon.stub();
-  instructionIsPendingStub = sinon.stub();
-  instructionExistsStub = sinon.stub();
-
-  instructionOptions = { ...defaultInstructionOptions, ...opts };
-
-  configureInstruction(instructionOptions);
-}
-
-/**
- * @hidden
- * Configure the Account instance
- */
-function configureAccount(opts: AccountOptions): void {
-  const account = {
-    uuid: 'account',
-    address: opts.address,
-    key: opts.key,
-    isFrozen: accountIsFrozenStub.resolves(opts.isFrozen),
-    getBalance: accountGetBalanceStub.resolves(opts.getBalance),
-    getIdentity: accountGetIdentityStub.resolves(
-      opts.getIdentity === undefined ? mockInstanceContainer.identity : opts.getIdentity
-    ),
-    getTransactionHistory: accountGetTransactionHistoryStub.resolves(opts.getTransactionHistory),
-    isEqual: accountIsEqualStub.returns(opts.isEqual),
-    exists: accountExistsStub.resolves(opts.exists),
-    hasPermissions: accountHasPermissionsStub.returns(opts.hasPermissions),
-    checkPermissions: accountCheckPermissionsStub.returns(opts.checkPermissions),
-  } as unknown as MockAccount;
-
-  Object.assign(mockInstanceContainer.account, account);
-  accountConstructorStub.callsFake(args => {
-    const value = merge({}, account, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Account.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Account.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Account instance
- */
-function initAccount(opts?: AccountOptions): void {
-  accountConstructorStub = sinon.stub();
-  accountIsFrozenStub = sinon.stub();
-  accountGetBalanceStub = sinon.stub();
-  accountGetIdentityStub = sinon.stub();
-  accountGetTransactionHistoryStub = sinon.stub();
-  accountIsEqualStub = sinon.stub();
-  accountExistsStub = sinon.stub();
-  accountHasPermissionsStub = sinon.stub();
-  accountCheckPermissionsStub = sinon.stub();
-
-  accountOptions = { ...defaultAccountOptions, ...opts };
-
-  configureAccount(accountOptions);
-}
-
-/**
- * @hidden
- * Configure the Asset Offering instance
- */
-function configureOffering(opts: OfferingOptions): void {
-  const details = {
-    creator: mockInstanceContainer.identity,
-    venue: mockInstanceContainer.venue,
-    offeringPortfolio: mockInstanceContainer.defaultPortfolio,
-    raisingPortfolio: mockInstanceContainer.numberedPortfolio,
-    ...opts.details,
-  };
-  const offering = {
-    uuid: 'sto',
-    details: offeringsDetailsStub.resolves(details),
-    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
-    id: opts.id,
-    exists: offeringExistsStub.resolves(opts.exists),
-  } as unknown as MockOffering;
-
-  Object.assign(mockInstanceContainer.offering, offering);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  offeringConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, offering, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Offering.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Offering.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Offering instance
- */
-function initOffering(opts?: OfferingOptions): void {
-  offeringConstructorStub = sinon.stub();
-  offeringsDetailsStub = sinon.stub();
-  offeringExistsStub = sinon.stub();
-
-  stoOptions = merge({}, defaultStoOptions, opts);
-
-  configureOffering(stoOptions);
-}
-
-/**
- * @hidden
- * Configure the Checkpoint instance
- */
-function configureCheckpoint(opts: CheckpointOptions): void {
-  const allBalances = opts.allBalances || {
-    data: [
-      {
-        identity: mockInstanceContainer.identity,
-        balance: new BigNumber(10000),
-      },
-    ],
-    next: null,
-  };
-  const checkpoint = {
-    uuid: 'checkpoint',
-    createdAt: checkpointCreatedAtStub.returns(opts.createdAt),
-    totalSupply: checkpointTotalSupplyStub.returns(opts.totalSupply),
-    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
-    id: opts.id,
-    exists: checkpointExistsStub.resolves(opts.exists),
-    allBalances: checkpointAllBalancesStub.resolves(allBalances),
-    balance: checkpointBalanceStub.resolves(opts.balance),
-  } as unknown as MockCheckpoint;
-
-  Object.assign(mockInstanceContainer.checkpoint, checkpoint);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  checkpointConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, checkpoint, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.Checkpoint.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.Checkpoint.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the Checkpoint instance
- */
-function initCheckpoint(opts?: CheckpointOptions): void {
-  checkpointConstructorStub = sinon.stub();
-  checkpointCreatedAtStub = sinon.stub();
-  checkpointTotalSupplyStub = sinon.stub();
-  checkpointExistsStub = sinon.stub();
-  checkpointAllBalancesStub = sinon.stub();
-  checkpointBalanceStub = sinon.stub();
-
-  checkpointOptions = merge({}, defaultCheckpointOptions, opts);
-
-  configureCheckpoint(checkpointOptions);
-}
-
-/**
- * @hidden
- * Configure the CheckpointSchedule instance
- */
-function configureCheckpointSchedule(opts: CheckpointScheduleOptions): void {
-  const checkpointSchedule = {
-    uuid: 'checkpointSchedule',
-    id: opts.id,
-    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
-    start: opts.start,
-    period: opts.period,
-    expiryDate: opts.expiryDate,
-    complexity: opts.complexity,
-    details: checkpointScheduleDetailsStub.resolves(opts.details),
-    exists: checkpointScheduleExistsStub.resolves(opts.exists),
-  } as unknown as MockCheckpointSchedule;
-
-  Object.assign(mockInstanceContainer.checkpointSchedule, checkpointSchedule);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  checkpointScheduleConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, checkpointSchedule, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.CheckpointSchedule.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(value, entities.CheckpointSchedule.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the CheckpointSchedule instance
- */
-function initCheckpointSchedule(opts?: CheckpointScheduleOptions): void {
-  checkpointScheduleConstructorStub = sinon.stub();
-  checkpointScheduleDetailsStub = sinon.stub();
-  checkpointScheduleExistsStub = sinon.stub();
-
-  checkpointScheduleOptions = merge({}, defaultCheckpointScheduleOptions, opts);
-
-  configureCheckpointSchedule(checkpointScheduleOptions);
-}
-
-/**
- * @hidden
- * Configure the CorporateAction instance
- */
-function configureCorporateAction(opts: CorporateActionOptions): void {
-  const corporateAction = {
-    uuid: 'corporateAction',
-    id: opts.id,
-    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
-    kind: opts.kind,
-    declarationDate: opts.declarationDate,
-    description: opts.description,
-    targets: opts.targets,
-    defaultTaxWithholding: opts.defaultTaxWithholding,
-    taxWithholdings: opts.taxWithholdings,
-    exists: corporateActionExistsStub.resolves(opts.exists),
-  } as unknown as MockCorporateAction;
-
-  Object.assign(mockInstanceContainer.corporateAction, corporateAction);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  corporateActionConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, corporateAction, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.CorporateActionBase.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(
-      entities.CorporateAction.prototype,
-      entities.CorporateActionBase.prototype
-    );
-    Object.setPrototypeOf(value, entities.CorporateAction.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the CorporateAction instance
- */
-function initCorporateAction(opts?: CorporateActionOptions): void {
-  corporateActionConstructorStub = sinon.stub();
-  corporateActionExistsStub = sinon.stub();
-
-  corporateActionOptions = merge({}, defaultCorporateActionOptions, opts);
-
-  configureCorporateAction(corporateActionOptions);
-}
-
-/**
- * @hidden
- * Configure the CorporateAction instance
- */
-function configureDividendDistribution(opts: DividendDistributionOptions): void {
-  const details = { owner: mockInstanceContainer.identity, ...opts.details };
-  const checkpoint = opts.checkpoint || mockInstanceContainer.checkpoint;
-  const getParticipant = opts.getParticipant
-    ? { ...defaultDividendDistributionOptions.getParticipant, ...opts.getParticipant }
-    : null;
-
-  const dividendDistribution = {
-    uuid: 'dividendDistribution',
-    id: opts.id,
-    asset: { ...mockInstanceContainer.asset, ticker: opts.ticker },
-    kind: CorporateActionKind.UnpredictableBenefit,
-    declarationDate: opts.declarationDate,
-    description: opts.description,
-    targets: opts.targets,
-    defaultTaxWithholding: opts.defaultTaxWithholding,
-    taxWithholdings: opts.taxWithholdings,
-    origin: mockInstanceContainer.defaultPortfolio,
-    currency: opts.currency,
-    perShare: opts.perShare,
-    maxAmount: opts.maxAmount,
-    expiryDate: opts.expiryDate,
-    paymentDate: opts.paymentDate,
-    details: dividendDistributionDetailsStub.resolves(details),
-    getParticipant: dividendDistributionGetParticipantStub.resolves(getParticipant),
-    checkpoint: dividendDistributionCheckpointStub.resolves(checkpoint),
-    exists: dividendDistributionExistsStub.resolves(opts.exists),
-  } as unknown as MockDividendDistribution;
-
-  Object.assign(mockInstanceContainer.dividendDistribution, dividendDistribution);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  dividendDistributionConstructorStub.callsFake(({ ticker, ...args } = {}) => {
-    const value = merge({}, dividendDistribution, args);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const entities = require('~/internal');
-    Object.setPrototypeOf(entities.CorporateActionBase.prototype, entities.Entity.prototype);
-    Object.setPrototypeOf(
-      entities.DividendDistribution.prototype,
-      entities.CorporateActionBase.prototype
-    );
-    Object.setPrototypeOf(value, entities.DividendDistribution.prototype);
-    return value;
-  });
-}
-
-/**
- * @hidden
- * Initialize the DividendDistribution instance
- */
-function initDividendDistribution(opts?: DividendDistributionOptions): void {
-  dividendDistributionConstructorStub = sinon.stub();
-  dividendDistributionDetailsStub = sinon.stub();
-  dividendDistributionGetParticipantStub = sinon.stub();
-  dividendDistributionCheckpointStub = sinon.stub();
-  dividendDistributionExistsStub = sinon.stub();
-
-  dividendDistributionOptions = merge({}, defaultDividendDistributionOptions, opts);
-
-  configureDividendDistribution(dividendDistributionOptions);
-}
-
 /**
  * @hidden
  *
- * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
+ * Initialize mock classes with the default configuration
  */
-export function configureMocks(opts?: MockOptions): void {
-  const tempIdentityOptions = { ...defaultIdentityOptions, ...opts?.identityOptions };
-
-  configureIdentity(tempIdentityOptions);
-
-  const tempAccountOptions = { ...defaultAccountOptions, ...opts?.accountOptions };
-
-  configureAccount(tempAccountOptions);
-
-  const tempTickerReservationOptions = {
-    ...defaultTickerReservationOptions,
-    ...opts?.tickerReservationOptions,
-  };
-
-  configureTickerReservation(tempTickerReservationOptions);
-
-  const tempAssetOptions = merge({}, defaultAssetOptions, opts?.assetOptions);
-
-  configureAsset(tempAssetOptions);
-
-  const tempAuthorizationRequestOptions = {
-    ...defaultAuthorizationRequestOptions,
-    ...opts?.authorizationRequestOptions,
-  };
-
-  configureAuthorizationRequest(tempAuthorizationRequestOptions);
-
-  const tempVenueOptions = {
-    ...defaultVenueOptions,
-    ...opts?.venueOptions,
-  };
-  configureVenue(tempVenueOptions);
-
-  const tempNumberedPortfolioOptions = {
-    ...defaultNumberedPortfolioOptions,
-    ...opts?.numberedPortfolioOptions,
-  };
-  configureNumberedPortfolio(tempNumberedPortfolioOptions);
-
-  const tempDefaultPortfolioOptions = {
-    ...defaultDefaultPortfolioOptions,
-    ...opts?.defaultPortfolioOptions,
-  };
-  configureDefaultPortfolio(tempDefaultPortfolioOptions);
-
-  const tempCustomPermissionGroupOptions = {
-    ...defaultCustomPermissionGroupOptions,
-    ...opts?.customPermissionGroupOptions,
-  };
-  configureCustomPermissionGroup(tempCustomPermissionGroupOptions);
-
-  const tempKnownPermissionGroupOptions = {
-    ...defaultKnownPermissionGroupOptions,
-    ...opts?.knownPermissionGroupOptions,
-  };
-  configureKnownPermissionGroup(tempKnownPermissionGroupOptions);
-
-  const tempInstructionOptions = {
-    ...defaultInstructionOptions,
-    ...opts?.instructionOptions,
-  };
-  configureInstruction(tempInstructionOptions);
-
-  const tempStoOptions = {
-    ...stoOptions,
-    ...opts?.offeringOptions,
-  };
-  configureOffering(tempStoOptions);
-
-  const tempCheckpointOptions = {
-    ...checkpointOptions,
-    ...opts?.checkpointOptions,
-  };
-  configureCheckpoint(tempCheckpointOptions);
-
-  const tempCheckpointScheduleOptions = {
-    ...checkpointScheduleOptions,
-    ...opts?.checkpointScheduleOptions,
-  };
-  configureCheckpointSchedule(tempCheckpointScheduleOptions);
-
-  const tempCorporateActionOptions = {
-    ...corporateActionOptions,
-    ...opts?.corporateActionOptions,
-  };
-  configureCorporateAction(tempCorporateActionOptions);
-
-  const tempDividendDistributionOptions = {
-    ...dividendDistributionOptions,
-    ...opts?.dividendDistributionOptions,
-  };
-  configureDividendDistribution(tempDividendDistributionOptions);
-}
+export const initMocks = function (opts?: MockOptions): void {
+  MockIdentityClass.init(opts?.identityOptions);
+  MockAccountClass.init(opts?.accountOptions);
+  MockSubsidyClass.init(opts?.subsidyOptions);
+  MockTickerReservationClass.init(opts?.tickerReservationOptions);
+  MockAssetClass.init(opts?.assetOptions);
+  MockAuthorizationRequestClass.init(opts?.authorizationRequestOptions);
+  MockVenueClass.init(opts?.venueOptions);
+  MockInstructionClass.init(opts?.instructionOptions);
+  MockNumberedPortfolioClass.init(opts?.numberedPortfolioOptions);
+  MockDefaultPortfolioClass.init(opts?.defaultPortfolioOptions);
+  MockCustomPermissionGroupClass.init(opts?.customPermissionGroupOptions);
+  MockKnownPermissionGroupClass.init(opts?.knownPermissionGroupOptions);
+  MockOfferingClass.init(opts?.offeringOptions);
+  MockCheckpointClass.init(opts?.checkpointOptions);
+  MockCheckpointScheduleClass.init(opts?.checkpointScheduleOptions);
+  MockCorporateActionClass.init(opts?.corporateActionOptions);
+  MockDividendDistributionClass.init(opts?.dividendDistributionOptions);
+};
 
 /**
  * @hidden
- *
- * Initialize the factory by adding default all-purpose functionality to the mock manager
+ *s
+ * Configure mock classes (calling .reset will go back to the default configuration)
  */
-export function initMocks(opts?: MockOptions): void {
-  // Identity
-  initIdentity(opts?.identityOptions);
-
-  // Account
-  initAccount(opts?.accountOptions);
-
-  // Ticker Reservation
-  initTickerReservation(opts?.tickerReservationOptions);
-
-  // Asset
-  initAsset(opts?.assetOptions);
-
-  // Authorization Request
-  initAuthorizationRequest(opts?.authorizationRequestOptions);
-
-  // Instruction Request
-  initInstruction(opts?.instructionOptions);
-
-  // Venue
-  initVenue(opts?.venueOptions);
-
-  // NumberedPortfolio
-  initNumberedPortfolio(opts?.numberedPortfolioOptions);
-
-  // DefaultPortfolio
-  initDefaultPortfolio(opts?.defaultPortfolioOptions);
-
-  // CustomPermissionGroup
-  initCustomPermissionGroup(opts?.customPermissionGroupOptions);
-
-  // KnownPermissionGroup
-  initKnownPermissionGroup(opts?.knownPermissionGroupOptions);
-
-  // Instruction
-  initInstruction(opts?.instructionOptions);
-
-  // Offering
-  initOffering(opts?.offeringOptions);
-
-  // Checkpoint
-  initCheckpoint(opts?.checkpointOptions);
-
-  // CheckpointSchedule
-  initCheckpointSchedule(opts?.checkpointScheduleOptions);
-
-  // CorporateAction
-  initCorporateAction(opts?.corporateActionOptions);
-
-  // DividendDistribution
-  initDividendDistribution(opts?.dividendDistributionOptions);
-}
+export const configureMocks = function (opts?: MockOptions): void {
+  MockIdentityClass.setOptions(opts?.identityOptions);
+  MockAccountClass.setOptions(opts?.accountOptions);
+  MockSubsidyClass.setOptions(opts?.subsidyOptions);
+  MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
+  MockAssetClass.setOptions(opts?.assetOptions);
+  MockAuthorizationRequestClass.setOptions(opts?.authorizationRequestOptions);
+  MockVenueClass.setOptions(opts?.venueOptions);
+  MockInstructionClass.setOptions(opts?.instructionOptions);
+  MockNumberedPortfolioClass.setOptions(opts?.numberedPortfolioOptions);
+  MockDefaultPortfolioClass.setOptions(opts?.defaultPortfolioOptions);
+  MockCustomPermissionGroupClass.setOptions(opts?.customPermissionGroupOptions);
+  MockKnownPermissionGroupClass.setOptions(opts?.knownPermissionGroupOptions);
+  MockOfferingClass.setOptions(opts?.offeringOptions);
+  MockCheckpointClass.setOptions(opts?.checkpointOptions);
+  MockCheckpointScheduleClass.setOptions(opts?.checkpointScheduleOptions);
+  MockCorporateActionClass.setOptions(opts?.corporateActionOptions);
+  MockDividendDistributionClass.setOptions(opts?.dividendDistributionOptions);
+};
 
 /**
  * @hidden
- * Restore instances to their original state
+ * Reset all mock classes to their default values
  */
-export function cleanup(): void {
-  mockInstanceContainer.identity = {} as MockIdentity;
-  mockInstanceContainer.account = {} as MockAccount;
-  mockInstanceContainer.tickerReservation = {} as MockTickerReservation;
-  mockInstanceContainer.asset = {} as MockAsset;
-  mockInstanceContainer.authorizationRequest = {} as MockAuthorizationRequest;
-  mockInstanceContainer.permissionGroup = {} as MockPermissionGroup;
-  mockInstanceContainer.venue = {} as MockVenue;
-  mockInstanceContainer.instruction = {} as MockInstruction;
-  mockInstanceContainer.offering = {} as MockOffering;
-  mockInstanceContainer.checkpoint = {} as MockCheckpoint;
-  mockInstanceContainer.checkpointSchedule = {} as MockCheckpointSchedule;
-  mockInstanceContainer.corporateAction = {} as MockCorporateAction;
-  mockInstanceContainer.dividendDistribution = {} as MockDividendDistribution;
-}
-
-/**
- * @hidden
- * Reinitialize mocks
- */
-export function reset(): void {
-  cleanup();
-  initMocks({
-    identityOptions,
-    accountOptions,
-    tickerReservationOptions,
-    assetOptions: assetOptions,
-    authorizationRequestOptions,
-    venueOptions,
-    instructionOptions,
-    numberedPortfolioOptions,
-    defaultPortfolioOptions,
-    offeringOptions: stoOptions,
-    checkpointOptions,
-    checkpointScheduleOptions,
-    corporateActionOptions,
-    dividendDistributionOptions,
-    customPermissionGroupOptions,
-    knownPermissionGroupOptions,
-  });
-}
+export const reset = function (): void {
+  MockIdentityClass.resetOptions();
+  MockAccountClass.resetOptions();
+  MockSubsidyClass.resetOptions();
+  MockTickerReservationClass.resetOptions();
+  MockAssetClass.resetOptions();
+  MockAuthorizationRequestClass.resetOptions();
+  MockVenueClass.resetOptions();
+  MockInstructionClass.resetOptions();
+  MockNumberedPortfolioClass.resetOptions();
+  MockDefaultPortfolioClass.resetOptions();
+  MockCustomPermissionGroupClass.resetOptions();
+  MockKnownPermissionGroupClass.resetOptions();
+  MockOfferingClass.resetOptions();
+  MockCheckpointClass.resetOptions();
+  MockCheckpointScheduleClass.resetOptions();
+  MockCorporateActionClass.resetOptions();
+  MockDividendDistributionClass.resetOptions();
+};
 
 /**
  * @hidden
  * Retrieve an Identity instance
  */
-export function getIdentityInstance(opts?: IdentityOptions): MockIdentity {
+export const getIdentityInstance = (opts?: IdentityOptions): MockIdentity => {
+  const instance = new MockIdentityClass();
+
   if (opts) {
-    configureIdentity({ ...defaultIdentityOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockIdentityClass() as MockIdentity;
-}
-
-/**
- * @hidden
- * Retrieve the Identity constructor stub
- */
-export function getIdentityConstructorStub(): SinonStub {
-  return identityConstructorStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.hasRoles` method
- */
-export function getIdentityHasRolesStub(): SinonStub {
-  return identityHasRolesStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.hasRoles` method
- */
-export function getIdentityHasRoleStub(): SinonStub {
-  return identityHasRoleStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.assetPermissions.hasPermissions` method
- */
-export function getIdentityAssetPermissionsHasPermissionsStub(): SinonStub {
-  return identityAssetPermissionsHasPermissionsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.hasValidCdd` method
- */
-export function getIdentityHasValidCddStub(): SinonStub {
-  return identityHasValidCddStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.getPrimaryAccount` method
- */
-export function getIdentityGetPrimaryAccountStub(): SinonStub {
-  return identityGetPrimaryAccountStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.authorizations.getReceived` method
- */
-export function getIdentityAuthorizationsGetReceivedStub(): SinonStub {
-  return identityAuthorizationsGetReceivedStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.authorizations.getSent` method
- */
-export function getIdentityAuthorizationsGetSentStub(): SinonStub {
-  return identityAuthorizationsGetSentStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.getVenues` method
- */
-export function getIdentityGetVenuesStub(): SinonStub {
-  return identityGetVenuesStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.getScopeId` method
- */
-export function getIdentityGetScopeIdStub(): SinonStub {
-  return identityGetScopeIdStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.assetPermissions.getGroup` method
- */
-export function getIdentityAssetPermissionsGetGroupStub(
-  group?: CustomPermissionGroup | KnownPermissionGroup
-): SinonStub {
-  if (group) {
-    return identityAssetPermissionsGetGroupStub.resolves(group);
-  }
-  return identityAssetPermissionsGetGroupStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Identity.isEqual` method
- */
-export function getIdentityIsEqualStub(): SinonStub {
-  return identityIsEqualStub;
-}
+  return instance as unknown as MockIdentity;
+};
 
 /**
  * @hidden
  * Retrieve an Account instance
  */
-export function getAccountInstance(opts?: AccountOptions): MockAccount {
+export const getAccountInstance = (opts?: AccountOptions): MockAccount => {
+  const instance = new MockAccountClass();
+
   if (opts) {
-    configureAccount({ ...defaultAccountOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockAccountClass() as MockAccount;
-}
+  return instance as unknown as MockAccount;
+};
 
 /**
  * @hidden
- * Retrieve the stub of the `Account.isFrozen` method
+ * Retrieve an Subsidy instance
  */
-export function getAccountIsFrozenStub(): SinonStub {
-  return accountIsFrozenStub;
-}
+export const getSubsidyInstance = (opts?: SubsidyOptions): MockSubsidy => {
+  const instance = new MockSubsidyClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockSubsidy;
+};
 
 /**
  * @hidden
- * Retrieve the stub of the `Account.getBalance` method
+ * Retrieve a TickerReservation instance
  */
-export function getAccountGetBalanceStub(): SinonStub {
-  return accountGetBalanceStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Account.getIdentity` method
- */
-export function getAccountGetIdentityStub(): SinonStub {
-  return accountGetIdentityStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Account.getTransactionHistory` method
- */
-export function getAccountGetTransactionHistoryStub(): SinonStub {
-  return accountGetTransactionHistoryStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Account.isEqual` method
- */
-export function getAccountIsEqualStub(): SinonStub {
-  return accountIsEqualStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Account.isEqual` method
- */
-export function getAccountHasPermissionsStub(): SinonStub {
-  return accountHasPermissionsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `NumberedPortfolio.isCustodiedBy` method
- */
-export function getNumberedPortfolioIsCustodiedByStub(): SinonStub {
-  return numberedPortfolioIsCustodiedByStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `NumberedPortfolio.getCustodian` method
- */
-export function getNumberedPortfolioGetCustodianStub(): SinonStub {
-  return numberedPortfolioGetCustodianStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `NumberedPortfolio.isEqual` method
- */
-export function getNumberedPortfolioIsEqualStub(): SinonStub {
-  return numberedPortfolioIsEqualStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `DefaultPortfolio.isCustodiedBy` method
- */
-export function getDefaultPortfolioIsCustodiedByStub(): SinonStub {
-  return defaultPortfolioIsCustodiedByStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `DefaultPortfolio.getCustodian` method
- */
-export function getDefaultPortfolioGetCustodianStub(): SinonStub {
-  return defaultPortfolioGetCustodianStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `DefaultPortfolio.isEqual` method
- */
-export function getDefaultPortfolioIsEqualStub(): SinonStub {
-  return defaultPortfolioIsEqualStub;
-}
-
-/**
- * @hidden
- * Retrieve a Ticker Reservation instance
- */
-export function getTickerReservationInstance(
+export const getTickerReservationInstance = (
   opts?: TickerReservationOptions
-): MockTickerReservation {
+): MockTickerReservation => {
+  const instance = new MockTickerReservationClass();
+
   if (opts) {
-    configureTickerReservation({ ...defaultTickerReservationOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockTickerReservationClass() as MockTickerReservation;
-}
+  return instance as unknown as MockTickerReservation;
+};
 
 /**
  * @hidden
- * Retrieve the stub of the `TickerReservation.details` method
+ * Retrieve a Asset instance
  */
-export function getTickerReservationDetailsStub(
-  details?: Partial<TickerReservationDetails>
-): SinonStub {
-  if (details) {
-    return tickerReservationDetailsStub.resolves({
-      ...defaultTickerReservationOptions.details,
-      ...details,
-    });
-  }
-  return tickerReservationDetailsStub;
-}
+export const getAssetInstance = (opts?: AssetOptions): MockAsset => {
+  const instance = new MockAssetClass();
 
-/**
- * @hidden
- * Retrieve an Asset instance
- */
-export function getAssetInstance(opts?: AssetOptions): MockAsset {
   if (opts) {
-    configureAsset({ ...defaultAssetOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockAssetClass() as MockAsset;
-}
+  return instance as unknown as MockAsset;
+};
 
 /**
  * @hidden
- * Retrieve the stub of the `Asset.details` method
+ * Retrieve an AuthorizationRequest instance
  */
-export function getAssetDetailsStub(details?: Partial<AssetDetails>): SinonStub {
-  if (details) {
-    return assetDetailsStub.resolves({
-      ...defaultAssetOptions.details,
-      ...details,
-    });
-  }
-  return assetDetailsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.currentFundingRound` method
- */
-export function getAssetCurrentFundingRoundStub(currentFundingRound?: string): SinonStub {
-  if (currentFundingRound) {
-    return assetCurrentFundingRoundStub.resolves(currentFundingRound);
-  }
-
-  return assetCurrentFundingRoundStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.isFrozen` method
- */
-export function getAssetIsFrozenStub(frozen?: boolean): SinonStub {
-  if (frozen !== undefined) {
-    return assetIsFrozenStub.resolves(frozen);
-  }
-
-  return assetIsFrozenStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.getIdentifiers` method
- */
-export function getAssetGetIdentifiersStub(identifiers?: SecurityIdentifier): SinonStub {
-  if (identifiers !== undefined) {
-    return assetGetIdentifiersStub.resolves(identifiers);
-  }
-
-  return assetGetIdentifiersStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.Transfers.canTransfer` method
- */
-export function getAssetTransfersCanTransferStub(status?: TransferStatus): SinonStub {
-  if (status) {
-    return assetTransfersCanTransferStub.resolves(status);
-  }
-
-  return assetTransfersCanTransferStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.transferRestrictions.count.get` method
- */
-export function getAssetTransferRestrictionsCountGetStub(
-  restrictions?: ActiveTransferRestrictions<CountTransferRestriction>
-): SinonStub {
-  if (restrictions) {
-    return assetTransferRestrictionsCountGetStub.resolves(restrictions);
-  }
-
-  return assetTransferRestrictionsCountGetStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.transferRestrictions.percentage.get` method
- */
-export function getAssetTransferRestrictionsPercentageGetStub(
-  restrictions?: ActiveTransferRestrictions<PercentageTransferRestriction>
-): SinonStub {
-  if (restrictions) {
-    return assetTransferRestrictionsPercentageGetStub.resolves(restrictions);
-  }
-
-  return assetTransferRestrictionsPercentageGetStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.corporateActions.getAgents` method
- */
-export function getAssetCorporateActionsGetAgentsStub(agent?: Identity): SinonStub {
-  if (agent) {
-    return assetCorporateActionsGetAgentsStub.resolves(agent);
-  }
-
-  return assetCorporateActionsGetAgentsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.corporateActions.getDefaultConfig` method
- */
-export function getAssetCorporateActionsGetDefaultConfigStub(
-  defaults?: Partial<CorporateActionDefaultConfig>
-): SinonStub {
-  if (defaults) {
-    return assetCorporateActionsGetDefaultConfigStub.resolves(defaults);
-  }
-
-  return assetCorporateActionsGetDefaultConfigStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.permissions.getGroups` method
- */
-export function getAssetPermissionsGetGroupsStub(
-  groups?: Partial<ResultSet<PermissionGroup>>
-): SinonStub {
-  if (groups) {
-    return assetPermissionsGetGroupsStub.resolves(groups);
-  }
-
-  return assetPermissionsGetGroupsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Asset.permissions.getAgents` method
- */
-export function getAssetPermissionsGetAgentsStub(agents?: Partial<AgentWithGroup>[]): SinonStub {
-  if (agents) {
-    return assetPermissionsGetAgentsStub.resolves(agents);
-  }
-
-  return assetPermissionsGetAgentsStub;
-}
-
-/**
- * @hidden
- * Retrieve an Authorization Request instance
- */
-export function getAuthorizationRequestInstance(
+export const getAuthorizationRequestInstance = (
   opts?: AuthorizationRequestOptions
-): MockAuthorizationRequest {
+): MockAuthorizationRequest => {
+  const instance = new MockAuthorizationRequestClass();
+
   if (opts) {
-    configureAuthorizationRequest({ ...defaultAuthorizationRequestOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockAuthorizationRequestClass() as MockAuthorizationRequest;
-}
+  return instance as unknown as MockAuthorizationRequest;
+};
 
 /**
  * @hidden
  * Retrieve a Venue instance
  */
-export function getVenueInstance(opts?: VenueOptions): MockVenue {
+export const getVenueInstance = (opts?: VenueOptions): MockVenue => {
+  const instance = new MockVenueClass();
+
   if (opts) {
-    configureVenue({ ...defaultVenueOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockVenueClass() as MockVenue;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Venue.details` method
- */
-export function getVenueDetailsStub(details?: Partial<VenueDetails>): SinonStub {
-  if (details) {
-    return venueDetailsStub.resolves({
-      ...defaultVenueOptions.details,
-      ...details,
-    });
-  }
-  return venueDetailsStub;
-}
+  return instance as unknown as MockVenue;
+};
 
 /**
  * @hidden
  * Retrieve a NumberedPortfolio instance
  */
-export function getNumberedPortfolioInstance(
+export const getNumberedPortfolioInstance = (
   opts?: NumberedPortfolioOptions
-): MockNumberedPortfolio {
+): MockNumberedPortfolio => {
+  const instance = new MockNumberedPortfolioClass();
+
   if (opts) {
-    configureNumberedPortfolio({ ...defaultNumberedPortfolioOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockNumberedPortfolioClass() as MockNumberedPortfolio;
-}
+  return instance as unknown as MockNumberedPortfolio;
+};
 
 /**
  * @hidden
  * Retrieve a DefaultPortfolio instance
  */
-export function getDefaultPortfolioInstance(opts?: DefaultPortfolioOptions): MockDefaultPortfolio {
+export const getDefaultPortfolioInstance = (
+  opts?: DefaultPortfolioOptions
+): MockDefaultPortfolio => {
+  const instance = new MockDefaultPortfolioClass();
+
   if (opts) {
-    configureDefaultPortfolio({ ...defaultDefaultPortfolioOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockDefaultPortfolioClass() as MockDefaultPortfolio;
-}
+  return instance as unknown as MockDefaultPortfolio;
+};
 
 /**
  * @hidden
  * Retrieve a CustomPermissionGroup instance
  */
-export function getCustomPermissionGroupInstance(
+export const getCustomPermissionGroupInstance = (
   opts?: CustomPermissionGroupOptions
-): MockCustomPermissionGroup {
+): MockCustomPermissionGroup => {
+  const instance = new MockCustomPermissionGroupClass();
+
   if (opts) {
-    configureCustomPermissionGroup({ ...defaultCustomPermissionGroupOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockCustomPermissionGroupClass() as MockCustomPermissionGroup;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CustomPermissionGroup.getPermissions` method
- */
-export function getCustomPermissionGroupGetPermissionsStub(
-  getPermissions?: GroupPermissions
-): SinonStub {
-  if (getPermissions) {
-    return customPermissionGroupGetPermissionsStub.resolves(getPermissions);
-  }
-  return customPermissionGroupGetPermissionsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CustomPermissionGroup.isEqual` method
- */
-export function getCustomPermissionIsEqualStub(): SinonStub {
-  return customPermissionGroupIsEqualStub;
-}
+  return instance as unknown as MockCustomPermissionGroup;
+};
 
 /**
  * @hidden
  * Retrieve a KnownPermissionGroup instance
  */
-export function getKnownPermissionGroupInstance(
+export const getKnownPermissionGroupInstance = (
   opts?: KnownPermissionGroupOptions
-): MockKnownPermissionGroup {
+): MockKnownPermissionGroup => {
+  const instance = new MockKnownPermissionGroupClass();
+
   if (opts) {
-    configureKnownPermissionGroup({ ...defaultKnownPermissionGroupOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockKnownPermissionGroupClass() as MockKnownPermissionGroup;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `KnownPermissionGroup.getPermissions` method
- */
-export function getKnownPermissionGroupGetPermissionsStub(
-  getPermissions?: GroupPermissions
-): SinonStub {
-  if (getPermissions) {
-    return knownPermissionGroupGetPermissionsStub.resolves(getPermissions);
-  }
-  return knownPermissionGroupGetPermissionsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `KnownPermissionGroup.isEqual` method
- */
-export function getKnownPermissionGroupIsEqualStub(): SinonStub {
-  return knownPermissionGroupIsEqualStub;
-}
+  return instance as unknown as MockKnownPermissionGroup;
+};
 
 /**
  * @hidden
  * Retrieve an Instruction instance
  */
-export function getInstructionInstance(opts?: InstructionOptions): MockInstruction {
+export const getInstructionInstance = (opts?: InstructionOptions): MockInstruction => {
+  const instance = new MockInstructionClass();
+
   if (opts) {
-    configureInstruction({ ...defaultInstructionOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockInstructionClass() as MockInstruction;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Instruction.details` method
- */
-export function getInstructionDetailsStub(details?: Partial<InstructionDetails>): SinonStub {
-  if (details) {
-    return instructionDetailsStub.resolves({
-      ...defaultInstructionOptions.details,
-      ...details,
-    });
-  }
-  return instructionDetailsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Instruction.getLegs` method
- */
-export function getInstructionGetLegsStub(legs?: ResultSet<Leg>): SinonStub {
-  if (legs) {
-    return instructionGetLegsStub.resolves({
-      ...defaultInstructionOptions.getLegs,
-      ...legs,
-    });
-  }
-  return instructionGetLegsStub;
-}
+  return instance as unknown as MockInstruction;
+};
 
 /**
  * @hidden
  * Retrieve an Offering instance
  */
-export function getOfferingInstance(opts?: OfferingOptions): MockOffering {
+export const getOfferingInstance = (opts?: OfferingOptions): MockOffering => {
+  const instance = new MockOfferingClass();
+
   if (opts) {
-    configureOffering({ ...defaultStoOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockOfferingClass() as MockOffering;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Offering.details` method
- */
-export function getOfferingDetailsStub(details?: Partial<OfferingDetails>): SinonStub {
-  if (details) {
-    return offeringsDetailsStub.resolves({
-      ...defaultStoOptions.details,
-      ...details,
-    });
-  }
-  return offeringsDetailsStub;
-}
-
-/**
- * @hidden
- * Retrieve the Offering constructor stub
- */
-export function getStoConstructorStub(): SinonStub {
-  return offeringConstructorStub;
-}
+  return instance as unknown as MockOffering;
+};
 
 /**
  * @hidden
  * Retrieve a Checkpoint instance
  */
-export function getCheckpointInstance(opts?: CheckpointOptions): MockCheckpoint {
+export const getCheckpointInstance = (opts?: CheckpointOptions): MockCheckpoint => {
+  const instance = new MockCheckpointClass();
+
   if (opts) {
-    configureCheckpoint({ ...defaultCheckpointOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockCheckpointClass() as MockCheckpoint;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Checkpoint.createdAt` method
- */
-export function getCheckpointCreatedAtStub(createdAt?: Date): SinonStub {
-  if (createdAt) {
-    return checkpointCreatedAtStub.resolves(createdAt);
-  }
-  return checkpointCreatedAtStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Checkpoint.totalSupply` method
- */
-export function getCheckpointTotalSupplyStub(totalSupply?: BigNumber): SinonStub {
-  if (totalSupply) {
-    return checkpointTotalSupplyStub.resolves(totalSupply);
-  }
-  return checkpointTotalSupplyStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Checkpoint.exists` method
- */
-export function getCheckpointExistsStub(exists?: boolean): SinonStub {
-  if (exists) {
-    return checkpointExistsStub.resolves(exists);
-  }
-  return checkpointExistsStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Checkpoint.allBalances` method
- */
-export function getCheckpointAllBalancesStub(allBalances?: ResultSet<IdentityBalance>): SinonStub {
-  if (allBalances) {
-    return checkpointAllBalancesStub.resolves(allBalances);
-  }
-  return checkpointAllBalancesStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `Checkpoint.balance` method
- */
-export function getCheckpointBalanceStub(balance?: BigNumber): SinonStub {
-  if (balance) {
-    return checkpointBalanceStub.resolves(balance);
-  }
-  return checkpointBalanceStub;
-}
-
-/**
- * @hidden
- * Retrieve the Checkpoint constructor stub
- */
-export function getCheckpointConstructorStub(): SinonStub {
-  return checkpointConstructorStub;
-}
+  return instance as unknown as MockCheckpoint;
+};
 
 /**
  * @hidden
  * Retrieve a CheckpointSchedule instance
  */
-export function getCheckpointScheduleInstance(
+export const getCheckpointScheduleInstance = (
   opts?: CheckpointScheduleOptions
-): MockCheckpointSchedule {
+): MockCheckpointSchedule => {
+  const instance = new MockCheckpointScheduleClass();
+
   if (opts) {
-    configureCheckpointSchedule({ ...defaultCheckpointScheduleOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockCheckpointScheduleClass() as MockCheckpointSchedule;
-}
-
-/**
- * @hidden
- * Retrieve the CheckpointSchedule constructor stub
- */
-export function getCheckpointScheduleConstructorStub(): SinonStub {
-  return checkpointScheduleConstructorStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CheckpointSchedule.details` method
- */
-export function getCheckpointScheduleDetailsStub(details?: Partial<ScheduleDetails>): SinonStub {
-  if (details) {
-    return checkpointScheduleDetailsStub.resolves({
-      ...defaultCheckpointScheduleOptions.details,
-      ...details,
-    });
-  }
-  return checkpointScheduleDetailsStub;
-}
+  return instance as unknown as MockCheckpointSchedule;
+};
 
 /**
  * @hidden
  * Retrieve a CorporateAction instance
  */
-export function getCorporateActionInstance(opts?: CorporateActionOptions): MockCorporateAction {
+export const getCorporateActionInstance = (opts?: CorporateActionOptions): MockCorporateAction => {
+  const instance = new MockCorporateActionClass();
+
   if (opts) {
-    configureCorporateAction({ ...defaultCorporateActionOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockCorporateActionClass() as MockCorporateAction;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `CorporateAction.exists` method
- */
-export function getCorporateActionExistsStub(exists?: boolean): SinonStub {
-  if (exists) {
-    return corporateActionExistsStub.resolves(exists);
-  }
-  return corporateActionExistsStub;
-}
-
-/**
- * @hidden
- * Retrieve the CorporateAction constructor stub
- */
-export function getCorporateActionConstructorStub(): SinonStub {
-  return corporateActionConstructorStub;
-}
+  return instance as unknown as MockCorporateAction;
+};
 
 /**
  * @hidden
  * Retrieve a DividendDistribution instance
  */
-export function getDividendDistributionInstance(
+export const getDividendDistributionInstance = (
   opts?: DividendDistributionOptions
-): MockDividendDistribution {
+): MockDividendDistribution => {
+  const instance = new MockDividendDistributionClass();
+
   if (opts) {
-    configureDividendDistribution({ ...defaultDividendDistributionOptions, ...opts });
+    instance.configure(opts);
   }
 
-  return new MockDividendDistributionClass() as MockDividendDistribution;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `DividendDistribution.checkpoint` method
- */
-export function getDividendDistributionCheckpointStub(
-  checkpoint?: Checkpoint | CheckpointSchedule
-): SinonStub {
-  if (checkpoint) {
-    return dividendDistributionCheckpointStub.resolves(checkpoint);
-  }
-  return dividendDistributionCheckpointStub;
-}
-
-/**
- * @hidden
- * Retrieve the DividendDistribution constructor stub
- */
-export function getDividendDistributionConstructorStub(): SinonStub {
-  return dividendDistributionConstructorStub;
-}
-
-/**
- * @hidden
- * Retrieve the stub of the `DividendDistribution.getParticipant` method
- */
-export function getDividendDistributionGetParticipantStub(
-  getParticipant?: Partial<DistributionParticipant>
-): SinonStub {
-  if (getParticipant) {
-    return dividendDistributionGetParticipantStub.resolves({
-      ...defaultDividendDistributionOptions.getParticipant,
-      ...getParticipant,
-    });
-  }
-
-  return dividendDistributionGetParticipantStub.resolves(getParticipant);
-}
+  return instance as unknown as MockDividendDistribution;
+};

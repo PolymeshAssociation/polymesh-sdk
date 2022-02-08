@@ -63,7 +63,6 @@ describe('Offering class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -115,21 +114,25 @@ describe('Offering class', () => {
         offering_asset: dsMockUtils.createMockTicker(ticker),
         raising_portfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(otherDid),
-          kind: dsMockUtils.createMockPortfolioKind({ User: dsMockUtils.createMockU64(1) }),
+          kind: dsMockUtils.createMockPortfolioKind({
+            User: dsMockUtils.createMockU64(new BigNumber(1)),
+          }),
         }),
         raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
         tiers: [
           dsMockUtils.createMockFundraiserTier({
-            total: dsMockUtils.createMockBalance(amount.toNumber()),
-            price: dsMockUtils.createMockBalance(price.toNumber()),
-            remaining: dsMockUtils.createMockBalance(remaining.toNumber()),
+            total: dsMockUtils.createMockBalance(amount),
+            price: dsMockUtils.createMockBalance(price),
+            remaining: dsMockUtils.createMockBalance(remaining),
           }),
         ],
-        venue_id: dsMockUtils.createMockU64(1),
-        start: dsMockUtils.createMockMoment(date.getTime()),
-        end: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(date.getTime())),
+        venue_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        start: dsMockUtils.createMockMoment(new BigNumber(date.getTime())),
+        end: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(date.getTime()))
+        ),
         status: dsMockUtils.createMockFundraiserStatus('Live'),
-        minimum_investment: dsMockUtils.createMockBalance(minInvestmentValue.toNumber()),
+        minimum_investment: dsMockUtils.createMockBalance(minInvestmentValue),
         /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
@@ -145,11 +148,13 @@ describe('Offering class', () => {
 
     test('should return details for an Asset offering', async () => {
       const fakeResult = {
-        creator: entityMockUtils.getIdentityInstance({ did: someDid }),
+        creator: expect.objectContaining({ did: someDid }),
         name,
-        offeringPortfolio: entityMockUtils.getDefaultPortfolioInstance({ did: someDid }),
-        raisingPortfolio: entityMockUtils.getNumberedPortfolioInstance({
-          did: otherDid,
+        offeringPortfolio: expect.objectContaining({
+          owner: expect.objectContaining({ did: someDid }),
+        }),
+        raisingPortfolio: expect.objectContaining({
+          owner: expect.objectContaining({ did: otherDid }),
           id: new BigNumber(1),
         }),
         raisingCurrency,
@@ -160,7 +165,7 @@ describe('Offering class', () => {
             remaining: remaining.shiftedBy(-6),
           },
         ],
-        venue: entityMockUtils.getVenueInstance({ id: new BigNumber(1) }),
+        venue: expect.objectContaining({ id: new BigNumber(1) }),
         start: date,
         end: date,
         status: {
@@ -310,8 +315,8 @@ describe('Offering class', () => {
       );
 
       let result = await offering.getInvestments({
-        size: 5,
-        start: 0,
+        size: new BigNumber(5),
+        start: new BigNumber(0),
       });
 
       const { data } = result;

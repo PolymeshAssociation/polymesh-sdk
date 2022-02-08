@@ -50,7 +50,7 @@ jest.mock(
 describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: sinon.SinonStub;
+  let bigNumberToBalanceStub: sinon.SinonStub;
   let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
@@ -94,7 +94,7 @@ describe('createAsset procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     internalAssetTypeToAssetTypeStub = sinon.stub(
@@ -129,7 +129,7 @@ describe('createAsset procedure', () => {
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawName = dsMockUtils.createMockAssetName(name);
-    rawInitialSupply = dsMockUtils.createMockBalance(initialSupply.toNumber());
+    rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
     rawType = dsMockUtils.createMockAssetType(assetType as KnownAssetType);
     rawIdentifiers = securityIdentifiers.map(({ type, value }) =>
@@ -149,7 +149,7 @@ describe('createAsset procedure', () => {
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
         filing_date: dsMockUtils.createMockOption(
-          filedAt ? dsMockUtils.createMockMoment(filedAt.getTime()) : null
+          filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
         /* eslint-enable @typescript-eslint/naming-convention */
       })
@@ -190,7 +190,9 @@ describe('createAsset procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(initialSupply, mockContext, isDivisible).returns(rawInitialSupply);
+    bigNumberToBalanceStub
+      .withArgs(initialSupply, mockContext, isDivisible)
+      .returns(rawInitialSupply);
     stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
@@ -223,7 +225,6 @@ describe('createAsset procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -271,7 +272,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toMatchObject(expect.objectContaining({ ticker }));
 
     await prepareCreateAsset.call(proc, {
       ...args,
@@ -321,7 +322,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
 
     proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
@@ -346,7 +347,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {
@@ -380,7 +381,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a document add transaction to the queue', async () => {
@@ -388,7 +389,7 @@ describe('createAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: {
         rawValue,
-        id: dsMockUtils.createMockU32(10),
+        id: dsMockUtils.createMockU32(new BigNumber(10)),
       },
       status: TickerReservationStatus.Reserved,
     });
@@ -399,11 +400,11 @@ describe('createAsset procedure', () => {
     sinon.assert.calledWith(addTransactionStub, {
       transaction: tx,
       isCritical: false,
-      feeMultiplier: rawDocuments.length,
+      feeMultiplier: new BigNumber(rawDocuments.length),
       args: [rawDocuments, rawTicker],
     });
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
@@ -419,7 +420,7 @@ describe('createAsset procedure', () => {
     const createAssetTx = dsMockUtils.createTxStub('asset', 'createAsset');
 
     const newCustomType = dsMockUtils.createMockAssetType({
-      Custom: dsMockUtils.createMockU32(10),
+      Custom: dsMockUtils.createMockU32(new BigNumber(10)),
     });
     addTransactionStub
       .withArgs(sinon.match({ transaction: registerAssetTypeTx, args: [rawValue] }))
@@ -448,13 +449,13 @@ describe('createAsset procedure', () => {
       })
     );
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('createRegisterCustomAssetTypeResolver', () => {
     const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
-    const rawId = dsMockUtils.createMockU32(id.toNumber());
+    const rawId = dsMockUtils.createMockU32(id);
     const rawValue = dsMockUtils.createMockBytes('something');
 
     beforeEach(() => {
@@ -527,7 +528,7 @@ describe('createAsset procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
         customTypeData: {
-          id: dsMockUtils.createMockU32(10),
+          id: dsMockUtils.createMockU32(new BigNumber(10)),
           rawValue: dsMockUtils.createMockBytes('something'),
         },
         status: TickerReservationStatus.Reserved,
@@ -548,7 +549,7 @@ describe('createAsset procedure', () => {
 
       proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
         customTypeData: {
-          id: dsMockUtils.createMockU32(10),
+          id: dsMockUtils.createMockU32(new BigNumber(10)),
           rawValue: dsMockUtils.createMockBytes('something'),
         },
         status: TickerReservationStatus.Free,
@@ -573,10 +574,14 @@ describe('createAsset procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: null,
-        status: TickerReservationStatus.Reserved,
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: null,
+            status: TickerReservationStatus.Reserved,
+          },
+        },
       });
 
       let result = await boundFunc({ assetType: KnownAssetType.EquityCommon } as Params);
@@ -607,7 +612,7 @@ describe('createAsset procedure', () => {
         status: TickerReservationStatus.Reserved,
       });
 
-      id = dsMockUtils.createMockU32(10);
+      id = dsMockUtils.createMockU32(new BigNumber(10));
       customTypesStub.resolves(id);
 
       result = await boundFunc({ assetType: 'something' } as Params);

@@ -39,7 +39,6 @@ describe('AccountManagement class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -166,6 +165,26 @@ describe('AccountManagement class', () => {
     });
   });
 
+  describe('method: subsidizeAccount', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        beneficiary: 'someAccount',
+        allowance: new BigNumber(1000),
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await accountManagement.subsidizeAccount(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: getAccount', () => {
     test('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
@@ -224,7 +243,12 @@ describe('AccountManagement class', () => {
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(accountBalanceStub, callback);
 
-      accountBalanceStub = entityMockUtils.getAccountGetBalanceStub().resolves(unsubCallback);
+      accountBalanceStub = sinon.stub().resolves(unsubCallback);
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getBalance: accountBalanceStub,
+        },
+      });
       const account = 'someId';
       result = await accountManagement.getAccountBalance({ account }, callback);
       expect(result).toEqual(unsubCallback);

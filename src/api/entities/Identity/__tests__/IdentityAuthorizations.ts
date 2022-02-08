@@ -34,7 +34,6 @@ describe('IdentityAuthorizations class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -79,9 +78,9 @@ describe('IdentityAuthorizations class', () => {
 
       const authorizations = authParams.map(({ authId, expiry, data }) =>
         dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+          auth_id: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
-            expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
+            expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
           authorization_data: dsMockUtils.createMockAuthorizationData({
             TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),

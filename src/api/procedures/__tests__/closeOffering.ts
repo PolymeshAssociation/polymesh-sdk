@@ -23,7 +23,7 @@ describe('closeOffering procedure', () => {
   const id = new BigNumber(1);
 
   const rawTicker = dsMockUtils.createMockTicker(ticker);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -45,7 +45,7 @@ describe('closeOffering procedure', () => {
     procedureMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'numberToU64').returns(rawId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
   });
 
   beforeEach(() => {
@@ -61,7 +61,6 @@ describe('closeOffering procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -108,7 +107,7 @@ describe('closeOffering procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.sto.Stop],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

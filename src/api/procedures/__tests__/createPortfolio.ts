@@ -51,7 +51,6 @@ describe('createPortfolio procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -89,7 +88,7 @@ describe('createPortfolioResolver', () => {
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const id = new BigNumber(1);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
 

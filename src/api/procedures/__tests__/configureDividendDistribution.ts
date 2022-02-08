@@ -85,9 +85,9 @@ describe('configureDividendDistribution procedure', () => {
   let distributeTransaction: PolymeshTx<unknown[]>;
 
   let stringToTickerStub: sinon.SinonStub;
-  let numberToU64Stub: sinon.SinonStub;
+  let bigNumberToU64Stub: sinon.SinonStub;
   let dateToMomentStub: sinon.SinonStub;
-  let numberToBalanceStub: sinon.SinonStub;
+  let bigNumberToBalanceStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -106,7 +106,7 @@ describe('configureDividendDistribution procedure', () => {
     taxWithholdings = [{ identity: 'someDid', percentage: new BigNumber(30) }];
     originPortfolio = entityMockUtils.getNumberedPortfolioInstance({
       id: new BigNumber(2),
-      assetBalances: [
+      getAssetBalances: [
         {
           asset: entityMockUtils.getAssetInstance({ ticker: currency }),
           total: new BigNumber(1000001),
@@ -121,20 +121,20 @@ describe('configureDividendDistribution procedure', () => {
     paymentDate = new Date(checkpoint.getTime() + 60 * 60 * 1000);
     expiryDate = new Date(paymentDate.getTime() + 60 * 60 * 1000 * 24 * 365);
 
-    rawPortfolioNumber = dsMockUtils.createMockU64(originPortfolio.id.toNumber());
+    rawPortfolioNumber = dsMockUtils.createMockU64(originPortfolio.id);
     rawCurrency = dsMockUtils.createMockTicker(currency);
-    rawPerShare = dsMockUtils.createMockBalance(perShare.toNumber());
-    rawAmount = dsMockUtils.createMockBalance(maxAmount.toNumber());
-    rawPaymentAt = dsMockUtils.createMockMoment(paymentDate.getTime());
-    rawExpiresAt = dsMockUtils.createMockMoment(expiryDate.getTime());
+    rawPerShare = dsMockUtils.createMockBalance(perShare);
+    rawAmount = dsMockUtils.createMockBalance(maxAmount);
+    rawPaymentAt = dsMockUtils.createMockMoment(new BigNumber(paymentDate.getTime()));
+    rawExpiresAt = dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()));
 
     rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
     distribution = 'distribution' as unknown as PostTransactionValue<DividendDistribution>;
 
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
@@ -145,11 +145,11 @@ describe('configureDividendDistribution procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(currency, mockContext).returns(rawCurrency);
-    numberToU64Stub.withArgs(originPortfolio.id, mockContext).returns(rawPortfolioNumber);
+    bigNumberToU64Stub.withArgs(originPortfolio.id, mockContext).returns(rawPortfolioNumber);
     dateToMomentStub.withArgs(paymentDate, mockContext).returns(rawPaymentAt);
     dateToMomentStub.withArgs(expiryDate, mockContext).returns(rawExpiresAt);
-    numberToBalanceStub.withArgs(perShare, mockContext).returns(rawPerShare);
-    numberToBalanceStub.withArgs(maxAmount, mockContext).returns(rawAmount);
+    bigNumberToBalanceStub.withArgs(perShare, mockContext).returns(rawPerShare);
+    bigNumberToBalanceStub.withArgs(maxAmount, mockContext).returns(rawAmount);
   });
 
   afterEach(() => {
@@ -159,7 +159,6 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -318,7 +317,7 @@ describe('configureDividendDistribution procedure', () => {
       mockContext,
       {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
-          assetBalances: [
+          getAssetBalances: [
             {
               asset: entityMockUtils.getAssetInstance({ ticker: currency }),
               total: new BigNumber(1),
@@ -471,7 +470,7 @@ describe('configureDividendDistribution procedure', () => {
     proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: entityMockUtils.getDefaultPortfolioInstance({
         did: 'someDid',
-        assetBalances: [
+        getAssetBalances: [
           {
             asset: entityMockUtils.getAssetInstance({ ticker: currency }),
             total: new BigNumber(1000001),
@@ -509,7 +508,7 @@ describe('configureDividendDistribution procedure', () => {
   describe('dividendDistributionResolver', () => {
     const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
-    const portfolioNumber = 3;
+    const portfolioNumber = new BigNumber(3);
     const did = 'someDid';
 
     let rawCorporateAction: CorporateAction;
@@ -521,29 +520,32 @@ describe('configureDividendDistribution procedure', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       rawCorporateAction = dsMockUtils.createMockCorporateAction({
         kind: 'UnpredictableBenefit',
-        decl_date: declarationDate.getTime(),
+        decl_date: new BigNumber(declarationDate.getTime()),
         record_date: dsMockUtils.createMockRecordDate({
-          date: new Date('10/14/2021').getTime(),
+          date: new BigNumber(new Date('10/14/2021').getTime()),
           checkpoint: {
-            Scheduled: [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)],
+            Scheduled: [
+              dsMockUtils.createMockU64(new BigNumber(1)),
+              dsMockUtils.createMockU64(new BigNumber(2)),
+            ],
           },
         }),
         targets,
-        default_withholding_tax: defaultTaxWithholding.shiftedBy(4).toNumber(),
+        default_withholding_tax: defaultTaxWithholding.shiftedBy(4),
         withholding_tax: taxWithholdings.map(({ identity, percentage }) =>
-          tuple(identity, percentage.shiftedBy(4).toNumber())
+          tuple(identity, percentage.shiftedBy(4))
         ),
       });
       rawDistribution = dsMockUtils.createMockDistribution({
         from: { did, kind: { User: dsMockUtils.createMockU64(portfolioNumber) } },
         currency,
-        per_share: perShare.shiftedBy(6).toNumber(),
-        amount: maxAmount.shiftedBy(6).toNumber(),
-        remaining: 10000,
+        per_share: perShare.shiftedBy(6),
+        amount: maxAmount.shiftedBy(6),
+        remaining: new BigNumber(10000),
         reclaimed: false,
-        payment_at: paymentDate.getTime(),
+        payment_at: new BigNumber(paymentDate.getTime()),
         expires_at: dsMockUtils.createMockOption(
-          dsMockUtils.createMockMoment(expiryDate?.getTime())
+          dsMockUtils.createMockMoment(new BigNumber(expiryDate?.getTime()))
         ),
       });
       /* eslint-enable @typescript-eslint/naming-convention */
@@ -563,7 +565,7 @@ describe('configureDividendDistribution procedure', () => {
           'data',
           dsMockUtils.createMockCAId({
             ticker,
-            local_id: id.toNumber(),
+            local_id: id,
           }),
           rawDistribution,
         ]),
@@ -586,7 +588,7 @@ describe('configureDividendDistribution procedure', () => {
       expect(result.description).toEqual(description);
       expect(result.targets).toEqual({
         identities: targets.identities.map(targetDid =>
-          entityMockUtils.getIdentityInstance({ did: targetDid })
+          expect.objectContaining({ did: targetDid })
         ),
 
         treatment: targets.treatment,
@@ -594,12 +596,15 @@ describe('configureDividendDistribution procedure', () => {
       expect(result.defaultTaxWithholding).toEqual(defaultTaxWithholding);
       expect(result.taxWithholdings).toEqual([
         {
-          identity: entityMockUtils.getIdentityInstance({ did: taxWithholdings[0].identity }),
+          identity: expect.objectContaining({ did: taxWithholdings[0].identity }),
           percentage: taxWithholdings[0].percentage,
         },
       ]);
       expect(result.origin).toEqual(
-        entityMockUtils.getNumberedPortfolioInstance({ did, id: new BigNumber(portfolioNumber) })
+        expect.objectContaining({
+          owner: expect.objectContaining({ did }),
+          id: new BigNumber(portfolioNumber),
+        })
       );
       expect(result.currency).toEqual(currency);
       expect(result.maxAmount).toEqual(maxAmount);
@@ -628,7 +633,7 @@ describe('configureDividendDistribution procedure', () => {
         ],
         permissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [originPortfolio],
         },
       });
@@ -658,7 +663,8 @@ describe('configureDividendDistribution procedure', () => {
       result = await boundFunc({ originPortfolio: portfolioId } as Params);
 
       expect(result).toEqual({
-        portfolio: entityMockUtils.getNumberedPortfolioInstance({
+        portfolio: expect.objectContaining({
+          owner: expect.objectContaining({ did }),
           id: portfolioId,
         }),
       });
@@ -666,7 +672,7 @@ describe('configureDividendDistribution procedure', () => {
       result = await boundFunc({} as Params);
 
       expect(result).toEqual({
-        portfolio: entityMockUtils.getDefaultPortfolioInstance({ did }),
+        portfolio: expect.objectContaining({ owner: expect.objectContaining({ did }) }),
       });
     });
   });

@@ -17,7 +17,7 @@ describe('claimDividends procedure', () => {
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
   let distribution: DividendDistribution;
@@ -48,7 +48,6 @@ describe('claimDividends procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -131,6 +130,8 @@ describe('claimDividends procedure', () => {
       paymentDate,
       getParticipant: {
         paid: true,
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: new BigNumber(100),
       },
     });
 
@@ -152,6 +153,8 @@ describe('claimDividends procedure', () => {
       paymentDate,
       getParticipant: {
         paid: false,
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: new BigNumber(100),
       },
     });
 

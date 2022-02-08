@@ -26,13 +26,13 @@ import {
 import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
+  bigNumberToU64,
   identityIdToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   middlewareEventToEventIdentifier,
   momentToDate,
-  numberToU64,
   tickerToString,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -142,7 +142,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const [{ status }, exists] = await Promise.all([
-      settlement.instructionDetails(numberToU64(id, context)),
+      settlement.instructionDetails(bigNumberToU64(id, context)),
       this.exists(),
     ]);
 
@@ -165,7 +165,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const { status } = await settlement.instructionDetails(numberToU64(id, context));
+    const { status } = await settlement.instructionDetails(bigNumberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
@@ -211,7 +211,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       value_date: valueDate,
       settlement_type: type,
       venue_id: venueId,
-    } = await settlement.instructionDetails(numberToU64(id, context));
+    } = await settlement.instructionDetails(bigNumberToU64(id, context));
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
@@ -275,7 +275,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     const { entries, lastKey: next } = await requestPaginated(settlement.affirmsReceived, {
-      arg: numberToU64(id, context),
+      arg: bigNumberToU64(id, context),
       paginationOpts,
     });
 
@@ -319,7 +319,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     const { entries: legs, lastKey: next } = await requestPaginated(settlement.instructionLegs, {
-      arg: numberToU64(id, context),
+      arg: bigNumberToU64(id, context),
       paginationOpts,
     });
 

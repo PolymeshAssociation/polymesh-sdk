@@ -4,7 +4,7 @@ import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareRedeemTokens } from '~/api/procedures/redeemTokens';
-import { Asset, Context, DefaultPortfolio } from '~/internal';
+import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, TxTags } from '~/types';
@@ -29,8 +29,8 @@ describe('redeemTokens procedure', () => {
   let amount: BigNumber;
   let rawAmount: Balance;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToBalanceStub: sinon.SinonStub<
-    [number | BigNumber, Context, (boolean | undefined)?],
+  let bigNumberToBalanceStub: sinon.SinonStub<
+    [BigNumber, Context, (boolean | undefined)?],
     Balance
   >;
 
@@ -41,16 +41,16 @@ describe('redeemTokens procedure', () => {
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawAmount = dsMockUtils.createMockBalance(amount);
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
   });
 
   afterEach(() => {
@@ -60,7 +60,6 @@ describe('redeemTokens procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -77,11 +76,11 @@ describe('redeemTokens procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [
+        getAssetBalances: [
           {
-            asset: new Asset({ ticker }, mockContext),
+            asset: entityMockUtils.getAssetInstance({ ticker }),
             free: new BigNumber(500),
-          } as PortfolioBalance,
+          } as unknown as PortfolioBalance,
         ],
       },
     });
@@ -102,11 +101,11 @@ describe('redeemTokens procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [
+        getAssetBalances: [
           {
-            asset: new Asset({ ticker }, mockContext),
+            asset: entityMockUtils.getAssetInstance({ ticker }),
             free: new BigNumber(0),
-          } as PortfolioBalance,
+          } as unknown as PortfolioBalance,
         ],
       },
     });
@@ -139,8 +138,10 @@ describe('redeemTokens procedure', () => {
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.asset.Redeem],
-          assets: [new Asset({ ticker }, mockContext)],
-          portfolios: [new DefaultPortfolio({ did: someDid }, mockContext)],
+          assets: [expect.objectContaining({ ticker })],
+          portfolios: [
+            expect.objectContaining({ owner: expect.objectContaining({ did: someDid }) }),
+          ],
         },
       });
     });

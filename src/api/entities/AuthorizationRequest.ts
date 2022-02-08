@@ -19,7 +19,7 @@ import {
   SignerValue,
 } from '~/types';
 import { HumanReadableType } from '~/types/utils';
-import { numberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { bigNumberToU64, signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -202,7 +202,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     const auth = await context.polymeshApi.query.identity.authorizations(
       signerValueToSignatory(signerToSignerValue(target), context),
-      numberToU64(authId, context)
+      bigNumberToU64(authId, context)
     );
 
     return auth.isSome;

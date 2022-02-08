@@ -14,9 +14,9 @@ import {
 } from '~/internal';
 import { GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
 import {
+  bigNumberToU64,
   identityIdToString,
   meshVenueTypeToVenueType,
-  numberToU64,
   u64ToBigNumber,
   venueDetailsToString,
 } from '~/utils/conversion';
@@ -66,14 +66,14 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     this.addInstruction = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venue: this }],
+        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venueId: this.id }],
         transformer: addInstructionTransformer,
       },
       context
     );
 
     this.addInstructions = createProcedureMethod(
-      { getProcedureAndArgs: args => [addInstruction, { ...args, venue: this }] },
+      { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: this.id }] },
       context
     );
 
@@ -97,7 +97,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+    const venueInfo = await settlement.venueInfo(bigNumberToU64(id, context));
 
     return !venueInfo.isNone;
   }
@@ -116,7 +116,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const venueId = numberToU64(id, context);
+    const venueId = bigNumberToU64(id, context);
     const [venueInfo, details] = await Promise.all([
       settlement.venueInfo(venueId),
       settlement.details(venueId),
@@ -187,7 +187,9 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const instructionEntries = await settlement.venueInstructions.entries(numberToU64(id, context));
+    const instructionEntries = await settlement.venueInstructions.entries(
+      bigNumberToU64(id, context)
+    );
 
     return instructionEntries.map(
       ([

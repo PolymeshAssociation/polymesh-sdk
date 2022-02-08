@@ -84,14 +84,13 @@ describe('createGroup procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   describe('createCreateGroupResolver', () => {
     const agId = new BigNumber(1);
-    const rawAgId = dsMockUtils.createMockU64(agId.toNumber());
+    const rawAgId = dsMockUtils.createMockU64(agId);
     sinon
       .stub(utilsInternalModule, 'filterEventRecords')
       .returns([dsMockUtils.createMockIEvent(['someDid', rawTicker, rawAgId])]);
@@ -265,7 +264,7 @@ describe('createGroup procedure', () => {
       const result = boundFunc({ ticker } as Params);
 
       expect(result).toEqual({
-        asset: entityMockUtils.getAssetInstance({ ticker }),
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
@@ -285,7 +284,7 @@ describe('createGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.CreateGroup],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -29,7 +29,7 @@ jest.mock(
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let authParams: {
     authId: BigNumber;
@@ -54,7 +54,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     sinon.stub(utilsConversionModule, 'addressToKey');
     dsMockUtils.createQueryStub('identity', 'authorizations', {
@@ -64,7 +64,7 @@ describe('consumeAuthorizationRequests procedure', () => {
           authorization_data: dsMockUtils.createMockAuthorizationData({
             TransferTicker: dsMockUtils.createMockTicker('TICKER'),
           }),
-          auth_id: 1,
+          auth_id: new BigNumber(1),
           authorized_by: 'someDid',
           expiry: dsMockUtils.createMockOption(),
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -155,9 +155,9 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       auths.push(new AuthorizationRequest(params, mockContext));
 
-      const rawAuthId = dsMockUtils.createMockU64(authId.toNumber());
+      const rawAuthId = dsMockUtils.createMockU64(authId);
       rawAuthIds.push([rawAuthId]);
-      numberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
+      bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
       const rawSignatory = dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(signerValue.value),
       });
@@ -187,7 +187,6 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

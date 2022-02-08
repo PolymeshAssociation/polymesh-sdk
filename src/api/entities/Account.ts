@@ -28,7 +28,7 @@ import {
   SignerType,
   SimplePermissions,
   SubCallback,
-  Subsidy,
+  SubsidyWithAllowance,
   TransactionPermissions,
   TxTag,
   TxTags,
@@ -136,15 +136,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public getSubsidy(): Promise<Omit<Subsidy, 'beneficiary'> | null>;
-  public getSubsidy(
-    callback: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
-  ): Promise<UnsubCallback>;
+  public getSubsidy(): Promise<SubsidyWithAllowance | null>;
+  public getSubsidy(callback: SubCallback<SubsidyWithAllowance | null>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public getSubsidy(
-    callback?: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
-  ): Promise<Omit<Subsidy, 'beneficiary'> | null | UnsubCallback> {
+    callback?: SubCallback<SubsidyWithAllowance | null>
+  ): Promise<SubsidyWithAllowance | null | UnsubCallback> {
     const { context, address } = this;
 
     if (callback) {
@@ -197,8 +195,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       blockHash?: string;
       tag?: TxTag;
       success?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
       orderBy?: TransactionOrderByInput;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
@@ -231,17 +229,19 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         module_id: moduleId,
         call_id: callId,
         success,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
         orderBy,
       })
     );
 
     const {
       data: {
-        transactions: { items: transactionList, totalCount: count },
+        transactions: { items: transactionList, totalCount },
       },
     } = result;
+
+    const count = new BigNumber(totalCount);
 
     const data = transactionList.map(
       ({
@@ -262,13 +262,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         return {
           blockNumber: new BigNumber(block_id),
           blockHash: block!.hash!,
-          extrinsicIdx: extrinsic_idx,
+          extrinsicIdx: new BigNumber(extrinsic_idx),
           address: rawAddress ?? null,
-          nonce: nonce!,
+          nonce: nonce ? new BigNumber(nonce) : null,
           txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
           params,
           success: !!txSuccess,
-          specVersionId: spec_version_id,
+          specVersionId: new BigNumber(spec_version_id),
           extrinsicHash: extrinsic_hash!,
         };
         /* eslint-enable @typescript-eslint/no-non-null-assertion */

@@ -19,7 +19,6 @@ import {
   Instruction,
   NumberedPortfolio,
   PostTransactionValue,
-  Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -46,9 +45,9 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioStub: sinon.SinonStub;
   let getCustodianStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let numberToBalanceStub: sinon.SinonStub<
-    [number | BigNumber, Context, (boolean | undefined)?],
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let bigNumberToBalanceStub: sinon.SinonStub<
+    [BigNumber, Context, (boolean | undefined)?],
     Balance
   >;
   let endConditionToSettlementTypeStub: sinon.SinonStub<
@@ -75,7 +74,6 @@ describe('addInstruction procedure', () => {
   let valueDate: Date;
   let endBlock: BigNumber;
   let args: Params;
-  let venue: Mocked<Venue>;
 
   let rawVenueId: u64;
   let rawAmount: Balance;
@@ -113,10 +111,10 @@ describe('addInstruction procedure', () => {
       'portfolioLikeToPortfolioId'
     );
     portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
-    getCustodianStub = entityMockUtils.getNumberedPortfolioGetCustodianStub();
+    getCustodianStub = sinon.stub();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     endConditionToSettlementTypeStub = sinon.stub(
       utilsConversionModule,
       'endConditionToSettlementType'
@@ -141,8 +139,8 @@ describe('addInstruction procedure', () => {
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
     endBlock = new BigNumber(1000);
-    rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawVenueId = dsMockUtils.createMockU64(venueId);
+    rawAmount = dsMockUtils.createMockBalance(amount);
     rawFrom = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(from),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -152,9 +150,9 @@ describe('addInstruction procedure', () => {
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     rawTicker = dsMockUtils.createMockTicker(asset);
-    rawTradeDate = dsMockUtils.createMockMoment(tradeDate.getTime());
-    rawValueDate = dsMockUtils.createMockMoment(valueDate.getTime());
-    rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
+    rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
+    rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
+    rawEndBlock = dsMockUtils.createMockU32(endBlock);
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawLeg = {
@@ -190,7 +188,8 @@ describe('addInstruction procedure', () => {
       .getAddBatchTransactionStub()
       .returns([instruction]);
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
+    const tickerReservationDetailsStub = sinon.stub();
+    tickerReservationDetailsStub.resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.Free,
@@ -214,9 +213,17 @@ describe('addInstruction procedure', () => {
     portfolioIdToMeshPortfolioIdStub.withArgs({ did: toDid }, mockContext).returns(rawTo);
     getCustodianStub.onCall(0).returns({ did: fromDid });
     getCustodianStub.onCall(1).returns({ did: toDid });
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        getCustodian: getCustodianStub,
+      },
+      tickerReservationOptions: {
+        details: tickerReservationDetailsStub,
+      },
+    });
     stringToTickerStub.withArgs(asset, mockContext).returns(rawTicker);
-    numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
-    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    bigNumberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
+    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     endConditionToSettlementTypeStub
       .withArgs({ type: InstructionType.SettleOnBlock, value: endBlock }, mockContext)
       .returns(rawBlockSettlementType);
@@ -226,9 +233,8 @@ describe('addInstruction procedure', () => {
     dateToMomentStub.withArgs(tradeDate, mockContext).returns(rawTradeDate);
     dateToMomentStub.withArgs(valueDate, mockContext).returns(rawValueDate);
 
-    venue = entityMockUtils.getVenueInstance({ id: venueId });
     args = {
-      venue,
+      venueId,
       instructions: [
         {
           legs: [
@@ -252,7 +258,6 @@ describe('addInstruction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -265,7 +270,7 @@ describe('addInstruction procedure', () => {
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [] });
     } catch (err) {
       error = err;
     }
@@ -279,10 +284,14 @@ describe('addInstruction procedure', () => {
       portfoliosToAffirm: [],
     });
 
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+    });
+
     let error;
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs: [] }] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
     } catch (err) {
       error = err;
     }
@@ -290,6 +299,27 @@ describe('addInstruction procedure', () => {
     expect(error.message).toBe("The legs array can't be empty");
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
+  test("should throw an error if the Venue doesn't exist", async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: false },
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("The Venue doesn't exist");
+    expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 
   test('should throw an error if the legs array exceeds limit', async () => {
@@ -313,7 +343,7 @@ describe('addInstruction procedure', () => {
     });
 
     try {
-      await prepareAddInstruction.call(proc, { venue, instructions: [{ legs }] });
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
     } catch (err) {
       error = err;
     }
@@ -339,7 +369,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venue,
+        venueId,
         instructions: [
           {
             legs: [
@@ -378,7 +408,7 @@ describe('addInstruction procedure', () => {
 
     try {
       await prepareAddInstruction.call(proc, {
-        venue,
+        venueId,
         instructions: [
           {
             legs: [
@@ -445,7 +475,7 @@ describe('addInstruction procedure', () => {
     });
 
     const result = await prepareAddInstruction.call(proc, {
-      venue,
+      venueId,
       instructions: [
         {
           legs: [
@@ -486,7 +516,7 @@ describe('addInstruction procedure', () => {
       let boundFunc = getAuthorization.bind(proc);
 
       let result = await boundFunc({
-        venue,
+        venueId,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
@@ -507,7 +537,7 @@ describe('addInstruction procedure', () => {
       boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc({
-        venue,
+        venueId,
         instructions: [
           { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
@@ -559,7 +589,7 @@ describe('addInstruction procedure', () => {
 describe('createAddInstructionResolver', () => {
   const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
 
   beforeAll(() => {
     entityMockUtils.initMocks({

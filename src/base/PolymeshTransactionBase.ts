@@ -220,8 +220,8 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       gettingUnsub
         .then(() => {
           // tx approved by signer
-          this.updateStatus(TransactionStatus.Running);
           this.txHash = txWithArgs.hash.toString();
+          this.updateStatus(TransactionStatus.Running);
         })
         .catch((err: Error) => {
           let error;
@@ -280,13 +280,16 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       };
     }
 
-    const subsidy = await context.accountSubsidy();
+    const subsidyWithAllowance = await context.accountSubsidy();
 
-    if (!subsidy) {
+    if (!subsidyWithAllowance) {
       return null;
     }
 
-    const { subsidizer: account, allowance } = subsidy;
+    const {
+      subsidy: { subsidizer: account },
+      allowance,
+    } = subsidyWithAllowance;
 
     return {
       type: PayingAccountType.Subsidy,

@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import {
   ComplianceRequirement,
   Condition as MeshCondition,
@@ -69,7 +70,7 @@ describe('addAssetRequirement procedure', () => {
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(50),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
@@ -91,7 +92,6 @@ describe('addAssetRequirement procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -103,7 +103,7 @@ describe('addAssetRequirement procedure', () => {
           requirements: [
             {
               conditions,
-              id: 1,
+              id: new BigNumber(1),
             },
           ],
           defaultTrustedClaimIssuers: [],
@@ -123,13 +123,13 @@ describe('addAssetRequirement procedure', () => {
     const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
     requirementToComplianceRequirementStub
-      .withArgs({ conditions: fakeConditions, id: 1 }, mockContext)
+      .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
       .returns(
         dsMockUtils.createMockComplianceRequirement({
           /* eslint-disable @typescript-eslint/naming-convention */
           sender_conditions: fakeSenderConditions,
           receiver_conditions: fakeReceiverConditions,
-          id: dsMockUtils.createMockU32(1),
+          id: dsMockUtils.createMockU32(new BigNumber(1)),
           /* eslint-enable @typescript-eslint/naming-convention */
         })
       );
@@ -146,7 +146,7 @@ describe('addAssetRequirement procedure', () => {
       args: [rawTicker, fakeSenderConditions, fakeReceiverConditions],
     });
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -160,7 +160,7 @@ describe('addAssetRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.AddComplianceRequirement],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -39,7 +39,6 @@ describe('Transaction Queue class', () => {
 
   afterAll(() => {
     jest.useRealTimers();
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
@@ -76,9 +75,9 @@ describe('Transaction Queue class', () => {
 
       let transactions = polymeshTransactionMockUtils.setupNextTransactions(transactionSpecs);
 
-      const procedureResult = 3;
+      const procedureResult = new BigNumber(3);
       let queue = new TransactionQueue(
-        { transactions, procedureResult, transformer: (val: number): string => `${val}` },
+        { transactions, procedureResult, transformer: (val: BigNumber): string => val.toString() },
         context
       );
 

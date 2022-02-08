@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import {
   Claim as MeshClaim,
   IdentityId,
@@ -124,7 +125,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
       scope_id: scopeId,
     });
     /* eslint-enable @typescript-eslint/naming-convention */
-    rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
+    rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
   });
 
   beforeEach(() => {
@@ -168,7 +169,6 @@ describe('addInvestorUniquenessClaim procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

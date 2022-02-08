@@ -387,7 +387,7 @@ describe('AuthorizationRequest class', () => {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
             /* eslint-disable @typescript-eslint/naming-convention */
-            auth_id: 1,
+            auth_id: new BigNumber(1),
             authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
             authorized_by: 'someDid',
             expiry: dsMockUtils.createMockOption(),

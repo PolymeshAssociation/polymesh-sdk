@@ -16,20 +16,20 @@ jest.mock(
 
 describe('rescheduleInstruction procedure', () => {
   const id = new BigNumber(1);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
   let mockContext: Mocked<Context>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    numberToU64Stub.withArgs(id, mockContext).returns(rawId);
+    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
@@ -46,7 +46,6 @@ describe('rescheduleInstruction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

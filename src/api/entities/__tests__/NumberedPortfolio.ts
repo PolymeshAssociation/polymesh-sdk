@@ -38,7 +38,6 @@ describe('NumberedPortfolio class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -50,10 +49,9 @@ describe('NumberedPortfolio class', () => {
     test('should assign Identity and id to instance', () => {
       const did = 'someDid';
       const id = new BigNumber(1);
-      const identity = entityMockUtils.getIdentityInstance({ did });
       const portfolio = new NumberedPortfolio({ did, id }, context);
 
-      expect(portfolio.owner).toEqual(identity);
+      expect(portfolio.owner.did).toBe(did);
       expect(portfolio.id).toEqual(id);
     });
   });
@@ -142,7 +140,7 @@ describe('NumberedPortfolio class', () => {
     test('should return the event identifier object of the portfolio creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
@@ -151,7 +149,7 @@ describe('NumberedPortfolio class', () => {
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
-          event_idx: eventIdx,
+          event_idx: eventIdx.toNumber(),
         },
         /* eslint-enable @typescript-eslint/naming-convention */
       });
@@ -177,22 +175,22 @@ describe('NumberedPortfolio class', () => {
       const portfolioId = new BigNumber(0);
 
       const portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
-        size: 0,
+        size: new BigNumber(0),
       });
 
       sinon
         .stub(utilsConversionModule, 'stringToIdentityId')
         .returns(dsMockUtils.createMockIdentityId(did));
       sinon
-        .stub(utilsConversionModule, 'numberToU64')
-        .returns(dsMockUtils.createMockU64(portfolioId.toNumber()));
+        .stub(utilsConversionModule, 'bigNumberToU64')
+        .returns(dsMockUtils.createMockU64(portfolioId));
 
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       let result = await numberedPortfolio.exists();
       expect(result).toBe(false);
 
-      portfoliosStub.size.resolves(dsMockUtils.createMockU64(10));
+      portfoliosStub.size.resolves(dsMockUtils.createMockU64(new BigNumber(10)));
 
       result = await numberedPortfolio.exists();
       expect(result).toBe(true);

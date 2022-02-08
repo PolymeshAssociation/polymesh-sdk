@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import {
   ComplianceRequirement,
   Condition as MeshCondition,
@@ -64,7 +65,7 @@ describe('modifyComplianceRequirement procedure', () => {
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(50),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
@@ -84,7 +85,7 @@ describe('modifyComplianceRequirement procedure', () => {
           requirements: [
             {
               conditions,
-              id: 1,
+              id: new BigNumber(1),
             },
           ],
           defaultTrustedClaimIssuers: [],
@@ -100,7 +101,6 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -109,7 +109,7 @@ describe('modifyComplianceRequirement procedure', () => {
     const fakeConditions = ['condition'] as unknown as Condition[];
     args = {
       ticker,
-      id: 2,
+      id: new BigNumber(2),
       conditions: fakeConditions,
     };
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -122,7 +122,7 @@ describe('modifyComplianceRequirement procedure', () => {
   test('should throw an error if the supplied requirement conditions have no change', () => {
     args = {
       ticker,
-      id: 1,
+      id: new BigNumber(1),
       conditions,
     };
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -141,17 +141,17 @@ describe('modifyComplianceRequirement procedure', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       sender_conditions: fakeSenderConditions,
       receiver_conditions: fakeReceiverConditions,
-      id: dsMockUtils.createMockU32(1),
+      id: dsMockUtils.createMockU32(new BigNumber(1)),
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     requirementToComplianceRequirementStub
-      .withArgs({ conditions: fakeConditions, id: 1 }, mockContext)
+      .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
       .returns(rawComplianceRequirement);
 
     args = {
       ticker,
-      id: 1,
+      id: new BigNumber(1),
       conditions: fakeConditions,
     };
 
@@ -176,7 +176,7 @@ describe('modifyComplianceRequirement procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ChangeComplianceRequirement],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

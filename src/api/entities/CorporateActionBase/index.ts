@@ -16,7 +16,7 @@ import {
 import { ErrorCode, InputCaCheckpoint, ProcedureMethod } from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
 import {
-  numberToU32,
+  bigNumberToU32,
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
@@ -246,7 +246,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
 
     const rawTicker = stringToTicker(ticker, context);
 
-    return query.corporateAction.corporateActions(rawTicker, numberToU32(id, context));
+    return query.corporateAction.corporateActions(rawTicker, bigNumberToU32(id, context));
   }
 
   /**

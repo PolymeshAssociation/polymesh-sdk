@@ -8,8 +8,8 @@ import { AuthorizationType, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  bigNumberToU64,
   booleanToBool,
-  numberToU64,
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
@@ -64,7 +64,7 @@ export async function prepareConsumeAuthorizationRequests(
         authId,
         data: { type },
       } = authRequest;
-      const id = tuple(numberToU64(authId, context));
+      const id = tuple(bigNumberToU64(authId, context));
 
       idsPerType[type as AllowedAuthType].push(id);
     });
@@ -87,7 +87,7 @@ export async function prepareConsumeAuthorizationRequests(
     const authIdentifiers = liveRequests.map(({ authId, target }) =>
       tuple(
         signerValueToSignatory(signerToSignerValue(target), context),
-        numberToU64(authId, context),
+        bigNumberToU64(authId, context),
         falseBool
       )
     );

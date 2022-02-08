@@ -104,10 +104,10 @@ describe('DividendDistribution class', () => {
             did: 'someDid',
           },
           currency: 'USD',
-          per_share: 20000000,
-          amount: 50000000000,
-          remaining: 40000000000,
-          payment_at: new Date(new Date().getTime() + 60 * 60 * 1000).getTime(),
+          per_share: new BigNumber(20000000),
+          amount: new BigNumber(50000000000),
+          remaining: new BigNumber(40000000000),
+          payment_at: new BigNumber(new Date(new Date().getTime() + 60 * 60 * 1000).getTime()),
           expires_at: null,
           reclaimed: false,
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -124,7 +124,6 @@ describe('DividendDistribution class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -310,14 +309,6 @@ describe('DividendDistribution class', () => {
   describe('method: getParticipants', () => {
     test('should return the distribution participants', async () => {
       const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
-      dividendDistribution.targets = {
-        identities: [excluded],
-        treatment: TargetTreatment.Exclude,
-      };
-      sinon
-        .stub(dividendDistribution, 'checkpoint')
-        .resolves(entityMockUtils.getCheckpointInstance());
-      const allBalancesStub = entityMockUtils.getCheckpointAllBalancesStub();
 
       const balances = [
         {
@@ -334,8 +325,24 @@ describe('DividendDistribution class', () => {
         },
       ];
 
+      const allBalancesStub = sinon.stub();
+
       allBalancesStub.onFirstCall().resolves({ data: balances, next: 'notNull' });
       allBalancesStub.onSecondCall().resolves({ data: [], next: null });
+
+      entityMockUtils.configureMocks({
+        checkpointOptions: {
+          allBalances: allBalancesStub,
+        },
+      });
+
+      dividendDistribution.targets = {
+        identities: [excluded],
+        treatment: TargetTreatment.Exclude,
+      };
+      sinon
+        .stub(dividendDistribution, 'checkpoint')
+        .resolves(entityMockUtils.getCheckpointInstance());
 
       dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
         multi: [dsMockUtils.createMockBool(true)],
@@ -400,7 +407,7 @@ describe('DividendDistribution class', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       sinon
         .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .returns(dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() }));
+        .returns(dsMockUtils.createMockCAId({ ticker, local_id: id }));
       /* eslint-enable @typescript-eslint/naming-convention */
       sinon.stub(utilsConversionModule, 'boolToBoolean').returns(false);
 
@@ -412,11 +419,9 @@ describe('DividendDistribution class', () => {
         identity: did,
       });
 
-      expect(result).toEqual({
-        identity: entityMockUtils.getIdentityInstance({ did }),
-        amount: balance.multipliedBy(dividendDistribution.perShare),
-        paid: false,
-      });
+      expect(result?.identity.did).toBe(did);
+      expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
+      expect(result?.paid).toBe(false);
 
       dividendDistribution.paymentDate = new Date('10/14/1987');
 
@@ -424,19 +429,15 @@ describe('DividendDistribution class', () => {
         identity: did,
       });
 
-      expect(result).toEqual({
-        identity: entityMockUtils.getIdentityInstance({ did }),
-        amount: balance.multipliedBy(dividendDistribution.perShare),
-        paid: false,
-      });
+      expect(result?.identity.did).toBe(did);
+      expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
+      expect(result?.paid).toBe(false);
 
       result = await dividendDistribution.getParticipant();
 
-      expect(result).toEqual({
-        identity: entityMockUtils.getIdentityInstance(),
-        amount: balance.multipliedBy(dividendDistribution.perShare),
-        paid: false,
-      });
+      expect(result?.identity.did).toBe(did);
+      expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
+      expect(result?.paid).toBe(false);
     });
 
     test("should return null if the distribution checkpoint hasn't been created yet", async () => {
@@ -505,8 +506,8 @@ describe('DividendDistribution class', () => {
           CAId: { ticker, localId: id.toNumber() },
           fromDate: null,
           toDate: null,
-          count: undefined,
-          skip: undefined,
+          count: 1,
+          skip: 0,
         }),
         {
           getHistoryOfPaymentEventsForCA: {
@@ -525,18 +526,19 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      const result = await dividendDistribution.getPaymentHistory();
+      const {
+        data: [result],
+      } = await dividendDistribution.getPaymentHistory({
+        size: new BigNumber(1),
+        start: new BigNumber(0),
+      });
 
-      expect(result.data).toEqual([
-        {
-          blockNumber: blockId,
-          blockHash,
-          date: new Date(`${datetime}Z`),
-          target: entityMockUtils.getIdentityInstance({ did: eventDid }),
-          amount: balance,
-          withheldTax: tax,
-        },
-      ]);
+      expect(result.blockNumber).toEqual(blockId);
+      expect(result.blockHash).toEqual(blockHash);
+      expect(result.date).toEqual(new Date(`${datetime}Z`));
+      expect(result.target.did).toBe(eventDid);
+      expect(result.amount).toEqual(balance);
+      expect(result.withheldTax).toEqual(tax);
     });
 
     test('should return null if the query result is empty', async () => {
@@ -608,9 +610,7 @@ describe('DividendDistribution class', () => {
         expiryDate: null,
         paymentDate: dividendDistribution.paymentDate.toISOString(),
         maxAmount: '10000',
-        origin: {
-          did: 'someDid',
-        },
+        origin: { did: 'someDid' },
         perShare: '10',
       });
     });

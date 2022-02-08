@@ -49,7 +49,6 @@ describe('Checkpoints class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -85,9 +84,10 @@ describe('Checkpoints class', () => {
     test('should return the requested Checkpoint', async () => {
       const id = new BigNumber(1);
 
-      return expect(checkpoints.getOne({ id })).resolves.toEqual(
-        entityMockUtils.getCheckpointInstance({ id })
-      );
+      const result = await checkpoints.getOne({ id });
+
+      expect(result.id).toEqual(id);
+      expect(result.asset.ticker).toBe(ticker);
     });
 
     test('should throw an error if the Checkpoint does not exist', async () => {
@@ -127,8 +127,8 @@ describe('Checkpoints class', () => {
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
 
       const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
-        checkpointId: dsMockUtils.createMockU64(checkpointId.toNumber()),
-        balance: dsMockUtils.createMockBalance(balance.toNumber()),
+        checkpointId: dsMockUtils.createMockU64(checkpointId),
+        balance: dsMockUtils.createMockBalance(balance),
       }));
 
       const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
@@ -139,7 +139,9 @@ describe('Checkpoints class', () => {
 
       const timestampsStub = dsMockUtils.createQueryStub('checkpoint', 'timestamps');
       timestampsStub.multi.resolves(
-        totalSupply.map(({ moment }) => dsMockUtils.createMockMoment(moment.getTime()))
+        totalSupply.map(({ moment }) =>
+          dsMockUtils.createMockMoment(new BigNumber(moment.getTime()))
+        )
       );
 
       const result = await checkpoints.get();
@@ -151,9 +153,8 @@ describe('Checkpoints class', () => {
           moment: expectedMoment,
         } = totalSupply[index];
 
-        expect(checkpoint).toEqual(
-          entityMockUtils.getCheckpointInstance({ id: expectedCheckpointId })
-        );
+        expect(checkpoint.id).toEqual(expectedCheckpointId);
+        expect(checkpoint.asset.ticker).toBe(ticker);
         expect(ts).toEqual(expectedBalance.shiftedBy(-6));
         expect(createdAt).toEqual(expectedMoment);
       });

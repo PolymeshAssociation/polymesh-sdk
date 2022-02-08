@@ -19,7 +19,7 @@ import {
   TxTag,
 } from 'polymesh-types/types';
 
-import { Account, Asset, DividendDistribution, Identity, PolymeshError } from '~/internal';
+import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -37,7 +37,7 @@ import {
   ResultSet,
   SimpleEnumTransactionArgument,
   SubCallback,
-  Subsidy,
+  SubsidyWithAllowance,
   TransactionArgument,
   TransactionArgumentType,
   UiKeyring,
@@ -49,6 +49,7 @@ import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/cons
 import {
   accountIdToString,
   balanceToBigNumber,
+  bigNumberToU32,
   boolToBoolean,
   claimTypeToMeshClaimType,
   corporateActionIdentifierToCaId,
@@ -57,7 +58,6 @@ import {
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
   momentToDate,
-  numberToU32,
   posRatioToBigNumber,
   signerToString,
   stringToAccountId,
@@ -81,7 +81,7 @@ interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   keyring: CommonKeyring;
-  ss58Format: number;
+  ss58Format: BigNumber;
 }
 
 interface AddPairBaseParams {
@@ -117,7 +117,7 @@ export class Context {
    */
   public isArchiveNode = false;
 
-  public ss58Format: number;
+  public ss58Format: BigNumber;
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
@@ -183,11 +183,12 @@ export class Context {
       accountMnemonic,
     } = params;
 
-    const ss58Format: number | undefined = u8ToBigNumber(
-      polymeshApi.consts.system.ss58Prefix
-    ).toNumber();
+    const ss58Format: BigNumber = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
-    let keyring: CommonKeyring = new Keyring({ type: 'sr25519', ss58Format });
+    let keyring: CommonKeyring = new Keyring({
+      type: 'sr25519',
+      ss58Format: ss58Format.toNumber(),
+    });
 
     if (passedKeyring) {
       keyring = getCommonKeyring(passedKeyring);
@@ -230,7 +231,7 @@ export class Context {
     } = this;
 
     try {
-      const blockHash = await system.blockHash(numberToU32(0, this));
+      const blockHash = await system.blockHash(bigNumberToU32(new BigNumber(0), this));
       const balance = await balances.totalIssuance.at(blockHash);
       return balanceToBigNumber(balance).gt(new BigNumber(0));
     } catch (e) {
@@ -398,17 +399,17 @@ export class Context {
    *
    * @note can be subscribed to
    */
-  public accountSubsidy(account?: string | Account): Promise<Omit<Subsidy, 'beneficiary'> | null>;
+  public accountSubsidy(account?: string | Account): Promise<SubsidyWithAllowance | null>;
   public accountSubsidy(
     account: string | Account | undefined,
-    callback: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
+    callback: SubCallback<SubsidyWithAllowance | null>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async accountSubsidy(
     account?: string | Account,
-    callback?: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
-  ): Promise<Omit<Subsidy, 'beneficiary'> | null | UnsubCallback> {
+    callback?: SubCallback<SubsidyWithAllowance | null>
+  ): Promise<SubsidyWithAllowance | null | UnsubCallback> {
     const {
       polymeshApi: {
         query: { relayer },
@@ -424,17 +425,20 @@ export class Context {
 
     const rawAddress = stringToAccountId(address, this);
 
-    const assembleResult = (subsidy: Option<MeshSubsidy>): Omit<Subsidy, 'beneficiary'> | null => {
-      if (subsidy.isNone) {
+    const assembleResult = (meshSubsidy: Option<MeshSubsidy>): SubsidyWithAllowance | null => {
+      if (meshSubsidy.isNone) {
         return null;
       }
-      const { paying_key: payingKey, remaining } = subsidy.unwrap();
+      const { paying_key: payingKey, remaining } = meshSubsidy.unwrap();
       const allowance = balanceToBigNumber(remaining);
-      const subsidizer = new Account({ address: accountIdToString(payingKey) }, this);
+      const subsidy = new Subsidy(
+        { beneficiary: address, subsidizer: accountIdToString(payingKey) },
+        this
+      );
 
       return {
+        subsidy,
         allowance,
-        subsidizer,
       };
     };
 
@@ -835,7 +839,7 @@ export class Context {
     /*
      * Divide the requests to account for practical limits
      */
-    const paramChunks = chunk(distributionsMultiParams, MAX_PAGE_SIZE);
+    const paramChunks = chunk(distributionsMultiParams, MAX_PAGE_SIZE.toNumber());
     const requestChunks = chunk(paramChunks, MAX_CONCURRENT_REQUESTS);
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
@@ -953,8 +957,8 @@ export class Context {
     trustedClaimIssuers?: (string | Identity)[];
     claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
     includeExpired?: boolean;
-    size?: number;
-    start?: number;
+    size?: BigNumber;
+    start?: BigNumber;
   }): Promise<ResultSet<ClaimData>> {
     const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
 
@@ -968,16 +972,18 @@ export class Context {
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
         includeExpired,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
     const {
       data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+        didsWithClaims: { items: didsWithClaimsList, totalCount },
       },
     } = result;
+
+    const count = new BigNumber(totalCount);
 
     didsWithClaimsList.forEach(({ claims }) => {
       claims.forEach(
@@ -1031,8 +1037,8 @@ export class Context {
       trustedClaimIssuers?: (string | Identity)[];
       claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;

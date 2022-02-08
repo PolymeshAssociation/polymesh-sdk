@@ -41,8 +41,8 @@ describe('investInOffering procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context, boolean?], Balance>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
   let addTransactionStub: sinon.SinonStub;
 
   let id: BigNumber;
@@ -74,10 +74,10 @@ describe('investInOffering procedure', () => {
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
     );
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     id = new BigNumber(id);
-    rawId = dsMockUtils.createMockU64(id.toNumber());
+    rawId = dsMockUtils.createMockU64(id);
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     purchasePortfolio = 'purchasePortfolioDid';
@@ -94,8 +94,8 @@ describe('investInOffering procedure', () => {
       did: dsMockUtils.createMockIdentityId(fundingPortfolio),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    rawPurchaseAmount = dsMockUtils.createMockBalance(purchaseAmount.toNumber());
-    rawMaxPrice = dsMockUtils.createMockBalance(maxPrice.toNumber());
+    rawPurchaseAmount = dsMockUtils.createMockBalance(purchaseAmount);
+    rawMaxPrice = dsMockUtils.createMockBalance(maxPrice);
   });
 
   beforeEach(() => {
@@ -110,9 +110,9 @@ describe('investInOffering procedure', () => {
     portfolioIdToMeshPortfolioIdStub
       .withArgs(fundingPortfolioId, mockContext)
       .returns(rawFundingPortfolio);
-    numberToU64Stub.withArgs(id, mockContext).returns(rawId);
-    numberToBalanceStub.withArgs(purchaseAmount, mockContext).returns(rawPurchaseAmount);
-    numberToBalanceStub.withArgs(maxPrice, mockContext).returns(rawMaxPrice);
+    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
+    bigNumberToBalanceStub.withArgs(purchaseAmount, mockContext).returns(rawPurchaseAmount);
+    bigNumberToBalanceStub.withArgs(maxPrice, mockContext).returns(rawMaxPrice);
 
     args = {
       id,
@@ -130,7 +130,6 @@ describe('investInOffering procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -178,7 +177,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
 
@@ -220,7 +219,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
       },
     });
 
@@ -270,7 +269,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
@@ -319,7 +318,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 

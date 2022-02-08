@@ -42,7 +42,6 @@ describe('createVenue procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -79,7 +78,7 @@ describe('createVenue procedure', () => {
 describe('createCreateVenueResolver', () => {
   const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
 
   beforeAll(() => {
     entityMockUtils.initMocks({

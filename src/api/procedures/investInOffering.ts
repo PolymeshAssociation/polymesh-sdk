@@ -12,13 +12,14 @@ import {
 } from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
-  numberToBalance,
-  numberToU64,
+  bigNumberToBalance,
+  bigNumberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   stringToTicker,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface InvestInOfferingParams {
   /**
@@ -189,9 +190,9 @@ export async function prepareInvestInSto(
       portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
       portfolioIdToMeshPortfolioId(fundingPortfolioId, context),
       stringToTicker(ticker, context),
-      numberToU64(id, context),
-      numberToBalance(purchaseAmount, context),
-      maxPrice ? numberToBalance(maxPrice, context) : null,
+      bigNumberToU64(id, context),
+      bigNumberToBalance(purchaseAmount, context),
+      optionize(bigNumberToBalance)(maxPrice, context),
       null,
     ],
   });

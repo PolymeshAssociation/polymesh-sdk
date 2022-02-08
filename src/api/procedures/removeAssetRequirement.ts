@@ -1,10 +1,12 @@
+import BigNumber from 'bignumber.js';
+
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, Requirement, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
+import { bigNumberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
 
 export interface RemoveAssetRequirementParams {
-  requirement: number | Requirement;
+  requirement: BigNumber | Requirement;
 }
 
 /**
@@ -31,7 +33,7 @@ export async function prepareRemoveAssetRequirement(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const reqId = typeof requirement === 'number' ? requirement : requirement.id;
+  const reqId = requirement instanceof BigNumber ? requirement : requirement.id;
 
   const { requirements } = await query.complianceManager.assetCompliances(rawTicker);
 
@@ -44,7 +46,7 @@ export async function prepareRemoveAssetRequirement(
 
   this.addTransaction({
     transaction: tx.complianceManager.removeComplianceRequirement,
-    args: [rawTicker, numberToU32(reqId, context)],
+    args: [rawTicker, bigNumberToU32(reqId, context)],
   });
 
   return new Asset({ ticker }, context);

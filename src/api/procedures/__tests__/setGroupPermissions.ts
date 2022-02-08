@@ -35,7 +35,7 @@ describe('setGroupPermissions procedure', () => {
     ],
   });
   const customId = new BigNumber(1);
-  const rawAgId = dsMockUtils.createMockU32(customId.toNumber());
+  const rawAgId = dsMockUtils.createMockU32(customId);
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -51,7 +51,7 @@ describe('setGroupPermissions procedure', () => {
     sinon
       .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
       .returns(rawExtrinsicPermissions);
-    sinon.stub(utilsConversionModule, 'numberToU32').returns(rawAgId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawAgId);
 
     permissionsLikeToPermissionsStub = sinon.stub(
       utilsConversionModule,
@@ -75,7 +75,6 @@ describe('setGroupPermissions procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -145,7 +144,7 @@ describe('setGroupPermissions procedure', () => {
       ).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.SetGroupPermissions],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -80,7 +80,6 @@ describe('setPermissionGroup procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -252,7 +251,7 @@ describe('setPermissionGroup procedure', () => {
     });
 
     const rawAgentGroup = dsMockUtils.createMockAgentGroup({
-      Custom: dsMockUtils.createMockU32(id.toNumber()),
+      Custom: dsMockUtils.createMockU32(id),
     });
 
     permissionGroupIdentifierToAgentGroupStub
@@ -325,6 +324,7 @@ describe('setPermissionGroup procedure', () => {
     const fakeCustomPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
       ticker,
       id: new BigNumber(2),
+      isEqual: false,
     });
 
     const result = await prepareSetPermissionGroup.call(proc, {
@@ -362,7 +362,7 @@ describe('setPermissionGroup procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        asset: entityMockUtils.getAssetInstance({ ticker }),
+        asset: expect.objectContaining({ ticker }),
       });
 
       result = boundFunc({
@@ -373,7 +373,7 @@ describe('setPermissionGroup procedure', () => {
       } as Params);
 
       expect(result).toEqual({
-        asset: entityMockUtils.getAssetInstance({ ticker }),
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
@@ -394,7 +394,7 @@ describe('setPermissionGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.ChangeGroup],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

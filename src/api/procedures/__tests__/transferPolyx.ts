@@ -42,7 +42,6 @@ describe('transferPolyx procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -61,7 +60,11 @@ describe('transferPolyx procedure', () => {
   });
 
   test("should throw an error if destination Account doesn't have an associated Identity", () => {
-    entityMockUtils.getAccountGetIdentityStub().resolves(null);
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: null,
+      },
+    });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
@@ -75,10 +78,8 @@ describe('transferPolyx procedure', () => {
       .createQueryStub('identity', 'keyToIdentityIds')
       .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        validCdd: false,
-      },
+    mockContext = dsMockUtils.getContextInstance({
+      validCdd: false,
     });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
@@ -94,8 +95,10 @@ describe('transferPolyx procedure', () => {
       .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
     entityMockUtils.configureMocks({
-      identityOptions: {
-        hasValidCdd: false,
+      accountOptions: {
+        getIdentity: entityMockUtils.getIdentityInstance({
+          hasValidCdd: false,
+        }),
       },
     });
 
@@ -111,7 +114,7 @@ describe('transferPolyx procedure', () => {
     const amount = new BigNumber(99);
     const memo = 'someMessage';
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
-    const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    const rawAmount = dsMockUtils.createMockBalance(amount);
     const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
@@ -119,7 +122,7 @@ describe('transferPolyx procedure', () => {
       .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
-    sinon.stub(utilsConversionModule, 'numberToBalance').returns(rawAmount);
+    sinon.stub(utilsConversionModule, 'bigNumberToBalance').returns(rawAmount);
     sinon.stub(utilsConversionModule, 'stringToMemo').returns(rawMemo);
 
     let tx = dsMockUtils.createTxStub('balances', 'transfer');

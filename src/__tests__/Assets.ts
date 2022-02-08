@@ -47,7 +47,6 @@ describe('Assets Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -120,35 +119,35 @@ describe('Assets Class', () => {
   });
 
   describe('method: isTickerAvailable', () => {
-    beforeAll(() => {
-      entityMockUtils.initMocks();
-    });
-
     afterEach(() => {
       entityMockUtils.reset();
     });
 
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
     test('should return true if ticker is available to reserve it', async () => {
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: new Date(),
-        status: TickerReservationStatus.Free,
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: new Date(),
+            status: TickerReservationStatus.Free,
+          },
+        },
       });
 
-      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'someTicker' });
+      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' });
 
       expect(isTickerAvailable).toBeTruthy();
     });
 
     test('should return false if ticker is not available to reserve it', async () => {
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: new Date(),
-        status: TickerReservationStatus.Reserved,
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: new Date(),
+            status: TickerReservationStatus.Reserved,
+          },
+        },
       });
 
       const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'someTicker' });
@@ -159,14 +158,18 @@ describe('Assets Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      entityMockUtils.getTickerReservationDetailsStub().callsFake(async cbFunc => {
-        cbFunc({
-          owner: entityMockUtils.getIdentityInstance(),
-          expiryDate: new Date(),
-          status: TickerReservationStatus.Free,
-        });
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: async cbFunc => {
+            cbFunc({
+              owner: entityMockUtils.getIdentityInstance(),
+              expiryDate: new Date(),
+              status: TickerReservationStatus.Free,
+            });
 
-        return unsubCallback;
+            return unsubCallback;
+          },
+        },
       });
 
       const callback = sinon.stub();
@@ -267,7 +270,9 @@ describe('Assets Class', () => {
       dsMockUtils.createQueryStub('asset', 'tickers', {
         returnValue: dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId('someDid'),
-          expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiry.getTime())),
+          expiry: dsMockUtils.createMockOption(
+            dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()))
+          ),
         }),
       });
 

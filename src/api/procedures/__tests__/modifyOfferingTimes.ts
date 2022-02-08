@@ -33,11 +33,11 @@ describe('modifyStoTimes procedure', () => {
   const end = new Date(start.getTime() + 500000);
 
   const rawTicker = dsMockUtils.createMockTicker(ticker);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
-  const rawNewStart = dsMockUtils.createMockMoment(newStart.getTime());
-  const rawNewEnd = dsMockUtils.createMockMoment(newEnd.getTime());
-  const rawStart = dsMockUtils.createMockMoment(start.getTime());
-  const rawEnd = dsMockUtils.createMockMoment(end.getTime());
+  const rawId = dsMockUtils.createMockU64(id);
+  const rawNewStart = dsMockUtils.createMockMoment(new BigNumber(newStart.getTime()));
+  const rawNewEnd = dsMockUtils.createMockMoment(new BigNumber(newEnd.getTime()));
+  const rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
+  const rawEnd = dsMockUtils.createMockMoment(new BigNumber(end.getTime()));
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -58,7 +58,7 @@ describe('modifyStoTimes procedure', () => {
     entityMockUtils.initMocks();
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'numberToU64').returns(rawId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
   });
 
@@ -92,7 +92,6 @@ describe('modifyStoTimes procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -309,7 +308,7 @@ describe('modifyStoTimes procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.sto.ModifyFundraiserWindow],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

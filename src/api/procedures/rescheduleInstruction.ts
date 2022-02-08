@@ -3,7 +3,7 @@ import { TxTags } from 'polymesh-types/types';
 
 import { Instruction, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, InstructionStatus } from '~/types';
-import { numberToU64 } from '~/utils/conversion';
+import { bigNumberToU64 } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -40,7 +40,7 @@ export async function prepareRescheduleInstruction(
     });
   }
 
-  const rawId = numberToU64(id, context);
+  const rawId = bigNumberToU64(id, context);
 
   this.addTransaction({
     transaction: tx.settlement.rescheduleInstruction,

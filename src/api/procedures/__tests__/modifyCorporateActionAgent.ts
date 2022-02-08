@@ -1,4 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
+import BigNumber from 'bignumber.js';
 import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -78,7 +79,6 @@ describe('modifyCorporateActionAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -144,7 +144,7 @@ describe('modifyCorporateActionAgent procedure', () => {
       ticker,
     };
     const requestExpiry = new Date('12/12/2050');
-    const rawExpiry = dsMockUtils.createMockMoment(requestExpiry.getTime());
+    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(requestExpiry.getTime()));
 
     dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
 
@@ -181,7 +181,7 @@ describe('modifyCorporateActionAgent procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
     });

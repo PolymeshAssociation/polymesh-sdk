@@ -4,7 +4,7 @@ import { Account, Identity, PolymeshError, Procedure } from '~/internal';
 import { AccountBalance, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  numberToBalance,
+  bigNumberToBalance,
   signerToString,
   stringToAccountId,
   stringToMemo,
@@ -94,7 +94,7 @@ export async function prepareTransferPolyx(
     });
   }
 
-  const rawAmount = numberToBalance(amount, context);
+  const rawAmount = bigNumberToBalance(amount, context);
 
   if (memo) {
     this.addTransaction({

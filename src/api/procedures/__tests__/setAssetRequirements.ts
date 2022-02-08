@@ -1,4 +1,5 @@
 import { Vec } from '@polkadot/types';
+import BigNumber from 'bignumber.js';
 import {
   ComplianceRequirement,
   Condition as MeshCondition,
@@ -98,7 +99,7 @@ describe('setAssetRequirements procedure', () => {
     ];
     currentRequirements = requirements.map((conditions, index) => ({
       conditions,
-      id: index,
+      id: new BigNumber(index),
     }));
     senderConditions = [
       'senderConditions0' as unknown as MeshCondition[],
@@ -125,7 +126,7 @@ describe('setAssetRequirements procedure', () => {
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
-      returnValue: dsMockUtils.createMockU32(50),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
     entityMockUtils.configureMocks({
       assetOptions: {
@@ -156,12 +157,12 @@ describe('setAssetRequirements procedure', () => {
         /* eslint-disable @typescript-eslint/naming-convention */
         sender_conditions: senderConditions[index],
         receiver_conditions: receiverConditions[index],
-        id: dsMockUtils.createMockU32(index),
+        id: dsMockUtils.createMockU32(new BigNumber(index)),
         /* eslint-enable @typescript-eslint/naming-convention */
       });
       rawComplianceRequirements.push(complianceRequirement);
       requirementToComplianceRequirementStub
-        .withArgs({ conditions, id: index }, mockContext)
+        .withArgs({ conditions, id: new BigNumber(index) }, mockContext)
         .returns(complianceRequirement);
     });
   });
@@ -173,7 +174,6 @@ describe('setAssetRequirements procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -197,7 +197,7 @@ describe('setAssetRequirements procedure', () => {
     });
 
     sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a replace asset compliance transactions to the queue', async () => {
@@ -218,7 +218,7 @@ describe('setAssetRequirements procedure', () => {
       args: [rawTicker, rawComplianceRequirements],
     });
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {
@@ -233,7 +233,7 @@ describe('setAssetRequirements procedure', () => {
       expect(boundFunc(params)).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ResetAssetCompliance],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });
@@ -241,7 +241,7 @@ describe('setAssetRequirements procedure', () => {
       expect(boundFunc({ ...params, requirements: [1] as unknown as InputCondition[][] })).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ReplaceAssetCompliance],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -46,7 +46,6 @@ describe('Checkpoint class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -77,7 +76,7 @@ describe('Checkpoint class', () => {
       const timestamp = 12000;
 
       dsMockUtils.createQueryStub('checkpoint', 'timestamps', {
-        returnValue: dsMockUtils.createMockMoment(timestamp),
+        returnValue: dsMockUtils.createMockMoment(new BigNumber(timestamp)),
       });
 
       const result = await checkpoint.createdAt();
@@ -89,7 +88,7 @@ describe('Checkpoint class', () => {
   describe('method: totalSupply', () => {
     test("should return the Checkpoint's total supply", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
-      const balance = 10000000000;
+      const balance = new BigNumber(10000000000);
       const expected = new BigNumber(balance).shiftedBy(-6);
 
       dsMockUtils.createQueryStub('checkpoint', 'totalSupply', {
@@ -131,7 +130,7 @@ describe('Checkpoint class', () => {
       const rawTicker = dsMockUtils.createMockTicker(ticker);
       const rawBalanceOf = balanceOf.map(({ identity, balance }) => ({
         identityId: dsMockUtils.createMockIdentityId(identity),
-        balance: dsMockUtils.createMockBalance(balance.toNumber()),
+        balance: dsMockUtils.createMockBalance(balance),
       }));
 
       rawBalanceOf.forEach(({ identityId, balance: rawBalance }, index) => {
@@ -152,17 +151,18 @@ describe('Checkpoint class', () => {
 
       dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
         multi: [
-          [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)],
-          [dsMockUtils.createMockU64(2)],
+          [
+            dsMockUtils.createMockU64(new BigNumber(1)),
+            dsMockUtils.createMockU64(new BigNumber(2)),
+          ],
+          [dsMockUtils.createMockU64(new BigNumber(2))],
           [],
         ],
       });
 
       const balanceMulti = [new BigNumber(10000), new BigNumber(20000)];
 
-      const rawBalanceMulti = balanceMulti.map(balance =>
-        dsMockUtils.createMockBalance(balance.toNumber())
-      );
+      const rawBalanceMulti = balanceMulti.map(balance => dsMockUtils.createMockBalance(balance));
 
       dsMockUtils.createQueryStub('checkpoint', 'balance', {
         multi: rawBalanceMulti,
@@ -186,7 +186,7 @@ describe('Checkpoint class', () => {
   describe('method: balance', () => {
     test("should return a specific Identity's balance at the Checkpoint", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
-      const balance = 10000000000;
+      const balance = new BigNumber(10000000000);
 
       const expected = new BigNumber(balance).shiftedBy(-6);
 
@@ -194,9 +194,9 @@ describe('Checkpoint class', () => {
 
       dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
         returnValue: [
-          dsMockUtils.createMockU64(1),
-          dsMockUtils.createMockU64(2),
-          dsMockUtils.createMockU64(5),
+          dsMockUtils.createMockU64(new BigNumber(1)),
+          dsMockUtils.createMockU64(new BigNumber(2)),
+          dsMockUtils.createMockU64(new BigNumber(5)),
         ],
       });
 
@@ -237,7 +237,7 @@ describe('Checkpoint class', () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
-        returnValue: [dsMockUtils.createMockU64(5)],
+        returnValue: [dsMockUtils.createMockU64(new BigNumber(5))],
       });
 
       let result = await checkpoint.exists();
@@ -245,7 +245,7 @@ describe('Checkpoint class', () => {
       expect(result).toBe(true);
 
       dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
-        returnValue: [dsMockUtils.createMockU64(0)],
+        returnValue: [dsMockUtils.createMockU64(new BigNumber(0))],
       });
 
       result = await checkpoint.exists();

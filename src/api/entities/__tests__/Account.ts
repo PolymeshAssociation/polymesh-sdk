@@ -6,7 +6,14 @@ import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, ModuleName, Permissions, PermissionType, Subsidy, TxTags } from '~/types';
+import {
+  AccountBalance,
+  ModuleName,
+  Permissions,
+  PermissionType,
+  SubsidyWithAllowance,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -47,7 +54,6 @@ describe('Account class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
     sinon.restore();
@@ -115,20 +121,22 @@ describe('Account class', () => {
   });
 
   describe('method: getSubsidy', () => {
-    let fakeResult: Omit<Subsidy, 'beneficiary'>;
+    let fakeResult: SubsidyWithAllowance;
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       account = new Account({ address }, context);
-      const subsidizer = new Account({ address: 'subsidizer ' }, context);
+
       fakeResult = {
+        subsidy: entityMockUtils.getSubsidyInstance({
+          beneficiary: address,
+        }),
         allowance: new BigNumber(1000),
-        subsidizer,
       };
       context.accountSubsidy.resolves(fakeResult);
     });
 
-    test("should return the account's balance", async () => {
+    test('should return Subsidy with allowance', async () => {
       const result = await account.getSubsidy();
 
       expect(result).toEqual(fakeResult);
@@ -201,6 +209,7 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber1.toNumber(),
             address,
+            nonce: 1,
             success: 0,
             signedby_address: 1,
             block: {
@@ -253,8 +262,8 @@ describe('Account class', () => {
       let result = await account.getTransactionHistory({
         blockNumber: blockNumber1,
         tag,
-        size: 2,
-        start: 1,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
       });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
@@ -263,19 +272,19 @@ describe('Account class', () => {
       expect(result.data[1].blockHash).toEqual(blockHash2);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[1].address).toBeNull();
+      expect(result.data[0].nonce).toEqual(new BigNumber(1));
+      expect(result.data[1].nonce).toBeNull();
       expect(result.data[0].success).toBeFalsy();
       expect(result.data[1].success).toBeTruthy();
-      expect(result.count).toEqual(20);
-      expect(result.next).toEqual(3);
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
 
       dsMockUtils.createRpcStub('chain', 'getBlock', {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
               parentHash: 'hash',
-              number: dsMockUtils.createMockCompact(
-                dsMockUtils.createMockU32(blockNumber1.toNumber())
-              ),
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber1)),
               extrinsicsRoot: 'hash',
               stateRoot: 'hash',
             },
@@ -286,8 +295,8 @@ describe('Account class', () => {
       result = await account.getTransactionHistory({
         blockHash: blockHash1,
         tag,
-        size: 2,
-        start: 1,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
       });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
@@ -298,8 +307,8 @@ describe('Account class', () => {
       expect(result.data[1].address).toBeNull();
       expect(result.data[0].success).toBeFalsy();
       expect(result.data[1].success).toBeTruthy();
-      expect(result.count).toEqual(20);
-      expect(result.next).toEqual(3);
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
 
       dsMockUtils.createApolloQueryStub(
         transactions({
@@ -322,7 +331,7 @@ describe('Account class', () => {
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[0].address).toEqual(address);
       expect(result.data[0].success).toBeFalsy();
-      expect(result.count).toEqual(20);
+      expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toBeNull();
     });
   });
@@ -487,16 +496,18 @@ describe('Account class', () => {
 
       account = new Account({ address: secondaryAccountAddress }, context);
 
+      const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
+
       result = await account.checkPermissions({
         assets: [asset],
-        portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+        portfolios: [portfolio],
         transactions: [TxTags.asset.CreateAsset],
       });
 
       expect(result).toEqual({
         result: false,
         missingPermissions: {
-          portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+          portfolios: [portfolio],
         },
       });
 

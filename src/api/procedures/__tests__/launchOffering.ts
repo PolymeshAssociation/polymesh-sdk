@@ -51,14 +51,15 @@ describe('launchOffering procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let numberToBalanceStub: sinon.SinonStub<[number | BigNumber, Context, boolean?], Balance>;
+  let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
   let stoTierToPriceTierStub: sinon.SinonStub<[OfferingTier, Context], PriceTier>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let portfolioIdToPortfolioStub: sinon.SinonStub;
   let ticker: string;
   let offeringPortfolio: PortfolioLike;
+  let portfolio: entityMockUtils.MockDefaultPortfolio;
   let offeringPortfolioId: PortfolioId;
   let raisingPortfolio: PortfolioLike;
   let raisingPortfolioId: PortfolioId;
@@ -100,9 +101,9 @@ describe('launchOffering procedure', () => {
       'portfolioLikeToPortfolioId'
     );
     stoTierToPriceTierStub = sinon.stub(utilsConversionModule, 'stoTierToPriceTier');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
     portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
     ticker = 'tickerFrozen';
@@ -129,17 +130,17 @@ describe('launchOffering procedure', () => {
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
     rawRaisingCurrency = dsMockUtils.createMockTicker(raisingCurrency);
-    rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
+    rawVenueId = dsMockUtils.createMockU64(venueId);
     rawName = dsMockUtils.createMockText(name);
-    rawStart = dsMockUtils.createMockMoment(start.getTime());
-    rawEnd = dsMockUtils.createMockMoment(end.getTime());
+    rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
+    rawEnd = dsMockUtils.createMockMoment(new BigNumber(end.getTime()));
     rawTiers = [
       dsMockUtils.createMockPriceTier({
-        total: dsMockUtils.createMockBalance(amount.toNumber()),
-        price: dsMockUtils.createMockBalance(price.toNumber()),
+        total: dsMockUtils.createMockBalance(amount),
+        price: dsMockUtils.createMockBalance(price),
       }),
     ];
-    rawMinInvestment = dsMockUtils.createMockBalance(minInvestment.toNumber());
+    rawMinInvestment = dsMockUtils.createMockBalance(minInvestment);
 
     offering = 'offering' as unknown as PostTransactionValue<Offering>;
   });
@@ -166,14 +167,13 @@ describe('launchOffering procedure', () => {
       .withArgs(raisingPortfolioId, mockContext)
       .returns(rawRaisingPortfolio);
     stoTierToPriceTierStub.withArgs({ amount, price }, mockContext).returns(rawTiers[0]);
-    numberToU64Stub.withArgs(venue.id, mockContext).returns(rawVenueId);
+    bigNumberToU64Stub.withArgs(venue.id, mockContext).returns(rawVenueId);
     dateToMomentStub.withArgs(start, mockContext).returns(rawStart);
     dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
     stringToTextStub.withArgs(name, mockContext).returns(rawName);
-    numberToBalanceStub.withArgs(minInvestment, mockContext).returns(rawMinInvestment);
-    portfolioIdToPortfolioStub
-      .withArgs(offeringPortfolioId, mockContext)
-      .returns(new DefaultPortfolio(offeringPortfolioId, mockContext));
+    bigNumberToBalanceStub.withArgs(minInvestment, mockContext).returns(rawMinInvestment);
+    portfolio = entityMockUtils.getDefaultPortfolioInstance(offeringPortfolioId);
+    portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolio);
 
     args = {
       ticker,
@@ -196,18 +196,15 @@ describe('launchOffering procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should throw an error if no valid Venue was supplied or found', async () => {
+    portfolio.getAssetBalances.resolves([{ free: new BigNumber(20) }]);
     entityMockUtils.configureMocks({
       identityOptions: {
         getVenues: [entityMockUtils.getVenueInstance({ details: { type: VenueType.Exchange } })],
-      },
-      defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
@@ -239,12 +236,8 @@ describe('launchOffering procedure', () => {
     expect(err?.message).toBe('A valid Venue for the Offering was neither supplied nor found');
   });
 
-  test("should throw an error if Assets offered exceed the Portfolio's balance", async () => {
-    entityMockUtils.configureMocks({
-      defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
-      },
-    });
+  test("should throw an error if Asset tokens offered exceed the Portfolio's balance", async () => {
+    portfolio.getAssetBalances.resolves([{ free: new BigNumber(1) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
@@ -263,11 +256,7 @@ describe('launchOffering procedure', () => {
   });
 
   test('should add a create fundraiser transaction to the queue', async () => {
-    entityMockUtils.configureMocks({
-      defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
-      },
-    });
+    portfolio.getAssetBalances.resolves([{ free: new BigNumber(1000) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
@@ -310,7 +299,7 @@ describe('launchOffering procedure', () => {
         getVenues: [venue],
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
       },
     });
 
@@ -354,7 +343,7 @@ describe('launchOffering procedure', () => {
 
     beforeEach(() => {
       filterEventRecordsStub.returns([
-        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId.toNumber())]),
+        dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId)]),
       ]);
     });
 
@@ -365,8 +354,9 @@ describe('launchOffering procedure', () => {
     test('should return the new Offering', () => {
       const result = createOfferingResolver(ticker, mockContext)({} as ISubmittableResult);
 
-      const newOffering = entityMockUtils.getOfferingInstance();
-      expect(result).toEqual(newOffering);
+      expect(result).toEqual(
+        expect.objectContaining({ asset: expect.objectContaining({ ticker }), id: stoId })
+      );
     });
   });
 
@@ -385,7 +375,6 @@ describe('launchOffering procedure', () => {
       portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(raisingPortfolioId, mockContext).returns(portfolios[1]);
 
-      const asset = entityMockUtils.getAssetInstance({ ticker });
       const roles = [
         { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },
@@ -395,7 +384,7 @@ describe('launchOffering procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.sto.CreateFundraiser],
-          assets: [asset],
+          assets: [expect.objectContaining({ ticker })],
           portfolios,
         },
       });

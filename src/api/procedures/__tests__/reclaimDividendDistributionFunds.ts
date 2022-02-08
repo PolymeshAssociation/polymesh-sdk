@@ -24,7 +24,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   const did = 'someDid';
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
 
   let origin: DefaultPortfolio;
   let distribution: DividendDistribution;
@@ -59,7 +59,6 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -140,8 +139,8 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
-          portfolios: [origin],
+          assets: [expect.objectContaining({ ticker })],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
         },
       });
     });

@@ -293,11 +293,11 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
     const { size: pageSize, start: startKey } = paginationOpts;
     entries = await query.entriesPaged({
       args,
-      pageSize,
+      pageSize: pageSize.toNumber(),
       startKey,
     });
 
-    if (entries.length === pageSize) {
+    if (pageSize.eq(entries.length)) {
       lastKey = entries[entries.length - 1][0].toHex();
     }
   } else {
@@ -408,9 +408,13 @@ export function batchArguments<Args>(
  * @hidden
  *
  */
-export function calculateNextKey(totalCount: number, size?: number, start?: number): NextKey {
-  const next = (start ?? 0) + (size ?? DEFAULT_GQL_PAGE_SIZE);
-  return totalCount > next ? next : null;
+export function calculateNextKey(
+  totalCount: BigNumber,
+  size?: BigNumber,
+  start?: BigNumber
+): NextKey {
+  const next = (start ?? new BigNumber(0)).plus(size ?? DEFAULT_GQL_PAGE_SIZE);
+  return totalCount.gt(next) ? next : null;
 }
 
 /**
@@ -563,9 +567,8 @@ export function createProcedureMethod<
 /**
  * @hidden
  */
-export function assertIsInteger(value: number | BigNumber): void {
-  const rawValue = new BigNumber(value);
-  if (!rawValue.isInteger()) {
+export function assertIsInteger(value: BigNumber): void {
+  if (!value.isInteger()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The number must be an integer',
@@ -576,9 +579,8 @@ export function assertIsInteger(value: number | BigNumber): void {
 /**
  * @hidden
  */
-export function assertIsPositive(value: number | BigNumber): void {
-  const rawValue = new BigNumber(value);
-  if (rawValue.isNegative()) {
+export function assertIsPositive(value: BigNumber): void {
+  if (value.isNegative()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The number must be positive',
@@ -605,8 +607,8 @@ export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyr
 /**
  * @hidden
  */
-export function assertFormatValid(address: string, ss58Format: number): void {
-  const encodedAddress = encodeAddress(decodeAddress(address), ss58Format);
+export function assertFormatValid(address: string, ss58Format: BigNumber): void {
+  const encodedAddress = encodeAddress(decodeAddress(address), ss58Format.toNumber());
 
   if (address !== encodedAddress) {
     throw new PolymeshError({
@@ -622,10 +624,10 @@ export function assertFormatValid(address: string, ss58Format: number): void {
 /**
  * @hidden
  */
-export function assertKeyringFormatValid(keyring: CommonKeyring, ss58Format: number): void {
+export function assertKeyringFormatValid(keyring: CommonKeyring, ss58Format: BigNumber): void {
   const dummyAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
   const encodedAddress = keyring.encodeAddress(dummyAddress);
-  const wellEncodedAddress = encodeAddress(dummyAddress, ss58Format);
+  const wellEncodedAddress = encodeAddress(dummyAddress, ss58Format.toNumber());
 
   if (encodedAddress !== wellEncodedAddress) {
     throw new PolymeshError({
@@ -662,14 +664,14 @@ export function xor(a: boolean, b: boolean): boolean {
 /**
  * @hidden
  */
-function secondsInUnit(unit: CalendarUnit): number {
-  const SECOND = 1;
-  const MINUTE = SECOND * 60;
-  const HOUR = MINUTE * 60;
-  const DAY = HOUR * 24;
-  const WEEK = DAY * 7;
-  const MONTH = DAY * 30;
-  const YEAR = DAY * 365;
+function secondsInUnit(unit: CalendarUnit): BigNumber {
+  const SECOND = new BigNumber(1);
+  const MINUTE = SECOND.multipliedBy(60);
+  const HOUR = MINUTE.multipliedBy(60);
+  const DAY = HOUR.multipliedBy(24);
+  const WEEK = DAY.multipliedBy(7);
+  const MONTH = DAY.multipliedBy(30);
+  const YEAR = DAY.multipliedBy(365);
 
   switch (unit) {
     case CalendarUnit.Second: {
@@ -698,19 +700,20 @@ function secondsInUnit(unit: CalendarUnit): number {
 
 /**
  * @hidden
- * Transform a conversion util into a version that returns null if the input is falsy
+ * Calculate the numeric complexity of a calendar period
  */
-export function periodComplexity(period: CalendarPeriod): number {
+export function periodComplexity(period: CalendarPeriod): BigNumber {
   const secsInYear = secondsInUnit(CalendarUnit.Year);
   const { amount, unit } = period;
 
-  if (amount === 0) {
-    return 1;
+  if (amount.isZero()) {
+    return new BigNumber(1);
   }
 
   const secsInUnit = secondsInUnit(unit);
 
-  return Math.max(2, Math.floor(secsInYear / (secsInUnit * amount)));
+  const complexity = secsInYear.dividedBy(secsInUnit.multipliedBy(amount));
+  return BigNumber.maximum(2, complexity.integerValue(BigNumber.ROUND_FLOOR));
 }
 
 /**
@@ -808,7 +811,16 @@ export function conditionsAreEqual(
   const { trustedClaimIssuers: aClaimIssuers = [] } = a;
   const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
-  const equalClaimIssuers = hasSameElements(aClaimIssuers, bClaimIssuers);
+  const equalClaimIssuers = hasSameElements(
+    aClaimIssuers,
+    bClaimIssuers,
+    (
+      { identity: aIdentity, trustedFor: aTrustedFor },
+      { identity: bIdentity, trustedFor: bTrustedFor }
+    ) =>
+      signerToString(aIdentity) === signerToString(bIdentity) &&
+      hasSameElements(aTrustedFor || [], bTrustedFor || [])
+  );
 
   return equalClaims && equalClaimIssuers;
 }

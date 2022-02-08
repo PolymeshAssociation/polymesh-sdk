@@ -21,7 +21,7 @@ jest.mock(
 describe('removeCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub;
-  let numberToU64Stub: sinon.SinonStub;
+  let bigNumberToU64Stub: sinon.SinonStub;
   let u32ToBigNumberStub: sinon.SinonStub;
   let ticker: string;
   let rawTicker: Ticker;
@@ -34,18 +34,18 @@ describe('removeCheckpointSchedule procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     u32ToBigNumberStub = sinon.stub(utilsConversionModule, 'u32ToBigNumber');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     id = new BigNumber(1);
-    rawId = dsMockUtils.createMockU64(id.toNumber());
+    rawId = dsMockUtils.createMockU64(id);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
-    numberToU64Stub.returns(rawId);
+    bigNumberToU64Stub.returns(rawId);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     dsMockUtils.createQueryStub('checkpoint', 'scheduleRefCount');
@@ -58,7 +58,6 @@ describe('removeCheckpointSchedule procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -72,7 +71,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.createQueryStub('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(5),
+          id: dsMockUtils.createMockU64(new BigNumber(5)),
         } as StoredSchedule),
       ],
     });
@@ -93,7 +92,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.createQueryStub('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(id.toNumber()),
+          id: dsMockUtils.createMockU64(id),
         } as StoredSchedule),
       ],
     });
@@ -154,7 +153,7 @@ describe('removeCheckpointSchedule procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.RemoveSchedule],
-          assets: [entityMockUtils.getAssetInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

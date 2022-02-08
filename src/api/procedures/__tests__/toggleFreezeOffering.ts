@@ -26,7 +26,7 @@ jest.mock(
 describe('toggleFreezeOffering procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let ticker: string;
   let rawTicker: Ticker;
   let id: BigNumber;
@@ -38,11 +38,11 @@ describe('toggleFreezeOffering procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     ticker = 'tickerFrozen';
     id = new BigNumber(1);
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawId = dsMockUtils.createMockU64(id.toNumber());
+    rawId = dsMockUtils.createMockU64(id);
     offering = new Offering({ ticker, id }, mockContext);
   });
 
@@ -52,7 +52,7 @@ describe('toggleFreezeOffering procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    numberToU64Stub.withArgs(id, mockContext).returns(rawId);
+    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
   });
 
   afterEach(() => {
@@ -62,7 +62,6 @@ describe('toggleFreezeOffering procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -210,7 +209,7 @@ describe('toggleFreezeOffering procedure', () => {
       );
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = entityMockUtils.getAssetInstance({ ticker });
+      const asset = expect.objectContaining({ ticker });
 
       expect(boundFunc({ ticker, id, freeze: true })).toEqual({
         permissions: {

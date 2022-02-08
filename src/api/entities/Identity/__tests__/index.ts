@@ -20,6 +20,7 @@ import {
   RoleType,
   TickerOwnerRole,
   VenueOwnerRole,
+  VenueType,
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -82,7 +83,6 @@ describe('Identity class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -115,10 +115,6 @@ describe('Identity class', () => {
       entityMockUtils.reset();
     });
 
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
     test('should return whether the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
@@ -132,12 +128,19 @@ describe('Identity class', () => {
         result: true,
       });
 
-      entityMockUtils.reset();
+      const stub = sinon.stub();
 
-      const stub = entityMockUtils.getTickerReservationDetailsStub();
-
-      stub.onSecondCall().returns({
+      stub.onFirstCall().resolves({
+        owner: identity,
+      });
+      stub.onSecondCall().resolves({
         owner: null,
+      });
+
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: stub,
+        },
       });
 
       result = await identity.checkRoles(roles);
@@ -156,10 +159,6 @@ describe('Identity class', () => {
 
     afterEach(() => {
       entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
     });
 
     test('hasRole should check whether the Identity has the Ticker Owner role', async () => {
@@ -204,7 +203,13 @@ describe('Identity class', () => {
       const role: VenueOwnerRole = { type: RoleType.VenueOwner, venueId: new BigNumber(10) };
 
       entityMockUtils.configureMocks({
-        venueOptions: { details: { owner: new Identity({ did }, context) } },
+        venueOptions: {
+          details: {
+            owner: new Identity({ did }, context),
+            type: VenueType.Sto,
+            description: 'aVenue',
+          },
+        },
       });
 
       let hasRole = await identity.hasRole(role);
@@ -288,10 +293,19 @@ describe('Identity class', () => {
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
 
-      const stub = entityMockUtils.getTickerReservationDetailsStub();
+      const stub = sinon.stub();
 
+      stub.onFirstCall().returns({
+        owner: identity,
+      });
       stub.onSecondCall().returns({
         owner: null,
+      });
+
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: stub,
+        },
       });
 
       const hasRole = await identity.hasRoles(roles);
@@ -319,7 +333,7 @@ describe('Identity class', () => {
       rawTicker = dsMockUtils.createMockTicker(ticker);
       rawIdentityId = dsMockUtils.createMockIdentityId(did);
       fakeValue = new BigNumber(100);
-      fakeBalance = dsMockUtils.createMockBalance(fakeValue.toNumber());
+      fakeBalance = dsMockUtils.createMockBalance(fakeValue);
       mockContext = dsMockUtils.getContextInstance();
       balanceOfStub = dsMockUtils.createQueryStub('asset', 'balanceOf');
       assetStub = dsMockUtils.createQueryStub('asset', 'tokens');
@@ -344,7 +358,7 @@ describe('Identity class', () => {
       assetStub.withArgs(rawTicker).resolves(
         dsMockUtils.createMockSecurityToken({
           owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
-          total_supply: dsMockUtils.createMockBalance(3000),
+          total_supply: dsMockUtils.createMockBalance(new BigNumber(3000)),
           divisible: dsMockUtils.createMockBool(true),
           asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
         })
@@ -481,7 +495,7 @@ describe('Identity class', () => {
       });
       /* eslint-enabled @typescript-eslint/naming-convention */
 
-      const account = entityMockUtils.getAccountInstance({ address: accountId });
+      const account = expect.objectContaining({ address: accountId });
 
       fakeResult = {
         account,
@@ -501,7 +515,15 @@ describe('Identity class', () => {
       didRecordsStub.returns(rawDidRecord);
 
       const result = await identity.getPrimaryAccount();
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual({
+        account: expect.objectContaining({ address: accountId }),
+        permissions: {
+          assets: null,
+          transactions: null,
+          portfolios: null,
+          transactionGroups: [],
+        },
+      });
     });
 
     test('should allow subscription', async () => {
@@ -519,7 +541,10 @@ describe('Identity class', () => {
       const result = await identity.getPrimaryAccount(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
+      sinon.assert.calledWithExactly(callback, {
+        ...fakeResult,
+        account: sinon.match({ address: accountId }),
+      });
     });
   });
 
@@ -555,7 +580,23 @@ describe('Identity class', () => {
         }
       );
 
-      const result = await identity.getHeldAssets();
+      let result = await identity.getHeldAssets();
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
+
+      dsMockUtils.createApolloQueryStub(
+        tokensHeldByDid({ did, count: 1, skip: 0, order: Order.Asc }),
+        {
+          tokensHeldByDid: { items: tickers, totalCount: 2 },
+        }
+      );
+
+      result = await identity.getHeldAssets({
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+        order: Order.Asc,
+      });
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
@@ -574,7 +615,7 @@ describe('Identity class', () => {
       venueId = new BigNumber(10);
 
       rawDid = dsMockUtils.createMockIdentityId(did);
-      rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
+      rawVenueId = dsMockUtils.createMockU64(venueId);
     });
 
     beforeEach(() => {
@@ -586,8 +627,6 @@ describe('Identity class', () => {
     });
 
     test('should return a list of Venues', async () => {
-      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
-
       dsMockUtils
         .createQueryStub('settlement', 'userVenues')
         .withArgs(rawDid)
@@ -596,13 +635,11 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       const result = await identity.getVenues();
-      expect(result).toEqual(fakeResult);
+      expect(result[0].id).toEqual(venueId);
     });
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
-
-      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
 
       dsMockUtils.createQueryStub('settlement', 'userVenues').callsFake(async (_, cbFunc) => {
         cbFunc([rawVenueId]);
@@ -614,7 +651,7 @@ describe('Identity class', () => {
       const callback = sinon.stub();
       const result = await identity.getVenues(callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
+      sinon.assert.calledWithMatch(callback, [sinon.match({ id: venueId })]);
     });
   });
 
@@ -623,13 +660,13 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
 
       dsMockUtils.createQueryStub('identity', 'didRecords', {
-        size: 10,
+        size: new BigNumber(10),
       });
 
       await expect(identity.exists()).resolves.toBe(true);
 
       dsMockUtils.createQueryStub('identity', 'didRecords', {
-        size: 0,
+        size: new BigNumber(0),
       });
 
       return expect(identity.exists()).resolves.toBe(false);
@@ -749,11 +786,11 @@ describe('Identity class', () => {
 
       const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
 
-      const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
-      const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
-      const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
-      const rawId4 = dsMockUtils.createMockU64(id4.toNumber());
-      const rawId5 = dsMockUtils.createMockU64(id5.toNumber());
+      const rawId1 = dsMockUtils.createMockU64(id1);
+      const rawId2 = dsMockUtils.createMockU64(id2);
+      const rawId3 = dsMockUtils.createMockU64(id3);
+      const rawId4 = dsMockUtils.createMockU64(id4);
+      const rawId5 = dsMockUtils.createMockU64(id5);
 
       const entriesStub = sinon.stub();
       entriesStub
@@ -795,7 +832,7 @@ describe('Identity class', () => {
 
       multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id1),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -804,7 +841,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id2),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -813,7 +850,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id3),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -822,7 +859,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id4),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Failed'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -831,7 +868,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id4),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -845,9 +882,9 @@ describe('Identity class', () => {
 
       const result = await identity.getInstructions();
 
-      expect(result.affirmed).toEqual([entityMockUtils.getInstructionInstance({ id: id1 })]);
-      expect(result.pending).toEqual([entityMockUtils.getInstructionInstance({ id: id2 })]);
-      expect(result.failed).toEqual([entityMockUtils.getInstructionInstance({ id: id4 })]);
+      expect(result.affirmed[0].id).toEqual(id1);
+      expect(result.pending[0].id).toEqual(id2);
+      expect(result.failed[0].id).toEqual(id4);
     });
   });
 
@@ -914,9 +951,9 @@ describe('Identity class', () => {
 
       const userAuthsStub = dsMockUtils.createQueryStub('settlement', 'userAffirmations');
 
-      const rawId1 = dsMockUtils.createMockU64(id1.toNumber());
-      const rawId2 = dsMockUtils.createMockU64(id2.toNumber());
-      const rawId3 = dsMockUtils.createMockU64(id3.toNumber());
+      const rawId1 = dsMockUtils.createMockU64(id1);
+      const rawId2 = dsMockUtils.createMockU64(id2);
+      const rawId3 = dsMockUtils.createMockU64(id3);
 
       const entriesStub = sinon.stub();
       entriesStub
@@ -951,7 +988,7 @@ describe('Identity class', () => {
 
       multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id1.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id1),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -960,7 +997,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id2.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id2),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -969,7 +1006,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id3.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id3),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -978,7 +1015,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4.toNumber()),
+          instruction_id: dsMockUtils.createMockU64(id4),
           venue_id: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
@@ -1105,8 +1142,11 @@ describe('Identity class', () => {
     test('should return all distributions where the Identity can claim funds', async () => {
       const holderPaidStub = dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid');
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const rawCaId = dsMockUtils.createMockCAId({ ticker: 'HOLDER_PAID', local_id: 5 });
+      const rawCaId = dsMockUtils.createMockCAId({
+        ticker: 'HOLDER_PAID',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        local_id: new BigNumber(5),
+      });
       const rawIdentityId = dsMockUtils.createMockIdentityId('someDid');
 
       sinon
@@ -1124,7 +1164,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
 
       const heldAssetsStub = sinon.stub(identity, 'getHeldAssets');
-      heldAssetsStub.onFirstCall().resolves({ data: [assets[0]], next: 1 });
+      heldAssetsStub.onFirstCall().resolves({ data: [assets[0]], next: new BigNumber(1) });
       heldAssetsStub.onSecondCall().resolves({ data: [assets[1]], next: null });
 
       const result = await identity.getPendingDistributions();

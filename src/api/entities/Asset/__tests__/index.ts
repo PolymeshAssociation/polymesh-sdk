@@ -43,7 +43,6 @@ describe('Asset class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -73,7 +72,7 @@ describe('Asset class', () => {
   describe('method: details', () => {
     let ticker: string;
     let name: string;
-    let totalSupply: number;
+    let totalSupply: BigNumber;
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
@@ -88,9 +87,9 @@ describe('Asset class', () => {
     let asset: Asset;
 
     beforeAll(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       name = 'tokenName';
-      totalSupply = 1000;
+      totalSupply = new BigNumber(1000);
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
@@ -150,8 +149,8 @@ describe('Asset class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
-      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did: owner })]);
+      expect(details.primaryIssuanceAgents[0].did).toBe(did);
+      expect(details.fullAgents[0].did).toBe(owner);
       expect(details.requiresInvestorUniqueness).toBe(true);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
@@ -165,13 +164,15 @@ describe('Asset class', () => {
 
       details = await asset.details();
       expect(details.primaryIssuanceAgents).toEqual([]);
-      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
+      expect(details.fullAgents[0].did).toEqual(did);
 
       tokensStub.resolves(
         dsMockUtils.createMockSecurityToken({
           /* eslint-disable @typescript-eslint/naming-convention */
           owner_did: dsMockUtils.createMockIdentityId(owner),
-          asset_type: dsMockUtils.createMockAssetType({ Custom: dsMockUtils.createMockU32(10) }),
+          asset_type: dsMockUtils.createMockAssetType({
+            Custom: dsMockUtils.createMockU32(new BigNumber(10)),
+          }),
           divisible: dsMockUtils.createMockBool(isDivisible),
           total_supply: dsMockUtils.createMockBalance(totalSupply),
           /* eslint-enable @typescript-eslint/naming-convention */
@@ -211,8 +212,8 @@ describe('Asset class', () => {
           name,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
-          fullAgents: [entityMockUtils.getIdentityInstance({ did: owner })],
+          primaryIssuanceAgents: [sinon.match({ did })],
+          fullAgents: [sinon.match({ did: owner })],
           requiresInvestorUniqueness: true,
         })
       );
@@ -278,7 +279,7 @@ describe('Asset class', () => {
     let asset: Asset;
 
     beforeAll(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       fundingRound = 'Series A';
     });
 
@@ -418,7 +419,7 @@ describe('Asset class', () => {
       const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
-      const eventIdx = 1;
+      const eventIdx = new BigNumber(1);
       const variables = {
         moduleId: ModuleIdEnum.Asset,
         eventId: EventIdEnum.AssetCreated,
@@ -433,7 +434,7 @@ describe('Asset class', () => {
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
           block: { datetime: blockDate },
-          event_idx: eventIdx,
+          event_idx: eventIdx.toNumber(),
         },
         /* eslint-enable @typescript-eslint/naming-convention */
       });
@@ -603,11 +604,11 @@ describe('Asset class', () => {
 
   describe('method: investorCount', () => {
     let investorCountPerAssetStub: sinon.SinonStub;
-    let investorCount: number;
+    let investorCount: BigNumber;
     let rawInvestorCount: u64;
 
     beforeAll(() => {
-      investorCount = 10;
+      investorCount = new BigNumber(10);
       rawInvestorCount = dsMockUtils.createMockU64(investorCount);
     });
 
@@ -627,7 +628,7 @@ describe('Asset class', () => {
 
       const result = await asset.investorCount();
 
-      expect(result).toBe(investorCount);
+      expect(result).toEqual(investorCount);
     });
 
     test('should allow subscription', async () => {
@@ -644,7 +645,7 @@ describe('Asset class', () => {
       const callback = sinon.stub();
       const result = await asset.investorCount(callback);
 
-      expect(result).toBe(unsubCallback);
+      expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, investorCount);
     });
   });
@@ -679,7 +680,7 @@ describe('Asset class', () => {
       const did = 'someDid';
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
-      const eventIndex = 'eventId';
+      const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
       dsMockUtils.createQueryStub('system', 'blockHash', {
@@ -698,7 +699,7 @@ describe('Asset class', () => {
                 {
                   block_id: blockId.toNumber(),
                   datetime,
-                  event_idx: eventIndex,
+                  event_idx: eventIndex.toNumber(),
                 },
               ],
             },
@@ -748,7 +749,7 @@ describe('Asset class', () => {
       const asset = new Asset({ ticker }, context);
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
-        size: 10,
+        size: new BigNumber(10),
       });
 
       let result = await asset.exists();
@@ -756,7 +757,7 @@ describe('Asset class', () => {
       expect(result).toBe(true);
 
       dsMockUtils.createQueryStub('asset', 'tokens', {
-        size: 0,
+        size: new BigNumber(0),
       });
 
       result = await asset.exists();

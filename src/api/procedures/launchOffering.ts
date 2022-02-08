@@ -16,9 +16,9 @@ import {
 import { ErrorCode, OfferingTier, PortfolioLike, RoleType, TxTags, VenueType } from '~/types';
 import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToBalance,
+  bigNumberToU64,
   dateToMoment,
-  numberToBalance,
-  numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -27,7 +27,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -179,10 +179,10 @@ export async function prepareLaunchOffering(
       portfolioIdToMeshPortfolioId(raisingPortfolioId, context),
       stringToTicker(raisingCurrency, context),
       tiers.map(tier => stoTierToPriceTier(tier, context)),
-      numberToU64(venueId, context),
-      start ? dateToMoment(start, context) : null,
-      end ? dateToMoment(end, context) : null,
-      numberToBalance(minInvestment, context),
+      bigNumberToU64(venueId, context),
+      optionize(dateToMoment)(start, context),
+      optionize(dateToMoment)(end, context),
+      bigNumberToBalance(minInvestment, context),
       stringToText(name, context),
     ],
   });

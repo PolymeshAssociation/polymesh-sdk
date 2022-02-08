@@ -5,8 +5,8 @@ import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } fro
 import { AuthorizationType, ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToU64,
   booleanToBool,
-  numberToU64,
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
@@ -64,7 +64,7 @@ export async function prepareConsumeJoinOrRotateAuthorization(
     });
   }
 
-  const rawAuthId = numberToU64(authId, context);
+  const rawAuthId = bigNumberToU64(authId, context);
 
   if (!accept) {
     const baseArgs: { paidForBy?: Identity } = {};

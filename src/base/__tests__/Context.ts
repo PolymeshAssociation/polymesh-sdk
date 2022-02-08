@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Context, Identity, PolymeshError } from '~/internal';
+import { Account, Context, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -50,6 +50,10 @@ jest.mock(
     '~/api/entities/NumberedPortfolio'
   )
 );
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
+);
 
 // TODO: refactor tests (too much repeated code)
 describe('Context class', () => {
@@ -59,7 +63,9 @@ describe('Context class', () => {
   });
 
   beforeEach(() => {
-    dsMockUtils.setConstMock('system', 'ss58Prefix', { returnValue: dsMockUtils.createMockU8(42) });
+    dsMockUtils.setConstMock('system', 'ss58Prefix', {
+      returnValue: dsMockUtils.createMockU8(new BigNumber(42)),
+    });
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
       returnValue: dsMockUtils.createMockIdentityId('someDid'),
     });
@@ -72,7 +78,6 @@ describe('Context class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should throw an error if accessing the transaction submodule without an active account', async () => {
@@ -136,7 +141,7 @@ describe('Context class', () => {
   describe('method: create', () => {
     beforeEach(() => {
       dsMockUtils.createQueryStub('balances', 'totalIssuance', {
-        returnValue: dsMockUtils.createMockBalance(100),
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(100)),
       });
       dsMockUtils.createQueryStub('system', 'blockHash', {
         returnValue: dsMockUtils.createMockHash('someBlockHash'),
@@ -220,7 +225,7 @@ describe('Context class', () => {
         keyring: dsMockUtils.getKeyringInstance(),
       });
 
-      return expect(context).rejects.toThrow(
+      expect(context).rejects.toThrow(
         new Error("The supplied keyring is not using the chain's SS58 format")
       );
     });
@@ -397,10 +402,10 @@ describe('Context class', () => {
   });
 
   describe('method: accountBalance', () => {
-    const free = 100;
-    const reserved = 40;
-    const miscFrozen = 50;
-    const feeFrozen = 25;
+    const free = new BigNumber(100);
+    const reserved = new BigNumber(40);
+    const miscFrozen = new BigNumber(50);
+    const feeFrozen = new BigNumber(25);
 
     test('should throw if accountId or currentPair is not set', async () => {
       dsMockUtils.configureMocks({
@@ -440,9 +445,9 @@ describe('Context class', () => {
 
       const result = await context.accountBalance();
       expect(result).toEqual({
-        free: new BigNumber(free - miscFrozen).shiftedBy(-6),
-        locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free + reserved).shiftedBy(-6),
+        free: free.minus(miscFrozen).shiftedBy(-6),
+        locked: miscFrozen.shiftedBy(-6),
+        total: free.plus(reserved).shiftedBy(-6),
       });
     });
 
@@ -468,9 +473,9 @@ describe('Context class', () => {
 
       const result = await context.accountBalance('accountId');
       expect(result).toEqual({
-        free: new BigNumber(free - miscFrozen).shiftedBy(-6),
-        locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free + reserved).shiftedBy(-6),
+        free: free.minus(miscFrozen).shiftedBy(-6),
+        locked: miscFrozen.shiftedBy(-6),
+        total: free.plus(reserved).shiftedBy(-6),
       });
     });
 
@@ -504,9 +509,9 @@ describe('Context class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
-        free: new BigNumber(free - miscFrozen).shiftedBy(-6),
-        locked: new BigNumber(miscFrozen).shiftedBy(-6),
-        total: new BigNumber(free + reserved).shiftedBy(-6),
+        free: free.minus(miscFrozen).shiftedBy(-6),
+        locked: miscFrozen.shiftedBy(-6),
+        total: free.plus(reserved).shiftedBy(-6),
       });
     });
   });
@@ -528,8 +533,8 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the Account subsidizer and allowance if currentPair is set', async () => {
-      const allowance = dsMockUtils.createMockBalance(100);
+    test('should return the Subsidy with allowance if currentPair is set', async () => {
+      const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
           // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -548,13 +553,16 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy();
       expect(result).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: DUMMY_ACCOUNT_ID }),
+          subsidizer: expect.objectContaining({ address: 'payingKey' }),
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
       });
     });
 
-    test('should return the Account subsidizer and allowance if accountId is set', async () => {
-      const allowance = dsMockUtils.createMockBalance(100);
+    test('should return the Subsidy with allowance if accountId is set', async () => {
+      const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
           // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -573,8 +581,11 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy('accountId');
       expect(result).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: 'accountId' }),
+          subsidizer: expect.objectContaining({ address: 'payingKey' }),
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
       });
     });
 
@@ -595,7 +606,7 @@ describe('Context class', () => {
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
-      const allowance = dsMockUtils.createMockBalance(100);
+      const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
           // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -619,10 +630,16 @@ describe('Context class', () => {
       const result = await context.accountSubsidy('accountId', callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, {
-        allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
-      });
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match({
+          subsidy: sinon.match({
+            beneficiary: sinon.match({ address: 'accountId' }),
+            subsidizer: sinon.match({ address: 'payingKey' }),
+          }),
+          allowance: utilsConversionModule.balanceToBigNumber(allowance),
+        })
+      );
     });
   });
 
@@ -644,7 +661,11 @@ describe('Context class', () => {
     });
 
     test('should throw an error if there is no Identity associated to the Current Account', async () => {
-      entityMockUtils.getAccountGetIdentityStub().resolves(null);
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getIdentity: null,
+        },
+      });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -748,7 +769,14 @@ describe('Context class', () => {
   });
 
   describe('method: getIdentity', () => {
+    const did = 'someDid';
+
     test('should return an Identity if given an Identity', async () => {
+      entityMockUtils.configureMocks({
+        identityOptions: {
+          did,
+        },
+      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -756,17 +784,22 @@ describe('Context class', () => {
 
       const identity = entityMockUtils.getIdentityInstance();
       const result = await context.getIdentity(identity);
-      expect(result).toBe(identity);
+      expect(result).toEqual(expect.objectContaining({ did }));
     });
     test('should return an Identity if given a valid DID', async () => {
+      entityMockUtils.configureMocks({
+        identityOptions: {
+          did,
+          exists: true,
+        },
+      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      const identity = entityMockUtils.getIdentityInstance({ exists: true });
-      const result = await context.getIdentity(identity.did);
-      expect(result).toEqual(identity);
+      const result = await context.getIdentity(did);
+      expect(result).toEqual(expect.objectContaining({ did }));
     });
 
     test('should throw if the Identity does not exist', async () => {
@@ -775,11 +808,16 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      const identity = entityMockUtils.getIdentityInstance({ exists: false });
+      entityMockUtils.configureMocks({
+        identityOptions: {
+          did,
+          exists: false,
+        },
+      });
 
       let error;
       try {
-        await context.getIdentity(identity.did);
+        await context.getIdentity(did);
       } catch (err) {
         error = err;
       }
@@ -896,7 +934,7 @@ describe('Context class', () => {
       });
 
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
-        returnValue: dsMockUtils.createMockPosRatio(1, 2),
+        returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
 
       const context = await Context.create({
@@ -913,7 +951,7 @@ describe('Context class', () => {
       txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
 
       dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
-        returnValue: dsMockUtils.createMockBalance(500000000),
+        returnValue: dsMockUtils.createMockBalance(new BigNumber(500000000)),
       });
 
       let result = await context.getProtocolFees({ tag: TxTags.asset.CreateAsset });
@@ -940,7 +978,7 @@ describe('Context class', () => {
       });
 
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
-        returnValue: dsMockUtils.createMockPosRatio(1, 2),
+        returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
 
       const context = await Context.create({
@@ -1186,11 +1224,12 @@ describe('Context class', () => {
 
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
       const date = 1589816265000;
       const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
       const claim = {
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuerDid }, context),
+        target: expect.objectContaining({ did: targetDid }),
+        issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
       };
       const fakeClaims = [
@@ -1199,6 +1238,7 @@ describe('Context class', () => {
           expiry: new Date(date),
           claim: {
             type: customerDueDiligenceType,
+            id: cddId,
           },
         },
         {
@@ -1206,6 +1246,7 @@ describe('Context class', () => {
           expiry: null,
           claim: {
             type: customerDueDiligenceType,
+            id: cddId,
           },
         },
       ];
@@ -1215,6 +1256,7 @@ describe('Context class', () => {
         issuer: issuerDid,
         issuance_date: date,
         last_update_date: date,
+        cdd_id: cddId,
       };
       const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
         totalCount: 25,
@@ -1245,7 +1287,7 @@ describe('Context class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: true,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -1257,12 +1299,13 @@ describe('Context class', () => {
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
         includeExpired: true,
-        size: 1,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -1281,7 +1324,7 @@ describe('Context class', () => {
       result = await context.issuedClaims();
 
       expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
+      expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toBeNull();
     });
 
@@ -1306,7 +1349,7 @@ describe('Context class', () => {
 
       const identityClaim = {
         claim_issuer: dsMockUtils.createMockIdentityId(issuerDid),
-        issuance_date: dsMockUtils.createMockMoment(issuedAt.getTime()),
+        issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
         last_update_date: dsMockUtils.createMockMoment(),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
@@ -1315,8 +1358,8 @@ describe('Context class', () => {
 
       const fakeClaims = [
         {
-          target: new Identity({ did: targetDid }, context),
-          issuer: new Identity({ did: issuerDid }, context),
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
           expiry: expiryOne,
           claim: {
@@ -1325,8 +1368,8 @@ describe('Context class', () => {
           },
         },
         {
-          target: new Identity({ did: targetDid }, context),
-          issuer: new Identity({ did: issuerDid }, context),
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
           expiry: null,
           claim: {
@@ -1335,8 +1378,8 @@ describe('Context class', () => {
           },
         },
         {
-          target: new Identity({ did: targetDid }, context),
-          issuer: new Identity({ did: issuerDid }, context),
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
           expiry: expiryTwo,
           claim: {
@@ -1358,7 +1401,9 @@ describe('Context class', () => {
           { args: [claim1stKey] },
           {
             ...identityClaim,
-            expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryOne.getTime())),
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryOne.getTime()))
+            ),
           }
         ),
         tuple(
@@ -1372,7 +1417,9 @@ describe('Context class', () => {
           { args: [claim1stKey] },
           {
             ...identityClaim,
-            expiry: dsMockUtils.createMockOption(dsMockUtils.createMockMoment(expiryTwo.getTime())),
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryTwo.getTime()))
+            ),
           }
         ),
       ]);
@@ -1480,7 +1527,7 @@ describe('Context class', () => {
 
   describe('method: getLatestBlock', () => {
     test('should return the latest block', async () => {
-      const blockNumber = 100;
+      const blockNumber = new BigNumber(100);
 
       dsMockUtils.createRpcStub('chain', 'getHeader', {
         returnValue: {
@@ -1496,7 +1543,7 @@ describe('Context class', () => {
 
       const result = await context.getLatestBlock();
 
-      expect(result).toEqual(new BigNumber(blockNumber));
+      expect(result).toEqual(blockNumber);
     });
   });
 
@@ -1738,46 +1785,46 @@ describe('Context class', () => {
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: CorporateActionKind.PredictableBenefit,
-            decl_date: new Date('10/14/1987').getTime(),
+            decl_date: new BigNumber(new Date('10/14/1987').getTime()),
             record_date: dsMockUtils.createMockRecordDate({
-              date: new Date('10/14/2019').getTime(),
-              checkpoint: { Existing: dsMockUtils.createMockU64(2) },
+              date: new BigNumber(new Date('10/14/2019').getTime()),
+              checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(2)) },
             }),
             targets: {
               identities: ['someDid'],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: 100000,
-            withholding_tax: [tuple('someDid', 300000)],
+            default_withholding_tax: new BigNumber(100000),
+            withholding_tax: [tuple('someDid', new BigNumber(300000))],
           })
         ),
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: CorporateActionKind.Reorganization,
-            decl_date: new Date('10/14/1987').getTime(),
+            decl_date: new BigNumber(new Date('10/14/1987').getTime()),
             record_date: null,
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: 0,
+            default_withholding_tax: new BigNumber(0),
             withholding_tax: [],
           })
         ),
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: CorporateActionKind.UnpredictableBenefit,
-            decl_date: new Date('11/26/1989').getTime(),
+            decl_date: new BigNumber(new Date('11/26/1989').getTime()),
             record_date: dsMockUtils.createMockRecordDate({
-              date: new Date('11/26/2019').getTime(),
-              checkpoint: { Existing: dsMockUtils.createMockU64(5) },
+              date: new BigNumber(new Date('11/26/2019').getTime()),
+              checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(5)) },
             }),
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: 150000,
-            withholding_tax: [tuple('someDid', 200000)],
+            default_withholding_tax: new BigNumber(150000),
+            withholding_tax: [tuple('someDid', new BigNumber(200000))],
           })
         ),
       ];
@@ -1787,30 +1834,30 @@ describe('Context class', () => {
           dsMockUtils.createMockDistribution({
             from: { kind: 'Default', did: 'someDid' },
             currency: 'USD',
-            per_share: 10000000,
-            amount: 500000000000,
-            remaining: 400000000000,
+            per_share: new BigNumber(10000000),
+            amount: new BigNumber(500000000000),
+            remaining: new BigNumber(400000000000),
             reclaimed: false,
-            payment_at: new Date('10/14/1987').getTime(),
+            payment_at: new BigNumber(new Date('10/14/1987').getTime()),
             expires_at: null,
           })
         ),
         dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
-            from: { kind: { User: dsMockUtils.createMockU64(2) }, did: 'someDid' },
+            from: { kind: { User: dsMockUtils.createMockU64(new BigNumber(2)) }, did: 'someDid' },
             currency: 'CAD',
-            per_share: 20000000,
-            amount: 300000000000,
-            remaining: 200000000000,
+            per_share: new BigNumber(20000000),
+            amount: new BigNumber(300000000000),
+            remaining: new BigNumber(200000000000),
             reclaimed: false,
-            payment_at: new Date('11/26/1989').getTime(),
+            payment_at: new BigNumber(new Date('11/26/1989').getTime()),
             expires_at: null,
           })
         ),
         dsMockUtils.createMockOption(),
       ];
 
-      const localIds = [1, 2, 3];
+      const localIds = [new BigNumber(1), new BigNumber(2), new BigNumber(3)];
       const caIds = [
         dsMockUtils.createMockCAId({ ticker: rawTickers[0], local_id: localIds[0] }),
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[1] }),
@@ -1866,7 +1913,7 @@ describe('Context class', () => {
       expect(result[0].details.fundsReclaimed).toBe(false);
       expect(result[0].details.remainingFunds).toEqual(new BigNumber(400000));
       expect(result[0].distribution.origin).toEqual(
-        entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid' })
+        expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) })
       );
       expect(result[0].distribution.currency).toBe('USD');
       expect(result[0].distribution.perShare).toEqual(new BigNumber(10));
@@ -1877,7 +1924,10 @@ describe('Context class', () => {
       expect(result[1].details.fundsReclaimed).toBe(false);
       expect(result[1].details.remainingFunds).toEqual(new BigNumber(200000));
       expect(result[1].distribution.origin).toEqual(
-        entityMockUtils.getNumberedPortfolioInstance({ did: 'someDid', id: new BigNumber(2) })
+        expect.objectContaining({
+          owner: expect.objectContaining({ did: 'someDid' }),
+          id: new BigNumber(2),
+        })
       );
       expect(result[1].distribution.currency).toBe('CAD');
       expect(result[1].distribution.perShare).toEqual(new BigNumber(20));
