@@ -77,7 +77,7 @@ export async function prepareModifyAllowance(
   let transaction = tx.relayer.increasePolyxLimit;
 
   if (operation === AllowanceOperation.Set) {
-    if (currentAllowance.isEqualTo(allowance)) {
+    if (currentAllowance.eq(allowance)) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
         message: 'Amount of allowance to set is equal to the current allowance',
@@ -88,10 +88,10 @@ export async function prepareModifyAllowance(
   }
 
   if (operation === AllowanceOperation.Decrease) {
-    if (currentAllowance.lt(allowance)) {
+    if (currentAllowance.lte(allowance)) {
       throw new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'Amount of allowance to decrease cannot be less than the current allowance',
+        message: 'Amount of allowance to decrease cannot be more than the current allowance',
       });
     }
 
@@ -109,17 +109,17 @@ export async function prepareModifyAllowance(
  *
  * To modify the allowance for a Subsidy, the caller should be the subsidizer
  */
-export async function getAuthorization(
+export function getAuthorization(
   this: Procedure<ModifyAllowanceParams, void>,
   args: ModifyAllowanceParams
-): Promise<ProcedureAuthorization> {
+): ProcedureAuthorization {
   const { context } = this;
   const {
     subsidy: { subsidizer },
     operation,
   } = args;
 
-  const currentAccount = await context.getCurrentAccount();
+  const currentAccount = context.getCurrentAccount();
 
   const hasRoles = subsidizer.isEqual(currentAccount);
 
