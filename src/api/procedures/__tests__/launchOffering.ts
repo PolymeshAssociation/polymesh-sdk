@@ -59,6 +59,7 @@ describe('launchOffering procedure', () => {
   let portfolioIdToPortfolioStub: sinon.SinonStub;
   let ticker: string;
   let offeringPortfolio: PortfolioLike;
+  let portfolio: entityMockUtils.MockDefaultPortfolio;
   let offeringPortfolioId: PortfolioId;
   let raisingPortfolio: PortfolioLike;
   let raisingPortfolioId: PortfolioId;
@@ -171,9 +172,8 @@ describe('launchOffering procedure', () => {
     dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
     stringToTextStub.withArgs(name, mockContext).returns(rawName);
     bigNumberToBalanceStub.withArgs(minInvestment, mockContext).returns(rawMinInvestment);
-    portfolioIdToPortfolioStub
-      .withArgs(offeringPortfolioId, mockContext)
-      .returns(new DefaultPortfolio(offeringPortfolioId, mockContext));
+    portfolio = entityMockUtils.getDefaultPortfolioInstance(offeringPortfolioId);
+    portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolio);
 
     args = {
       ticker,
@@ -196,18 +196,15 @@ describe('launchOffering procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should throw an error if no valid Venue was supplied or found', async () => {
+    portfolio.getAssetBalances.resolves([{ free: new BigNumber(20) }]);
     entityMockUtils.configureMocks({
       identityOptions: {
         getVenues: [entityMockUtils.getVenueInstance({ details: { type: VenueType.Exchange } })],
-      },
-      defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
@@ -239,12 +236,8 @@ describe('launchOffering procedure', () => {
     expect(err?.message).toBe('A valid Venue for the Offering was neither supplied nor found');
   });
 
-  test("should throw an error if Assets offered exceed the Portfolio's balance", async () => {
-    entityMockUtils.configureMocks({
-      defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
-      },
-    });
+  test("should throw an error if Asset tokens offered exceed the Portfolio's balance", async () => {
+    portfolio.getAssetBalances.resolves([{ free: new BigNumber(1) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
@@ -263,11 +256,7 @@ describe('launchOffering procedure', () => {
   });
 
   test('should add a create fundraiser transaction to the queue', async () => {
-    entityMockUtils.configureMocks({
-      defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
-      },
-    });
+    portfolio.getAssetBalances.resolves([{ free: new BigNumber(1000) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
       offeringPortfolioId,
@@ -310,7 +299,7 @@ describe('launchOffering procedure', () => {
         getVenues: [venue],
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(1000) }] as PortfolioBalance[],
       },
     });
 
@@ -365,8 +354,9 @@ describe('launchOffering procedure', () => {
     test('should return the new Offering', () => {
       const result = createOfferingResolver(ticker, mockContext)({} as ISubmittableResult);
 
-      const newOffering = entityMockUtils.getOfferingInstance();
-      expect(result).toEqual(newOffering);
+      expect(result).toEqual(
+        expect.objectContaining({ asset: expect.objectContaining({ ticker }), id: stoId })
+      );
     });
   });
 
@@ -385,7 +375,6 @@ describe('launchOffering procedure', () => {
       portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolios[0]);
       portfolioIdToPortfolioStub.withArgs(raisingPortfolioId, mockContext).returns(portfolios[1]);
 
-      const asset = entityMockUtils.getAssetInstance({ ticker });
       const roles = [
         { type: RoleType.PortfolioCustodian, portfolioId: offeringPortfolioId },
         { type: RoleType.PortfolioCustodian, portfolioId: raisingPortfolioId },
@@ -395,7 +384,7 @@ describe('launchOffering procedure', () => {
         roles,
         permissions: {
           transactions: [TxTags.sto.CreateFundraiser],
-          assets: [asset],
+          assets: [expect.objectContaining({ ticker })],
           portfolios,
         },
       });

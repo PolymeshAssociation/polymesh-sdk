@@ -49,7 +49,6 @@ describe('waivePermissions procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -166,7 +165,7 @@ describe('waivePermissions procedure', () => {
       ).toEqual({
         signerPermissions: {
           transactions: [TxTags.externalAgents.Abdicate],
-          assets: [asset],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
         roles: [{ type: RoleType.Identity, did }],

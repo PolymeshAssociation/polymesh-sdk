@@ -43,7 +43,6 @@ describe('Asset class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -88,7 +87,7 @@ describe('Asset class', () => {
     let asset: Asset;
 
     beforeAll(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       name = 'tokenName';
       totalSupply = new BigNumber(1000);
       isDivisible = true;
@@ -150,8 +149,8 @@ describe('Asset class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
-      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did: owner })]);
+      expect(details.primaryIssuanceAgents[0].did).toBe(did);
+      expect(details.fullAgents[0].did).toBe(owner);
       expect(details.requiresInvestorUniqueness).toBe(true);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
@@ -165,7 +164,7 @@ describe('Asset class', () => {
 
       details = await asset.details();
       expect(details.primaryIssuanceAgents).toEqual([]);
-      expect(details.fullAgents).toEqual([entityMockUtils.getIdentityInstance({ did })]);
+      expect(details.fullAgents[0].did).toEqual(did);
 
       tokensStub.resolves(
         dsMockUtils.createMockSecurityToken({
@@ -213,8 +212,8 @@ describe('Asset class', () => {
           name,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
-          fullAgents: [entityMockUtils.getIdentityInstance({ did: owner })],
+          primaryIssuanceAgents: [sinon.match({ did })],
+          fullAgents: [sinon.match({ did: owner })],
           requiresInvestorUniqueness: true,
         })
       );
@@ -280,7 +279,7 @@ describe('Asset class', () => {
     let asset: Asset;
 
     beforeAll(() => {
-      ticker = 'FAKETICKER';
+      ticker = 'FAKE_TICKER';
       fundingRound = 'Series A';
     });
 

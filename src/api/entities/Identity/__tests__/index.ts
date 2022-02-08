@@ -20,6 +20,7 @@ import {
   RoleType,
   TickerOwnerRole,
   VenueOwnerRole,
+  VenueType,
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -82,7 +83,6 @@ describe('Identity class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {
@@ -115,10 +115,6 @@ describe('Identity class', () => {
       entityMockUtils.reset();
     });
 
-    afterAll(() => {
-      entityMockUtils.cleanup();
-    });
-
     test('should return whether the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
@@ -132,12 +128,19 @@ describe('Identity class', () => {
         result: true,
       });
 
-      entityMockUtils.reset();
+      const stub = sinon.stub();
 
-      const stub = entityMockUtils.getTickerReservationDetailsStub();
-
-      stub.onSecondCall().returns({
+      stub.onFirstCall().resolves({
+        owner: identity,
+      });
+      stub.onSecondCall().resolves({
         owner: null,
+      });
+
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: stub,
+        },
       });
 
       result = await identity.checkRoles(roles);
@@ -156,10 +159,6 @@ describe('Identity class', () => {
 
     afterEach(() => {
       entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
     });
 
     test('hasRole should check whether the Identity has the Ticker Owner role', async () => {
@@ -204,7 +203,13 @@ describe('Identity class', () => {
       const role: VenueOwnerRole = { type: RoleType.VenueOwner, venueId: new BigNumber(10) };
 
       entityMockUtils.configureMocks({
-        venueOptions: { details: { owner: new Identity({ did }, context) } },
+        venueOptions: {
+          details: {
+            owner: new Identity({ did }, context),
+            type: VenueType.Sto,
+            description: 'aVenue',
+          },
+        },
       });
 
       let hasRole = await identity.hasRole(role);
@@ -288,10 +293,19 @@ describe('Identity class', () => {
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
 
-      const stub = entityMockUtils.getTickerReservationDetailsStub();
+      const stub = sinon.stub();
 
+      stub.onFirstCall().returns({
+        owner: identity,
+      });
       stub.onSecondCall().returns({
         owner: null,
+      });
+
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: stub,
+        },
       });
 
       const hasRole = await identity.hasRoles(roles);
@@ -481,7 +495,7 @@ describe('Identity class', () => {
       });
       /* eslint-enabled @typescript-eslint/naming-convention */
 
-      const account = entityMockUtils.getAccountInstance({ address: accountId });
+      const account = expect.objectContaining({ address: accountId });
 
       fakeResult = {
         account,
@@ -501,7 +515,15 @@ describe('Identity class', () => {
       didRecordsStub.returns(rawDidRecord);
 
       const result = await identity.getPrimaryAccount();
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual({
+        account: expect.objectContaining({ address: accountId }),
+        permissions: {
+          assets: null,
+          transactions: null,
+          portfolios: null,
+          transactionGroups: [],
+        },
+      });
     });
 
     test('should allow subscription', async () => {
@@ -519,7 +541,10 @@ describe('Identity class', () => {
       const result = await identity.getPrimaryAccount(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
+      sinon.assert.calledWithExactly(callback, {
+        ...fakeResult,
+        account: sinon.match({ address: accountId }),
+      });
     });
   });
 
@@ -602,8 +627,6 @@ describe('Identity class', () => {
     });
 
     test('should return a list of Venues', async () => {
-      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
-
       dsMockUtils
         .createQueryStub('settlement', 'userVenues')
         .withArgs(rawDid)
@@ -612,13 +635,11 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       const result = await identity.getVenues();
-      expect(result).toEqual(fakeResult);
+      expect(result[0].id).toEqual(venueId);
     });
 
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
-
-      const fakeResult = [entityMockUtils.getVenueInstance({ id: venueId })];
 
       dsMockUtils.createQueryStub('settlement', 'userVenues').callsFake(async (_, cbFunc) => {
         cbFunc([rawVenueId]);
@@ -630,7 +651,7 @@ describe('Identity class', () => {
       const callback = sinon.stub();
       const result = await identity.getVenues(callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
+      sinon.assert.calledWithMatch(callback, [sinon.match({ id: venueId })]);
     });
   });
 
@@ -861,9 +882,9 @@ describe('Identity class', () => {
 
       const result = await identity.getInstructions();
 
-      expect(result.affirmed).toEqual([entityMockUtils.getInstructionInstance({ id: id1 })]);
-      expect(result.pending).toEqual([entityMockUtils.getInstructionInstance({ id: id2 })]);
-      expect(result.failed).toEqual([entityMockUtils.getInstructionInstance({ id: id4 })]);
+      expect(result.affirmed[0].id).toEqual(id1);
+      expect(result.pending[0].id).toEqual(id2);
+      expect(result.failed[0].id).toEqual(id4);
     });
   });
 

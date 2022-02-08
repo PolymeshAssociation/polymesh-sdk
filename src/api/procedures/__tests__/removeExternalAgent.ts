@@ -64,7 +64,6 @@ describe('removeExternalAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -80,7 +79,7 @@ describe('removeExternalAgent procedure', () => {
       });
 
       expect(result).toEqual({
-        asset,
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
@@ -95,7 +94,7 @@ describe('removeExternalAgent procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.RemoveAgent],
-          assets: [asset],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

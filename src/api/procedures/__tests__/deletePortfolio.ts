@@ -49,7 +49,7 @@ describe('deletePortfolio procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,
-        assetBalances: [zeroBalance, zeroBalance],
+        getAssetBalances: [zeroBalance, zeroBalance],
       },
     });
   });
@@ -61,15 +61,14 @@ describe('deletePortfolio procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the portfolio has balance in it', () => {
+  test('should throw an error if the Portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        assetBalances: [
+        getAssetBalances: [
           { total: new BigNumber(1) },
           { total: new BigNumber(0) },
         ] as PortfolioBalance[],
@@ -84,6 +83,23 @@ describe('deletePortfolio procedure', () => {
         did,
       })
     ).rejects.toThrow('Only empty Portfolios can be deleted');
+  });
+
+  test('should throw an error if the Portfolio has balance in it', () => {
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        exists: false,
+      },
+    });
+
+    const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
+
+    return expect(
+      prepareDeletePortfolio.call(proc, {
+        id,
+        did,
+      })
+    ).rejects.toThrow("The Portfolio doesn't exist");
   });
 
   test('should add a delete portfolio transaction to the queue', async () => {
@@ -102,7 +118,7 @@ describe('deletePortfolio procedure', () => {
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        assetBalances: [],
+        getAssetBalances: [],
       },
     });
 

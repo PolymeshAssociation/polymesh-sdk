@@ -8,6 +8,11 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
+);
+
 describe('quitSubsidy procedure', () => {
   let mockContext: Mocked<Context>;
   let beneficiary: Account;
@@ -41,20 +46,19 @@ describe('quitSubsidy procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   test('should throw an error if the Subsidy does not exist', async () => {
     const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
-    entityMockUtils.getSubsidyExistsStub().resolves(false);
-    mockContext.getCurrentAccount.returns(beneficiary);
 
     let error;
 
     try {
-      await prepareQuitSubsidy.call(proc, args);
+      await prepareQuitSubsidy.call(proc, {
+        subsidy: entityMockUtils.getSubsidyInstance({ exists: false }),
+      });
     } catch (err) {
       error = err;
     }
@@ -73,23 +77,15 @@ describe('quitSubsidy procedure', () => {
 
     const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
 
-    mockContext.getCurrentAccount.onFirstCall().returns(beneficiary);
-
     await prepareQuitSubsidy.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: removePayingKeyTransaction,
-      args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
-    });
-
-    mockContext.getCurrentAccount.onSecondCall().returns(subsidizer);
-
-    await prepareQuitSubsidy.call(proc, args);
-
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: removePayingKeyTransaction,
-      args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
-    });
+    sinon.assert.calledWith(
+      addTransactionStub,
+      sinon.match({
+        transaction: removePayingKeyTransaction,
+        args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
+      })
+    );
   });
 
   describe('getAuthorization', () => {

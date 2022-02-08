@@ -69,7 +69,6 @@ describe('inviteAccount procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -131,7 +130,11 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    entityMockUtils.getAccountGetIdentityStub().resolves(null);
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: null,
+      },
+    });
 
     signerToStringStub.withArgs(account).returns(account.address);
     signerToStringStub.withArgs(args.targetAccount).returns(address);
@@ -262,7 +265,11 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    entityMockUtils.getAccountGetIdentityStub().resolves(null);
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: null,
+      },
+    });
 
     signerToStringStub.withArgs(args.targetAccount).returns(address);
     signerToStringStub.withArgs(target).returns(address);

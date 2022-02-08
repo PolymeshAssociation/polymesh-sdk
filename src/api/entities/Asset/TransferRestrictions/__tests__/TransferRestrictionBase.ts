@@ -47,7 +47,6 @@ describe('TransferRestrictionBase class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 

@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
-import { Asset, Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
+import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';
@@ -71,7 +71,6 @@ describe('moveFunds procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -122,34 +121,34 @@ describe('moveFunds procedure', () => {
   test('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
-    const fromDid = 'someDid';
-    const toDid = 'otherDid';
-    const from = new NumberedPortfolio({ id: fromId, did: fromDid }, mockContext);
-    const to = new NumberedPortfolio({ id: toId, did: toDid }, mockContext);
-    const asset01 = new Asset({ ticker: 'TICKER001' }, mockContext);
-    const asset02 = new Asset({ ticker: 'TICKER002' }, mockContext);
+    const did = 'someDid';
+    const asset1 = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
+    const asset2 = entityMockUtils.getAssetInstance({ ticker: 'TICKER002' });
     const items: PortfolioMovement[] = [
       {
-        asset: asset01.ticker,
+        asset: asset1.ticker,
         amount: new BigNumber(100),
       },
       {
-        asset: asset02,
+        asset: asset2,
         amount: new BigNumber(20),
       },
     ];
 
-    portfolioLikeToPortfolioIdStub.withArgs(from).returns({ did: fromDid, number: fromId });
-    portfolioLikeToPortfolioIdStub.withArgs(to).returns({ did: toDid, number: toId });
-
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        assetBalances: [
-          { asset: asset01, free: new BigNumber(50) },
-          { asset: asset02, free: new BigNumber(10) },
-        ] as PortfolioBalance[],
+        getAssetBalances: [
+          { asset: asset1, free: new BigNumber(50) },
+          { asset: asset2, free: new BigNumber(10) },
+        ] as unknown as PortfolioBalance[],
       },
     });
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
+
+    portfolioLikeToPortfolioIdStub.withArgs(from).returns({ did, number: fromId });
+    portfolioLikeToPortfolioIdStub.withArgs(to).returns({ did, number: toId });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -175,9 +174,7 @@ describe('moveFunds procedure', () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
-    const from = new NumberedPortfolio({ id: fromId, did }, mockContext);
-    const to = new NumberedPortfolio({ id: toId, did }, mockContext);
-    const asset = new Asset({ ticker: 'TICKER001' }, mockContext);
+    const asset = entityMockUtils.getAssetInstance({ ticker: 'TICKER001' });
     const items = [
       {
         asset: asset.ticker,
@@ -188,19 +185,25 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         did,
-        assetBalances: [{ asset, total: new BigNumber(150) }] as PortfolioBalance[],
+        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
       },
       defaultPortfolioOptions: {
         did,
-        assetBalances: [{ asset, total: new BigNumber(150) }] as PortfolioBalance[],
+        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
       },
     });
+
+    const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
+    const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
 
     let fromPortfolioId: { did: string; number?: BigNumber } = { did, number: fromId };
     let toPortfolioId: { did: string; number?: BigNumber } = { did, number: toId };
 
     portfolioLikeToPortfolioIdStub.withArgs(from).returns(fromPortfolioId);
     portfolioLikeToPortfolioIdStub.withArgs(to).returns(toPortfolioId);
+    portfolioLikeToPortfolioIdStub
+      .withArgs(sinon.match({ owner: sinon.match({ did }), id: toId }))
+      .returns(toPortfolioId);
 
     let rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -247,11 +250,11 @@ describe('moveFunds procedure', () => {
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
     });
 
-    const defaultTo = new DefaultPortfolio({ did }, mockContext);
-
     toPortfolioId = { did };
 
-    portfolioLikeToPortfolioIdStub.withArgs(defaultTo).returns(toPortfolioId);
+    portfolioLikeToPortfolioIdStub
+      .withArgs(sinon.match({ owner: sinon.match({ did }), id: undefined }))
+      .returns(toPortfolioId);
 
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -273,7 +276,7 @@ describe('moveFunds procedure', () => {
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
     });
 
-    const defaultFrom = new DefaultPortfolio({ did }, mockContext);
+    const defaultFrom = entityMockUtils.getDefaultPortfolioInstance({ did });
 
     fromPortfolioId = { did };
     toPortfolioId = { did, number: toId };
@@ -320,15 +323,14 @@ describe('moveFunds procedure', () => {
       const fromId = new BigNumber(1);
       const toId = new BigNumber(10);
       const did = 'someDid';
-      let from: DefaultPortfolio | NumberedPortfolio = new NumberedPortfolio(
-        { id: fromId, did },
-        mockContext
+      let from: DefaultPortfolio | NumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance(
+        { did, id: fromId }
       );
-      const toPortfolio = new NumberedPortfolio({ did, id: toId }, mockContext);
+      const to = entityMockUtils.getNumberedPortfolioInstance({ did, id: toId });
 
       let args = {
         from,
-      } as Params;
+      } as unknown as Params;
 
       let portfolioId: PortfolioId = { did, number: fromId };
 
@@ -336,17 +338,20 @@ describe('moveFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
-          portfolios: [from, new DefaultPortfolio({ did }, mockContext)],
+          portfolios: [
+            expect.objectContaining({ owner: expect.objectContaining({ did }), id: fromId }),
+            expect.objectContaining({ owner: expect.objectContaining({ did }) }),
+          ],
           assets: [],
         },
       });
 
-      from = new DefaultPortfolio({ did }, mockContext);
+      from = entityMockUtils.getDefaultPortfolioInstance({ did });
 
       args = {
         from,
         to: toId,
-      } as Params;
+      } as unknown as Params;
 
       portfolioId = { did };
 
@@ -354,15 +359,18 @@ describe('moveFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
-          portfolios: [from, toPortfolio],
+          portfolios: [
+            expect.objectContaining({ owner: expect.objectContaining({ did }) }),
+            expect.objectContaining({ owner: expect.objectContaining({ did }), id: toId }),
+          ],
           assets: [],
         },
       });
 
       args = {
         from,
-        to: toPortfolio,
-      } as Params;
+        to,
+      } as unknown as Params;
 
       portfolioId = { did };
 
@@ -370,7 +378,10 @@ describe('moveFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.portfolio.MovePortfolioFunds],
-          portfolios: [from, toPortfolio],
+          portfolios: [
+            expect.objectContaining({ owner: expect.objectContaining({ did }) }),
+            expect.objectContaining({ owner: expect.objectContaining({ did }), id: toId }),
+          ],
           assets: [],
         },
       });

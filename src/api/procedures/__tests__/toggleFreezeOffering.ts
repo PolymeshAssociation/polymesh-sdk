@@ -62,7 +62,6 @@ describe('toggleFreezeOffering procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -210,7 +209,7 @@ describe('toggleFreezeOffering procedure', () => {
       );
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = entityMockUtils.getAssetInstance({ ticker });
+      const asset = expect.objectContaining({ ticker });
 
       expect(boundFunc({ ticker, id, freeze: true })).toEqual({
         permissions: {

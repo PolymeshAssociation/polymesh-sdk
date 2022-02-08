@@ -77,7 +77,6 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });

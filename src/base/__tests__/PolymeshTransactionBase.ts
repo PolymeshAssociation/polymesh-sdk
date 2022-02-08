@@ -44,7 +44,6 @@ describe('Polymesh Transaction Base class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   describe('method: run', () => {

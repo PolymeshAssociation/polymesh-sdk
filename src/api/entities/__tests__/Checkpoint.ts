@@ -46,7 +46,6 @@ describe('Checkpoint class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
   test('should extend Entity', () => {

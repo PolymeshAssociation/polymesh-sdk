@@ -62,7 +62,6 @@ describe('Permissions class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -159,7 +158,8 @@ describe('Permissions class', () => {
 
       const result = await permissions.getGroup({ id });
 
-      expect(result).toEqual(entityMockUtils.getCustomPermissionGroupInstance({ id, ticker }));
+      expect(result.id).toEqual(id);
+      expect(result.asset.ticker).toBe(ticker);
     });
 
     test('should throw an error if the Custom Permission Group does not exist', () => {
@@ -182,7 +182,8 @@ describe('Permissions class', () => {
 
       const result = await permissions.getGroup({ type });
 
-      expect(result).toEqual(entityMockUtils.getKnownPermissionGroupInstance({ type, ticker }));
+      expect(result.type).toEqual(type);
+      expect(result.asset.ticker).toBe(ticker);
     });
   });
 

@@ -3,15 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Asset,
-  Context,
-  DefaultPortfolio,
-  Entity,
-  NumberedPortfolio,
-  Portfolio,
-  TransactionQueue,
-} from '~/internal';
+import { Asset, Context, Entity, NumberedPortfolio, Portfolio, TransactionQueue } from '~/internal';
 import { heartbeat, settlements } from '~/middleware/queries';
 import {
   SettlementDirectionEnum,
@@ -75,7 +67,6 @@ describe('Portfolio class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -86,10 +77,9 @@ describe('Portfolio class', () => {
   describe('constructor', () => {
     test('should assign Identity to instance', () => {
       const did = 'someDid';
-      const identity = entityMockUtils.getIdentityInstance({ did });
       const portfolio = new NonAbstract({ did }, context);
 
-      expect(portfolio.owner).toEqual(identity);
+      expect(portfolio.owner.did).toBe(did);
     });
   });
 
@@ -407,26 +397,23 @@ describe('Portfolio class', () => {
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
 
-      const asset1 = new Asset({ ticker: 'TICKER1' }, context);
+      const ticker1 = 'TICKER_1';
+      const ticker2 = 'TICKER_2';
+
       const amount1 = new BigNumber(1000);
-      const asset2 = new Asset({ ticker: 'TICKER2' }, context);
       const amount2 = new BigNumber(2000);
 
-      const portfolioDid1 = 'somePortfolioDid';
+      const portfolioDid1 = 'portfolioDid1';
       const portfolioKind1 = 'Default';
 
-      const portfolioDid2 = 'somePortfolioDid2';
+      const portfolioDid2 = 'portfolioDid2';
       const portfolioKind2 = '10';
 
-      const portfolio1 = new DefaultPortfolio({ did: portfolioDid1 }, context);
-      const portfolio2 = new NumberedPortfolio(
-        { did: portfolioDid2, id: new BigNumber(portfolioKind2) },
-        context
-      );
+      const portfolioId2 = new BigNumber(portfolioKind2);
 
-      const leg1 = [
+      const legs1 = [
         {
-          ticker: asset1.ticker,
+          ticker: ticker1,
           amount: amount1.toString(),
           direction: SettlementDirectionEnum.Incoming,
           from: {
@@ -439,9 +426,9 @@ describe('Portfolio class', () => {
           },
         },
       ];
-      const leg2 = [
+      const legs2 = [
         {
-          ticker: asset2.ticker,
+          ticker: ticker2,
           amount: amount2.toString(),
           direction: SettlementDirectionEnum.Outgoing,
           from: {
@@ -463,13 +450,13 @@ describe('Portfolio class', () => {
             block_id: blockNumber1.toNumber(),
             addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
             result: SettlementResultEnum.Executed,
-            legs: leg1,
+            legs: legs1,
           },
           {
             block_id: blockNumber2.toNumber(),
             addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
             result: SettlementResultEnum.Executed,
-            legs: leg2,
+            legs: legs2,
           },
         ],
       };
@@ -506,19 +493,21 @@ describe('Portfolio class', () => {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
-      expect(result.data[0].blockHash).toEqual(blockHash1);
-      expect(result.data[1].blockHash).toEqual(blockHash2);
-      expect(result.data[0].legs[0].asset.ticker).toEqual(asset1.ticker);
-      expect(result.data[1].legs[0].asset.ticker).toEqual(asset2.ticker);
+      expect(result.data[0].blockHash).toBe(blockHash1);
+      expect(result.data[1].blockHash).toBe(blockHash2);
+      expect(result.data[0].legs[0].asset.ticker).toBe(ticker1);
+      expect(result.data[1].legs[0].asset.ticker).toBe(ticker2);
       expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect(result.data[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result.data[0].legs[0].from).toEqual(portfolio1);
-      expect(result.data[0].legs[0].to).toEqual(portfolio2);
-      expect(result.data[1].legs[0].from).toEqual(portfolio2);
-      expect(result.data[1].legs[0].to).toEqual(portfolio1);
+      expect(result.data[0].legs[0].from.owner.did).toBe(portfolioDid1);
+      expect(result.data[0].legs[0].to.owner.did).toBe(portfolioDid2);
+      expect((result.data[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(result.data[1].legs[0].from.owner.did).toBe(portfolioDid2);
+      expect((result.data[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(result.data[1].legs[0].to.owner.did).toEqual(portfolioDid1);
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(5));
-      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
       dsMockUtils.createApolloQueryStub(
         settlements({

@@ -49,7 +49,6 @@ describe('AssetPermissions class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
@@ -156,10 +155,6 @@ describe('AssetPermissions class', () => {
 
     afterEach(() => {
       entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
     });
 
     test('should check whether the Identity has the appropriate permissions for the Asset', async () => {
@@ -361,10 +356,6 @@ describe('AssetPermissions class', () => {
 
     afterEach(() => {
       entityMockUtils.reset();
-    });
-
-    afterAll(() => {
-      entityMockUtils.cleanup();
     });
 
     test('should check whether the Identity has the appropriate permissions for the Asset', async () => {

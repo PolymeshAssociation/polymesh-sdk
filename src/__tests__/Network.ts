@@ -47,7 +47,6 @@ describe('Network Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -132,9 +131,13 @@ describe('Network Class', () => {
     test('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      entityMockUtils.getAccountInstance().getBalance.callsFake(async cbFunc => {
-        cbFunc(fakeBalance);
-        return unsubCallback;
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getBalance: sinon.stub().callsFake(async cbFunc => {
+            cbFunc(fakeBalance);
+            return unsubCallback;
+          }),
+        },
       });
 
       const callback = sinon.stub();

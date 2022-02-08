@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Account, Context, Entity, Subsidy, TransactionQueue } from '~/internal';
+import { Context, Entity, Subsidy, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 
@@ -16,6 +16,9 @@ jest.mock(
 
 describe('Subsidy class', () => {
   let context: Mocked<Context>;
+  let beneficiary: string;
+  let subsidizer: string;
+  let subsidy: Subsidy;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -25,6 +28,9 @@ describe('Subsidy class', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
+    beneficiary = 'beneficiary';
+    subsidizer = 'subsidizer';
+    subsidy = new Subsidy({ beneficiary, subsidizer }, context);
   });
 
   afterEach(() => {
@@ -35,7 +41,6 @@ describe('Subsidy class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -45,23 +50,18 @@ describe('Subsidy class', () => {
 
   describe('constructor', () => {
     test('should assign beneficiary and subsidizer to instance', () => {
-      const beneficiary = 'beneficiary';
-      const subsidizer = 'subsidizer';
-      const beneficiaryAccount = new Account({ address: beneficiary }, context);
-      const subsidizerAccount = new Account({ address: subsidizer }, context);
+      const fakeResult = expect.objectContaining({
+        beneficiary: expect.objectContaining({ address: beneficiary }),
+        subsidizer: expect.objectContaining({ address: subsidizer }),
+      });
 
-      const subsidy = new Subsidy({ beneficiary, subsidizer }, context);
-
-      expect(subsidy.subsidizer).toEqual(subsidizerAccount);
-      expect(subsidy.beneficiary).toEqual(beneficiaryAccount);
+      expect(subsidy).toEqual(fakeResult);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
     test('should return true if the object conforms to the interface', () => {
-      expect(
-        Subsidy.isUniqueIdentifiers({ beneficiary: 'beneficiary', subsidizer: 'subsidizer' })
-      ).toBe(true);
+      expect(Subsidy.isUniqueIdentifiers({ beneficiary, subsidizer })).toBe(true);
       expect(Subsidy.isUniqueIdentifiers({})).toBe(false);
       expect(Subsidy.isUniqueIdentifiers({ beneficiary: 1, subsidizer: 2 })).toBe(false);
     });
@@ -73,16 +73,9 @@ describe('Subsidy class', () => {
     });
 
     test('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const subsidy = new Subsidy(
-        { beneficiary: 'beneficiary', subsidizer: 'subsidizer' },
-        context
-      );
+      const args = { subsidy };
 
-      const args = {
-        subsidy,
-      };
-
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -96,43 +89,35 @@ describe('Subsidy class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the request exists', async () => {
-      const subsidy = new Subsidy(
-        { beneficiary: 'beneficiary', subsidizer: 'subsidizer' },
-        context
-      );
-
+    test('should return whether the Subsidy exists', async () => {
       context.accountSubsidy.onFirstCall().returns(null);
-
       await expect(subsidy.exists()).resolves.toBe(false);
 
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          isEqual: false,
+        },
+      });
       context.accountSubsidy.onSecondCall().returns({
-        subsidy: entityMockUtils.getSubsidyInstance({ subsidizer: 'otherAddress' }),
+        subsidy: entityMockUtils.getSubsidyInstance({ subsidizer: 'mockSubsidizer' }),
         allowance: new BigNumber(1),
       });
-
-      entityMockUtils.getAccountIsEqualStub().returns(false);
-
       await expect(subsidy.exists()).resolves.toBe(false);
 
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          isEqual: true,
+        },
+      });
       context.accountSubsidy.onThirdCall().returns({
         subsidy: entityMockUtils.getSubsidyInstance(),
         allowance: new BigNumber(1),
       });
-
-      entityMockUtils.getAccountIsEqualStub().returns(true);
-
       await expect(subsidy.exists()).resolves.toBe(true);
     });
   });
 
   describe('method: getAllowance', () => {
-    let subsidy: Subsidy;
-
-    beforeEach(() => {
-      subsidy = new Subsidy({ beneficiary: 'beneficiary', subsidizer: 'subsidizer' }, context);
-    });
-
     test('should throw an error if the Subsidy relationship does not exist', async () => {
       context.accountSubsidy.onFirstCall().returns(null);
 
@@ -150,8 +135,11 @@ describe('Subsidy class', () => {
         subsidy: entityMockUtils.getSubsidyInstance({ subsidizer: 'otherAddress' }),
         allowance: new BigNumber(1),
       });
-
-      entityMockUtils.getAccountIsEqualStub().returns(false);
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          isEqual: false,
+        },
+      });
 
       try {
         await subsidy.getAllowance();
@@ -168,22 +156,15 @@ describe('Subsidy class', () => {
         subsidy: entityMockUtils.getSubsidyInstance(),
         allowance,
       });
-
-      entityMockUtils.getAccountIsEqualStub().returns(true);
-
       await expect(subsidy.getAllowance()).resolves.toBe(allowance);
     });
   });
 
   describe('method: toJson', () => {
     test('should return a human readable version of the entity', () => {
-      const subsidy = new Subsidy(
-        { beneficiary: 'beneficiary', subsidizer: 'subsidizer' },
-        context
-      );
-      entityMockUtils.getAccountToJsonStub().onFirstCall().returns('beneficiary');
-      entityMockUtils.getAccountToJsonStub().onSecondCall().returns('subsidizer');
-      expect(subsidy.toJson()).toEqual({ beneficiary: 'beneficiary', subsidizer: 'subsidizer' });
+      subsidy.beneficiary.toJson = sinon.stub().returns(beneficiary);
+      subsidy.subsidizer.toJson = sinon.stub().returns(subsidizer);
+      expect(subsidy.toJson()).toEqual({ beneficiary, subsidizer });
     });
   });
 });

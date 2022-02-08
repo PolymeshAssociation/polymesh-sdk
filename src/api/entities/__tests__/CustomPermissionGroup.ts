@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'ASSETNAME';
+  const ticker = 'ASSET_NAME';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -40,7 +40,6 @@ describe('CustomPermissionGroup class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 

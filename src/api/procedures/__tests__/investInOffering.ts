@@ -130,7 +130,6 @@ describe('investInOffering procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -178,7 +177,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(20) }] as PortfolioBalance[],
       },
     });
 
@@ -220,7 +219,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(1) }] as PortfolioBalance[],
       },
     });
 
@@ -270,7 +269,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 
@@ -319,7 +318,7 @@ describe('investInOffering procedure', () => {
         },
       },
       defaultPortfolioOptions: {
-        assetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
+        getAssetBalances: [{ free: new BigNumber(200) }] as PortfolioBalance[],
       },
     });
 

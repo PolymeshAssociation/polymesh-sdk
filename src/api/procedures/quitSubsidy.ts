@@ -33,6 +33,8 @@ export async function prepareQuitSubsidy(
 
   const exists = await subsidy.exists();
 
+  console.log(exists);
+
   if (!exists) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
@@ -67,7 +69,7 @@ export async function getAuthorization(
     },
   } = args;
 
-  const { address } = await context.getCurrentAccount();
+  const { address } = context.getCurrentAccount();
 
   const hasRoles = [beneficiaryAddress, subsidizerAddress].includes(address);
 

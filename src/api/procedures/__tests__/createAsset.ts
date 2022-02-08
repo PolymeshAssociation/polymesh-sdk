@@ -225,7 +225,6 @@ describe('createAsset procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -273,7 +272,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toMatchObject(expect.objectContaining({ ticker }));
 
     await prepareCreateAsset.call(proc, {
       ...args,
@@ -323,7 +322,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
 
     proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
@@ -348,7 +347,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should waive protocol fees if the token was created in Ethereum', async () => {
@@ -382,7 +381,7 @@ describe('createAsset procedure', () => {
         rawDisableIu,
       ],
     });
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a document add transaction to the queue', async () => {
@@ -405,7 +404,7 @@ describe('createAsset procedure', () => {
       args: [rawDocuments, rawTicker],
     });
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   test('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
@@ -450,7 +449,7 @@ describe('createAsset procedure', () => {
       })
     );
 
-    expect(result).toMatchObject(entityMockUtils.getAssetInstance({ ticker }));
+    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('createRegisterCustomAssetTypeResolver', () => {
@@ -575,10 +574,14 @@ describe('createAsset procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      entityMockUtils.getTickerReservationDetailsStub().resolves({
-        owner: entityMockUtils.getIdentityInstance(),
-        expiryDate: null,
-        status: TickerReservationStatus.Reserved,
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: null,
+            status: TickerReservationStatus.Reserved,
+          },
+        },
       });
 
       let result = await boundFunc({ assetType: KnownAssetType.EquityCommon } as Params);

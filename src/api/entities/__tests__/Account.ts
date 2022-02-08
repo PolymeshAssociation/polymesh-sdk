@@ -54,7 +54,6 @@ describe('Account class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
     sinon.restore();
@@ -497,16 +496,18 @@ describe('Account class', () => {
 
       account = new Account({ address: secondaryAccountAddress }, context);
 
+      const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
+
       result = await account.checkPermissions({
         assets: [asset],
-        portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+        portfolios: [portfolio],
         transactions: [TxTags.asset.CreateAsset],
       });
 
       expect(result).toEqual({
         result: false,
         missingPermissions: {
-          portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' })],
+          portfolios: [portfolio],
         },
       });
 

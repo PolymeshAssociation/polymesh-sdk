@@ -39,7 +39,6 @@ describe('AccountManagement class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
@@ -224,7 +223,12 @@ describe('AccountManagement class', () => {
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(accountBalanceStub, callback);
 
-      accountBalanceStub = entityMockUtils.getAccountGetBalanceStub().resolves(unsubCallback);
+      accountBalanceStub = sinon.stub().resolves(unsubCallback);
+      entityMockUtils.configureMocks({
+        accountOptions: {
+          getBalance: accountBalanceStub,
+        },
+      });
       const account = 'someId';
       result = await accountManagement.getAccountBalance({ account }, callback);
       expect(result).toEqual(unsubCallback);

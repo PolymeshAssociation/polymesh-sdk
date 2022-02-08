@@ -56,7 +56,6 @@ describe('createCheckpoint procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
@@ -106,12 +105,10 @@ describe('createCheckpoint procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      const asset = entityMockUtils.getAssetInstance({ ticker });
-
       expect(boundFunc({ ticker })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateCheckpoint],
-          assets: [asset],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -811,7 +811,16 @@ export function conditionsAreEqual(
   const { trustedClaimIssuers: aClaimIssuers = [] } = a;
   const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
-  const equalClaimIssuers = hasSameElements(aClaimIssuers, bClaimIssuers);
+  const equalClaimIssuers = hasSameElements(
+    aClaimIssuers,
+    bClaimIssuers,
+    (
+      { identity: aIdentity, trustedFor: aTrustedFor },
+      { identity: bIdentity, trustedFor: bTrustedFor }
+    ) =>
+      signerToString(aIdentity) === signerToString(bIdentity) &&
+      hasSameElements(aTrustedFor || [], bTrustedFor || [])
+  );
 
   return equalClaims && equalClaimIssuers;
 }
