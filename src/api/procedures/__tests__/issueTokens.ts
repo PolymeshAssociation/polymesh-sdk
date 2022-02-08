@@ -20,7 +20,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
-describe('issueAssets procedure', () => {
+describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let bigNumberToBalance: sinon.SinonStub;
