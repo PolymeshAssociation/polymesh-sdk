@@ -1,5 +1,6 @@
 import { Keyring } from '@polkadot/api';
-import { IKeyringPair, TypeDef } from '@polkadot/types/types';
+import { AddressOrPair } from '@polkadot/api/types';
+import { IKeyringPair, Signer as PolkadotSigner, TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
@@ -1407,8 +1408,24 @@ export interface HistoricAgentOperation {
   history: EventIdentifier[];
 }
 
+export interface SigningManager {
+  /**
+   * Fetch and return all managed accounts (or keyring pairs)
+   */
+  getAccounts(): Promise<AddressOrPair[]>;
+
+  /**
+   * Return the external signer object that manages all signing logic
+   */
+  getExternalSigner(): PolkadotSigner | null;
+
+  /**
+   * Set the format in which the addresses returned by the Signing Manager are encoded
+   */
+  setSs58Format(ss58Format: number): void;
+}
+
 export { TxTags, TxTag, ModuleName };
-export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';
 export * from '~/base/types';

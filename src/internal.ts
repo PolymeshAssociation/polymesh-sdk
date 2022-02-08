@@ -5,6 +5,7 @@ export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
 export { PolymeshTransaction } from '~/base/PolymeshTransaction';
 export { PolymeshTransactionBatch } from '~/base/PolymeshTransactionBatch';
 export { Procedure } from '~/base/Procedure';
+export { LocalSigningManager } from '~/base/LocalSigningManager';
 export { Entity } from '~/api/entities/Entity';
 export { Namespace } from '~/api/entities/Namespace';
 export { Authorizations } from '~/api/entities/common/namespaces/Authorizations';
