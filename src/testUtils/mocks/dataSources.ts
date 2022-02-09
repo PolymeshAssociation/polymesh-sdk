@@ -2065,6 +2065,7 @@ export const createMockAuthorizationType = (
     | 'JoinIdentity'
     | 'Custom'
     | 'NoData'
+    | 'RotatePrimaryKeyToSecondary'
 ): MeshAuthorizationType => {
   return createMockEnum(authorizationType) as MeshAuthorizationType;
 };
@@ -2197,6 +2198,7 @@ export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: IdentityId }
     | 'RotatePrimaryKey'
+    | { RotatePrimaryKeyToSecondary: Permissions }
     | { TransferTicker: Ticker }
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }

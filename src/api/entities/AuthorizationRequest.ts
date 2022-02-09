@@ -5,8 +5,8 @@ import {
   ConsumeAddMultiSigSignerAuthorizationParams,
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
-  consumeJoinIdentityAuthorization,
-  ConsumeJoinIdentityAuthorizationParams,
+  consumeJoinOrRotateAuthorization,
+  ConsumeJoinOrRotateAuthorizationParams,
   Context,
   Entity,
   Identity,
@@ -70,17 +70,18 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
   /**
    * Authorization Request data corresponding to type of Authorization
    *
-   * | Type                        | Data                            |
-   * |-----------------------------|---------------------------------|
-   * | Add Relayer Paying Key      | Beneficiary, Relayer, Allowance |
-   * | Become Agent                | Permission Group                |
-   * | Attest Primary Key Rotation | DID                             |
-   * | Rotate Primary Key          | DID                             |
-   * | Transfer Ticker             | Ticker                          |
-   * | Add MultiSig Signer         | Account                         |
-   * | Transfer Asset Ownership    | Ticker                          |
-   * | Join Identity               | DID                             |
-   * | Portfolio Custody           | Portfolio                       |
+   * | Type                            | Data                            |
+   * |---------------------------------|---------------------------------|
+   * | Add Relayer Paying Key          | Beneficiary, Relayer, Allowance |
+   * | Become Agent                    | Permission Group                |
+   * | Attest Primary Key Rotation     | DID                             |
+   * | Rotate Primary Key              | N/A                             |
+   * | Rotate Primary Key to Secondary | Permissions                     |
+   * | Transfer Ticker                 | Ticker                          |
+   * | Add MultiSig Signer             | Account                         |
+   * | Transfer Token Ownership        | Ticker                          |
+   * | Join Identity                   | Permissions                     |
+   * | Portfolio Custody               | Portfolio                       |
    */
   public data: Authorization;
 
@@ -113,7 +114,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.accept = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
-      | ConsumeJoinIdentityAuthorizationParams
+      | ConsumeJoinOrRotateAuthorizationParams
       | ConsumeAddMultiSigSignerAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,8 +123,10 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       {
         getProcedureAndArgs: () => {
           switch (this.data.type) {
-            case AuthorizationType.JoinIdentity: {
-              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: true }];
+            case AuthorizationType.JoinIdentity:
+            case AuthorizationType.RotatePrimaryKey:
+            case AuthorizationType.RotatePrimaryKeyToSecondary: {
+              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: true }];
             }
             case AuthorizationType.AddMultiSigSigner: {
               return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: true }];
@@ -140,7 +143,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
 
     this.remove = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
-      | ConsumeJoinIdentityAuthorizationParams
+      | ConsumeJoinOrRotateAuthorizationParams
       | ConsumeAddMultiSigSignerAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,7 +153,10 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
         getProcedureAndArgs: () => {
           switch (this.data.type) {
             case AuthorizationType.JoinIdentity: {
-              return [consumeJoinIdentityAuthorization, { authRequest: this, accept: false }];
+              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: false }];
+            }
+            case AuthorizationType.RotatePrimaryKeyToSecondary: {
+              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: false }];
             }
             case AuthorizationType.AddMultiSigSigner: {
               return [consumeAddMultiSigSignerAuthorization, { authRequest: this, accept: false }];

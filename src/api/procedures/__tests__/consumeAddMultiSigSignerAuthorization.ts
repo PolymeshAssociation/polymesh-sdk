@@ -18,7 +18,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 
-describe('consumeJoinSignerAuthorization procedure', () => {
+describe('consumeAddMultiSigSignerAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
   let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
