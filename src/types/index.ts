@@ -1425,6 +1425,20 @@ export interface SigningManager {
   setSs58Format(ss58Format: number): void;
 }
 
+/**
+ * URI|mnemonic|hex representation of a private key
+ */
+export type PrivateKey =
+  | {
+      uri: string;
+    }
+  | {
+      mnemonic: string;
+    }
+  | {
+      seed: string;
+    };
+
 export { TxTags, TxTag, ModuleName };
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';

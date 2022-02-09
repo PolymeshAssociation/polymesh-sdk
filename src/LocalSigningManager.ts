@@ -1,51 +1,38 @@
 import { Keyring } from '@polkadot/api';
 import { IKeyringPair } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
-import { cryptoIsReady, cryptoWaitReady } from '@polkadot/util-crypto';
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 
-import { SigningManager } from '~/types';
-
-/**
- * URI|mnemonic|hex representation of a private key
- */
-type PrivateKey =
-  | {
-      uri: string;
-    }
-  | {
-      mnemonic: string;
-    }
-  | {
-      seed: string;
-    };
+import { PrivateKey, SigningManager } from '~/types';
 
 /**
  * Signing manager that holds private keys in memory
  */
 export class LocalSigningManager implements SigningManager {
   private keyring: Keyring;
+  private hasFormat?: boolean;
 
   /**
    * Create an instance of the Local Signing Manager and populates it with the passed accounts
+   *
+   * @param args.accounts - array of private keys
    */
   public static async create(args: { accounts: PrivateKey[] }): Promise<LocalSigningManager> {
-    if (!cryptoIsReady()) {
-      await cryptoWaitReady();
-    }
+    await cryptoWaitReady();
 
-    return new LocalSigningManager(args);
+    return new LocalSigningManager(args.accounts);
   }
 
   /**
-   * @param args.accounts - array of private keys
+   * @hidden
    */
-  private constructor(args: { accounts: PrivateKey[] }) {
+  private constructor(accounts: PrivateKey[]) {
     this.keyring = new Keyring({
       type: 'sr25519',
     });
 
-    args.accounts.forEach(account => {
-      this.addAccount(account);
+    accounts.forEach(account => {
+      this._addAccount(account);
     });
   }
 
@@ -53,6 +40,7 @@ export class LocalSigningManager implements SigningManager {
    * Set the SS58 format in which returned addresses will be encoded
    */
   public setSs58Format(ss58Format: number): void {
+    this.hasFormat = true;
     this.keyring.setSS58Format(ss58Format);
   }
 
@@ -76,11 +64,23 @@ export class LocalSigningManager implements SigningManager {
    * @returns the newly added account's address, encoded with the Signing Manager's
    *   current SS58 format
    *
-   * @note this method should only be called after instantiating the SDK with the Signing
-   *   Manager. Doing so before can cause return values to be incorrectly encoded. If accounts need to be pre-loaded,
-   *   it should be done with the `create` static method
+   * @throws if called before calling `setSs58Format`. Normally, `setSs58Format` will be called by the SDK when instantiated.
+   *   If accounts need to be pre-loaded, it should be done by passing them to the `create` method
    */
   public addAccount(account: PrivateKey): string {
+    const { hasFormat } = this;
+
+    if (!hasFormat) {
+      throw new Error('Cannot add accounts before calling `setSs58Format`');
+    }
+
+    return this._addAccount(account);
+  }
+
+  /**
+   * @hidden
+   */
+  private _addAccount(account: PrivateKey): string {
     const { keyring } = this;
 
     let address: string;
