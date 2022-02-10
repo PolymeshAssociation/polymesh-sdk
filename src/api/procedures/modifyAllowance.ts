@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { RelayerTx, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
 import { AllowanceOperation, ErrorCode } from '~/types';
@@ -107,7 +107,7 @@ export async function prepareModifyAllowance(
 /**
  * @hidden
  *
- * To modify the allowance for a Subsidy, the caller should be the subsidizer
+ * To modify the allowance for a Subsidy, the caller must be the subsidizer
  */
 export function getAuthorization(
   this: Procedure<ModifyAllowanceParams, void>,
@@ -123,17 +123,16 @@ export function getAuthorization(
 
   const hasRoles = subsidizer.isEqual(currentAccount);
 
-  const transactionMap = new Map<AllowanceOperation, RelayerTx>([
-    [AllowanceOperation.Increase, TxTags.relayer.IncreasePolyxLimit],
-    [AllowanceOperation.Decrease, TxTags.relayer.DecreasePolyxLimit],
-    [AllowanceOperation.Set, TxTags.relayer.UpdatePolyxLimit],
-  ]);
+  const transactionMap = {
+    [AllowanceOperation.Increase]: TxTags.relayer.IncreasePolyxLimit,
+    [AllowanceOperation.Decrease]: TxTags.relayer.DecreasePolyxLimit,
+    [AllowanceOperation.Set]: TxTags.relayer.UpdatePolyxLimit,
+  };
 
   return {
     roles: hasRoles || 'Only the subsidizer is allowed to modify the allowance of a Subsidy',
     permissions: {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      transactions: [transactionMap.get(operation)!],
+      transactions: [transactionMap[operation]],
     },
   };
 }

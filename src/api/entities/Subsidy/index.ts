@@ -147,7 +147,7 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
    *
    * @note Only the subsidizer is allowed to decrease the allowance
    *
-   * @throws if the allowance to decrease is not less than the existing allowance
+   * @throws if the amount to decrease by is more than the existing allowance
    */
   public decreaseAllowance: ProcedureMethod<Pick<ModifyAllowanceParams, 'allowance'>, void>;
 
