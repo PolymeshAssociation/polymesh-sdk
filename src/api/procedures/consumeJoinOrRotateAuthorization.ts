@@ -1,7 +1,8 @@
 import { TxTags } from 'polymesh-types/types';
 
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
+import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
+import { AuthorizationType, ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU64,
@@ -13,7 +14,7 @@ import {
 /**
  * @hidden
  */
-export interface ConsumeJoinIdentityAuthorizationParams {
+export interface ConsumeJoinOrRotateAuthorizationParams {
   authRequest: AuthorizationRequest;
   accept: boolean;
 }
@@ -25,10 +26,12 @@ export interface Storage {
 
 /**
  * @hidden
+ *
+ * Consumes JoinIdentity, RotatePrimaryKey and RotatePrimaryKeyToSecondaryKey Authorizations
  */
-export async function prepareConsumeJoinIdentityAuthorization(
-  this: Procedure<ConsumeJoinIdentityAuthorizationParams, void, Storage>,
-  args: ConsumeJoinIdentityAuthorizationParams
+export async function prepareConsumeJoinOrRotateAuthorization(
+  this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
+  args: ConsumeJoinOrRotateAuthorizationParams
 ): Promise<void> {
   const {
     context: {
@@ -41,7 +44,25 @@ export async function prepareConsumeJoinIdentityAuthorization(
   } = this;
   const { authRequest, accept } = args;
 
-  const { target, authId, issuer } = authRequest;
+  const {
+    target,
+    authId,
+    issuer,
+    data: { type },
+  } = authRequest;
+
+  if (
+    ![
+      AuthorizationType.JoinIdentity,
+      AuthorizationType.RotatePrimaryKeyToSecondary,
+      AuthorizationType.RotatePrimaryKey,
+    ].includes(type)
+  ) {
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: `Unrecognized auth type: "${type}" for consumeJoinOrRotateAuthorization method`,
+    });
+  }
 
   const rawAuthId = bigNumberToU64(authId, context);
 
@@ -67,11 +88,24 @@ export async function prepareConsumeJoinIdentityAuthorization(
 
   await assertAuthorizationRequestValid(authRequest, context);
 
-  this.addTransaction({
-    transaction: identity.joinIdentityAsKey,
-    paidForBy: issuer,
-    args: [rawAuthId],
-  });
+  if (type === AuthorizationType.JoinIdentity) {
+    this.addTransaction({
+      transaction: identity.joinIdentityAsKey,
+      paidForBy: issuer,
+      args: [rawAuthId],
+    });
+  } else {
+    const transaction =
+      type === AuthorizationType.RotatePrimaryKey
+        ? identity.acceptPrimaryKey
+        : identity.rotatePrimaryKeyToSecondary;
+
+    this.addTransaction({
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId, null],
+    });
+  }
 }
 
 /**
@@ -81,15 +115,18 @@ export async function prepareConsumeJoinIdentityAuthorization(
  * - If the auth is being rejected, we check that the caller is either the target or the issuer
  */
 export async function getAuthorization(
-  this: Procedure<ConsumeJoinIdentityAuthorizationParams, void, Storage>,
-  { authRequest, accept }: ConsumeJoinIdentityAuthorizationParams
+  this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
+  { authRequest, accept }: ConsumeJoinOrRotateAuthorizationParams
 ): Promise<ProcedureAuthorization> {
   const { issuer } = authRequest;
   const {
     storage: { currentAccount, calledByTarget },
   } = this;
-
   let hasRoles = calledByTarget;
+
+  const {
+    data: { type },
+  } = authRequest;
 
   /*
    * when accepting a JoinIdentity request, you don't need permissions (and can't have them by definition),
@@ -97,8 +134,7 @@ export async function getAuthorization(
    */
   if (accept) {
     return {
-      roles:
-        hasRoles || '"JoinIdentity" Authorization Requests must be accepted by the target Account',
+      roles: hasRoles || `"${type}" Authorization Requests must be accepted by the target Account`,
     };
   }
 
@@ -120,7 +156,7 @@ export async function getAuthorization(
   return {
     roles:
       hasRoles ||
-      '"JoinIdentity" Authorization Requests can only be removed by the issuer Identity or the target Account',
+      `"${type}" Authorization Requests can only be removed by the issuer Identity or the target Account`,
     permissions: {
       transactions: [TxTags.identity.RemoveAuthorization],
     },
@@ -131,8 +167,8 @@ export async function getAuthorization(
  * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<ConsumeJoinIdentityAuthorizationParams, void, Storage>,
-  { authRequest: { target } }: ConsumeJoinIdentityAuthorizationParams
+  this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
+  { authRequest: { target } }: ConsumeJoinOrRotateAuthorizationParams
 ): Promise<Storage> {
   const { context } = this;
 
@@ -150,8 +186,8 @@ export async function prepareStorage(
 /**
  * @hidden
  */
-export const consumeJoinIdentityAuthorization = (): Procedure<
-  ConsumeJoinIdentityAuthorizationParams,
+export const consumeJoinOrRotateAuthorization = (): Procedure<
+  ConsumeJoinOrRotateAuthorizationParams,
   void,
   Storage
-> => new Procedure(prepareConsumeJoinIdentityAuthorization, getAuthorization, prepareStorage);
+> => new Procedure(prepareConsumeJoinOrRotateAuthorization, getAuthorization, prepareStorage);

@@ -186,6 +186,7 @@ export enum AuthorizationType {
   PortfolioCustody = 'PortfolioCustody',
   BecomeAgent = 'BecomeAgent',
   AddRelayerPayingKey = 'AddRelayerPayingKey',
+  RotatePrimaryKeyToSecondary = 'RotatePrimaryKeyToSecondary',
 }
 
 export enum ConditionTarget {
@@ -1041,6 +1042,11 @@ export type RotatePrimaryKeyAuthorizationData = {
   type: AuthorizationType.RotatePrimaryKey;
 };
 
+export type RotatePrimaryKeyToSecondaryData = {
+  type: AuthorizationType.RotatePrimaryKeyToSecondary;
+  value: Permissions;
+};
+
 export type JoinIdentityAuthorizationData = {
   type: AuthorizationType.JoinIdentity;
   value: Permissions;
@@ -1069,6 +1075,7 @@ export type GenericAuthorizationData = {
     | AuthorizationType.PortfolioCustody
     | AuthorizationType.BecomeAgent
     | AuthorizationType.AddRelayerPayingKey
+    | AuthorizationType.RotatePrimaryKeyToSecondary
   >;
   value: string;
 };
@@ -1081,6 +1088,7 @@ export type Authorization =
   | PortfolioCustodyAuthorizationData
   | BecomeAgentAuthorizationData
   | AddRelayerPayingKeyAuthorizationData
+  | RotatePrimaryKeyToSecondaryData
   | GenericAuthorizationData;
 
 export enum TransactionArgumentType {
