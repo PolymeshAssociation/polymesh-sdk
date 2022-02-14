@@ -76,7 +76,7 @@ describe('transferPolyx procedure', () => {
   test("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     mockContext = dsMockUtils.getContextInstance({
       validCdd: false,
@@ -92,7 +92,7 @@ describe('transferPolyx procedure', () => {
   test("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     entityMockUtils.configureMocks({
       accountOptions: {
@@ -119,7 +119,7 @@ describe('transferPolyx procedure', () => {
 
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
     sinon.stub(utilsConversionModule, 'bigNumberToBalance').returns(rawAmount);

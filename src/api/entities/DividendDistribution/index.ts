@@ -183,7 +183,7 @@ export class DividendDistribution extends CorporateActionBase {
   }
 
   /**
-   * Claim the Dividends corresponding to the current Identity
+   * Claim the Dividends corresponding to the current signing Identity
    *
    * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
@@ -334,7 +334,7 @@ export class DividendDistribution extends CorporateActionBase {
    * Retrieve an Identity that is entitled to dividends in this Distribution (participant),
    *   the amount it is entitled to and whether it has been paid or not
    *
-   * @param args.identity - defaults to the current Identity
+   * @param args.identity - defaults to the current signing Identity
    *
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be null.
    *   This is because the Distribution participant's corresponding payment cannot be determined without a Checkpoint

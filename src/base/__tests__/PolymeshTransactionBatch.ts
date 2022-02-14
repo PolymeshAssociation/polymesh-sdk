@@ -1,3 +1,4 @@
+import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -20,7 +21,8 @@ describe('Polymesh Transaction Batch class', () => {
   });
 
   const txSpec = {
-    signer: 'signer',
+    signingAddress: 'signingAddress',
+    signer: 'signer' as PolkadotSigner,
     isCritical: false,
     fee: new BigNumber(100),
   };

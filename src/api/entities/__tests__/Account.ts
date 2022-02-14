@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Account, Context, Entity, TransactionQueue } from '~/internal';
+import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -59,10 +59,10 @@ describe('Account class', () => {
   test('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
     assertFormatValidStub.throws();
 
-    expect(() => {
-      // eslint-disable-next-line no-new
-      new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context);
-    }).toThrow();
+    expect(
+      // cSpell: disable-next-line
+      () => new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context)
+    ).toThrow();
 
     sinon.reset();
   });
@@ -91,7 +91,7 @@ describe('Account class', () => {
       account = new Account({ address }, context);
     });
 
-    test("should return the account's balance", async () => {
+    test("should return the Account's balance", async () => {
       const result = await account.getBalance();
 
       expect(result).toEqual(fakeResult);
@@ -127,7 +127,7 @@ describe('Account class', () => {
       context.accountSubsidy.resolves(fakeResult);
     });
 
-    test("should return the account's balance", async () => {
+    test("should return the Account's balance", async () => {
       const result = await account.getSubsidy();
 
       expect(result).toEqual(fakeResult);
@@ -202,6 +202,7 @@ describe('Account class', () => {
             address,
             nonce: 1,
             success: 0,
+            // cSpell: disable-next-line
             signedby_address: 1,
             block: {
               hash: blockHash1,
@@ -217,6 +218,7 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber2.toNumber(),
             success: 1,
+            // cSpell: disable-next-line
             signedby_address: 1,
             block: {
               hash: blockHash2,
@@ -228,7 +230,7 @@ describe('Account class', () => {
       };
       /* eslint-enabled @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       dsMockUtils.createQueryStub('system', 'blockHash', {
@@ -669,25 +671,6 @@ describe('Account class', () => {
       const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual(true);
-    });
-  });
-
-  describe('method: leaveIdentity', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
-
-      const args = {
-        account,
-      };
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await account.leaveIdentity();
-
-      expect(queue).toBe(expectedQueue);
     });
   });
 });

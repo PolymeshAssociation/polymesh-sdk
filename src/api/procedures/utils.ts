@@ -457,7 +457,7 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid join identity authorization request
+ * Asserts valid join Identity Authorization Request
  */
 export async function assertJoinIdentityAuthorizationValid(
   authRequest: AuthorizationRequest

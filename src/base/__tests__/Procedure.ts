@@ -198,7 +198,7 @@ describe('Procedure class', () => {
       });
 
       context = dsMockUtils.getContextInstance();
-      context.getCurrentAccount.returns(
+      context.getSigningAccount.returns(
         entityMockUtils.getAccountInstance({
           getIdentity: null,
           isFrozen: false,
@@ -323,7 +323,7 @@ describe('Procedure class', () => {
 
       const proc1 = new Procedure(func1);
 
-      let queue = await proc1.prepare({ args: procArgs }, context, { signer: 'something' });
+      let queue = await proc1.prepare({ args: procArgs }, context, { signingAccount: 'something' });
 
       expect(queue).toMatchObject({
         transactions: [
@@ -339,8 +339,9 @@ describe('Procedure class', () => {
             sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
         }),
-        { ...context, currentPair: { address: 'something' } }
+        { ...context, signingAddress: { address: 'something' } }
       );
+      sinon.assert.calledWith(context.setSigningAddress, 'something');
 
       const func2 = async function (
         this: Procedure<typeof procArgs, string>,
@@ -424,7 +425,7 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Identity doesn't have the required roles to execute this procedure"
+        "The current signing Identity doesn't have the required roles to execute this procedure"
       );
 
       proc = new Procedure(func, {
@@ -436,7 +437,7 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Account doesn't have the required permissions to execute this procedure"
+        "The current signing Account doesn't have the required permissions to execute this procedure"
       );
 
       proc = new Procedure(func, {
@@ -452,19 +453,19 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Identity doesn't have the required permissions to execute this procedure"
+        "The current signing Identity doesn't have the required permissions to execute this procedure"
       );
 
       context = dsMockUtils.getContextInstance();
 
-      context.getCurrentAccount.returns(
+      context.getSigningAccount.returns(
         entityMockUtils.getAccountInstance({
           getIdentity: null,
         })
       );
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        'This procedure requires the Current Account to have an associated Identity'
+        'This procedure requires the current signing Account to have an associated Identity'
       );
 
       proc = new Procedure(func, {
@@ -472,19 +473,19 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Account doesn't have the required permissions to execute this procedure"
+        "The current signing Account doesn't have the required permissions to execute this procedure"
       );
 
       proc = new Procedure(func, async () => ({ roles: 'Failed just because' }));
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Identity doesn't have the required roles to execute this procedure"
+        "The current signing Identity doesn't have the required roles to execute this procedure"
       );
 
       context = dsMockUtils.getContextInstance({ isFrozen: true });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "Current Account can't execute this procedure because it is frozen"
+        "The current signing Account can't execute this procedure because it is frozen"
       );
     });
   });

@@ -134,7 +134,7 @@ describe('inviteExternalAgent procedure', () => {
     });
   });
 
-  test('should throw an error if the target identity is already an External Agent', () => {
+  test('should throw an error if the target Identity is already an external agent', () => {
     const args = {
       target,
       ticker,

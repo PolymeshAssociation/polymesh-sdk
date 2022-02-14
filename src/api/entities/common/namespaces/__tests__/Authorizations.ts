@@ -61,7 +61,7 @@ describe('Authorizations class', () => {
       );
     });
 
-    test('should retrieve all pending authorizations received by the identity and filter out expired ones', async () => {
+    test('should retrieve all pending authorizations received by the Identity and filter out expired ones', async () => {
       const did = 'someDid';
       const filter = AuthorizationType.RotatePrimaryKey;
       const context = dsMockUtils.getContextInstance({ did });

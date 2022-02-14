@@ -116,7 +116,7 @@ const findPositiveBalanceIuClaims = (claims: ClaimTarget[], context: Context): P
 /**
  * @hidden
  *
- * Return all new CDD claims for identities that have an existing CDD claim with a different ID
+ * Return all new CDD claims for Identities that have an existing CDD claim with a different ID
  */
 const findInvalidCddClaims = async (
   claims: ClaimTarget[],
@@ -215,7 +215,7 @@ export async function prepareModifyClaims(
 
   // skip validation if the middleware is unavailable
   if (shouldValidateWithMiddleware) {
-    const { did: currentDid } = await context.getCurrentIdentity();
+    const { did: currentDid } = await context.getSigningIdentity();
     const {
       data: {
         didsWithClaims: { items: currentClaims },
@@ -243,7 +243,7 @@ export async function prepareModifyClaims(
     if (claimsByOtherIssuers.length) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the current Identity`,
+        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the current signing Identity`,
         data: {
           claimsByOtherIssuers,
         },

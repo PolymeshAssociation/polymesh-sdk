@@ -1,9 +1,12 @@
-import { ApiPromise, Keyring } from '@polkadot/api';
-import { AddressOrPair } from '@polkadot/api/types';
+import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
-import { hexToU8a } from '@polkadot/util';
+import {
+  CallFunction,
+  Signer as PolkadotSigner,
+  TypeDef,
+  TypeDefInfo,
+} from '@polkadot/types/types';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
@@ -27,24 +30,22 @@ import {
   ArrayTransactionArgument,
   ClaimData,
   ClaimType,
-  CommonKeyring,
   ComplexTransactionArgument,
   CorporateActionParams,
   DistributionWithDetails,
   ErrorCode,
-  KeyringPair,
   PlainTransactionArgument,
   ResultSet,
+  SigningManager,
   SimpleEnumTransactionArgument,
   SubCallback,
   Subsidy,
   TransactionArgument,
   TransactionArgumentType,
-  UiKeyring,
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, QueryReturnType } from '~/types/utils';
+import { Ensured, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
   accountIdToString,
@@ -69,48 +70,28 @@ import {
   u8ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import {
-  assertFormatValid,
-  assertKeyringFormatValid,
-  calculateNextKey,
-  createClaim,
-  getCommonKeyring,
-} from '~/utils/internal';
+import { assertFormatValid, calculateNextKey, createClaim } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-  keyring: CommonKeyring;
   ss58Format: BigNumber;
+  signingManager?: SigningManager;
 }
-
-interface AddPairBaseParams {
-  keyring: CommonKeyring;
-}
-
-type AddPairParams = {
-  accountSeed?: string;
-  accountUri?: string;
-  accountMnemonic?: string;
-  pair?: KeyringPair;
-};
 
 /**
  * @hidden
  *
  * Context in which the SDK is being used
  *
- * - Holds the current low level API
- * - Holds the current keyring pair
- * - Holds the current Identity
+ * - Holds the polkadot API instance
+ * - Holds the middleware API instance (if any)
+ * - Holds the Signing Manager (if any)
  */
 export class Context {
-  private keyring: CommonKeyring;
   private isDisconnected = false;
 
   public polymeshApi: ApiPromise;
-
-  public currentPair?: KeyringPair;
 
   /**
    * Whether the current node is an archive node (contains a full history from genesis onward) or not
@@ -123,24 +104,20 @@ export class Context {
 
   private _polymeshApi: ApiPromise;
 
+  private _signingManager?: SigningManager;
+
+  private signingAddress?: string;
+
   /**
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, keyring, ss58Format } = params;
+    const { polymeshApi, middlewareApi, ss58Format } = params;
 
     this._middlewareApi = middlewareApi;
     this._polymeshApi = polymeshApi;
     this.polymeshApi = Context.createPolymeshApiProxy(this);
-    this.keyring = keyring;
     this.ss58Format = ss58Format;
-
-    const currentPair = keyring.getPairs()[0];
-
-    if (currentPair) {
-      assertFormatValid(currentPair.address, ss58Format);
-      this.currentPair = currentPair;
-    }
   }
 
   /**
@@ -149,7 +126,7 @@ export class Context {
   static createPolymeshApiProxy(ctx: Context): ApiPromise {
     return new Proxy(ctx._polymeshApi, {
       get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
-        if (prop === 'tx' && !ctx.currentPair) {
+        if (prop === 'tx' && !ctx.signingAddress) {
           throw new PolymeshError({
             code: ErrorCode.General,
             message: 'Cannot perform transactions without an active Account',
@@ -169,42 +146,21 @@ export class Context {
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-    accountSeed?: string;
-    keyring?: CommonKeyring | UiKeyring;
-    accountUri?: string;
-    accountMnemonic?: string;
+    signingManager?: SigningManager;
   }): Promise<Context> {
-    const {
-      polymeshApi,
-      middlewareApi,
-      accountSeed,
-      keyring: passedKeyring,
-      accountUri,
-      accountMnemonic,
-    } = params;
+    const { polymeshApi, middlewareApi, signingManager } = params;
 
     const ss58Format: BigNumber = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
-    let keyring: CommonKeyring = new Keyring({
-      type: 'sr25519',
-      ss58Format: ss58Format.toNumber(),
-    });
+    const context = new Context({ polymeshApi, middlewareApi, signingManager, ss58Format });
 
-    if (passedKeyring) {
-      keyring = getCommonKeyring(passedKeyring);
-      assertKeyringFormatValid(keyring, ss58Format);
-    } else {
-      Context._addPair({
-        accountSeed,
-        accountMnemonic,
-        accountUri,
-        keyring,
-      });
+    const isArchiveNodePromise = context.isCurrentNodeArchive();
+
+    if (signingManager) {
+      await context.setSigningManager(signingManager);
     }
 
-    const context = new Context({ polymeshApi, middlewareApi, keyring, ss58Format });
-
-    context.isArchiveNode = await context.isCurrentNodeArchive();
+    context.isArchiveNode = await isArchiveNodePromise;
 
     return new Proxy(context, {
       get: (target, prop: keyof Context): Context[keyof Context] => {
@@ -242,93 +198,94 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve a list of Accounts that can act as signers. The first Account in the array is the current Account (default signer)
+   * @note the current signing Account will be set to the Signing Manager's first Account. If the Signing Manager has
+   *   no Accounts yet, the current signing Account will be left empty
    */
-  public getAccounts(): Account[] {
-    const { keyring, currentPair } = this;
+  public async setSigningManager(signingManager: SigningManager): Promise<void> {
+    this._signingManager = signingManager;
 
-    if (!currentPair) {
+    signingManager.setSs58Format(this.ss58Format.toNumber());
+
+    // this could be undefined
+    const [firstAccount] = await signingManager.getAccounts();
+
+    if (!firstAccount) {
+      this.signingAddress = undefined;
+    } else {
+      return this.setSigningAddress(firstAccount);
+    }
+  }
+
+  /**
+   * @hidden
+   */
+  private get signingManager(): SigningManager {
+    const { _signingManager: manager } = this;
+
+    if (!manager) {
       throw new PolymeshError({
         code: ErrorCode.General,
-        message: 'There is no Account associated with the SDK',
+        message: 'There is no Signing Manager attached to the SDK',
       });
     }
 
-    const pairs = [...keyring.getPairs()];
+    return manager;
+  }
 
-    const [first] = remove(pairs, ({ address }) => currentPair.address === address);
+  /**
+   * @hidden
+   *
+   * Retrieve a list of Accounts that can sign transactions. The first Account in the array is the current (default) Account
+   */
+  public async getSigningAccounts(): Promise<Account[]> {
+    const { signingManager } = this;
+
+    let accounts = await signingManager.getAccounts();
+
+    /*
+     * we clone the array so as to not mess with the Signing Manager's internal representation
+     * when we remove the first element
+     */
+    accounts = tuple(...accounts);
+
+    const signingAddress = this.getSigningAddress();
+
+    remove(accounts, account => signingAddress === account);
 
     return [
-      new Account({ address: first.address }, this),
-      ...pairs.map(({ address }) => new Account({ address }, this)),
+      new Account({ address: signingAddress }, this),
+      ...accounts.map(address => new Account({ address }, this)),
     ];
   }
 
   /**
    * @hidden
    *
-   * Add a signing pair to the Keyring
-   */
-  public addPair(params: AddPairParams): KeyringPair {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return Context._addPair({ ...params, keyring: this.keyring })!;
-  }
-
-  /**
-   * @hidden
-   */
-  private static _addPair(params: AddPairBaseParams & AddPairParams): KeyringPair | undefined {
-    const { accountSeed, accountUri, accountMnemonic, keyring, pair } = params;
-
-    let newPair: KeyringPair;
-    if (accountSeed) {
-      if (accountSeed.length !== 66) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'Seed must be 66 characters in length',
-        });
-      }
-
-      newPair = keyring.addFromSeed(hexToU8a(accountSeed), undefined, 'sr25519');
-    } else if (accountUri) {
-      newPair = keyring.addFromUri(accountUri);
-    } else if (accountMnemonic) {
-      newPair = keyring.addFromMnemonic(accountMnemonic);
-    } else if (pair) {
-      /*
-       * NOTE @monitz87: the only way to avoid this assertion is to import the Keyring package
-       *   which doesn't make sense just for this
-       */
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      newPair = keyring.addPair(pair as any);
-    } else {
-      return;
-    }
-
-    return newPair;
-  }
-
-  /**
-   * @hidden
+   * Set the signing Account from among the existing ones in the Signing Manager
    *
-   * Set a pair as the current Account keyring pair
+   * @throws if the passed address isn't present in the Signing Manager
    */
-  public setPair(address: string): void {
-    const { keyring } = this;
+  public async setSigningAddress(signingAddress: string): Promise<void> {
+    const { signingManager } = this;
 
-    let newCurrentPair;
+    const newAddress = signingAddress;
 
-    try {
-      assertFormatValid(address, this.ss58Format);
-      newCurrentPair = keyring.getPair(address);
-    } catch (e) {
+    assertFormatValid(newAddress, this.ss58Format);
+
+    const accounts = await signingManager.getAccounts();
+
+    const newSigningAddress = accounts.find(account => {
+      return account === newAddress;
+    });
+
+    if (!newSigningAddress) {
       throw new PolymeshError({
         code: ErrorCode.General,
-        message: 'The address is not present in the keyring set',
+        message: 'The Account is not part of the Signing Manager attached to the SDK',
       });
     }
 
-    this.currentPair = newCurrentPair;
+    this.signingAddress = newSigningAddress;
   }
 
   /**
@@ -359,7 +316,7 @@ export class Context {
     if (account) {
       address = signerToString(account);
     } else {
-      ({ address } = this.getCurrentAccount());
+      ({ address } = this.getSigningAccount());
     }
 
     const rawAddress = stringToAccountId(address, this);
@@ -420,7 +377,7 @@ export class Context {
     if (account) {
       address = signerToString(account);
     } else {
-      ({ address } = this.getCurrentAccount());
+      ({ address } = this.getSigningAccount());
     }
 
     const rawAddress = stringToAccountId(address, this);
@@ -453,12 +410,12 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the current Account
+   * Retrieve the current signing Account
    *
-   * @throws if there is no current Account associated to the SDK instance
+   * @throws if there is no signing Account associated to the SDK instance
    */
-  public getCurrentAccount(): Account {
-    const { address } = this.getCurrentPair();
+  public getSigningAccount(): Account {
+    const address = this.getSigningAddress();
 
     return new Account({ address }, this);
   }
@@ -466,19 +423,19 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the current Identity
+   * Retrieve the current signing Identity
    *
-   * @throws if there is no Identity associated to the current Account (or there is no current Account associated to the SDK instance)
+   * @throws if there is no Identity associated to the current signing Account (or there is no current signing Account associated to the SDK instance)
    */
-  public async getCurrentIdentity(): Promise<Identity> {
-    const account = this.getCurrentAccount();
+  public async getSigningIdentity(): Promise<Identity> {
+    const account = this.getSigningAccount();
 
     const identity = await account.getIdentity();
 
     if (identity === null) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'The current Account does not have an associated Identity',
+        message: 'The current signing Account does not have an associated Identity',
       });
     }
 
@@ -488,36 +445,32 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the current Keyring Pair
+   * Retrieve the current signing address
    *
-   * @throws if there is no Account associated to the SDK instance
+   * @throws if there is no signing Account associated to the SDK instance
    */
-  public getCurrentPair(): KeyringPair {
-    const { currentPair } = this;
+  public getSigningAddress(): string {
+    const { signingAddress } = this;
 
-    if (!currentPair) {
+    if (!signingAddress) {
       throw new PolymeshError({
         code: ErrorCode.General,
-        message: 'There is no Account associated with the current SDK instance',
+        message: 'There is no signing Account associated with the SDK instance',
       });
     }
 
-    return currentPair;
+    return signingAddress;
   }
 
   /**
    * @hidden
    *
-   * Retrieve the signer address (or keyring pair)
+   * Retrieve the external signer from the Signing Manager
    */
-  public getSigner(): AddressOrPair {
-    const currentPair = this.getCurrentPair();
-    const { isLocked, address } = currentPair;
-    /*
-     * if the keyring pair is locked, it means it most likely got added from the polkadot extension
-     * with a custom signer. This means we have to pass just the address to signAndSend
-     */
-    return isLocked ? address : currentPair;
+  public getExternalSigner(): PolkadotSigner {
+    const { signingManager } = this;
+
+    return signingManager.getExternalSigner();
   }
 
   /**
@@ -552,7 +505,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Returns an Identity when given a did string
+   * Returns an Identity when given a DID string
    *
    * @throws if the Identity does not exist
    */
@@ -630,7 +583,11 @@ export class Context {
    */
   public getTransactionArguments({ tag }: { tag: TxTag }): TransactionArgument[] {
     const {
-      polymeshApi: { tx },
+      /*
+       * we use the non-proxy polkadot instance since we shouldn't need to
+       * have a signer Account for this method
+       */
+      _polymeshApi: { tx },
     } = this;
     const { types } = polymesh;
 
@@ -1019,8 +976,8 @@ export class Context {
    *
    * Retrieve a list of claims. Can be filtered using parameters
    *
-   * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    * @param opts.size - page size
@@ -1190,7 +1147,7 @@ export class Context {
    * @hidden
    *
    * Returns a (shallow) clone of this instance. Useful for providing a separate
-   *   Context to Procedures with different signers
+   *   Context to Procedures with different signing Accounts
    */
   public clone(): Context {
     const cloned = clone(this);

@@ -134,7 +134,7 @@ export async function getAuthorization(
     let condition;
 
     if (target instanceof Account) {
-      const { address } = context.getCurrentAccount();
+      const { address } = context.getSigningAccount();
       condition = address === target.address;
     } else {
       did = await fetchDid();

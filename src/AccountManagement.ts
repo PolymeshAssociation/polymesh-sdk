@@ -4,6 +4,7 @@ import {
   Context,
   inviteAccount,
   InviteAccountParams,
+  leaveIdentity,
   modifySignerPermissions,
   ModifySignerPermissionsParams,
   removeSecondaryAccounts,
@@ -32,13 +33,16 @@ export class AccountManagement {
   constructor(context: Context) {
     this.context = context;
 
+    this.leaveIdentity = createProcedureMethod(
+      { getProcedureAndArgs: () => [leaveIdentity, undefined], voidArgs: true },
+      context
+    );
     this.removeSecondaryAccounts = createProcedureMethod(
       {
         getProcedureAndArgs: args => [removeSecondaryAccounts, { ...args }],
       },
       context
     );
-
     this.revokePermissions = createProcedureMethod<
       { secondaryAccounts: Account[] },
       ModifySignerPermissionsParams,
@@ -87,6 +91,11 @@ export class AccountManagement {
   }
 
   /**
+   * Disassociate the signing Account from its Identity. This operation can only be done if the signing Account is a secondary Account
+   */
+  public leaveIdentity: NoArgsProcedureMethod<void>;
+
+  /**
    * Remove a list of secondary Accounts associated with the signing Identity
    */
   public removeSecondaryAccounts: ProcedureMethod<RemoveSecondaryAccountsParams, void>;
@@ -123,7 +132,7 @@ export class AccountManagement {
   /**
    * Get the free/locked POLYX balance of an Account
    *
-   * @param args.account - defaults to the current Account
+   * @param args.account - defaults to the current signing Account
    *
    * @note can be subscribed to
    */
@@ -158,7 +167,7 @@ export class AccountManagement {
     }
 
     if (!account) {
-      account = context.getCurrentAccount();
+      account = context.getSigningAccount();
     } else if (typeof account === 'string') {
       account = new Account({ address: account }, context);
     }
@@ -171,7 +180,7 @@ export class AccountManagement {
   }
 
   /**
-   * Create an Account instance from an address. If no address is passed, the current Account is returned
+   * Create an Account instance from an address. If no address is passed, the current signing Account is returned
    */
   public getAccount(args?: { address: string }): Account {
     const { context } = this;
@@ -180,15 +189,15 @@ export class AccountManagement {
       return new Account(args, context);
     }
 
-    return context.getCurrentAccount();
+    return context.getSigningAccount();
   }
 
   /**
-   * Return a list that contains all the signing Accounts associated to the SDK instance
+   * Return a list that contains all the signing Accounts associated to the SDK instance's Signing Manager
    *
-   * @throws — if there is no current Account associated to the SDK instance
+   * @throws — if there is no Signing Manager attached to the SDK, or the Signing Manager has no Accounts
    */
-  public getAccounts(): Account[] {
-    return this.context.getAccounts();
+  public async getSigningAccounts(): Promise<Account[]> {
+    return this.context.getSigningAccounts();
   }
 }

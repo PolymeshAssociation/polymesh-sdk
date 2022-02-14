@@ -188,7 +188,7 @@ describe('modifyClaims procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getCurrentIdentity();
+    const { did } = await mockContext.getSigningIdentity();
 
     await prepareModifyClaims.call(
       procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext),
@@ -285,7 +285,7 @@ describe('modifyClaims procedure', () => {
       },
     });
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getCurrentIdentity();
+    const { did } = await mockContext.getSigningIdentity();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
@@ -347,9 +347,9 @@ describe('modifyClaims procedure', () => {
     expect(newCddId).toEqual(otherId);
   });
 
-  test("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {
+  test("should throw an error if any of the claims that will be modified weren't issued by the current signing Identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getCurrentIdentity();
+    const { did } = await mockContext.getSigningIdentity();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
@@ -369,19 +369,19 @@ describe('modifyClaims procedure', () => {
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit })
     ).rejects.toThrow(
-      new RegExp("Attempt to edit claims that weren't issued by the current Identity")
+      new RegExp("Attempt to edit claims that weren't issued by the current signing Identity")
     );
 
     return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
     ).rejects.toThrow(
-      new RegExp("Attempt to revoke claims that weren't issued by the current Identity")
+      new RegExp("Attempt to revoke claims that weren't issued by the current signing Identity")
     );
   });
 
   test('should throw an error if any Investor Uniqueness claim has balance in a revoke operation', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getCurrentIdentity();
+    const { did } = await mockContext.getSigningIdentity();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
@@ -421,7 +421,7 @@ describe('modifyClaims procedure', () => {
 
   test('should add a batch of revoke claim transactions to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getCurrentIdentity();
+    const { did } = await mockContext.getSigningIdentity();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({

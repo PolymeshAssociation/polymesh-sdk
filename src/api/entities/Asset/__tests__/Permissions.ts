@@ -218,7 +218,7 @@ describe('Permissions class', () => {
   });
 
   describe('method: getAgents', () => {
-    test('should retrieve a list of agent identities', async () => {
+    test('should retrieve a list of agent Identities', async () => {
       const did = 'someDid';
       const otherDid = 'otherDid';
       const customId = new BigNumber(1);

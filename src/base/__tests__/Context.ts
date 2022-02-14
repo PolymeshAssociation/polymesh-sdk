@@ -1,3 +1,4 @@
+import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ProtocolOp, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -16,7 +17,6 @@ import {
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
-import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -76,11 +76,11 @@ describe('Context class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if accessing the transaction submodule without an active account', async () => {
+  test('should throw an error if accessing the transaction submodule without an active Account', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: dsMockUtils.getMiddlewareApi(),
-      keyring: dsMockUtils.getKeyringInstance({ getPairs: [] }),
+      signingManager: dsMockUtils.getSigningManagerInstance({ getAccounts: [] }),
     });
 
     expect(() => context.polymeshApi.tx).toThrow(
@@ -89,21 +89,9 @@ describe('Context class', () => {
   });
 
   test('should throw an error if accessing the middleware client without an active connection', async () => {
-    const newPair = {
-      address: 'someAddress1',
-      meta: {},
-      publicKey: 'publicKey',
-    };
-    dsMockUtils.configureMocks({
-      keyringOptions: {
-        addFromSeed: newPair,
-      },
-    });
-
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: null,
-      accountSeed: '0x6'.padEnd(66, '0'),
     });
 
     expect(() => context.middlewareApi).toThrow(
@@ -112,29 +100,21 @@ describe('Context class', () => {
   });
 
   test('should check if the middleware client is equal to the instance passed to the constructor', async () => {
-    const newPair = {
-      address: 'someAddress1',
-      meta: {},
-      publicKey: 'publicKey',
-    };
-    dsMockUtils.configureMocks({
-      keyringOptions: {
-        addFromSeed: newPair,
-      },
-    });
-
     const middlewareApi = dsMockUtils.getMiddlewareApi();
 
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi,
-      accountSeed: '0x6'.padEnd(66, '0'),
     });
 
     expect(context.middlewareApi).toEqual(middlewareApi);
   });
 
   describe('method: create', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
     beforeEach(() => {
       dsMockUtils.createQueryStub('balances', 'totalIssuance', {
         returnValue: dsMockUtils.createMockBalance(new BigNumber(100)),
@@ -144,282 +124,171 @@ describe('Context class', () => {
       });
     });
 
-    test('should throw if seed parameter is not a 66 length string', () => {
-      const context = Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: 'abc',
-      });
-
-      return expect(context).rejects.toThrow(new Error('Seed must be 66 characters in length'));
+    afterAll(() => {
+      sinon.restore();
     });
 
-    test('should create a Context object from a seed with Pair attached', async () => {
-      const newPair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [newPair],
-        },
-      });
+    test('should create a Context object with a Signing Manager attached', async () => {
+      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: [address],
+        }),
       });
 
-      expect(context.currentPair).toEqual(newPair);
+      expect(context.getSigningAddress()).toEqual(address);
     });
 
-    test('should create a Context object from a keyring with Pair attached', async () => {
-      const pairs = [
-        {
-          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-          meta: {},
-          publicKey: 'publicKey',
-        },
-      ];
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: pairs,
-        },
+    test('should create a Context object without a Signing Manager attached', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
+      expect(() => context.getSigningAddress()).toThrow(
+        'There is no signing Account associated with the SDK instance'
+      );
+    });
+  });
+
+  describe('method: getSigningAccounts', () => {
+    beforeAll(() => {
       sinon.stub(utilsInternalModule, 'assertFormatValid');
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        keyring: dsMockUtils.getKeyringInstance(),
-      });
-
-      expect(context.currentPair).toEqual(pairs[0]);
     });
 
-    test('should throw if keyring has incorrect ss58 format set', () => {
-      const pairs = [
-        {
-          address: '2HFAAoz9ZGHnLL84ytDhVBXggYv4avQCiS5ajtKLudRhUFrh',
-          meta: {},
-          publicKey: 'publicKey',
-        },
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should retrieve an array of Accounts, with the current signing Account first', async () => {
+      const addresses = [
+        '5GNWrbft4pJcYSak9tkvUy89e2AKimEwHb6CKaJq81KHEj8e',
+        '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
       ];
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: pairs,
-          encodeAddress: '2HFAAoz9ZGHnLL84ytDhVBXggYv4avQCiS5ajtKLudRhUFrh',
-        },
-      });
-
-      const context = Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        keyring: dsMockUtils.getKeyringInstance(),
-      });
-
-      expect(context).rejects.toThrow(
-        new Error("The supplied keyring is not using the chain's SS58 format")
-      );
-    });
-
-    test('should create a Context object from a uri with Pair attached', async () => {
-      const newPair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [newPair],
-        },
-      });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountUri: '//Alice',
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: addresses,
+        }),
       });
 
-      expect(context.currentPair).toEqual(newPair);
-    });
-
-    test('should create a Context object from a mnemonic with Pair attached', async () => {
-      const newPair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [newPair],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountMnemonic: 'lorem ipsum dolor',
-      });
-
-      expect(context.currentPair).toEqual(newPair);
-    });
-
-    test('should create a Context object without Pair attached', async () => {
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-      });
-
-      expect(context.currentPair).toBe(undefined);
-    });
-  });
-
-  describe('method: getAccounts', () => {
-    test('should retrieve an array of Accounts', async () => {
-      const pairs = [
-        {
-          address: '5GNWrbft4pJcYSak9tkvUy89e2AKimEwHb6CKaJq81KHEj8e',
-          meta: {
-            name: 'name 01',
-          },
-          somethingElse: false,
-          publicKey: 'publicKey',
-        },
-        {
-          address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-          meta: {},
-          somethingElse: false,
-          publicKey: 'publicKey',
-        },
-      ];
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: pairs,
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-      });
-
-      let result = context.getAccounts();
-      expect(result[0].address).toBe(pairs[0].address);
-      expect(result[1].address).toBe(pairs[1].address);
+      let result = await context.getSigningAccounts();
+      expect(result[0].address).toBe(addresses[0]);
+      expect(result[1].address).toBe(addresses[1]);
       expect(result[0] instanceof Account).toBe(true);
       expect(result[1] instanceof Account).toBe(true);
 
-      context.setPair(result[1].address);
+      await context.setSigningAddress(result[1].address);
 
-      result = context.getAccounts();
-      expect(result[1].address).toBe(pairs[0].address);
-      expect(result[0].address).toBe(pairs[1].address);
+      result = await context.getSigningAccounts();
+      expect(result[1].address).toBe(addresses[0]);
+      expect(result[0].address).toBe(addresses[1]);
       expect(result[0] instanceof Account).toBe(true);
       expect(result[1] instanceof Account).toBe(true);
     });
-
-    test('should throw an error if there is no Current Account', async () => {
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-      });
-
-      expect(() => context.getAccounts()).toThrow('There is no Account associated with the SDK');
-    });
   });
 
-  describe('method: setPair', () => {
-    test('should throw error if the pair does not exist in the keyring set', async () => {
+  describe('method: setSigningAddress', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should throw error if the passed address does not exist in the Signing Manager', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['someAddress'],
+        }),
       });
 
-      dsMockUtils.getKeyringInstance().getPair.throws(new Error('failed'));
-
-      return expect(() => context.setPair('012')).toThrow(
-        'The address is not present in the keyring set'
+      return expect(() => context.setSigningAddress('otherAddress')).rejects.toThrow(
+        'The Account is not part of the Signing Manager attached to the SDK'
       );
     });
 
-    test('should set new value for currentPair', async () => {
-      const publicKey = 'publicKey';
-      const newPublicKey = 'newPublicKey';
-      const newAddress = 'newAddress';
-      const accountId = dsMockUtils.createMockAccountId(newAddress);
-      const newCurrentPair = {
-        address: newAddress,
-        meta: {},
-        publicKey: newPublicKey,
-      };
-
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromSeed: {
-            address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-            meta: {},
-            publicKey,
-          },
-          getPair: newCurrentPair,
-        },
-      });
-
+    test('should set the passed value as signing address', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['someAddress', 'otherAddress'],
+        }),
       });
 
-      sinon
-        .stub(utilsConversionModule, 'stringToAccountId')
-        .withArgs(newAddress, context)
-        .returns(accountId);
+      expect(context.getSigningAddress()).toBe('someAddress');
 
-      context.setPair(DUMMY_ACCOUNT_ID);
+      await context.setSigningAddress('otherAddress');
 
-      expect(context.currentPair).toEqual(newCurrentPair);
+      expect(context.getSigningAddress()).toBe('otherAddress');
+    });
+  });
+
+  describe('method: setSigningManager', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should set the passed value as Signing Manager', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(() => (context as any).signingManager).toThrow(
+        'There is no Signing Manager attached to the SDK'
+      );
+
+      const signingManager = dsMockUtils.getSigningManagerInstance({
+        getExternalSigner: 'signer' as PolkadotSigner,
+      });
+      await context.setSigningManager(signingManager);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((context as any).signingManager).toEqual(signingManager);
     });
   });
 
   describe('method: accountBalance', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     const free = new BigNumber(100);
     const reserved = new BigNumber(40);
     const miscFrozen = new BigNumber(50);
     const feeFrozen = new BigNumber(25);
 
-    test('should throw if accountId or currentPair is not set', async () => {
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [],
-        },
-      });
+    test('should throw if there is no signing Account and no Account is passed', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
       return expect(context.accountBalance()).rejects.toThrow(
-        'There is no Account associated with the current SDK instance'
+        'There is no signing Account associated with the SDK instance'
       );
     });
 
-    test('should return the Account POLYX balance if currentPair is set', async () => {
+    test('should return the signer Account POLYX balance if no address is passed', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -436,7 +305,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
       const result = await context.accountBalance();
@@ -447,7 +316,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the Account POLYX balance if accountId is set', async () => {
+    test('should return the Account POLYX balance if an address is passed', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -464,10 +333,9 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
-      const result = await context.accountBalance('accountId');
+      const result = await context.accountBalance('someAddress');
       expect(result).toEqual({
         free: free.minus(miscFrozen).shiftedBy(-6),
         locked: miscFrozen.shiftedBy(-6),
@@ -497,11 +365,10 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const callback = sinon.stub();
-      const result = await context.accountBalance('accountId', callback);
+      const result = await context.accountBalance('someAddress', callback);
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, {
@@ -513,23 +380,15 @@ describe('Context class', () => {
   });
 
   describe('method: accountSubsidy', () => {
-    test('should throw if accountId or currentPair is not set', async () => {
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [],
-        },
-      });
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-      });
-
-      return expect(context.accountSubsidy()).rejects.toThrow(
-        'There is no Account associated with the current SDK instance'
-      );
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
     });
 
-    test('should return the Account subsidizer and allowance if currentPair is set', async () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test("should return the current signer Account's subsidizer and allowance if no address is passed", async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -544,7 +403,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
       const result = await context.accountSubsidy();
@@ -554,7 +413,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the Account subsidizer and allowance if accountId is set', async () => {
+    test('should return the Account subsidizer and allowance if an address is passed', async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -569,10 +428,9 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
-      const result = await context.accountSubsidy('accountId');
+      const result = await context.accountSubsidy('someAddress');
       expect(result).toEqual({
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
         subsidizer: expect.objectContaining({ address: 'payingKey' }),
@@ -587,7 +445,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
       const result = await context.accountSubsidy();
@@ -613,7 +471,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const callback = sinon.stub();
@@ -627,8 +484,16 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: getCurrentIdentity', () => {
-    test('should return the current Identity', async () => {
+  describe('method: getSigningIdentity', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the current signing Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockIdentityId(did),
@@ -637,14 +502,14 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
-      const result = await context.getCurrentIdentity();
+      const result = await context.getSigningIdentity();
       expect(result.did).toBe(did);
     });
 
-    test('should throw an error if there is no Identity associated to the Current Account', async () => {
+    test('should throw an error if there is no Identity associated to the current signing Account', async () => {
       entityMockUtils.configureMocks({
         accountOptions: {
           getIdentity: null,
@@ -654,105 +519,60 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
-      return expect(context.getCurrentIdentity()).rejects.toThrow(
-        'The current Account does not have an associated Identity'
+      return expect(context.getSigningIdentity()).rejects.toThrow(
+        'The current signing Account does not have an associated Identity'
       );
     });
   });
 
-  describe('method: getCurrentAccount', () => {
-    test('should return the current Account', async () => {
-      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  describe('method: getSigningAccount', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
 
-      const pair = {
-        address,
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [pair],
-        },
-      });
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the current signing Account', async () => {
+      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: [address],
+        }),
       });
 
-      const result = context.getCurrentAccount();
-      expect(result.address).toBe(address);
+      const result = context.getSigningAccount();
+      expect(result).toEqual(expect.objectContaining({ address }));
     });
 
     test('should throw an error if there is no Account associated with the SDK', async () => {
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [],
-        },
-      });
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      let err;
-
-      try {
-        context.getCurrentAccount();
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err.message).toBe('There is no Account associated with the current SDK instance');
-    });
-  });
-
-  describe('method: getCurrentPair', () => {
-    test('should return the current keyring pair', async () => {
-      const pair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [pair],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      const result = context.getCurrentPair();
-
-      expect(result).toBe(pair);
-    });
-
-    test("should throw an error if the current pair isn't defined", async () => {
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [],
-        },
-      });
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-      });
-
-      expect(() => context.getCurrentPair()).toThrow(
-        'There is no Account associated with the current SDK instance'
+      expect(() => context.getSigningAccount()).toThrow(
+        'There is no signing Account associated with the SDK instance'
       );
     });
   });
 
   describe('method: getIdentity', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     const did = 'someDid';
 
     test('should return an Identity if given an Identity', async () => {
@@ -770,6 +590,7 @@ describe('Context class', () => {
       const result = await context.getIdentity(identity);
       expect(result).toEqual(expect.objectContaining({ did }));
     });
+
     test('should return an Identity if given a valid DID', async () => {
       entityMockUtils.configureMocks({
         identityOptions: {
@@ -813,53 +634,62 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: getSigner', () => {
-    test('should return the signer address if the current pair is locked', async () => {
-      const pair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-        isLocked: true,
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [pair],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      expect(context.getSigner()).toBe(pair.address);
+  describe('method: getSigningAddress', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
     });
 
-    test('should return the signer address if the current pair is locked', async () => {
-      const pair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-        isLocked: false,
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [pair],
-        },
-      });
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the current signing address', async () => {
+      const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: [address, 'somethingElse'],
+        }),
       });
 
-      expect(context.getSigner()).toEqual(pair);
+      expect(context.getSigningAddress()).toBe(address);
+    });
+  });
+
+  describe('method: getExternalSigner', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should get and return an external signer from the Signing Manager', async () => {
+      const signer = 'signer' as PolkadotSigner;
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getExternalSigner: signer,
+        }),
+      });
+
+      expect(context.getExternalSigner()).toBe(signer);
     });
   });
 
   describe('method: getInvalidDids', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     /* eslint-disable @typescript-eslint/naming-convention */
     test('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
@@ -880,21 +710,10 @@ describe('Context class', () => {
         ],
       });
 
-      const newPair = {
-        address: 'someAddress',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromUri: newPair,
-        },
-      });
-
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountUri: '//Alice',
+        signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
       const invalidDids = await context.getInvalidDids(inputDids);
@@ -905,18 +724,15 @@ describe('Context class', () => {
   });
 
   describe('method: getProtocolFees', () => {
-    test('should return the fees associated to the supplied transaction', async () => {
-      const pair = {
-        address: 'someAddress1',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromSeed: pair,
-        },
-      });
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
 
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return the fees associated to the supplied transaction', async () => {
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
@@ -924,7 +740,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
@@ -949,18 +764,15 @@ describe('Context class', () => {
   });
 
   describe('method: getTransactionArguments', () => {
-    test('should return a representation of the arguments of a transaction', async () => {
-      const pair = {
-        address: 'someAddress1',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          addFromSeed: pair,
-        },
-      });
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
 
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    test('should return a representation of the arguments of a transaction', async () => {
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
@@ -968,7 +780,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createTxStub('asset', 'registerTicker', {
@@ -1199,11 +1010,18 @@ describe('Context class', () => {
   });
 
   describe('method: issuedClaims', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return a result set of claims', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const targetDid = 'someTargetDid';
@@ -1316,7 +1134,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const targetDid = 'someTargetDid';
@@ -1449,7 +1266,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.configureMocks({
@@ -1465,11 +1281,18 @@ describe('Context class', () => {
   });
 
   describe('method: queryMiddleware', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should throw if the middleware query fails', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1498,7 +1321,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
@@ -1510,6 +1332,14 @@ describe('Context class', () => {
   });
 
   describe('method: getLatestBlock', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return the latest block', async () => {
       const blockNumber = new BigNumber(100);
 
@@ -1522,7 +1352,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.getLatestBlock();
@@ -1532,6 +1361,14 @@ describe('Context class', () => {
   });
 
   describe('method: getNetworkVersion', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return the network version', async () => {
       const version = '1.0.0';
 
@@ -1542,7 +1379,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const result = await context.getNetworkVersion();
@@ -1552,11 +1388,18 @@ describe('Context class', () => {
   });
 
   describe('method: isMiddlewareEnabled', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return true if the middleware is enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1568,7 +1411,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1578,11 +1420,18 @@ describe('Context class', () => {
   });
 
   describe('method: isMiddlewareAvailable', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return true if the middleware is available', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
@@ -1596,7 +1445,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1608,13 +1456,20 @@ describe('Context class', () => {
   });
 
   describe('method: disconnect', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should disconnect everything and leave the instance unusable', async () => {
       const polymeshApi = dsMockUtils.getApiInstance();
       const middlewareApi = dsMockUtils.getMiddlewareApi();
       let context = await Context.create({
         polymeshApi,
         middlewareApi,
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       await context.disconnect();
@@ -1623,14 +1478,13 @@ describe('Context class', () => {
       sinon.assert.calledOnce(polymeshApi.disconnect);
       sinon.assert.calledOnce(middlewareApi.stop);
 
-      expect(() => context.getAccounts()).toThrow(
+      expect(() => context.getSigningAccounts()).toThrow(
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
       );
 
       context = await Context.create({
         polymeshApi,
         middlewareApi: null,
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       await context.disconnect();
@@ -1639,116 +1493,17 @@ describe('Context class', () => {
       sinon.assert.calledTwice(polymeshApi.disconnect);
       sinon.assert.calledOnce(middlewareApi.stop);
 
-      expect(() => context.getAccounts()).toThrow(
+      expect(() => context.getSigningAccounts()).toThrow(
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
       );
     });
   });
 
-  describe('method: addPair', () => {
-    test('should add a new pair to the keyring via seed', async () => {
-      const newPair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [newPair],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      const accountSeed = '0x7'.padEnd(66, '0');
-
-      context.addPair({ accountSeed });
-
-      sinon.assert.calledTwice(dsMockUtils.getKeyringInstance().addFromSeed);
-    });
-
-    test('should add a new pair to the keyring via mnemonic', async () => {
-      const newPair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [newPair],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      const accountMnemonic = 'something';
-
-      context.addPair({ accountMnemonic });
-
-      sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addFromMnemonic, accountMnemonic);
-    });
-
-    test('should add a new pair to the keyring via uri', async () => {
-      const newPair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [newPair],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      const accountUri = 'something';
-
-      context.addPair({ accountUri });
-
-      sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addFromUri, accountUri);
-    });
-
-    test('should add a new pair to the keyring via pair', async () => {
-      const newPair = {
-        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-        meta: {},
-        publicKey: 'publicKey',
-      };
-      dsMockUtils.configureMocks({
-        keyringOptions: {
-          getPairs: [newPair],
-        },
-      });
-
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pair = 'something' as unknown as any;
-
-      context.addPair({ pair });
-
-      sinon.assert.calledWith(dsMockUtils.getKeyringInstance().addPair, pair);
-    });
-  });
-
   describe('method: getDividendDistributionsForAssets', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
     afterAll(() => {
       sinon.restore();
     });
@@ -1762,7 +1517,6 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi,
         middlewareApi,
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       const corporateActions = [
@@ -1922,11 +1676,19 @@ describe('Context class', () => {
   });
 
   describe('method: clone', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return a cloned instance', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
+        signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
       const cloned = context.clone();
@@ -1936,11 +1698,18 @@ describe('Context class', () => {
   });
 
   describe('method: supportsSubsidy', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertFormatValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
     test('should return whether the specified transaction supports subsidies', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountSeed: '0x6'.padEnd(66, '0'),
       });
 
       expect(context.supportsSubsidy({ tag: TxTags.system.FillBlock })).toBe(false);

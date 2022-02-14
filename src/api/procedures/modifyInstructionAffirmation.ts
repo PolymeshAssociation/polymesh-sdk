@@ -61,7 +61,7 @@ export async function prepareModifyInstructionAffirmation(
   if (!portfolios.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Current Identity is not involved in this Instruction',
+      message: 'The current signing Identity is not involved in this Instruction',
     });
   }
 
@@ -182,7 +182,7 @@ export async function prepareStorage(
   const instruction = new Instruction({ id }, context);
   const [{ data: legs }, { did }] = await Promise.all([
     instruction.getLegs(),
-    context.getCurrentIdentity(),
+    context.getSigningIdentity(),
   ]);
 
   const [portfolios, senderLegAmount] = await P.reduce<

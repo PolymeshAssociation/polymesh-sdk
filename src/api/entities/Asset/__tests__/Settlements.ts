@@ -47,7 +47,6 @@ describe('Settlements class', () => {
   let amount: BigNumber;
   let toDid: string;
   let ticker: string;
-  let accountId: string;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -78,12 +77,10 @@ describe('Settlements class', () => {
     bigNumberToBalanceStub.withArgs(amount, mockContext, false).returns(rawAmount);
     settlements = new Settlements(mockAsset, mockContext);
     ticker = mockAsset.ticker;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    accountId = mockContext.currentPair!.address;
-    rawAccountId = dsMockUtils.createMockAccountId(accountId);
+    rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawToDid = dsMockUtils.createMockIdentityId(toDid);
-    stringToAccountIdStub.withArgs(accountId, mockContext).returns(rawAccountId);
+    stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawAccountId);
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     stringToIdentityIdStub.withArgs(toDid, mockContext).returns(rawToDid);
   });
@@ -132,9 +129,9 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a status value representing whether the transaction can be made from the current Identity', async () => {
-      const currentIdentity = await mockContext.getCurrentIdentity();
-      const { did: currentDid } = currentIdentity;
+    test('should return a status value representing whether the transaction can be made from the current signing Identity', async () => {
+      const signingIdentity = await mockContext.getSigningIdentity();
+      const { did: currentDid } = signingIdentity;
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
 
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
@@ -143,7 +140,7 @@ describe('Settlements class', () => {
       fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: currentDid }));
       toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
 
-      portfolioLikeToPortfolioIdStub.withArgs(currentIdentity).returns(currentDefaultPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(signingIdentity).returns(currentDefaultPortfolioId);
       portfolioIdToMeshPortfolioIdStub
         .withArgs(currentDefaultPortfolioId, mockContext)
         .returns(rawFromPortfolio);
@@ -153,9 +150,6 @@ describe('Settlements class', () => {
         })
       );
       stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
-
-      // also test the case where the SDK was instanced without an account
-      mockContext.currentPair = undefined;
       stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawDummyAccountId);
 
       const rawResponse = dsMockUtils.createMockCanTransferResult({
@@ -250,14 +244,14 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a transfer breakdown representing whether the transaction can be made from the current Identity', async () => {
-      const currentIdentity = await mockContext.getCurrentIdentity();
-      const { did: currentDid } = currentIdentity;
+    test('should return a transfer breakdown representing whether the transaction can be made from the current signing Identity', async () => {
+      const signingIdentity = await mockContext.getSigningIdentity();
+      const { did: currentDid } = signingIdentity;
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
 
       const currentDefaultPortfolioId = { did: currentDid };
 
-      portfolioLikeToPortfolioIdStub.withArgs(currentIdentity).returns(currentDefaultPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(signingIdentity).returns(currentDefaultPortfolioId);
       portfolioIdToMeshPortfolioIdStub
         .withArgs(currentDefaultPortfolioId, mockContext)
         .returns(rawFromPortfolio);

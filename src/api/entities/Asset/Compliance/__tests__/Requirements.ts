@@ -560,7 +560,7 @@ describe('Requirements class', () => {
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance();
       requirements = new Requirements(asset, context);
-      ({ did: currentDid } = await context.getCurrentIdentity());
+      ({ did: currentDid } = await context.getSigningIdentity());
 
       rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
       rawToDid = dsMockUtils.createMockIdentityId(toDid);

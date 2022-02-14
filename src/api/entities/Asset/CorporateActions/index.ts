@@ -64,7 +64,7 @@ export class CorporateActions extends Namespace<Asset> {
   }
 
   /**
-   * Assign default config values(targets, global tax withholding percentage and per-identity tax withholding percentages)
+   * Assign default config values(targets, global tax withholding percentage and per-Identity tax withholding percentages)
    *
    * @note These config values are applied to every Corporate Action that is created until they are modified. Modifying these values
    *   does not impact existing Corporate Actions.
@@ -98,7 +98,7 @@ export class CorporateActions extends Namespace<Asset> {
   public remove: ProcedureMethod<RemoveCorporateActionParams, void>;
 
   /**
-   * Retrieve a list of agent identities
+   * Retrieve a list of agent Identities
    */
   public async getAgents(): Promise<Identity[]> {
     const {
@@ -128,7 +128,7 @@ export class CorporateActions extends Namespace<Asset> {
   }
 
   /**
-   * Retrieve default config comprising of targets, global tax withholding percentage and per-identity tax withholding percentages.
+   * Retrieve default config comprising of targets, global tax withholding percentage and per-Identity tax withholding percentages.
    *
    *
    * @note This config is applied to every Corporate Action that is created until they are modified. Modifying the default config

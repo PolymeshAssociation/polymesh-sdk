@@ -208,7 +208,7 @@ export class Requirements extends Namespace<Asset> {
    *
    * @note this does not take balances into account
    *
-   * @param args.from - sender Identity (optional, defaults to the current Identity)
+   * @param args.from - sender Identity (optional, defaults to the current signing Identity)
    * @param args.to - receiver Identity
    *
    * @deprecated in favor of `settlements.canTransfer`
@@ -225,7 +225,7 @@ export class Requirements extends Namespace<Asset> {
       context,
     } = this;
 
-    const { from = await context.getCurrentIdentity(), to } = args;
+    const { from = await context.getSigningIdentity(), to } = args;
 
     const fromDid = stringToIdentityId(signerToString(from), context);
     const toDid = signerToString(to);

@@ -1,3 +1,4 @@
+import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshTransaction } from '~/internal';
@@ -17,8 +18,9 @@ describe('Polymesh Transaction class', () => {
   });
 
   const txSpec = {
-    signer: 'signer',
+    signingAddress: 'signingAddress',
     isCritical: false,
+    signer: 'signer' as PolkadotSigner,
     fee: new BigNumber(100),
   };
 

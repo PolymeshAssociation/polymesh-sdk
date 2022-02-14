@@ -183,9 +183,9 @@ export class TransactionQueue<
    * - Protocol or gas fees may vary between when this value is fetched and when the transaction is actually executed because of a
    *   governance vote
    *
-   * Transaction fees are broken down between those that have to be paid by the current Account and
+   * Transaction fees are broken down between those that have to be paid by the current signing Account and
    *   those that will be paid by third parties. In most cases, the entirety of the fees will be paid by
-   *   either the current Account or a **single** third party Account
+   *   either the current signing Account or a **single** third party Account
    */
   public async getMinFees(): Promise<FeesBreakdown> {
     const {
@@ -240,7 +240,7 @@ export class TransactionQueue<
     // Account address -> fee data (for efficiency)
     const breakdownByAccount: Record<string, ThirdPartyFees> = {};
 
-    // fees for the current Account
+    // fees for the current signing Account
     let accountFees: Fees = {
       protocol: new BigNumber(0),
       gas: new BigNumber(0),
@@ -248,7 +248,7 @@ export class TransactionQueue<
 
     const subsidizedTransactions: PolymeshTransactionBase[] = [];
 
-    // compile the fees and other data for each paying a¡Account (and the current account as well)
+    // compile the fees and other data for each paying Account (and the current signing Account as well)
     const eachPromise = P.each(allFees, async (transactionFees, index) => {
       if (!transactionFees) {
         return;
@@ -257,7 +257,7 @@ export class TransactionQueue<
       const { fees, payingAccount } = transactionFees;
 
       if (!payingAccount) {
-        // payingAccount === null means the current Account has to pay
+        // payingAccount === null means the current signing Account has to pay
         accountFees = addFees(accountFees, fees);
       } else {
         const { account, type } = payingAccount;
@@ -449,7 +449,7 @@ export class TransactionQueue<
   }
 
   /**
-   * Check if balances and allowances (both third party and current Account)
+   * Check if balances and allowances (both third party and current signing Account)
    *   are sufficient to cover this queue's fees
    */
   private async assertFeesCovered(): Promise<void> {

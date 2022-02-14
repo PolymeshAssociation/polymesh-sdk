@@ -32,7 +32,6 @@ import {
   CalendarUnit,
   Claim,
   ClaimType,
-  CommonKeyring,
   Condition,
   ConditionType,
   CountryCode,
@@ -46,7 +45,6 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
-  UiKeyring,
 } from '~/types';
 import {
   Events,
@@ -118,7 +116,7 @@ export function unserialize<UniqueIdentifiers>(id: string): UniqueIdentifiers {
 
 /**
  * @hidden
- * Extract the DID from an Identity, or return the Current DID if no Identity is passed
+ * Extract the DID from an Identity, or return the DID of the current signing Identity if no Identity is passed
  */
 export async function getDid(
   value: string | Identity | undefined,
@@ -128,7 +126,7 @@ export async function getDid(
   if (value) {
     did = signerToString(value);
   } else {
-    ({ did } = await context.getCurrentIdentity());
+    ({ did } = await context.getSigningIdentity());
   }
 
   return did;
@@ -588,22 +586,6 @@ export function assertIsPositive(value: BigNumber): void {
   }
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * @hidden
- */
-function isUiKeyring(keyring: any): keyring is UiKeyring {
-  return !!keyring.keyring;
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
-/**
- * @hidden
- */
-export function getCommonKeyring(keyring: CommonKeyring | UiKeyring): CommonKeyring {
-  return isUiKeyring(keyring) ? keyring.keyring : keyring;
-}
-
 /**
  * @hidden
  */
@@ -614,25 +596,6 @@ export function assertFormatValid(address: string, ss58Format: BigNumber): void 
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "The supplied address is not encoded with the chain's SS58 format",
-      data: {
-        ss58Format,
-      },
-    });
-  }
-}
-
-/**
- * @hidden
- */
-export function assertKeyringFormatValid(keyring: CommonKeyring, ss58Format: BigNumber): void {
-  const dummyAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-  const encodedAddress = keyring.encodeAddress(dummyAddress);
-  const wellEncodedAddress = encodeAddress(dummyAddress, ss58Format.toNumber());
-
-  if (encodedAddress !== wellEncodedAddress) {
-    throw new PolymeshError({
-      code: ErrorCode.FatalError,
-      message: "The supplied keyring is not using the chain's SS58 format",
       data: {
         ss58Format,
       },

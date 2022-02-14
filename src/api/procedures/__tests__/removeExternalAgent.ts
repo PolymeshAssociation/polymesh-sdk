@@ -101,7 +101,7 @@ describe('removeExternalAgent procedure', () => {
     });
   });
 
-  test('should throw an error if the identity is not an External Agent', () => {
+  test('should throw an error if the Identity is not an external agent', () => {
     const args = {
       target,
       ticker,

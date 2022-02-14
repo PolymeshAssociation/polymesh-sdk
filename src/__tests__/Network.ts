@@ -54,7 +54,9 @@ describe('Network Class', () => {
     test('should return the latest block number', async () => {
       const blockNumber = new BigNumber(100);
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, latestBlock: blockNumber } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, latestBlock: blockNumber },
+      });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       const result = await network.getLatestBlock();
@@ -67,7 +69,7 @@ describe('Network Class', () => {
     test('should return the network version', async () => {
       const networkVersion = '1.0.0';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true, networkVersion } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true, networkVersion } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       const result = await network.getVersion();
@@ -104,7 +106,7 @@ describe('Network Class', () => {
   });
 
   describe('method: getTreasuryAccount', () => {
-    test('should return the treasury account', async () => {
+    test('should return the treasury Account', async () => {
       const treasuryAddress = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
 
       expect(network.getTreasuryAccount().address).toEqual(treasuryAddress);
@@ -123,7 +125,7 @@ describe('Network Class', () => {
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
     });
 
-    test('should return the POLYX balance of the treasury account', async () => {
+    test('should return the POLYX balance of the treasury Account', async () => {
       const result = await network.getTreasuryBalance();
       expect(result).toEqual(fakeBalance.free);
     });
@@ -179,7 +181,7 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
       dsMockUtils.createApolloQueryStub(
         eventByIndexedArgs({
           ...variables,
@@ -229,7 +231,7 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = [{ blockNumber, blockDate, eventIndex: eventIdx }];
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryStub(
         eventsByIndexedArgs({
@@ -291,7 +293,7 @@ describe('Network Class', () => {
       const address = 'someAddress';
       const specVersionId = new BigNumber(2006);
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
         /* eslint-disable @typescript-eslint/naming-convention */

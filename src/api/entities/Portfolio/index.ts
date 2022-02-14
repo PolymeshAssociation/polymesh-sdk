@@ -68,7 +68,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * identity of the Portfolio's owner
+   * Identity of the Portfolio's owner
    */
   public owner: Identity;
 
@@ -105,7 +105,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Return whether an Identity is the Portfolio owner
    *
-   * @param args.identity - defaults to the current Identity
+   * @param args.identity - defaults to the current signing Identity
    */
   public async isOwnedBy(args?: { identity: string | Identity }): Promise<boolean> {
     const {
@@ -121,7 +121,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Return whether an Identity is the Portfolio custodian
    *
-   * @param args.identity - optional, defaults to the current Identity
+   * @param args.identity - optional, defaults to the current signing Identity
    */
   public async isCustodiedBy(args?: { identity: string | Identity }): Promise<boolean> {
     const { context } = this;
@@ -279,7 +279,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
    *
-   * @param filters.account - account involved in the settlement
+   * @param filters.account - Account involved in the settlement
    * @param filters.ticker - ticker involved in the transaction
    * @param filters.size - page size
    * @param filters.start - page offset

@@ -52,7 +52,7 @@ export async function prepareCreatePortfolio(
   } = this;
   const { name: portfolioName } = args;
 
-  const { did } = await context.getCurrentIdentity();
+  const { did } = await context.getSigningIdentity();
 
   const rawIdentityId = stringToIdentityId(did, context);
 

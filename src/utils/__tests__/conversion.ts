@@ -2394,6 +2394,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       `Invalid security identifier ${identifier.value} of type Isin`
     );
 
+    // cSpell: disable-next-line
     identifier = { type: SecurityIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
 
     expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(

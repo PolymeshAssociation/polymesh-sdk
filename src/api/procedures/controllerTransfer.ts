@@ -81,7 +81,7 @@ export async function getAuthorization(
 
   const asset = new Asset({ ticker }, context);
 
-  const { did } = await context.getCurrentIdentity();
+  const { did } = await context.getSigningIdentity();
   const portfolioId = { did };
 
   return {

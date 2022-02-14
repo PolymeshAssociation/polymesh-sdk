@@ -1,4 +1,3 @@
-import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
@@ -13,7 +12,6 @@ import {
   CalendarPeriod,
   CalendarUnit,
   ClaimType,
-  CommonKeyring,
   CountryCode,
   ProcedureMethod,
 } from '~/types';
@@ -24,7 +22,6 @@ import {
   assertFormatValid,
   assertIsInteger,
   assertIsPositive,
-  assertKeyringFormatValid,
   batchArguments,
   calculateNextKey,
   createClaim,
@@ -32,7 +29,6 @@ import {
   delay,
   filterEventRecords,
   getCheckpointValue,
-  getCommonKeyring,
   getDid,
   getPortfolioIdByName,
   getTicker,
@@ -146,10 +142,10 @@ describe('getDid', () => {
     expect(result).toBe(did);
   });
 
-  test('getDid should return the current Identity DID if nothing is passed', async () => {
+  test('getDid should return the current signing Identity DID if nothing is passed', async () => {
     const result = await getDid(undefined, context);
 
-    expect(result).toBe((await context.getCurrentIdentity()).did);
+    expect(result).toBe((await context.getSigningIdentity()).did);
   });
 });
 
@@ -569,23 +565,12 @@ describe('assertIsPositive', () => {
   });
 });
 
-describe('getCommonKeyring', () => {
-  test('should return a common keyring', async () => {
-    const fakeKeyring = 'keyring' as unknown as CommonKeyring;
-    let result = getCommonKeyring(fakeKeyring);
-
-    expect(result).toBe(fakeKeyring);
-
-    result = getCommonKeyring({ keyring: fakeKeyring });
-    expect(result).toBe(fakeKeyring);
-  });
-});
-
 describe('assertFormatValid', () => {
   const ss58Format = new BigNumber(42);
 
   test('should throw an error if the address is prefixed with an invalid ss58', async () => {
     expect(() =>
+      // cSpell: disable-next-line
       assertFormatValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
     ).toThrow("The supplied address is not encoded with the chain's SS58 format");
   });
@@ -594,22 +579,6 @@ describe('assertFormatValid', () => {
     expect(() =>
       assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
-  });
-});
-
-describe('assertKeyringFormatValid', () => {
-  const ss58Format = new BigNumber(42);
-  const keyring = new Keyring({ ss58Format: ss58Format.toNumber() });
-
-  test('should not throw if the keyring is set with valid ss58', async () => {
-    expect(() => assertKeyringFormatValid(keyring, ss58Format)).not.toThrow();
-  });
-
-  test('should throw an error if the keyring is set with an invalid ss58', async () => {
-    keyring.setSS58Format(12);
-    expect(() => assertKeyringFormatValid(keyring, ss58Format)).toThrow(
-      "The supplied keyring is not using the chain's SS58 format"
-    );
   });
 });
 

@@ -48,7 +48,7 @@ export async function prepareInviteAccount(
 
   const { targetAccount, permissions: permissionsLike, expiry = null } = args;
 
-  const identity = await context.getCurrentIdentity();
+  const identity = await context.getSigningIdentity();
 
   const address = signerToString(targetAccount);
 

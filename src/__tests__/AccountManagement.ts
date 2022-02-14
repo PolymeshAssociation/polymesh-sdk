@@ -42,6 +42,21 @@ describe('AccountManagement class', () => {
     procedureMockUtils.cleanup();
   });
 
+  describe('method: leaveIdentity', () => {
+    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: undefined, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await accountManagement.leaveIdentity();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: removeSecondaryAccounts', () => {
     test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const accounts = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
@@ -174,9 +189,9 @@ describe('AccountManagement class', () => {
       expect(result.address).toBe(params.address);
     });
 
-    test('should return the current Account if no address is passed', async () => {
+    test('should return the current signing Account if no address is passed', async () => {
       const address = 'someAddress';
-      dsMockUtils.configureMocks({ contextOptions: { currentPairAddress: address } });
+      dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
       const result = accountManagement.getAccount();
 
@@ -190,14 +205,14 @@ describe('AccountManagement class', () => {
       locked: new BigNumber(0),
       total: new BigNumber(100),
     };
-    test('should return the free and locked POLYX balance of the current Account', async () => {
+    test('should return the free and locked POLYX balance of the current signing Account', async () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const result = await accountManagement.getAccountBalance();
       expect(result).toEqual(fakeBalance);
     });
 
-    test('should return the free and locked POLYX balance of the supplied account', async () => {
+    test('should return the free and locked POLYX balance of the supplied Account', async () => {
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
       let result = await accountManagement.getAccountBalance({ account: 'someId' });
@@ -209,13 +224,13 @@ describe('AccountManagement class', () => {
       expect(result).toEqual(fakeBalance);
     });
 
-    test('should allow subscription (with and without a supplied account id)', async () => {
+    test('should allow subscription (with and without a supplied Account id)', async () => {
       const unsubCallback = 'unsubCallback';
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
       let accountBalanceStub = (
-        dsMockUtils.getContextInstance().getCurrentAccount().getBalance as sinon.SinonStub
+        dsMockUtils.getContextInstance().getSigningAccount().getBalance as sinon.SinonStub
       ).resolves(unsubCallback);
 
       const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
@@ -236,16 +251,16 @@ describe('AccountManagement class', () => {
     });
   });
 
-  describe('method: getAccounts', () => {
-    test('should return the list of signer accounts associated to the SDK', async () => {
+  describe('method: getSigningAccounts', () => {
+    test('should return the list of signer Accounts associated to the SDK', async () => {
       const accounts = [entityMockUtils.getAccountInstance()];
       dsMockUtils.configureMocks({
         contextOptions: {
-          getAccounts: accounts,
+          getSigningAccounts: accounts,
         },
       });
 
-      const result = accountManagement.getAccounts();
+      const result = await accountManagement.getSigningAccounts();
 
       expect(result).toEqual(accounts);
     });

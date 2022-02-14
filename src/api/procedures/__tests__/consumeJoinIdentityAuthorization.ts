@@ -31,7 +31,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     targetAddress = 'someAddress';
     dsMockUtils.initMocks({
       contextOptions: {
-        currentPairAddress: targetAddress,
+        signingAddress: targetAddress,
       },
     });
     procedureMockUtils.initMocks();
@@ -87,7 +87,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -124,7 +124,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -161,7 +161,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -208,7 +208,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: false,
     });
 
@@ -254,7 +254,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
       mockContext,
       {
-        currentAccount: targetAccount,
+        signingAccount: targetAccount,
         calledByTarget: true,
       }
     );
@@ -289,7 +289,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test("should return the current Account, whether the target is the caller and the target's identity (if any)", async () => {
+    test("should return the current signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
         ConsumeJoinIdentityAuthorizationParams,
         void,
@@ -303,7 +303,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       } as unknown as ConsumeJoinIdentityAuthorizationParams);
 
       expect(result).toEqual({
-        currentAccount: mockContext.getCurrentAccount(),
+        signingAccount: mockContext.getSigningAccount(),
         calledByTarget: true,
       });
     });
@@ -316,10 +316,10 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         void,
         Storage
       >(mockContext, {
-        currentAccount: targetAccount,
+        signingAccount: targetAccount,
         calledByTarget: true,
       });
-      const { address } = mockContext.getCurrentAccount();
+      const { address } = mockContext.getSigningAccount();
       const constructorParams = {
         authId,
         expiry: null,
@@ -341,11 +341,11 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       });
 
       args.accept = false;
-      args.authRequest.issuer = await mockContext.getCurrentIdentity();
+      args.authRequest.issuer = await mockContext.getSigningIdentity();
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: true,
+          signingIdentityIsEqual: true,
         },
       });
 
@@ -358,12 +358,12 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       });
 
       targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
-      mockContext.getCurrentAccount.returns(targetAccount);
+      mockContext.getSigningAccount.returns(targetAccount);
 
       proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
         mockContext,
         {
-          currentAccount: targetAccount,
+          signingAccount: targetAccount,
           calledByTarget: false,
         }
       );
@@ -386,7 +386,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
         mockContext,
         {
-          currentAccount: targetAccount,
+          signingAccount: targetAccount,
           calledByTarget: false,
         }
       );
@@ -411,7 +411,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
         mockContext,
         {
-          currentAccount: targetAccount,
+          signingAccount: targetAccount,
           calledByTarget: true,
         }
       );

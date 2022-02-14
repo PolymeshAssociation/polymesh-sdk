@@ -146,7 +146,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       did: string;
       params: [(Ticker | CheckpointId)[], IdentityId];
     }[] = [];
-    const currentIdentityBalances: IdentityBalance[] = [];
+    const signingIdentityBalances: IdentityBalance[] = [];
 
     rawBalanceUpdates.forEach((rawCheckpointIds, index) => {
       const firstUpdatedCheckpoint = rawCheckpointIds.find(checkpointId =>
@@ -159,7 +159,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           params: tuple([rawTicker, firstUpdatedCheckpoint], stringToIdentityId(did, context)),
         });
       } else {
-        currentIdentityBalances.push({
+        signingIdentityBalances.push({
           identity: new Identity({ did }, context),
           balance,
         });
@@ -176,7 +176,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           identity: new Identity({ did }, context),
           balance: balanceToBigNumber(checkpointBalances[index]),
         })),
-        ...currentIdentityBalances,
+        ...signingIdentityBalances,
       ],
       next,
     };
@@ -185,7 +185,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Retrieve the balance of a specific Asset Holder Identity at this Checkpoint
    *
-   * @param args.identity - defaults to the current Identity
+   * @param args.identity - defaults to the current signing Identity
    */
   public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
     const {

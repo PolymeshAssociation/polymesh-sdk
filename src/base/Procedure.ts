@@ -102,10 +102,10 @@ export class Procedure<
   private async setup(args: Args, context: Context, opts: ProcedureOpts = {}): Promise<Context> {
     if (!this._context) {
       const ctx = context.clone();
-      const { signer } = opts;
+      const { signingAccount } = opts;
 
-      if (signer) {
-        ctx.setPair(signerToString(signer));
+      if (signingAccount) {
+        await ctx.setSigningAddress(signerToString(signingAccount));
       }
 
       this._context = ctx;
@@ -149,7 +149,7 @@ export class Procedure<
     let rolesResult: CheckRolesResult;
     let noIdentity = false;
 
-    const account = ctx.getCurrentAccount();
+    const account = ctx.getSigningAccount();
 
     const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
@@ -259,14 +259,15 @@ export class Procedure<
       if (noIdentity) {
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message: 'This procedure requires the Current Account to have an associated Identity',
+          message:
+            'This procedure requires the current signing Account to have an associated Identity',
         });
       }
 
       if (accountFrozen) {
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message: "Current Account can't execute this procedure because it is frozen",
+          message: "The current signing Account can't execute this procedure because it is frozen",
         });
       }
 
@@ -276,7 +277,7 @@ export class Procedure<
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
-            "Current Account doesn't have the required permissions to execute this procedure",
+            "The current signing Account doesn't have the required permissions to execute this procedure",
           data: {
             message,
             missingPermissions,
@@ -290,7 +291,7 @@ export class Procedure<
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
-            "Current Identity doesn't have the required permissions to execute this procedure",
+            "The current signing Identity doesn't have the required permissions to execute this procedure",
           data: {
             message,
             missingPermissions,
@@ -303,7 +304,8 @@ export class Procedure<
 
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message: "Current Identity doesn't have the required roles to execute this procedure",
+          message:
+            "The current signing Identity doesn't have the required roles to execute this procedure",
           data: {
             message,
             missingRoles,
@@ -344,7 +346,8 @@ export class Procedure<
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    const signer = context.getSigner();
+    const signingAddress = context.getSigningAddress();
+    const signer = context.getExternalSigner();
 
     this.transactions.push(
       new PolymeshTransaction<unknown[] | []>(
@@ -353,6 +356,7 @@ export class Procedure<
           args: txArgs,
           postTransactionValues,
           isCritical,
+          signingAddress,
           signer,
           fee,
           feeMultiplier,
@@ -427,8 +431,6 @@ export class Procedure<
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    const signer = context.getSigner();
-
     // if only a single transaction is added to the batch, we don't use a batch
     if (transactions.length === 1) {
       const [{ transaction, args: txArgs, feeMultiplier }] = transactions;
@@ -443,6 +445,9 @@ export class Procedure<
       });
     }
 
+    const signingAddress = context.getSigningAddress();
+    const signer = context.getExternalSigner();
+
     this.transactions.push(
       new PolymeshTransactionBatch<(unknown[] | [])[]>(
         {
@@ -452,6 +457,7 @@ export class Procedure<
           })),
           postTransactionValues,
           isCritical,
+          signingAddress,
           signer,
           fee,
           paidForBy,
@@ -481,7 +487,7 @@ export class Procedure<
   }
 
   /**
-   * contains the data services, current Account, etc. In short, the *context* in which
+   * contains the data services, current signing Account, etc. In short, the *context* in which
    *   the Procedure is being run
    */
   public get context(): Context {

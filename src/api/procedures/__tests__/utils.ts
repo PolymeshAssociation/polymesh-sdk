@@ -301,7 +301,7 @@ describe('assertCaTargetsValid', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if there are more target identities than the maximum', async () => {
+  test('should throw an error if there are more target Identities than the maximum', async () => {
     expect(() =>
       assertCaTargetsValid(
         { identities: ['someDid', 'otherDid'], treatment: TargetTreatment.Include },
@@ -310,7 +310,7 @@ describe('assertCaTargetsValid', () => {
     ).toThrow('Too many target Identities');
   });
 
-  test('should not throw an error if the number of target identities is appropriate', async () => {
+  test('should not throw an error if the number of target Identities is appropriate', async () => {
     expect(() =>
       assertCaTargetsValid(
         { identities: ['someDid'], treatment: TargetTreatment.Include },
@@ -342,7 +342,7 @@ describe('assertCaTaxWithholdingsValid', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if there are more target identities than the maximum', async () => {
+  test('should throw an error if there are more target Identities than the maximum', async () => {
     expect(() =>
       assertCaTaxWithholdingsValid(
         [
@@ -354,7 +354,7 @@ describe('assertCaTaxWithholdingsValid', () => {
     ).toThrow('Too many tax withholding entries');
   });
 
-  test('should not throw an error if the number of target identities is appropriate', async () => {
+  test('should not throw an error if the number of target Identities is appropriate', async () => {
     expect(() =>
       assertCaTaxWithholdingsValid(
         [{ identity: 'someDid', percentage: new BigNumber(15) }],
@@ -535,7 +535,7 @@ describe('assertRequirementsNotTooComplex', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the complexity sumatory is greater than max condition complexity', async () => {
+  test('should throw an error if the total added complexity is greater than max condition complexity', async () => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(2)),
     });
