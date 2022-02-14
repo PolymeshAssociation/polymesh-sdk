@@ -6,7 +6,14 @@ import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, ModuleName, Permissions, PermissionType, Subsidy, TxTags } from '~/types';
+import {
+  AccountBalance,
+  ModuleName,
+  Permissions,
+  PermissionType,
+  SubsidyWithAllowance,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -114,20 +121,22 @@ describe('Account class', () => {
   });
 
   describe('method: getSubsidy', () => {
-    let fakeResult: Omit<Subsidy, 'beneficiary'>;
+    let fakeResult: SubsidyWithAllowance;
 
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       account = new Account({ address }, context);
-      const subsidizer = new Account({ address: 'subsidizer ' }, context);
+
       fakeResult = {
+        subsidy: entityMockUtils.getSubsidyInstance({
+          beneficiary: address,
+        }),
         allowance: new BigNumber(1000),
-        subsidizer,
       };
       context.accountSubsidy.resolves(fakeResult);
     });
 
-    test("should return the Account's balance", async () => {
+    test('should return the Subsidy with allowance', async () => {
       const result = await account.getSubsidy();
 
       expect(result).toEqual(fakeResult);

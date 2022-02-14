@@ -658,7 +658,7 @@ describe('authorization request validations', () => {
       expect(error).toBe(undefined);
     });
 
-    test('should throw not with target that is an Identity', async () => {
+    test('should throw with target that is an Identity', async () => {
       const badTarget = entityMockUtils.getIdentityInstance();
       const auth = new AuthorizationRequest(
         { authId: new BigNumber(1), target: badTarget, issuer, expiry, data },
@@ -907,7 +907,7 @@ describe('authorization request validations', () => {
     });
   });
 
-  describe('assertJoinIdentityAuthorizationValid', () => {
+  describe('assertJoinOrRotateAuthorizationValid', () => {
     const permissions = {
       assets: null,
       transactions: null,
@@ -1224,6 +1224,122 @@ describe('authorization request validations', () => {
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Subsidizer Account does not have an Identity',
+      });
+      expect(error).toEqual(expectedError);
+    });
+  });
+
+  describe('assertRotatePrimaryKeyToSecondaryAuthorization', () => {
+    const permissions = {
+      assets: null,
+      transactions: null,
+      transactionGroups: [],
+      portfolios: null,
+    };
+    const data: Authorization = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: permissions,
+    };
+    test('should not throw with a valid request', async () => {
+      const validTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: validTarget,
+          issuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      expect(error).toBe(undefined);
+    });
+
+    test('should throw when the issuer lacks a valid CDD', async () => {
+      const noCddIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: false });
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer: noCddIssuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Issuing Identity does not have a valid CDD claim',
+      });
+      expect(error).toEqual(expectedError);
+    });
+
+    test('should throw when the target is an Identity', async () => {
+      const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
+      const identityTarget = entityMockUtils.getIdentityInstance();
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: identityTarget,
+          issuer: mockIssuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The target cannot be an Identity',
+      });
+      expect(error).toEqual(expectedError);
+    });
+
+    test('should throw if the target already has an Identity', async () => {
+      const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
+      const unavailableTarget = entityMockUtils.getAccountInstance({
+        getIdentity: entityMockUtils.getIdentityInstance(),
+      });
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: unavailableTarget,
+          issuer: mockIssuer,
+          expiry,
+          data,
+        },
+        mockContext
+      );
+
+      let error;
+      try {
+        await assertAuthorizationRequestValid(auth, mockContext);
+      } catch (err) {
+        error = err;
+      }
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The target Account already has an associated Identity',
       });
       expect(error).toEqual(expectedError);
     });

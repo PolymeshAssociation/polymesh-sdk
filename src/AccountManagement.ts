@@ -9,6 +9,8 @@ import {
   ModifySignerPermissionsParams,
   removeSecondaryAccounts,
   RemoveSecondaryAccountsParams,
+  subsidizeAccount,
+  SubsidizeAccountParams,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
@@ -88,6 +90,10 @@ export class AccountManagement {
       },
       context
     );
+    this.subsidizeAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [subsidizeAccount, { ...args }] },
+      context
+    );
   }
 
   /**
@@ -128,6 +134,14 @@ export class AccountManagement {
    * Unfreeze all of the secondary Accounts in the signing Identity. This will restore their permissions as they were before being frozen
    */
   public unfreezeSecondaryAccounts: NoArgsProcedureMethod<void>;
+
+  /**
+   * Send an Authorization Request to an Account to subsidize its transaction fees
+   *
+   * @note this will create an AuthorizationRequest which has to be accepted by
+   *   the beneficiary Account. An Account can fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   */
+  public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
 
   /**
    * Get the free/locked POLYX balance of an Account

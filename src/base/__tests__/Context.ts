@@ -50,6 +50,10 @@ jest.mock(
     '~/api/entities/NumberedPortfolio'
   )
 );
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
+);
 
 // TODO: refactor tests (too much repeated code)
 describe('Context class', () => {
@@ -388,7 +392,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test("should return the current signer Account's subsidizer and allowance if no address is passed", async () => {
+    test("should return the current signer Account's Subsidy with allowance if no address is passed", async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -403,17 +407,22 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        signingManager: dsMockUtils.getSigningManagerInstance(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['beneficiary'],
+        }),
       });
 
       const result = await context.accountSubsidy();
       expect(result).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: 'beneficiary' }),
+          subsidizer: expect.objectContaining({ address: 'payingKey' }),
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: expect.objectContaining({ address: 'payingKey' }),
       });
     });
 
-    test('should return the Account subsidizer and allowance if an address is passed', async () => {
+    test('should return the Account Subsidy and allowance if an address is passed', async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -432,8 +441,11 @@ describe('Context class', () => {
 
       const result = await context.accountSubsidy('someAddress');
       expect(result).toEqual({
+        subsidy: expect.objectContaining({
+          beneficiary: expect.objectContaining({ address: 'someAddress' }),
+          subsidizer: expect.objectContaining({ address: 'payingKey' }),
+        }),
         allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: expect.objectContaining({ address: 'payingKey' }),
       });
     });
 
@@ -477,10 +489,16 @@ describe('Context class', () => {
       const result = await context.accountSubsidy('accountId', callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, {
-        allowance: utilsConversionModule.balanceToBigNumber(allowance),
-        subsidizer: sinon.match({ address: 'payingKey' }),
-      });
+      sinon.assert.calledWithExactly(
+        callback,
+        sinon.match({
+          subsidy: sinon.match({
+            beneficiary: sinon.match({ address: 'accountId' }),
+            subsidizer: sinon.match({ address: 'payingKey' }),
+          }),
+          allowance: utilsConversionModule.balanceToBigNumber(allowance),
+        })
+      );
     });
   });
 

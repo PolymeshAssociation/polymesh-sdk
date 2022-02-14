@@ -1112,6 +1112,26 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: {
+        assets: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      },
+    };
+
+    createTypeStub.withArgs('Permissions', sinon.match(sinon.match.object)).returns(rawPermissions);
+    createTypeStub
+      .withArgs('AuthorizationData', {
+        [value.type]: rawPermissions,
+      })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
@@ -1252,6 +1272,21 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     authorizationData = dsMockUtils.createMockAuthorizationData({
       BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
     });
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      RotatePrimaryKeyToSecondary: dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      }),
+    });
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+    };
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);

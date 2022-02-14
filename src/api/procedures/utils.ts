@@ -370,9 +370,11 @@ export async function assertAuthorizationRequestValid(
       // no additional checks
       return;
     case AuthorizationType.JoinIdentity:
-      return assertJoinIdentityAuthorizationValid(authRequest);
+      return assertJoinOrRotateAuthorizationValid(authRequest);
     case AuthorizationType.AddRelayerPayingKey:
       return assertAddRelayerPayingKeyAuthorizationValid(data);
+    case AuthorizationType.RotatePrimaryKeyToSecondary:
+      return assertJoinOrRotateAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
   }
@@ -457,35 +459,6 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
 /**
  * @hidden
  *
- * Asserts valid join Identity Authorization Request
- */
-export async function assertJoinIdentityAuthorizationValid(
-  authRequest: AuthorizationRequest
-): Promise<void> {
-  const issuer = authRequest.issuer;
-  const target = authRequest.target;
-  const hasValidCdd = await issuer.hasValidCdd();
-  if (!hasValidCdd) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Issuing Identity does not have a valid CDD claim',
-    });
-  }
-
-  assertIsAccount(target);
-
-  const targetIdentity = await target.getIdentity();
-  if (targetIdentity) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The target Account already has an associated Identity',
-    });
-  }
-}
-
-/**
- * @hidden
- *
  * Asserts valid add relayer paying key authorization
  */
 export async function assertAddRelayerPayingKeyAuthorizationValid(
@@ -541,6 +514,34 @@ function assertIsAccount(target: Signer): asserts target is Account {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The target cannot be an Identity',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid authorization for JoinIdentity and RotatePrimaryKeyToSecondary types
+ */
+async function assertJoinOrRotateAuthorizationValid(
+  authRequest: AuthorizationRequest
+): Promise<void> {
+  const { issuer, target } = authRequest;
+  const hasValidCdd = await issuer.hasValidCdd();
+  if (!hasValidCdd) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Issuing Identity does not have a valid CDD claim',
+    });
+  }
+
+  assertIsAccount(target);
+
+  const targetIdentity = await target.getIdentity();
+  if (targetIdentity) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target Account already has an associated Identity',
     });
   }
 }

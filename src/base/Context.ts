@@ -22,7 +22,7 @@ import {
   TxTag,
 } from 'polymesh-types/types';
 
-import { Account, Asset, DividendDistribution, Identity, PolymeshError } from '~/internal';
+import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
@@ -39,7 +39,7 @@ import {
   SigningManager,
   SimpleEnumTransactionArgument,
   SubCallback,
-  Subsidy,
+  SubsidyWithAllowance,
   TransactionArgument,
   TransactionArgumentType,
   UnsubCallback,
@@ -356,17 +356,17 @@ export class Context {
    *
    * @note can be subscribed to
    */
-  public accountSubsidy(account?: string | Account): Promise<Omit<Subsidy, 'beneficiary'> | null>;
+  public accountSubsidy(account?: string | Account): Promise<SubsidyWithAllowance | null>;
   public accountSubsidy(
     account: string | Account | undefined,
-    callback: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
+    callback: SubCallback<SubsidyWithAllowance | null>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async accountSubsidy(
     account?: string | Account,
-    callback?: SubCallback<Omit<Subsidy, 'beneficiary'> | null>
-  ): Promise<Omit<Subsidy, 'beneficiary'> | null | UnsubCallback> {
+    callback?: SubCallback<SubsidyWithAllowance | null>
+  ): Promise<SubsidyWithAllowance | null | UnsubCallback> {
     const {
       polymeshApi: {
         query: { relayer },
@@ -382,17 +382,20 @@ export class Context {
 
     const rawAddress = stringToAccountId(address, this);
 
-    const assembleResult = (subsidy: Option<MeshSubsidy>): Omit<Subsidy, 'beneficiary'> | null => {
-      if (subsidy.isNone) {
+    const assembleResult = (meshSubsidy: Option<MeshSubsidy>): SubsidyWithAllowance | null => {
+      if (meshSubsidy.isNone) {
         return null;
       }
-      const { paying_key: payingKey, remaining } = subsidy.unwrap();
+      const { paying_key: payingKey, remaining } = meshSubsidy.unwrap();
       const allowance = balanceToBigNumber(remaining);
-      const subsidizer = new Account({ address: accountIdToString(payingKey) }, this);
+      const subsidy = new Subsidy(
+        { beneficiary: address, subsidizer: accountIdToString(payingKey) },
+        this
+      );
 
       return {
+        subsidy,
         allowance,
-        subsidizer,
       };
     };
 

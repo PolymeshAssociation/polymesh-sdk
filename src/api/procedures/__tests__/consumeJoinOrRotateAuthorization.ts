@@ -3,19 +3,26 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  ConsumeJoinIdentityAuthorizationParams,
+  ConsumeJoinOrRotateAuthorizationParams,
   getAuthorization,
-  prepareConsumeJoinIdentityAuthorization,
+  prepareConsumeJoinOrRotateAuthorization,
   prepareStorage,
   Storage,
-} from '~/api/procedures/consumeJoinIdentityAuthorization';
-import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
+} from '~/api/procedures/consumeJoinOrRotateAuthorization';
+import {
+  Account,
+  AuthorizationRequest,
+  Context,
+  Identity,
+  KnownPermissionGroup,
+  PolymeshError,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Signer, TxTags } from '~/types';
+import { Authorization, AuthorizationType, ErrorCode, Signer, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
-describe('consumeJoinSignerAuthorization procedure', () => {
+describe('consumeJoinOrRotateAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
   let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
@@ -83,7 +90,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
   test('should throw an error if the Authorization Request is expired', () => {
     const proc = procedureMockUtils.getInstance<
-      ConsumeJoinIdentityAuthorizationParams,
+      ConsumeJoinOrRotateAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -94,7 +101,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     const target = targetAccount;
 
     return expect(
-      prepareConsumeJoinIdentityAuthorization.call(proc, {
+      prepareConsumeJoinOrRotateAuthorization.call(proc, {
         authRequest: new AuthorizationRequest(
           {
             target,
@@ -120,7 +127,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
   test('should throw an error if the target Account is already part of an Identity', () => {
     const proc = procedureMockUtils.getInstance<
-      ConsumeJoinIdentityAuthorizationParams,
+      ConsumeJoinOrRotateAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -131,7 +138,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     const target = targetAccount;
 
     return expect(
-      prepareConsumeJoinIdentityAuthorization.call(proc, {
+      prepareConsumeJoinOrRotateAuthorization.call(proc, {
         authRequest: new AuthorizationRequest(
           {
             target,
@@ -157,7 +164,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
   test('should add a joinIdentityAsKey transaction to the queue if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<
-      ConsumeJoinIdentityAuthorizationParams,
+      ConsumeJoinOrRotateAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -173,7 +180,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       getIdentity: null,
     });
 
-    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -202,9 +209,141 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     });
   });
 
+  test('should add a rotatePrimaryKeyToSecondary transaction to the queue if the target is an Account', async () => {
+    const proc = procedureMockUtils.getInstance<
+      ConsumeJoinOrRotateAuthorizationParams,
+      void,
+      Storage
+    >(mockContext, {
+      signingAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const transaction = dsMockUtils.createTxStub('identity', 'rotatePrimaryKeyToSecondary');
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
+
+    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer,
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.RotatePrimaryKeyToSecondary,
+            value: {
+              assets: null,
+              transactions: null,
+              transactionGroups: [],
+              portfolios: null,
+            },
+          },
+        },
+        mockContext
+      ),
+      accept: true,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId, null],
+    });
+  });
+
+  test('should add an acceptPrimaryKey transaction to the queue if called with RotatePrimaryKey', async () => {
+    const proc = procedureMockUtils.getInstance<
+      ConsumeJoinOrRotateAuthorizationParams,
+      void,
+      Storage
+    >(mockContext, {
+      signingAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const transaction = dsMockUtils.createTxStub('identity', 'acceptPrimaryKey');
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
+
+    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+      authRequest: new AuthorizationRequest(
+        {
+          target,
+          issuer,
+          authId,
+          expiry: null,
+          data: {
+            type: AuthorizationType.RotatePrimaryKey,
+          },
+        },
+        mockContext
+      ),
+      accept: true,
+    });
+
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      paidForBy: issuer,
+      args: [rawAuthId, null],
+    });
+  });
+
+  test('should throw if called with an Authorization that is not JoinIdentity, RotatePrimaryKeyToSecondary or RotatePrimaryKey', async () => {
+    const proc = procedureMockUtils.getInstance<
+      ConsumeJoinOrRotateAuthorizationParams,
+      void,
+      Storage
+    >(mockContext, {
+      signingAccount: targetAccount,
+      calledByTarget: true,
+    });
+
+    const issuer = entityMockUtils.getIdentityInstance();
+    const target = entityMockUtils.getAccountInstance({
+      address: 'someAddress',
+      getIdentity: null,
+    });
+
+    let error;
+    try {
+      await prepareConsumeJoinOrRotateAuthorization.call(proc, {
+        authRequest: new AuthorizationRequest(
+          {
+            target,
+            issuer,
+            authId,
+            expiry: null,
+            data: {
+              type: AuthorizationType.BecomeAgent,
+              value: {} as KnownPermissionGroup,
+            },
+          },
+          mockContext
+        ),
+        accept: true,
+      });
+    } catch (err) {
+      error = err;
+    }
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: 'Unrecognized auth type: "BecomeAgent" for consumeJoinOrRotateAuthorization method',
+    });
+    expect(error).toEqual(expectedError);
+  });
+
   test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
     let proc = procedureMockUtils.getInstance<
-      ConsumeJoinIdentityAuthorizationParams,
+      ConsumeJoinOrRotateAuthorizationParams,
       void,
       Storage
     >(mockContext, {
@@ -223,7 +362,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
     sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
 
-    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -251,7 +390,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
     });
 
     target = targetAccount;
-    proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
+    proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
       mockContext,
       {
         signingAccount: targetAccount,
@@ -259,7 +398,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       }
     );
 
-    await prepareConsumeJoinIdentityAuthorization.call(proc, {
+    await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -291,7 +430,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   describe('prepareStorage', () => {
     test("should return the current signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
-        ConsumeJoinIdentityAuthorizationParams,
+        ConsumeJoinOrRotateAuthorizationParams,
         void,
         Storage
       >(mockContext);
@@ -300,7 +439,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
       const result = await boundFunc({
         authRequest: { target },
-      } as unknown as ConsumeJoinIdentityAuthorizationParams);
+      } as unknown as ConsumeJoinOrRotateAuthorizationParams);
 
       expect(result).toEqual({
         signingAccount: mockContext.getSigningAccount(),
@@ -312,7 +451,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<
-        ConsumeJoinIdentityAuthorizationParams,
+        ConsumeJoinOrRotateAuthorizationParams,
         void,
         Storage
       >(mockContext, {
@@ -360,7 +499,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
       targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
       mockContext.getSigningAccount.returns(targetAccount);
 
-      proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
+      proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,
         {
           signingAccount: targetAccount,
@@ -383,7 +522,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
         getIdentity: entityMockUtils.getIdentityInstance({ isEqual: false }),
       });
 
-      proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
+      proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,
         {
           signingAccount: targetAccount,
@@ -408,7 +547,7 @@ describe('consumeJoinSignerAuthorization procedure', () => {
 
       targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
 
-      proc = procedureMockUtils.getInstance<ConsumeJoinIdentityAuthorizationParams, void, Storage>(
+      proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,
         {
           signingAccount: targetAccount,

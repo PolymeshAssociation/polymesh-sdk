@@ -163,7 +163,7 @@ import {
   ResultSet,
   SignerType,
   SigningManager,
-  Subsidy,
+  SubsidyWithAllowance,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
@@ -306,7 +306,7 @@ interface ContextOptions {
   did?: string;
   withSigningManager?: boolean;
   balance?: AccountBalance;
-  subsidy?: Omit<Subsidy, 'beneficiary'>;
+  subsidy?: SubsidyWithAllowance;
   hasRoles?: boolean;
   checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
@@ -2126,6 +2126,7 @@ export const createMockAuthorizationType = (
     | 'JoinIdentity'
     | 'Custom'
     | 'NoData'
+    | 'RotatePrimaryKeyToSecondary'
 ): MeshAuthorizationType => {
   return createMockEnum(authorizationType) as MeshAuthorizationType;
 };
@@ -2258,6 +2259,7 @@ export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: IdentityId }
     | 'RotatePrimaryKey'
+    | { RotatePrimaryKeyToSecondary: Permissions }
     | { TransferTicker: Ticker }
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }
