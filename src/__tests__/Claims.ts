@@ -649,7 +649,7 @@ describe('Claims Class', () => {
       const identityClaims: ClaimData[] = [
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuer: entityMockUtils.getIdentityInstance({ did: issuer, isEqual: true }),
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -659,7 +659,7 @@ describe('Claims Class', () => {
         },
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuer: entityMockUtils.getIdentityInstance({ did: issuer, isEqual: true }),
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -671,7 +671,7 @@ describe('Claims Class', () => {
         },
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: otherIssuer }),
+          issuer: entityMockUtils.getIdentityInstance({ did: otherIssuer, isEqual: false }),
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -691,7 +691,7 @@ describe('Claims Class', () => {
       });
 
       let result = await claims.getTargetingClaims({
-        target: target,
+        target,
       });
 
       expect(result.data.length).toEqual(2);
@@ -700,8 +700,8 @@ describe('Claims Class', () => {
       expect(result.data[0].claims[0].claim).toEqual(identityClaims[0].claim);
       expect(result.data[0].claims[1].claim).toEqual(identityClaims[1].claim);
       expect(result.data[1].identity.did).toEqual(otherIssuer);
-      expect(result.data[1].claims.length).toEqual(1);
-      expect(result.data[1].claims[0].claim).toEqual(identityClaims[2].claim);
+      expect(result.data[1].claims.length).toEqual(2);
+      expect(result.data[1].claims[0].claim).toEqual(identityClaims[0].claim);
 
       result = await claims.getTargetingClaims({
         target: target,

@@ -94,7 +94,6 @@ export async function prepareSetPermissionGroup(
 
   const { identity, group } = args;
   const { ticker } = asset;
-  const { did } = identity;
 
   const [currentGroup, currentAgents] = await Promise.all([
     identity.assetPermissions.getGroup({ asset: asset }),
@@ -114,7 +113,7 @@ export async function prepareSetPermissionGroup(
     }
   }
 
-  if (!currentAgents.find(({ agent }) => agent.did === did)) {
+  if (!currentAgents.find(({ agent }) => agent.isEqual(identity))) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The target must already be an Agent for the Asset',
@@ -145,7 +144,7 @@ export async function prepareSetPermissionGroup(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawIdentityId = stringToIdentityId(did, context);
+  const rawIdentityId = stringToIdentityId(identity.did, context);
 
   this.addTransaction({
     transaction: externalAgents.changeGroup,

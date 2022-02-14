@@ -204,7 +204,7 @@ describe('Checkpoint class', () => {
         returnValue: dsMockUtils.createMockBalance(balance),
       });
 
-      let result = await checkpoint.balance({ identity: 'someDid' });
+      let result = await checkpoint.balance({ identity: entityMockUtils.getIdentityInstance() });
 
       expect(result).toEqual(expected);
 
@@ -216,15 +216,11 @@ describe('Checkpoint class', () => {
         returnValue: [],
       });
 
-      const assetBalance = new BigNumber(10);
+      const assetBalance = new BigNumber(30);
 
-      entityMockUtils.configureMocks({
-        identityOptions: {
-          getAssetBalance: assetBalance,
-        },
+      result = await checkpoint.balance({
+        identity: entityMockUtils.getIdentityInstance({ getAssetBalance: assetBalance }),
       });
-
-      result = await checkpoint.balance();
 
       expect(result).toEqual(assetBalance);
     });

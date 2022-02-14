@@ -121,6 +121,7 @@ describe('Identity class', () => {
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
 
       let result = await identity.checkRoles(roles);
 
@@ -149,6 +150,8 @@ describe('Identity class', () => {
         result: false,
         missingRoles: [{ type: RoleType.TickerOwner, ticker: 'otherTicker' }],
       });
+
+      spy.mockRestore();
     });
   });
 
@@ -164,16 +167,19 @@ describe('Identity class', () => {
     test('hasRole should check whether the Identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
 
       let hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(true);
 
       identity.did = 'otherDid';
+      spy.mockReturnValue(false);
 
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+      spy.mockRestore();
     });
 
     test('hasRole should check whether the Identity has the CDD Provider role', async () => {
@@ -212,15 +218,18 @@ describe('Identity class', () => {
         },
       });
 
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
       let hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(true);
 
       identity.did = 'otherDid';
 
+      spy.mockReturnValue(false);
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+      spy.mockRestore();
     });
 
     test('hasRole should check whether the Identity has the Portfolio Custodian role', async () => {
@@ -280,10 +289,12 @@ describe('Identity class', () => {
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
 
       const hasRole = await identity.hasRoles(roles);
 
       expect(hasRole).toBe(true);
+      spy.mockRestore();
     });
 
     test("hasRoles should return false if at least one role isn't possessed by the Identity", async () => {

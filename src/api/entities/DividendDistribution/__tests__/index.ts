@@ -306,17 +306,17 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: getParticipants', () => {
+  describe.only('method: getParticipants', () => {
     test('should return the distribution participants', async () => {
-      const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
+      const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded', isEqual: true });
 
       const balances = [
         {
-          identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+          identity: entityMockUtils.getIdentityInstance({ did: 'someDid', isEqual: false }),
           balance: new BigNumber(10000),
         },
         {
-          identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+          identity: entityMockUtils.getIdentityInstance({ did: 'otherDid', isEqual: false }),
           balance: new BigNumber(0),
         },
         {
@@ -363,7 +363,6 @@ describe('DividendDistribution class', () => {
       allBalancesStub.onThirdCall().resolves({ data: balances, next: null });
 
       result = await dividendDistribution.getParticipants();
-
       expect(result).toEqual([
         {
           identity: balances[0].identity,

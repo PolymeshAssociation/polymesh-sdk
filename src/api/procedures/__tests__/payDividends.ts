@@ -147,7 +147,7 @@ describe('payDividends procedure', () => {
 
     distribution = entityMockUtils.getDividendDistributionInstance({
       targets: {
-        identities: [entityMockUtils.getIdentityInstance({ did: 'otherDid' })],
+        identities: [entityMockUtils.getIdentityInstance({ isEqual: false, did: 'otherDid' })],
         treatment: TargetTreatment.Include,
       },
       paymentDate,
@@ -172,7 +172,7 @@ describe('payDividends procedure', () => {
 
   test('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
     const dids = ['someDid', 'otherDid'];
-    const targets = [dids[0], entityMockUtils.getIdentityInstance({ did: dids[1] })];
+    const targets = [dids[0], entityMockUtils.getIdentityInstance({ isEqual: true, did: dids[1] })];
 
     dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
       multi: [dsMockUtils.createMockBool(true)],
@@ -187,7 +187,7 @@ describe('payDividends procedure', () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       targets: {
         identities: dids.map(identityDid =>
-          entityMockUtils.getIdentityInstance({ did: identityDid })
+          entityMockUtils.getIdentityInstance({ isEqual: true, did: identityDid })
         ),
         treatment: TargetTreatment.Include,
       },

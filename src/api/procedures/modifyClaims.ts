@@ -25,7 +25,7 @@ import {
   stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
-import { assembleBatchTransactions } from '~/utils/internal';
+import { assembleBatchTransactions, coerceIdentity } from '~/utils/internal';
 import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
 
 interface AddClaimsParams {
@@ -136,9 +136,9 @@ const findInvalidCddClaims = async (
     });
 
     newCddClaims.forEach(({ target, claim }) => {
-      const did = signerToString(target);
-      const issuedClaimsForTarget = issuedCddClaims.data.filter(
-        ({ target: issuedTarget }) => issuedTarget.did === did
+      const targetId = coerceIdentity(target, context);
+      const issuedClaimsForTarget = issuedCddClaims.data.filter(({ target: issuedTarget }) =>
+        targetId.isEqual(issuedTarget)
       );
 
       if (issuedClaimsForTarget.length) {
@@ -148,7 +148,7 @@ const findInvalidCddClaims = async (
 
         if (newCddId !== currentCddId) {
           invalidCddClaims.push({
-            target: typeof target === 'string' ? new Identity({ did: target }, context) : target,
+            target: targetId,
             currentCddId,
             newCddId,
           });

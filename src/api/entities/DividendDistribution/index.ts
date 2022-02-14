@@ -53,7 +53,7 @@ import {
 import {
   calculateNextKey,
   createProcedureMethod,
-  getDid,
+  getIdentity,
   toHumanReadable,
   xor,
 } from '~/utils/internal';
@@ -308,9 +308,8 @@ export class DividendDistribution extends CorporateActionBase {
     const participants: DistributionParticipant[] = [];
     const clonedTargets = [...targetIdentities];
 
-    balances.forEach(({ identity: { did }, identity, balance }) => {
-      const isTarget = !!remove(clonedTargets, ({ did: targetDid }) => did === targetDid).length;
-
+    balances.forEach(({ identity, balance }) => {
+      const isTarget = !!remove(clonedTargets, target => identity.isEqual(target)).length;
       if (balance.gt(0) && xor(isTarget, isExclusion)) {
         participants.push({
           identity,
@@ -360,14 +359,12 @@ export class DividendDistribution extends CorporateActionBase {
       return null;
     }
 
-    const [did, balance] = await Promise.all([
-      getDid(args?.identity, context),
+    const [identity, balance] = await Promise.all([
+      getIdentity(args?.identity, context),
       checkpoint.balance(args),
     ]);
 
-    const identity = new Identity({ did }, context);
-
-    const isTarget = !!targetIdentities.find(({ did: targetDid }) => did === targetDid);
+    const isTarget = !!targetIdentities.find(target => identity.isEqual(target));
 
     let participant: DistributionParticipant;
 
@@ -388,7 +385,7 @@ export class DividendDistribution extends CorporateActionBase {
       return participant;
     }
 
-    const rawDid = stringToIdentityId(did, context);
+    const rawDid = stringToIdentityId(identity.did, context);
     const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
     const holderPaid = await query.capitalDistribution.holderPaid([rawCaId, rawDid]);
     const paid = boolToBoolean(holderPaid);
