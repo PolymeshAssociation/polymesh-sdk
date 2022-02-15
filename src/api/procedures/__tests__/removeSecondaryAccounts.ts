@@ -32,7 +32,10 @@ describe('removeSecondaryAccounts procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
 
-    const accounts = [entityMockUtils.getAccountInstance({ address: 'someFakeAccount' })];
+    const secondaryAccount = entityMockUtils.getAccountInstance({ address: 'fake' });
+    secondaryAccount.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+
+    const accounts = [secondaryAccount];
 
     args = {
       accounts,
@@ -43,6 +46,7 @@ describe('removeSecondaryAccounts procedure', () => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
     dsMockUtils.reset();
+    sinon.restore();
   });
 
   afterAll(() => {

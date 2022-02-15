@@ -32,9 +32,8 @@ export async function prepareLeaveIdentity(
   }
 
   const secondaryAccounts = await currentIdentity.getSecondaryAccounts();
-  const { address } = account;
-  const isSecondaryAccount = secondaryAccounts.find(
-    ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
+  const isSecondaryAccount = secondaryAccounts.find(({ account: secondaryAccount }) =>
+    secondaryAccount.isEqual(account)
   );
 
   if (!isSecondaryAccount) {

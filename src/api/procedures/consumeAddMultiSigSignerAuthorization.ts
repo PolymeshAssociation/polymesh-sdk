@@ -103,7 +103,7 @@ export async function getAuthorization(
   let calledByTarget: boolean;
 
   if (target instanceof Account) {
-    calledByTarget = currentAccount.address === target.address;
+    calledByTarget = target.isEqual(currentAccount);
     hasRoles = calledByTarget;
     transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
   } else {

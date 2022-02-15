@@ -262,7 +262,9 @@ describe('assertSecondaryAccounts', () => {
         },
       },
     ];
-    const accounts = [entityMockUtils.getAccountInstance({ address: 'otherAddress' })];
+    const accounts = [
+      entityMockUtils.getAccountInstance({ address: 'otherAddress', isEqual: false }),
+    ];
 
     signerToSignerValueStub.returns({ type: SignerType.Account, value: address });
 

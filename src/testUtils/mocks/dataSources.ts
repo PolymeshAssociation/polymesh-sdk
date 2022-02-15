@@ -315,6 +315,7 @@ interface ContextOptions {
   currentPairIsLocked?: boolean;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentity?: Identity;
+  getCurrentIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   primaryAccount?: string;
@@ -672,6 +673,7 @@ function configureContext(opts: ContextOptions): void {
       },
     }),
     getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
+    getCurrentIdentity: sinon.stub().resolves(opts.getCurrentIdentity),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
