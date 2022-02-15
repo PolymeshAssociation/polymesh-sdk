@@ -646,10 +646,17 @@ describe('Claims Class', () => {
         value: 'someIdentityScope',
       };
 
+      const issuer1 = entityMockUtils.getIdentityInstance({ did: issuer });
+      issuer1.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      const issuer2 = entityMockUtils.getIdentityInstance({ did: issuer });
+      issuer2.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      const issuer3 = entityMockUtils.getIdentityInstance({ did: otherIssuer });
+      issuer3.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+
       const identityClaims: ClaimData[] = [
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: issuer, isEqual: true }),
+          issuer: issuer1,
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -659,7 +666,7 @@ describe('Claims Class', () => {
         },
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: issuer, isEqual: true }),
+          issuer: issuer2,
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -671,7 +678,7 @@ describe('Claims Class', () => {
         },
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: otherIssuer, isEqual: false }),
+          issuer: issuer3,
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -700,11 +707,11 @@ describe('Claims Class', () => {
       expect(result.data[0].claims[0].claim).toEqual(identityClaims[0].claim);
       expect(result.data[0].claims[1].claim).toEqual(identityClaims[1].claim);
       expect(result.data[1].identity.did).toEqual(otherIssuer);
-      expect(result.data[1].claims.length).toEqual(2);
-      expect(result.data[1].claims[0].claim).toEqual(identityClaims[0].claim);
+      expect(result.data[1].claims.length).toEqual(1);
+      expect(result.data[1].claims[0].claim).toEqual(identityClaims[2].claim);
 
       result = await claims.getTargetingClaims({
-        target: target,
+        target,
         trustedClaimIssuers: ['trusted'],
       });
 
