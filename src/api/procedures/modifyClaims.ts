@@ -25,7 +25,7 @@ import {
   stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, coerceIdentity } from '~/utils/internal';
+import { assembleBatchTransactions, intoIdentity } from '~/utils/internal';
 import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
 
 interface AddClaimsParams {
@@ -136,7 +136,7 @@ const findInvalidCddClaims = async (
     });
 
     newCddClaims.forEach(({ target, claim }) => {
-      const targetId = coerceIdentity(target, context);
+      const targetId = intoIdentity(target, context);
       const issuedClaimsForTarget = issuedCddClaims.data.filter(({ target: issuedTarget }) =>
         targetId.isEqual(issuedTarget)
       );

@@ -666,7 +666,7 @@ describe('Account class', () => {
     });
   });
 
-  describe.only('method: hasPermissions', () => {
+  describe('method: hasPermissions', () => {
     test('should return whether the Account has the passed permissions', async () => {
       const mockAccount = entityMockUtils.getAccountInstance({ address });
       context = dsMockUtils.getContextInstance({
