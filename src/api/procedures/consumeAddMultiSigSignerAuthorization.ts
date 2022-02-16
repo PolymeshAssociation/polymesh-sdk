@@ -1,8 +1,7 @@
 import { TxTag, TxTags } from 'polymesh-types/types';
 
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU64,
@@ -39,8 +38,6 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   const { target, authId, issuer } = authRequest;
 
-  await assertAuthorizationRequestValid(authRequest, context);
-
   const rawAuthId = bigNumberToU64(authId, context);
 
   if (!accept) {
@@ -66,22 +63,15 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
     return;
   }
 
-  let transaction = multiSig.acceptMultisigSignerAsIdentity;
+  await assertAuthorizationRequestValid(authRequest, context);
 
   if (target instanceof Account) {
-    const existingIdentity = await target.getIdentity();
-
-    if (existingIdentity) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The target Account is already part of an Identity',
-      });
-    }
-
-    transaction = multiSig.acceptMultisigSignerAsKey;
+    const transaction = multiSig.acceptMultisigSignerAsKey;
+    this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
+  } else {
+    const transaction = multiSig.acceptMultisigSignerAsIdentity;
+    this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
   }
-
-  this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
 }
 
 /**

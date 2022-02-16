@@ -41,36 +41,6 @@ import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
 import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
-// import { Proposal } from '~/internal';
-// import { ProposalStage, ProposalState } from '~/api/entities/Proposal/types';
-// import { Context, PolymeshError } from '~/internal';
-// import { ErrorCode } from '~/types';
-
-// /**
-//  * @hidden
-//  */
-// export async function assertProposalUnlocked(pipId: BigNumber, context: Context): Promise<void> {
-//   const proposal = new Proposal({ pipId }, context);
-
-//   const [details, stage] = await Promise.all([proposal.getDetails(), proposal.getStage()]);
-
-//   const { lastState } = details;
-
-//   if (lastState !== ProposalState.Pending) {
-//     throw new PolymeshError({
-//       code: ErrorCode.ValidationError,
-//       message: 'The proposal must be in pending state',
-//     });
-//   }
-
-//   if (stage !== ProposalStage.CoolOff) {
-//     throw new PolymeshError({
-//       code: ErrorCode.ValidationError,
-//       message: 'The proposal must be in its cool-off period',
-//     });
-//   }
-// }
-
 /**
  * @hidden
  */
@@ -380,7 +350,7 @@ export async function assertAuthorizationRequestValid(
       },
     });
   }
-  const { data } = authRequest;
+  const { data, target } = authRequest;
   switch (data.type) {
     case AuthorizationType.RotatePrimaryKey:
       return assertPrimaryKeyRotationAuthorizationValid(authRequest);
@@ -394,8 +364,7 @@ export async function assertAuthorizationRequestValid(
       // no additional checks
       return;
     case AuthorizationType.AddMultiSigSigner:
-      // no additional checks
-      return;
+      return assertMultiSigSignerAuthorizationValid(data, target);
     case AuthorizationType.PortfolioCustody:
       // no additional checks
       return;
@@ -484,6 +453,33 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
       code: ErrorCode.UnmetPrerequisite,
       message: 'The Asset does not exist',
     });
+}
+
+/**
+ * @hidden
+ *
+ * Asserts valid add multisig signer authorization
+ */
+export async function assertMultiSigSignerAuthorizationValid(
+  data: GenericAuthorizationData,
+  target: Signer
+): Promise<void> {
+  if (target instanceof Account) {
+    if (target.address === data.value) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'A multisig cannot be its own signer',
+      });
+    }
+    const exitingIdentity = await target.getIdentity();
+    if (exitingIdentity) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already part of an Identity',
+      });
+    }
+    // TODO assert the account does not have another multisig it is a part of
+  }
 }
 
 /**

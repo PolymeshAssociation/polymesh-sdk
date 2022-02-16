@@ -132,7 +132,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
             expiry: null,
             data: {
               type: AuthorizationType.AddMultiSigSigner,
-              value: 'someAddress',
+              value: 'multisigAddr',
             },
           },
           mockContext
@@ -242,7 +242,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
           expiry: null,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'someAddress',
+            value: 'multiSigAddr',
           },
         },
         mockContext
@@ -255,7 +255,11 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       args: [rawSignatory, rawAuthId, rawFalse],
     });
 
-    target = entityMockUtils.getAccountInstance({ address: targetAddress });
+    target = entityMockUtils.getAccountInstance({
+      address: targetAddress,
+      isEqual: false,
+      getIdentity: null,
+    });
 
     await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -266,7 +270,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
           expiry: null,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'someAddress',
+            value: 'multiSigAddr',
           },
         },
         mockContext

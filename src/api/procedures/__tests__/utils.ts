@@ -1,5 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import exp from 'constants';
 import sinon from 'sinon';
 
 import {
@@ -607,75 +608,61 @@ describe('authorization request validations', () => {
   });
 
   describe('assertAuthorizationRequestValid', () => {
-    test('should throw with an expired request', async () => {
+    test('should throw with an expired request', () => {
       const auth = entityMockUtils.getAuthorizationRequestInstance({ isExpired: true });
-
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Authorization Request has expired',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw with an Authorization that does not exist', async () => {
+    test('should throw with an Authorization that does not exist', () => {
       const auth = entityMockUtils.getAuthorizationRequestInstance({ exists: false });
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Authorization Request no longer exists',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
   describe('assertPrimaryKeyRotationValid', () => {
     const data = { type: AuthorizationType.RotatePrimaryKey } as Authorization;
-    test('should not throw with a valid request', async () => {
+
+    test('should not throw with a valid request', () => {
       const goodTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(
         { authId: new BigNumber(1), target: goodTarget, issuer, expiry, data },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw with target that is an Identity', async () => {
+    test('should throw with target that is an Identity', () => {
       const badTarget = entityMockUtils.getIdentityInstance();
       const auth = new AuthorizationRequest(
         { authId: new BigNumber(1), target: badTarget, issuer, expiry, data },
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'An Identity can not become the primary Account of another Identity',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
@@ -684,7 +671,8 @@ describe('authorization request validations', () => {
       type: AuthorizationType.AttestPrimaryKeyRotation,
       value: '',
     };
-    test('should not throw with a valid request', async () => {
+
+    test('should not throw with a valid request', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ isCddProvider: true });
       const auth = new AuthorizationRequest(
         {
@@ -697,16 +685,10 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw with non CDD provider Issuer', async () => {
+    test('should throw with non CDD provider Issuer', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ isCddProvider: false });
       const auth = new AuthorizationRequest(
         {
@@ -719,22 +701,19 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Issuer must be a CDD provider',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
   describe('assertTransferTickerAuthorizationValid', () => {
-    test('should not throw with a valid request', async () => {
+    test('should not throw with a valid request', () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: { details: { status: TickerReservationStatus.Reserved } },
       });
@@ -752,16 +731,11 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw with an unreserved ticker', async () => {
+    test('should throw with an unreserved ticker', () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: { details: { status: TickerReservationStatus.Free } },
       });
@@ -779,20 +753,17 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
+
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Ticker is not reserved',
       });
-      expect(error).toEqual(expectedError);
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw with an already used ticker', async () => {
+    test('should throw with an already used ticker', () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: { details: { status: TickerReservationStatus.AssetCreated } },
       });
@@ -810,22 +781,20 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
+
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Ticker has already been used to create an Asset',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
   describe('assertTransferAssetOwnershipAuthorizationValid', () => {
-    test('should not throw with a valid request', async () => {
+    test('should not throw with a valid request', () => {
       entityMockUtils.configureMocks({ assetOptions: { exists: true } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
@@ -841,16 +810,11 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw with a Asset that does not exist', async () => {
+    test('should throw with a Asset that does not exist', () => {
       entityMockUtils.configureMocks({ assetOptions: { exists: false } });
       const data: Authorization = {
         type: AuthorizationType.TransferAssetOwnership,
@@ -867,22 +831,19 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Asset does not exist',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
-  describe('PortfolioCustody', () => {
-    test('should throw with a valid request', async () => {
+  describe('assertPortfolioCustodyAuthorizationValid', () => {
+    test('should not throw with a valid request', () => {
       const data: Authorization = {
         type: AuthorizationType.PortfolioCustody,
         value: entityMockUtils.getNumberedPortfolioInstance(),
@@ -897,13 +858,8 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
   });
 
@@ -918,7 +874,8 @@ describe('authorization request validations', () => {
       type: AuthorizationType.JoinIdentity,
       value: permissions,
     };
-    test('should not throw with a valid request', async () => {
+
+    test('should not throw with a valid request', () => {
       const mockTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(
         {
@@ -931,16 +888,10 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw when the issuer lacks a valid CDD', async () => {
+    test('should throw when the issuer lacks a valid CDD', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: false });
       const auth = new AuthorizationRequest(
         {
@@ -953,20 +904,17 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Issuing Identity does not have a valid CDD claim',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw when the target is an Identity', async () => {
+    test('should throw when the target is an Identity', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
       const mockTarget = entityMockUtils.getIdentityInstance();
       const auth = new AuthorizationRequest(
@@ -980,20 +928,17 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The target cannot be an Identity',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw if the target already has an Identity', async () => {
+    test('should throw if the target already has an Identity', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
       const mockTarget = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance(),
@@ -1009,23 +954,21 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The target Account already has an associated Identity',
       });
-      expect(error).toEqual(expectedError);
+
+      expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
   describe('assertAddRelayerPayingKeyAuthorizationValid', () => {
     const allowance = new BigNumber(100);
-    test('should not throw with a valid request', async () => {
+
+    test('should not throw with a valid request', () => {
       const subsidizer = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
@@ -1053,16 +996,10 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw with a beneficiary that does not have a CDD Claim', async () => {
+    test('should throw with a beneficiary that does not have a CDD Claim', () => {
       const subsidizer = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance(),
       });
@@ -1090,20 +1027,18 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
+
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Beneficiary Account does not have a valid CDD Claim',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw with a Subsidizer that does not have a CDD Claim', async () => {
+    test('should throw with a Subsidizer that does not have a CDD Claim', () => {
       const beneficiary = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
@@ -1134,20 +1069,18 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
+
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Subsidizer Account does not have a valid CDD Claim',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw with a beneficiary that does not have an Identity', async () => {
+    test('should throw with a beneficiary that does not have an Identity', () => {
       const subsidizer = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: false }),
       });
@@ -1173,20 +1106,17 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Beneficiary Account does not have an Identity',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw with a Subsidizer that does not have an Identity', async () => {
+    test('should throw with a Subsidizer that does not have an Identity', () => {
       const beneficiary = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance({ hasValidCdd: true }),
       });
@@ -1215,17 +1145,91 @@ describe('authorization request validations', () => {
         },
         mockContext
       );
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
+
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Subsidizer Account does not have an Identity',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
+    });
+  });
+
+  describe('assertMultiSigSignerAuthorizationValid', () => {
+    test('should not throw with a valid request', () => {
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target,
+          issuer,
+          expiry,
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: 'multisigAddr',
+          },
+        },
+        mockContext
+      );
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
+    });
+
+    test('should throw if the multisig is being added as its own signer', () => {
+      const address = 'multiSigAddr';
+
+      const badTarget = entityMockUtils.getAccountInstance({
+        address,
+        getIdentity: null,
+      });
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: badTarget,
+          issuer,
+          expiry,
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: address,
+          },
+        },
+        mockContext
+      );
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'A multisig cannot be its own signer',
+      });
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
+    });
+
+    test('should throw if the target Account is already associated to an Identity', () => {
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: entityMockUtils.getAccountInstance(),
+          issuer,
+          expiry,
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: 'addr',
+          },
+        },
+        mockContext
+      );
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already part of an Identity',
+      });
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
@@ -1240,8 +1244,10 @@ describe('authorization request validations', () => {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
       value: permissions,
     };
-    test('should not throw with a valid request', async () => {
-      const validTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
+    test('should not throw with a valid request', () => {
+      const validTarget = entityMockUtils.getAccountInstance({
+        getIdentity: null,
+      });
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -1253,16 +1259,10 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
-      expect(error).toBe(undefined);
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw when the issuer lacks a valid CDD', async () => {
+    test('should throw when the issuer lacks a valid CDD', () => {
       const noCddIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: false });
       const auth = new AuthorizationRequest(
         {
@@ -1275,20 +1275,17 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Issuing Identity does not have a valid CDD claim',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw when the target is an Identity', async () => {
+    test('should throw when the target is an Identity', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
       const identityTarget = entityMockUtils.getIdentityInstance();
       const auth = new AuthorizationRequest(
@@ -1302,20 +1299,17 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The target cannot be an Identity',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
 
-    test('should throw if the target already has an Identity', async () => {
+    test('should throw if the target already has an Identity', () => {
       const mockIssuer = entityMockUtils.getIdentityInstance({ hasValidCdd: true });
       const unavailableTarget = entityMockUtils.getAccountInstance({
         getIdentity: entityMockUtils.getIdentityInstance(),
@@ -1331,43 +1325,36 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      let error;
-      try {
-        await assertAuthorizationRequestValid(auth, mockContext);
-      } catch (err) {
-        error = err;
-      }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The target Account already has an associated Identity',
       });
-      expect(error).toEqual(expectedError);
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrowError(
+        expectedError
+      );
     });
   });
 
   describe('unreachable code', () => {
-    test('with an any assertion', async () => {
-      let error;
-      try {
-        await assertAuthorizationRequestValid(
+    test('with an any assertion', () => {
+      const expectedError = new UnreachableCaseError({ type: 'FAKE_TYPE' } as never);
+      return expect(
+        assertAuthorizationRequestValid(
           {
             data: { type: 'FAKE_TYPE' },
             isExpired: () => false,
             exists: () => true,
           } as never,
           mockContext
-        );
-      } catch (err) {
-        error = err;
-      }
-      const expectedError = new UnreachableCaseError({ type: 'FAKE_TYPE' } as never);
-      expect(error).toEqual(expectedError);
+        )
+      ).rejects.toThrowError(expectedError);
     });
   });
 });
 
 describe('Unreachable error case', () => {
-  test('should throw error if called via type assertion', async () => {
+  test('should throw error if called via type assertion', () => {
     const message = 'Should never happen' as never;
     const error = new UnreachableCaseError(message);
     expect(error.message).toEqual(`Unreachable case: "${message}"`);
