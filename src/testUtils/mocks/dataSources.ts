@@ -332,7 +332,6 @@ interface ContextOptions {
   addPair?: Pair;
   getAccounts?: Account[];
   currentIdentityIsEqual?: boolean;
-  currentAccountIsEqual?: boolean;
   networkVersion?: string;
   supportsSubsidy?: boolean;
 }
@@ -699,7 +698,6 @@ function configureContext(opts: ContextOptions): void {
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
         checkPermissions: sinon.stub().resolves(opts.checkPermissions),
         isFrozen: sinon.stub().resolves(opts.isFrozen),
-        isEqual: sinon.stub().resolves(opts.currentAccountIsEqual),
       })
     : getCurrentAccount.throws(new Error('There is no Account associated with the SDK'));
   const currentPair = opts.withSeed

@@ -1,6 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import exp from 'constants';
 import sinon from 'sinon';
 
 import {
