@@ -310,9 +310,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       let result = await boundFunc(args);
       expect(result).toEqual({
         roles: true,
-        permissions: {
-          transactions: [TxTags.multiSig.AcceptMultisigSignerAsKey],
-        },
+        permissions: undefined,
       });
 
       args.authRequest.target = entityMockUtils.getIdentityInstance({

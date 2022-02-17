@@ -92,14 +92,17 @@ export async function getAuthorization(
 
   let calledByTarget: boolean;
 
+  let permissions;
   if (target instanceof Account) {
     calledByTarget = currentAccount.address === target.address;
     hasRoles = calledByTarget;
     transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
+    // An account accepting multisig cannot be part of an Identity, so we cannot check for permissions
   } else {
     calledByTarget = !!identity?.isEqual(target);
     hasRoles = calledByTarget;
     transactions = [TxTags.multiSig.AcceptMultisigSignerAsIdentity];
+    permissions = { transactions };
   }
 
   if (accept) {
@@ -107,9 +110,7 @@ export async function getAuthorization(
       roles:
         hasRoles ||
         '"AddMultiSigSigner" Authorization Requests can only be accepted by the target Signer',
-      permissions: {
-        transactions,
-      },
+      permissions,
     };
   }
 
