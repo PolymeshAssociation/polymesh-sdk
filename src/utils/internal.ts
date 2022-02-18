@@ -857,6 +857,7 @@ export async function getCheckpointValue(
 
 interface TxAndArgsArray<Args extends unknown[] = unknown[]> {
   transaction: PolymeshTx<Args>;
+  feeMultiplier?: BigNumber;
   argsArray: Args[];
 }
 
@@ -868,12 +869,12 @@ type MapTxAndArgsArray<Args extends unknown[][]> = {
 /**
  * @hidden
  */
-function mapArgs<Args extends unknown[] | []>({
-  transaction,
-  argsArray,
-}: TxAndArgsArray<Args>): MapTxWithArgs<Args[]> {
+function mapArgs<Args extends unknown[] | []>(
+  txAndArgsArray: TxAndArgsArray<Args>
+): MapTxWithArgs<Args[]> {
+  const { argsArray, ...rest } = txAndArgsArray;
   return argsArray.map(args => ({
-    transaction,
+    ...rest,
     args,
   })) as unknown as MapTxWithArgs<Args[]>;
 }

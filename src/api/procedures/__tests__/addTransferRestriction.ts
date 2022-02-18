@@ -188,7 +188,7 @@ describe('addTransferRestriction procedure', () => {
         },
         {
           transaction: addExemptedEntitiesTransaction,
-          // feeMultiplier: new BigNumber(2),
+          feeMultiplier: new BigNumber(2),
           args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
         },
       ],
@@ -209,7 +209,7 @@ describe('addTransferRestriction procedure', () => {
         },
         {
           transaction: addExemptedEntitiesTransaction,
-          // feeMultiplier: new BigNumber(2),
+          feeMultiplier: new BigNumber(2),
           args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
         },
       ],

@@ -147,12 +147,12 @@ describe('setAssetDocuments procedure', () => {
       transactions: [
         {
           transaction: removeDocumentsTransaction,
-          // feeMultiplier: new BigNumber(1),
+          feeMultiplier: new BigNumber(1),
           args: [docIds, rawTicker],
         },
         {
           transaction: addDocumentsTransaction,
-          // feeMultiplier: new BigNumber(rawDocuments.length),
+          feeMultiplier: new BigNumber(rawDocuments.length),
           args: [rawDocuments, rawTicker],
         },
       ],
@@ -172,7 +172,7 @@ describe('setAssetDocuments procedure', () => {
       transactions: [
         {
           transaction: addDocumentsTransaction,
-          // feeMultiplier: new BigNumber(rawDocuments.length),
+          feeMultiplier: new BigNumber(rawDocuments.length),
           args: [rawDocuments, rawTicker],
         },
       ],
@@ -193,7 +193,7 @@ describe('setAssetDocuments procedure', () => {
       transactions: [
         {
           transaction: removeDocumentsTransaction,
-          // feeMultiplier: new BigNumber(1),
+          feeMultiplier: new BigNumber(1),
           args: [docIds, rawTicker],
         },
       ],
