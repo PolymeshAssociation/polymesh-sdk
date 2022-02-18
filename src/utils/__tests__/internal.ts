@@ -8,6 +8,7 @@ import sinon from 'sinon';
 import { Asset, Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { getIdentityInstance } from '~/testUtils/mocks/entities';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -34,6 +35,7 @@ import {
   getCheckpointValue,
   getCommonKeyring,
   getDid,
+  getIdentity,
   getPortfolioIdByName,
   getTicker,
   hasSameElements,
@@ -844,5 +846,42 @@ describe('getPortfolioIdByName', () => {
 
     result = await getPortfolioIdByName(identityId, rawName, context);
     expect(result).toEqual(new BigNumber(1));
+  });
+});
+
+describe('getIdentity', () => {
+  let context: Context;
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance({
+      getCurrentIdentity: entityMockUtils.getIdentityInstance(),
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  test('should return currentIdentity when given undefined value', async () => {
+    const expectedIdentity = await context.getCurrentIdentity();
+    const result = await getIdentity(undefined, context);
+    expect(result).toEqual(expectedIdentity);
+  });
+
+  test('should return an Identity if given an Identity', async () => {
+    const identity = getIdentityInstance();
+    const result = await getIdentity(identity, context);
+    expect(result).toEqual(identity);
+  });
+
+  test('should return the Identity given its DID', async () => {
+    const identity = entityMockUtils.getIdentityInstance();
+    const result = await getIdentity(identity.did, context);
+    expect(result.did).toEqual(identity.did);
   });
 });
