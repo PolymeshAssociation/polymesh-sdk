@@ -1,15 +1,17 @@
 import BigNumber from 'bignumber.js';
+import { flatten } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { AssetDocument, ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   assetDocumentToDocument,
   documentToAssetDocument,
   stringToTicker,
 } from '~/utils/conversion';
-import { batchArguments, hasSameElements } from '~/utils/internal';
+import { assembleBatchTransactions, batchArguments, hasSameElements } from '~/utils/internal';
 
 export interface SetAssetDocumentsParams {
   /**
@@ -57,25 +59,31 @@ export async function prepareSetAssetDocuments(
 
   const rawTicker = stringToTicker(ticker, context);
 
+  const transactions = [];
+
   if (currentDocIds.length) {
-    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
-      this.addTransaction({
+    const txArgsArray = batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).map(
+      docIdBatch => ({
         transaction: tx.asset.removeDocuments,
         feeMultiplier: new BigNumber(docIdBatch.length),
-        args: [docIdBatch, rawTicker],
-      });
-    });
+        argsArray: [tuple(docIdBatch, rawTicker)],
+      })
+    );
+    transactions.push(assembleBatchTransactions(tuple(...txArgsArray)));
   }
 
   if (rawDocuments.length) {
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
-      this.addTransaction({
+    const txArgsArray = batchArguments(rawDocuments, TxTags.asset.AddDocuments).map(
+      rawDocumentBatch => ({
         transaction: tx.asset.addDocuments,
         feeMultiplier: new BigNumber(rawDocumentBatch.length),
-        args: [rawDocumentBatch, rawTicker],
-      });
-    });
+        argsArray: [tuple(rawDocumentBatch, rawTicker)],
+      })
+    );
+    transactions.push(assembleBatchTransactions(tuple(...txArgsArray)));
   }
+
+  this.addBatchTransaction({ transactions: flatten(transactions) });
 
   return new Asset({ ticker }, context);
 }

@@ -60,13 +60,13 @@ describe('addTransferRestriction procedure', () => {
     percentageTm = { type: TransferRestrictionType.Percentage, value: percentage };
   });
 
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
 
   let addTransferManagerTransaction: PolymeshTx<[Ticker, TransferManager]>;
   let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferManager, ScopeId[]]>;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     addTransferManagerTransaction = dsMockUtils.createTxStub('statistics', 'addTransferManager');
     addExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'addExemptedEntities');
@@ -119,9 +119,13 @@ describe('addTransferRestriction procedure', () => {
 
     let result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: addTransferManagerTransaction,
-      args: [rawTicker, rawCountTm],
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: [
+        {
+          transaction: addTransferManagerTransaction,
+          args: [rawTicker, rawCountTm],
+        },
+      ],
     });
 
     expect(result).toEqual(new BigNumber(1));
@@ -135,9 +139,13 @@ describe('addTransferRestriction procedure', () => {
 
     result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: addTransferManagerTransaction,
-      args: [rawTicker, rawPercentageTm],
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: addTransferManagerTransaction,
+          args: [rawTicker, rawPercentageTm],
+        },
+      ],
     });
 
     expect(result).toEqual(new BigNumber(1));
@@ -172,10 +180,18 @@ describe('addTransferRestriction procedure', () => {
 
     let result = await prepareAddTransferRestriction.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: addExemptedEntitiesTransaction,
-      feeMultiplier: new BigNumber(2),
-      args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: [
+        {
+          transaction: addTransferManagerTransaction,
+          args: [rawTicker, rawCountTm],
+        },
+        {
+          transaction: addExemptedEntitiesTransaction,
+          // feeMultiplier: new BigNumber(2),
+          args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+        },
+      ],
     });
 
     expect(result).toEqual(new BigNumber(1));
@@ -185,10 +201,18 @@ describe('addTransferRestriction procedure', () => {
       exemptedIdentities: [entityMockUtils.getIdentityInstance()],
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: addExemptedEntitiesTransaction,
-      feeMultiplier: new BigNumber(2),
-      args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: addTransferManagerTransaction,
+          args: [rawTicker, rawCountTm],
+        },
+        {
+          transaction: addExemptedEntitiesTransaction,
+          // feeMultiplier: new BigNumber(2),
+          args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+        },
+      ],
     });
 
     expect(result).toEqual(new BigNumber(1));

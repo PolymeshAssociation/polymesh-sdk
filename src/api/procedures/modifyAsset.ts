@@ -1,13 +1,16 @@
+import { flatten } from 'lodash';
+
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, SecurityIdentifier, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   securityIdentifierToAssetIdentifier,
   stringToAssetName,
   stringToFundingRoundName,
   stringToTicker,
 } from '~/utils/conversion';
-import { hasSameElements } from '~/utils/internal';
+import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
 
 export type ModifyAssetParams =
   | {
@@ -87,6 +90,7 @@ export async function prepareModifyAsset(
     asset.getIdentifiers(),
   ]);
 
+  const transactions = [];
   if (makeDivisible) {
     if (isDivisible) {
       throw new PolymeshError({
@@ -95,10 +99,14 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction({
-      transaction: tx.asset.makeDivisible,
-      args: [rawTicker],
-    });
+    transactions.push(
+      assembleBatchTransactions(
+        tuple({
+          transaction: tx.asset.makeDivisible,
+          argsArray: [tuple(rawTicker)],
+        })
+      )
+    );
   }
 
   if (newName) {
@@ -109,10 +117,14 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction({
-      transaction: tx.asset.renameAsset,
-      args: [rawTicker, stringToAssetName(newName, context)],
-    });
+    transactions.push(
+      assembleBatchTransactions(
+        tuple({
+          transaction: tx.asset.renameAsset,
+          argsArray: [tuple(rawTicker, stringToAssetName(newName, context))],
+        })
+      )
+    );
   }
 
   if (newFundingRound) {
@@ -123,10 +135,14 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction({
-      transaction: tx.asset.setFundingRound,
-      args: [rawTicker, stringToFundingRoundName(newFundingRound, context)],
-    });
+    transactions.push(
+      assembleBatchTransactions(
+        tuple({
+          transaction: tx.asset.setFundingRound,
+          argsArray: [tuple(rawTicker, stringToFundingRoundName(newFundingRound, context))],
+        })
+      )
+    );
   }
 
   if (newIdentifiers) {
@@ -139,16 +155,21 @@ export async function prepareModifyAsset(
       });
     }
 
-    this.addTransaction({
-      transaction: tx.asset.updateIdentifiers,
-      args: [
-        rawTicker,
-        newIdentifiers.map(newIdentifier =>
-          securityIdentifierToAssetIdentifier(newIdentifier, context)
-        ),
-      ],
-    });
+    const rawIdentifiers = newIdentifiers.map(newIdentifier =>
+      securityIdentifierToAssetIdentifier(newIdentifier, context)
+    );
+
+    transactions.push(
+      assembleBatchTransactions(
+        tuple({
+          transaction: tx.asset.updateIdentifiers,
+          argsArray: [tuple(rawTicker, rawIdentifiers)],
+        })
+      )
+    );
   }
+
+  this.addBatchTransaction({ transactions: flatten(transactions) });
 
   return asset;
 }
