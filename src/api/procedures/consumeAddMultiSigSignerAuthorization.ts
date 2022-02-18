@@ -96,7 +96,6 @@ export async function getAuthorization(
   if (target instanceof Account) {
     calledByTarget = currentAccount.address === target.address;
     hasRoles = calledByTarget;
-    transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
     // An account accepting multisig cannot be part of an Identity, so we cannot check for permissions
   } else {
     calledByTarget = !!identity?.isEqual(target);
