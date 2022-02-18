@@ -1230,6 +1230,35 @@ describe('authorization request validations', () => {
         expectedError
       );
     });
+
+    test('should throw if the target Account is already associated to a multisig', () => {
+      const auth = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          target: entityMockUtils.getAccountInstance({ getIdentity: null }),
+          issuer,
+          expiry,
+          data: {
+            type: AuthorizationType.AddMultiSigSigner,
+            value: 'addr',
+          },
+        },
+        mockContext
+      );
+
+      dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
+        returnValue: dsMockUtils.createMockAccountId('abc'),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already associated to a multisig address',
+      });
+
+      return expect(assertAuthorizationRequestValid(auth, mockContext)).rejects.toThrow(
+        expectedError
+      );
+    });
   });
 
   describe('assertRotatePrimaryKeyToSecondaryAuthorization', () => {

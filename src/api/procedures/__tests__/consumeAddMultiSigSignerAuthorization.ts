@@ -150,6 +150,9 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
+    dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
+      returnValue: dsMockUtils.createMockAccountId(),
+    });
 
     const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
 

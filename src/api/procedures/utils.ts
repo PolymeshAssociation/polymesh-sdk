@@ -364,7 +364,7 @@ export async function assertAuthorizationRequestValid(
       // no additional checks
       return;
     case AuthorizationType.AddMultiSigSigner:
-      return assertMultiSigSignerAuthorizationValid(data, target);
+      return assertMultiSigSignerAuthorizationValid(data, target, context);
     case AuthorizationType.PortfolioCustody:
       // no additional checks
       return;
@@ -462,7 +462,8 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
  */
 export async function assertMultiSigSignerAuthorizationValid(
   data: GenericAuthorizationData,
-  target: Signer
+  target: Signer,
+  context: Context
 ): Promise<void> {
   if (target instanceof Account) {
     if (target.address === data.value) {
@@ -471,6 +472,7 @@ export async function assertMultiSigSignerAuthorizationValid(
         message: 'A multisig cannot be its own signer',
       });
     }
+
     const exitingIdentity = await target.getIdentity();
     if (exitingIdentity) {
       throw new PolymeshError({
@@ -478,7 +480,14 @@ export async function assertMultiSigSignerAuthorizationValid(
         message: 'The target Account is already part of an Identity',
       });
     }
-    // TODO assert the account does not have another multisig it is a part of
+
+    const multiSig = await context.polymeshApi.query.multiSig.keyToMultiSig(target.address);
+    if (!multiSig.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already associated to a multisig address',
+      });
+    }
   }
 }
 
