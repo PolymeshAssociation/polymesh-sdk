@@ -323,7 +323,7 @@ describe('stringToAssetName and assetNameToString', () => {
     const fakeResult = 'convertedName' as unknown as AssetName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AssetName', value).returns(fakeResult);
+    context.createType.withArgs('AssetName', value).returns(fakeResult);
 
     const result = stringToAssetName(value, context);
 
@@ -357,7 +357,7 @@ describe('booleanToBool and boolToBoolean', () => {
     const fakeResult = 'true' as unknown as bool;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('bool', value).returns(fakeResult);
+    context.createType.withArgs('bool', value).returns(fakeResult);
 
     const result = booleanToBool(value, context);
 
@@ -391,7 +391,7 @@ describe('stringToBytes and bytesToString', () => {
     const fakeResult = 'convertedBytes' as unknown as Bytes;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Bytes', value).returns(fakeResult);
+    context.createType.withArgs('Bytes', value).returns(fakeResult);
 
     const result = stringToBytes(value, context);
 
@@ -425,7 +425,7 @@ describe('stringToInvestorZKProofData', () => {
     const fakeResult = 'convertedProof' as unknown as InvestorZKProofData;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('InvestorZKProofData', value).returns(fakeResult);
+    context.createType.withArgs('InvestorZKProofData', value).returns(fakeResult);
 
     const result = stringToInvestorZKProofData(value, context);
 
@@ -464,15 +464,13 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+    context.createType.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Balance', portfolioMovement.amount.multipliedBy(Math.pow(10, 6)).toString())
       .returns(rawAmount);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('MovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
@@ -493,10 +491,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(memo, 32)).returns(rawMemo);
+    context.createType.withArgs('Memo', padString(memo, 32)).returns(rawMemo);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('MovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
@@ -534,7 +531,7 @@ describe('stringToTicker and tickerToString', () => {
     const fakeResult = 'convertedTicker' as unknown as Ticker;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(value, 12)).returns(fakeResult);
+    context.createType.withArgs('Ticker', padString(value, 12)).returns(fakeResult);
 
     const result = stringToTicker(value, context);
 
@@ -604,10 +601,7 @@ describe('dateToMoment and momentToDate', () => {
     const fakeResult = 10000 as unknown as Moment;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Moment', Math.round(value.getTime()))
-      .returns(fakeResult);
+    context.createType.withArgs('Moment', Math.round(value.getTime())).returns(fakeResult);
 
     const result = dateToMoment(value, context);
 
@@ -641,7 +635,7 @@ describe('stringToAccountId and accountIdToString', () => {
     const fakeResult = 'convertedAccountId' as unknown as AccountId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AccountId', value).returns(fakeResult);
+    context.createType.withArgs('AccountId', value).returns(fakeResult);
 
     const result = stringToAccountId(value, context);
 
@@ -675,7 +669,7 @@ describe('stringToHash and hashToString', () => {
     const fakeResult = 'convertedHash' as unknown as Hash;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Hash', value).returns(fakeResult);
+    context.createType.withArgs('Hash', value).returns(fakeResult);
 
     const result = stringToHash(value, context);
 
@@ -709,7 +703,7 @@ describe('stringToIdentityId and identityIdToString', () => {
     const fakeResult = 'type' as unknown as IdentityId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', identity).returns(fakeResult);
+    context.createType.withArgs('IdentityId', identity).returns(fakeResult);
 
     const result = stringToIdentityId(identity, context);
 
@@ -743,7 +737,7 @@ describe('stringToEcdsaSignature', () => {
     const fakeResult = 'sig' as unknown as EcdsaSignature;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('EcdsaSignature', signature).returns(fakeResult);
+    context.createType.withArgs('EcdsaSignature', signature).returns(fakeResult);
 
     const result = stringToEcdsaSignature(signature, context);
 
@@ -773,10 +767,7 @@ describe('signerValueToSignatory and signatoryToSignerValue', () => {
     const fakeResult = 'SignatoryEnum' as unknown as Signatory;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Signatory', { [value.type]: value.value })
-      .returns(fakeResult);
+    context.createType.withArgs('Signatory', { [value.type]: value.value }).returns(fakeResult);
 
     const result = signerValueToSignatory(value, context);
 
@@ -983,11 +974,11 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     };
     const fakeResult = 'AuthorizationDataEnum' as unknown as AuthorizationData;
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
     createTypeStub.withArgs('AuthorizationData', { [value.type]: value.value }).returns(fakeResult);
 
     const fakeTicker = 'convertedTicker' as unknown as Ticker;
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
+    context.createType.withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
 
     let result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
@@ -1043,10 +1034,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       type: AuthorizationType.RotatePrimaryKey,
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: null })
-      .returns(fakeResult);
+    context.createType.withArgs('AuthorizationData', { [value.type]: null }).returns(fakeResult);
 
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
@@ -1064,8 +1052,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     let rawAgentGroup = 'Full' as unknown as AgentGroup;
     createTypeStub.withArgs('AgentGroup', knownPermissionGroup.type).returns(rawAgentGroup);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
       .returns(fakeResult);
 
@@ -1087,8 +1074,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     createTypeStub.withArgs('u32', id.toString()).returns(id);
     createTypeStub.withArgs('AgentGroup', { Custom: id }).returns(rawAgentGroup);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
       .returns(fakeResult);
 
@@ -1100,13 +1086,11 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       value: 'TICKER',
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH))
       .returns(fakeTicker);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('AuthorizationData', { [value.type]: fakeTicker })
       .returns(fakeResult);
 
@@ -1322,7 +1306,7 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
     const fakeResult = 'convertedAgentGroup' as unknown as AgentGroup;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', value).returns(fakeResult);
+    context.createType.withArgs('AgentGroup', value).returns(fakeResult);
 
     let result = permissionGroupIdentifierToAgentGroup(value, context);
 
@@ -1333,11 +1317,8 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
 
     const u32FakeResult = '100' as unknown as u32;
 
-    dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AgentGroup', { Custom: u32FakeResult })
-      .returns(fakeResult);
+    context.createType.withArgs('u32', custom.toString()).returns(u32FakeResult);
+    context.createType.withArgs('AgentGroup', { Custom: u32FakeResult }).returns(fakeResult);
 
     result = permissionGroupIdentifierToAgentGroup(value, context);
 
@@ -1392,7 +1373,7 @@ describe('authorizationTypeToMeshAuthorizationType', () => {
     const fakeResult = 'convertedAuthorizationType' as unknown as MeshAuthorizationType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AuthorizationType', value).returns(fakeResult);
+    context.createType.withArgs('AuthorizationType', value).returns(fakeResult);
 
     const result = authorizationTypeToMeshAuthorizationType(value, context);
 
@@ -1425,12 +1406,11 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     const fakeResult = 'convertedPermission' as unknown as MeshPermissions;
     const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     let fakeExtrinsicPermissionsResult: unknown =
       'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('ExtrinsicPermissions', 'Whole')
       .returns(fakeExtrinsicPermissionsResult);
 
@@ -1464,8 +1444,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       ],
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeExtrinsicPermissionsResult);
 
@@ -1520,8 +1499,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       ],
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeExtrinsicPermissionsResult);
 
@@ -1558,8 +1536,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       ],
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeExtrinsicPermissionsResult);
 
@@ -1607,8 +1584,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       ],
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeExtrinsicPermissionsResult);
 
@@ -1833,7 +1809,7 @@ describe('bigNumberToU64 and u64ToBigNumber', () => {
     const fakeResult = '100' as unknown as u64;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('u64', value.toString()).returns(fakeResult);
+    context.createType.withArgs('u64', value.toString()).returns(fakeResult);
 
     const result = bigNumberToU64(value, context);
 
@@ -1881,7 +1857,7 @@ describe('bigNumberToU32 and u32ToBigNumber', () => {
     const fakeResult = '100' as unknown as u32;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('u32', value.toString()).returns(fakeResult);
+    context.createType.withArgs('u32', value.toString()).returns(fakeResult);
 
     const result = bigNumberToU32(value, context);
 
@@ -1951,8 +1927,7 @@ describe('percentageToPermill and permillToBigNumber', () => {
     const fakeResult = '100' as unknown as Permill;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
       .returns(fakeResult);
 
@@ -2002,8 +1977,7 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
     const fakeResult = '100' as unknown as Balance;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
       .returns(fakeResult);
 
@@ -2013,8 +1987,7 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
 
     value = new BigNumber(100.1);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
       .returns(fakeResult);
 
@@ -2133,7 +2106,7 @@ describe('stringToMemo', () => {
     const fakeResult = 'memoDescription' as unknown as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Memo', padString(value, 32)).returns(fakeResult);
+    context.createType.withArgs('Memo', padString(value, 32)).returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
@@ -2259,7 +2232,7 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
     const fakeResult = 'CommodityEnum' as unknown as AssetType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
+    context.createType.withArgs('AssetType', value).returns(fakeResult);
 
     const result = internalAssetTypeToAssetType(value, context);
 
@@ -2388,8 +2361,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
     const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('AssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
       .returns(fakeResult);
 
@@ -2399,8 +2371,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
     value = { type: SecurityIdentifierType.Lei, value: leiValue };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('AssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
       .returns(fakeResult);
 
@@ -2410,8 +2381,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
     value = { type: SecurityIdentifierType.Cusip, value: cusipValue };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('AssetIdentifier', { [SecurityIdentifierType.Cusip]: cusipValue })
       .returns(fakeResult);
 
@@ -2495,7 +2465,7 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
     const fakeResult = 'convertedName' as unknown as FundingRoundName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('FundingRoundName', value).returns(fakeResult);
+    context.createType.withArgs('FundingRoundName', value).returns(fakeResult);
 
     const result = stringToFundingRoundName(value, context);
 
@@ -2529,7 +2499,7 @@ describe('stringToDocumentName and documentNameToString', () => {
     const fakeResult = 'convertedName' as unknown as DocumentName;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentName', value).returns(fakeResult);
+    context.createType.withArgs('DocumentName', value).returns(fakeResult);
 
     const result = stringToDocumentName(value, context);
 
@@ -2563,7 +2533,7 @@ describe('stringToDocumentUri and documentUriToString', () => {
     const fakeResult = 'convertedUri' as unknown as DocumentUri;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentUri', value).returns(fakeResult);
+    context.createType.withArgs('DocumentUri', value).returns(fakeResult);
 
     const result = stringToDocumentUri(value, context);
 
@@ -2608,7 +2578,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
     const fakeResult = 'convertedHash' as unknown as DocumentHash;
     const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
 
@@ -2772,7 +2742,7 @@ describe('stringToDocumentType and documentTypeToString', () => {
     const fakeResult = 'convertedType' as unknown as DocumentType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentType', value).returns(fakeResult);
+    context.createType.withArgs('DocumentType', value).returns(fakeResult);
 
     const result = stringToDocumentType(value, context);
 
@@ -2815,8 +2785,7 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
     const fakeResult = 'convertedDocument' as unknown as Document;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Document', {
         uri: stringToDocumentUri(uri, context),
         name: stringToDocumentName(name, context),
@@ -2831,8 +2800,7 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
     let result = assetDocumentToDocument(value, context);
     expect(result).toEqual(fakeResult);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Document', {
         uri: stringToDocumentUri(uri, context),
         name: stringToDocumentName(name, context),
@@ -3084,10 +3052,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     };
     const fakeResult = 'ScopeEnum' as unknown as MeshScope;
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Scope', { [value.type]: value.value })
-      .returns(fakeResult);
+    context.createType.withArgs('Scope', { [value.type]: value.value }).returns(fakeResult);
 
     const result = scopeToMeshScope(value, context);
 
@@ -3104,12 +3069,9 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     const fakeIdentityId =
       '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as IdentityId;
 
-    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', value.value).returns(fakeIdentityId);
+    context.createType.withArgs('IdentityId', value.value).returns(fakeIdentityId);
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Scope', { [value.type]: fakeIdentityId })
-      .returns(fakeResult);
+    context.createType.withArgs('Scope', { [value.type]: fakeIdentityId }).returns(fakeResult);
 
     const result = scopeToMeshScope(value, context);
 
@@ -3125,15 +3087,11 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     const fakeResult = 'ScopeEnum' as unknown as MeshScope;
     const fakeTicker = 'SOME_TICKER' as unknown as Ticker;
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Ticker', padString(value.value, MAX_TICKER_LENGTH))
       .returns(fakeTicker);
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Scope', { [value.type]: fakeTicker })
-      .returns(fakeResult);
+    context.createType.withArgs('Scope', { [value.type]: fakeTicker }).returns(fakeResult);
 
     const result = scopeToMeshScope(value, context);
 
@@ -3199,7 +3157,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
     const fakeResult = 'meshClaim' as unknown as MeshClaim;
     const fakeScope = 'scope' as unknown as MeshScope;
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     createTypeStub.withArgs('Scope', sinon.match.any).returns(fakeScope);
     createTypeStub
@@ -3534,7 +3492,7 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
     const context = dsMockUtils.getContextInstance();
     const fakeResult = 'meshClaim' as unknown as MeshClaim;
 
-    dsMockUtils.getCreateTypeStub().returns(fakeResult);
+    context.createType.returns(fakeResult);
 
     const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
     expect(result).toEqual(fakeResult);
@@ -3612,7 +3570,7 @@ describe('stringToCddId and cddIdToString', () => {
     const fakeResult = 'type' as unknown as CddId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('CddId', cddId).returns(fakeResult);
+    context.createType.withArgs('CddId', cddId).returns(fakeResult);
 
     const result = stringToCddId(cddId, context);
 
@@ -3646,7 +3604,7 @@ describe('stringToScopeId and scopeIdToString', () => {
     const fakeResult = 'type' as unknown as ScopeId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('ScopeId', scopeId).returns(fakeResult);
+    context.createType.withArgs('ScopeId', scopeId).returns(fakeResult);
 
     const result = stringToScopeId(scopeId, context);
 
@@ -3732,7 +3690,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     };
     const fakeResult = 'convertedComplianceRequirement' as unknown as ComplianceRequirement;
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     conditions.forEach(({ type }) => {
       const meshType = type === ConditionType.IsExternalAgent ? ConditionType.IsIdentity : type;
@@ -3951,8 +3909,7 @@ describe('txTagToProtocolOp', () => {
     const fakeResult = 'convertedProtocolOp' as unknown as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = dsMockUtils
-      .getCreateTypeStub()
+    const createTypeStub = context.createType
       .withArgs('ProtocolOp', 'AssetRegisterTicker')
       .returns(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.RegisterTicker, context)).toEqual(fakeResult);
@@ -4062,7 +4019,7 @@ describe('stringToText and textToString', () => {
     const fakeResult = 'convertedText' as unknown as Text;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Text', value).returns(fakeResult);
+    context.createType.withArgs('Text', value).returns(fakeResult);
 
     const result = stringToText(value, context);
 
@@ -4101,10 +4058,9 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const fakeResult = 'PortfolioId' as unknown as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', portfolioId.did).returns(rawIdentityId);
+    context.createType.withArgs('IdentityId', portfolioId.did).returns(rawIdentityId);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('PortfolioId', {
         did: rawIdentityId,
         kind: 'Default',
@@ -4115,10 +4071,9 @@ describe('portfolioIdToMeshPortfolioId', () => {
 
     expect(result).toBe(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('u64', number.toString()).returns(rawU64);
+    context.createType.withArgs('u64', number.toString()).returns(rawU64);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('PortfolioId', {
         did: rawIdentityId,
         kind: { User: rawU64 },
@@ -4582,7 +4537,7 @@ describe('transactionHexToTxTag', () => {
 
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Proposal', hex).returns(mockResult);
+    context.createType.withArgs('Proposal', hex).returns(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
@@ -4687,8 +4642,7 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
       permissions: mockPermissions,
     });
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('SecondaryKey', {
         signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
         permissions: permissionsToMeshPermissions(secondaryAccount.permissions, context),
@@ -4719,7 +4673,7 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
     const fakeResult = 'Other' as unknown as MeshVenueType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('VenueType', value).returns(fakeResult);
+    context.createType.withArgs('VenueType', value).returns(fakeResult);
 
     const result = venueTypeToMeshVenueType(value, context);
 
@@ -4771,7 +4725,7 @@ describe('stringToVenueDetails and venueDetailsToString', () => {
     const fakeResult = 'type' as unknown as VenueDetails;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('VenueDetails', details).returns(fakeResult);
+    context.createType.withArgs('VenueDetails', details).returns(fakeResult);
 
     const result = stringToVenueDetails(details, context);
 
@@ -4875,8 +4829,7 @@ describe('endConditionToSettlementType', () => {
     const fakeResult = 'type' as unknown as SettlementType;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('SettlementType', InstructionType.SettleOnAffirmation)
       .returns(fakeResult);
 
@@ -4890,9 +4843,8 @@ describe('endConditionToSettlementType', () => {
     const blockNumber = new BigNumber(10);
     const rawBlockNumber = dsMockUtils.createMockU32(blockNumber);
 
-    dsMockUtils.getCreateTypeStub().withArgs('u32', blockNumber.toString()).returns(rawBlockNumber);
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType.withArgs('u32', blockNumber.toString()).returns(rawBlockNumber);
+    context.createType
       .withArgs('SettlementType', { [InstructionType.SettleOnBlock]: rawBlockNumber })
       .returns(fakeResult);
 
@@ -5118,8 +5070,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       trustedFor: null,
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('TrustedIssuer', {
         issuer: stringToIdentityId(did, context),
         trusted_for: 'Any',
@@ -5134,8 +5085,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       trustedFor: [ClaimType.Accredited, ClaimType.Blocked],
     };
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('TrustedIssuer', {
         issuer: stringToIdentityId(did, context),
         trusted_for: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
@@ -5362,7 +5312,7 @@ describe('transferRestrictionToTransferManager and signatoryToSignerValue', () =
 
     const rawCount = dsMockUtils.createMockU64(count);
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
     createTypeStub
       .withArgs('TransferManager', { CountTransferManager: rawCount })
       .returns(fakeResult);
@@ -5448,7 +5398,7 @@ describe('stoTierToPriceTier', () => {
       amount: total,
     };
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     createTypeStub
       .withArgs('Balance', total.multipliedBy(Math.pow(10, 6)).toString())
@@ -5457,8 +5407,7 @@ describe('stoTierToPriceTier', () => {
       .withArgs('Balance', price.multipliedBy(Math.pow(10, 6)).toString())
       .returns(rawPrice);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    createTypeStub
       .withArgs('PriceTier', {
         total: rawTotal,
         price: rawPrice,
@@ -5944,7 +5893,7 @@ describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPer
     const fakeResult = 'Period' as unknown as MeshCalendarPeriod;
     const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
     const rawAmount = dsMockUtils.createMockU64(amount);
 
     createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
@@ -6046,7 +5995,7 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
     const fakeResult = 'Spec' as unknown as ScheduleSpec;
     const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
     const rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
     const rawAmount = dsMockUtils.createMockU64(amount);
     const rawZero = dsMockUtils.createMockU64(new BigNumber(0));
@@ -6336,7 +6285,7 @@ describe('corporateActionKindToCaKind', () => {
     const fakeResult = 'issuerNotice' as unknown as CAKind;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('CAKind', value).returns(fakeResult);
+    context.createType.withArgs('CAKind', value).returns(fakeResult);
 
     const result = corporateActionKindToCaKind(value, context);
 
@@ -6364,7 +6313,7 @@ describe('checkpointToRecordDateSpec', () => {
     const fakeResult = 'recordDateSpec' as unknown as RecordDateSpec;
     const rawId = dsMockUtils.createMockU64(id);
     const context = dsMockUtils.getContextInstance();
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     createTypeStub.withArgs('u64', id.toString()).returns(rawId);
     createTypeStub.withArgs('RecordDateSpec', { Existing: rawId }).returns(fakeResult);
@@ -6380,7 +6329,7 @@ describe('checkpointToRecordDateSpec', () => {
     const fakeResult = 'recordDateSpec' as unknown as RecordDateSpec;
     const rawDate = dsMockUtils.createMockMoment(new BigNumber(value.getTime()));
     const context = dsMockUtils.getContextInstance();
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     createTypeStub.withArgs('Moment', value.getTime()).returns(rawDate);
     createTypeStub.withArgs('RecordDateSpec', { Scheduled: rawDate }).returns(fakeResult);
@@ -6397,7 +6346,7 @@ describe('checkpointToRecordDateSpec', () => {
     const fakeResult = 'recordDateSpec' as unknown as RecordDateSpec;
     const rawId = dsMockUtils.createMockU64(id);
     const context = dsMockUtils.getContextInstance();
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     createTypeStub.withArgs('u64', id.toString()).returns(rawId);
     createTypeStub.withArgs('RecordDateSpec', { ExistingSchedule: rawId }).returns(fakeResult);
@@ -6467,7 +6416,7 @@ describe('targetsToTargetIdentities', () => {
     const value = { identities: [entityMockUtils.getIdentityInstance({ did })], treatment };
     const fakeResult = 'targetIdentities' as unknown as TargetIdentities;
     const context = dsMockUtils.getContextInstance();
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+    const createTypeStub = context.createType;
 
     const rawDid = dsMockUtils.createMockIdentityId(did);
     const rawTreatment = dsMockUtils.createMockTargetTreatment();
@@ -6510,11 +6459,10 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId);
     const fakeResult = 'CAId' as unknown as CAId;
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
-    dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
+    context.createType.withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
+    context.createType.withArgs('u32', args.localId.toString()).returns(localId);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('CAId', {
         ticker,
         local_id: localId,
@@ -6544,7 +6492,7 @@ describe('stringToSignature', () => {
     const fakeResult = 'convertedSignature' as unknown as Signature;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Signature', value).returns(fakeResult);
+    context.createType.withArgs('Signature', value).returns(fakeResult);
 
     const result = stringToSignature(value, context);
 
@@ -6570,7 +6518,7 @@ describe('stringToRistrettoPoint', () => {
     const fakeResult = 'convertedRistrettoPoint' as unknown as RistrettoPoint;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('RistrettoPoint', value).returns(fakeResult);
+    context.createType.withArgs('RistrettoPoint', value).returns(fakeResult);
 
     const result = stringToRistrettoPoint(value, context);
 
@@ -6596,7 +6544,7 @@ describe('stringToScalar', () => {
     const fakeResult = 'convertedScalar' as unknown as Scalar;
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Scalar', value).returns(fakeResult);
+    context.createType.withArgs('Scalar', value).returns(fakeResult);
 
     const result = stringToScalar(value, context);
 
@@ -6674,34 +6622,26 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
     };
     const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Scalar', firstChallengeResponse)
       .returns(rawFirstChallengeResponse);
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Scalar', secondChallengeResponse)
       .returns(rawSecondChallengeResponse);
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('RistrettoPoint', subtractExpressionsRes)
       .returns(rawSubtractExpressionsRes);
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('RistrettoPoint', blindedScopeDidHash)
       .returns(rawBlindedScopeDidHash);
-    dsMockUtils.getCreateTypeStub().withArgs('ZkProofData', zkProofData).returns(rawZkProofData);
+    context.createType.withArgs('ZkProofData', zkProofData).returns(rawZkProofData);
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('Signature', proofScopeIdWellFormed)
       .returns(rawProofScopeIdWellFormed);
-    dsMockUtils.getCreateTypeStub().withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
+    context.createType.withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ScopeClaimProof', scopeClaimProof)
-      .returns(fakeResult);
+    context.createType.withArgs('ScopeClaimProof', scopeClaimProof).returns(fakeResult);
 
     const result = scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context);
 
@@ -6731,8 +6671,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
 
     const fakeResult = 'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
 
-    dsMockUtils
-      .getCreateTypeStub()
+    context.createType
       .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
       .returns(fakeResult);
 
@@ -6740,7 +6679,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
 
     expect(result).toEqual(fakeResult);
 
-    dsMockUtils.getCreateTypeStub().withArgs('ExtrinsicPermissions', 'Whole').returns(fakeResult);
+    context.createType.withArgs('ExtrinsicPermissions', 'Whole').returns(fakeResult);
 
     result = transactionPermissionsToExtrinsicPermissions(null, context);
 
