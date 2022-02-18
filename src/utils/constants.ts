@@ -139,3 +139,8 @@ export const SYSTEM_VERSION_RPC_CALL = {
  * Maximum amount of legs allowed in a single instruction
  */
 export const MAX_LEGS_LENGTH = 10;
+
+/**
+ * Default cdd_id associated with an Identity on chain
+ */
+export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
