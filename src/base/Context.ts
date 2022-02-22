@@ -1207,18 +1207,14 @@ export class Context {
    *
    * Creates an instance of a type as registered
    */
-  public createType<K extends keyof InterfaceTypes>(
-    type: K,
-    ...params: unknown[]
-  ): InterfaceTypes[K] {
-    console.log('calling in real');
-    console.log('api: ', this.polymeshApi);
+  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): InterfaceTypes[K] {
     try {
       return this.polymeshApi.createType(type, params);
-    } catch (err) {
+    } catch (error) {
       throw new PolymeshError({
         code: ErrorCode.UnexpectedError,
-        message: 'Could not create internal type. Please report this to the Polymath team',
+        message: `Could not create internal Polymesh type: "${type}" with params: "${params}". Please report this error to the Polymath team`,
+        data: { error },
       });
     }
   }

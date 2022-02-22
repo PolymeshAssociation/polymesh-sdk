@@ -1963,4 +1963,35 @@ describe('Context class', () => {
       expect(context.supportsSubsidy({ tag: TxTags.asset.CreateAsset })).toBe(true);
     });
   });
+
+  describe('method: createType', () => {
+    test('should call polymeshApi and return the result', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.getCreateTypeStub().withArgs('Bytes', 'abc').returns('abc');
+
+      const result = context.createType('Bytes', 'abc');
+      expect(result).toEqual('abc');
+    });
+
+    test('should throw a PolymeshError if createType throws', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.getCreateTypeStub().throws('Could not create Polymesh type');
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message:
+          'Could not create internal Polymesh type: "Bytes" with params: "abc". Please report this error to the Polymath team',
+      });
+
+      expect(() => context.createType('Bytes', 'abc')).toThrowError(expectedError);
+    });
+  });
 });
