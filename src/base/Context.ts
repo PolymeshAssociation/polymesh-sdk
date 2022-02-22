@@ -1205,7 +1205,7 @@ export class Context {
   /**
    *  @hidden
    *
-   * Creates an instance of a type as registered
+   * Creates an instance of a type as registered in the polymeshApi instance
    */
   public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): InterfaceTypes[K] {
     try {
