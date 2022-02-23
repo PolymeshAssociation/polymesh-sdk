@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { MovePortfolioItem, PortfolioId as MeshPortfolioId, TxTags } from 'polymesh-types/types';
+import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
@@ -7,7 +7,7 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';
+import { PortfolioBalance, PortfolioMovement, RoleType, TxTags } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

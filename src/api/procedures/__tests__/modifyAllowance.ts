@@ -7,7 +7,7 @@ import { Context, ModifyAllowanceParams, Subsidy } from '~/internal';
 import { TxTags } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AllowanceOperation } from '~/types';
+import { AllowanceOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -38,7 +38,11 @@ describe('modifyAllowance procedure', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    entityMockUtils.initMocks();
+    entityMockUtils.initMocks({
+      subsidyOptions: {
+        getAllowance: new BigNumber(100),
+      },
+    });
 
     stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');

@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
@@ -9,7 +8,12 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { AddRelayerPayingKeyAuthorizationData, AuthorizationType, ErrorCode } from '~/types';
+import {
+  AddRelayerPayingKeyAuthorizationData,
+  AuthorizationType,
+  ErrorCode,
+  TxTags,
+} from '~/types';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
 
 export interface SubsidizeAccountParams {

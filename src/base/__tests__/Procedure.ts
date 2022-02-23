@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
+import { PosRatio, ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, PolymeshTransaction, Procedure } from '~/internal';
@@ -12,7 +12,7 @@ import {
   procedureMockUtils,
 } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import { Role, RoleType } from '~/types';
+import { Role, RoleType, TxTag, TxTags } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';

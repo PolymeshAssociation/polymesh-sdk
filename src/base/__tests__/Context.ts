@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { ProtocolOp, TxTags } from 'polymesh-types/types';
+import { ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
@@ -13,6 +13,7 @@ import {
   ErrorCode,
   TargetTreatment,
   TransactionArgumentType,
+  TxTags,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';

@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
-import { AllowanceOperation, ErrorCode } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ErrorCode, TxTags } from '~/types';
+import { AllowanceOperation, ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
 
-interface IncreaseAllowanceParams {
+export interface IncreaseAllowanceParams {
   /**
    * amount of POLYX to be increased
    */
@@ -14,7 +13,7 @@ interface IncreaseAllowanceParams {
   operation: AllowanceOperation.Increase;
 }
 
-interface DecreaseAllowanceParams {
+export interface DecreaseAllowanceParams {
   /**
    * amount of POLYX to be decreased
    */
@@ -22,7 +21,7 @@ interface DecreaseAllowanceParams {
   operation: AllowanceOperation.Decrease;
 }
 
-interface SetAllowanceParams {
+export interface SetAllowanceParams {
   /**
    * amount of POLYX to be set
    */
@@ -79,7 +78,7 @@ export async function prepareModifyAllowance(
   if (operation === AllowanceOperation.Set) {
     if (currentAllowance.eq(allowance)) {
       throw new PolymeshError({
-        code: ErrorCode.NoDataChange,
+        code: ErrorCode.ValidationError,
         message: 'Amount of allowance to set is equal to the current allowance',
       });
     }
@@ -90,7 +89,7 @@ export async function prepareModifyAllowance(
   if (operation === AllowanceOperation.Decrease) {
     if (currentAllowance.lte(allowance)) {
       throw new PolymeshError({
-        code: ErrorCode.NoDataChange,
+        code: ErrorCode.ValidationError,
         message: 'Amount of allowance to decrease cannot be more than the current allowance',
       });
     }

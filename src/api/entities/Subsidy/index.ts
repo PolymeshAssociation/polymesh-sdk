@@ -3,13 +3,17 @@ import BigNumber from 'bignumber.js';
 import {
   Account,
   Context,
+  DecreaseAllowanceParams,
   Entity,
+  IncreaseAllowanceParams,
   modifyAllowance,
   ModifyAllowanceParams,
   PolymeshError,
   quitSubsidy,
+  SetAllowanceParams,
 } from '~/internal';
-import { AllowanceOperation, ErrorCode, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { AllowanceOperation } from '~/types/internal';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -127,29 +131,29 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
   public quit: NoArgsProcedureMethod<void>;
 
   /**
-   * Set allowance for this Subsidy relationship.
+   * Set allowance for this Subsidy relationship
    *
    * @note Only the subsidizer is allowed to set the allowance
    *
    * @throws if the allowance to set is equal to the current allowance
    */
-  public setAllowance: ProcedureMethod<Pick<ModifyAllowanceParams, 'allowance'>, void>;
+  public setAllowance: ProcedureMethod<Pick<SetAllowanceParams, 'allowance'>, void>;
 
   /**
-   * Increase allowance for this Subsidy relationship.
+   * Increase allowance for this Subsidy relationship
    *
    * @note Only the subsidizer is allowed to increase the allowance
    */
-  public increaseAllowance: ProcedureMethod<Pick<ModifyAllowanceParams, 'allowance'>, void>;
+  public increaseAllowance: ProcedureMethod<Pick<IncreaseAllowanceParams, 'allowance'>, void>;
 
   /**
-   * Decrease allowance for this Subsidy relationship.
+   * Decrease allowance for this Subsidy relationship
    *
    * @note Only the subsidizer is allowed to decrease the allowance
    *
    * @throws if the amount to decrease by is more than the existing allowance
    */
-  public decreaseAllowance: ProcedureMethod<Pick<ModifyAllowanceParams, 'allowance'>, void>;
+  public decreaseAllowance: ProcedureMethod<Pick<DecreaseAllowanceParams, 'allowance'>, void>;
 
   /**
    * Determine whether this Subsidy relationship exists on chain

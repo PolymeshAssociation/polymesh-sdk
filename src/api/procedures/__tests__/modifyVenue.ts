@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyVenue } from '~/api/procedures/modifyVenue';
 import { Context, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, VenueType } from '~/types';
+import { RoleType, TxTags, VenueType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

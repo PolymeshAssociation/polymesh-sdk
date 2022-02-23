@@ -2,7 +2,7 @@ import { Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PortfolioId, SettlementType, Ticker, TxTags } from 'polymesh-types/types';
+import { PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -28,6 +28,7 @@ import {
   PortfolioLike,
   RoleType,
   TickerReservationStatus,
+  TxTags,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';

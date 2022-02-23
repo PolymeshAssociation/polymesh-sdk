@@ -1,13 +1,13 @@
 import { Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { CAId, Document, DocumentId, Ticker, TxTags } from 'polymesh-types/types';
+import { CAId, Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/linkCaDocs';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AssetDocument } from '~/types';
+import { AssetDocument, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';

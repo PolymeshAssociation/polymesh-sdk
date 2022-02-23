@@ -21,9 +21,3 @@ export interface SubsidyWithAllowance {
   subsidy: Subsidy;
   allowance: BigNumber;
 }
-
-export enum AllowanceOperation {
-  Set = 'Set',
-  Increase = 'Increase',
-  Decrease = 'Decrease',
-}

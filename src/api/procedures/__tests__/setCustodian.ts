@@ -1,13 +1,20 @@
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
+import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, RoleType, SignerType, SignerValue } from '~/types';
+import {
+  Authorization,
+  AuthorizationType,
+  RoleType,
+  SignerType,
+  SignerValue,
+  TxTags,
+} from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

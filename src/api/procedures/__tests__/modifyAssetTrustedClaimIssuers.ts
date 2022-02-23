@@ -1,5 +1,5 @@
 import { Vec } from '@polkadot/types';
-import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -10,7 +10,7 @@ import {
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
+import { InputTrustedClaimIssuer, TrustedClaimIssuer, TxTags } from '~/types';
 import { PolymeshTx, TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

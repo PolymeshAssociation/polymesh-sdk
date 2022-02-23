@@ -1,7 +1,7 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
+import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -19,6 +19,7 @@ import {
   SignerType,
   SignerValue,
   TickerReservationStatus,
+  TxTags,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
