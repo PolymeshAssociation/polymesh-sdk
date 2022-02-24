@@ -9,7 +9,7 @@ import {
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { intoIdentity, xor } from '~/utils/internal';
+import { asIdentity, xor } from '~/utils/internal';
 
 export interface PayDividendsParams {
   targets: (string | Identity)[];
@@ -51,7 +51,7 @@ export async function preparePayDividends(
 
   const excluded: Identity[] = [];
   targets.forEach(target => {
-    const targetIdentity = intoIdentity(target, context);
+    const targetIdentity = asIdentity(target, context);
     const found = !!identities.find(identity => identity.isEqual(targetIdentity));
     if (xor(found, treatment === TargetTreatment.Include)) {
       excluded.push(targetIdentity);

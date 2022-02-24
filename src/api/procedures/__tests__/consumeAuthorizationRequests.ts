@@ -312,9 +312,11 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       args.authRequests[0].target = entityMockUtils.getIdentityInstance({
         isEqual: false,
+        did: 'someoneElse',
       });
       args.authRequests[0].issuer = entityMockUtils.getIdentityInstance({
         isEqual: false,
+        did: 'someoneElse',
       });
       args.accept = false;
 

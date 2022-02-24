@@ -145,7 +145,7 @@ export async function getIdentity(
   if (!value) {
     return context.getCurrentIdentity();
   } else {
-    return intoIdentity(value, context);
+    return asIdentity(value, context);
   }
 }
 
@@ -153,7 +153,7 @@ export async function getIdentity(
  * @hidden
  * Given a DID return the corresponding Identity, given an Identity return the Identity
  */
-export function intoIdentity(value: string | Identity, context: Context): Identity {
+export function asIdentity(value: string | Identity, context: Context): Identity {
   return typeof value === 'string' ? new Identity({ did: value }, context) : value;
 }
 

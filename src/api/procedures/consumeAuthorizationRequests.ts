@@ -13,7 +13,7 @@ import {
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { assembleBatchTransactions } from '~/utils/internal';
+import { assembleBatchTransactions, getDid } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -111,7 +111,8 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  const identity = await context.getCurrentIdentity();
+  let did: string;
+  const fetchDid = async (): Promise<string> => getDid(did, context);
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 
@@ -122,11 +123,13 @@ export async function getAuthorization(
       const account = context.getCurrentAccount();
       condition = target.isEqual(account);
     } else {
-      condition = target.isEqual(identity);
+      did = await fetchDid();
+      condition = did === target.did;
     }
 
     if (!accept) {
-      condition = condition || issuer.isEqual(identity);
+      did = await fetchDid();
+      condition = condition || did === issuer.did;
     }
 
     return condition;

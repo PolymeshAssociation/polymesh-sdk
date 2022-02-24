@@ -8,7 +8,6 @@ import sinon from 'sinon';
 import { Asset, Context, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getIdentityInstance } from '~/testUtils/mocks/entities';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -853,9 +852,7 @@ describe('getIdentity', () => {
   let context: Context;
 
   beforeEach(() => {
-    context = dsMockUtils.getContextInstance({
-      getCurrentIdentity: entityMockUtils.getIdentityInstance(),
-    });
+    context = dsMockUtils.getContextInstance({});
   });
 
   afterEach(() => {
@@ -874,7 +871,7 @@ describe('getIdentity', () => {
   });
 
   test('should return an Identity if given an Identity', async () => {
-    const identity = getIdentityInstance();
+    const identity = entityMockUtils.getIdentityInstance();
     const result = await getIdentity(identity, context);
     expect(result).toEqual(identity);
   });
