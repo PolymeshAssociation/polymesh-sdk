@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { getAuthorization, prepareModifyAllowance } from '~/api/procedures/modifyAllowance';
-import { Context, ModifyAllowanceParams, Subsidy } from '~/internal';
+import { Context, ModifyAllowanceParams, Procedure, Subsidy } from '~/internal';
 import { TxTags } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -35,6 +35,8 @@ describe('modifyAllowance procedure', () => {
 
   let increasePolyxLimitTransaction: sinon.SinonStub;
 
+  let proc: Procedure<ModifyAllowanceParams, void>;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
@@ -62,6 +64,8 @@ describe('modifyAllowance procedure', () => {
     bigNumberToBalanceStub.withArgs(allowance, mockContext).returns(rawAllowance);
 
     increasePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'increasePolyxLimit');
+
+    proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
   });
 
   afterEach(() => {
@@ -76,62 +80,36 @@ describe('modifyAllowance procedure', () => {
   });
 
   test('should throw an error if the Subsidy does not exist', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
-
-    let error;
-
-    try {
-      await prepareModifyAllowance.call(proc, {
+    await expect(() =>
+      prepareModifyAllowance.call(proc, {
         ...args,
         subsidy: entityMockUtils.getSubsidyInstance({ exists: false }),
-      });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The Subsidy no longer exists');
+      })
+    ).rejects.toThrowError('The Subsidy no longer exists');
   });
 
   test('should throw an error if the allowance to be set is same as the current allowance', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
-
-    let error;
-
-    try {
-      await prepareModifyAllowance.call(proc, {
+    await expect(
+      prepareModifyAllowance.call(proc, {
         ...args,
         allowance: new BigNumber(100),
-      });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('Amount of allowance to set is equal to the current allowance');
+      })
+    ).rejects.toThrowError('Amount of allowance to set is equal to the current allowance');
   });
 
   test('should throw an error if the amount of allowance to decrease is more than the current allowance', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
-
-    let error;
-
-    try {
-      await prepareModifyAllowance.call(proc, {
+    await expect(
+      prepareModifyAllowance.call(proc, {
         ...args,
         operation: AllowanceOperation.Decrease,
         allowance: new BigNumber(1000),
-      });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe(
+      })
+    ).rejects.toThrowError(
       'Amount of allowance to decrease cannot be more than the current allowance'
     );
   });
 
   test('should add a transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
-
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     const updatePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'updatePolyxLimit');
@@ -168,8 +146,6 @@ describe('modifyAllowance procedure', () => {
 
   describe('getAuthorization', () => {
     test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
-
       const boundFunc = getAuthorization.bind(proc);
 
       let result = boundFunc(args);

@@ -7,7 +7,7 @@ import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
 
 export interface IncreaseAllowanceParams {
   /**
-   * amount of POLYX to be increased
+   * amount of POLYX to increase the allowance by
    */
   allowance: BigNumber;
   operation: AllowanceOperation.Increase;
@@ -15,7 +15,7 @@ export interface IncreaseAllowanceParams {
 
 export interface DecreaseAllowanceParams {
   /**
-   * amount of POLYX to be decreased
+   * amount of POLYX to decrease the allowance by
    */
   allowance: BigNumber;
   operation: AllowanceOperation.Decrease;
@@ -23,7 +23,7 @@ export interface DecreaseAllowanceParams {
 
 export interface SetAllowanceParams {
   /**
-   * amount of POLYX to be set
+   * amount of POLYX to set the allowance to
    */
   allowance: BigNumber;
   operation: AllowanceOperation.Set;
@@ -78,7 +78,7 @@ export async function prepareModifyAllowance(
   if (operation === AllowanceOperation.Set) {
     if (currentAllowance.eq(allowance)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'Amount of allowance to set is equal to the current allowance',
       });
     }
