@@ -53,12 +53,12 @@ describe('AssetPermissions class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(AssetPermissions.prototype instanceof Namespace).toBe(true);
   });
 
   describe('method: getGroup', () => {
-    test('should throw an error if the Identity is no longer an Agent', async () => {
+    it('should throw an error if the Identity is no longer an Agent', async () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -74,7 +74,7 @@ describe('AssetPermissions class', () => {
       expect(error.message).toBe('This Identity is no longer an Agent for this Asset');
     });
 
-    test('should return the permission group associated with the Agent', async () => {
+    it('should return the permission group associated with the Agent', async () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
       });
@@ -87,7 +87,7 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: enabledAt', () => {
-    test('should return the event identifier object of the agent added', async () => {
+    it('should return the event identifier object of the agent added', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -113,7 +113,7 @@ describe('AssetPermissions class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       const variables = {
         moduleId: ModuleIdEnum.Externalagents,
         eventId: EventIdEnum.AgentAdded,
@@ -127,7 +127,7 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: setGroup', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const group = {
         transactions: {
           type: PermissionType.Include,
@@ -157,7 +157,7 @@ describe('AssetPermissions class', () => {
       entityMockUtils.reset();
     });
 
-    test('should check whether the Identity has the appropriate permissions for the Asset', async () => {
+    it('should check whether the Identity has the appropriate permissions for the Asset', async () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -342,7 +342,7 @@ describe('AssetPermissions class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    test('should throw an error if the transaction array is empty', async () => {
+    it('should throw an error if the transaction array is empty', async () => {
       expect(assetPermissions.checkPermissions({ asset, transactions: [] })).rejects.toThrow(
         'Cannot check Permissions for an empty transaction array'
       );
@@ -358,7 +358,7 @@ describe('AssetPermissions class', () => {
       entityMockUtils.reset();
     });
 
-    test('should check whether the Identity has the appropriate permissions for the Asset', async () => {
+    it('should check whether the Identity has the appropriate permissions for the Asset', async () => {
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -370,7 +370,7 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: waive', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         asset,
         identity,
@@ -408,7 +408,7 @@ describe('AssetPermissions class', () => {
       sinon.restore();
     });
 
-    test('should return a list of AgentWithGroup', async () => {
+    it('should return a list of AgentWithGroup', async () => {
       const group = entityMockUtils.getKnownPermissionGroupInstance({
         ticker,
         type: PermissionGroupType.Full,
@@ -438,7 +438,7 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: getOperationHistory', () => {
-    test('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
+    it('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
       const eventIndex = new BigNumber(1);

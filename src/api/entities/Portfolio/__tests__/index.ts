@@ -70,12 +70,12 @@ describe('Portfolio class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Portfolio.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign Identity to instance', () => {
+    it('should assign Identity to instance', () => {
       const did = 'someDid';
       const portfolio = new NonAbstract({ did }, context);
 
@@ -84,7 +84,7 @@ describe('Portfolio class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Portfolio.isUniqueIdentifiers({ did: 'someDid', id: new BigNumber(1) })).toBe(true);
       expect(Portfolio.isUniqueIdentifiers({ did: 'someDid' })).toBe(true);
       expect(Portfolio.isUniqueIdentifiers({})).toBe(false);
@@ -101,7 +101,7 @@ describe('Portfolio class', () => {
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
-    test('should return whether the current Identity is the Portfolio owner', async () => {
+    it('should return whether the current Identity is the Portfolio owner', async () => {
       let portfolio = new NonAbstract({ did }, context);
 
       let result = await portfolio.isOwnedBy();
@@ -129,7 +129,7 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should return the custodian of the portfolio', async () => {
+    it('should return the custodian of the portfolio', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
       const custodianDid = 'custodianDid';
       const currentIdentityDid = 'currentIdentity';
@@ -230,7 +230,7 @@ describe('Portfolio class', () => {
       expect(result[1].free).toEqual(total1.minus(locked1));
     });
 
-    test('should return the requested portfolio assets and their balances', async () => {
+    it('should return the requested portfolio assets and their balances', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
       const otherTicker = 'OTHER_TICKER';
@@ -249,7 +249,7 @@ describe('Portfolio class', () => {
       expect(result[1].free).toEqual(new BigNumber(0));
     });
 
-    test('should throw an error if the portfolio does not exist', () => {
+    it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
@@ -273,7 +273,7 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should return the custodian of the portfolio', async () => {
+    it('should return the custodian of the portfolio', async () => {
       const custodianDid = 'custodianDid';
       const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
 
@@ -296,7 +296,7 @@ describe('Portfolio class', () => {
       expect(result.did).toEqual(did);
     });
 
-    test('should throw an error if the portfolio does not exist', () => {
+    it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
       dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
@@ -308,7 +308,7 @@ describe('Portfolio class', () => {
   });
 
   describe('method: moveFunds', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const args = {
         to: new NumberedPortfolio({ id: new BigNumber(1), did: 'someDid' }, context),
         items: [{ asset: 'someAsset', amount: new BigNumber(100) }],
@@ -328,7 +328,7 @@ describe('Portfolio class', () => {
   });
 
   describe('method: quitCustody', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
@@ -356,7 +356,7 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolio = new NonAbstract({ id, did }, context);
       const targetIdentity = 'someTarget';
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
@@ -385,7 +385,7 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should return a list of transactions', async () => {
+    it('should return a list of transactions', async () => {
       let portfolio = new NonAbstract({ id, did }, context);
 
       const account = 'someAccount';
@@ -533,7 +533,7 @@ describe('Portfolio class', () => {
       expect(result.next).toBeNull();
     });
 
-    test('should throw an error if the portfolio does not exist', () => {
+    it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
@@ -562,7 +562,7 @@ describe('Portfolio class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       let portfolio = new NonAbstract({ did: 'someDid', id: new BigNumber(1) }, context);
 
       expect(portfolio.toJson()).toEqual({

@@ -46,7 +46,7 @@ describe('transferPolyx procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the user has insufficient balance to transfer', () => {
+  it('should throw an error if the user has insufficient balance to transfer', () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
@@ -109,7 +109,7 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('The receiver Identity has an invalid CDD claim');
   });
 
-  test('should add a balance transfer transaction to the queue', async () => {
+  it('should add a balance transfer transaction to the queue', async () => {
     const to = entityMockUtils.getAccountInstance({ address: 'someAccount' });
     const amount = new BigNumber(99);
     const memo = 'someMessage';
@@ -153,7 +153,7 @@ describe('transferPolyx procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const memo = 'something';
       const args = {
         memo,

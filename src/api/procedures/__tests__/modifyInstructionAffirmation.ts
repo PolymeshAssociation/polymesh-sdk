@@ -111,7 +111,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the current identity is not the custodian of any of the involved portfolios', () => {
+  it('should throw an error if the current identity is not the custodian of any of the involved portfolios', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -165,7 +165,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The Instruction is already affirmed');
   });
 
-  test('should add an affirm instruction transaction to the queue', async () => {
+  it('should add an affirm instruction transaction to the queue', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -200,7 +200,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result.id).toEqual(id);
   });
 
-  test('should throw an error if operation is Withdraw and the current status of the instruction is pending', () => {
+  it('should throw an error if operation is Withdraw and the current status of the instruction is pending', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -227,7 +227,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The instruction is not affirmed');
   });
 
-  test('should add a withdraw instruction transaction to the queue', async () => {
+  it('should add a withdraw instruction transaction to the queue', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -262,7 +262,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result.id).toEqual(id);
   });
 
-  test('should add a reject instruction transaction to the queue', async () => {
+  it('should add a reject instruction transaction to the queue', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -310,7 +310,7 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       const args = {
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Affirm,
@@ -374,7 +374,7 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the portfolios for which to modify affirmation status', async () => {
+    it('should return the portfolios for which to modify affirmation status', async () => {
       const proc = procedureMockUtils.getInstance<
         ModifyInstructionAffirmationParams,
         Instruction,

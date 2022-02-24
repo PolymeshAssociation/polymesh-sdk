@@ -55,7 +55,7 @@ describe('createPortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the portfolio name is duplicated', () => {
+  it('should throw an error if the portfolio name is duplicated', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
     getPortfolioIdByNameStub.returns(new BigNumber(1));
 
@@ -64,7 +64,7 @@ describe('createPortfolio procedure', () => {
     );
   });
 
-  test('should add a create portfolio transaction to the queue', async () => {
+  it('should add a create portfolio transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
     const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
     getPortfolioIdByNameStub.returns(null);
@@ -108,7 +108,7 @@ describe('createPortfolioResolver', () => {
     filterEventRecordsStub.reset();
   });
 
-  test('should return the new Numbered Portfolio', () => {
+  it('should return the new Numbered Portfolio', () => {
     const fakeContext = {} as Context;
 
     const result = createPortfolioResolver(fakeContext)({} as ISubmittableResult);

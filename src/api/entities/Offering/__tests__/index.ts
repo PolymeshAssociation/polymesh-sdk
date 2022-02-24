@@ -66,12 +66,12 @@ describe('Offering class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Offering.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign ticker and id to instance', () => {
+    it('should assign ticker and id to instance', () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -82,7 +82,7 @@ describe('Offering class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
       expect(Offering.isUniqueIdentifiers({})).toBe(false);
       expect(Offering.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
@@ -146,7 +146,7 @@ describe('Offering class', () => {
       offering = new Offering({ ticker, id }, context);
     });
 
-    test('should return details for an Asset offering', async () => {
+    it('should return details for an Asset offering', async () => {
       const fakeResult = {
         creator: expect.objectContaining({ did: someDid }),
         name,
@@ -190,7 +190,7 @@ describe('Offering class', () => {
       expect(details).toEqual(fakeResult);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
       dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
@@ -215,7 +215,7 @@ describe('Offering class', () => {
   });
 
   describe('method: close', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -239,7 +239,7 @@ describe('Offering class', () => {
   });
 
   describe('method: modifyTimes', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -272,7 +272,7 @@ describe('Offering class', () => {
   });
 
   describe('method: getInvestments', () => {
-    test('should return a list of investors', async () => {
+    it('should return a list of investors', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -347,7 +347,7 @@ describe('Offering class', () => {
   });
 
   describe('method: freeze', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -366,7 +366,7 @@ describe('Offering class', () => {
   });
 
   describe('method: unfreeze', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -385,7 +385,7 @@ describe('Offering class', () => {
   });
 
   describe('method: invest', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -421,7 +421,7 @@ describe('Offering class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the Offering exists', async () => {
+    it('should return whether the Offering exists', async () => {
       const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
@@ -441,7 +441,7 @@ describe('Offering class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
       expect(offering.toJson()).toEqual({

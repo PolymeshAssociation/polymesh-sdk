@@ -127,12 +127,12 @@ describe('DividendDistribution class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend CorporateActionBase', () => {
+  it('should extend CorporateActionBase', () => {
     expect(DividendDistribution.prototype instanceof CorporateActionBase).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign parameters to instance', () => {
+    it('should assign parameters to instance', () => {
       expect(dividendDistribution.id).toEqual(id);
       expect(dividendDistribution.asset.ticker).toBe(ticker);
       expect(dividendDistribution.declarationDate).toEqual(declarationDate);
@@ -144,7 +144,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: checkpoint', () => {
-    test('should just pass the call down the line', async () => {
+    it('should just pass the call down the line', async () => {
       const fakeResult = 'checkpoint' as unknown as Checkpoint;
       sinon.stub(CorporateActionBase.prototype, 'checkpoint').resolves(fakeResult);
 
@@ -153,7 +153,7 @@ describe('DividendDistribution class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should throw an error if the Dividend Distribution does not exist', () => {
+    it('should throw an error if the Dividend Distribution does not exist', () => {
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -165,7 +165,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the Distribution exists', async () => {
+    it('should return whether the Distribution exists', async () => {
       let result = await dividendDistribution.exists();
 
       expect(result).toBe(true);
@@ -181,7 +181,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: claim', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
@@ -196,7 +196,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: pay', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const identityTargets = ['identityDid'];
 
@@ -218,7 +218,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: details', () => {
-    test('should return the distribution details', async () => {
+    it('should return the distribution details', async () => {
       const result = await dividendDistribution.details();
 
       expect(result).toEqual({
@@ -227,7 +227,7 @@ describe('DividendDistribution class', () => {
       });
     });
 
-    test('should throw an error if the Dividend Distribution does not exist', async () => {
+    it('should throw an error if the Dividend Distribution does not exist', async () => {
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -244,7 +244,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: modifyCheckpoint', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const args = {
         checkpoint: new Date(),
@@ -265,7 +265,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getWithheldTax', () => {
-    test('should return the amount of the withheld tax', async () => {
+    it('should return the amount of the withheld tax', async () => {
       const fakeTax = new BigNumber(100);
 
       dsMockUtils.createApolloQueryStub(
@@ -284,7 +284,7 @@ describe('DividendDistribution class', () => {
       expect(result).toEqual(fakeTax);
     });
 
-    test('should throw an error if the Dividend Distribution does not exist', () => {
+    it('should throw an error if the Dividend Distribution does not exist', () => {
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -307,7 +307,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getParticipants', () => {
-    test('should return the distribution participants', async () => {
+    it('should return the distribution participants', async () => {
       const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
 
       const balances = [
@@ -385,7 +385,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getParticipant', () => {
-    test('should return the distribution participant', async () => {
+    it('should return the distribution participant', async () => {
       const did = 'someDid';
       const balance = new BigNumber(100);
       const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
@@ -452,7 +452,7 @@ describe('DividendDistribution class', () => {
       expect(result).toEqual(null);
     });
 
-    test('should return null if the identity is excluded of the distribution', async () => {
+    it('should return null if the identity is excluded of the distribution', async () => {
       const did = 'someDid';
       const excluded = entityMockUtils.getIdentityInstance({ did });
       dividendDistribution.targets = {
@@ -474,7 +474,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: reclaimFunds', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
@@ -489,7 +489,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getPaymentHistory', () => {
-    test('should return the amount of the withheld tax', async () => {
+    it('should return the amount of the withheld tax', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
       const eventId = 'eventId';
@@ -541,7 +541,7 @@ describe('DividendDistribution class', () => {
       expect(result.withheldTax).toEqual(tax);
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryStub(
         getHistoryOfPaymentEventsForCa({
           CAId: { ticker, localId: id.toNumber() },
@@ -562,7 +562,7 @@ describe('DividendDistribution class', () => {
       expect(result.next).toBeNull();
     });
 
-    test('should throw an error if the Dividend Distribution does not exist', () => {
+    it('should throw an error if the Dividend Distribution does not exist', () => {
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -590,7 +590,7 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       dividendDistribution.targets = {
         treatment: TargetTreatment.Exclude,
         identities: [],

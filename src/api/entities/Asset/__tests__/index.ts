@@ -46,12 +46,12 @@ describe('Asset class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Asset.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign ticker and did to instance', () => {
+    it('should assign ticker and did to instance', () => {
       const ticker = 'test';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -62,7 +62,7 @@ describe('Asset class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Asset.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
       expect(Asset.isUniqueIdentifiers({})).toBe(false);
       expect(Asset.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
@@ -135,7 +135,7 @@ describe('Asset class', () => {
       });
     });
 
-    test('should return details for an Asset', async () => {
+    it('should return details for an Asset', async () => {
       const tokensStub = dsMockUtils.createQueryStub('asset', 'tokens', {
         returnValue: rawToken,
       });
@@ -189,7 +189,7 @@ describe('Asset class', () => {
       expect(details.assetType).toEqual(customType);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/naming-convention
       (rawToken as any).primary_issuance_agent = dsMockUtils.createMockOption();
@@ -221,7 +221,7 @@ describe('Asset class', () => {
   });
 
   describe('method: transferOwnership', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'TEST';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -247,7 +247,7 @@ describe('Asset class', () => {
   });
 
   describe('method: modify', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'TEST';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -289,7 +289,7 @@ describe('Asset class', () => {
       asset = new Asset({ ticker }, context);
     });
 
-    test('should return null if there is no funding round for an Asset', async () => {
+    it('should return null if there is no funding round for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
         returnValue: dsMockUtils.createMockFundingRoundName(),
       });
@@ -299,7 +299,7 @@ describe('Asset class', () => {
       expect(result).toBeNull();
     });
 
-    test('should return the funding round for an Asset', async () => {
+    it('should return the funding round for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
         returnValue: rawFundingRound,
       });
@@ -309,7 +309,7 @@ describe('Asset class', () => {
       expect(result).toBe(fundingRound);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
       dsMockUtils.createQueryStub('asset', 'fundingRound').callsFake(async (_, cbFunc) => {
@@ -384,7 +384,7 @@ describe('Asset class', () => {
       asset = new Asset({ ticker }, context);
     });
 
-    test('should return the list of security identifiers for an Asset', async () => {
+    it('should return the list of security identifiers for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'identifiers', {
         returnValue: [isinMock, cusipMock, cinsMock, leiMock],
       });
@@ -397,7 +397,7 @@ describe('Asset class', () => {
       expect(result[3].value).toBe(leiValue);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
       dsMockUtils.createQueryStub('asset', 'identifiers').callsFake(async (_, cbFunc) => {
@@ -415,7 +415,7 @@ describe('Asset class', () => {
   });
 
   describe('method: createdAt', () => {
-    test('should return the event identifier object of the Asset creation', async () => {
+    it('should return the event identifier object of the Asset creation', async () => {
       const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
@@ -444,7 +444,7 @@ describe('Asset class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       const ticker = 'SOME_TICKER';
       const variables = {
         moduleId: ModuleIdEnum.Asset,
@@ -461,7 +461,7 @@ describe('Asset class', () => {
   });
 
   describe('method: freeze', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -480,7 +480,7 @@ describe('Asset class', () => {
   });
 
   describe('method: unfreeze', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -512,7 +512,7 @@ describe('Asset class', () => {
       frozenStub = dsMockUtils.createQueryStub('asset', 'frozen');
     });
 
-    test('should return whether the Asset is frozen or not', async () => {
+    it('should return whether the Asset is frozen or not', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -524,7 +524,7 @@ describe('Asset class', () => {
       expect(result).toBe(boolValue);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -544,7 +544,7 @@ describe('Asset class', () => {
   });
 
   describe('method: modifyPrimaryIssuanceAgent', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
       const target = 'someDid';
       const context = dsMockUtils.getContextInstance();
@@ -564,7 +564,7 @@ describe('Asset class', () => {
   });
 
   describe('method: removePrimaryIssuanceAgent', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -583,7 +583,7 @@ describe('Asset class', () => {
   });
 
   describe('method: redeem', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
       const amount = new BigNumber(100);
       const context = dsMockUtils.getContextInstance();
@@ -619,7 +619,7 @@ describe('Asset class', () => {
       );
     });
 
-    test('should return the amount of unique investors that hold the Asset', async () => {
+    it('should return the amount of unique investors that hold the Asset', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -631,7 +631,7 @@ describe('Asset class', () => {
       expect(result).toEqual(investorCount);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -651,7 +651,7 @@ describe('Asset class', () => {
   });
 
   describe('method: controllerTransfer', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'TICKER';
       const originPortfolio = 'portfolio';
       const amount = new BigNumber(1);
@@ -672,7 +672,7 @@ describe('Asset class', () => {
   });
 
   describe('method: getOperationHistory', () => {
-    test('should return a list of agent operations', async () => {
+    it('should return a list of agent operations', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -743,7 +743,7 @@ describe('Asset class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the Asset exists', async () => {
+    it('should return whether the Asset exists', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
@@ -767,7 +767,7 @@ describe('Asset class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker: 'SOME_TICKER' }, context);
 

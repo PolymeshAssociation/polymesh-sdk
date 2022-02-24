@@ -105,7 +105,7 @@ describe('removeAssetRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied id is not present in the current requirements', () => {
+  it('should throw an error if the supplied id is not present in the current requirements', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
     const complianceRequirementId = new BigNumber(1);
 
@@ -117,7 +117,7 @@ describe('removeAssetRequirement procedure', () => {
     ).rejects.toThrow(`There is no compliance requirement with id "${complianceRequirementId}"`);
   });
 
-  test('should add a remove compliance requirement transaction to the queue', async () => {
+  it('should add a remove compliance requirement transaction to the queue', async () => {
     const rawId = dsMockUtils.createMockU32(requirement);
     sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawId);
 
@@ -134,7 +134,7 @@ describe('removeAssetRequirement procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {

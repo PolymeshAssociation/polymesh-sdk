@@ -61,7 +61,7 @@ describe('Offerings class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Offerings.prototype instanceof Namespace).toBe(true);
   });
 
@@ -70,7 +70,7 @@ describe('Offerings class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
       const args = {
         offeringPortfolio: 'otherDid',
@@ -93,7 +93,7 @@ describe('Offerings class', () => {
   });
 
   describe('method: getOne', () => {
-    test('should return the requested Offering', async () => {
+    it('should return the requested Offering', async () => {
       entityMockUtils.configureMocks({
         offeringOptions: {
           ticker,
@@ -105,7 +105,7 @@ describe('Offerings class', () => {
       expect(result.id).toEqual(id);
     });
 
-    test('should throw an error if the Offering does not exist', () => {
+    it('should throw an error if the Offering does not exist', () => {
       entityMockUtils.configureMocks({
         offeringOptions: {
           exists: false,
@@ -289,7 +289,7 @@ describe('Offerings class', () => {
       sinon.restore();
     });
 
-    test('should return all Offerings associated to the Asset', async () => {
+    it('should return all Offerings associated to the Asset', async () => {
       const result = await offerings.get();
 
       expect(result[0].offering.id).toEqual(new BigNumber(1));
@@ -300,7 +300,7 @@ describe('Offerings class', () => {
       expect(result.length).toBe(2);
     });
 
-    test('should return Offerings associated to the Asset filtered by status', async () => {
+    it('should return Offerings associated to the Asset filtered by status', async () => {
       const result = await offerings.get({
         status: {
           sale: OfferingSaleStatus.Live,

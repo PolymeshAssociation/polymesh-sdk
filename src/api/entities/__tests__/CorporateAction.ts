@@ -84,12 +84,12 @@ describe('CorporateAction class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend CorporateActionBase', () => {
+  it('should extend CorporateActionBase', () => {
     expect(CorporateAction.prototype instanceof CorporateActionBase).toBe(true);
   });
 
   describe('method: modifyCheckpoint', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const args = {
         checkpoint: new Date(),

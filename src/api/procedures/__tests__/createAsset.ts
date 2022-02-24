@@ -229,7 +229,7 @@ describe('createAsset procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if an Asset with that ticker has already been launched', () => {
+  it('should throw an error if an Asset with that ticker has already been launched', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.AssetCreated,
@@ -251,7 +251,7 @@ describe('createAsset procedure', () => {
     );
   });
 
-  test('should add an Asset creation transaction to the queue', async () => {
+  it('should add an Asset creation transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
@@ -298,7 +298,7 @@ describe('createAsset procedure', () => {
     });
   });
 
-  test('should add an Asset creation transaction to the queue when reservationRequired is false', async () => {
+  it('should add an Asset creation transaction to the queue when reservationRequired is false', async () => {
     let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
@@ -350,7 +350,7 @@ describe('createAsset procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should waive protocol fees if the token was created in Ethereum', async () => {
+  it('should waive protocol fees if the token was created in Ethereum', async () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
@@ -384,7 +384,7 @@ describe('createAsset procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should add a document add transaction to the queue', async () => {
+  it('should add a document add transaction to the queue', async () => {
     const rawValue = dsMockUtils.createMockBytes('something');
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: {
@@ -407,7 +407,7 @@ describe('createAsset procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
+  it('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
     const rawValue = dsMockUtils.createMockBytes('something');
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: {
@@ -472,7 +472,7 @@ describe('createAsset procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new custom AssetType', () => {
+    it('should return the new custom AssetType', () => {
       const fakeResult = 'assetType' as unknown as AssetType;
       internalAssetTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
       const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
@@ -482,7 +482,7 @@ describe('createAsset procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
         customTypeData: null,
         status: TickerReservationStatus.Reserved,
@@ -570,7 +570,7 @@ describe('createAsset procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the custom asset type ID and bytes representation along with ticker reservation status', async () => {
+    it('should return the custom asset type ID and bytes representation along with ticker reservation status', async () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 

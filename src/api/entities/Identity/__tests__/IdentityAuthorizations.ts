@@ -37,7 +37,7 @@ describe('IdentityAuthorizations class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(IdentityAuthorizations.prototype instanceof Namespace).toBe(true);
   });
 
@@ -46,7 +46,7 @@ describe('IdentityAuthorizations class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all pending authorizations sent by the Identity', async () => {
+    it('should retrieve all pending authorizations sent by the Identity', async () => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
       dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
 

@@ -96,7 +96,7 @@ describe('modifyStoTimes procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a modify fundraiser window transaction to the queue', async () => {
+  it('should add a modify fundraiser window transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     modifyFundraiserWindowTransaction = dsMockUtils.createTxStub('sto', 'modifyFundraiserWindow');
 
@@ -150,7 +150,7 @@ describe('modifyStoTimes procedure', () => {
     });
   });
 
-  test('should throw an error if nothing is being modified', async () => {
+  it('should throw an error if nothing is being modified', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let err: Error | undefined;
@@ -184,7 +184,7 @@ describe('modifyStoTimes procedure', () => {
     expect(err?.message).toBe(message);
   });
 
-  test('should throw an error if the Offering is already closed', () => {
+  it('should throw an error if the Offering is already closed', () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -204,7 +204,7 @@ describe('modifyStoTimes procedure', () => {
     );
   });
 
-  test('should throw an error if the Offering has already ended', async () => {
+  it('should throw an error if the Offering has already ended', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     entityMockUtils.configureMocks({
@@ -232,7 +232,7 @@ describe('modifyStoTimes procedure', () => {
     expect(err?.message).toBe('The Offering has already ended');
   });
 
-  test('should throw an error if attempting to modify the start time of an Offering that has already started', async () => {
+  it('should throw an error if attempting to modify the start time of an Offering that has already started', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     entityMockUtils.configureMocks({
@@ -260,7 +260,7 @@ describe('modifyStoTimes procedure', () => {
     expect(err?.message).toBe('Cannot modify the start time of an Offering that already started');
   });
 
-  test('should throw an error if the new times are in the past', async () => {
+  it('should throw an error if the new times are in the past', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -301,7 +301,7 @@ describe('modifyStoTimes procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

@@ -32,12 +32,12 @@ describe('AuthorizationRequest class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(AuthorizationRequest.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign target did, issuer did, expiry and data to instance', () => {
+    it('should assign target did, issuer did, expiry and data to instance', () => {
       const targetDid = 'someDid';
       const issuerDid = 'otherDid';
       const targetIdentity = new Identity({ did: targetDid }, context);
@@ -57,7 +57,7 @@ describe('AuthorizationRequest class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(AuthorizationRequest.isUniqueIdentifiers({ authId: new BigNumber(1) })).toBe(true);
       expect(AuthorizationRequest.isUniqueIdentifiers({})).toBe(false);
       expect(AuthorizationRequest.isUniqueIdentifiers({ authId: 3 })).toBe(false);
@@ -69,7 +69,7 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
-    test('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -98,7 +98,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -135,7 +135,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeJoinOrRotateAuthorization procedure with a RotatePrimaryKeyToSecondary auth and return the resulting transaction queue', async () => {
+    it('should prepare the consumeJoinOrRotateAuthorization procedure with a RotatePrimaryKeyToSecondary auth and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -172,7 +172,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -210,7 +210,7 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
-    test('should prepare the consumeAuthorizationRequest procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAuthorizationRequest procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -239,7 +239,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -276,7 +276,7 @@ describe('AuthorizationRequest class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    test('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -309,7 +309,7 @@ describe('AuthorizationRequest class', () => {
     });
   });
 
-  test('should prepare the consumeRotatePrimaryKeyToSecondary procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+  it('should prepare the consumeRotatePrimaryKeyToSecondary procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
     const authorizationRequest = new AuthorizationRequest(
       {
         authId: new BigNumber(1),
@@ -347,7 +347,7 @@ describe('AuthorizationRequest class', () => {
   });
 
   describe('method: isExpired', () => {
-    test('should return whether the request has expired', () => {
+    it('should return whether the request has expired', () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -366,7 +366,7 @@ describe('AuthorizationRequest class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the request exists', async () => {
+    it('should return whether the request exists', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -400,7 +400,7 @@ describe('AuthorizationRequest class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
