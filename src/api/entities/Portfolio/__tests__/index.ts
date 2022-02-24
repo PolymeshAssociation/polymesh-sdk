@@ -215,7 +215,7 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test("should return all of the portfolio's assets and their balances", async () => {
+    it("should return all of the portfolio's assets and their balances", async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
       const result = await portfolio.getAssetBalances();

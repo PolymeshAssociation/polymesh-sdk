@@ -472,7 +472,7 @@ describe('isPrintableAscii', () => {
     expect(isPrintableAscii('TICKER')).toBe(true);
   });
 
-  test("should return false if the string doesn't contain only printable ASCII characters", () => {
+  it("should return false if the string doesn't contain only printable ASCII characters", () => {
     expect(isPrintableAscii(String.fromCharCode(10000000))).toBe(false);
   });
 });
@@ -684,7 +684,7 @@ describe('optionize', () => {
 });
 
 describe('isModuleOrTagMatch', () => {
-  test("should return true if two tags/modules are equal, or if one is the other one's module", () => {
+  it("should return true if two tags/modules are equal, or if one is the other one's module", () => {
     let result = isModuleOrTagMatch(TxTags.identity.AddInvestorUniquenessClaim, ModuleName.Sto);
     expect(result).toEqual(false);
 

@@ -301,7 +301,7 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  test("should throw an error if the Venue doesn't exist", async () => {
+  it("should throw an error if the Venue doesn't exist", async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });

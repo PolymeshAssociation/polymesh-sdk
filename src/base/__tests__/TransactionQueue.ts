@@ -59,7 +59,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('method: run', () => {
-    test("should run each transaction in the queue and return the queue's return value, unwrapping it if it is a PostTransactionValue and transforming it if there is a transform function", async () => {
+    it("should run each transaction in the queue and return the queue's return value, unwrapping it if it is a PostTransactionValue and transforming it if there is a transform function", async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -177,7 +177,7 @@ describe('Transaction Queue class', () => {
       return expect(runPromise).rejects.toThrow('Transaction Error');
     });
 
-    test("should throw an error if the current Account doesn't have enough balance to pay the transaction fees", () => {
+    it("should throw an error if the current Account doesn't have enough balance to pay the transaction fees", () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -212,7 +212,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test("should throw an error if any third party Account doesn't have enough balance to pay the transaction fees", () => {
+    it("should throw an error if any third party Account doesn't have enough balance to pay the transaction fees", () => {
       const account1 = entityMockUtils.getAccountInstance({
         address: 'account1',
         getBalance: {
@@ -272,7 +272,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test("should throw an error if any third party Account doesn't have enough allowance to pay the transaction fees", () => {
+    it("should throw an error if any third party Account doesn't have enough allowance to pay the transaction fees", () => {
       const account = entityMockUtils.getAccountInstance({
         getBalance: {
           free: new BigNumber(1000),
@@ -440,7 +440,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('method: onStatusChange', () => {
-    test("should execute a callback when the queue's status changes", async () => {
+    it("should execute a callback when the queue's status changes", async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -493,7 +493,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('method: onTransactionStatusChange', () => {
-    test("should execute a callback when the a transaction's status changes", async () => {
+    it("should execute a callback when the a transaction's status changes", async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -576,7 +576,7 @@ describe('Transaction Queue class', () => {
       });
     });
 
-    test("should execute a callback when the queue's data has been processed", async () => {
+    it("should execute a callback when the queue's data has been processed", async () => {
       const transactionSpecs = [
         {
           args: [1],

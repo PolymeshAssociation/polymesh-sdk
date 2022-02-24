@@ -512,7 +512,7 @@ describe('Instruction class', () => {
       });
     });
 
-    test("should return the instruction's legs", async () => {
+    it("should return the instruction's legs", async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
@@ -813,7 +813,7 @@ describe('Instruction class', () => {
       });
     });
 
-    test("should throw an error if Instruction status couldn't be determied", async () => {
+    it("should throw an error if Instruction status couldn't be determied", async () => {
       const queryVariables = {
         moduleId: ModuleIdEnum.Settlement,
         eventId: EventIdEnum.InstructionExecuted,

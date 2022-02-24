@@ -147,7 +147,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     ).rejects.toThrow('The supplied claim issuer list is equal to the current one');
   });
 
-  test("should throw an error if some of the supplied dids don't exist", async () => {
+  it("should throw an error if some of the supplied dids don't exist", async () => {
     const nonExistentDid = claimIssuerDids[1];
     dsMockUtils.configureMocks({ contextOptions: { invalidDids: [nonExistentDid] } });
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);

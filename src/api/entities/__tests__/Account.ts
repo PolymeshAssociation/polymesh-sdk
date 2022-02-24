@@ -98,7 +98,7 @@ describe('Account class', () => {
       account = new Account({ address }, context);
     });
 
-    test("should return the account's balance", async () => {
+    it("should return the account's balance", async () => {
       const result = await account.getBalance();
 
       expect(result).toEqual(fakeResult);
@@ -404,7 +404,7 @@ describe('Account class', () => {
       });
     });
 
-    test("should return the Account's permissions if it is a secondary Account", async () => {
+    it("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
         assets: null,
         transactions: null,

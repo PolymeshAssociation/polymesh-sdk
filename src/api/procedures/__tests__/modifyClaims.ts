@@ -145,7 +145,7 @@ describe('modifyClaims procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if some of the supplied target dids don't exist", async () => {
+  it("should throw an error if some of the supplied target dids don't exist", async () => {
     dsMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
 
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
@@ -347,7 +347,7 @@ describe('modifyClaims procedure', () => {
     expect(newCddId).toEqual(otherId);
   });
 
-  test("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {
+  it("should throw an error if any of the claims that will be modified weren't issued by the current Identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getCurrentIdentity();
 

@@ -399,7 +399,7 @@ describe('Identity class', () => {
       sinon.assert.calledWithExactly(callback, fakeValue);
     });
 
-    test("should throw an error if the Asset doesn't exist", async () => {
+    it("should throw an error if the Asset doesn't exist", async () => {
       assetStub.withArgs(rawTicker).resolves(dsMockUtils.createMockSecurityToken());
 
       let error;
@@ -719,7 +719,7 @@ describe('Identity class', () => {
       sinon.restore();
     });
 
-    test("should return the Identity's scopeId associated to the Asset", async () => {
+    it("should return the Identity's scopeId associated to the Asset", async () => {
       const identity = new Identity({ did }, context);
 
       let result = await identity.getScopeId({ asset: ticker });

@@ -23,7 +23,7 @@ describe('Entity class', () => {
 
   const serializeStub = sinon.stub(utilsInternalModule, 'serialize');
   describe('method: generateUuid', () => {
-    test("should generate the Entity's UUID", async () => {
+    it("should generate the Entity's UUID", async () => {
       serializeStub
         .withArgs('Entity', {
           did: 'abc',

@@ -191,7 +191,7 @@ describe('assertInstructionValid', () => {
 });
 
 describe('assertPortfolioExists', () => {
-  test("should throw an error if the portfolio doesn't exist", async () => {
+  it("should throw an error if the portfolio doesn't exist", async () => {
     entityMockUtils.configureMocks({ numberedPortfolioOptions: { exists: false } });
 
     const context = dsMockUtils.getContextInstance();

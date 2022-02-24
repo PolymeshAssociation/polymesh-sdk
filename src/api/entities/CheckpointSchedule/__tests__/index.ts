@@ -186,7 +186,7 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: getCheckpoints', () => {
-    test("should throw an error if the schedule doesn't exist", async () => {
+    it("should throw an error if the schedule doesn't exist", async () => {
       const schedule = new CheckpointSchedule(
         { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
         context

@@ -198,7 +198,7 @@ describe('investInOffering procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(0));
   });
 
-  test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the Assets", async () => {
+  it("should throw an error if the funding Portfolio doesn't have enough balance to purchase the Assets", async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {

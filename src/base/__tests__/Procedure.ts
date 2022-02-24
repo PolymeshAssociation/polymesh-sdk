@@ -394,7 +394,7 @@ describe('Procedure class', () => {
       return expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(errorMsg);
     });
 
-    test("should throw an error if the caller doesn't have the appropriate roles", async () => {
+    it("should throw an error if the caller doesn't have the appropriate roles", async () => {
       const ticker = 'MY_ASSET';
       const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
@@ -610,7 +610,7 @@ describe('Procedure class', () => {
       expect(proc.storage).toEqual({ something: 'yeah' });
     });
 
-    test("should throw an error if the storage hasn't been set", () => {
+    it("should throw an error if the storage hasn't been set", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._storage = null;
 
@@ -632,7 +632,7 @@ describe('Procedure class', () => {
       expect(proc.context).toBe('context');
     });
 
-    test("should throw an error if the context hasn't been set", () => {
+    it("should throw an error if the context hasn't been set", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._context = null;
 

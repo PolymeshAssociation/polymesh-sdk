@@ -176,7 +176,7 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: getDefaultConfig', () => {
-    test("should retrieve the Asset's Corporate Actions Default Config", async () => {
+    it("should retrieve the Asset's Corporate Actions Default Config", async () => {
       const dids = ['someDid', 'otherDid'];
       const defaultTaxWithholding = new BigNumber(10);
 

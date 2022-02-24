@@ -240,7 +240,7 @@ describe('createAsset procedure', () => {
     );
   });
 
-  test("should throw an error if that ticker hasn't been reserved and reservation is required", () => {
+  it("should throw an error if that ticker hasn't been reserved and reservation is required", () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Free,

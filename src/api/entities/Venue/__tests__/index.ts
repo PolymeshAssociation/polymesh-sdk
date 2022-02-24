@@ -141,7 +141,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should return the Venue's pending and failed instructions", async () => {
+    it("should return the Venue's pending and failed instructions", async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
 
@@ -191,7 +191,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should return the Venue's pending instructions", async () => {
+    it("should return the Venue's pending instructions", async () => {
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({

@@ -236,7 +236,7 @@ describe('launchOffering procedure', () => {
     expect(err?.message).toBe('A valid Venue for the Offering was neither supplied nor found');
   });
 
-  test("should throw an error if Asset tokens offered exceed the Portfolio's balance", async () => {
+  it("should throw an error if Asset tokens offered exceed the Portfolio's balance", async () => {
     portfolio.getAssetBalances.resolves([{ free: new BigNumber(1) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {

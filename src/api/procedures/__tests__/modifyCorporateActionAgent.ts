@@ -83,7 +83,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the supplied target doesn't exist", () => {
+  it("should throw an error if the supplied target doesn't exist", () => {
     const args = {
       target,
       ticker,

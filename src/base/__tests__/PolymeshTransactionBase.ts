@@ -329,7 +329,7 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: onStatusChange', () => {
-    test("should execute a callback when the transaction's status changes", async () => {
+    it("should execute a callback when the transaction's status changes", async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('I_HAVE_LOST_THE_WILL_TO_LIVE');
 

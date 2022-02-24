@@ -373,7 +373,7 @@ describe('DividendDistribution class', () => {
       ]);
     });
 
-    test("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
+    it("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
       sinon
         .stub(dividendDistribution, 'checkpoint')
         .resolves(entityMockUtils.getCheckpointScheduleInstance());
@@ -440,7 +440,7 @@ describe('DividendDistribution class', () => {
       expect(result?.paid).toBe(false);
     });
 
-    test("should return null if the distribution checkpoint hasn't been created yet", async () => {
+    it("should return null if the distribution checkpoint hasn't been created yet", async () => {
       sinon
         .stub(dividendDistribution, 'checkpoint')
         .resolves(entityMockUtils.getCheckpointScheduleInstance());

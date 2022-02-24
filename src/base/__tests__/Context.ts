@@ -751,7 +751,7 @@ describe('Context class', () => {
       expect(result).toBe(pair);
     });
 
-    test("should throw an error if the current pair isn't defined", async () => {
+    it("should throw an error if the current pair isn't defined", async () => {
       dsMockUtils.configureMocks({
         keyringOptions: {
           getPairs: [],

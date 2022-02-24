@@ -138,7 +138,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('Current Identity is not involved in this Instruction');
   });
 
-  test("should throw an error if the operation is Affirm and all of the current Identity's Portfolios are affirmed", () => {
+  it("should throw an error if the operation is Affirm and all of the current Identity's Portfolios are affirmed", () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],

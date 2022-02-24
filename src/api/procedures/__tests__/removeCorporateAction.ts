@@ -56,7 +56,7 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the Corporate Action is a Distribution and it doesn't exist", () => {
+  it("should throw an error if the Corporate Action is a Distribution and it doesn't exist", () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
@@ -71,7 +71,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow("The Distribution doesn't exist");
   });
 
-  test("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", () => {
+  it("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });

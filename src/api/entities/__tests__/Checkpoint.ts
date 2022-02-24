@@ -71,7 +71,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: createdAt', () => {
-    test("should return the Checkpoint's creation date", async () => {
+    it("should return the Checkpoint's creation date", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const timestamp = 12000;
 
@@ -86,7 +86,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: totalSupply', () => {
-    test("should return the Checkpoint's total supply", async () => {
+    it("should return the Checkpoint's total supply", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const balance = new BigNumber(10000000000);
       const expected = new BigNumber(balance).shiftedBy(-6);
@@ -109,7 +109,7 @@ describe('Checkpoint class', () => {
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     });
 
-    test("should return the Checkpoint's Asset Holder balances", async () => {
+    it("should return the Checkpoint's Asset Holder balances", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       const balanceOf = [
@@ -184,7 +184,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: balance', () => {
-    test("should return a specific Identity's balance at the Checkpoint", async () => {
+    it("should return a specific Identity's balance at the Checkpoint", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const balance = new BigNumber(10000000000);
 
