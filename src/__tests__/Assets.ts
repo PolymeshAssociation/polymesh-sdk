@@ -359,7 +359,7 @@ describe('Assets Class', () => {
       expect(asset[0].ticker).toBe(fakeTicker);
     });
 
-    test('should return a list of Assets owned by the current signing Identity if no did is supplied', async () => {
+    test('should return a list of Assets owned by the signing Identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 

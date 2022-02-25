@@ -211,7 +211,6 @@ describe('Account class', () => {
             address,
             nonce: 1,
             success: 0,
-            // cSpell: disable-next-line
             signedby_address: 1,
             block: {
               hash: blockHash1,
@@ -227,7 +226,6 @@ describe('Account class', () => {
             params: [],
             block_id: blockNumber2.toNumber(),
             success: 1,
-            // cSpell: disable-next-line
             signedby_address: 1,
             block: {
               hash: blockHash2,

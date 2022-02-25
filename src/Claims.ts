@@ -103,7 +103,7 @@ export class Claims {
   }
 
   /**
-   * Add an Investor Uniqueness Claim to the current signing Identity
+   * Add an Investor Uniqueness Claim to the signing Identity
    */
   public addInvestorUniquenessClaim: ProcedureMethod<AddInvestorUniquenessClaimParams, void>;
 
@@ -135,7 +135,7 @@ export class Claims {
   /**
    * Retrieve all claims issued by an Identity
    *
-   * @param opts.target - Identity (optional, defaults to the current signing Identity)
+   * @param opts.target - Identity (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
@@ -234,7 +234,7 @@ export class Claims {
    * Retrieve all scopes in which claims have been made for the target Identity.
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
-   * @param opts.target - Identity for which to fetch claim scopes (optional, defaults to the current signing Identity)
+   * @param opts.target - Identity for which to fetch claim scopes (optional, defaults to the signing Identity)
    */
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
@@ -283,7 +283,7 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
-   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the current signing Identity)
+   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    */
   public async getCddClaims(
@@ -307,7 +307,7 @@ export class Claims {
   /**
    * Retrieve the list of InvestorUniqueness claims for a target Identity
    *
-   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the current signing Identity)
+   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    */
   public async getInvestorUniquenessClaims(
@@ -331,7 +331,7 @@ export class Claims {
   /**
    * Retrieve all claims issued about an Identity, grouped by claim issuer
    *
-   * @param opts.target - Identity for which to fetch targeting claims (optional, defaults to the current signing Identity)
+   * @param opts.target - Identity for which to fetch targeting claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination

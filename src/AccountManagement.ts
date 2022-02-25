@@ -146,7 +146,7 @@ export class AccountManagement {
   /**
    * Get the free/locked POLYX balance of an Account
    *
-   * @param args.account - defaults to the current signing Account
+   * @param args.account - defaults to the signing Account
    *
    * @note can be subscribed to
    */
@@ -194,7 +194,7 @@ export class AccountManagement {
   }
 
   /**
-   * Create an Account instance from an address. If no address is passed, the current signing Account is returned
+   * Create an Account instance from an address. If no address is passed, the signing Account is returned
    */
   public getAccount(args?: { address: string }): Account {
     const { context } = this;

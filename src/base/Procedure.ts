@@ -259,15 +259,14 @@ export class Procedure<
       if (noIdentity) {
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message:
-            'This procedure requires the current signing Account to have an associated Identity',
+          message: 'This procedure requires the signing Account to have an associated Identity',
         });
       }
 
       if (accountFrozen) {
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message: "The current signing Account can't execute this procedure because it is frozen",
+          message: "The signing Account can't execute this procedure because it is frozen",
         });
       }
 
@@ -277,7 +276,7 @@ export class Procedure<
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
-            "The current signing Account doesn't have the required permissions to execute this procedure",
+            "The signing Account doesn't have the required permissions to execute this procedure",
           data: {
             message,
             missingPermissions,
@@ -291,7 +290,7 @@ export class Procedure<
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
-            "The current signing Identity doesn't have the required permissions to execute this procedure",
+            "The signing Identity doesn't have the required permissions to execute this procedure",
           data: {
             message,
             missingPermissions,
@@ -304,8 +303,7 @@ export class Procedure<
 
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message:
-            "The current signing Identity doesn't have the required roles to execute this procedure",
+          message: "The signing Identity doesn't have the required roles to execute this procedure",
           data: {
             message,
             missingRoles,
@@ -487,7 +485,7 @@ export class Procedure<
   }
 
   /**
-   * contains the data services, current signing Account, etc. In short, the *context* in which
+   * contains the data services, signing Account, etc. In short, the *context* in which
    *   the Procedure is being run
    */
   public get context(): Context {

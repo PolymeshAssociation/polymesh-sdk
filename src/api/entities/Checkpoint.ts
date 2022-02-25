@@ -185,7 +185,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Retrieve the balance of a specific Asset Holder Identity at this Checkpoint
    *
-   * @param args.identity - defaults to the current signing Identity
+   * @param args.identity - defaults to the signing Identity
    */
   public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
     const {

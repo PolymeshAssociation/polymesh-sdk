@@ -347,7 +347,7 @@ describe('modifyClaims procedure', () => {
     expect(newCddId).toEqual(otherId);
   });
 
-  test("should throw an error if any of the claims that will be modified weren't issued by the current signing Identity", async () => {
+  test("should throw an error if any of the claims that will be modified weren't issued by the signing Identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
@@ -369,13 +369,13 @@ describe('modifyClaims procedure', () => {
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit })
     ).rejects.toThrow(
-      new RegExp("Attempt to edit claims that weren't issued by the current signing Identity")
+      new RegExp("Attempt to edit claims that weren't issued by the signing Identity")
     );
 
     return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
     ).rejects.toThrow(
-      new RegExp("Attempt to revoke claims that weren't issued by the current signing Identity")
+      new RegExp("Attempt to revoke claims that weren't issued by the signing Identity")
     );
   });
 

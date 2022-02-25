@@ -139,7 +139,7 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getPortfolio', () => {
-    test('should return the default portfolio for the current signing Identity', async () => {
+    test('should return the default portfolio for the signing Identity', async () => {
       const result = await portfolios.getPortfolio();
       expect(result instanceof DefaultPortfolio).toBe(true);
       expect(result.owner.did).toEqual(did);

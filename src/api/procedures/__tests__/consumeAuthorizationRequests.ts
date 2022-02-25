@@ -264,7 +264,7 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return whether the current signing Identity or Account is the target of all non-expired requests if trying to accept', async () => {
+    test('should return whether the signing Identity or Account is the target of all non-expired requests if trying to accept', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );

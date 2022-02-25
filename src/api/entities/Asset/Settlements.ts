@@ -29,7 +29,7 @@ export class Settlements extends Namespace<Asset> {
    *   they would become locked. From that point, further calls to this function would yield failed results because of the funds being locked, even though they haven't been
    *   transferred yet
    *
-   * @param args.from - sender Portfolio (optional, defaults to the current signing Identity's Default Portfolio)
+   * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)
    * @param args.to - receiver Portfolio
    * @param args.amount - amount of tokens to transfer
    *
@@ -99,7 +99,7 @@ export class Settlements extends Namespace<Asset> {
    *   they would become locked. From that point, further calls to this function would yield failed results because of the funds being locked, even though they haven't been
    *   transferred yet
    *
-   * @param args.from - sender Portfolio (optional, defaults to the current signing Identity's Default Portfolio)
+   * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)
    * @param args.to - receiver Portfolio
    * @param args.amount - amount of tokens to transfer
    *

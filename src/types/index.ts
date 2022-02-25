@@ -757,9 +757,9 @@ export interface ThirdPartyFees extends PayingAccount {
 
 /**
  * Breakdown of transaction fees for a Transaction Queue. In most cases, the entirety of the Queue's fees
- *   will be paid by either the current signing Account or a third party. In some rare cases,
- *   fees can be split between them (for example, if the current signing Account is being subsidized, but one of the
- *   transactions in the queue terminates the subsidy, leaving the current signing Account with the responsibility of
+ *   will be paid by either the signing Account or a third party. In some rare cases,
+ *   fees can be split between them (for example, if the signing Account is being subsidized, but one of the
+ *   transactions in the queue terminates the subsidy, leaving the signing Account with the responsibility of
  *   paying for the rest of the transactions)
  */
 export interface FeesBreakdown {
@@ -1226,7 +1226,7 @@ export interface ProcedureAuthorizationStatus {
    */
   accountFrozen: boolean;
   /**
-   * true only if the Procedure requires an Identity but the current signing Account
+   * true only if the Procedure requires an Identity but the signing Account
    *   doesn't have one associated
    */
   noIdentity: boolean;

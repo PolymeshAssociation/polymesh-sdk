@@ -116,7 +116,7 @@ export function unserialize<UniqueIdentifiers>(id: string): UniqueIdentifiers {
 
 /**
  * @hidden
- * Extract the DID from an Identity, or return the DID of the current signing Identity if no Identity is passed
+ * Extract the DID from an Identity, or return the DID of the signing Identity if no Identity is passed
  */
 export async function getDid(
   value: string | Identity | undefined,

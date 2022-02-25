@@ -701,7 +701,7 @@ function configureContext(opts: ContextOptions): void {
   opts.withSigningManager
     ? getSigningIdentity.resolves(identity)
     : getSigningIdentity.throws(
-        new Error('The current signing Account does not have an associated Identity')
+        new Error('The signing Account does not have an associated Identity')
       );
   const getSigningAccount = sinon.stub();
   opts.withSigningManager

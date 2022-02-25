@@ -243,7 +243,7 @@ export async function prepareModifyClaims(
     if (claimsByOtherIssuers.length) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the current signing Identity`,
+        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the signing Identity`,
         data: {
           claimsByOtherIssuers,
         },

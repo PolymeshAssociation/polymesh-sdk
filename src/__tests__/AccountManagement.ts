@@ -209,7 +209,7 @@ describe('AccountManagement class', () => {
       expect(result.address).toBe(params.address);
     });
 
-    test('should return the current signing Account if no address is passed', async () => {
+    test('should return the signing Account if no address is passed', async () => {
       const address = 'someAddress';
       dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
@@ -225,7 +225,7 @@ describe('AccountManagement class', () => {
       locked: new BigNumber(0),
       total: new BigNumber(100),
     };
-    test('should return the free and locked POLYX balance of the current signing Account', async () => {
+    test('should return the free and locked POLYX balance of the signing Account', async () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const result = await accountManagement.getAccountBalance();

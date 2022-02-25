@@ -101,7 +101,7 @@ describe('Portfolio class', () => {
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
-    test('should return whether the current signing Identity is the Portfolio owner', async () => {
+    test('should return whether the signing Identity is the Portfolio owner', async () => {
       let portfolio = new NonAbstract({ did }, context);
 
       let result = await portfolio.isOwnedBy();

@@ -180,7 +180,7 @@ export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
   fee?: BigNumber;
   /**
    * third party Identity that will pay for the transaction (for example when joining an Identity/multisig as a secondary key).
-   *   This is separate from a subsidy, and takes precedence over it. If the current signing Account is being subsidized and
+   *   This is separate from a subsidy, and takes precedence over it. If the signing Account is being subsidized and
    *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` Identity
    */
   paidForBy?: Identity;

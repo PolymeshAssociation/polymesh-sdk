@@ -142,7 +142,7 @@ describe('getDid', () => {
     expect(result).toBe(did);
   });
 
-  test('getDid should return the current signing Identity DID if nothing is passed', async () => {
+  test('getDid should return the signing Identity DID if nothing is passed', async () => {
     const result = await getDid(undefined, context);
 
     expect(result).toBe((await context.getSigningIdentity()).did);

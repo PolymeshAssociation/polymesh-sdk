@@ -129,7 +129,7 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a status value representing whether the transaction can be made from the current signing Identity', async () => {
+    test('should return a status value representing whether the transaction can be made from the signing Identity', async () => {
       const signingIdentity = await mockContext.getSigningIdentity();
       const { did: currentDid } = signingIdentity;
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
@@ -244,7 +244,7 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a transfer breakdown representing whether the transaction can be made from the current signing Identity', async () => {
+    test('should return a transfer breakdown representing whether the transaction can be made from the signing Identity', async () => {
       const signingIdentity = await mockContext.getSigningIdentity();
       const { did: currentDid } = signingIdentity;
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);

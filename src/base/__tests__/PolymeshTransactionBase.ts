@@ -523,7 +523,7 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: getPayingAccount', () => {
-    test('should return null if the current signing Account should pay', async () => {
+    test('should return null if the signing Account should pay', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const args = tuple('SOMETHING');

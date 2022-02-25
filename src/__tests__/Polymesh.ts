@@ -225,7 +225,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getSigningIdentity', () => {
-    test('should return the current signing Identity', async () => {
+    test('should return the signing Identity', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,

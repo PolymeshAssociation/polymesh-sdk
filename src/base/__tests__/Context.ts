@@ -167,7 +167,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should retrieve an array of Accounts, with the current signing Account first', async () => {
+    test('should retrieve an array of Accounts, with the signing Account first', async () => {
       const addresses = [
         '5GNWrbft4pJcYSak9tkvUy89e2AKimEwHb6CKaJq81KHEj8e',
         '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
@@ -511,7 +511,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the current signing Identity', async () => {
+    test('should return the signing Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockIdentityId(did),
@@ -527,7 +527,7 @@ describe('Context class', () => {
       expect(result.did).toBe(did);
     });
 
-    test('should throw an error if there is no Identity associated to the current signing Account', async () => {
+    test('should throw an error if there is no Identity associated to the signing Account', async () => {
       entityMockUtils.configureMocks({
         accountOptions: {
           getIdentity: null,
@@ -541,7 +541,7 @@ describe('Context class', () => {
       });
 
       return expect(context.getSigningIdentity()).rejects.toThrow(
-        'The current signing Account does not have an associated Identity'
+        'The signing Account does not have an associated Identity'
       );
     });
   });
@@ -555,7 +555,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the current signing Account', async () => {
+    test('should return the signing Account', async () => {
       const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({
@@ -661,7 +661,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the current signing address', async () => {
+    test('should return the signing address', async () => {
       const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({

@@ -190,7 +190,7 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve the Identity associated to the current signing Account (null if there is none)
+   * Retrieve the Identity associated to the signing Account (null if there is none)
    */
   public getSigningIdentity(): Promise<Identity | null> {
     return this.context.getSigningAccount().getIdentity();
@@ -242,7 +242,7 @@ export class Polymesh {
   }
 
   /**
-   * Set the SDK's current signing Account to the provided one
+   * Set the SDK's signing Account to the provided one
    *
    * @throws if the passed Account is not present in the Signing Manager (or there is no Signing Manager)
    */
@@ -268,7 +268,7 @@ export class Polymesh {
 
   /* istanbul ignore next: not part of the official public API */
   /**
-   * Current signing address (to manually submit transactions with the polkadot API)
+   * signing address (to manually submit transactions with the polkadot API)
    */
   public get _signingAddress(): string {
     return this.context.getSigningAddress();

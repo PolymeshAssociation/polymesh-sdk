@@ -198,8 +198,8 @@ export class Context {
   /**
    * @hidden
    *
-   * @note the current signing Account will be set to the Signing Manager's first Account. If the Signing Manager has
-   *   no Accounts yet, the current signing Account will be left empty
+   * @note the signing Account will be set to the Signing Manager's first Account. If the Signing Manager has
+   *   no Accounts yet, the signing Account will be left empty
    */
   public async setSigningManager(signingManager: SigningManager): Promise<void> {
     this._signingManager = signingManager;
@@ -400,7 +400,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the current signing Account
+   * Retrieve the signing Account
    *
    * @throws if there is no signing Account associated to the SDK instance
    */
@@ -413,9 +413,9 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the current signing Identity
+   * Retrieve the signing Identity
    *
-   * @throws if there is no Identity associated to the current signing Account (or there is no current signing Account associated to the SDK instance)
+   * @throws if there is no Identity associated to the signing Account (or there is no signing Account associated to the SDK instance)
    */
   public async getSigningIdentity(): Promise<Identity> {
     const account = this.getSigningAccount();
@@ -425,7 +425,7 @@ export class Context {
     if (identity === null) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'The current signing Account does not have an associated Identity',
+        message: 'The signing Account does not have an associated Identity',
       });
     }
 
@@ -435,7 +435,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the current signing address
+   * Retrieve the signing address
    *
    * @throws if there is no signing Account associated to the SDK instance
    */

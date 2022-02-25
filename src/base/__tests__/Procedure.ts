@@ -425,7 +425,7 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "The current signing Identity doesn't have the required roles to execute this procedure"
+        "The signing Identity doesn't have the required roles to execute this procedure"
       );
 
       proc = new Procedure(func, {
@@ -437,7 +437,7 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "The current signing Account doesn't have the required permissions to execute this procedure"
+        "The signing Account doesn't have the required permissions to execute this procedure"
       );
 
       proc = new Procedure(func, {
@@ -453,7 +453,7 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "The current signing Identity doesn't have the required permissions to execute this procedure"
+        "The signing Identity doesn't have the required permissions to execute this procedure"
       );
 
       context = dsMockUtils.getContextInstance();
@@ -465,7 +465,7 @@ describe('Procedure class', () => {
       );
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        'This procedure requires the current signing Account to have an associated Identity'
+        'This procedure requires the signing Account to have an associated Identity'
       );
 
       proc = new Procedure(func, {
@@ -473,19 +473,19 @@ describe('Procedure class', () => {
       });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "The current signing Account doesn't have the required permissions to execute this procedure"
+        "The signing Account doesn't have the required permissions to execute this procedure"
       );
 
       proc = new Procedure(func, async () => ({ roles: 'Failed just because' }));
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "The current signing Identity doesn't have the required roles to execute this procedure"
+        "The signing Identity doesn't have the required roles to execute this procedure"
       );
 
       context = dsMockUtils.getContextInstance({ isFrozen: true });
 
       await expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(
-        "The current signing Account can't execute this procedure because it is frozen"
+        "The signing Account can't execute this procedure because it is frozen"
       );
     });
   });

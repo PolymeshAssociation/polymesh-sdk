@@ -428,7 +428,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test("should return the current signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
+    test("should return the signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
         ConsumeJoinOrRotateAuthorizationParams,
         void,

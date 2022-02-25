@@ -109,7 +109,7 @@ export class Assets {
    * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include Assets that
    *   have already been launched
    *
-   * @param args.owner - defaults to the current signing Identity
+   * @param args.owner - defaults to the signing Identity
    *
    * @note reservations with unreadable characters in their tickers will be left out
    */

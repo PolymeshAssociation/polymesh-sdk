@@ -105,7 +105,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Return whether an Identity is the Portfolio owner
    *
-   * @param args.identity - defaults to the current signing Identity
+   * @param args.identity - defaults to the signing Identity
    */
   public async isOwnedBy(args?: { identity: string | Identity }): Promise<boolean> {
     const {
@@ -121,7 +121,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Return whether an Identity is the Portfolio custodian
    *
-   * @param args.identity - optional, defaults to the current signing Identity
+   * @param args.identity - optional, defaults to the signing Identity
    */
   public async isCustodiedBy(args?: { identity: string | Identity }): Promise<boolean> {
     const { context } = this;

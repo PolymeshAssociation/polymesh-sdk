@@ -61,7 +61,7 @@ export async function prepareModifyInstructionAffirmation(
   if (!portfolios.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The current signing Identity is not involved in this Instruction',
+      message: 'The signing Identity is not involved in this Instruction',
     });
   }
 
