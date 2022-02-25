@@ -76,7 +76,7 @@ async function run() {
 Here is an overview of the parameters passed to the `connect` function:
 
 - `nodeUrl` is a URL that points to a running Polymesh node
-- `signingManager` is an object that complies with the `SigningManager` interface. It holds the Accounts capable of signing transactions, and the signing logic itself. In this example, `LocalSigningManager` is a simple signing manager that holds private keys locally and signs with them
+- `signingManager` is an object that complies with the `SigningManager` interface. It holds the Accounts capable of signing transactions, and the signing logic itself. In this example, `LocalSigningManager` is a simple signing manager that holds private keys in memory and signs with them
 
 **NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), you would use the `BrowserExtensionSigningManager` provided by `@polymathnetwork/browser-extension-signing-manager`
 
