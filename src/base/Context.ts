@@ -70,7 +70,7 @@ import {
   u8ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertFormatValid, calculateNextKey, createClaim } from '~/utils/internal';
+import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -250,14 +250,14 @@ export class Context {
    *
    * Set the signing Account from among the existing ones in the Signing Manager
    *
-   * @throws if the passed address isn't present in the Signing Manager
+   * @throws if the passed address isn't valid, or isn't present in the Signing Manager
    */
   public async setSigningAddress(signingAddress: string): Promise<void> {
     const { signingManager } = this;
 
     const newAddress = signingAddress;
 
-    assertFormatValid(newAddress, this.ss58Format);
+    assertAddressValid(newAddress, this.ss58Format);
 
     const accounts = await signingManager.getAccounts();
 

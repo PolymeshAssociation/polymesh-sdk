@@ -44,7 +44,7 @@ import {
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertFormatValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
+import { assertAddressValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   address: string;
@@ -86,7 +86,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const { address } = identifiers;
 
-    assertFormatValid(address, context.ss58Format);
+    assertAddressValid(address, context.ss58Format);
 
     this.address = address;
     this.key = addressToKey(address, context);

@@ -116,7 +116,7 @@ describe('Context class', () => {
 
   describe('method: create', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     beforeEach(() => {
@@ -160,7 +160,7 @@ describe('Context class', () => {
 
   describe('method: getSigningAccounts', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -191,7 +191,7 @@ describe('Context class', () => {
 
   describe('method: setSigningAddress', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -231,7 +231,7 @@ describe('Context class', () => {
 
   describe('method: setSigningManager', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -261,7 +261,7 @@ describe('Context class', () => {
 
   describe('method: accountBalance', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -377,7 +377,7 @@ describe('Context class', () => {
 
   describe('method: accountSubsidy', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -496,7 +496,7 @@ describe('Context class', () => {
 
   describe('method: getSigningIdentity', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -540,7 +540,7 @@ describe('Context class', () => {
 
   describe('method: getSigningAccount', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -576,7 +576,7 @@ describe('Context class', () => {
 
   describe('method: getIdentity', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -646,7 +646,7 @@ describe('Context class', () => {
 
   describe('method: getSigningAddress', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -670,7 +670,7 @@ describe('Context class', () => {
 
   describe('method: getExternalSigner', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -693,7 +693,7 @@ describe('Context class', () => {
 
   describe('method: getInvalidDids', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -735,7 +735,7 @@ describe('Context class', () => {
 
   describe('method: getProtocolFees', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -775,7 +775,7 @@ describe('Context class', () => {
 
   describe('method: getTransactionArguments', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1021,7 +1021,7 @@ describe('Context class', () => {
 
   describe('method: issuedClaims', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1292,7 +1292,7 @@ describe('Context class', () => {
 
   describe('method: queryMiddleware', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1343,7 +1343,7 @@ describe('Context class', () => {
 
   describe('method: getLatestBlock', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1372,7 +1372,7 @@ describe('Context class', () => {
 
   describe('method: getNetworkVersion', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1399,7 +1399,7 @@ describe('Context class', () => {
 
   describe('method: isMiddlewareEnabled', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1431,7 +1431,7 @@ describe('Context class', () => {
 
   describe('method: isMiddlewareAvailable', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1467,7 +1467,7 @@ describe('Context class', () => {
 
   describe('method: disconnect', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1511,7 +1511,7 @@ describe('Context class', () => {
 
   describe('method: getDividendDistributionsForAssets', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1687,7 +1687,7 @@ describe('Context class', () => {
 
   describe('method: clone', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {
@@ -1709,7 +1709,7 @@ describe('Context class', () => {
 
   describe('method: supportsSubsidy', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertFormatValid');
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
 
     afterAll(() => {

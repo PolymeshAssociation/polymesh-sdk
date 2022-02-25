@@ -19,7 +19,7 @@ import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
-  assertFormatValid,
+  assertAddressValid,
   assertIsInteger,
   assertIsPositive,
   batchArguments,
@@ -565,19 +565,26 @@ describe('assertIsPositive', () => {
   });
 });
 
-describe('assertFormatValid', () => {
+describe('assertAddressValid', () => {
   const ss58Format = new BigNumber(42);
+
+  test('should throw an error if the address is not a valid ss58 address', async () => {
+    expect(() =>
+      // cSpell: disable-next-line
+      assertAddressValid('foo', ss58Format)
+    ).toThrow('The supplied address is not a valid SS58 address');
+  });
 
   test('should throw an error if the address is prefixed with an invalid ss58', async () => {
     expect(() =>
       // cSpell: disable-next-line
-      assertFormatValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
+      assertAddressValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
     ).toThrow("The supplied address is not encoded with the chain's SS58 format");
   });
 
-  test('should not throw if the address is prefixed with valid ss58', async () => {
+  test('should not throw if the address is valid and prefixed with valid ss58', async () => {
     expect(() =>
-      assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
+      assertAddressValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
   });
 });

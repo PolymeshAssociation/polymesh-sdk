@@ -191,6 +191,8 @@ export class Polymesh {
 
   /**
    * Retrieve the Identity associated to the signing Account (null if there is none)
+   *
+   * @throws if there is no signing Account associated to the SDK
    */
   public getSigningIdentity(): Promise<Identity | null> {
     return this.context.getSigningAccount().getIdentity();

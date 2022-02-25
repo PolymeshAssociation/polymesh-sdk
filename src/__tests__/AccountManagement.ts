@@ -208,14 +208,24 @@ describe('AccountManagement class', () => {
 
       expect(result.address).toBe(params.address);
     });
+  });
 
-    test('should return the signing Account if no address is passed', async () => {
+  describe('method: getSigningAccount', () => {
+    test('should return the signing Account', async () => {
       const address = 'someAddress';
       dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
-      const result = accountManagement.getAccount();
+      const result = accountManagement.getSigningAccount();
 
-      expect(result.address).toBe(address);
+      expect(result && result.address).toBe(address);
+    });
+
+    test('should return null if there is no set signing Account', async () => {
+      context.getSigningAccount.throws('err');
+
+      const result = accountManagement.getSigningAccount();
+
+      expect(result).toBeNull();
     });
   });
 

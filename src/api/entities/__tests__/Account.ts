@@ -28,14 +28,14 @@ describe('Account class', () => {
   let address: string;
   let key: string;
   let account: Account;
-  let assertFormatValidStub: sinon.SinonStub;
+  let assertAddressValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    assertFormatValidStub = sinon.stub(utilsInternalModule, 'assertFormatValid');
+    assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
 
     address = 'someAddress';
@@ -64,7 +64,7 @@ describe('Account class', () => {
   });
 
   test('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
-    assertFormatValidStub.throws();
+    assertAddressValidStub.throws();
 
     expect(
       // cSpell: disable-next-line

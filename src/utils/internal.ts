@@ -589,8 +589,16 @@ export function assertIsPositive(value: BigNumber): void {
 /**
  * @hidden
  */
-export function assertFormatValid(address: string, ss58Format: BigNumber): void {
-  const encodedAddress = encodeAddress(decodeAddress(address), ss58Format.toNumber());
+export function assertAddressValid(address: string, ss58Format: BigNumber): void {
+  let encodedAddress: string;
+  try {
+    encodedAddress = encodeAddress(decodeAddress(address), ss58Format.toNumber());
+  } catch (err) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The supplied address is not a valid SS58 address',
+    });
+  }
 
   if (address !== encodedAddress) {
     throw new PolymeshError({

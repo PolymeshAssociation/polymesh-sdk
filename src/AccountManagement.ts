@@ -194,16 +194,23 @@ export class AccountManagement {
   }
 
   /**
-   * Create an Account instance from an address. If no address is passed, the signing Account is returned
+   * Return an Account instance from an address
    */
-  public getAccount(args?: { address: string }): Account {
+  public getAccount(args: { address: string }): Account {
     const { context } = this;
 
-    if (args) {
-      return new Account(args, context);
-    }
+    return new Account(args, context);
+  }
 
-    return context.getSigningAccount();
+  /**
+   * Return the signing Account, or null if no signing Account has been set
+   */
+  public getSigningAccount(): Account | null {
+    try {
+      return this.context.getSigningAccount();
+    } catch (err) {
+      return null;
+    }
   }
 
   /**
