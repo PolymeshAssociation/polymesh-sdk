@@ -167,7 +167,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should retrieve an array of Accounts, with the signing Account first', async () => {
+    test('should retrieve an array of Accounts', async () => {
       const addresses = [
         '5GNWrbft4pJcYSak9tkvUy89e2AKimEwHb6CKaJq81KHEj8e',
         '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
@@ -181,17 +181,9 @@ describe('Context class', () => {
         }),
       });
 
-      let result = await context.getSigningAccounts();
+      const result = await context.getSigningAccounts();
       expect(result[0].address).toBe(addresses[0]);
       expect(result[1].address).toBe(addresses[1]);
-      expect(result[0] instanceof Account).toBe(true);
-      expect(result[1] instanceof Account).toBe(true);
-
-      await context.setSigningAddress(result[1].address);
-
-      result = await context.getSigningAccounts();
-      expect(result[1].address).toBe(addresses[0]);
-      expect(result[0].address).toBe(addresses[1]);
       expect(result[0] instanceof Account).toBe(true);
       expect(result[1] instanceof Account).toBe(true);
     });

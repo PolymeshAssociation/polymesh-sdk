@@ -11,7 +11,7 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, clone, flatMap, flatten, flattenDeep, remove } from 'lodash';
+import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 import {
   CAId,
@@ -45,7 +45,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, QueryReturnType } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
 import {
   accountIdToString,
