@@ -368,15 +368,11 @@ describe('modifyClaims procedure', () => {
 
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit })
-    ).rejects.toThrow(
-      new RegExp("Attempt to edit claims that weren't issued by the signing Identity")
-    );
+    ).rejects.toThrow("Attempt to edit claims that weren't issued by the signing Identity");
 
     return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
-    ).rejects.toThrow(
-      new RegExp("Attempt to revoke claims that weren't issued by the signing Identity")
-    );
+    ).rejects.toThrow("Attempt to revoke claims that weren't issued by the signing Identity");
   });
 
   test('should throw an error if any Investor Uniqueness claim has balance in a revoke operation', async () => {
@@ -413,9 +409,7 @@ describe('modifyClaims procedure', () => {
     return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
     ).rejects.toThrow(
-      new RegExp(
-        'Attempt to revoke Investor Uniqueness claims from investors with positive balance'
-      )
+      'Attempt to revoke Investor Uniqueness claims from investors with positive balance'
     );
   });
 
