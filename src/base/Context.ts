@@ -235,27 +235,14 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve a list of Accounts that can sign transactions. The first Account in the array is the current (default) Account
+   * Retrieve a list of Accounts that can sign transactions
    */
   public async getSigningAccounts(): Promise<Account[]> {
     const { signingManager } = this;
 
-    let accounts = await signingManager.getAccounts();
+    const accounts = await signingManager.getAccounts();
 
-    /*
-     * we clone the array so as to not mess with the Signing Manager's internal representation
-     * when we remove the first element
-     */
-    accounts = tuple(...accounts);
-
-    const signingAddress = this.getSigningAddress();
-
-    remove(accounts, account => signingAddress === account);
-
-    return [
-      new Account({ address: signingAddress }, this),
-      ...accounts.map(address => new Account({ address }, this)),
-    ];
+    return accounts.map(address => new Account({ address }, this));
   }
 
   /**

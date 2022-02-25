@@ -209,7 +209,7 @@ export class AccountManagement {
   /**
    * Return a list that contains all the signing Accounts associated to the SDK instance's Signing Manager
    *
-   * @throws — if there is no Signing Manager attached to the SDK, or the Signing Manager has no Accounts
+   * @throws — if there is no Signing Manager attached to the SDK
    */
   public async getSigningAccounts(): Promise<Account[]> {
     return this.context.getSigningAccounts();
