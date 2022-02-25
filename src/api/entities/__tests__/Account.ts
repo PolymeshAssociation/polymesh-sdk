@@ -235,7 +235,7 @@ describe('Account class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
@@ -243,6 +243,7 @@ describe('Account class', () => {
       dsMockUtils.createQueryStub('system', 'blockHash', {
         multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
       });
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryStub(
         transactions({
           block_id: blockNumber1.toNumber(),
@@ -258,6 +259,7 @@ describe('Account class', () => {
           transactions: transactionsQueryResponse,
         }
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       let result = await account.getTransactionHistory({
         blockNumber: blockNumber1,
@@ -310,6 +312,7 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryStub(
         transactions({
           block_id: undefined,
@@ -325,6 +328,7 @@ describe('Account class', () => {
           transactions: transactionsQueryResponse,
         }
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       result = await account.getTransactionHistory();
 
@@ -340,6 +344,7 @@ describe('Account class', () => {
     test('should return if the Account is frozen or not', async () => {
       const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('identity', 'didRecords').returns(
         dsMockUtils.createMockDidRecord({
           primary_key: dsMockUtils.createMockAccountId(address),
@@ -347,6 +352,7 @@ describe('Account class', () => {
           secondary_keys: [],
         })
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
       const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
         returnValue: dsMockUtils.createMockBool(false),
       });

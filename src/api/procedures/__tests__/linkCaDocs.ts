@@ -64,7 +64,7 @@ describe('linkCaDocs procedure', () => {
         filing_date: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enabled @typescript-eslint/naming-convention */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     documentEntries = [];

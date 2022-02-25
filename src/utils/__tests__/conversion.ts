@@ -5085,7 +5085,7 @@ describe('toIdentityWithClaimsArray', () => {
         ],
       },
     ];
-    /* eslint-enabled @typescript-eslint/naming-convention */
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
 
@@ -5122,6 +5122,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       .getCreateTypeStub()
       .withArgs('TrustedIssuer', {
         issuer: stringToIdentityId(did, context),
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         trusted_for: 'Any',
       })
       .returns(fakeResult);
@@ -5138,6 +5139,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       .getCreateTypeStub()
       .withArgs('TrustedIssuer', {
         issuer: stringToIdentityId(did, context),
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         trusted_for: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
       })
       .returns(fakeResult);
@@ -5155,6 +5157,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
     };
     let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
       issuer: dsMockUtils.createMockIdentityId(did),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       trusted_for: dsMockUtils.createMockTrustedFor('Any'),
     });
 
@@ -5164,6 +5167,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
     fakeResult = { identity: expect.objectContaining({ did }), trustedFor: [ClaimType.SellLockup] };
     trustedIssuer = dsMockUtils.createMockTrustedIssuer({
       issuer: dsMockUtils.createMockIdentityId(did),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       trusted_for: dsMockUtils.createMockTrustedFor({
         Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
       }),
@@ -5759,6 +5763,7 @@ describe('fundraiserToStoDetails', () => {
     const status = dsMockUtils.createMockFundraiserStatus('Live');
     const minInvestment = dsMockUtils.createMockBalance(minInvestmentValue);
 
+    /* eslint-disable @typescript-eslint/naming-convention */
     let fundraiser = dsMockUtils.createMockFundraiser({
       creator,
       offering_portfolio: offeringPortfolio,
@@ -5894,6 +5899,7 @@ describe('fundraiserToStoDetails', () => {
       status: dsMockUtils.createMockFundraiserStatus('Frozen'),
       minimum_investment: minInvestment,
     });
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
@@ -6195,6 +6201,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       ],
     };
 
+    /* eslint-disable @typescript-eslint/naming-convention */
     const params = {
       kind,
       decl_date: new BigNumber(declarationDate.getTime()),
@@ -6206,6 +6213,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
       default_withholding_tax: defaultTaxWithholding.shiftedBy(4),
       withholding_tax: [tuple(dids[0], taxWithholdings[0].percentage.shiftedBy(4))],
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     let corporateAction = dsMockUtils.createMockCorporateAction(params);
     const details = dsMockUtils.createMockText(description);
@@ -6293,6 +6301,7 @@ describe('distributionToDividendDistributionParams', () => {
       expiryDate,
     };
 
+    /* eslint-disable @typescript-eslint/naming-convention */
     const params = {
       from: { did, kind: { User: dsMockUtils.createMockU64(from) } },
       currency,
@@ -6303,6 +6312,7 @@ describe('distributionToDividendDistributionParams', () => {
       payment_at: new BigNumber(paymentDate.getTime()),
       expires_at: dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime())),
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     let distribution = dsMockUtils.createMockDistribution(params);
 
@@ -6310,6 +6320,7 @@ describe('distributionToDividendDistributionParams', () => {
 
     expect(result).toEqual(fakeResult);
 
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     distribution = dsMockUtils.createMockDistribution({ ...params, expires_at: null });
 
     result = distributionToDividendDistributionParams(distribution, context);
@@ -6513,6 +6524,7 @@ describe('corporateActionIdentifierToCaId', () => {
     dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
     dsMockUtils.getCreateTypeStub().withArgs('u32', args.localId.toString()).returns(localId);
 
+    /* eslint-disable @typescript-eslint/naming-convention */
     dsMockUtils
       .getCreateTypeStub()
       .withArgs('CAId', {
@@ -6520,6 +6532,7 @@ describe('corporateActionIdentifierToCaId', () => {
         local_id: localId,
       })
       .returns(fakeResult);
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const result = corporateActionIdentifierToCaId(args, context);
     expect(result).toEqual(fakeResult);
@@ -6641,6 +6654,7 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
         blindedScopeDidHash,
       },
     };
+    /* eslint-disable @typescript-eslint/naming-convention */
     const rawFirstChallengeResponse = dsMockUtils.createMockScalar(firstChallengeResponse);
     const rawSecondChallengeResponse = dsMockUtils.createMockScalar(secondChallengeResponse);
     const rawSubtractExpressionsRes = dsMockUtils.createMockRistrettoPoint(subtractExpressionsRes);
@@ -6672,6 +6686,7 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       proof_scope_id_cdd_id_match: rawZkProofData,
       scope_id: rawScopeId,
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
     const context = dsMockUtils.getContextInstance();
 
     dsMockUtils

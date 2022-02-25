@@ -493,7 +493,7 @@ describe('Identity class', () => {
         primary_key: dsMockUtils.createMockAccountId(accountId),
         secondary_keys: [],
       });
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const account = expect.objectContaining({ address: accountId });
 
@@ -830,6 +830,7 @@ describe('Identity class', () => {
 
       const multiStub = sinon.stub();
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id1),
@@ -877,6 +878,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
       ]);
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       instructionDetailsStub.multi = multiStub;
 
@@ -975,7 +977,6 @@ describe('Identity class', () => {
 
       userAuthsStub.entries = entriesStub;
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const instructionDetailsStub = dsMockUtils.createQueryStub(
         'settlement',
         'instructionDetails',
@@ -986,6 +987,7 @@ describe('Identity class', () => {
 
       const multiStub = sinon.stub();
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id1),
@@ -1222,7 +1224,7 @@ describe('Identity class', () => {
           }),
         ],
       });
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     test('should return a list of Signers', async () => {
