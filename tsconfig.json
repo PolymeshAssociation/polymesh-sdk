@@ -27,5 +27,5 @@
     "lib": ["es2017", "dom"],
     "typeRoots": ["./node_modules/@types", "./src/typings"]
   },
-  "exclude": ["dist", "node_modules", "sandbox.ts", "test.ts", "*/**/__tests__/**/*"]
+  "exclude": ["dist", "node_modules", "sandbox.ts", "test.ts"]
 }

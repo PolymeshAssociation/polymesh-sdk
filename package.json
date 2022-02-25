@@ -17,7 +17,7 @@
     "generate:tags": "cross-env node scripts/generateTxTags.js",
     "generate:post-process": "cross-env node scripts/postProcessTypes.js",
     "test": "jest --detectOpenHandles --coverage",
-    "build:ts": "ttsc -b",
+    "build:ts": "ttsc -b tsconfig.lib.json",
     "build:docs": "cross-env cp -R src src-temp && cross-env node scripts/prepareCodeForDocs.js && typedoc src && rimraf src && mv src-temp src",
     "commit": "npx git-cz",
     "semantic-release": "semantic-release",
