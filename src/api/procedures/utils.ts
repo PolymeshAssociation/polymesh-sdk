@@ -466,7 +466,8 @@ export async function assertMultiSigSignerAuthorizationValid(
   context: Context
 ): Promise<void> {
   if (target instanceof Account) {
-    if (target.address === data.value) {
+    const { address } = target;
+    if (address === data.value) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'A multisig cannot be its own signer',
@@ -481,7 +482,7 @@ export async function assertMultiSigSignerAuthorizationValid(
       });
     }
 
-    const multiSig = await context.polymeshApi.query.multiSig.keyToMultiSig(target.address);
+    const multiSig = await context.polymeshApi.query.multiSig.keyToMultiSig(address);
     if (!multiSig.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.ValidationError,

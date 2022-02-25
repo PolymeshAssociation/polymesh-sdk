@@ -65,13 +65,12 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   await assertAuthorizationRequestValid(authRequest, context);
 
-  if (target instanceof Account) {
-    const transaction = multiSig.acceptMultisigSignerAsKey;
-    this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
-  } else {
-    const transaction = multiSig.acceptMultisigSignerAsIdentity;
-    this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
-  }
+  const transaction =
+    target instanceof Account
+      ? multiSig.acceptMultisigSignerAsKey
+      : multiSig.acceptMultisigSignerAsIdentity;
+
+  this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
 }
 
 /**
@@ -85,7 +84,6 @@ export async function getAuthorization(
   const { context } = this;
 
   let hasRoles;
-  let transactions: TxTag[] = [];
 
   const currentAccount = context.getCurrentAccount();
   const identity = await currentAccount.getIdentity();
@@ -100,7 +98,7 @@ export async function getAuthorization(
   } else {
     calledByTarget = !!identity?.isEqual(target);
     hasRoles = calledByTarget;
-    transactions = [TxTags.multiSig.AcceptMultisigSignerAsIdentity];
+    const transactions = [TxTags.multiSig.AcceptMultisigSignerAsIdentity];
     permissions = { transactions };
   }
 
@@ -113,7 +111,7 @@ export async function getAuthorization(
     };
   }
 
-  transactions = [TxTags.identity.RemoveAuthorization];
+  const transactions = [TxTags.identity.RemoveAuthorization];
 
   /*
    * if the target is removing the auth request and they don't have an Identity,
