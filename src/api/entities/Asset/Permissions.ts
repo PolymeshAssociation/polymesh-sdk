@@ -3,6 +3,8 @@ import BigNumber from 'bignumber.js';
 import {
   Asset,
   AuthorizationRequest,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Authorizations,
   Context,
   createGroup,
   CreateGroupParams,
@@ -67,7 +69,9 @@ export class Permissions extends Namespace<Asset> {
   /**
    * Invite an Identity to be an agent with permissions over this Asset
    *
-   * @note this will create an AuthorizationRequest that will need to be accepted by the target
+   * @note this will create an AuthorizationRequest which has to be accepted by the target Account.
+   *   An Account or Identity can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne}
    */
   public inviteAgent: ProcedureMethod<InviteExternalAgentParams, AuthorizationRequest>;
 

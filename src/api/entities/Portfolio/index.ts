@@ -6,6 +6,8 @@ import {
   Account,
   Asset,
   AuthorizationRequest,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Authorizations,
   Context,
   Entity,
   Identity,
@@ -212,9 +214,9 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Send an invitation to an Identity to assign it as custodian for this Portfolio
    *
-   * @note this may create an AuthorizationRequest which has to be accepted by
-   *   the corresponding Identity. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this will create an AuthorizationRequest which has to be accepted by the corresponding Identity.
+   *   An Account or Identity can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne}
    *
    * @note required role:
    *   - Portfolio Custodian

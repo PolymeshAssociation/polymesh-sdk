@@ -1,6 +1,8 @@
 import {
   Account,
   AuthorizationRequest,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Authorizations,
   Context,
   inviteAccount,
   InviteAccountParams,
@@ -110,9 +112,9 @@ export class AccountManagement {
   /**
    * Send an invitation to an Account to join the signing Identity as a secondary Account
    *
-   * @note this will create an AuthorizationRequest which has to be accepted by
-   *   the corresponding Account. An Account can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this will create an AuthorizationRequest which has to be accepted by the corresponding Account.
+   *   An Account or Identity can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne}
    */
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
@@ -129,8 +131,9 @@ export class AccountManagement {
   /**
    * Send an Authorization Request to an Account to subsidize its transaction fees
    *
-   * @note this will create an AuthorizationRequest which has to be accepted by
-   *   the beneficiary Account. An Account can fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this will create an AuthorizationRequest which has to be accepted by the beneficiary Account.
+   *   An Account or Identity can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne}
    */
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
 

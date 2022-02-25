@@ -12,6 +12,8 @@ import {
 
 import {
   AuthorizationRequest,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Authorizations,
   Context,
   controllerTransfer,
   ControllerTransferParams,
@@ -184,11 +186,11 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *   by the recipient
    *
    * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
-   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]].
+   *   An Account or Identity can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne}
    */
   public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
-
   /**
    * Modify some properties of the Asset
    *
