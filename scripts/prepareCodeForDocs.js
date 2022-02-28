@@ -18,7 +18,8 @@ const ts = require('typescript');
 const replace = require('replace-in-file');
 const path = require('path');
 
-const methodRegex = /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:NoArgs)?ProcedureMethod<[\w\W]+?>);/gs;
+const methodRegex =
+  /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:NoArgs)?ProcedureMethod<[\w\W]+?>);/gs;
 const importRegex = /(import .+? from '.+?';\n)\n/s;
 
 /**
@@ -60,12 +61,8 @@ const getTypeArgumentsFromProcedureMethod = typeString => {
  * Assemble a method signature according to the Procedure Method that is being replaced
  */
 const createReplacementSignature = (_, funcName, type) => {
-  const {
-    methodArgs,
-    returnValue,
-    procedureReturnValue,
-    kind,
-  } = getTypeArgumentsFromProcedureMethod(type);
+  const { methodArgs, returnValue, procedureReturnValue, kind } =
+    getTypeArgumentsFromProcedureMethod(type);
   const returnValueString = returnValue ? `, ${returnValue}` : '';
   const returnType = `Promise<TransactionQueue<${procedureReturnValue}${returnValueString}>>`;
 
@@ -80,7 +77,7 @@ const createReplacementSignature = (_, funcName, type) => {
 
   // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
   return `*
-   * @note this method is of type [[${kind}]], which means you can call \`${name}.checkAuthorization\`
+   * @note this method is of type {@link ${kind}}, which means you can call {@link ${kind}.checkAuthorization | ${name}.checkAuthorization}
    *   on it to see whether the Current Account has the required permissions to run it
    */
   public ${funcName}${funcArgs}: ${returnType}${isAbstract ? ';' : implementation}`;
