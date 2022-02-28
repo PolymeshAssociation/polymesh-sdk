@@ -43,7 +43,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: removeSecondaryAccounts', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const accounts = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
@@ -60,7 +60,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: revokePermissions', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const account = entityMockUtils.getAccountInstance({ address: 'someAccount' });
       const secondaryAccounts = [
         {
@@ -87,7 +87,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: modifyPermissions', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const secondaryAccounts = [
         {
           account: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
@@ -109,7 +109,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: inviteAccount', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         targetAccount: 'someAccount',
       };
@@ -128,7 +128,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: freezeSecondaryAccounts', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         freeze: true,
       };
@@ -147,7 +147,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: unfreezeSecondaryAccounts', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         freeze: false,
       };
@@ -166,7 +166,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: subsidizeAccount', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         beneficiary: 'someAccount',
         allowance: new BigNumber(1000),
@@ -186,7 +186,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getAccount', () => {
-    test('should return an Account object with the passed address', async () => {
+    it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
 
       const result = accountManagement.getAccount(params);
@@ -194,7 +194,7 @@ describe('AccountManagement class', () => {
       expect(result.address).toBe(params.address);
     });
 
-    test('should return the current Account if no address is passed', async () => {
+    it('should return the current Account if no address is passed', async () => {
       const address = 'someAddress';
       dsMockUtils.configureMocks({ contextOptions: { currentPairAddress: address } });
 
@@ -210,14 +210,14 @@ describe('AccountManagement class', () => {
       locked: new BigNumber(0),
       total: new BigNumber(100),
     };
-    test('should return the free and locked POLYX balance of the current Account', async () => {
+    it('should return the free and locked POLYX balance of the current Account', async () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
 
       const result = await accountManagement.getAccountBalance();
       expect(result).toEqual(fakeBalance);
     });
 
-    test('should return the free and locked POLYX balance of the supplied account', async () => {
+    it('should return the free and locked POLYX balance of the supplied account', async () => {
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
       let result = await accountManagement.getAccountBalance({ account: 'someId' });
@@ -229,7 +229,7 @@ describe('AccountManagement class', () => {
       expect(result).toEqual(fakeBalance);
     });
 
-    test('should allow subscription (with and without a supplied account id)', async () => {
+    it('should allow subscription (with and without a supplied account id)', async () => {
       const unsubCallback = 'unsubCallback';
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
@@ -257,7 +257,7 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getAccounts', () => {
-    test('should return the list of signer accounts associated to the SDK', async () => {
+    it('should return the list of signer accounts associated to the SDK', async () => {
       const accounts = [entityMockUtils.getAccountInstance()];
       dsMockUtils.configureMocks({
         contextOptions: {

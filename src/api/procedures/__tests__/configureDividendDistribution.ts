@@ -163,7 +163,7 @@ describe('configureDividendDistribution procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Asset is being used as the distribution currency', async () => {
+  it('should throw an error if the Asset is being used as the distribution currency', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -194,7 +194,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Cannot distribute Dividends using the Asset as currency');
   });
 
-  test('should throw an error if the payment date is in the past', async () => {
+  it('should throw an error if the payment date is in the past', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -225,7 +225,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Payment date must be in the future');
   });
 
-  test('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
+  it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -282,7 +282,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Payment date must be after the Checkpoint date');
   });
 
-  test('should throw an error if the payment date is after the expiry date', async () => {
+  it('should throw an error if the payment date is after the expiry date', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -312,7 +312,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Expiry date must be after payment date');
   });
 
-  test('should throw an error if the origin Portfolio does not have enough balance', async () => {
+  it('should throw an error if the origin Portfolio does not have enough balance', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       {
@@ -359,7 +359,7 @@ describe('configureDividendDistribution procedure', () => {
     });
   });
 
-  test('should throw an error if the origin Portfolio does not exist', async () => {
+  it('should throw an error if the origin Portfolio does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       {
@@ -394,7 +394,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe("The origin Portfolio doesn't exist");
   });
 
-  test('should add a distribute transaction to the queue', async () => {
+  it('should add a distribute transaction to the queue', async () => {
     let proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: originPortfolio,
     });
@@ -577,7 +577,7 @@ describe('configureDividendDistribution procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new DividendDistribution', async () => {
+    it('should return the new DividendDistribution', async () => {
       const result = await createDividendDistributionResolver(mockContext)(
         {} as ISubmittableResult
       );
@@ -614,7 +614,7 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
         mockContext,
         { portfolio: originPortfolio }
@@ -641,7 +641,7 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the origin Portfolio', async () => {
+    it('should return the origin Portfolio', async () => {
       const did = 'someDid';
       dsMockUtils.configureMocks({
         contextOptions: {

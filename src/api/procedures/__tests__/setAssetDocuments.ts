@@ -123,7 +123,7 @@ describe('setAssetDocuments procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the new list is the same as the current one', () => {
+  it('should throw an error if the new list is the same as the current one', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocs: documents,
       currentDocIds: [],
@@ -134,7 +134,7 @@ describe('setAssetDocuments procedure', () => {
     );
   });
 
-  test('should add a remove documents transaction and an add documents transaction to the queue', async () => {
+  it('should add a remove documents transaction and an add documents transaction to the queue', async () => {
     const docIds = [documentEntries[0][0][1]];
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocIds: docIds,
@@ -156,7 +156,7 @@ describe('setAssetDocuments procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
+  it('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocIds: [],
       currentDocs: [],
@@ -173,7 +173,7 @@ describe('setAssetDocuments procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
+  it('should not add an add documents transaction if there are no documents passed as arguments', async () => {
     const docIds = [documentEntries[0][0][1]];
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocs: [documents[0]],
@@ -192,7 +192,7 @@ describe('setAssetDocuments procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
         currentDocIds: [documentEntries[0][0][1]],
         currentDocs: [],
@@ -224,7 +224,7 @@ describe('setAssetDocuments procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the current documents and their ids', async () => {
+    it('should return the current documents and their ids', async () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 

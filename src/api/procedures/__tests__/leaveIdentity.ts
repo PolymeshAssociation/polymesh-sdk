@@ -40,7 +40,7 @@ describe('leaveIdentity procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Account is not associated to any Identity', async () => {
+  it('should throw an error if the Account is not associated to any Identity', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance({
       getIdentity: null,
@@ -57,7 +57,7 @@ describe('leaveIdentity procedure', () => {
     expect(error.message).toBe('There is no Identity associated to this Account');
   });
 
-  test('should throw an error if the Account is not a secondary Account', async () => {
+  it('should throw an error if the Account is not a secondary Account', async () => {
     const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance();
 
@@ -72,7 +72,7 @@ describe('leaveIdentity procedure', () => {
     expect(error.message).toBe('Only secondary Accounts are allowed to leave an Identity');
   });
 
-  test('should add a leave identity as Account transaction to the queue', async () => {
+  it('should add a leave identity as Account transaction to the queue', async () => {
     const address = 'someAddress';
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
     const leaveIdentityAsKeyTransaction = dsMockUtils.createTxStub(
@@ -98,7 +98,7 @@ describe('leaveIdentity procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<LeaveIdentityParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

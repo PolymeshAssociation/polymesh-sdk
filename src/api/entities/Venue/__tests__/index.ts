@@ -62,12 +62,12 @@ describe('Venue class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Venue.prototype instanceof Entity).toBe(true);
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Venue.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(true);
       expect(Venue.isUniqueIdentifiers({})).toBe(false);
       expect(Venue.isUniqueIdentifiers({ id: 3 })).toBe(false);
@@ -79,7 +79,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test('should return whether if the venue exists or not', async () => {
+    it('should return whether if the venue exists or not', async () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
@@ -101,7 +101,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test('should return the Venue details', async () => {
+    it('should return the Venue details', async () => {
       const description = 'someDescription';
       const type = VenueType.Other;
       const owner = 'someDid';
@@ -141,7 +141,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should return the Venue's pending and failed instructions", async () => {
+    it("should return the Venue's pending and failed instructions", async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
 
@@ -191,7 +191,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test("should return the Venue's pending instructions", async () => {
+    it("should return the Venue's pending instructions", async () => {
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -236,7 +236,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const legs = [
         {
           from: 'someDid',
@@ -279,7 +279,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const legs = [
         {
           from: 'someDid',
@@ -330,7 +330,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
       const description = 'someDetails';
       const type = VenueType.Other;
@@ -353,7 +353,7 @@ describe('Venue class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const venueEntity = new Venue({ id: new BigNumber(1) }, context);
 
       expect(venueEntity.toJson()).toBe('1');
@@ -362,7 +362,7 @@ describe('Venue class', () => {
 });
 
 describe('addInstructionTransformer', () => {
-  test('should return a single Instruction', () => {
+  it('should return a single Instruction', () => {
     const id = new BigNumber(1);
 
     const result = addInstructionTransformer([entityMockUtils.getInstructionInstance({ id })]);

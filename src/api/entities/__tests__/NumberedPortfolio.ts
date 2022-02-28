@@ -41,12 +41,12 @@ describe('NumberedPortfolio class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(NumberedPortfolio.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign Identity and id to instance', () => {
+    it('should assign Identity and id to instance', () => {
       const did = 'someDid';
       const id = new BigNumber(1);
       const portfolio = new NumberedPortfolio({ did, id }, context);
@@ -57,7 +57,7 @@ describe('NumberedPortfolio class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(NumberedPortfolio.isUniqueIdentifiers({ did: 'someDid', id: new BigNumber(1) })).toBe(
         true
       );
@@ -69,7 +69,7 @@ describe('NumberedPortfolio class', () => {
   });
 
   describe('method: modifyName', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const id = new BigNumber(1);
       const did = 'someDid';
       const name = 'newName';
@@ -91,7 +91,7 @@ describe('NumberedPortfolio class', () => {
     const id = new BigNumber(1);
     const did = 'someDid';
     const portfolioName = 'someName';
-    test('should return the name of the Portfolio', async () => {
+    it('should return the name of the Portfolio', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
       const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
@@ -105,7 +105,7 @@ describe('NumberedPortfolio class', () => {
       spy.mockRestore();
     });
 
-    test('should throw an error if the Portfolio no longer exists', async () => {
+    it('should throw an error if the Portfolio no longer exists', async () => {
       const emptyName = dsMockUtils.createMockText('');
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         returnValue: emptyName,
@@ -137,7 +137,7 @@ describe('NumberedPortfolio class', () => {
       eventArg1: id.toString(),
     };
 
-    test('should return the event identifier object of the portfolio creation', async () => {
+    it('should return the event identifier object of the portfolio creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -159,7 +159,7 @@ describe('NumberedPortfolio class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
@@ -169,7 +169,7 @@ describe('NumberedPortfolio class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the portfolio exists', async () => {
+    it('should return whether the portfolio exists', async () => {
       const did = 'someDid';
       const id = new BigNumber(1);
       const portfolioId = new BigNumber(0);

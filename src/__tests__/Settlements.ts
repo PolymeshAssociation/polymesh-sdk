@@ -49,7 +49,7 @@ describe('Settlements Class', () => {
   });
 
   describe('method: getVenue', () => {
-    test('should return a Venue by its id', async () => {
+    it('should return a Venue by its id', async () => {
       const venueId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -61,7 +61,7 @@ describe('Settlements Class', () => {
       expect(result.id).toEqual(venueId);
     });
 
-    test('should throw if the Venue does not exist', async () => {
+    it('should throw if the Venue does not exist', async () => {
       const venueId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -75,7 +75,7 @@ describe('Settlements Class', () => {
   });
 
   describe('method: getInstruction', () => {
-    test('should return an Instruction by its id', async () => {
+    it('should return an Instruction by its id', async () => {
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -87,7 +87,7 @@ describe('Settlements Class', () => {
       expect(result.id).toEqual(instructionId);
     });
 
-    test('should throw if the Instruction does not exist', async () => {
+    it('should throw if the Instruction does not exist', async () => {
       const instructionId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -101,7 +101,7 @@ describe('Settlements Class', () => {
   });
 
   describe('method: createVenue', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         description: 'description',
         type: VenueType.Distribution,
@@ -121,7 +121,7 @@ describe('Settlements Class', () => {
   });
 
   describe('method: addInstruction', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const venueId = new BigNumber(1);
       const legs = [
         {
@@ -160,7 +160,7 @@ describe('Settlements Class', () => {
   });
 
   describe('method: affirmInstruction', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const instructionId = new BigNumber(1);
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<Venue>;

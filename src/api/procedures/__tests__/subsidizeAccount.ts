@@ -58,7 +58,7 @@ describe('subsidizeAccount procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the subsidizer has already sent a pending authorization to beneficiary Account with the same allowance to accept', () => {
+  it('should throw an error if the subsidizer has already sent a pending authorization to beneficiary Account with the same allowance to accept', () => {
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
         new AuthorizationRequest(
@@ -100,7 +100,7 @@ describe('subsidizeAccount procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const mockBeneficiary = entityMockUtils.getAccountInstance({ address: 'mockAddress' });
     const issuer = entityMockUtils.getIdentityInstance();
     const subsidizer = entityMockUtils.getAccountInstance();

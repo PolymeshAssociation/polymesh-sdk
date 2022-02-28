@@ -60,7 +60,7 @@ describe('issueTokens procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the Asset', () => {
+    it('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
@@ -75,7 +75,7 @@ describe('issueTokens procedure', () => {
     });
   });
 
-  test('should throw an error if Asset supply is bigger than the limit total supply', async () => {
+  it('should throw an error if Asset supply is bigger than the limit total supply', async () => {
     const args = {
       amount,
       ticker,
@@ -112,7 +112,7 @@ describe('issueTokens procedure', () => {
     });
   });
 
-  test('should add a issue transaction to the queue', async () => {
+  it('should add a issue transaction to the queue', async () => {
     const isDivisible = true;
     const args = {
       amount,
@@ -142,7 +142,7 @@ describe('issueTokens procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
         asset: entityMockUtils.getAssetInstance({ ticker }),
       });

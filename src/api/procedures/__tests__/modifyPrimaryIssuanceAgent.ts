@@ -76,7 +76,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the primary issuance agents list is not empty', () => {
+  it('should throw an error if the primary issuance agents list is not empty', () => {
     const args = {
       target,
       ticker,
@@ -98,7 +98,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     );
   });
 
-  test("should throw an error if the supplied target doesn't exist", () => {
+  it("should throw an error if the supplied target doesn't exist", () => {
     const args = {
       target,
       ticker,
@@ -113,7 +113,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied expiry date is not a future date', () => {
+  it('should throw an error if the supplied expiry date is not a future date', () => {
     const args = {
       target,
       ticker,
@@ -135,7 +135,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     );
   });
 
-  test('should add a add authorization transaction to the queue', async () => {
+  it('should add a add authorization transaction to the queue', async () => {
     const args = {
       target,
       ticker,
@@ -190,7 +190,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
