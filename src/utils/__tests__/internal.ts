@@ -856,12 +856,16 @@ describe('getIdentity', () => {
   let context: Context;
 
   beforeEach(() => {
-    context = dsMockUtils.getContextInstance({});
+    context = dsMockUtils.getContextInstance();
   });
 
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
+  });
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
   });
 
   afterAll(() => {
