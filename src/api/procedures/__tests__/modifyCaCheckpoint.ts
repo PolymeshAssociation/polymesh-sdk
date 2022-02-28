@@ -48,7 +48,7 @@ describe('modifyCaCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the checkpoint does not exist', async () => {
+  it('should throw an error if the checkpoint does not exist', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: entityMockUtils.getCheckpointInstance({
@@ -69,7 +69,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe("Checkpoint doesn't exist");
   });
 
-  test('should throw an error if checkpoint schedule no longer exists', async () => {
+  it('should throw an error if checkpoint schedule no longer exists', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: entityMockUtils.getCheckpointScheduleInstance({
@@ -90,7 +90,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe("Checkpoint Schedule doesn't exist");
   });
 
-  test('should throw an error if date is in the past', async () => {
+  it('should throw an error if date is in the past', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: new Date(new Date().getTime() - 100000),
@@ -109,7 +109,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe('Checkpoint date must be in the future');
   });
 
-  test('should add a change record date transaction to the queue', async () => {
+  it('should add a change record date transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const id = new BigNumber(1);
 
@@ -178,7 +178,7 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

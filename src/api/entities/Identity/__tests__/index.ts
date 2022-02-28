@@ -85,12 +85,12 @@ describe('Identity class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Identity.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign did to instance', () => {
+    it('should assign did to instance', () => {
       const did = 'abc';
       const identity = new Identity({ did }, context);
 
@@ -99,7 +99,7 @@ describe('Identity class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Identity.isUniqueIdentifiers({ did: 'someDid' })).toBe(true);
       expect(Identity.isUniqueIdentifiers({})).toBe(false);
       expect(Identity.isUniqueIdentifiers({ did: 3 })).toBe(false);
@@ -115,7 +115,7 @@ describe('Identity class', () => {
       entityMockUtils.reset();
     });
 
-    test('should return whether the Identity possesses all roles', async () => {
+    it('should return whether the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
@@ -152,7 +152,7 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: hasRole and hasRoles', () => {
+  describe('method: hasRole', () => {
     beforeAll(() => {
       entityMockUtils.initMocks();
     });
@@ -161,7 +161,7 @@ describe('Identity class', () => {
       entityMockUtils.reset();
     });
 
-    test('hasRole should check whether the Identity has the Ticker Owner role', async () => {
+    it('should check whether the Identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
 
@@ -176,7 +176,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the Identity has the CDD Provider role', async () => {
+    it('should check whether the Identity has the CDD Provider role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: Role = { type: RoleType.CddProvider };
@@ -197,7 +197,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the Identity has the Venue Owner role', async () => {
+    it('should check whether the Identity has the Venue Owner role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: VenueOwnerRole = { type: RoleType.VenueOwner, venueId: new BigNumber(10) };
@@ -223,7 +223,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the Identity has the Portfolio Custodian role', async () => {
+    it('should check whether the Identity has the Portfolio Custodian role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const portfolioId = {
@@ -248,7 +248,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should check whether the Identity has the Identity role', async () => {
+    it('should check whether the Identity has the Identity role', async () => {
       const did = 'someDid';
       const identity = new Identity({ did }, context);
       const role: IdentityRole = { type: RoleType.Identity, did };
@@ -264,7 +264,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(false);
     });
 
-    test('hasRole should throw an error if the role is not recognized', () => {
+    it('should throw an error if the role is not recognized', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const type = 'Fake' as RoleType;
       const role = { type, ticker: 'someTicker' } as TickerOwnerRole;
@@ -273,8 +273,18 @@ describe('Identity class', () => {
 
       return expect(hasRole).rejects.toThrow(`Unrecognized role "${JSON.stringify(role)}"`);
     });
+  });
 
-    test('hasRoles should return true if the Identity possesses all roles', async () => {
+  describe('method: hasRoles', () => {
+    beforeAll(() => {
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    it('should return true if the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
@@ -286,7 +296,7 @@ describe('Identity class', () => {
       expect(hasRole).toBe(true);
     });
 
-    test("hasRoles should return false if at least one role isn't possessed by the Identity", async () => {
+    it("should return false if at least one role isn't possessed by the Identity", async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
@@ -366,7 +376,7 @@ describe('Identity class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    test('should return the balance of a given Asset', async () => {
+    it('should return the balance of a given Asset', async () => {
       balanceOfStub.withArgs(rawTicker, rawIdentityId).resolves(fakeBalance);
 
       const result = await identity.getAssetBalance({ ticker });
@@ -374,7 +384,7 @@ describe('Identity class', () => {
       expect(result).toEqual(fakeValue);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
       const callback = sinon.stub();
 
@@ -389,7 +399,7 @@ describe('Identity class', () => {
       sinon.assert.calledWithExactly(callback, fakeValue);
     });
 
-    test("should throw an error if the Asset doesn't exist", async () => {
+    it("should throw an error if the Asset doesn't exist", async () => {
       assetStub.withArgs(rawTicker).resolves(dsMockUtils.createMockSecurityToken());
 
       let error;
@@ -405,7 +415,7 @@ describe('Identity class', () => {
   });
 
   describe('method: hasValidCdd', () => {
-    test('should return whether the Identity has valid CDD', async () => {
+    it('should return whether the Identity has valid CDD', async () => {
       const did = 'someDid';
       const statusResponse = true;
       const mockContext = dsMockUtils.getContextInstance();
@@ -434,7 +444,7 @@ describe('Identity class', () => {
   });
 
   describe('method: isGcMember', () => {
-    test('should return whether the Identity is GC member', async () => {
+    it('should return whether the Identity is GC member', async () => {
       const did = 'someDid';
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
@@ -453,7 +463,7 @@ describe('Identity class', () => {
   });
 
   describe('method: isCddProvider', () => {
-    test('should return whether the Identity is a CDD provider', async () => {
+    it('should return whether the Identity is a CDD provider', async () => {
       const did = 'someDid';
       const rawDid = dsMockUtils.createMockIdentityId(did);
       const mockContext = dsMockUtils.getContextInstance();
@@ -508,7 +518,7 @@ describe('Identity class', () => {
       };
     });
 
-    test('should return a PrimaryAccount', async () => {
+    it('should return a PrimaryAccount', async () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
@@ -526,7 +536,7 @@ describe('Identity class', () => {
       });
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
@@ -552,7 +562,7 @@ describe('Identity class', () => {
     const did = 'someDid';
     const tickers = ['ASSET1\0\0', 'ASSET2\0\0'];
 
-    test('should return a list of Assets', async () => {
+    it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryStub(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
@@ -570,7 +580,7 @@ describe('Identity class', () => {
     const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
 
-    test('should return a list of Assets', async () => {
+    it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryStub(
@@ -626,7 +636,7 @@ describe('Identity class', () => {
       sinon.restore();
     });
 
-    test('should return a list of Venues', async () => {
+    it('should return a list of Venues', async () => {
       dsMockUtils
         .createQueryStub('settlement', 'userVenues')
         .withArgs(rawDid)
@@ -638,7 +648,7 @@ describe('Identity class', () => {
       expect(result[0].id).toEqual(venueId);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
       dsMockUtils.createQueryStub('settlement', 'userVenues').callsFake(async (_, cbFunc) => {
@@ -656,7 +666,7 @@ describe('Identity class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the Identity exists', async () => {
+    it('should return whether the Identity exists', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
 
       dsMockUtils.createQueryStub('identity', 'didRecords', {
@@ -709,7 +719,7 @@ describe('Identity class', () => {
       sinon.restore();
     });
 
-    test("should return the Identity's scopeId associated to the Asset", async () => {
+    it("should return the Identity's scopeId associated to the Asset", async () => {
       const identity = new Identity({ did }, context);
 
       let result = await identity.getScopeId({ asset: ticker });
@@ -727,7 +737,7 @@ describe('Identity class', () => {
       sinon.restore();
     });
 
-    test('should return all instructions in which the identity is involved, grouped by status', async () => {
+    it('should return all instructions in which the identity is involved, grouped by status', async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
       const id3 = new BigNumber(3);
@@ -895,7 +905,7 @@ describe('Identity class', () => {
       sinon.restore();
     });
 
-    test('should return all pending instructions in which the identity is involved', async () => {
+    it('should return all pending instructions in which the identity is involved', async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
       const id3 = new BigNumber(3);
@@ -1053,7 +1063,7 @@ describe('Identity class', () => {
       frozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen');
     });
 
-    test('should return whether secondary key is frozen or not', async () => {
+    it('should return whether secondary key is frozen or not', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
 
       frozenStub.resolves(rawBoolValue);
@@ -1063,7 +1073,7 @@ describe('Identity class', () => {
       expect(result).toBe(boolValue);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const unsubCallback = 'unsubCallBack';
 
@@ -1141,7 +1151,7 @@ describe('Identity class', () => {
       sinon.restore();
     });
 
-    test('should return all distributions where the Identity can claim funds', async () => {
+    it('should return all distributions where the Identity can claim funds', async () => {
       const holderPaidStub = dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid');
 
       const rawCaId = dsMockUtils.createMockCAId({
@@ -1227,7 +1237,7 @@ describe('Identity class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    test('should return a list of Signers', async () => {
+    it('should return a list of Signers', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       didRecordsStub.resolves(rawDidRecord);
 
@@ -1235,7 +1245,7 @@ describe('Identity class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const unsubCallback = 'unsubCallBack';
 
@@ -1253,7 +1263,7 @@ describe('Identity class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       expect(identity.toJson()).toBe('someDid');
     });

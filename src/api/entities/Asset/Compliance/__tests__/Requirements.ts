@@ -47,7 +47,7 @@ describe('Requirements class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Requirements.prototype instanceof Namespace).toBe(true);
   });
 
@@ -56,7 +56,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -84,7 +84,7 @@ describe('Requirements class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -102,7 +102,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -128,7 +128,7 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -146,7 +146,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -155,7 +155,7 @@ describe('Requirements class', () => {
         requirement: new BigNumber(10),
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -173,12 +173,12 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -303,7 +303,7 @@ describe('Requirements class', () => {
             }),
           ],
         } as AssetCompliance,
-        defaultClaimIssuers as unknown as Vec<IdentityId>,
+        (defaultClaimIssuers as unknown) as Vec<IdentityId>,
       ];
 
       expected = {
@@ -362,14 +362,14 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should return all requirements attached to the Asset, along with the default trusted claim issuers', async () => {
+    it('should return all requirements attached to the Asset, along with the default trusted claim issuers', async () => {
       queryMultiStub.resolves(queryMultiResult);
       const result = await requirements.get();
 
       expect(result).toEqual(expected);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
       queryMultiStub.callsFake((_, cbFunc) => {
         cbFunc(queryMultiResult);
@@ -421,12 +421,12 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -444,12 +444,12 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -467,7 +467,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -483,7 +483,7 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -501,7 +501,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('should return whether compliance conditions are paused or not', async () => {
+    it('should return whether compliance conditions are paused or not', async () => {
       const fakeResult = false;
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
@@ -577,8 +577,8 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    test('checkSettle should return the current requirement compliance and whether the transfer complies', async () => {
-      const rawResponse = 'response' as unknown as AssetComplianceResult;
+    it('should return the current requirement compliance and whether the transfer complies', async () => {
+      const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
@@ -594,8 +594,8 @@ describe('Requirements class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('checkSettle should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
-      const rawResponse = 'response' as unknown as AssetComplianceResult;
+    it('should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
+      const rawResponse = ('response' as unknown) as AssetComplianceResult;
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
