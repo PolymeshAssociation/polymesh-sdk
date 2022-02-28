@@ -658,7 +658,7 @@ describe('stringToAccountId and accountIdToString', () => {
 
   describe('stringToAccountId', () => {
     it('should convert a string to a polkadot AccountId object', () => {
-      const value = 'someAccountId';
+      const value = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
       const fakeResult = 'convertedAccountId' as unknown as AccountId;
       const context = dsMockUtils.getContextInstance();
 
@@ -667,6 +667,15 @@ describe('stringToAccountId and accountIdToString', () => {
       const result = stringToAccountId(value, context);
 
       expect(result).toEqual(fakeResult);
+    });
+
+    it('should throw an error if the passed string is not a valid SS58 formatted address', () => {
+      const value = 'notAnAddress';
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => stringToAccountId(value, context)).toThrow(
+        'The supplied address is not a valid SS58 address'
+      );
     });
   });
 

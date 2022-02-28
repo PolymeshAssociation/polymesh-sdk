@@ -12,6 +12,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -29,6 +30,7 @@ describe('transferPolyx procedure', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    sinon.stub(utilsInternalModule, 'assertAddressValid');
   });
 
   beforeEach(() => {
@@ -44,6 +46,7 @@ describe('transferPolyx procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+    sinon.restore();
   });
 
   it('should throw an error if the user has insufficient balance to transfer', () => {
