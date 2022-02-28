@@ -25,7 +25,7 @@ import {
   stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
-import { asIdentity,assembleBatchTransactions } from '~/utils/internal';
+import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
 import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
 
 interface AddClaimsParams {
