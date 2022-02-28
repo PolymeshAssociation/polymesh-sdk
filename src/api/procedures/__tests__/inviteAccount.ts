@@ -73,7 +73,7 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const expiry = new Date('1/1/2040');
     const target = new Account({ address }, mockContext);
     const account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
@@ -198,7 +198,7 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  test('should throw an error if the passed Account is already part of an Identity', () => {
+  it('should throw an error if the passed Account is already part of an Identity', () => {
     const identity = entityMockUtils.getIdentityInstance();
     const targetAccount = entityMockUtils.getAccountInstance({
       address: 'someAddress',
@@ -216,7 +216,7 @@ describe('inviteAccount procedure', () => {
     );
   });
 
-  test('should throw an error if the passed Account has a pending authorization to accept', () => {
+  it('should throw an error if the passed Account has a pending authorization to accept', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
     });

@@ -55,7 +55,7 @@ describe('Schedules class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Schedules.prototype instanceof Namespace).toBe(true);
   });
 
@@ -64,7 +64,7 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<CheckpointSchedule>;
       const args = {
         start: null,
@@ -91,7 +91,7 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const args = {
         schedule: new BigNumber(1),
@@ -124,7 +124,7 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    test('should return the requested Checkpoint Schedule', async () => {
+    it('should return the requested Checkpoint Schedule', async () => {
       const fakeResult = {
         schedule: entityMockUtils.getCheckpointScheduleInstance({ id }),
         details: {
@@ -139,7 +139,7 @@ describe('Schedules class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should throw an error if the Schedule does not exist', () => {
+    it('should throw an error if the Schedule does not exist', () => {
       getStub.resolves([]);
 
       return expect(schedules.getOne({ id })).rejects.toThrow('The Schedule does not exist');
@@ -151,7 +151,7 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    test('should return the current checkpoint schedules', async () => {
+    it('should return the current checkpoint schedules', async () => {
       const rawTicker = dsMockUtils.createMockTicker(ticker);
       const id = new BigNumber(1);
       const start = new Date('10/14/1987');
@@ -207,7 +207,7 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    test('should return the complexity of the passed period', () => {
+    it('should return the complexity of the passed period', () => {
       const period = {
         unit: CalendarUnit.Month,
         amount: new BigNumber(7),
@@ -224,7 +224,7 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    test('should return the sum of the complexity of all schedules', async () => {
+    it('should return the sum of the complexity of all schedules', async () => {
       const getStub = sinon.stub(schedules, 'get');
       getStub.resolves([
         {
@@ -257,7 +257,7 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    test('should return the maximum complexity from the chain', async () => {
+    it('should return the maximum complexity from the chain', async () => {
       dsMockUtils.createQueryStub('checkpoint', 'schedulesMaxComplexity', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(20)),
       });

@@ -56,7 +56,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a remove primary issuance agent transaction to the queue', async () => {
+  it('should add a remove primary issuance agent transaction to the queue', async () => {
     const args = {
       ticker,
     };
@@ -77,7 +77,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
-  test('should throw an error if Primary Issuance Agent list has more than one Identity', () => {
+  it('should throw an error if primary issuance agent list has more than one Identity', () => {
     const args = {
       ticker,
     };
@@ -101,7 +101,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

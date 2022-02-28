@@ -76,7 +76,7 @@ describe('modifySignerPermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a batch of Set Permission To Signer transactions to the queue', async () => {
+  it('should add a batch of Set Permission To Signer transactions to the queue', async () => {
     let secondaryAccounts: PermissionedAccount[] = [
       {
         account,
@@ -156,7 +156,7 @@ describe('modifySignerPermissions procedure', () => {
     });
   });
 
-  test('should throw an error if at least one of the Accounts for which to modify permissions is not a secondary Account for the Identity', () => {
+  it('should throw an error if at least one of the Accounts for which to modify permissions is not a secondary Account for the Identity', () => {
     const secondaryAccounts = [
       {
         account: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),

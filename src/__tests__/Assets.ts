@@ -51,7 +51,7 @@ describe('Assets Class', () => {
   });
 
   describe('method: reserveTicker', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         ticker: 'SOME_TICKER',
       };
@@ -70,7 +70,7 @@ describe('Assets Class', () => {
   });
 
   describe('method: createAsset', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'FAKE_TICKER';
 
       const args = {
@@ -99,7 +99,7 @@ describe('Assets Class', () => {
   });
 
   describe('method: claimClassicTicker', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         ticker: 'SOME_TICKER',
         ethereumSignature: 'someSig',
@@ -123,7 +123,7 @@ describe('Assets Class', () => {
       entityMockUtils.reset();
     });
 
-    test('should return true if ticker is available to reserve it', async () => {
+    it('should return true if ticker is available to reserve it', async () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: {
           details: {
@@ -139,7 +139,7 @@ describe('Assets Class', () => {
       expect(isTickerAvailable).toBeTruthy();
     });
 
-    test('should return false if ticker is not available to reserve it', async () => {
+    it('should return false if ticker is not available to reserve it', async () => {
       entityMockUtils.configureMocks({
         tickerReservationOptions: {
           details: {
@@ -155,7 +155,7 @@ describe('Assets Class', () => {
       expect(isTickerAvailable).toBeFalsy();
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
       entityMockUtils.configureMocks({
@@ -189,7 +189,7 @@ describe('Assets Class', () => {
       sinon.restore();
     });
 
-    test('should return a list of ticker reservations if did parameter is set', async () => {
+    it('should return a list of ticker reservations if did parameter is set', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
@@ -210,7 +210,7 @@ describe('Assets Class', () => {
       expect(tickerReservations[0].ticker).toBe(fakeTicker);
     });
 
-    test('should return a list of ticker reservations owned by the Identity', async () => {
+    it('should return a list of ticker reservations owned by the Identity', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
@@ -231,7 +231,7 @@ describe('Assets Class', () => {
       expect(tickerReservations[0].ticker).toBe(fakeTicker);
     });
 
-    test('should filter out tickers with unreadable characters', async () => {
+    it('should filter out tickers with unreadable characters', async () => {
       const fakeTicker = 'TEST';
       const unreadableTicker = String.fromCharCode(65533);
       const did = 'someDid';
@@ -263,7 +263,7 @@ describe('Assets Class', () => {
   });
 
   describe('method: getTickerReservation', () => {
-    test('should return a specific ticker reservation owned by the Identity', async () => {
+    it('should return a specific ticker reservation owned by the Identity', async () => {
       const ticker = 'TEST';
       const expiry = new Date();
 
@@ -280,7 +280,7 @@ describe('Assets Class', () => {
       expect(tickerReservation.ticker).toBe(ticker);
     });
 
-    test('should throw if ticker reservation does not exist', async () => {
+    it('should throw if ticker reservation does not exist', async () => {
       const ticker = 'TEST';
 
       dsMockUtils.createQueryStub('asset', 'tickers', {
@@ -295,7 +295,7 @@ describe('Assets Class', () => {
       );
     });
 
-    test('should throw if ticker is already an Asset', async () => {
+    it('should throw if ticker is already an Asset', async () => {
       const ticker = 'TEST';
 
       dsMockUtils.createQueryStub('asset', 'tickers', {
@@ -312,14 +312,14 @@ describe('Assets Class', () => {
   });
 
   describe('method: getAsset', () => {
-    test('should return a specific Asset', async () => {
+    it('should return a specific Asset', async () => {
       const ticker = 'TEST';
 
       const asset = await assets.getAsset({ ticker });
       expect(asset.ticker).toBe(ticker);
     });
 
-    test('should throw if the Asset does not exist', async () => {
+    it('should throw if the Asset does not exist', async () => {
       const ticker = 'TEST';
       entityMockUtils.configureMocks({ assetOptions: { exists: false } });
 
@@ -338,7 +338,7 @@ describe('Assets Class', () => {
       sinon.restore();
     });
 
-    test('should return a list of Assets owned by the supplied did', async () => {
+    it('should return a list of Assets owned by the supplied did', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
@@ -359,7 +359,7 @@ describe('Assets Class', () => {
       expect(asset[0].ticker).toBe(fakeTicker);
     });
 
-    test('should return a list of Assets owned by the signing Identity if no did is supplied', async () => {
+    it('should return a list of Assets owned by the signing Identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
@@ -380,7 +380,7 @@ describe('Assets Class', () => {
       expect(assetResults[0].ticker).toBe(fakeTicker);
     });
 
-    test('should filter out Assets whose tickers have unreadable characters', async () => {
+    it('should filter out Assets whose tickers have unreadable characters', async () => {
       const fakeTicker = 'TEST';
       const unreadableTicker = String.fromCharCode(65533);
       const did = 'someDid';

@@ -66,7 +66,7 @@ describe('Permissions class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Permissions.prototype instanceof Namespace).toBe(true);
   });
 
@@ -75,7 +75,7 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         ticker: asset.ticker,
         permissions: { transactions: {} as TransactionPermissions },
@@ -99,7 +99,7 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         ticker: asset.ticker,
         target,
@@ -124,7 +124,7 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         ticker: asset.ticker,
         target,
@@ -148,7 +148,7 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    test('should retrieve a specific Custom Permission Group', async () => {
+    it('should retrieve a specific Custom Permission Group', async () => {
       entityMockUtils.configureMocks({
         customPermissionGroupOptions: {
           ticker,
@@ -162,7 +162,7 @@ describe('Permissions class', () => {
       expect(result.asset.ticker).toBe(ticker);
     });
 
-    test('should throw an error if the Custom Permission Group does not exist', () => {
+    it('should throw an error if the Custom Permission Group does not exist', () => {
       const id = new BigNumber(1);
 
       entityMockUtils.configureMocks({ customPermissionGroupOptions: { exists: false } });
@@ -172,7 +172,7 @@ describe('Permissions class', () => {
       );
     });
 
-    test('should retrieve a specific Known Permission Group', async () => {
+    it('should retrieve a specific Known Permission Group', async () => {
       entityMockUtils.configureMocks({
         knownPermissionGroupOptions: {
           ticker,
@@ -192,7 +192,7 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all the permission groups of the Asset', async () => {
+    it('should retrieve all the permission groups of the Asset', async () => {
       const id = new BigNumber(1);
 
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
@@ -218,7 +218,7 @@ describe('Permissions class', () => {
   });
 
   describe('method: getAgents', () => {
-    test('should retrieve a list of agent Identities', async () => {
+    it('should retrieve a list of agent Identities', async () => {
       const did = 'someDid';
       const otherDid = 'otherDid';
       const customId = new BigNumber(1);

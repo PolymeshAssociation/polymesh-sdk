@@ -88,7 +88,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Authorization Request is expired', () => {
+  it('should throw an error if the Authorization Request is expired', () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -125,7 +125,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     ).rejects.toThrow('The Authorization Request has expired');
   });
 
-  test('should throw an error if the target Account is already part of an Identity', () => {
+  it('should throw an error if the target Account is already part of an Identity', () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -162,7 +162,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     ).rejects.toThrow('The target Account already has an associated Identity');
   });
 
-  test('should add a joinIdentityAsKey transaction to the queue if the target is an Account', async () => {
+  it('should add a joinIdentityAsKey transaction to the queue if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -209,7 +209,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
   });
 
-  test('should add a rotatePrimaryKeyToSecondary transaction to the queue if the target is an Account', async () => {
+  it('should add a rotatePrimaryKeyToSecondary transaction to the queue if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -256,7 +256,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
   });
 
-  test('should add an acceptPrimaryKey transaction to the queue if called with RotatePrimaryKey', async () => {
+  it('should add an acceptPrimaryKey transaction to the queue if called with RotatePrimaryKey', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -297,7 +297,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
   });
 
-  test('should throw if called with an Authorization that is not JoinIdentity, RotatePrimaryKeyToSecondary or RotatePrimaryKey', async () => {
+  it('should throw if called with an Authorization that is not JoinIdentity, RotatePrimaryKeyToSecondary or RotatePrimaryKey', async () => {
     const proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -341,7 +341,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     expect(error).toEqual(expectedError);
   });
 
-  test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
+  it('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
     let proc = procedureMockUtils.getInstance<
       ConsumeJoinOrRotateAuthorizationParams,
       void,
@@ -428,7 +428,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test("should return the signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
+    it("should return the signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
         ConsumeJoinOrRotateAuthorizationParams,
         void,
@@ -449,7 +449,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<
         ConsumeJoinOrRotateAuthorizationParams,
         void,

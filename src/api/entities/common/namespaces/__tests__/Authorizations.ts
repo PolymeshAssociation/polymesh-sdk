@@ -36,7 +36,7 @@ describe('Authorizations class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Authorizations.prototype instanceof Namespace).toBe(true);
   });
 
@@ -61,7 +61,7 @@ describe('Authorizations class', () => {
       );
     });
 
-    test('should retrieve all pending authorizations received by the Identity and filter out expired ones', async () => {
+    it('should retrieve all pending authorizations received by the Identity and filter out expired ones', async () => {
       const did = 'someDid';
       const filter = AuthorizationType.RotatePrimaryKey;
       const context = dsMockUtils.getContextInstance({ did });
@@ -146,7 +146,7 @@ describe('Authorizations class', () => {
       sinon.stub(utilsConversionModule, 'bigNumberToU64');
     });
 
-    test('should return the requested Authorization Request', async () => {
+    it('should return the requested Authorization Request', async () => {
       const did = 'someDid';
       const issuerDid = 'alice';
       const context = dsMockUtils.getContextInstance({ did });
@@ -181,7 +181,7 @@ describe('Authorizations class', () => {
       expect(result.issuer.did).toEqual(issuerDid);
     });
 
-    test('should throw an error if the Authorization Request does not exist', async () => {
+    it('should throw an error if the Authorization Request does not exist', async () => {
       const did = 'someDid';
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });

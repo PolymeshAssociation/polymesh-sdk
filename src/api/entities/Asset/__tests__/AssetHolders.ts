@@ -65,7 +65,7 @@ describe('AssetHolder class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(AssetHolders.prototype instanceof Namespace).toBe(true);
   });
 
@@ -74,7 +74,7 @@ describe('AssetHolder class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all the Asset Holders with balance', async () => {
+    it('should retrieve all the Asset Holders with balance', async () => {
       dsMockUtils.createQueryStub('asset', 'balanceOf');
 
       const expectedHolders: IdentityBalance[] = [];
@@ -112,7 +112,7 @@ describe('AssetHolder class', () => {
       expect(result.next).toBeNull();
     });
 
-    test('should retrieve the first page of results with only one Asset Holder', async () => {
+    it('should retrieve the first page of results with only one Asset Holder', async () => {
       dsMockUtils.createQueryStub('asset', 'balanceOf');
 
       const expectedHolders: IdentityBalance[] = [];

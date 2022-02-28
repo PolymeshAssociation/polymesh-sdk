@@ -28,12 +28,12 @@ describe('TickerReservation class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(TickerReservation.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign ticker to instance', () => {
+    it('should assign ticker to instance', () => {
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -42,7 +42,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(TickerReservation.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
       expect(TickerReservation.isUniqueIdentifiers({})).toBe(false);
       expect(TickerReservation.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
@@ -58,7 +58,7 @@ describe('TickerReservation class', () => {
       queryMultiStub = dsMockUtils.getQueryMultiStub();
     });
 
-    test('should return details for a free ticker', async () => {
+    it('should return details for a free ticker', async () => {
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -76,7 +76,7 @@ describe('TickerReservation class', () => {
       });
     });
 
-    test('should return details for a reserved ticker', async () => {
+    it('should return details for a reserved ticker', async () => {
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() + 100000);
       const context = dsMockUtils.getContextInstance();
@@ -101,7 +101,7 @@ describe('TickerReservation class', () => {
       });
     });
 
-    test('should return details for a permanently reserved ticker', async () => {
+    it('should return details for a permanently reserved ticker', async () => {
       const ownerDid = 'someDid';
       const expiryDate = null;
       const context = dsMockUtils.getContextInstance();
@@ -124,7 +124,7 @@ describe('TickerReservation class', () => {
       });
     });
 
-    test('should return details for a ticker for which a reservation expired', async () => {
+    it('should return details for a ticker for which a reservation expired', async () => {
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() - 100000);
       const context = dsMockUtils.getContextInstance();
@@ -149,7 +149,7 @@ describe('TickerReservation class', () => {
       });
     });
 
-    test('should return details for a ticker for which an Asset has already been created', async () => {
+    it('should return details for a ticker for which an Asset has already been created', async () => {
       const ownerDid = 'someDid';
       const expiryDate = null;
       const context = dsMockUtils.getContextInstance();
@@ -179,7 +179,7 @@ describe('TickerReservation class', () => {
       });
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -203,7 +203,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: extend', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -226,7 +226,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: createAsset', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
@@ -256,7 +256,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: transferOwnership', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
       const target = 'someOtherDid';
@@ -282,7 +282,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the Reservation exists', async () => {
+    it('should return whether the Reservation exists', async () => {
       const context = dsMockUtils.getContextInstance();
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
@@ -303,7 +303,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 

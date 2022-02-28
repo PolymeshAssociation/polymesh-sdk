@@ -43,7 +43,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('constructor', () => {
-    test('should set the arguments, fees and list of transactions', () => {
+    it('should set the arguments, fees and list of transactions', () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -59,7 +59,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('method: run', () => {
-    test("should run each transaction in the queue and return the queue's return value, unwrapping it if it is a PostTransactionValue and transforming it if there is a transform function", async () => {
+    it("should run each transaction in the queue and return the queue's return value, unwrapping it if it is a PostTransactionValue and transforming it if there is a transform function", async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -105,7 +105,7 @@ describe('Transaction Queue class', () => {
       expect(returned).toBe(procedureResult);
     });
 
-    test('should update the queue status', async () => {
+    it('should update the queue status', async () => {
       const transactionSpecs = [
         {
           args: [12],
@@ -153,7 +153,7 @@ describe('Transaction Queue class', () => {
       expect(queue.status).toBe(TransactionQueueStatus.Failed);
     });
 
-    test('should throw an error if a critical transaction fails', () => {
+    it('should throw an error if a critical transaction fails', () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -177,7 +177,7 @@ describe('Transaction Queue class', () => {
       return expect(runPromise).rejects.toThrow('Transaction Error');
     });
 
-    test("should throw an error if the signing Account doesn't have enough balance to pay the transaction fees", () => {
+    it("should throw an error if the signing Account doesn't have enough balance to pay the transaction fees", () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -212,7 +212,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test("should throw an error if any third party Account doesn't have enough balance to pay the transaction fees", () => {
+    it("should throw an error if any third party Account doesn't have enough balance to pay the transaction fees", () => {
       const account1 = entityMockUtils.getAccountInstance({
         address: 'account1',
         getBalance: {
@@ -272,7 +272,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test("should throw an error if any third party Account doesn't have enough allowance to pay the transaction fees", () => {
+    it("should throw an error if any third party Account doesn't have enough allowance to pay the transaction fees", () => {
       const account = entityMockUtils.getAccountInstance({
         getBalance: {
           free: new BigNumber(1000),
@@ -323,7 +323,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test('should throw an error if the caller is subsidized but one or more transactions cannot be subsidized', () => {
+    it('should throw an error if the caller is subsidized but one or more transactions cannot be subsidized', () => {
       const account1 = entityMockUtils.getAccountInstance({
         address: 'account1',
         getBalance: {
@@ -384,7 +384,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test('should succeed if the only failures are from non-critical transactions', async () => {
+    it('should succeed if the only failures are from non-critical transactions', async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -414,7 +414,7 @@ describe('Transaction Queue class', () => {
       expect(err).toBeUndefined();
     });
 
-    test('should throw an error if attempting to run a queue that has already run', async () => {
+    it('should throw an error if attempting to run a queue that has already run', async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -440,7 +440,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('method: onStatusChange', () => {
-    test("should execute a callback when the queue's status changes", async () => {
+    it("should execute a callback when the queue's status changes", async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -461,7 +461,7 @@ describe('Transaction Queue class', () => {
       sinon.assert.calledWith(listenerStub.secondCall, TransactionQueueStatus.Succeeded);
     });
 
-    test('should return an unsubscribe function', async () => {
+    it('should return an unsubscribe function', async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -493,7 +493,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('method: onTransactionStatusChange', () => {
-    test("should execute a callback when the a transaction's status changes", async () => {
+    it("should execute a callback when the a transaction's status changes", async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -527,7 +527,7 @@ describe('Transaction Queue class', () => {
       sinon.assert.calledWith(listenerStub.secondCall, TransactionStatus.Succeeded);
     });
 
-    test('should return an unsubscribe function', async () => {
+    it('should return an unsubscribe function', async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -576,7 +576,7 @@ describe('Transaction Queue class', () => {
       });
     });
 
-    test("should execute a callback when the queue's data has been processed", async () => {
+    it("should execute a callback when the queue's data has been processed", async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -611,7 +611,7 @@ describe('Transaction Queue class', () => {
       sinon.assert.calledWith(listenerStub.firstCall, undefined);
     });
 
-    test('should execute a callback with an error if 10 seconds pass without the data being processed', async () => {
+    it('should execute a callback with an error if 10 seconds pass without the data being processed', async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -641,7 +641,7 @@ describe('Transaction Queue class', () => {
       expect(listenerStub.getCall(0).args[0].message).toBe('Timed out');
     });
 
-    test('should throw an error if the middleware is not enabled', async () => {
+    it('should throw an error if the middleware is not enabled', async () => {
       dsMockUtils.initMocks({ contextOptions: { middlewareEnabled: false } });
 
       const transactionSpecs = [
@@ -661,7 +661,7 @@ describe('Transaction Queue class', () => {
       );
     });
 
-    test('should return an unsubscribe function', async () => {
+    it('should return an unsubscribe function', async () => {
       const transactionSpecs = [
         {
           args: [1],
@@ -698,7 +698,7 @@ describe('Transaction Queue class', () => {
   });
 
   describe('method: getMinFees', () => {
-    test('should return the sum of all transaction fees', async () => {
+    it('should return the sum of all transaction fees', async () => {
       const account = entityMockUtils.getAccountInstance({
         getBalance: {
           free: new BigNumber(1000),

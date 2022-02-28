@@ -127,7 +127,7 @@ describe('setTransferRestrictions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a batch of add transfer manager transactions to the queue', async () => {
+  it('should add a batch of add transfer manager transactions to the queue', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -154,7 +154,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(result).toEqual(new BigNumber(1));
   });
 
-  test('should add a batch of remove transfer manager transactions to the queue', async () => {
+  it('should add a batch of remove transfer manager transactions to the queue', async () => {
     args = {
       type: TransferRestrictionType.Count,
       restrictions: [],
@@ -187,7 +187,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(result).toEqual(new BigNumber(0));
   });
 
-  test('should add a batch of add exempted entities transaction to the queue', async () => {
+  it('should add a batch of add exempted entities transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -214,7 +214,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(result).toEqual(new BigNumber(0));
   });
 
-  test('should add a batch of remove exempted entities transaction to the queue', async () => {
+  it('should add a batch of remove exempted entities transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -241,7 +241,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(result).toEqual(new BigNumber(0));
   });
 
-  test('should throw an error if attempting to add restrictions that already exist', async () => {
+  it('should throw an error if attempting to add restrictions that already exist', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -269,7 +269,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.message).toBe('The supplied restrictions are already in place');
   });
 
-  test('should throw an error if attempting to remove an empty restriction list', async () => {
+  it('should throw an error if attempting to remove an empty restriction list', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -293,7 +293,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.message).toBe('There are no restrictions to remove');
   });
 
-  test('should throw an error if attempting to add more restrictions than there are slots available', async () => {
+  it('should throw an error if attempting to add more restrictions than there are slots available', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -320,7 +320,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.data).toEqual({ availableSlots: new BigNumber(0) });
   });
 
-  test('should throw an error if exempted scope IDs are repeated for a restriction', async () => {
+  it('should throw an error if exempted scope IDs are repeated for a restriction', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -347,7 +347,7 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
@@ -459,7 +459,7 @@ describe('setTransferRestrictions procedure', () => {
       sinon.restore();
     });
 
-    test('should fetch, process and return shared data', async () => {
+    it('should fetch, process and return shared data', async () => {
       const getCountStub = sinon.stub();
       getCountStub.resolves({
         restrictions: [],

@@ -69,7 +69,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the user has not passed any arguments', () => {
+  it('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareModifyCaDefaultConfig.call(proc, {} as unknown as Params)).rejects.toThrow(
@@ -77,7 +77,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     );
   });
 
-  test('should throw an error if the new targets are the same as the current ones', () => {
+  it('should throw an error if the new targets are the same as the current ones', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const targets = {
@@ -96,7 +96,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     ).rejects.toThrow('New targets are the same as the current ones');
   });
 
-  test('should throw an error if the new default tax withholding is the same as the current one', () => {
+  it('should throw an error if the new default tax withholding is the same as the current one', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const defaultTaxWithholding = new BigNumber(10);
@@ -112,7 +112,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     ).rejects.toThrow('New default tax withholding is the same as the current one');
   });
 
-  test('should throw an error if the new tax withholdings are the same as the current ones', () => {
+  it('should throw an error if the new tax withholdings are the same as the current ones', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const taxWithholdings = [
@@ -133,7 +133,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     ).rejects.toThrow('New per-Identity tax withholding percentages are the same as current ones');
   });
 
-  test('should add a set default targets transaction to the queue', async () => {
+  it('should add a set default targets transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultTargets');
@@ -194,7 +194,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     );
   });
 
-  test('should add a set default withholding tax transaction to the queue', async () => {
+  it('should add a set default withholding tax transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultWithholdingTax');
@@ -221,7 +221,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     );
   });
 
-  test('should add a batch of set did withholding tax transactions to the queue', async () => {
+  it('should add a batch of set did withholding tax transactions to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDidWithholdingTax');
@@ -263,7 +263,7 @@ describe('modifyCaDefaultConfig procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

@@ -80,7 +80,7 @@ describe('Context class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if accessing the transaction submodule without an active Account', async () => {
+  it('should throw an error if accessing the transaction submodule without an active Account', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -92,7 +92,7 @@ describe('Context class', () => {
     );
   });
 
-  test('should throw an error if accessing the middleware client without an active connection', async () => {
+  it('should throw an error if accessing the middleware client without an active connection', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: null,
@@ -103,7 +103,7 @@ describe('Context class', () => {
     );
   });
 
-  test('should check if the middleware client is equal to the instance passed to the constructor', async () => {
+  it('should check if the middleware client is equal to the instance passed to the constructor', async () => {
     const middlewareApi = dsMockUtils.getMiddlewareApi();
 
     const context = await Context.create({
@@ -132,7 +132,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should create a Context object with a Signing Manager attached', async () => {
+    it('should create a Context object with a Signing Manager attached', async () => {
       const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({
@@ -146,7 +146,7 @@ describe('Context class', () => {
       expect(context.getSigningAddress()).toEqual(address);
     });
 
-    test('should create a Context object without a Signing Manager attached', async () => {
+    it('should create a Context object without a Signing Manager attached', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -167,7 +167,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should retrieve an array of Accounts', async () => {
+    it('should retrieve an array of Accounts', async () => {
       const addresses = [
         '5GNWrbft4pJcYSak9tkvUy89e2AKimEwHb6CKaJq81KHEj8e',
         '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
@@ -198,7 +198,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should throw error if the passed address does not exist in the Signing Manager', async () => {
+    it('should throw error if the passed address does not exist in the Signing Manager', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -212,7 +212,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should set the passed value as signing address', async () => {
+    it('should set the passed value as signing address', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -238,7 +238,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should set the passed value as Signing Manager', async () => {
+    it('should set the passed value as Signing Manager', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -273,7 +273,7 @@ describe('Context class', () => {
     const miscFrozen = new BigNumber(50);
     const feeFrozen = new BigNumber(25);
 
-    test('should throw if there is no signing Account and no Account is passed', async () => {
+    it('should throw if there is no signing Account and no Account is passed', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -284,7 +284,7 @@ describe('Context class', () => {
       );
     });
 
-    test('should return the signer Account POLYX balance if no address is passed', async () => {
+    it('should return the signer Account POLYX balance if no address is passed', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -312,7 +312,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the Account POLYX balance if an address is passed', async () => {
+    it('should return the Account POLYX balance if an address is passed', async () => {
       const returnValue = dsMockUtils.createMockAccountInfo({
         nonce: dsMockUtils.createMockIndex(),
         refcount: dsMockUtils.createMockRefCount(),
@@ -339,7 +339,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
       const returnValue = dsMockUtils.createMockAccountInfo({
@@ -384,7 +384,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test("should return the current signer Account's Subsidy with allowance if no address is passed", async () => {
+    it("should return the current signer Account's Subsidy with allowance if no address is passed", async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -414,7 +414,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return the Account Subsidy and allowance if an address is passed', async () => {
+    it('should return the Account Subsidy and allowance if an address is passed', async () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
@@ -441,7 +441,7 @@ describe('Context class', () => {
       });
     });
 
-    test('should return null if the Account has no subsidizer', async () => {
+    it('should return null if the Account has no subsidizer', async () => {
       const returnValue = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
@@ -456,7 +456,7 @@ describe('Context class', () => {
       expect(result).toBeNull();
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
@@ -503,7 +503,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the signing Identity', async () => {
+    it('should return the signing Identity', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockIdentityId(did),
@@ -519,7 +519,7 @@ describe('Context class', () => {
       expect(result.did).toBe(did);
     });
 
-    test('should throw an error if there is no Identity associated to the signing Account', async () => {
+    it('should throw an error if there is no Identity associated to the signing Account', async () => {
       entityMockUtils.configureMocks({
         accountOptions: {
           getIdentity: null,
@@ -547,7 +547,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the signing Account', async () => {
+    it('should return the signing Account', async () => {
       const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({
@@ -562,7 +562,7 @@ describe('Context class', () => {
       expect(result).toEqual(expect.objectContaining({ address }));
     });
 
-    test('should throw an error if there is no Account associated with the SDK', async () => {
+    it('should throw an error if there is no Account associated with the SDK', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -585,7 +585,7 @@ describe('Context class', () => {
 
     const did = 'someDid';
 
-    test('should return an Identity if given an Identity', async () => {
+    it('should return an Identity if given an Identity', async () => {
       entityMockUtils.configureMocks({
         identityOptions: {
           did,
@@ -601,7 +601,7 @@ describe('Context class', () => {
       expect(result).toEqual(expect.objectContaining({ did }));
     });
 
-    test('should return an Identity if given a valid DID', async () => {
+    it('should return an Identity if given a valid DID', async () => {
       entityMockUtils.configureMocks({
         identityOptions: {
           did,
@@ -617,7 +617,7 @@ describe('Context class', () => {
       expect(result).toEqual(expect.objectContaining({ did }));
     });
 
-    test('should throw if the Identity does not exist', async () => {
+    it('should throw if the Identity does not exist', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -653,7 +653,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the signing address', async () => {
+    it('should return the signing address', async () => {
       const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 
       const context = await Context.create({
@@ -677,7 +677,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should get and return an external signer from the Signing Manager', async () => {
+    it('should get and return an external signer from the Signing Manager', async () => {
       const signer = 'signer' as PolkadotSigner;
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -701,7 +701,7 @@ describe('Context class', () => {
     });
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    test('should return which DIDs in the input array are invalid', async () => {
+    it('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
       dsMockUtils.createQueryStub('identity', 'didRecords', {
         multi: [
@@ -742,7 +742,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the fees associated to the supplied transaction', async () => {
+    it('should return the fees associated to the supplied transaction', async () => {
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
@@ -782,7 +782,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return a representation of the arguments of a transaction', async () => {
+    it('should return a representation of the arguments of a transaction', async () => {
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
@@ -1028,7 +1028,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return a result set of claims', async () => {
+    it('should return a result set of claims', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1140,7 +1140,7 @@ describe('Context class', () => {
       expect(result.next).toBeNull();
     });
 
-    test('should return a result set of claims from chain', async () => {
+    it('should return a result set of claims from chain', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1272,7 +1272,7 @@ describe('Context class', () => {
       expect(result.data.length).toEqual(0);
     });
 
-    test('should throw if the middleware is not available and targets or claimTypes are not set', async () => {
+    it('should throw if the middleware is not available and targets or claimTypes are not set', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1299,7 +1299,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should throw if the middleware query fails', async () => {
+    it('should throw if the middleware query fails', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1324,7 +1324,7 @@ describe('Context class', () => {
       ).rejects.toThrow('Error in middleware query: Some Message');
     });
 
-    test('should perform a middleware query and return the results', async () => {
+    it('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
       const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
 
@@ -1350,7 +1350,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the latest block', async () => {
+    it('should return the latest block', async () => {
       const blockNumber = new BigNumber(100);
 
       dsMockUtils.createRpcStub('chain', 'getHeader', {
@@ -1379,7 +1379,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return the network version', async () => {
+    it('should return the network version', async () => {
       const version = '1.0.0';
 
       dsMockUtils.createRpcStub('system', 'version', {
@@ -1406,7 +1406,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return true if the middleware is enabled', async () => {
+    it('should return true if the middleware is enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1417,7 +1417,7 @@ describe('Context class', () => {
       expect(result).toBe(true);
     });
 
-    test('should return false if the middleware is not enabled', async () => {
+    it('should return false if the middleware is not enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
@@ -1438,7 +1438,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return true if the middleware is available', async () => {
+    it('should return true if the middleware is available', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1451,7 +1451,7 @@ describe('Context class', () => {
       expect(result).toBe(true);
     });
 
-    test('should return false if the middleware is not enabled', async () => {
+    it('should return false if the middleware is not enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
@@ -1474,7 +1474,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should disconnect everything and leave the instance unusable', async () => {
+    it('should disconnect everything and leave the instance unusable', async () => {
       const polymeshApi = dsMockUtils.getApiInstance();
       const middlewareApi = dsMockUtils.getMiddlewareApi();
       let context = await Context.create({
@@ -1518,7 +1518,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return all distributions associated to the passed assets', async () => {
+    it('should return all distributions associated to the passed assets', async () => {
       const tickers = ['TICKER_0', 'TICKER_1', 'TICKER_2'];
       const rawTickers = tickers.map(dsMockUtils.createMockTicker);
 
@@ -1694,7 +1694,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return a cloned instance', async () => {
+    it('should return a cloned instance', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1716,7 +1716,7 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    test('should return whether the specified transaction supports subsidies', async () => {
+    it('should return whether the specified transaction supports subsidies', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),

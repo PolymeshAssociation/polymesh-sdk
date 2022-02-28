@@ -145,7 +145,7 @@ describe('modifyClaims procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if some of the supplied target dids don't exist", async () => {
+  it("should throw an error if some of the supplied target dids don't exist", async () => {
     dsMockUtils.configureMocks({ contextOptions: { invalidDids: [otherDid] } });
 
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
@@ -163,13 +163,13 @@ describe('modifyClaims procedure', () => {
   });
 
   describe('groupByDid', () => {
-    test('should return the DID of the target identity', () => {
+    it('should return the DID of the target identity', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(groupByDid([rawOtherDid] as any)).toBe(otherDid);
     });
   });
 
-  test('should add a batch of add claim transactions to the queue', async () => {
+  it('should add a batch of add claim transactions to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         issuedClaims: {
@@ -265,7 +265,7 @@ describe('modifyClaims procedure', () => {
     });
   });
 
-  test('should throw an error if any of the CDD IDs of the claims that will be added are not equal to the CDD ID of current CDD claims', async () => {
+  it('should throw an error if any of the CDD IDs of the claims that will be added are not equal to the CDD ID of current CDD claims', async () => {
     const otherId = 'otherId';
     dsMockUtils.configureMocks({
       contextOptions: {
@@ -347,7 +347,7 @@ describe('modifyClaims procedure', () => {
     expect(newCddId).toEqual(otherId);
   });
 
-  test("should throw an error if any of the claims that will be modified weren't issued by the signing Identity", async () => {
+  it("should throw an error if any of the claims that will be modified weren't issued by the signing Identity", async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
@@ -375,7 +375,7 @@ describe('modifyClaims procedure', () => {
     ).rejects.toThrow("Attempt to revoke claims that weren't issued by the signing Identity");
   });
 
-  test('should throw an error if any Investor Uniqueness claim has balance in a revoke operation', async () => {
+  it('should throw an error if any Investor Uniqueness claim has balance in a revoke operation', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
@@ -413,7 +413,7 @@ describe('modifyClaims procedure', () => {
     );
   });
 
-  test('should add a batch of revoke claim transactions to the queue', async () => {
+  it('should add a batch of revoke claim transactions to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
@@ -463,7 +463,7 @@ describe('modifyClaims procedure', () => {
 });
 
 describe('getAuthorization', () => {
-  test('should return the appropriate roles and permissions', () => {
+  it('should return the appropriate roles and permissions', () => {
     let args = {
       claims: [
         {

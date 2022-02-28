@@ -173,6 +173,7 @@ import {
   middlewareScopeToScope,
   moduleAddressToString,
   momentToDate,
+  offeringTierToPriceTier,
   percentageToPermill,
   permillToBigNumber,
   permissionGroupIdentifierToAgentGroup,
@@ -198,7 +199,6 @@ import {
   signerValueToSignatory,
   signerValueToSigner,
   storedScheduleToCheckpointScheduleParams,
-  stoTierToPriceTier,
   stringToAccountId,
   stringToAssetName,
   stringToBytes,
@@ -287,7 +287,7 @@ jest.mock(
 );
 
 describe('tickerToDid', () => {
-  test('should generate the ticker did', () => {
+  it('should generate the ticker did', () => {
     let ticker = 'someTicker';
     let result = tickerToDid(ticker);
 
@@ -318,24 +318,28 @@ describe('stringToAssetName and assetNameToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToAssetName should convert a string to a polkadot AssetName object', () => {
-    const value = 'someName';
-    const fakeResult = 'convertedName' as unknown as AssetName;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToAssetName', () => {
+    it('should convert a string to a polkadot AssetName object', () => {
+      const value = 'someName';
+      const fakeResult = 'convertedName' as unknown as AssetName;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AssetName', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('AssetName', value).returns(fakeResult);
 
-    const result = stringToAssetName(value, context);
+      const result = stringToAssetName(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('assetNameToString should convert a polkadot AssetName object to a string', () => {
-    const fakeResult = 'someAssetName';
-    const assetName = dsMockUtils.createMockAssetName(fakeResult);
+  describe('assetNameToString', () => {
+    it('should convert a polkadot AssetName object to a string', () => {
+      const fakeResult = 'someAssetName';
+      const assetName = dsMockUtils.createMockAssetName(fakeResult);
 
-    const result = assetNameToString(assetName);
-    expect(result).toEqual(fakeResult);
+      const result = assetNameToString(assetName);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -352,24 +356,28 @@ describe('booleanToBool and boolToBoolean', () => {
     dsMockUtils.cleanup();
   });
 
-  test('booleanToBool should convert a boolean to a polkadot bool object', () => {
-    const value = true;
-    const fakeResult = 'true' as unknown as bool;
-    const context = dsMockUtils.getContextInstance();
+  describe('booleanToBool', () => {
+    it('should convert a boolean to a polkadot bool object', () => {
+      const value = true;
+      const fakeResult = 'true' as unknown as bool;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('bool', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('bool', value).returns(fakeResult);
 
-    const result = booleanToBool(value, context);
+      const result = booleanToBool(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('boolToBoolean should convert a polkadot bool object to a boolean', () => {
-    const fakeResult = true;
-    const mockBool = dsMockUtils.createMockBool(fakeResult);
+  describe('boolToBoolean', () => {
+    it('should convert a polkadot bool object to a boolean', () => {
+      const fakeResult = true;
+      const mockBool = dsMockUtils.createMockBool(fakeResult);
 
-    const result = boolToBoolean(mockBool);
-    expect(result).toEqual(fakeResult);
+      const result = boolToBoolean(mockBool);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -386,24 +394,28 @@ describe('stringToBytes and bytesToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToBytes should convert a string to a polkadot Bytes object', () => {
-    const value = 'someBytes';
-    const fakeResult = 'convertedBytes' as unknown as Bytes;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToBytes', () => {
+    it('should convert a string to a polkadot Bytes object', () => {
+      const value = 'someBytes';
+      const fakeResult = 'convertedBytes' as unknown as Bytes;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Bytes', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('Bytes', value).returns(fakeResult);
 
-    const result = stringToBytes(value, context);
+      const result = stringToBytes(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('bytesToString should convert a polkadot Bytes object to a string', () => {
-    const fakeResult = 'someBytes';
-    const ticker = dsMockUtils.createMockBytes(fakeResult);
+  describe('bytesToString', () => {
+    it('should convert a polkadot Bytes object to a string', () => {
+      const fakeResult = 'someBytes';
+      const ticker = dsMockUtils.createMockBytes(fakeResult);
 
-    const result = bytesToString(ticker);
-    expect(result).toEqual(fakeResult);
+      const result = bytesToString(ticker);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -420,7 +432,7 @@ describe('stringToInvestorZKProofData', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToInvestorZKProofData should convert a string to a polkadot InvestorZKProofData object', () => {
+  it('should convert a string to a polkadot InvestorZKProofData object', () => {
     const value = 'someProof';
     const fakeResult = 'convertedProof' as unknown as InvestorZKProofData;
     const context = dsMockUtils.getContextInstance();
@@ -448,7 +460,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     dsMockUtils.cleanup();
   });
 
-  test('portfolioMovementToMovePortfolioItem should convert a portfolio item into a polkadot move portfolio item', () => {
+  it('should convert a portfolio item into a polkadot move portfolio item', () => {
     const context = dsMockUtils.getContextInstance();
     const ticker = 'SOME_ASSET';
     const amount = new BigNumber(100);
@@ -529,60 +541,64 @@ describe('stringToTicker and tickerToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToTicker should convert a string to a polkadot Ticker object', () => {
-    const value = 'SOME_TICKER';
-    const fakeResult = 'convertedTicker' as unknown as Ticker;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToTicker', () => {
+    it('should convert a string to a polkadot Ticker object', () => {
+      const value = 'SOME_TICKER';
+      const fakeResult = 'convertedTicker' as unknown as Ticker;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(value, 12)).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(value, 12)).returns(fakeResult);
 
-    const result = stringToTicker(value, context);
+      const result = stringToTicker(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if the string is empty', () => {
+      const value = '';
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => stringToTicker(value, context)).toThrow(
+        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+      );
+    });
+
+    it('should throw an error if the string length exceeds the max ticker length', () => {
+      const value = 'veryLongTicker';
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => stringToTicker(value, context)).toThrow(
+        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+      );
+    });
+
+    it('should throw an error if the string contains unreadable characters', () => {
+      const value = `Illegal ${String.fromCharCode(65533)}`;
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => stringToTicker(value, context)).toThrow(
+        'Only printable ASCII is allowed as ticker name'
+      );
+    });
+
+    it('should throw an error if the string is not in upper case', () => {
+      const value = 'FakeTicker';
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => stringToTicker(value, context)).toThrow(
+        'Ticker cannot contain lower case letters'
+      );
+    });
   });
 
-  test('stringToTicker should throw an error if the string is empty', () => {
-    const value = '';
-    const context = dsMockUtils.getContextInstance();
+  describe('tickerToString', () => {
+    it('should convert a polkadot Ticker object to a string', () => {
+      const fakeResult = 'someTicker';
+      const ticker = dsMockUtils.createMockTicker(fakeResult);
 
-    expect(() => stringToTicker(value, context)).toThrow(
-      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-    );
-  });
-
-  test('stringToTicker should throw an error if the string length exceeds the max ticker length', () => {
-    const value = 'veryLongTicker';
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => stringToTicker(value, context)).toThrow(
-      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-    );
-  });
-
-  test('stringToTicker should throw an error if the string contains unreadable characters', () => {
-    const value = `Illegal ${String.fromCharCode(65533)}`;
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => stringToTicker(value, context)).toThrow(
-      'Only printable ASCII is allowed as ticker name'
-    );
-  });
-
-  test('stringToTicker should throw an error if the string is not in upper case', () => {
-    const value = 'FakeTicker';
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => stringToTicker(value, context)).toThrow(
-      'Ticker cannot contain lower case letters'
-    );
-  });
-
-  test('tickerToString should convert a polkadot Ticker object to a string', () => {
-    const fakeResult = 'someTicker';
-    const ticker = dsMockUtils.createMockTicker(fakeResult);
-
-    const result = tickerToString(ticker);
-    expect(result).toEqual(fakeResult);
+      const result = tickerToString(ticker);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -599,27 +615,31 @@ describe('dateToMoment and momentToDate', () => {
     dsMockUtils.cleanup();
   });
 
-  test('dateToMoment should convert a Date to a polkadot Moment object', () => {
-    const value = new Date();
-    const fakeResult = 10000 as unknown as Moment;
-    const context = dsMockUtils.getContextInstance();
+  describe('dateToMoment', () => {
+    it('should convert a Date to a polkadot Moment object', () => {
+      const value = new Date();
+      const fakeResult = 10000 as unknown as Moment;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Moment', Math.round(value.getTime()))
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Moment', Math.round(value.getTime()))
+        .returns(fakeResult);
 
-    const result = dateToMoment(value, context);
+      const result = dateToMoment(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('momentToDate should convert a polkadot Moment object to a Date', () => {
-    const fakeResult = 10000;
-    const moment = dsMockUtils.createMockMoment(new BigNumber(fakeResult));
+  describe('momentToDate', () => {
+    it('should convert a polkadot Moment object to a Date', () => {
+      const fakeResult = 10000;
+      const moment = dsMockUtils.createMockMoment(new BigNumber(fakeResult));
 
-    const result = momentToDate(moment);
-    expect(result).toEqual(new Date(fakeResult));
+      const result = momentToDate(moment);
+      expect(result).toEqual(new Date(fakeResult));
+    });
   });
 });
 
@@ -636,24 +656,28 @@ describe('stringToAccountId and accountIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToAccountId should convert a string to a polkadot AccountId object', () => {
-    const value = 'someAccountId';
-    const fakeResult = 'convertedAccountId' as unknown as AccountId;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToAccountId', () => {
+    it('should convert a string to a polkadot AccountId object', () => {
+      const value = 'someAccountId';
+      const fakeResult = 'convertedAccountId' as unknown as AccountId;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AccountId', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('AccountId', value).returns(fakeResult);
 
-    const result = stringToAccountId(value, context);
+      const result = stringToAccountId(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('accountIdToString should convert a polkadot AccountId object to a string', () => {
-    const fakeResult = 'someAccountId';
-    const accountId = dsMockUtils.createMockAccountId(fakeResult);
+  describe('accountIdToString', () => {
+    it('should convert a polkadot AccountId object to a string', () => {
+      const fakeResult = 'someAccountId';
+      const accountId = dsMockUtils.createMockAccountId(fakeResult);
 
-    const result = accountIdToString(accountId);
-    expect(result).toEqual(fakeResult);
+      const result = accountIdToString(accountId);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -670,24 +694,28 @@ describe('stringToHash and hashToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToHash should convert a string to a polkadot Hash object', () => {
-    const value = 'someHash';
-    const fakeResult = 'convertedHash' as unknown as Hash;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToHash', () => {
+    it('should convert a string to a polkadot Hash object', () => {
+      const value = 'someHash';
+      const fakeResult = 'convertedHash' as unknown as Hash;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Hash', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('Hash', value).returns(fakeResult);
 
-    const result = stringToHash(value, context);
+      const result = stringToHash(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('hashToString should convert a polkadot Hash object to a string', () => {
-    const fakeResult = 'someHash';
-    const accountId = dsMockUtils.createMockHash(fakeResult);
+  describe('hashToString', () => {
+    it('should convert a polkadot Hash object to a string', () => {
+      const fakeResult = 'someHash';
+      const accountId = dsMockUtils.createMockHash(fakeResult);
 
-    const result = hashToString(accountId);
-    expect(result).toEqual(fakeResult);
+      const result = hashToString(accountId);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -704,24 +732,28 @@ describe('stringToIdentityId and identityIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToIdentityId should convert a did string into an IdentityId', () => {
-    const identity = 'IdentityObject';
-    const fakeResult = 'type' as unknown as IdentityId;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToIdentityId', () => {
+    it('should convert a did string into an IdentityId', () => {
+      const identity = 'IdentityObject';
+      const fakeResult = 'type' as unknown as IdentityId;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', identity).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('IdentityId', identity).returns(fakeResult);
 
-    const result = stringToIdentityId(identity, context);
+      const result = stringToIdentityId(identity, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('identityIdToString should convert an IdentityId to a did string', () => {
-    const fakeResult = 'IdentityString';
-    const identityId = dsMockUtils.createMockIdentityId(fakeResult);
+  describe('identityIdToString', () => {
+    it('should convert an IdentityId to a did string', () => {
+      const fakeResult = 'IdentityString';
+      const identityId = dsMockUtils.createMockIdentityId(fakeResult);
 
-    const result = identityIdToString(identityId);
-    expect(result).toBe(fakeResult);
+      const result = identityIdToString(identityId);
+      expect(result).toBe(fakeResult);
+    });
   });
 });
 
@@ -738,7 +770,7 @@ describe('stringToEcdsaSignature', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a signature string into a polkadot EcdsaSignature object', () => {
+  it('should convert a signature string into a polkadot EcdsaSignature object', () => {
     const signature = 'hexSig';
     const fakeResult = 'sig' as unknown as EcdsaSignature;
     const context = dsMockUtils.getContextInstance();
@@ -765,46 +797,50 @@ describe('signerValueToSignatory and signatoryToSignerValue', () => {
     sinon.restore();
   });
 
-  test('signerValueToSignatory should convert a SignerValue to a polkadot Signatory object', () => {
-    const value = {
-      type: SignerType.Identity,
-      value: 'someIdentity',
-    };
-    const fakeResult = 'SignatoryEnum' as unknown as Signatory;
-    const context = dsMockUtils.getContextInstance();
+  describe('signerValueToSignatory', () => {
+    it('should convert a SignerValue to a polkadot Signatory object', () => {
+      const value = {
+        type: SignerType.Identity,
+        value: 'someIdentity',
+      };
+      const fakeResult = 'SignatoryEnum' as unknown as Signatory;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Signatory', { [value.type]: value.value })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Signatory', { [value.type]: value.value })
+        .returns(fakeResult);
 
-    const result = signerValueToSignatory(value, context);
+      const result = signerValueToSignatory(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('signatoryToSignerValue should convert a polkadot Signatory object to a SignerValue', () => {
-    let fakeResult = {
-      type: SignerType.Identity,
-      value: 'someIdentity',
-    };
-    let signatory = dsMockUtils.createMockSignatory({
-      Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
+  describe('signatoryToSignerValue', () => {
+    it('should convert a polkadot Signatory object to a SignerValue', () => {
+      let fakeResult = {
+        type: SignerType.Identity,
+        value: 'someIdentity',
+      };
+      let signatory = dsMockUtils.createMockSignatory({
+        Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
+      });
+
+      let result = signatoryToSignerValue(signatory);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: SignerType.Account,
+        value: 'someAccountId',
+      };
+      signatory = dsMockUtils.createMockSignatory({
+        Account: dsMockUtils.createMockAccountId(fakeResult.value),
+      });
+
+      result = signatoryToSignerValue(signatory);
+      expect(result).toEqual(fakeResult);
     });
-
-    let result = signatoryToSignerValue(signatory);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: SignerType.Account,
-      value: 'someAccountId',
-    };
-    signatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(fakeResult.value),
-    });
-
-    result = signatoryToSignerValue(signatory);
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -830,40 +866,44 @@ describe('signerToSignerValue and signerValueToSigner', () => {
     sinon.restore();
   });
 
-  test('signerToSignerValue should convert a Signer to a SignerValue', () => {
-    const address = DUMMY_ACCOUNT_ID;
-    let signer: Signer = new Account({ address }, context);
+  describe('signerToSignerValue', () => {
+    it('should convert a Signer to a SignerValue', () => {
+      const address = DUMMY_ACCOUNT_ID;
+      let signer: Signer = new Account({ address }, context);
 
-    let result = signerToSignerValue(signer);
+      let result = signerToSignerValue(signer);
 
-    expect(result).toEqual({
-      type: SignerType.Account,
-      value: address,
+      expect(result).toEqual({
+        type: SignerType.Account,
+        value: address,
+      });
+
+      const did = 'someDid';
+      signer = new Identity({ did }, context);
+
+      result = signerToSignerValue(signer);
+
+      expect(result).toEqual({ type: SignerType.Identity, value: did });
     });
-
-    const did = 'someDid';
-    signer = new Identity({ did }, context);
-
-    result = signerToSignerValue(signer);
-
-    expect(result).toEqual({ type: SignerType.Identity, value: did });
   });
 
-  test('signerValueToSigner should convert a SignerValue to a Signer', () => {
-    let value = DUMMY_ACCOUNT_ID;
-    let signerValue: SignerValue = { type: SignerType.Account, value };
+  describe('signerValueToSigner', () => {
+    it('should convert a SignerValue to a Signer', () => {
+      let value = DUMMY_ACCOUNT_ID;
+      let signerValue: SignerValue = { type: SignerType.Account, value };
 
-    let result = signerValueToSigner(signerValue, context);
+      let result = signerValueToSigner(signerValue, context);
 
-    expect((result as Account).address).toBe(value);
+      expect((result as Account).address).toBe(value);
 
-    value = 'someDid';
+      value = 'someDid';
 
-    signerValue = { type: SignerType.Identity, value };
+      signerValue = { type: SignerType.Identity, value };
 
-    result = signerValueToSigner(signerValue, context);
+      result = signerValueToSigner(signerValue, context);
 
-    expect((result as Identity).did).toBe(value);
+      expect((result as Identity).did).toBe(value);
+    });
   });
 });
 
@@ -887,7 +927,7 @@ describe('signatoryToAccount', () => {
     sinon.restore();
   });
 
-  test('should convert a polkadot Signatory Account object to an Account', () => {
+  it('should convert a polkadot Signatory Account object to an Account', () => {
     const address = 'someAccountId';
     const signatory = dsMockUtils.createMockSignatory({
       Account: dsMockUtils.createMockAccountId(address),
@@ -897,7 +937,7 @@ describe('signatoryToAccount', () => {
     expect(result).toEqual(expect.objectContaining({ address }));
   });
 
-  test('should throw an error while converting a polkadot Signatory Identity object', () => {
+  it('should throw an error while converting a polkadot Signatory Identity object', () => {
     const signatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId('someIdentity'),
     });
@@ -931,7 +971,7 @@ describe('signerToString', () => {
     entityMockUtils.reset();
   });
 
-  test('signerToString should return the Identity DID string', () => {
+  it('should return the Identity DID string', () => {
     const did = 'someDid';
     const context = dsMockUtils.getContextInstance();
     const identity = new Identity({ did }, context);
@@ -941,7 +981,7 @@ describe('signerToString', () => {
     expect(result).toBe(did);
   });
 
-  test('signerToStrings should return the Account address string', () => {
+  it('should return the Account address string', () => {
     const address = DUMMY_ACCOUNT_ID;
     const context = dsMockUtils.getContextInstance();
 
@@ -952,7 +992,7 @@ describe('signerToString', () => {
     expect(result).toBe(address);
   });
 
-  test('signerToStrings should return the same address string that it receives', () => {
+  it('should return the same address string that it receives', () => {
     const address = DUMMY_ACCOUNT_ID;
     const result = signerToString(address);
 
@@ -973,334 +1013,346 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
     dsMockUtils.cleanup();
   });
 
-  test('authorizationToAuthorizationData should convert an Authorization to a polkadot AuthorizationData object', () => {
-    const ticker = 'TICKER_NAME';
-    const context = dsMockUtils.getContextInstance();
+  describe('authorizationToAuthorizationData', () => {
+    it('should convert an Authorization to a polkadot AuthorizationData object', () => {
+      const ticker = 'TICKER_NAME';
+      const context = dsMockUtils.getContextInstance();
 
-    let value: Authorization = {
-      type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: 'someIdentity',
-    };
-    const fakeResult = 'AuthorizationDataEnum' as unknown as AuthorizationData;
+      let value: Authorization = {
+        type: AuthorizationType.AttestPrimaryKeyRotation,
+        value: 'someIdentity',
+      };
+      const fakeResult = 'AuthorizationDataEnum' as unknown as AuthorizationData;
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
-    createTypeStub.withArgs('AuthorizationData', { [value.type]: value.value }).returns(fakeResult);
+      const createTypeStub = dsMockUtils.getCreateTypeStub();
+      createTypeStub
+        .withArgs('AuthorizationData', { [value.type]: value.value })
+        .returns(fakeResult);
 
-    const fakeTicker = 'convertedTicker' as unknown as Ticker;
-    dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
+      const fakeTicker = 'convertedTicker' as unknown as Ticker;
+      dsMockUtils.getCreateTypeStub().withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
 
-    let result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
+      let result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
 
-    value = {
-      type: AuthorizationType.JoinIdentity,
-      value: {
-        assets: null,
-        transactions: null,
-        transactionGroups: [],
-        portfolios: null,
-      },
-    };
+      value = {
+        type: AuthorizationType.JoinIdentity,
+        value: {
+          assets: null,
+          transactions: null,
+          transactionGroups: [],
+          portfolios: null,
+        },
+      };
 
-    const rawPermissions = dsMockUtils.createMockPermissions({
-      asset: dsMockUtils.createMockAssetPermissions('Whole'),
-      portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
-      extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
-    });
+      const rawPermissions = dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      });
 
-    createTypeStub.withArgs('Permissions', sinon.match(sinon.match.object)).returns(rawPermissions);
-    createTypeStub
-      .withArgs('AuthorizationData', {
-        [value.type]: rawPermissions,
-      })
-      .returns(fakeResult);
+      createTypeStub
+        .withArgs('Permissions', sinon.match(sinon.match.object))
+        .returns(rawPermissions);
+      createTypeStub
+        .withArgs('AuthorizationData', {
+          [value.type]: rawPermissions,
+        })
+        .returns(fakeResult);
 
-    result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
 
-    const did = 'someDid';
-    value = {
-      type: AuthorizationType.PortfolioCustody,
-      value: entityMockUtils.getDefaultPortfolioInstance({ did }),
-    };
+      const did = 'someDid';
+      value = {
+        type: AuthorizationType.PortfolioCustody,
+        value: entityMockUtils.getDefaultPortfolioInstance({ did }),
+      };
 
-    const rawPortfolioId = dsMockUtils.createMockPortfolioId({
-      did: dsMockUtils.createMockIdentityId(did),
-      kind: dsMockUtils.createMockPortfolioKind('Default'),
-    });
-
-    createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
-    createTypeStub
-      .withArgs('AuthorizationData', {
-        [value.type]: rawPortfolioId,
-      })
-      .returns(fakeResult);
-
-    result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
-
-    value = {
-      type: AuthorizationType.RotatePrimaryKey,
-    };
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: null })
-      .returns(fakeResult);
-
-    result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
-
-    const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
-      ticker,
-      type: PermissionGroupType.Full,
-    });
-
-    value = {
-      type: AuthorizationType.BecomeAgent,
-      value: knownPermissionGroup,
-    };
-
-    let rawAgentGroup = 'Full' as unknown as AgentGroup;
-    createTypeStub.withArgs('AgentGroup', knownPermissionGroup.type).returns(rawAgentGroup);
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
-      .returns(fakeResult);
-
-    result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
-
-    const id = new BigNumber(1);
-    const customPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
-      ticker,
-      id,
-    });
-
-    value = {
-      type: AuthorizationType.BecomeAgent,
-      value: customPermissionGroup,
-    };
-
-    rawAgentGroup = 'Full' as unknown as AgentGroup;
-    createTypeStub.withArgs('u32', id.toString()).returns(id);
-    createTypeStub.withArgs('AgentGroup', { Custom: id }).returns(rawAgentGroup);
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
-      .returns(fakeResult);
-
-    result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
-
-    value = {
-      type: AuthorizationType.TransferAssetOwnership,
-      value: 'TICKER',
-    };
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH))
-      .returns(fakeTicker);
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AuthorizationData', { [value.type]: fakeTicker })
-      .returns(fakeResult);
-
-    result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
-
-    value = {
-      type: AuthorizationType.RotatePrimaryKeyToSecondary,
-      value: {
-        assets: null,
-        transactions: null,
-        transactionGroups: [],
-        portfolios: null,
-      },
-    };
-
-    createTypeStub.withArgs('Permissions', sinon.match(sinon.match.object)).returns(rawPermissions);
-    createTypeStub
-      .withArgs('AuthorizationData', {
-        [value.type]: rawPermissions,
-      })
-      .returns(fakeResult);
-
-    result = authorizationToAuthorizationData(value, context);
-    expect(result).toBe(fakeResult);
-  });
-
-  test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
-    const context = dsMockUtils.getContextInstance();
-    let fakeResult: Authorization = {
-      type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: 'someIdentity',
-    };
-    let authorizationData = dsMockUtils.createMockAuthorizationData({
-      AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
-    });
-
-    let result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.RotatePrimaryKey,
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKey');
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.TransferTicker,
-      value: 'someTicker',
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.AddMultiSigSigner,
-      value: 'someAccount',
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      AddMultiSigSigner: dsMockUtils.createMockAccountId(fakeResult.value),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.PortfolioCustody,
-      value: expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) }),
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      PortfolioCustody: dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId('someDid'),
+      const rawPortfolioId = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind('Default'),
-      }),
+      });
+
+      createTypeStub
+        .withArgs('PortfolioId', sinon.match(sinon.match.object))
+        .returns(rawPortfolioId);
+      createTypeStub
+        .withArgs('AuthorizationData', {
+          [value.type]: rawPortfolioId,
+        })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      value = {
+        type: AuthorizationType.RotatePrimaryKey,
+      };
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AuthorizationData', { [value.type]: null })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      const knownPermissionGroup = entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.Full,
+      });
+
+      value = {
+        type: AuthorizationType.BecomeAgent,
+        value: knownPermissionGroup,
+      };
+
+      let rawAgentGroup = 'Full' as unknown as AgentGroup;
+      createTypeStub.withArgs('AgentGroup', knownPermissionGroup.type).returns(rawAgentGroup);
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      const id = new BigNumber(1);
+      const customPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
+        ticker,
+        id,
+      });
+
+      value = {
+        type: AuthorizationType.BecomeAgent,
+        value: customPermissionGroup,
+      };
+
+      rawAgentGroup = 'Full' as unknown as AgentGroup;
+      createTypeStub.withArgs('u32', id.toString()).returns(id);
+      createTypeStub.withArgs('AgentGroup', { Custom: id }).returns(rawAgentGroup);
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      value = {
+        type: AuthorizationType.TransferAssetOwnership,
+        value: 'TICKER',
+      };
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH))
+        .returns(fakeTicker);
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AuthorizationData', { [value.type]: fakeTicker })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      value = {
+        type: AuthorizationType.RotatePrimaryKeyToSecondary,
+        value: {
+          assets: null,
+          transactions: null,
+          transactionGroups: [],
+          portfolios: null,
+        },
+      };
+
+      createTypeStub
+        .withArgs('Permissions', sinon.match(sinon.match.object))
+        .returns(rawPermissions);
+      createTypeStub
+        .withArgs('AuthorizationData', {
+          [value.type]: rawPermissions,
+        })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
     });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    const portfolioId = new BigNumber(1);
-    fakeResult = {
-      type: AuthorizationType.PortfolioCustody,
-      value: expect.objectContaining({
-        owner: expect.objectContaining({ did: 'someDid' }),
-        id: portfolioId,
-      }),
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      PortfolioCustody: dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId('someDid'),
-        kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(portfolioId),
-        }),
-      }),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.TransferAssetOwnership,
-      value: 'someTicker',
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.JoinIdentity,
-      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      JoinIdentity: dsMockUtils.createMockPermissions({
-        asset: dsMockUtils.createMockAssetPermissions('Whole'),
-        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
-        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
-      }),
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    const beneficiaryAddress = 'beneficiaryAddress';
-    const relayerAddress = 'relayerAddress';
-    const allowance = new BigNumber(1000);
-    fakeResult = {
-      type: AuthorizationType.AddRelayerPayingKey,
-      value: {
-        beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
-        subsidizer: expect.objectContaining({ address: relayerAddress }),
-        allowance,
-      },
-    };
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      AddRelayerPayingKey: [
-        dsMockUtils.createMockAccountId(beneficiaryAddress),
-        dsMockUtils.createMockAccountId(relayerAddress),
-        dsMockUtils.createMockBalance(allowance.shiftedBy(6)),
-      ],
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    const ticker = 'SOME_TICKER';
-    const type = PermissionGroupType.Full;
-    fakeResult = {
-      type: AuthorizationType.BecomeAgent,
-      value: expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
-        type,
-      }),
-    };
-
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
-    });
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    authorizationData = dsMockUtils.createMockAuthorizationData({
-      RotatePrimaryKeyToSecondary: dsMockUtils.createMockPermissions({
-        asset: dsMockUtils.createMockAssetPermissions('Whole'),
-        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
-        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
-      }),
-    });
-    fakeResult = {
-      type: AuthorizationType.RotatePrimaryKeyToSecondary,
-      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
-    };
-
-    result = authorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
   });
 
-  test('should throw an error if the authorization has an unsupported type', () => {
-    const context = dsMockUtils.getContextInstance();
-    const authorizationData = dsMockUtils.createMockAuthorizationData(
-      'Whatever' as 'RotatePrimaryKey'
-    );
+  describe('authorizationDataToAuthorization', () => {
+    it('should convert a polkadot AuthorizationData object to an Authorization', () => {
+      const context = dsMockUtils.getContextInstance();
+      let fakeResult: Authorization = {
+        type: AuthorizationType.AttestPrimaryKeyRotation,
+        value: 'someIdentity',
+      };
+      let authorizationData = dsMockUtils.createMockAuthorizationData({
+        AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
+      });
 
-    expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
-      'Unsupported Authorization Type. Please contact the Polymath team'
-    );
+      let result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: AuthorizationType.RotatePrimaryKey,
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKey');
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: AuthorizationType.TransferTicker,
+        value: 'someTicker',
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: AuthorizationType.AddMultiSigSigner,
+        value: 'someAccount',
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        AddMultiSigSigner: dsMockUtils.createMockAccountId(fakeResult.value),
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: AuthorizationType.PortfolioCustody,
+        value: expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) }),
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        PortfolioCustody: dsMockUtils.createMockPortfolioId({
+          did: dsMockUtils.createMockIdentityId('someDid'),
+          kind: dsMockUtils.createMockPortfolioKind('Default'),
+        }),
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      const portfolioId = new BigNumber(1);
+      fakeResult = {
+        type: AuthorizationType.PortfolioCustody,
+        value: expect.objectContaining({
+          owner: expect.objectContaining({ did: 'someDid' }),
+          id: portfolioId,
+        }),
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        PortfolioCustody: dsMockUtils.createMockPortfolioId({
+          did: dsMockUtils.createMockIdentityId('someDid'),
+          kind: dsMockUtils.createMockPortfolioKind({
+            User: dsMockUtils.createMockU64(portfolioId),
+          }),
+        }),
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: AuthorizationType.TransferAssetOwnership,
+        value: 'someTicker',
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: AuthorizationType.JoinIdentity,
+        value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        JoinIdentity: dsMockUtils.createMockPermissions({
+          asset: dsMockUtils.createMockAssetPermissions('Whole'),
+          portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+          extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+        }),
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      const beneficiaryAddress = 'beneficiaryAddress';
+      const relayerAddress = 'relayerAddress';
+      const allowance = new BigNumber(1000);
+      fakeResult = {
+        type: AuthorizationType.AddRelayerPayingKey,
+        value: {
+          beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
+          subsidizer: expect.objectContaining({ address: relayerAddress }),
+          allowance,
+        },
+      };
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        AddRelayerPayingKey: [
+          dsMockUtils.createMockAccountId(beneficiaryAddress),
+          dsMockUtils.createMockAccountId(relayerAddress),
+          dsMockUtils.createMockBalance(allowance.shiftedBy(6)),
+        ],
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      const ticker = 'SOME_TICKER';
+      const type = PermissionGroupType.Full;
+      fakeResult = {
+        type: AuthorizationType.BecomeAgent,
+        value: expect.objectContaining({
+          asset: expect.objectContaining({ ticker }),
+          type,
+        }),
+      };
+
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
+      });
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+
+      authorizationData = dsMockUtils.createMockAuthorizationData({
+        RotatePrimaryKeyToSecondary: dsMockUtils.createMockPermissions({
+          asset: dsMockUtils.createMockAssetPermissions('Whole'),
+          portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+          extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+        }),
+      });
+      fakeResult = {
+        type: AuthorizationType.RotatePrimaryKeyToSecondary,
+        value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+      };
+
+      result = authorizationDataToAuthorization(authorizationData, context);
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should throw an error if the authorization has an unsupported type', () => {
+      const context = dsMockUtils.getContextInstance();
+      const authorizationData = dsMockUtils.createMockAuthorizationData(
+        'Whatever' as 'RotatePrimaryKey'
+      );
+
+      expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
+        'Unsupported Authorization Type. Please contact the Polymath team'
+      );
+    });
   });
 });
 
@@ -1317,60 +1369,64 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
     dsMockUtils.cleanup();
   });
 
-  test('permissionGroupIdentifierToAgentGroup should convert a PermissionGroupIdentifier to a polkadot AgentGroup object', () => {
-    let value: PermissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
-    const fakeResult = 'convertedAgentGroup' as unknown as AgentGroup;
-    const context = dsMockUtils.getContextInstance();
+  describe('permissionGroupIdentifierToAgentGroup', () => {
+    it('should convert a PermissionGroupIdentifier to a polkadot AgentGroup object', () => {
+      let value: PermissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
+      const fakeResult = 'convertedAgentGroup' as unknown as AgentGroup;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('AgentGroup', value).returns(fakeResult);
 
-    let result = permissionGroupIdentifierToAgentGroup(value, context);
+      let result = permissionGroupIdentifierToAgentGroup(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
 
-    const custom = new BigNumber(100);
-    value = { custom };
+      const custom = new BigNumber(100);
+      value = { custom };
 
-    const u32FakeResult = '100' as unknown as u32;
+      const u32FakeResult = '100' as unknown as u32;
 
-    dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AgentGroup', { Custom: u32FakeResult })
-      .returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('u32', custom.toString()).returns(u32FakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AgentGroup', { Custom: u32FakeResult })
+        .returns(fakeResult);
 
-    result = permissionGroupIdentifierToAgentGroup(value, context);
+      result = permissionGroupIdentifierToAgentGroup(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('agentGroupToPermissionGroupIdentifier should convert a polkadot AgentGroup object to a PermissionGroupIdentifier', () => {
-    let agentGroup = dsMockUtils.createMockAgentGroup('Full');
+  describe('agentGroupToPermissionGroupIdentifier', () => {
+    it('should convert a polkadot AgentGroup object to a PermissionGroupIdentifier', () => {
+      let agentGroup = dsMockUtils.createMockAgentGroup('Full');
 
-    let result = agentGroupToPermissionGroupIdentifier(agentGroup);
-    expect(result).toEqual(PermissionGroupType.Full);
+      let result = agentGroupToPermissionGroupIdentifier(agentGroup);
+      expect(result).toEqual(PermissionGroupType.Full);
 
-    agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
+      agentGroup = dsMockUtils.createMockAgentGroup('ExceptMeta');
 
-    result = agentGroupToPermissionGroupIdentifier(agentGroup);
-    expect(result).toEqual(PermissionGroupType.ExceptMeta);
+      result = agentGroupToPermissionGroupIdentifier(agentGroup);
+      expect(result).toEqual(PermissionGroupType.ExceptMeta);
 
-    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
+      agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
 
-    result = agentGroupToPermissionGroupIdentifier(agentGroup);
-    expect(result).toEqual(PermissionGroupType.PolymeshV1Caa);
+      result = agentGroupToPermissionGroupIdentifier(agentGroup);
+      expect(result).toEqual(PermissionGroupType.PolymeshV1Caa);
 
-    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+      agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
 
-    result = agentGroupToPermissionGroupIdentifier(agentGroup);
-    expect(result).toEqual(PermissionGroupType.PolymeshV1Pia);
+      result = agentGroupToPermissionGroupIdentifier(agentGroup);
+      expect(result).toEqual(PermissionGroupType.PolymeshV1Pia);
 
-    const id = new BigNumber(1);
-    const rawAgId = dsMockUtils.createMockU32(id) as AGId;
-    agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
+      const id = new BigNumber(1);
+      const rawAgId = dsMockUtils.createMockU32(id) as AGId;
+      agentGroup = dsMockUtils.createMockAgentGroup({ Custom: rawAgId });
 
-    result = agentGroupToPermissionGroupIdentifier(agentGroup);
-    expect(result).toEqual({ custom: id });
+      result = agentGroupToPermissionGroupIdentifier(agentGroup);
+      expect(result).toEqual({ custom: id });
+    });
   });
 });
 
@@ -1387,7 +1443,7 @@ describe('authorizationTypeToMeshAuthorizationType', () => {
     dsMockUtils.cleanup();
   });
 
-  test('authorizationTypeToMeshAuthorizationType should convert a AuthorizationType to a polkadot AuthorizationType object', () => {
+  it('should convert a AuthorizationType to a polkadot AuthorizationType object', () => {
     const value = AuthorizationType.TransferTicker;
     const fakeResult = 'convertedAuthorizationType' as unknown as MeshAuthorizationType;
     const context = dsMockUtils.getContextInstance();
@@ -1415,403 +1471,409 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
     dsMockUtils.cleanup();
   });
 
-  test('permissionsToMeshPermissions should convert a Permissions to a polkadot Permissions object (ordering tx alphabetically)', () => {
-    let value: Permissions = {
-      assets: null,
-      transactions: null,
-      transactionGroups: [],
-      portfolios: null,
-    };
-    const fakeResult = 'convertedPermission' as unknown as MeshPermissions;
-    const context = dsMockUtils.getContextInstance();
+  describe('permissionsToMeshPermissions', () => {
+    it('should convert a Permissions to a polkadot Permissions object (ordering tx alphabetically)', () => {
+      let value: Permissions = {
+        assets: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
+      const fakeResult = 'convertedPermission' as unknown as MeshPermissions;
+      const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+      const createTypeStub = dsMockUtils.getCreateTypeStub();
 
-    let fakeExtrinsicPermissionsResult: unknown =
-      'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ExtrinsicPermissions', 'Whole')
-      .returns(fakeExtrinsicPermissionsResult);
+      let fakeExtrinsicPermissionsResult: unknown =
+        'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('ExtrinsicPermissions', 'Whole')
+        .returns(fakeExtrinsicPermissionsResult);
 
-    createTypeStub
-      .withArgs('Permissions', {
-        asset: 'Whole',
-        extrinsic: fakeExtrinsicPermissionsResult,
-        portfolio: 'Whole',
-      })
-      .returns(fakeResult);
+      createTypeStub
+        .withArgs('Permissions', {
+          asset: 'Whole',
+          extrinsic: fakeExtrinsicPermissionsResult,
+          portfolio: 'Whole',
+        })
+        .returns(fakeResult);
 
-    let result = permissionsToMeshPermissions(value, context);
-    expect(result).toEqual(fakeResult);
+      let result = permissionsToMeshPermissions(value, context);
+      expect(result).toEqual(fakeResult);
 
-    fakeExtrinsicPermissionsResult = {
-      These: [
-        /* eslint-disable @typescript-eslint/naming-convention */
-        {
-          pallet_name: 'Identity',
-          dispatchable_names: {
-            These: ['add_claim'],
-          },
-        },
-        {
-          pallet_name: 'Sto',
-          dispatchable_names: {
-            These: ['create_fundraiser', 'invest'],
-          },
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      ],
-    };
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
-      .returns(fakeExtrinsicPermissionsResult);
-
-    const ticker = 'SOME_TICKER';
-    const did = 'someDid';
-    value = {
-      assets: {
-        values: [entityMockUtils.getAssetInstance({ ticker })],
-        type: PermissionType.Include,
-      },
-      transactions: {
-        values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
-        type: PermissionType.Include,
-      },
-      transactionGroups: [],
-      portfolios: {
-        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
-        type: PermissionType.Include,
-      },
-    };
-
-    const rawTicker = dsMockUtils.createMockTicker(ticker);
-    const rawPortfolioId = dsMockUtils.createMockPortfolioId({
-      did: dsMockUtils.createMockIdentityId(did),
-      kind: dsMockUtils.createMockPortfolioKind('Default'),
-    });
-    createTypeStub
-      .withArgs('Permissions', {
-        asset: {
-          These: [rawTicker],
-        },
-        extrinsic: fakeExtrinsicPermissionsResult,
-        portfolio: {
-          These: [rawPortfolioId],
-        },
-      })
-      .returns(fakeResult);
-    createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
-    createTypeStub.withArgs('PortfolioId', sinon.match(sinon.match.object)).returns(rawPortfolioId);
-
-    result = permissionsToMeshPermissions(value, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeExtrinsicPermissionsResult = {
-      These: [
-        /* eslint-disable @typescript-eslint/naming-convention */
-        {
-          pallet_name: 'Sto',
-          dispatchable_names: { Except: ['invest', 'stop'] },
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      ],
-    };
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
-      .returns(fakeExtrinsicPermissionsResult);
-
-    value = {
-      assets: null,
-      transactions: {
-        values: [ModuleName.Sto],
-        type: PermissionType.Include,
-        exceptions: [TxTags.sto.Invest, TxTags.sto.Stop],
-      },
-      transactionGroups: [],
-      portfolios: null,
-    };
-
-    createTypeStub
-      .withArgs('Permissions', {
-        asset: 'Whole',
-        extrinsic: fakeExtrinsicPermissionsResult,
-        portfolio: 'Whole',
-      })
-      .returns(fakeResult);
-
-    result = permissionsToMeshPermissions(value, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeExtrinsicPermissionsResult = {
-      Except: [
-        /* eslint-disable @typescript-eslint/naming-convention */
-        {
-          pallet_name: 'Sto',
-          dispatchable_names: 'Whole',
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      ],
-    };
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
-      .returns(fakeExtrinsicPermissionsResult);
-
-    value = {
-      assets: {
-        values: [entityMockUtils.getAssetInstance({ ticker })],
-        type: PermissionType.Exclude,
-      },
-      transactions: {
-        values: [ModuleName.Sto],
-        type: PermissionType.Exclude,
-      },
-      transactionGroups: [],
-      portfolios: {
-        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
-        type: PermissionType.Exclude,
-      },
-    };
-
-    createTypeStub
-      .withArgs('Permissions', {
-        asset: {
-          Except: [rawTicker],
-        },
-        extrinsic: fakeExtrinsicPermissionsResult,
-        portfolio: {
-          Except: [rawPortfolioId],
-        },
-      })
-      .returns(fakeResult);
-
-    result = permissionsToMeshPermissions(value, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeExtrinsicPermissionsResult = {
-      These: [
-        /* eslint-disable @typescript-eslint/naming-convention */
-        {
-          pallet_name: 'Identity',
-          dispatchable_names: {
-            These: ['add_claim'],
-          },
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      ],
-    };
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
-      .returns(fakeExtrinsicPermissionsResult);
-
-    const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
-
-    value = {
-      assets: {
-        values: tickers.map(t => entityMockUtils.getAssetInstance({ ticker: t })),
-        type: PermissionType.Include,
-      },
-      transactions: {
-        values: [TxTags.identity.AddClaim],
-        type: PermissionType.Include,
-      },
-      transactionGroups: [],
-      portfolios: {
-        values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
-        type: PermissionType.Include,
-      },
-    };
-
-    const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
-    createTypeStub
-      .withArgs('Permissions', {
-        asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
-        extrinsic: fakeExtrinsicPermissionsResult,
-        portfolio: { These: [rawPortfolioId] },
-      })
-      .returns(fakeResult);
-
-    tickers.forEach((t, i) =>
-      createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
-    );
-
-    result = permissionsToMeshPermissions(value, context);
-    expect(result).toEqual(fakeResult);
-  });
-
-  test('permissionsToMeshPermissions should throw an error if attempting to add permissions for specific transactions as well as the entire module', () => {
-    const value: Permissions = {
-      assets: null,
-      transactions: {
-        values: [TxTags.sto.Invest, ModuleName.Sto],
-        type: PermissionType.Include,
-      },
-      transactionGroups: [],
-      portfolios: null,
-    };
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => permissionsToMeshPermissions(value, context)).toThrow(
-      'Attempting to add permissions for specific transactions as well as the entire module'
-    );
-  });
-
-  test('permissionsToMeshPermissions should throw an error if user simultaneously include and exclude transactions belonging to the same module', () => {
-    const value: Permissions = {
-      assets: null,
-      transactions: {
-        values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
-        type: PermissionType.Exclude,
-        exceptions: [TxTags.sto.Stop],
-      },
-      transactionGroups: [],
-      portfolios: null,
-    };
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => permissionsToMeshPermissions(value, context)).toThrow(
-      'Cannot simultaneously include and exclude transactions belonging to the same module'
-    );
-  });
-
-  test('permissionsToMeshPermissions should throw an error if attempting to add a transaction permission exception without its corresponding module being included/excluded', () => {
-    const value: Permissions = {
-      assets: null,
-      transactions: {
-        values: [],
-        type: PermissionType.Exclude,
-        exceptions: [TxTags.sto.Stop],
-      },
-      transactionGroups: [],
-      portfolios: null,
-    };
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => permissionsToMeshPermissions(value, context)).toThrow(
-      'Attempting to add a transaction permission exception without its corresponding module being included/excluded'
-    );
-  });
-
-  test('meshPermissionsToPermissions should convert a polkadot Permissions object to a Permissions', () => {
-    const context = dsMockUtils.getContextInstance();
-    const ticker = 'someTicker';
-    const did = 'someDid';
-    let fakeResult: Permissions = {
-      assets: {
-        values: [expect.objectContaining({ ticker })],
-        type: PermissionType.Include,
-      },
-      transactions: {
-        type: PermissionType.Include,
-        values: [TxTags.identity.AddClaim, ModuleName.Authorship],
-      },
-      transactionGroups: [],
-      portfolios: {
-        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
-        type: PermissionType.Include,
-      },
-    };
-    let permissions = dsMockUtils.createMockPermissions({
-      asset: dsMockUtils.createMockAssetPermissions({
-        These: [dsMockUtils.createMockTicker(ticker)],
-      }),
-      extrinsic: dsMockUtils.createMockExtrinsicPermissions({
+      fakeExtrinsicPermissionsResult = {
         These: [
           /* eslint-disable @typescript-eslint/naming-convention */
-          dsMockUtils.createMockPalletPermissions({
-            pallet_name: dsMockUtils.createMockPalletName('Identity'),
-            dispatchable_names: dsMockUtils.createMockDispatchableNames({
-              These: [dsMockUtils.createMockDispatchableName('add_claim')],
-            }),
-          }),
-          dsMockUtils.createMockPalletPermissions({
-            pallet_name: dsMockUtils.createMockPalletName('Authorship'),
-            dispatchable_names: dsMockUtils.createMockDispatchableNames('Whole'),
-          }),
+          {
+            pallet_name: 'Identity',
+            dispatchable_names: {
+              These: ['add_claim'],
+            },
+          },
+          {
+            pallet_name: 'Sto',
+            dispatchable_names: {
+              These: ['create_fundraiser', 'invest'],
+            },
+          },
           /* eslint-enable @typescript-eslint/naming-convention */
         ],
-      }),
-      portfolio: dsMockUtils.createMockPortfolioPermissions({
+      };
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .returns(fakeExtrinsicPermissionsResult);
+
+      const ticker = 'SOME_TICKER';
+      const did = 'someDid';
+      value = {
+        assets: {
+          values: [entityMockUtils.getAssetInstance({ ticker })],
+          type: PermissionType.Include,
+        },
+        transactions: {
+          values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+          type: PermissionType.Include,
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+          type: PermissionType.Include,
+        },
+      };
+
+      const rawTicker = dsMockUtils.createMockTicker(ticker);
+      const rawPortfolioId = dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId(did),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      });
+      createTypeStub
+        .withArgs('Permissions', {
+          asset: {
+            These: [rawTicker],
+          },
+          extrinsic: fakeExtrinsicPermissionsResult,
+          portfolio: {
+            These: [rawPortfolioId],
+          },
+        })
+        .returns(fakeResult);
+      createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+      createTypeStub
+        .withArgs('PortfolioId', sinon.match(sinon.match.object))
+        .returns(rawPortfolioId);
+
+      result = permissionsToMeshPermissions(value, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeExtrinsicPermissionsResult = {
         These: [
-          dsMockUtils.createMockPortfolioId({
-            did: dsMockUtils.createMockIdentityId(did),
-            kind: dsMockUtils.createMockPortfolioKind('Default'),
-          }),
+          /* eslint-disable @typescript-eslint/naming-convention */
+          {
+            pallet_name: 'Sto',
+            dispatchable_names: { Except: ['invest', 'stop'] },
+          },
+          /* eslint-enable @typescript-eslint/naming-convention */
         ],
-      }),
-    });
+      };
 
-    let result = meshPermissionsToPermissions(permissions, context);
-    expect(result).toEqual(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .returns(fakeExtrinsicPermissionsResult);
 
-    fakeResult = {
-      assets: null,
-      transactions: null,
-      transactionGroups: [],
-      portfolios: null,
-    };
-    permissions = dsMockUtils.createMockPermissions({
-      asset: dsMockUtils.createMockAssetPermissions('Whole'),
-      portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
-      extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
-    });
+      value = {
+        assets: null,
+        transactions: {
+          values: [ModuleName.Sto],
+          type: PermissionType.Include,
+          exceptions: [TxTags.sto.Invest, TxTags.sto.Stop],
+        },
+        transactionGroups: [],
+        portfolios: null,
+      };
 
-    result = meshPermissionsToPermissions(permissions, context);
-    expect(result).toEqual(fakeResult);
+      createTypeStub
+        .withArgs('Permissions', {
+          asset: 'Whole',
+          extrinsic: fakeExtrinsicPermissionsResult,
+          portfolio: 'Whole',
+        })
+        .returns(fakeResult);
 
-    fakeResult = {
-      assets: {
-        values: [expect.objectContaining({ ticker })],
-        type: PermissionType.Exclude,
-      },
-      transactions: {
-        type: PermissionType.Exclude,
-        values: [ModuleName.Identity],
-        exceptions: [TxTags.identity.AddClaim],
-      },
-      transactionGroups: [],
-      portfolios: {
-        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
-        type: PermissionType.Exclude,
-      },
-    };
+      result = permissionsToMeshPermissions(value, context);
+      expect(result).toEqual(fakeResult);
 
-    permissions = dsMockUtils.createMockPermissions({
-      asset: dsMockUtils.createMockAssetPermissions({
-        Except: [dsMockUtils.createMockTicker(ticker)],
-      }),
-      extrinsic: dsMockUtils.createMockExtrinsicPermissions({
+      fakeExtrinsicPermissionsResult = {
         Except: [
           /* eslint-disable @typescript-eslint/naming-convention */
-          dsMockUtils.createMockPalletPermissions({
-            pallet_name: dsMockUtils.createMockPalletName('Identity'),
-            dispatchable_names: dsMockUtils.createMockDispatchableNames({
-              Except: [dsMockUtils.createMockDispatchableName('add_claim')],
-            }),
-          }),
+          {
+            pallet_name: 'Sto',
+            dispatchable_names: 'Whole',
+          },
           /* eslint-enable @typescript-eslint/naming-convention */
         ],
-      }),
-      portfolio: dsMockUtils.createMockPortfolioPermissions({
-        Except: [
-          dsMockUtils.createMockPortfolioId({
-            did: dsMockUtils.createMockIdentityId(did),
-            kind: dsMockUtils.createMockPortfolioKind('Default'),
-          }),
+      };
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .returns(fakeExtrinsicPermissionsResult);
+
+      value = {
+        assets: {
+          values: [entityMockUtils.getAssetInstance({ ticker })],
+          type: PermissionType.Exclude,
+        },
+        transactions: {
+          values: [ModuleName.Sto],
+          type: PermissionType.Exclude,
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+          type: PermissionType.Exclude,
+        },
+      };
+
+      createTypeStub
+        .withArgs('Permissions', {
+          asset: {
+            Except: [rawTicker],
+          },
+          extrinsic: fakeExtrinsicPermissionsResult,
+          portfolio: {
+            Except: [rawPortfolioId],
+          },
+        })
+        .returns(fakeResult);
+
+      result = permissionsToMeshPermissions(value, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeExtrinsicPermissionsResult = {
+        These: [
+          /* eslint-disable @typescript-eslint/naming-convention */
+          {
+            pallet_name: 'Identity',
+            dispatchable_names: {
+              These: ['add_claim'],
+            },
+          },
+          /* eslint-enable @typescript-eslint/naming-convention */
         ],
-      }),
+      };
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .returns(fakeExtrinsicPermissionsResult);
+
+      const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
+
+      value = {
+        assets: {
+          values: tickers.map(t => entityMockUtils.getAssetInstance({ ticker: t })),
+          type: PermissionType.Include,
+        },
+        transactions: {
+          values: [TxTags.identity.AddClaim],
+          type: PermissionType.Include,
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [entityMockUtils.getDefaultPortfolioInstance({ did })],
+          type: PermissionType.Include,
+        },
+      };
+
+      const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
+      createTypeStub
+        .withArgs('Permissions', {
+          asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
+          extrinsic: fakeExtrinsicPermissionsResult,
+          portfolio: { These: [rawPortfolioId] },
+        })
+        .returns(fakeResult);
+
+      tickers.forEach((t, i) =>
+        createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
+      );
+
+      result = permissionsToMeshPermissions(value, context);
+      expect(result).toEqual(fakeResult);
     });
 
-    result = meshPermissionsToPermissions(permissions, context);
-    expect(result).toEqual(fakeResult);
+    it('should throw an error if attempting to add permissions for specific transactions as well as the entire module', () => {
+      const value: Permissions = {
+        assets: null,
+        transactions: {
+          values: [TxTags.sto.Invest, ModuleName.Sto],
+          type: PermissionType.Include,
+        },
+        transactionGroups: [],
+        portfolios: null,
+      };
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => permissionsToMeshPermissions(value, context)).toThrow(
+        'Attempting to add permissions for specific transactions as well as the entire module'
+      );
+    });
+
+    it('should throw an error if user simultaneously include and exclude transactions belonging to the same module', () => {
+      const value: Permissions = {
+        assets: null,
+        transactions: {
+          values: [TxTags.sto.Invest, TxTags.identity.AddClaim, TxTags.sto.CreateFundraiser],
+          type: PermissionType.Exclude,
+          exceptions: [TxTags.sto.Stop],
+        },
+        transactionGroups: [],
+        portfolios: null,
+      };
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => permissionsToMeshPermissions(value, context)).toThrow(
+        'Cannot simultaneously include and exclude transactions belonging to the same module'
+      );
+    });
+
+    it('should throw an error if attempting to add a transaction permission exception without its corresponding module being included/excluded', () => {
+      const value: Permissions = {
+        assets: null,
+        transactions: {
+          values: [],
+          type: PermissionType.Exclude,
+          exceptions: [TxTags.sto.Stop],
+        },
+        transactionGroups: [],
+        portfolios: null,
+      };
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => permissionsToMeshPermissions(value, context)).toThrow(
+        'Attempting to add a transaction permission exception without its corresponding module being included/excluded'
+      );
+    });
+  });
+
+  describe('meshPermissionsToPermissions', () => {
+    it('should convert a polkadot Permissions object to a Permissions', () => {
+      const context = dsMockUtils.getContextInstance();
+      const ticker = 'someTicker';
+      const did = 'someDid';
+      let fakeResult: Permissions = {
+        assets: {
+          values: [expect.objectContaining({ ticker })],
+          type: PermissionType.Include,
+        },
+        transactions: {
+          type: PermissionType.Include,
+          values: [TxTags.identity.AddClaim, ModuleName.Authorship],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          type: PermissionType.Include,
+        },
+      };
+      let permissions = dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions({
+          These: [dsMockUtils.createMockTicker(ticker)],
+        }),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions({
+          These: [
+            /* eslint-disable @typescript-eslint/naming-convention */
+            dsMockUtils.createMockPalletPermissions({
+              pallet_name: dsMockUtils.createMockPalletName('Identity'),
+              dispatchable_names: dsMockUtils.createMockDispatchableNames({
+                These: [dsMockUtils.createMockDispatchableName('add_claim')],
+              }),
+            }),
+            dsMockUtils.createMockPalletPermissions({
+              pallet_name: dsMockUtils.createMockPalletName('Authorship'),
+              dispatchable_names: dsMockUtils.createMockDispatchableNames('Whole'),
+            }),
+            /* eslint-enable @typescript-eslint/naming-convention */
+          ],
+        }),
+        portfolio: dsMockUtils.createMockPortfolioPermissions({
+          These: [
+            dsMockUtils.createMockPortfolioId({
+              did: dsMockUtils.createMockIdentityId(did),
+              kind: dsMockUtils.createMockPortfolioKind('Default'),
+            }),
+          ],
+        }),
+      });
+
+      let result = meshPermissionsToPermissions(permissions, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        assets: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
+      permissions = dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      });
+
+      result = meshPermissionsToPermissions(permissions, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        assets: {
+          values: [expect.objectContaining({ ticker })],
+          type: PermissionType.Exclude,
+        },
+        transactions: {
+          type: PermissionType.Exclude,
+          values: [ModuleName.Identity],
+          exceptions: [TxTags.identity.AddClaim],
+        },
+        transactionGroups: [],
+        portfolios: {
+          values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          type: PermissionType.Exclude,
+        },
+      };
+
+      permissions = dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions({
+          Except: [dsMockUtils.createMockTicker(ticker)],
+        }),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions({
+          Except: [
+            /* eslint-disable @typescript-eslint/naming-convention */
+            dsMockUtils.createMockPalletPermissions({
+              pallet_name: dsMockUtils.createMockPalletName('Identity'),
+              dispatchable_names: dsMockUtils.createMockDispatchableNames({
+                Except: [dsMockUtils.createMockDispatchableName('add_claim')],
+              }),
+            }),
+            /* eslint-enable @typescript-eslint/naming-convention */
+          ],
+        }),
+        portfolio: dsMockUtils.createMockPortfolioPermissions({
+          Except: [
+            dsMockUtils.createMockPortfolioId({
+              did: dsMockUtils.createMockIdentityId(did),
+              kind: dsMockUtils.createMockPortfolioKind('Default'),
+            }),
+          ],
+        }),
+      });
+
+      result = meshPermissionsToPermissions(permissions, context);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -1828,38 +1890,42 @@ describe('bigNumberToU64 and u64ToBigNumber', () => {
     dsMockUtils.cleanup();
   });
 
-  test('bigNumberToU64 should convert a number to a polkadot u64 object', () => {
-    const value = new BigNumber(100);
-    const fakeResult = '100' as unknown as u64;
-    const context = dsMockUtils.getContextInstance();
+  describe('bigNumberToU64', () => {
+    it('should convert a number to a polkadot u64 object', () => {
+      const value = new BigNumber(100);
+      const fakeResult = '100' as unknown as u64;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('u64', value.toString()).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('u64', value.toString()).returns(fakeResult);
 
-    const result = bigNumberToU64(value, context);
+      const result = bigNumberToU64(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if the number is negative', () => {
+      const value = new BigNumber(-100);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU64(value, context)).toThrow();
+    });
+
+    it('should throw an error if the number is not an integer', () => {
+      const value = new BigNumber(1.5);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU64(value, context)).toThrow();
+    });
   });
 
-  test('bigNumberToU64 should throw an error if the number is negative', () => {
-    const value = new BigNumber(-100);
-    const context = dsMockUtils.getContextInstance();
+  describe('u64ToBigNumber', () => {
+    it('should convert a polkadot u64 object to a BigNumber', () => {
+      const fakeResult = new BigNumber(100);
+      const num = dsMockUtils.createMockU64(fakeResult);
 
-    expect(() => bigNumberToU64(value, context)).toThrow();
-  });
-
-  test('bigNumberToU64 should throw an error if the number is not an integer', () => {
-    const value = new BigNumber(1.5);
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => bigNumberToU64(value, context)).toThrow();
-  });
-
-  test('u64ToBigNumber should convert a polkadot u64 object to a BigNumber', () => {
-    const fakeResult = new BigNumber(100);
-    const num = dsMockUtils.createMockU64(fakeResult);
-
-    const result = u64ToBigNumber(num);
-    expect(result).toEqual(new BigNumber(fakeResult));
+      const result = u64ToBigNumber(num);
+      expect(result).toEqual(new BigNumber(fakeResult));
+    });
   });
 });
 
@@ -1876,38 +1942,42 @@ describe('bigNumberToU32 and u32ToBigNumber', () => {
     dsMockUtils.cleanup();
   });
 
-  test('bigNumberToU32 should convert a number to a polkadot u32 object', () => {
-    const value = new BigNumber(100);
-    const fakeResult = '100' as unknown as u32;
-    const context = dsMockUtils.getContextInstance();
+  describe('bigNumberToU32', () => {
+    it('should convert a number to a polkadot u32 object', () => {
+      const value = new BigNumber(100);
+      const fakeResult = '100' as unknown as u32;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('u32', value.toString()).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('u32', value.toString()).returns(fakeResult);
 
-    const result = bigNumberToU32(value, context);
+      const result = bigNumberToU32(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if the number is negative', () => {
+      const value = new BigNumber(-100);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU32(value, context)).toThrow();
+    });
+
+    it('should throw an error if the number is not an integer', () => {
+      const value = new BigNumber(1.5);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToU32(value, context)).toThrow();
+    });
   });
 
-  test('bigNumberToU32 should throw an error if the number is negative', () => {
-    const value = new BigNumber(-100);
-    const context = dsMockUtils.getContextInstance();
+  describe('u32ToBigNumber', () => {
+    it('should convert a polkadot u32 object to a BigNumber', () => {
+      const fakeResult = new BigNumber(100);
+      const num = dsMockUtils.createMockU32(fakeResult);
 
-    expect(() => bigNumberToU32(value, context)).toThrow();
-  });
-
-  test('bigNumberToU32 should throw an error if the number is not an integer', () => {
-    const value = new BigNumber(1.5);
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => bigNumberToU32(value, context)).toThrow();
-  });
-
-  test('u32ToBigNumber should convert a polkadot u32 object to a BigNumber', () => {
-    const fakeResult = new BigNumber(100);
-    const num = dsMockUtils.createMockU32(fakeResult);
-
-    const result = u32ToBigNumber(num);
-    expect(result).toEqual(new BigNumber(fakeResult));
+      const result = u32ToBigNumber(num);
+      expect(result).toEqual(new BigNumber(fakeResult));
+    });
   });
 });
 
@@ -1924,7 +1994,7 @@ describe('u8ToBigNumber', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a polkadot u8 object to a BigNumber', () => {
+  it('should convert a polkadot u8 object to a BigNumber', () => {
     const fakeResult = new BigNumber(100);
     const num = dsMockUtils.createMockU8(fakeResult);
 
@@ -1946,41 +2016,45 @@ describe('percentageToPermill and permillToBigNumber', () => {
     dsMockUtils.cleanup();
   });
 
-  test('percentageToPermill should convert a number to a polkadot Permill object', () => {
-    const value = new BigNumber(49);
-    const fakeResult = '100' as unknown as Permill;
-    const context = dsMockUtils.getContextInstance();
+  describe('percentageToPermill', () => {
+    it('should convert a number to a polkadot Permill object', () => {
+      const value = new BigNumber(49);
+      const fakeResult = '100' as unknown as Permill;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
+        .returns(fakeResult);
 
-    const result = percentageToPermill(value, context);
+      const result = percentageToPermill(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if the number is negative', () => {
+      const value = new BigNumber(-10);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => percentageToPermill(value, context)).toThrow();
+    });
+
+    it('should throw an error if the number is greater than 100', () => {
+      const value = new BigNumber(250);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => percentageToPermill(value, context)).toThrow();
+    });
   });
 
-  test('percentageToPermill should throw an error if the number is negative', () => {
-    const value = new BigNumber(-10);
-    const context = dsMockUtils.getContextInstance();
+  describe('permillToBigNumber', () => {
+    it('should convert a polkadot Permill object to a BigNumber', () => {
+      const fakeResult = new BigNumber(490000);
+      const permill = dsMockUtils.createMockPermill(fakeResult);
 
-    expect(() => percentageToPermill(value, context)).toThrow();
-  });
-
-  test('percentageToPermill should throw an error if the number is greater than 100', () => {
-    const value = new BigNumber(250);
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => percentageToPermill(value, context)).toThrow();
-  });
-
-  test('permillToBigNumber should convert a polkadot Permill object to a BigNumber', () => {
-    const fakeResult = new BigNumber(490000);
-    const permill = dsMockUtils.createMockPermill(fakeResult);
-
-    const result = permillToBigNumber(permill);
-    expect(result).toEqual(new BigNumber(49));
+      const result = permillToBigNumber(permill);
+      expect(result).toEqual(new BigNumber(49));
+    });
   });
 });
 
@@ -1997,121 +2071,131 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
     dsMockUtils.cleanup();
   });
 
-  test('bigNumberToBalance should convert a number to a polkadot Balance object', () => {
-    let value = new BigNumber(100);
-    const fakeResult = '100' as unknown as Balance;
-    const context = dsMockUtils.getContextInstance();
+  describe('bigNumberToBalance', () => {
+    it('should convert a number to a polkadot Balance object', () => {
+      let value = new BigNumber(100);
+      const fakeResult = '100' as unknown as Balance;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .returns(fakeResult);
 
-    let result = bigNumberToBalance(value, context, false);
+      let result = bigNumberToBalance(value, context, false);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = new BigNumber(100.1);
+      value = new BigNumber(100.1);
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .returns(fakeResult);
 
-    result = bigNumberToBalance(value, context);
+      result = bigNumberToBalance(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if the value exceeds the max balance', () => {
+      const value = new BigNumber(Math.pow(20, 15));
+      const context = dsMockUtils.getContextInstance();
+
+      let error;
+
+      try {
+        bigNumberToBalance(value, context);
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('The value exceeds the maximum possible balance');
+      expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_BALANCE });
+    });
+
+    it('should throw an error if the value has more decimal places than allowed', () => {
+      const value = new BigNumber(50.1234567);
+      const context = dsMockUtils.getContextInstance();
+
+      let error;
+
+      try {
+        bigNumberToBalance(value, context);
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error.message).toBe('The value has more decimal places than allowed');
+      expect(error.data).toMatchObject({ currentValue: value, decimalsLimit: MAX_DECIMALS });
+    });
+
+    it('should throw an error if the value has decimals and the Asset is indivisible', () => {
+      const value = new BigNumber(50.1234567);
+      const context = dsMockUtils.getContextInstance();
+
+      expect(() => bigNumberToBalance(value, context, false)).toThrow(
+        'The value has decimals but the Asset is indivisible'
+      );
+    });
   });
 
-  test('bigNumberToBalance should throw an error if the value exceeds the max balance', () => {
-    const value = new BigNumber(Math.pow(20, 15));
-    const context = dsMockUtils.getContextInstance();
+  describe('balanceToBigNumber', () => {
+    it('should convert a polkadot Balance object to a BigNumber', () => {
+      const fakeResult = new BigNumber(100);
+      const balance = dsMockUtils.createMockBalance(fakeResult);
 
-    let error;
-
-    try {
-      bigNumberToBalance(value, context);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The value exceeds the maximum possible balance');
-    expect(error.data).toMatchObject({ currentValue: value, amountLimit: MAX_BALANCE });
-  });
-
-  test('bigNumberToBalance should throw an error if the value has more decimal places than allowed', () => {
-    const value = new BigNumber(50.1234567);
-    const context = dsMockUtils.getContextInstance();
-
-    let error;
-
-    try {
-      bigNumberToBalance(value, context);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The value has more decimal places than allowed');
-    expect(error.data).toMatchObject({ currentValue: value, decimalsLimit: MAX_DECIMALS });
-  });
-
-  test('bigNumberToBalance should throw an error if the value has decimals and the Asset is indivisible', () => {
-    const value = new BigNumber(50.1234567);
-    const context = dsMockUtils.getContextInstance();
-
-    expect(() => bigNumberToBalance(value, context, false)).toThrow(
-      'The value has decimals but the Asset is indivisible'
-    );
-  });
-
-  test('balanceToBigNumber should convert a polkadot Balance object to a BigNumber', () => {
-    const fakeResult = new BigNumber(100);
-    const balance = dsMockUtils.createMockBalance(fakeResult);
-
-    const result = balanceToBigNumber(balance);
-    expect(result).toEqual(new BigNumber(fakeResult).shiftedBy(-6));
+      const result = balanceToBigNumber(balance);
+      expect(result).toEqual(new BigNumber(fakeResult).shiftedBy(-6));
+    });
   });
 });
 
 describe('isIsinValid, isCusipValid and isLeiValid', () => {
-  test('isIsinValid should return if the Isin value identifier is valid or not', () => {
-    const correct = isIsinValid('US0378331005');
-    let incorrect = isIsinValid('US0373431005');
+  describe('isIsinValid', () => {
+    it('should return if the Isin value identifier is valid or not', () => {
+      const correct = isIsinValid('US0378331005');
+      let incorrect = isIsinValid('US0373431005');
 
-    expect(correct).toBeTruthy();
-    expect(incorrect).toBeFalsy();
+      expect(correct).toBeTruthy();
+      expect(incorrect).toBeFalsy();
 
-    incorrect = isIsinValid('US0373431');
-    expect(incorrect).toBeFalsy();
+      incorrect = isIsinValid('US0373431');
+      expect(incorrect).toBeFalsy();
+    });
   });
 
-  test('isCusipValid should return if the Cusip value identifier is valid or not', () => {
-    const correct = isCusipValid('037833100');
-    let incorrect = isCusipValid('037831200');
+  describe('isCusipValid', () => {
+    it('should return if the Cusip value identifier is valid or not', () => {
+      const correct = isCusipValid('037833100');
+      let incorrect = isCusipValid('037831200');
 
-    expect(correct).toBeTruthy();
-    expect(incorrect).toBeFalsy();
+      expect(correct).toBeTruthy();
+      expect(incorrect).toBeFalsy();
 
-    incorrect = isCusipValid('037831');
+      incorrect = isCusipValid('037831');
 
-    expect(incorrect).toBeFalsy();
+      expect(incorrect).toBeFalsy();
 
-    incorrect = isCusipValid('0378312CD');
+      incorrect = isCusipValid('0378312CD');
 
-    expect(incorrect).toBeFalsy();
+      expect(incorrect).toBeFalsy();
+    });
   });
 
-  test('isLeiValid should return if the Lei value identifier is valid or not', () => {
-    /* cSpell: disable */
-    const correct = isLeiValid('724500VKKSH9QOLTFR81');
-    let incorrect = isLeiValid('969500T3MBS4SQAMHJ45');
+  describe('isLeiValid', () => {
+    it('should return if the Lei value identifier is valid or not', () => {
+      /* cSpell: disable */
+      const correct = isLeiValid('724500VKKSH9QOLTFR81');
+      let incorrect = isLeiValid('969500T3MBS4SQAMHJ45');
 
-    expect(correct).toBeTruthy();
-    expect(incorrect).toBeFalsy();
+      expect(correct).toBeTruthy();
+      expect(incorrect).toBeFalsy();
 
-    incorrect = isLeiValid('969500T3MS4SQAMHJ4');
-    expect(incorrect).toBeFalsy();
-    /* cSpell: enable */
+      incorrect = isLeiValid('969500T3MS4SQAMHJ4');
+      expect(incorrect).toBeFalsy();
+      /* cSpell: enable */
+    });
   });
 });
 
@@ -2128,7 +2212,7 @@ describe('stringToMemo', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToMemo should convert a string to a polkadot Memo object', () => {
+  it('should convert a string to a polkadot Memo object', () => {
     const value = 'someDescription';
     const fakeResult = 'memoDescription' as unknown as Memo;
     const context = dsMockUtils.getContextInstance();
@@ -2140,7 +2224,7 @@ describe('stringToMemo', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  test('stringToMemo should throw an error if the value exceeds the maximum length', () => {
+  it('should throw an error if the value exceeds the maximum length', () => {
     const value = 'someVeryLongDescriptionThatIsDefinitelyLongerThanTheMaxLength';
     const context = dsMockUtils.getContextInstance();
 
@@ -2149,7 +2233,7 @@ describe('stringToMemo', () => {
 });
 
 describe('u8ToTransferStatus', () => {
-  test('u8ToTransferStatus should convert a polkadot u8 object to a TransferStatus', () => {
+  it('should convert a polkadot u8 object to a TransferStatus', () => {
     let result = u8ToTransferStatus(dsMockUtils.createMockU8(new BigNumber(80)));
 
     expect(result).toBe(TransferStatus.Failure);
@@ -2254,91 +2338,95 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
     dsMockUtils.cleanup();
   });
 
-  test('internalAssetTypeToAssetType should convert an AssetType to a polkadot AssetType object', () => {
-    const value = KnownAssetType.Commodity;
-    const fakeResult = 'CommodityEnum' as unknown as AssetType;
-    const context = dsMockUtils.getContextInstance();
+  describe('internalSecurityTypeToAssetType', () => {
+    it('should convert an AssetType to a polkadot AssetType object', () => {
+      const value = KnownAssetType.Commodity;
+      const fakeResult = 'CommodityEnum' as unknown as AssetType;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('AssetType', value).returns(fakeResult);
 
-    const result = internalAssetTypeToAssetType(value, context);
+      const result = internalAssetTypeToAssetType(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('assetTypeToKnownOrId should convert a polkadot AssetType object to a string', () => {
-    let fakeResult = KnownAssetType.Commodity;
-    let assetType = dsMockUtils.createMockAssetType(fakeResult);
+  describe('assetTypeToKnownOrId', () => {
+    it('should convert a polkadot AssetType object to a string', () => {
+      let fakeResult = KnownAssetType.Commodity;
+      let assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    let result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      let result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.EquityCommon;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.EquityCommon;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.EquityPreferred;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.EquityPreferred;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.Commodity;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.Commodity;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.FixedIncome;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.FixedIncome;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.Reit;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.Reit;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.Fund;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.Fund;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.RevenueShareAgreement;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.RevenueShareAgreement;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.StructuredProduct;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.StructuredProduct;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.Derivative;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.Derivative;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = KnownAssetType.StableCoin;
-    assetType = dsMockUtils.createMockAssetType(fakeResult);
+      fakeResult = KnownAssetType.StableCoin;
+      assetType = dsMockUtils.createMockAssetType(fakeResult);
 
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(fakeResult);
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(fakeResult);
 
-    assetType = dsMockUtils.createMockAssetType({
-      Custom: dsMockUtils.createMockU32(new BigNumber(1)),
+      assetType = dsMockUtils.createMockAssetType({
+        Custom: dsMockUtils.createMockU32(new BigNumber(1)),
+      });
+
+      result = assetTypeToKnownOrId(assetType);
+      expect(result).toEqual(new BigNumber(1));
     });
-
-    result = assetTypeToKnownOrId(assetType);
-    expect(result).toEqual(new BigNumber(1));
   });
 });
 
@@ -2355,7 +2443,7 @@ describe('posRatioToBigNumber', () => {
     dsMockUtils.cleanup();
   });
 
-  test('posRatioToBigNumber should convert a polkadot PosRatio object to a BigNumber', () => {
+  it('should convert a polkadot PosRatio object to a BigNumber', () => {
     const numerator = new BigNumber(1);
     const denominator = new BigNumber(1);
     const balance = dsMockUtils.createMockPosRatio(numerator, denominator);
@@ -2378,103 +2466,107 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
     dsMockUtils.cleanup();
   });
 
-  test('securityIdentifierToAssetIdentifier should convert a SecurityIdentifier to a polkadot AssetIdentifier object', () => {
-    const isinValue = 'US0378331005';
-    // cSpell: disable-next-line
-    const leiValue = '724500VKKSH9QOLTFR81';
-    const cusipValue = '037833100';
+  describe('securityIdentifierToAssetIdentifier', () => {
+    it('should convert a SecurityIdentifier to a polkadot AssetIdentifier object', () => {
+      const isinValue = 'US0378331005';
+      // cSpell: disable-next-line
+      const leiValue = '724500VKKSH9QOLTFR81';
+      const cusipValue = '037833100';
 
-    let value = { type: SecurityIdentifierType.Isin, value: isinValue };
-    const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
-    const context = dsMockUtils.getContextInstance();
+      let value = { type: SecurityIdentifierType.Isin, value: isinValue };
+      const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
+        .returns(fakeResult);
 
-    let result = securityIdentifierToAssetIdentifier(value, context);
+      let result = securityIdentifierToAssetIdentifier(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = { type: SecurityIdentifierType.Lei, value: leiValue };
+      value = { type: SecurityIdentifierType.Lei, value: leiValue };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
+        .returns(fakeResult);
 
-    result = securityIdentifierToAssetIdentifier(value, context);
+      result = securityIdentifierToAssetIdentifier(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = { type: SecurityIdentifierType.Cusip, value: cusipValue };
+      value = { type: SecurityIdentifierType.Cusip, value: cusipValue };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('AssetIdentifier', { [SecurityIdentifierType.Cusip]: cusipValue })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Cusip]: cusipValue })
+        .returns(fakeResult);
 
-    result = securityIdentifierToAssetIdentifier(value, context);
+      result = securityIdentifierToAssetIdentifier(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
+
+    it('should throw an error if some identifier is invalid', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      let identifier = { type: SecurityIdentifierType.Isin, value: 'US0373431005' };
+
+      expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+        `Invalid security identifier ${identifier.value} of type Isin`
+      );
+
+      // cSpell: disable-next-line
+      identifier = { type: SecurityIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
+
+      expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+        `Invalid security identifier ${identifier.value} of type Lei`
+      );
+
+      identifier = { type: SecurityIdentifierType.Cusip, value: '037831200' };
+
+      expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+        `Invalid security identifier ${identifier.value} of type Cusip`
+      );
+    });
   });
 
-  test('securityIdentifierToAssetIdentifier should throw an error if some identifier is invalid', () => {
-    const context = dsMockUtils.getContextInstance();
+  describe('assetIdentifierToSecurityIdentifier', () => {
+    it('should convert a polkadot AssetIdentifier object to a SecurityIdentifier', () => {
+      let fakeResult = { type: SecurityIdentifierType.Isin, value: 'someValue' };
+      let identifier = dsMockUtils.createMockAssetIdentifier({
+        [SecurityIdentifierType.Isin]: dsMockUtils.createMockU8aFixed('someValue'),
+      });
 
-    let identifier = { type: SecurityIdentifierType.Isin, value: 'US0373431005' };
+      let result = assetIdentifierToSecurityIdentifier(identifier);
+      expect(result).toEqual(fakeResult);
 
-    expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Invalid security identifier ${identifier.value} of type Isin`
-    );
+      fakeResult = { type: SecurityIdentifierType.Cusip, value: 'someValue' };
+      identifier = dsMockUtils.createMockAssetIdentifier({
+        [SecurityIdentifierType.Cusip]: dsMockUtils.createMockU8aFixed('someValue'),
+      });
 
-    // cSpell: disable-next-line
-    identifier = { type: SecurityIdentifierType.Lei, value: '969500T3MBS4SQAMHJ45' };
+      result = assetIdentifierToSecurityIdentifier(identifier);
+      expect(result).toEqual(fakeResult);
 
-    expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Invalid security identifier ${identifier.value} of type Lei`
-    );
+      fakeResult = { type: SecurityIdentifierType.Cins, value: 'someValue' };
+      identifier = dsMockUtils.createMockAssetIdentifier({
+        [SecurityIdentifierType.Cins]: dsMockUtils.createMockU8aFixed('someValue'),
+      });
 
-    identifier = { type: SecurityIdentifierType.Cusip, value: '037831200' };
+      result = assetIdentifierToSecurityIdentifier(identifier);
+      expect(result).toEqual(fakeResult);
 
-    expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
-      `Invalid security identifier ${identifier.value} of type Cusip`
-    );
-  });
+      fakeResult = { type: SecurityIdentifierType.Lei, value: 'someValue' };
+      identifier = dsMockUtils.createMockAssetIdentifier({
+        [SecurityIdentifierType.Lei]: dsMockUtils.createMockU8aFixed('someValue'),
+      });
 
-  test('assetIdentifierToSecurityIdentifier should convert a polkadot AssetIdentifier object to a SecurityIdentifier', () => {
-    let fakeResult = { type: SecurityIdentifierType.Isin, value: 'someValue' };
-    let identifier = dsMockUtils.createMockAssetIdentifier({
-      [SecurityIdentifierType.Isin]: dsMockUtils.createMockU8aFixed('someValue'),
+      result = assetIdentifierToSecurityIdentifier(identifier);
+      expect(result).toEqual(fakeResult);
     });
-
-    let result = assetIdentifierToSecurityIdentifier(identifier);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { type: SecurityIdentifierType.Cusip, value: 'someValue' };
-    identifier = dsMockUtils.createMockAssetIdentifier({
-      [SecurityIdentifierType.Cusip]: dsMockUtils.createMockU8aFixed('someValue'),
-    });
-
-    result = assetIdentifierToSecurityIdentifier(identifier);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { type: SecurityIdentifierType.Cins, value: 'someValue' };
-    identifier = dsMockUtils.createMockAssetIdentifier({
-      [SecurityIdentifierType.Cins]: dsMockUtils.createMockU8aFixed('someValue'),
-    });
-
-    result = assetIdentifierToSecurityIdentifier(identifier);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { type: SecurityIdentifierType.Lei, value: 'someValue' };
-    identifier = dsMockUtils.createMockAssetIdentifier({
-      [SecurityIdentifierType.Lei]: dsMockUtils.createMockU8aFixed('someValue'),
-    });
-
-    result = assetIdentifierToSecurityIdentifier(identifier);
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -2491,24 +2583,28 @@ describe('stringToFundingRoundName and fundingRoundNameToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToFundingRoundName should convert a string to a polkadot FundingRoundName object', () => {
-    const value = 'someName';
-    const fakeResult = 'convertedName' as unknown as FundingRoundName;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToFundingRoundName', () => {
+    it('should convert a string to a polkadot FundingRoundName object', () => {
+      const value = 'someName';
+      const fakeResult = 'convertedName' as unknown as FundingRoundName;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('FundingRoundName', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('FundingRoundName', value).returns(fakeResult);
 
-    const result = stringToFundingRoundName(value, context);
+      const result = stringToFundingRoundName(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('fundingRoundNameToString should convert a polkadot FundingRoundName object to a string', () => {
-    const fakeResult = 'someFundingRoundName';
-    const roundName = dsMockUtils.createMockFundingRoundName(fakeResult);
+  describe('fundingRoundNameToString', () => {
+    it('should convert a polkadot FundingRoundName object to a string', () => {
+      const fakeResult = 'someFundingRoundName';
+      const roundName = dsMockUtils.createMockFundingRoundName(fakeResult);
 
-    const result = fundingRoundNameToString(roundName);
-    expect(result).toEqual(fakeResult);
+      const result = fundingRoundNameToString(roundName);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -2525,24 +2621,28 @@ describe('stringToDocumentName and documentNameToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToDocumentName should convert a string to a polkadot DocumentName object', () => {
-    const value = 'someName';
-    const fakeResult = 'convertedName' as unknown as DocumentName;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToDocumentName', () => {
+    it('should convert a string to a polkadot DocumentName object', () => {
+      const value = 'someName';
+      const fakeResult = 'convertedName' as unknown as DocumentName;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentName', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('DocumentName', value).returns(fakeResult);
 
-    const result = stringToDocumentName(value, context);
+      const result = stringToDocumentName(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('documentNameToString should convert a polkadot DocumentName object to a string', () => {
-    const fakeResult = 'someDocumentName';
-    const docName = dsMockUtils.createMockDocumentName(fakeResult);
+  describe('documentNameToString', () => {
+    it('should convert a polkadot DocumentName object to a string', () => {
+      const fakeResult = 'someDocumentName';
+      const docName = dsMockUtils.createMockDocumentName(fakeResult);
 
-    const result = documentNameToString(docName);
-    expect(result).toEqual(fakeResult);
+      const result = documentNameToString(docName);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -2559,24 +2659,28 @@ describe('stringToDocumentUri and documentUriToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToDocumentUri should convert a string to a polkadot DocumentUri object', () => {
-    const value = 'someUri';
-    const fakeResult = 'convertedUri' as unknown as DocumentUri;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToDocumentUri', () => {
+    it('should convert a string to a polkadot DocumentUri object', () => {
+      const value = 'someUri';
+      const fakeResult = 'convertedUri' as unknown as DocumentUri;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentUri', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('DocumentUri', value).returns(fakeResult);
 
-    const result = stringToDocumentUri(value, context);
+      const result = stringToDocumentUri(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
-    const fakeResult = 'someDocumentUri';
-    const docUri = dsMockUtils.createMockDocumentUri(fakeResult);
+  describe('documentUriToString', () => {
+    it('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
+      const fakeResult = 'someDocumentUri';
+      const docUri = dsMockUtils.createMockDocumentUri(fakeResult);
 
-    const result = documentUriToString(docUri);
-    expect(result).toEqual(fakeResult);
+      const result = documentUriToString(docUri);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -2593,165 +2697,169 @@ describe('stringToDocumentHash and documentHashToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToDocumentHash should throw if document hash is not prefixed with 0x', () => {
-    expect(() => stringToDocumentHash('', dsMockUtils.getContextInstance())).toThrow(
-      'Document hash must be a hexadecimal string prefixed by 0x'
-    );
+  describe('stringToDocumentHash', () => {
+    it('should throw if document hash is not prefixed with 0x', () => {
+      expect(() => stringToDocumentHash('', dsMockUtils.getContextInstance())).toThrow(
+        'Document hash must be a hexadecimal string prefixed by 0x'
+      );
+    });
+
+    it('should throw if document hash is longer than 128 characters', () => {
+      expect(() =>
+        stringToDocumentHash('0x'.padEnd(131, '1'), dsMockUtils.getContextInstance())
+      ).toThrow('Document hash exceeds max length');
+    });
+
+    it('should convert a string to a polkadot DocumentHash object', () => {
+      const fakeResult = 'convertedHash' as unknown as DocumentHash;
+      const context = dsMockUtils.getContextInstance();
+
+      const createTypeStub = dsMockUtils.getCreateTypeStub();
+
+      createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
+
+      let result = stringToDocumentHash(undefined, context);
+
+      expect(result).toEqual(fakeResult);
+
+      let value = '0x1';
+      createTypeStub
+        .withArgs('DocumentHash', { H128: hexToU8a(value.padEnd(34, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+
+      value = value.padEnd(35, '1');
+      createTypeStub
+        .withArgs('DocumentHash', { H160: hexToU8a(value.padEnd(42, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+
+      value = value.padEnd(43, '1');
+      createTypeStub
+        .withArgs('DocumentHash', { H192: hexToU8a(value.padEnd(50, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+
+      value = value.padEnd(51, '1');
+      createTypeStub
+        .withArgs('DocumentHash', { H224: hexToU8a(value.padEnd(58, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+
+      value = value.padEnd(59, '1');
+      createTypeStub
+        .withArgs('DocumentHash', { H256: hexToU8a(value.padEnd(66, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+
+      value = value.padEnd(67, '1');
+      createTypeStub
+        .withArgs('DocumentHash', { H320: hexToU8a(value.padEnd(82, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+
+      value = value.padEnd(83, '1');
+      createTypeStub
+        .withArgs('DocumentHash', { H384: hexToU8a(value.padEnd(98, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+
+      value = value.padEnd(99, '1');
+      createTypeStub
+        .withArgs('DocumentHash', { H512: hexToU8a(value.padEnd(130, '0')) })
+        .returns(fakeResult);
+
+      result = stringToDocumentHash(value, context);
+
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('stringToDocumentHash should throw if document hash is longer than 128 characters', () => {
-    expect(() =>
-      stringToDocumentHash('0x'.padEnd(131, '1'), dsMockUtils.getContextInstance())
-    ).toThrow('Document hash exceeds max length');
-  });
+  describe('documentHashToString', () => {
+    it('should convert a polkadot DocumentHash object to a string', () => {
+      const fakeResult = '0x01';
+      let docHash = dsMockUtils.createMockDocumentHash({
+        H128: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-  test('stringToDocumentHash should convert a string to a polkadot DocumentHash object', () => {
-    const fakeResult = 'convertedHash' as unknown as DocumentHash;
-    const context = dsMockUtils.getContextInstance();
+      let result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+      docHash = dsMockUtils.createMockDocumentHash({
+        H160: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-    createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
+      result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    let result = stringToDocumentHash(undefined, context);
+      docHash = dsMockUtils.createMockDocumentHash({
+        H192: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-    expect(result).toEqual(fakeResult);
+      result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    let value = '0x1';
-    createTypeStub
-      .withArgs('DocumentHash', { H128: hexToU8a(value.padEnd(34, '0')) })
-      .returns(fakeResult);
+      docHash = dsMockUtils.createMockDocumentHash({
+        H224: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-    result = stringToDocumentHash(value, context);
+      result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    expect(result).toEqual(fakeResult);
+      docHash = dsMockUtils.createMockDocumentHash({
+        H256: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-    value = value.padEnd(35, '1');
-    createTypeStub
-      .withArgs('DocumentHash', { H160: hexToU8a(value.padEnd(42, '0')) })
-      .returns(fakeResult);
+      result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    result = stringToDocumentHash(value, context);
+      docHash = dsMockUtils.createMockDocumentHash({
+        H320: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-    expect(result).toEqual(fakeResult);
+      result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    value = value.padEnd(43, '1');
-    createTypeStub
-      .withArgs('DocumentHash', { H192: hexToU8a(value.padEnd(50, '0')) })
-      .returns(fakeResult);
+      docHash = dsMockUtils.createMockDocumentHash({
+        H384: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-    result = stringToDocumentHash(value, context);
+      result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    expect(result).toEqual(fakeResult);
+      docHash = dsMockUtils.createMockDocumentHash({
+        H512: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      });
 
-    value = value.padEnd(51, '1');
-    createTypeStub
-      .withArgs('DocumentHash', { H224: hexToU8a(value.padEnd(58, '0')) })
-      .returns(fakeResult);
+      result = documentHashToString(docHash);
+      expect(result).toEqual(fakeResult);
 
-    result = stringToDocumentHash(value, context);
+      docHash = dsMockUtils.createMockDocumentHash('None');
 
-    expect(result).toEqual(fakeResult);
-
-    value = value.padEnd(59, '1');
-    createTypeStub
-      .withArgs('DocumentHash', { H256: hexToU8a(value.padEnd(66, '0')) })
-      .returns(fakeResult);
-
-    result = stringToDocumentHash(value, context);
-
-    expect(result).toEqual(fakeResult);
-
-    value = value.padEnd(67, '1');
-    createTypeStub
-      .withArgs('DocumentHash', { H320: hexToU8a(value.padEnd(82, '0')) })
-      .returns(fakeResult);
-
-    result = stringToDocumentHash(value, context);
-
-    expect(result).toEqual(fakeResult);
-
-    value = value.padEnd(83, '1');
-    createTypeStub
-      .withArgs('DocumentHash', { H384: hexToU8a(value.padEnd(98, '0')) })
-      .returns(fakeResult);
-
-    result = stringToDocumentHash(value, context);
-
-    expect(result).toEqual(fakeResult);
-
-    value = value.padEnd(99, '1');
-    createTypeStub
-      .withArgs('DocumentHash', { H512: hexToU8a(value.padEnd(130, '0')) })
-      .returns(fakeResult);
-
-    result = stringToDocumentHash(value, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-
-  test('documentHashToString should convert a polkadot DocumentHash object to a string', () => {
-    const fakeResult = '0x01';
-    let docHash = dsMockUtils.createMockDocumentHash({
-      H128: dsMockUtils.createMockU8aFixed(fakeResult, true),
+      result = documentHashToString(docHash);
+      expect(result).toBeUndefined();
     });
-
-    let result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash({
-      H160: dsMockUtils.createMockU8aFixed(fakeResult, true),
-    });
-
-    result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash({
-      H192: dsMockUtils.createMockU8aFixed(fakeResult, true),
-    });
-
-    result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash({
-      H224: dsMockUtils.createMockU8aFixed(fakeResult, true),
-    });
-
-    result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash({
-      H256: dsMockUtils.createMockU8aFixed(fakeResult, true),
-    });
-
-    result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash({
-      H320: dsMockUtils.createMockU8aFixed(fakeResult, true),
-    });
-
-    result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash({
-      H384: dsMockUtils.createMockU8aFixed(fakeResult, true),
-    });
-
-    result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash({
-      H512: dsMockUtils.createMockU8aFixed(fakeResult, true),
-    });
-
-    result = documentHashToString(docHash);
-    expect(result).toEqual(fakeResult);
-
-    docHash = dsMockUtils.createMockDocumentHash('None');
-
-    result = documentHashToString(docHash);
-    expect(result).toBeUndefined();
   });
 });
 
@@ -2768,24 +2876,28 @@ describe('stringToDocumentType and documentTypeToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToDocumentType should convert a string to a polkadot DocumentType object', () => {
-    const value = 'someType';
-    const fakeResult = 'convertedType' as unknown as DocumentType;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToDocumentType', () => {
+    it('should convert a string to a polkadot DocumentType object', () => {
+      const value = 'someType';
+      const fakeResult = 'convertedType' as unknown as DocumentType;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('DocumentType', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('DocumentType', value).returns(fakeResult);
 
-    const result = stringToDocumentType(value, context);
+      const result = stringToDocumentType(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('documentTypeToString should convert a polkadot DocumentType object to a string', () => {
-    const fakeResult = 'someDocumentType';
-    const docType = dsMockUtils.createMockDocumentType(fakeResult);
+  describe('documentTypeToString', () => {
+    it('should convert a polkadot DocumentType object to a string', () => {
+      const fakeResult = 'someDocumentType';
+      const docType = dsMockUtils.createMockDocumentType(fakeResult);
 
-    const result = documentTypeToString(docType);
-    expect(result).toEqual(fakeResult);
+      const result = documentTypeToString(docType);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -2802,105 +2914,109 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
     dsMockUtils.cleanup();
   });
 
-  test('assetDocumentToDocument should convert an AssetDocument object to a polkadot Document object', () => {
-    const uri = 'someUri';
-    const contentHash = '0x01';
-    const name = 'someName';
-    const type = 'someType';
-    const filedAt = new Date();
-    const value = {
-      uri,
-      contentHash,
-      name,
-    };
-    const fakeResult = 'convertedDocument' as unknown as Document;
-    const context = dsMockUtils.getContextInstance();
+  describe('assetDocumentToDocument', () => {
+    it('should convert an AssetDocument object to a polkadot Document object', () => {
+      const uri = 'someUri';
+      const contentHash = '0x01';
+      const name = 'someName';
+      const type = 'someType';
+      const filedAt = new Date();
+      const value = {
+        uri,
+        contentHash,
+        name,
+      };
+      const fakeResult = 'convertedDocument' as unknown as Document;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Document', {
-        uri: stringToDocumentUri(uri, context),
-        name: stringToDocumentName(name, context),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: stringToDocumentHash(contentHash, context),
-        doc_type: null,
-        filing_date: null,
-        /* eslint-enable @typescript-eslint/naming-convention */
-      })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Document', {
+          uri: stringToDocumentUri(uri, context),
+          name: stringToDocumentName(name, context),
+          /* eslint-disable @typescript-eslint/naming-convention */
+          content_hash: stringToDocumentHash(contentHash, context),
+          doc_type: null,
+          filing_date: null,
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+        .returns(fakeResult);
 
-    let result = assetDocumentToDocument(value, context);
-    expect(result).toEqual(fakeResult);
+      let result = assetDocumentToDocument(value, context);
+      expect(result).toEqual(fakeResult);
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Document', {
-        uri: stringToDocumentUri(uri, context),
-        name: stringToDocumentName(name, context),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: stringToDocumentHash(contentHash, context),
-        doc_type: stringToDocumentType(type, context),
-        filing_date: dateToMoment(filedAt, context),
-        /* eslint-enable @typescript-eslint/naming-convention */
-      })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Document', {
+          uri: stringToDocumentUri(uri, context),
+          name: stringToDocumentName(name, context),
+          /* eslint-disable @typescript-eslint/naming-convention */
+          content_hash: stringToDocumentHash(contentHash, context),
+          doc_type: stringToDocumentType(type, context),
+          filing_date: dateToMoment(filedAt, context),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+        .returns(fakeResult);
 
-    result = assetDocumentToDocument({ ...value, filedAt, type }, context);
-    expect(result).toEqual(fakeResult);
+      result = assetDocumentToDocument({ ...value, filedAt, type }, context);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('documentToAssetDocument should convert a polkadot Document object to an AssetDocument object', () => {
-    const name = 'someName';
-    const uri = 'someUri';
-    const contentHash = '0x111111';
-    const filedAt = new Date();
-    const type = 'someType';
-    let fakeResult: AssetDocument = {
-      name,
-      uri,
-    };
+  describe('documentToAssetDocument', () => {
+    it('should convert a polkadot Document object to an AssetDocument object', () => {
+      const name = 'someName';
+      const uri = 'someUri';
+      const contentHash = '0x111111';
+      const filedAt = new Date();
+      const type = 'someType';
+      let fakeResult: AssetDocument = {
+        name,
+        uri,
+      };
 
-    let doc = dsMockUtils.createMockDocument({
-      uri: dsMockUtils.createMockDocumentUri(uri),
-      name: dsMockUtils.createMockDocumentName(name),
-      /* eslint-disable @typescript-eslint/naming-convention */
-      content_hash: dsMockUtils.createMockDocumentHash('None'),
-      doc_type: dsMockUtils.createMockOption(),
-      filing_date: dsMockUtils.createMockOption(),
-      /* eslint-enable @typescript-eslint/naming-convention */
+      let doc = dsMockUtils.createMockDocument({
+        uri: dsMockUtils.createMockDocumentUri(uri),
+        name: dsMockUtils.createMockDocumentName(name),
+        /* eslint-disable @typescript-eslint/naming-convention */
+        content_hash: dsMockUtils.createMockDocumentHash('None'),
+        doc_type: dsMockUtils.createMockOption(),
+        filing_date: dsMockUtils.createMockOption(),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      let result = documentToAssetDocument(doc);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        ...fakeResult,
+        contentHash,
+        filedAt,
+        type,
+      };
+
+      doc = dsMockUtils.createMockDocument({
+        uri: dsMockUtils.createMockDocumentUri(uri),
+        name: dsMockUtils.createMockDocumentName(name),
+        /* eslint-disable @typescript-eslint/naming-convention */
+        content_hash: dsMockUtils.createMockDocumentHash({
+          H128: dsMockUtils.createMockU8aFixed(contentHash, true),
+        }),
+        doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
+        filing_date: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime()))
+        ),
+        /* eslint-enable @typescript-eslint/naming-convention */
+      });
+
+      result = documentToAssetDocument(doc);
+      expect(result).toEqual(fakeResult);
     });
-
-    let result = documentToAssetDocument(doc);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      ...fakeResult,
-      contentHash,
-      filedAt,
-      type,
-    };
-
-    doc = dsMockUtils.createMockDocument({
-      uri: dsMockUtils.createMockDocumentUri(uri),
-      name: dsMockUtils.createMockDocumentName(name),
-      /* eslint-disable @typescript-eslint/naming-convention */
-      content_hash: dsMockUtils.createMockDocumentHash({
-        H128: dsMockUtils.createMockU8aFixed(contentHash, true),
-      }),
-      doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
-      filing_date: dsMockUtils.createMockOption(
-        dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime()))
-      ),
-      /* eslint-enable @typescript-eslint/naming-convention */
-    });
-
-    result = documentToAssetDocument(doc);
-    expect(result).toEqual(fakeResult);
   });
 });
 
 describe('cddStatusToBoolean', () => {
-  test('cddStatusToBoolean should convert a valid CDD status to a true boolean', async () => {
+  it('should convert a valid CDD status to a true boolean', async () => {
     const cddStatusMock = dsMockUtils.createMockCddStatus({
       Ok: dsMockUtils.createMockIdentityId(),
     });
@@ -2909,7 +3025,7 @@ describe('cddStatusToBoolean', () => {
     expect(result).toEqual(true);
   });
 
-  test('cddStatusToBoolean should convert an invalid CDD status to a false boolean', async () => {
+  it('should convert an invalid CDD status to a false boolean', async () => {
     const cddStatusMock = dsMockUtils.createMockCddStatus();
     const result = cddStatusToBoolean(cddStatusMock);
 
@@ -2918,7 +3034,7 @@ describe('cddStatusToBoolean', () => {
 });
 
 describe('canTransferResultToTransferStatus', () => {
-  test('canTransferResultToTransferStatus should convert a polkadot CanTransferResult object to a TransferStatus', () => {
+  it('should convert a polkadot CanTransferResult object to a TransferStatus', () => {
     const errorMsg = 'someError';
     expect(() =>
       canTransferResultToTransferStatus(
@@ -2937,7 +3053,7 @@ describe('canTransferResultToTransferStatus', () => {
 });
 
 describe('granularCanTransferResultToTransferBreakdown', () => {
-  test('granularCanTransferResultToTransferBreakdown should convert a polkadot GranularCanTransferResult object to a TransferBreakdown', () => {
+  it('should convert a polkadot GranularCanTransferResult object to a TransferBreakdown', () => {
     const context = dsMockUtils.getContextInstance();
     let result = granularCanTransferResultToTransferBreakdown(
       dsMockUtils.createMockGranularCanTransferResult({
@@ -3077,103 +3193,107 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
     dsMockUtils.cleanup();
   });
 
-  test('scopeToMeshScope should convert a Custom type Scope into a polkadot Scope object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const value: Scope = {
-      type: ScopeType.Custom,
-      value: 'someValue',
-    };
-    const fakeResult = 'ScopeEnum' as unknown as MeshScope;
+  describe('scopeToMeshScope', () => {
+    it('should convert a Custom type Scope into a polkadot Scope object', () => {
+      const context = dsMockUtils.getContextInstance();
+      const value: Scope = {
+        type: ScopeType.Custom,
+        value: 'someValue',
+      };
+      const fakeResult = 'ScopeEnum' as unknown as MeshScope;
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Scope', { [value.type]: value.value })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Scope', { [value.type]: value.value })
+        .returns(fakeResult);
 
-    const result = scopeToMeshScope(value, context);
+      const result = scopeToMeshScope(value, context);
 
-    expect(result).toBe(fakeResult);
-  });
-
-  test('scopeToMeshScope should convert a Identity type Scope into a polkadot Scope object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const value: Scope = {
-      type: ScopeType.Identity,
-      value: '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c',
-    };
-    const fakeResult = 'ScopeEnum' as unknown as MeshScope;
-    const fakeIdentityId =
-      '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as IdentityId;
-
-    dsMockUtils.getCreateTypeStub().withArgs('IdentityId', value.value).returns(fakeIdentityId);
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Scope', { [value.type]: fakeIdentityId })
-      .returns(fakeResult);
-
-    const result = scopeToMeshScope(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-
-  test('scopeToMeshScope should convert a Ticker type Scope into a polkadot Scope object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const value: Scope = {
-      type: ScopeType.Ticker,
-      value: 'SOME_TICKER',
-    };
-    const fakeResult = 'ScopeEnum' as unknown as MeshScope;
-    const fakeTicker = 'SOME_TICKER' as unknown as Ticker;
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Ticker', padString(value.value, MAX_TICKER_LENGTH))
-      .returns(fakeTicker);
-
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('Scope', { [value.type]: fakeTicker })
-      .returns(fakeResult);
-
-    const result = scopeToMeshScope(value, context);
-
-    expect(result).toBe(fakeResult);
-  });
-
-  test('meshScopeToScope should convert a polkadot Scope object into a Scope', () => {
-    let fakeResult: Scope = {
-      type: ScopeType.Identity,
-      value: 'someDid',
-    };
-    let scope = dsMockUtils.createMockScope({
-      Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
+      expect(result).toBe(fakeResult);
     });
 
-    let result = meshScopeToScope(scope);
-    expect(result).toEqual(fakeResult);
+    it('should convert a Identity type Scope into a polkadot Scope object', () => {
+      const context = dsMockUtils.getContextInstance();
+      const value: Scope = {
+        type: ScopeType.Identity,
+        value: '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c',
+      };
+      const fakeResult = 'ScopeEnum' as unknown as MeshScope;
+      const fakeIdentityId =
+        '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as IdentityId;
 
-    fakeResult = {
-      type: ScopeType.Ticker,
-      value: 'someTicker',
-    };
-    scope = dsMockUtils.createMockScope({
-      Ticker: dsMockUtils.createMockTicker(fakeResult.value),
+      dsMockUtils.getCreateTypeStub().withArgs('IdentityId', value.value).returns(fakeIdentityId);
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Scope', { [value.type]: fakeIdentityId })
+        .returns(fakeResult);
+
+      const result = scopeToMeshScope(value, context);
+
+      expect(result).toBe(fakeResult);
     });
 
-    result = meshScopeToScope(scope);
-    expect(result).toEqual(fakeResult);
+    it('should convert a Ticker type Scope into a polkadot Scope object', () => {
+      const context = dsMockUtils.getContextInstance();
+      const value: Scope = {
+        type: ScopeType.Ticker,
+        value: 'SOME_TICKER',
+      };
+      const fakeResult = 'ScopeEnum' as unknown as MeshScope;
+      const fakeTicker = 'SOME_TICKER' as unknown as Ticker;
 
-    fakeResult = {
-      type: ScopeType.Custom,
-      value: 'something',
-    };
-    scope = dsMockUtils.createMockScope({
-      Custom: dsMockUtils.createMockBytes(fakeResult.value),
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Ticker', padString(value.value, MAX_TICKER_LENGTH))
+        .returns(fakeTicker);
+
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('Scope', { [value.type]: fakeTicker })
+        .returns(fakeResult);
+
+      const result = scopeToMeshScope(value, context);
+
+      expect(result).toBe(fakeResult);
     });
+  });
 
-    result = meshScopeToScope(scope);
-    expect(result).toEqual(fakeResult);
+  describe('meshScopeToScope', () => {
+    it('should convert a polkadot Scope object into a Scope', () => {
+      let fakeResult: Scope = {
+        type: ScopeType.Identity,
+        value: 'someDid',
+      };
+      let scope = dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(fakeResult.value),
+      });
+
+      let result = meshScopeToScope(scope);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ScopeType.Ticker,
+        value: 'someTicker',
+      };
+      scope = dsMockUtils.createMockScope({
+        Ticker: dsMockUtils.createMockTicker(fakeResult.value),
+      });
+
+      result = meshScopeToScope(scope);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ScopeType.Custom,
+        value: 'something',
+      };
+      scope = dsMockUtils.createMockScope({
+        Custom: dsMockUtils.createMockBytes(fakeResult.value),
+      });
+
+      result = meshScopeToScope(scope);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -3190,259 +3310,263 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
     dsMockUtils.cleanup();
   });
 
-  test('claimToMeshClaim should convert a Claim to a polkadot Claim object', () => {
-    const context = dsMockUtils.getContextInstance();
-    let value: Claim = {
-      type: ClaimType.Jurisdiction,
-      code: CountryCode.Cl,
-      scope: { type: ScopeType.Identity, value: 'someTickerDid' },
-    };
-    const fakeResult = 'meshClaim' as unknown as MeshClaim;
-    const fakeScope = 'scope' as unknown as MeshScope;
+  describe('claimToMeshClaim', () => {
+    it('should convert a Claim to a polkadot Claim object', () => {
+      const context = dsMockUtils.getContextInstance();
+      let value: Claim = {
+        type: ClaimType.Jurisdiction,
+        code: CountryCode.Cl,
+        scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+      };
+      const fakeResult = 'meshClaim' as unknown as MeshClaim;
+      const fakeScope = 'scope' as unknown as MeshScope;
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+      const createTypeStub = dsMockUtils.getCreateTypeStub();
 
-    createTypeStub.withArgs('Scope', sinon.match.any).returns(fakeScope);
-    createTypeStub
-      .withArgs('Claim', { [value.type]: [value.code, scopeToMeshScope(value.scope, context)] })
-      .returns(fakeResult);
+      createTypeStub.withArgs('Scope', sinon.match.any).returns(fakeScope);
+      createTypeStub
+        .withArgs('Claim', { [value.type]: [value.code, scopeToMeshScope(value.scope, context)] })
+        .returns(fakeResult);
 
-    let result = claimToMeshClaim(value, context);
+      let result = claimToMeshClaim(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = {
-      type: ClaimType.Exempted,
-      scope: { type: ScopeType.Identity, value: 'someTickerDid' },
-    };
+      value = {
+        type: ClaimType.Exempted,
+        scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+      };
 
-    createTypeStub
-      .withArgs('Claim', { [value.type]: scopeToMeshScope(value.scope, context) })
-      .returns(fakeResult);
+      createTypeStub
+        .withArgs('Claim', { [value.type]: scopeToMeshScope(value.scope, context) })
+        .returns(fakeResult);
 
-    result = claimToMeshClaim(value, context);
+      result = claimToMeshClaim(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = {
-      type: ClaimType.CustomerDueDiligence,
-      id: 'someCddId',
-    };
+      value = {
+        type: ClaimType.CustomerDueDiligence,
+        id: 'someCddId',
+      };
 
-    createTypeStub
-      .withArgs('Claim', { [value.type]: stringToCddId(value.id, context) })
-      .returns(fakeResult);
+      createTypeStub
+        .withArgs('Claim', { [value.type]: stringToCddId(value.id, context) })
+        .returns(fakeResult);
 
-    result = claimToMeshClaim(value, context);
+      result = claimToMeshClaim(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = {
-      type: ClaimType.NoData,
-    };
+      value = {
+        type: ClaimType.NoData,
+      };
 
-    createTypeStub.withArgs('Claim', { [value.type]: null }).returns(fakeResult);
+      createTypeStub.withArgs('Claim', { [value.type]: null }).returns(fakeResult);
 
-    result = claimToMeshClaim(value, context);
+      result = claimToMeshClaim(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = {
-      type: ClaimType.InvestorUniqueness,
-      scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
-      cddId: 'someCddId',
-      scopeId: 'someScopeId',
-    };
+      value = {
+        type: ClaimType.InvestorUniqueness,
+        scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
+        cddId: 'someCddId',
+        scopeId: 'someScopeId',
+      };
 
-    createTypeStub
-      .withArgs('Claim', {
-        [value.type]: [
-          scopeToMeshScope(value.scope, context),
-          stringToScopeId(value.scopeId, context),
-          stringToCddId(value.cddId, context),
-        ],
-      })
-      .returns(fakeResult);
+      createTypeStub
+        .withArgs('Claim', {
+          [value.type]: [
+            scopeToMeshScope(value.scope, context),
+            stringToScopeId(value.scopeId, context),
+            stringToCddId(value.cddId, context),
+          ],
+        })
+        .returns(fakeResult);
 
-    result = claimToMeshClaim(value, context);
+      result = claimToMeshClaim(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
 
-    value = {
-      type: ClaimType.InvestorUniquenessV2,
-      cddId: 'someCddId',
-    };
+      value = {
+        type: ClaimType.InvestorUniquenessV2,
+        cddId: 'someCddId',
+      };
 
-    createTypeStub
-      .withArgs('Claim', {
-        [value.type]: stringToCddId(value.cddId, context),
-      })
-      .returns(fakeResult);
+      createTypeStub
+        .withArgs('Claim', {
+          [value.type]: stringToCddId(value.cddId, context),
+        })
+        .returns(fakeResult);
 
-    result = claimToMeshClaim(value, context);
+      result = claimToMeshClaim(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('meshClaimToClaim should convert a polkadot Claim object to a Claim', () => {
-    let scope = { type: ScopeType.Ticker, value: 'someTicker' };
+  describe('meshClaimToClaim', () => {
+    it('should convert a polkadot Claim object to a Claim', () => {
+      let scope = { type: ScopeType.Ticker, value: 'someTicker' };
 
-    let fakeResult: Claim = {
-      type: ClaimType.Accredited,
-      scope,
-    };
+      let fakeResult: Claim = {
+        type: ClaimType.Accredited,
+        scope,
+      };
 
-    let claim = dsMockUtils.createMockClaim({
-      Accredited: dsMockUtils.createMockScope({
-        Ticker: dsMockUtils.createMockTicker(scope.value),
-      }),
+      let claim = dsMockUtils.createMockClaim({
+        Accredited: dsMockUtils.createMockScope({
+          Ticker: dsMockUtils.createMockTicker(scope.value),
+        }),
+      });
+
+      let result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      scope = { type: ScopeType.Identity, value: 'someDid' };
+
+      fakeResult = {
+        type: ClaimType.Affiliate,
+        scope,
+      };
+      claim = dsMockUtils.createMockClaim({
+        Affiliate: dsMockUtils.createMockScope({
+          Identity: dsMockUtils.createMockIdentityId(scope.value),
+        }),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.Blocked,
+        scope,
+      };
+      claim = dsMockUtils.createMockClaim({
+        Blocked: dsMockUtils.createMockScope({
+          Identity: dsMockUtils.createMockIdentityId(scope.value),
+        }),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.BuyLockup,
+        scope,
+      };
+      claim = dsMockUtils.createMockClaim({
+        BuyLockup: dsMockUtils.createMockScope({
+          Identity: dsMockUtils.createMockIdentityId(scope.value),
+        }),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.CustomerDueDiligence,
+        id: 'someId',
+      };
+      claim = dsMockUtils.createMockClaim({
+        CustomerDueDiligence: dsMockUtils.createMockCddId(fakeResult.id),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.Jurisdiction,
+        code: CountryCode.Cl,
+        scope,
+      };
+
+      claim = dsMockUtils.createMockClaim({
+        Jurisdiction: [
+          dsMockUtils.createMockCountryCode(fakeResult.code),
+          dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
+        ],
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.KnowYourCustomer,
+        scope,
+      };
+      claim = dsMockUtils.createMockClaim({
+        KnowYourCustomer: dsMockUtils.createMockScope({
+          Identity: dsMockUtils.createMockIdentityId(scope.value),
+        }),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.NoData,
+      };
+      claim = dsMockUtils.createMockClaim('NoData');
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.SellLockup,
+        scope,
+      };
+      claim = dsMockUtils.createMockClaim({
+        SellLockup: dsMockUtils.createMockScope({
+          Identity: dsMockUtils.createMockIdentityId(scope.value),
+        }),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.Exempted,
+        scope,
+      };
+      claim = dsMockUtils.createMockClaim({
+        Exempted: dsMockUtils.createMockScope({
+          Identity: dsMockUtils.createMockIdentityId(scope.value),
+        }),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.InvestorUniqueness,
+        scope,
+        scopeId: 'scopeId',
+        cddId: 'cddId',
+      };
+      claim = dsMockUtils.createMockClaim({
+        InvestorUniqueness: [
+          dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
+          dsMockUtils.createMockScopeId(fakeResult.scopeId),
+          dsMockUtils.createMockCddId(fakeResult.cddId),
+        ],
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        type: ClaimType.InvestorUniquenessV2,
+        cddId: 'cddId',
+      };
+      claim = dsMockUtils.createMockClaim({
+        InvestorUniquenessV2: dsMockUtils.createMockCddId(fakeResult.cddId),
+      });
+
+      result = meshClaimToClaim(claim);
+      expect(result).toEqual(fakeResult);
     });
-
-    let result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    scope = { type: ScopeType.Identity, value: 'someDid' };
-
-    fakeResult = {
-      type: ClaimType.Affiliate,
-      scope,
-    };
-    claim = dsMockUtils.createMockClaim({
-      Affiliate: dsMockUtils.createMockScope({
-        Identity: dsMockUtils.createMockIdentityId(scope.value),
-      }),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.Blocked,
-      scope,
-    };
-    claim = dsMockUtils.createMockClaim({
-      Blocked: dsMockUtils.createMockScope({
-        Identity: dsMockUtils.createMockIdentityId(scope.value),
-      }),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.BuyLockup,
-      scope,
-    };
-    claim = dsMockUtils.createMockClaim({
-      BuyLockup: dsMockUtils.createMockScope({
-        Identity: dsMockUtils.createMockIdentityId(scope.value),
-      }),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.CustomerDueDiligence,
-      id: 'someId',
-    };
-    claim = dsMockUtils.createMockClaim({
-      CustomerDueDiligence: dsMockUtils.createMockCddId(fakeResult.id),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.Jurisdiction,
-      code: CountryCode.Cl,
-      scope,
-    };
-
-    claim = dsMockUtils.createMockClaim({
-      Jurisdiction: [
-        dsMockUtils.createMockCountryCode(fakeResult.code),
-        dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
-      ],
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.KnowYourCustomer,
-      scope,
-    };
-    claim = dsMockUtils.createMockClaim({
-      KnowYourCustomer: dsMockUtils.createMockScope({
-        Identity: dsMockUtils.createMockIdentityId(scope.value),
-      }),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.NoData,
-    };
-    claim = dsMockUtils.createMockClaim('NoData');
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.SellLockup,
-      scope,
-    };
-    claim = dsMockUtils.createMockClaim({
-      SellLockup: dsMockUtils.createMockScope({
-        Identity: dsMockUtils.createMockIdentityId(scope.value),
-      }),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.Exempted,
-      scope,
-    };
-    claim = dsMockUtils.createMockClaim({
-      Exempted: dsMockUtils.createMockScope({
-        Identity: dsMockUtils.createMockIdentityId(scope.value),
-      }),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.InvestorUniqueness,
-      scope,
-      scopeId: 'scopeId',
-      cddId: 'cddId',
-    };
-    claim = dsMockUtils.createMockClaim({
-      InvestorUniqueness: [
-        dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
-        dsMockUtils.createMockScopeId(fakeResult.scopeId),
-        dsMockUtils.createMockCddId(fakeResult.cddId),
-      ],
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: ClaimType.InvestorUniquenessV2,
-      cddId: 'cddId',
-    };
-    claim = dsMockUtils.createMockClaim({
-      InvestorUniquenessV2: dsMockUtils.createMockCddId(fakeResult.cddId),
-    });
-
-    result = meshClaimToClaim(claim);
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -3459,124 +3583,132 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshClaimTypeToClaimType should convert a polkadot ClaimType object to a ClaimType', () => {
-    let fakeResult: ClaimType = ClaimType.Accredited;
+  describe('meshClaimTypeToClaimType', () => {
+    it('should convert a polkadot ClaimType object to a ClaimType', () => {
+      let fakeResult: ClaimType = ClaimType.Accredited;
 
-    let claimType = dsMockUtils.createMockClaimType(fakeResult);
+      let claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    let result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      let result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.Affiliate;
+      fakeResult = ClaimType.Affiliate;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.Blocked;
+      fakeResult = ClaimType.Blocked;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.BuyLockup;
+      fakeResult = ClaimType.BuyLockup;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.CustomerDueDiligence;
+      fakeResult = ClaimType.CustomerDueDiligence;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.Exempted;
+      fakeResult = ClaimType.Exempted;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.Jurisdiction;
+      fakeResult = ClaimType.Jurisdiction;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.KnowYourCustomer;
+      fakeResult = ClaimType.KnowYourCustomer;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.NoData;
+      fakeResult = ClaimType.NoData;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = ClaimType.SellLockup;
+      fakeResult = ClaimType.SellLockup;
 
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-    result = meshClaimTypeToClaimType(claimType);
-    expect(result).toEqual(fakeResult);
+      result = meshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('claimTypeToMeshClaimType should convert a ClaimType to a polkadot ClaimType object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const fakeResult = 'meshClaim' as unknown as MeshClaim;
+  describe('claimTypeToMeshClaimType', () => {
+    it('should convert a ClaimType to a polkadot ClaimType object', () => {
+      const context = dsMockUtils.getContextInstance();
+      const fakeResult = 'meshClaim' as unknown as MeshClaim;
 
-    dsMockUtils.getCreateTypeStub().returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().returns(fakeResult);
 
-    const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
-    expect(result).toEqual(fakeResult);
+      const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
-  test('should convert a MiddlewareScope object to a Scope', () => {
-    let result = middlewareScopeToScope({
-      type: ClaimScopeTypeEnum.Ticker,
-      value: 'SOMETHING\u0000\u0000\u0000',
+  describe('middlewareScopeToScope', () => {
+    it('should convert a MiddlewareScope object to a Scope', () => {
+      let result = middlewareScopeToScope({
+        type: ClaimScopeTypeEnum.Ticker,
+        value: 'SOMETHING\u0000\u0000\u0000',
+      });
+
+      expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
+
+      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
+
+      expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
+
+      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
+
+      expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
     });
-
-    expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
-
-    result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
-
-    expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
-
-    result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
-
-    expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
   });
 
-  test('scopeToMiddlewareScope should convert a Scope to a MiddlewareScope object', () => {
-    let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-    let result = scopeToMiddlewareScope(scope);
-    expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
+  describe('scopeToMiddlewareScope', () => {
+    it('should convert a Scope to a MiddlewareScope object', () => {
+      let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
+      let result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
-    scope = { type: ScopeType.Ticker, value: 'someTicker' };
-    result = scopeToMiddlewareScope(scope);
-    expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+      scope = { type: ScopeType.Ticker, value: 'someTicker' };
+      result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
 
-    scope = { type: ScopeType.Custom, value: 'customValue' };
-    result = scopeToMiddlewareScope(scope);
-    expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+      scope = { type: ScopeType.Custom, value: 'customValue' };
+      result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+    });
   });
 });
 
 describe('middlewareEventToEventIdentifier', () => {
-  test('should convert a middleware Event object to an EventIdentifier', () => {
+  it('should convert a middleware Event object to an EventIdentifier', () => {
     const event = {
       /* eslint-disable @typescript-eslint/naming-convention */
       block_id: 3000,
@@ -3608,24 +3740,28 @@ describe('stringToCddId and cddIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToCddId should convert a cdd id string into a CddId', () => {
-    const cddId = 'someId';
-    const fakeResult = 'type' as unknown as CddId;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToCddId', () => {
+    it('should convert a cdd id string into a CddId', () => {
+      const cddId = 'someId';
+      const fakeResult = 'type' as unknown as CddId;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('CddId', cddId).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('CddId', cddId).returns(fakeResult);
 
-    const result = stringToCddId(cddId, context);
+      const result = stringToCddId(cddId, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('cddIdToString should convert a CddId to a cddId string', () => {
-    const fakeResult = 'cddId';
-    const cddId = dsMockUtils.createMockCddId(fakeResult);
+  describe('cddIdToString', () => {
+    it('should convert a CddId to a cddId string', () => {
+      const fakeResult = 'cddId';
+      const cddId = dsMockUtils.createMockCddId(fakeResult);
 
-    const result = cddIdToString(cddId);
-    expect(result).toBe(fakeResult);
+      const result = cddIdToString(cddId);
+      expect(result).toBe(fakeResult);
+    });
   });
 });
 
@@ -3642,24 +3778,28 @@ describe('stringToScopeId and scopeIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToScopeId should convert a scope id string into a ScopeId', () => {
-    const scopeId = 'someId';
-    const fakeResult = 'type' as unknown as ScopeId;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToScopeId', () => {
+    it('should convert a scope id string into a ScopeId', () => {
+      const scopeId = 'someId';
+      const fakeResult = 'type' as unknown as ScopeId;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('ScopeId', scopeId).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('ScopeId', scopeId).returns(fakeResult);
 
-    const result = stringToScopeId(scopeId, context);
+      const result = stringToScopeId(scopeId, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('scopeIdToString should convert a ScopeId to a scopeId string', () => {
-    const fakeResult = 'scopeId';
-    const scopeId = dsMockUtils.createMockScopeId(fakeResult);
+  describe('scopeIdToString', () => {
+    it('should convert a ScopeId to a scopeId string', () => {
+      const fakeResult = 'scopeId';
+      const scopeId = dsMockUtils.createMockScopeId(fakeResult);
 
-    const result = scopeIdToString(scopeId);
-    expect(result).toBe(fakeResult);
+      const result = scopeIdToString(scopeId);
+      expect(result).toBe(fakeResult);
+    });
   });
 });
 
@@ -3678,260 +3818,264 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
     dsMockUtils.cleanup();
   });
 
-  test('requirementToComplianceRequirement should convert a Requirement to a polkadot ComplianceRequirement object', () => {
-    const did = 'someDid';
-    const context = dsMockUtils.getContextInstance();
-    const conditions: InputCondition[] = [
-      {
-        type: ConditionType.IsPresent,
-        target: ConditionTarget.Both,
-        claim: {
-          type: ClaimType.Exempted,
-          scope: { type: ScopeType.Identity, value: 'someTickerDid' },
-        },
-        trustedClaimIssuers: [
-          { identity: new Identity({ did }, context), trustedFor: null },
-          { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
-        ],
-      },
-      {
-        type: ConditionType.IsNoneOf,
-        target: ConditionTarget.Sender,
-        claims: [
-          {
-            type: ClaimType.Blocked,
+  describe('requirementToComplianceRequirement', () => {
+    it('should convert a Requirement to a polkadot ComplianceRequirement object', () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance();
+      const conditions: InputCondition[] = [
+        {
+          type: ConditionType.IsPresent,
+          target: ConditionTarget.Both,
+          claim: {
+            type: ClaimType.Exempted,
             scope: { type: ScopeType.Identity, value: 'someTickerDid' },
           },
-          {
-            type: ClaimType.SellLockup,
-            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
-          },
-        ],
-      },
-      {
-        type: ConditionType.IsAbsent,
-        target: ConditionTarget.Receiver,
-        claim: {
-          type: ClaimType.Jurisdiction as const,
-          scope: { type: ScopeType.Identity, value: 'someTickerDid' },
-          code: CountryCode.Cl,
+          trustedClaimIssuers: [
+            { identity: new Identity({ did }, context), trustedFor: null },
+            { identity: new Identity({ did: 'otherDid' }, context), trustedFor: null },
+          ],
         },
-      },
-      {
-        type: ConditionType.IsIdentity,
-        target: ConditionTarget.Sender,
-        identity: new Identity({ did }, context),
-      },
-      {
-        type: ConditionType.IsExternalAgent,
-        target: ConditionTarget.Receiver,
-      },
-    ];
-    const value = {
-      conditions,
-      id: new BigNumber(1),
-    };
-    const fakeResult = 'convertedComplianceRequirement' as unknown as ComplianceRequirement;
+        {
+          type: ConditionType.IsNoneOf,
+          target: ConditionTarget.Sender,
+          claims: [
+            {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+            },
+            {
+              type: ClaimType.SellLockup,
+              scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+            },
+          ],
+        },
+        {
+          type: ConditionType.IsAbsent,
+          target: ConditionTarget.Receiver,
+          claim: {
+            type: ClaimType.Jurisdiction as const,
+            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+            code: CountryCode.Cl,
+          },
+        },
+        {
+          type: ConditionType.IsIdentity,
+          target: ConditionTarget.Sender,
+          identity: new Identity({ did }, context),
+        },
+        {
+          type: ConditionType.IsExternalAgent,
+          target: ConditionTarget.Receiver,
+        },
+      ];
+      const value = {
+        conditions,
+        id: new BigNumber(1),
+      };
+      const fakeResult = 'convertedComplianceRequirement' as unknown as ComplianceRequirement;
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
+      const createTypeStub = dsMockUtils.getCreateTypeStub();
 
-    conditions.forEach(({ type }) => {
-      const meshType = type === ConditionType.IsExternalAgent ? ConditionType.IsIdentity : type;
+      conditions.forEach(({ type }) => {
+        const meshType = type === ConditionType.IsExternalAgent ? ConditionType.IsIdentity : type;
+        createTypeStub
+          .withArgs(
+            'Condition',
+            sinon.match({
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              condition_type: sinon.match.has(meshType),
+            })
+          )
+          .returns(`meshCondition${meshType}`);
+      });
+
       createTypeStub
-        .withArgs(
-          'Condition',
-          sinon.match({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            condition_type: sinon.match.has(meshType),
-          })
-        )
-        .returns(`meshCondition${meshType}`);
+        .withArgs('ComplianceRequirement', {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          sender_conditions: [
+            'meshConditionIsPresent',
+            'meshConditionIsNoneOf',
+            'meshConditionIsIdentity',
+          ],
+          receiver_conditions: [
+            'meshConditionIsPresent',
+            'meshConditionIsAbsent',
+            'meshConditionIsIdentity',
+          ],
+          id: bigNumberToU32(value.id, context),
+          /* eslint-enable @typescript-eslint/naming-convention */
+        })
+        .returns(fakeResult);
+
+      const result = requirementToComplianceRequirement(value, context);
+
+      expect(result).toEqual(fakeResult);
     });
-
-    createTypeStub
-      .withArgs('ComplianceRequirement', {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        sender_conditions: [
-          'meshConditionIsPresent',
-          'meshConditionIsNoneOf',
-          'meshConditionIsIdentity',
-        ],
-        receiver_conditions: [
-          'meshConditionIsPresent',
-          'meshConditionIsAbsent',
-          'meshConditionIsIdentity',
-        ],
-        id: bigNumberToU32(value.id, context),
-        /* eslint-enable @typescript-eslint/naming-convention */
-      })
-      .returns(fakeResult);
-
-    const result = requirementToComplianceRequirement(value, context);
-
-    expect(result).toEqual(fakeResult);
   });
 
-  test('complianceRequirementToRequirement should convert a polkadot Compliance Requirement object to a Requirement', () => {
-    const id = new BigNumber(1);
-    const assetDid = 'someAssetDid';
-    const cddId = 'someCddId';
-    const issuerDids = [
-      { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
-      { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
-    ];
-    const fakeIssuerDids = [
-      { identity: expect.objectContaining({ did: 'someDid' }), trustedFor: null },
-      { identity: expect.objectContaining({ did: 'otherDid' }), trustedFor: null },
-    ];
-    const targetIdentityDid = 'targetIdentityDid';
-    const conditions: Condition[] = [
-      {
-        type: ConditionType.IsPresent,
-        target: ConditionTarget.Both,
-        claim: {
-          type: ClaimType.KnowYourCustomer,
-          scope: { type: ScopeType.Identity, value: assetDid },
+  describe('complianceRequirementToRequirement', () => {
+    it('should convert a polkadot Compliance Requirement object to a Requirement', () => {
+      const id = new BigNumber(1);
+      const assetDid = 'someAssetDid';
+      const cddId = 'someCddId';
+      const issuerDids = [
+        { identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }) },
+        { identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }) },
+      ];
+      const fakeIssuerDids = [
+        { identity: expect.objectContaining({ did: 'someDid' }), trustedFor: null },
+        { identity: expect.objectContaining({ did: 'otherDid' }), trustedFor: null },
+      ];
+      const targetIdentityDid = 'targetIdentityDid';
+      const conditions: Condition[] = [
+        {
+          type: ConditionType.IsPresent,
+          target: ConditionTarget.Both,
+          claim: {
+            type: ClaimType.KnowYourCustomer,
+            scope: { type: ScopeType.Identity, value: assetDid },
+          },
+          trustedClaimIssuers: fakeIssuerDids,
         },
-        trustedClaimIssuers: fakeIssuerDids,
-      },
-      {
-        type: ConditionType.IsAbsent,
-        target: ConditionTarget.Receiver,
-        claim: {
-          type: ClaimType.BuyLockup,
-          scope: { type: ScopeType.Identity, value: assetDid },
+        {
+          type: ConditionType.IsAbsent,
+          target: ConditionTarget.Receiver,
+          claim: {
+            type: ClaimType.BuyLockup,
+            scope: { type: ScopeType.Identity, value: assetDid },
+          },
+          trustedClaimIssuers: fakeIssuerDids,
         },
-        trustedClaimIssuers: fakeIssuerDids,
-      },
-      {
-        type: ConditionType.IsNoneOf,
-        target: ConditionTarget.Sender,
-        claims: [
-          {
-            type: ClaimType.Blocked,
-            scope: { type: ScopeType.Identity, value: assetDid },
-          },
-          {
-            type: ClaimType.SellLockup,
-            scope: { type: ScopeType.Identity, value: assetDid },
-          },
-        ],
-        trustedClaimIssuers: fakeIssuerDids,
-      },
-      {
-        type: ConditionType.IsAnyOf,
-        target: ConditionTarget.Both,
-        claims: [
-          {
-            type: ClaimType.Exempted,
-            scope: { type: ScopeType.Identity, value: assetDid },
-          },
-          {
-            type: ClaimType.CustomerDueDiligence,
-            id: cddId,
-          },
-        ],
-        trustedClaimIssuers: fakeIssuerDids,
-      },
-      {
-        type: ConditionType.IsIdentity,
-        target: ConditionTarget.Sender,
-        identity: expect.objectContaining({ did: targetIdentityDid }),
-        trustedClaimIssuers: fakeIssuerDids,
-      },
-      {
-        type: ConditionType.IsExternalAgent,
-        target: ConditionTarget.Receiver,
-        trustedClaimIssuers: fakeIssuerDids,
-      },
-    ];
-    const fakeResult = {
-      id,
-      conditions,
-    };
+        {
+          type: ConditionType.IsNoneOf,
+          target: ConditionTarget.Sender,
+          claims: [
+            {
+              type: ClaimType.Blocked,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+            {
+              type: ClaimType.SellLockup,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+          ],
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        {
+          type: ConditionType.IsAnyOf,
+          target: ConditionTarget.Both,
+          claims: [
+            {
+              type: ClaimType.Exempted,
+              scope: { type: ScopeType.Identity, value: assetDid },
+            },
+            {
+              type: ClaimType.CustomerDueDiligence,
+              id: cddId,
+            },
+          ],
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        {
+          type: ConditionType.IsIdentity,
+          target: ConditionTarget.Sender,
+          identity: expect.objectContaining({ did: targetIdentityDid }),
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+        {
+          type: ConditionType.IsExternalAgent,
+          target: ConditionTarget.Receiver,
+          trustedClaimIssuers: fakeIssuerDids,
+        },
+      ];
+      const fakeResult = {
+        id,
+        conditions,
+      };
 
-    const scope = dsMockUtils.createMockScope({
-      Identity: dsMockUtils.createMockIdentityId(assetDid),
-    });
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const issuers = issuerDids.map(({ identity }) =>
-      dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(identity.did),
-        trusted_for: dsMockUtils.createMockTrustedFor(),
-      })
-    );
-    const rawConditions = [
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
-        }),
-        issuers,
-      }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
-        }),
-        issuers,
-      }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsNoneOf: [
-            dsMockUtils.createMockClaim({ Blocked: scope }),
-            dsMockUtils.createMockClaim({ SellLockup: scope }),
-          ],
-        }),
-        issuers,
-      }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsAnyOf: [
-            dsMockUtils.createMockClaim({ Exempted: scope }),
-            dsMockUtils.createMockClaim({
-              CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
-            }),
-          ],
-        }),
-        issuers,
-      }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsIdentity: dsMockUtils.createMockTargetIdentity({
-            Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
+      const scope = dsMockUtils.createMockScope({
+        Identity: dsMockUtils.createMockIdentityId(assetDid),
+      });
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const issuers = issuerDids.map(({ identity }) =>
+        dsMockUtils.createMockTrustedIssuer({
+          issuer: dsMockUtils.createMockIdentityId(identity.did),
+          trusted_for: dsMockUtils.createMockTrustedFor(),
+        })
+      );
+      const rawConditions = [
+        dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
+          issuers,
         }),
-        issuers,
-      }),
-      dsMockUtils.createMockCondition({
-        condition_type: dsMockUtils.createMockConditionType({
-          IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
+        dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
+          }),
+          issuers,
         }),
-        issuers,
-      }),
-    ];
-    const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
-      sender_conditions: [
-        rawConditions[0],
-        rawConditions[2],
-        rawConditions[2],
-        rawConditions[3],
-        rawConditions[4],
-      ],
-      receiver_conditions: [
-        rawConditions[0],
-        rawConditions[1],
-        rawConditions[1],
-        rawConditions[3],
-        rawConditions[5],
-      ],
-      id: dsMockUtils.createMockU32(new BigNumber(1)),
-    });
-    /* eslint-enable @typescript-eslint/naming-convention */
+        dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsNoneOf: [
+              dsMockUtils.createMockClaim({ Blocked: scope }),
+              dsMockUtils.createMockClaim({ SellLockup: scope }),
+            ],
+          }),
+          issuers,
+        }),
+        dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsAnyOf: [
+              dsMockUtils.createMockClaim({ Exempted: scope }),
+              dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+            ],
+          }),
+          issuers,
+        }),
+        dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsIdentity: dsMockUtils.createMockTargetIdentity({
+              Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
+            }),
+          }),
+          issuers,
+        }),
+        dsMockUtils.createMockCondition({
+          condition_type: dsMockUtils.createMockConditionType({
+            IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
+          }),
+          issuers,
+        }),
+      ];
+      const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
+        sender_conditions: [
+          rawConditions[0],
+          rawConditions[2],
+          rawConditions[2],
+          rawConditions[3],
+          rawConditions[4],
+        ],
+        receiver_conditions: [
+          rawConditions[0],
+          rawConditions[1],
+          rawConditions[1],
+          rawConditions[3],
+          rawConditions[5],
+        ],
+        id: dsMockUtils.createMockU32(new BigNumber(1)),
+      });
+      /* eslint-enable @typescript-eslint/naming-convention */
 
-    const result = complianceRequirementToRequirement(
-      complianceRequirement,
-      dsMockUtils.getContextInstance()
-    );
-    expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
+      const result = complianceRequirementToRequirement(
+        complianceRequirement,
+        dsMockUtils.getContextInstance()
+      );
+      expect(result.conditions).toEqual(expect.arrayContaining(fakeResult.conditions));
+    });
   });
 });
 
@@ -3948,7 +4092,7 @@ describe('txTagToProtocolOp', () => {
     dsMockUtils.cleanup();
   });
 
-  test('txTagToProtocolOp should convert a TxTag to a polkadot ProtocolOp object', () => {
+  it('should convert a TxTag to a polkadot ProtocolOp object', () => {
     const fakeResult = 'convertedProtocolOp' as unknown as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
@@ -4000,7 +4144,7 @@ describe('txTagToProtocolOp', () => {
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
   });
 
-  test('txTagToProtocolOp should throw an error if tag does not match any ProtocolOp', () => {
+  it('should throw an error if tag does not match any ProtocolOp', () => {
     const value = TxTags.asset.MakeDivisible;
     const context = dsMockUtils.getContextInstance();
     const mockTag = 'AssetMakeDivisible';
@@ -4012,36 +4156,40 @@ describe('txTagToProtocolOp', () => {
 });
 
 describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
-  test('txTagToExtrinsicIdentifier should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
-    let result = txTagToExtrinsicIdentifier(TxTags.identity.CddRegisterDid);
+  describe('txTagToExtrinsicIdentifier', () => {
+    it('should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
+      let result = txTagToExtrinsicIdentifier(TxTags.identity.CddRegisterDid);
 
-    expect(result).toEqual({
-      moduleId: ModuleIdEnum.Identity,
-      callId: CallIdEnum.CddRegisterDid,
-    });
+      expect(result).toEqual({
+        moduleId: ModuleIdEnum.Identity,
+        callId: CallIdEnum.CddRegisterDid,
+      });
 
-    result = txTagToExtrinsicIdentifier(TxTags.babe.ReportEquivocation);
+      result = txTagToExtrinsicIdentifier(TxTags.babe.ReportEquivocation);
 
-    expect(result).toEqual({
-      moduleId: ModuleIdEnum.Babe,
-      callId: CallIdEnum.ReportEquivocation,
+      expect(result).toEqual({
+        moduleId: ModuleIdEnum.Babe,
+        callId: CallIdEnum.ReportEquivocation,
+      });
     });
   });
 
-  test('extrinsicIdentifierToTxTag should convert a ExtrinsicIdentifier object to a TxTag', () => {
-    let result = extrinsicIdentifierToTxTag({
-      moduleId: ModuleIdEnum.Identity,
-      callId: CallIdEnum.CddRegisterDid,
+  describe('extrinsicIdentifierToTxTag', () => {
+    it('should convert a ExtrinsicIdentifier object to a TxTag', () => {
+      let result = extrinsicIdentifierToTxTag({
+        moduleId: ModuleIdEnum.Identity,
+        callId: CallIdEnum.CddRegisterDid,
+      });
+
+      expect(result).toEqual(TxTags.identity.CddRegisterDid);
+
+      result = extrinsicIdentifierToTxTag({
+        moduleId: ModuleIdEnum.Babe,
+        callId: CallIdEnum.ReportEquivocation,
+      });
+
+      expect(result).toEqual(TxTags.babe.ReportEquivocation);
     });
-
-    expect(result).toEqual(TxTags.identity.CddRegisterDid);
-
-    result = extrinsicIdentifierToTxTag({
-      moduleId: ModuleIdEnum.Babe,
-      callId: CallIdEnum.ReportEquivocation,
-    });
-
-    expect(result).toEqual(TxTags.babe.ReportEquivocation);
   });
 });
 
@@ -4058,24 +4206,28 @@ describe('stringToText and textToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToText should convert a string to a polkadot Text object', () => {
-    const value = 'someText';
-    const fakeResult = 'convertedText' as unknown as Text;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToText', () => {
+    it('should convert a string to a polkadot Text object', () => {
+      const value = 'someText';
+      const fakeResult = 'convertedText' as unknown as Text;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('Text', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('Text', value).returns(fakeResult);
 
-    const result = stringToText(value, context);
+      const result = stringToText(value, context);
 
-    expect(result).toEqual(fakeResult);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
-  test('textToString should convert polkadot Text object to string', () => {
-    const text = 'someText';
-    const mockText = dsMockUtils.createMockText(text);
+  describe('textToString', () => {
+    it('should convert polkadot Text object to string', () => {
+      const text = 'someText';
+      const mockText = dsMockUtils.createMockText(text);
 
-    const result = textToString(mockText);
-    expect(result).toEqual(text);
+      const result = textToString(mockText);
+      expect(result).toEqual(text);
+    });
   });
 });
 
@@ -4092,7 +4244,7 @@ describe('portfolioIdToMeshPortfolioId', () => {
     dsMockUtils.cleanup();
   });
 
-  test('portfolioIdToMeshPortfolioId should convert a portfolio id into a polkadot portfolio id', () => {
+  it('should convert a portfolio id into a polkadot portfolio id', () => {
     const portfolioId = {
       did: 'someDid',
     };
@@ -4147,7 +4299,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     dsMockUtils.cleanup();
   });
 
-  test('complianceRequirementResultToRequirementCompliance should convert a polkadot Compliance Requirement Result object to a RequirementCompliance', () => {
+  it('should convert a polkadot Compliance Requirement Result object to a RequirementCompliance', () => {
     const id = new BigNumber(1);
     const assetDid = 'someAssetDid';
     const cddId = 'someCddId';
@@ -4362,7 +4514,7 @@ describe('assetComplianceResultToCompliance', () => {
     dsMockUtils.cleanup();
   });
 
-  test('assetComplianceResultToCompliance should convert a polkadot AssetComplianceResult object to a RequirementCompliance', () => {
+  it('should convert a polkadot AssetComplianceResult object to a RequirementCompliance', () => {
     const id = new BigNumber(1);
     const assetDid = 'someAssetDid';
     const cddId = 'someCddId';
@@ -4534,7 +4686,7 @@ describe('assetComplianceResultToCompliance', () => {
 describe('moduleAddressToString', () => {
   const context = dsMockUtils.getContextInstance();
 
-  test('should convert a module address to a string', () => {
+  it('should convert a module address to a string', () => {
     const moduleAddress = 'someModuleName';
 
     const result = moduleAddressToString(moduleAddress, context);
@@ -4547,16 +4699,20 @@ describe('keyToAddress and addressToKey', () => {
   const publicKey = '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
   const context = dsMockUtils.getContextInstance();
 
-  test('addressToKey should decode an address into a public key', () => {
-    const result = addressToKey(address, context);
+  describe('addressToKey', () => {
+    it('should decode an address into a public key', () => {
+      const result = addressToKey(address, context);
 
-    expect(result).toBe(publicKey);
+      expect(result).toBe(publicKey);
+    });
   });
 
-  test('keyToAddress should encode a public key into an address', () => {
-    const result = keyToAddress(publicKey, context);
+  describe('keyToAddress', () => {
+    it('should encode a public key into an address', () => {
+      const result = keyToAddress(publicKey, context);
 
-    expect(result).toBe(address);
+      expect(result).toBe(address);
+    });
   });
 });
 
@@ -4573,7 +4729,7 @@ describe('transactionHexToTxTag', () => {
     dsMockUtils.cleanup();
   });
 
-  test('transactionHexToTxTag should convert a hex string to a TxTag', () => {
+  it('should convert a hex string to a TxTag', () => {
     const hex = '0x110000';
     const fakeResult = TxTags.treasury.Disbursement;
     const mockResult = {
@@ -4603,7 +4759,7 @@ describe('transactionToTxTag', () => {
     dsMockUtils.cleanup();
   });
 
-  test('transactionToTxTag should convert a transaction to a TxTag', () => {
+  it('should convert a transaction to a TxTag', () => {
     const tx = dsMockUtils.createTxStub('asset', 'unfreeze');
     const fakeResult = TxTags.asset.Unfreeze;
 
@@ -4625,7 +4781,7 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshAffirmationStatusToAffirmationStatus should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
+  it('should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
     let fakeResult = AffirmationStatus.Affirmed;
     let permission = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
@@ -4664,7 +4820,7 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
     dsMockUtils.cleanup();
   });
 
-  test('secondaryAccountToMeshSecondaryKey should convert a SecondaryAccount to a polkadot SecondaryKey', () => {
+  it('should convert a SecondaryAccount to a polkadot SecondaryKey', () => {
     const address = 'someAccount';
     const context = dsMockUtils.getContextInstance();
     const secondaryAccount = {
@@ -4715,42 +4871,46 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
     dsMockUtils.cleanup();
   });
 
-  test('venueTypeToMeshVenueType should convert a VenueType to a polkadot VenueType object', () => {
-    const value = VenueType.Other;
-    const fakeResult = 'Other' as unknown as MeshVenueType;
-    const context = dsMockUtils.getContextInstance();
+  describe('venueTypeToMeshVenueType', () => {
+    it('should convert a VenueType to a polkadot VenueType object', () => {
+      const value = VenueType.Other;
+      const fakeResult = 'Other' as unknown as MeshVenueType;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('VenueType', value).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('VenueType', value).returns(fakeResult);
 
-    const result = venueTypeToMeshVenueType(value, context);
+      const result = venueTypeToMeshVenueType(value, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('meshVenueTypeToVenueType should convert a polkadot VenueType object to a VenueType', () => {
-    let fakeResult = VenueType.Other;
-    let venueType = dsMockUtils.createMockVenueType(fakeResult);
+  describe('meshVenueTypeToVenueType', () => {
+    it('should convert a polkadot VenueType object to a VenueType', () => {
+      let fakeResult = VenueType.Other;
+      let venueType = dsMockUtils.createMockVenueType(fakeResult);
 
-    let result = meshVenueTypeToVenueType(venueType);
-    expect(result).toEqual(fakeResult);
+      let result = meshVenueTypeToVenueType(venueType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = VenueType.Distribution;
-    venueType = dsMockUtils.createMockVenueType(fakeResult);
+      fakeResult = VenueType.Distribution;
+      venueType = dsMockUtils.createMockVenueType(fakeResult);
 
-    result = meshVenueTypeToVenueType(venueType);
-    expect(result).toEqual(fakeResult);
+      result = meshVenueTypeToVenueType(venueType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = VenueType.Sto;
-    venueType = dsMockUtils.createMockVenueType(fakeResult);
+      fakeResult = VenueType.Sto;
+      venueType = dsMockUtils.createMockVenueType(fakeResult);
 
-    result = meshVenueTypeToVenueType(venueType);
-    expect(result).toEqual(fakeResult);
+      result = meshVenueTypeToVenueType(venueType);
+      expect(result).toEqual(fakeResult);
 
-    fakeResult = VenueType.Exchange;
-    venueType = dsMockUtils.createMockVenueType(fakeResult);
+      fakeResult = VenueType.Exchange;
+      venueType = dsMockUtils.createMockVenueType(fakeResult);
 
-    result = meshVenueTypeToVenueType(venueType);
-    expect(result).toEqual(fakeResult);
+      result = meshVenueTypeToVenueType(venueType);
+      expect(result).toEqual(fakeResult);
+    });
   });
 });
 
@@ -4767,24 +4927,28 @@ describe('stringToVenueDetails and venueDetailsToString', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToVenueDetails should convert a string into a polkadot VenueDetails object', () => {
-    const details = 'details';
-    const fakeResult = 'type' as unknown as VenueDetails;
-    const context = dsMockUtils.getContextInstance();
+  describe('stringToVenueDetails', () => {
+    it('should convert a string into a polkadot VenueDetails object', () => {
+      const details = 'details';
+      const fakeResult = 'type' as unknown as VenueDetails;
+      const context = dsMockUtils.getContextInstance();
 
-    dsMockUtils.getCreateTypeStub().withArgs('VenueDetails', details).returns(fakeResult);
+      dsMockUtils.getCreateTypeStub().withArgs('VenueDetails', details).returns(fakeResult);
 
-    const result = stringToVenueDetails(details, context);
+      const result = stringToVenueDetails(details, context);
 
-    expect(result).toBe(fakeResult);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('venueDetailsToString should convert a polkadot VenueDetails object to a string', () => {
-    const fakeResult = 'details';
-    const venueDetails = dsMockUtils.createMockVenueDetails(fakeResult);
+  describe('venueDetailsToString', () => {
+    it('should convert a polkadot VenueDetails object to a string', () => {
+      const fakeResult = 'details';
+      const venueDetails = dsMockUtils.createMockVenueDetails(fakeResult);
 
-    const result = venueDetailsToString(venueDetails);
-    expect(result).toBe(fakeResult);
+      const result = venueDetailsToString(venueDetails);
+      expect(result).toBe(fakeResult);
+    });
   });
 });
 
@@ -4801,7 +4965,7 @@ describe('meshInstructionStatusToInstructionStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshInstructionStatusToInstructionStatus should convert a polkadot InstructionStatus object to an InstructionStatus', () => {
+  it('should convert a polkadot InstructionStatus object to an InstructionStatus', () => {
     let fakeResult = InstructionStatus.Pending;
     let instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
 
@@ -4835,7 +4999,7 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
     dsMockUtils.cleanup();
   });
 
-  test('meshAffirmationStatusToAffirmationStatus should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
+  it('should convert a polkadot AffirmationStatus object to a AffirmationStatus', () => {
     let fakeResult = AffirmationStatus.Unknown;
     let authorizationStatus = dsMockUtils.createMockAffirmationStatus(fakeResult);
 
@@ -4872,7 +5036,7 @@ describe('endConditionToSettlementType', () => {
     dsMockUtils.cleanup();
   });
 
-  test('endConditionToSettlementType should convert an end condition to a polkadot SettlementType object', () => {
+  it('should convert an end condition to a polkadot SettlementType object', () => {
     const fakeResult = 'type' as unknown as SettlementType;
     const context = dsMockUtils.getContextInstance();
 
@@ -4932,13 +5096,13 @@ describe('portfolioLikeToPortfolioId', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a DID string to a PortfolioId', async () => {
+  it('should convert a DID string to a PortfolioId', async () => {
     const result = portfolioLikeToPortfolioId(did);
 
     expect(result).toEqual({ did, number: undefined });
   });
 
-  test('should convert an Identity to a PortfolioId', async () => {
+  it('should convert an Identity to a PortfolioId', async () => {
     const identity = entityMockUtils.getIdentityInstance({ did });
 
     const result = portfolioLikeToPortfolioId(identity);
@@ -4946,7 +5110,7 @@ describe('portfolioLikeToPortfolioId', () => {
     expect(result).toEqual({ did, number: undefined });
   });
 
-  test('should convert a NumberedPortfolio to a PortfolioId', async () => {
+  it('should convert a NumberedPortfolio to a PortfolioId', async () => {
     const portfolio = new NumberedPortfolio({ did, id: number }, context);
 
     const result = portfolioLikeToPortfolioId(portfolio);
@@ -4954,7 +5118,7 @@ describe('portfolioLikeToPortfolioId', () => {
     expect(result).toEqual({ did, number });
   });
 
-  test('should convert a DefaultPortfolio to a PortfolioId', async () => {
+  it('should convert a DefaultPortfolio to a PortfolioId', async () => {
     const portfolio = new DefaultPortfolio({ did }, context);
 
     const result = portfolioLikeToPortfolioId(portfolio);
@@ -4962,7 +5126,7 @@ describe('portfolioLikeToPortfolioId', () => {
     expect(result).toEqual({ did, number: undefined });
   });
 
-  test('should convert a Portfolio identifier object to a PortfolioId', async () => {
+  it('should convert a Portfolio identifier object to a PortfolioId', async () => {
     let result = portfolioLikeToPortfolioId({ identity: did, id: number });
     expect(result).toEqual({ did, number });
 
@@ -5000,12 +5164,12 @@ describe('portfolioLikeToPortfolio', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a PortfolioLike to a DefaultPortfolio instance', async () => {
+  it('should convert a PortfolioLike to a DefaultPortfolio instance', async () => {
     const result = portfolioLikeToPortfolio(did, context);
     expect(result instanceof DefaultPortfolio).toBe(true);
   });
 
-  test('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
+  it('should convert a PortfolioLike to a NumberedPortfolio instance', async () => {
     const result = portfolioLikeToPortfolio({ identity: did, id }, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
   });
@@ -5026,7 +5190,7 @@ describe('toIdentityWithClaimsArray', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should return an IdentityWithClaims array object', () => {
+  it('should return an IdentityWithClaims array object', () => {
     const context = dsMockUtils.getContextInstance();
     const targetDid = 'someTargetDid';
     const issuerDid = 'someIssuerDid';
@@ -5109,69 +5273,76 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
     dsMockUtils.cleanup();
   });
 
-  test('trustedClaimIssuerToTrustedIssuer should convert a did string into an IdentityId', () => {
-    const did = 'someDid';
-    const fakeResult = 'type' as unknown as TrustedIssuer;
-    const context = dsMockUtils.getContextInstance();
+  describe('trustedClaimIssuerToTrustedIssuer', () => {
+    it('should convert a did string into an IdentityId', () => {
+      const did = 'someDid';
+      const fakeResult = 'type' as unknown as TrustedIssuer;
+      const context = dsMockUtils.getContextInstance();
 
-    let issuer: TrustedClaimIssuer = {
-      identity: entityMockUtils.getIdentityInstance({ did }),
-      trustedFor: null,
-    };
+      let issuer: TrustedClaimIssuer = {
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        trustedFor: null,
+      };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('TrustedIssuer', {
-        issuer: stringToIdentityId(did, context),
-        trusted_for: 'Any',
-      })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('TrustedIssuer', {
+          issuer: stringToIdentityId(did, context),
+          trusted_for: 'Any',
+        })
+        .returns(fakeResult);
 
-    let result = trustedClaimIssuerToTrustedIssuer(issuer, context);
-    expect(result).toBe(fakeResult);
+      let result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+      expect(result).toBe(fakeResult);
 
-    issuer = {
-      identity: entityMockUtils.getIdentityInstance({ did }),
-      trustedFor: [ClaimType.Accredited, ClaimType.Blocked],
-    };
+      issuer = {
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        trustedFor: [ClaimType.Accredited, ClaimType.Blocked],
+      };
 
-    dsMockUtils
-      .getCreateTypeStub()
-      .withArgs('TrustedIssuer', {
-        issuer: stringToIdentityId(did, context),
-        trusted_for: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
-      })
-      .returns(fakeResult);
+      dsMockUtils
+        .getCreateTypeStub()
+        .withArgs('TrustedIssuer', {
+          issuer: stringToIdentityId(did, context),
+          trusted_for: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
+        })
+        .returns(fakeResult);
 
-    result = trustedClaimIssuerToTrustedIssuer(issuer, context);
-    expect(result).toBe(fakeResult);
+      result = trustedClaimIssuerToTrustedIssuer(issuer, context);
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('trustedIssuerToTrustedClaimIssuer should convert an IdentityId to an Identity object', () => {
-    const did = 'someDid';
-    const context = dsMockUtils.getContextInstance();
-    let fakeResult: TrustedClaimIssuer = {
-      identity: expect.objectContaining({ did }),
-      trustedFor: null,
-    };
-    let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
-      issuer: dsMockUtils.createMockIdentityId(did),
-      trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+  describe('trustedIssuerToTrustedClaimIssuer', () => {
+    it('should convert an IdentityId to an Identity object', () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance();
+      let fakeResult: TrustedClaimIssuer = {
+        identity: expect.objectContaining({ did }),
+        trustedFor: null,
+      };
+      let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+      });
+
+      let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        identity: expect.objectContaining({ did }),
+        trustedFor: [ClaimType.SellLockup],
+      };
+      trustedIssuer = dsMockUtils.createMockTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        trusted_for: dsMockUtils.createMockTrustedFor({
+          Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
+        }),
+      });
+
+      result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      expect(result).toEqual(fakeResult);
     });
-
-    let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { identity: expect.objectContaining({ did }), trustedFor: [ClaimType.SellLockup] };
-    trustedIssuer = dsMockUtils.createMockTrustedIssuer({
-      issuer: dsMockUtils.createMockIdentityId(did),
-      trusted_for: dsMockUtils.createMockTrustedFor({
-        Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
-      }),
-    });
-
-    result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -5190,7 +5361,7 @@ describe('permissionsLikeToPermissions', () => {
     dsMockUtils.cleanup();
   });
 
-  test('permissionsLikeToPermissions should convert a PermissionsLike into a Permissions', () => {
+  it('should convert a PermissionsLike into a Permissions', () => {
     const context = dsMockUtils.getContextInstance();
     let args: PermissionsLike = { assets: null, transactions: null, portfolios: null };
     let result = permissionsLikeToPermissions(args, context);
@@ -5310,7 +5481,7 @@ describe('permissionsLikeToPermissions', () => {
 });
 
 describe('middlewarePortfolioToPortfolio', () => {
-  test('middlewarePortfolioToPortfolio should convert a MiddlewarePortfolio into a Portfolio', async () => {
+  it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
     const context = dsMockUtils.getContextInstance();
     let middlewarePortfolio = {
       kind: 'Default',
@@ -5338,7 +5509,7 @@ describe('middlewarePortfolioToPortfolio', () => {
   });
 });
 
-describe('transferRestrictionToTransferManager and signatoryToSignerValue', () => {
+describe('transferRestrictionToTransferManager', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -5352,7 +5523,7 @@ describe('transferRestrictionToTransferManager and signatoryToSignerValue', () =
     sinon.restore();
   });
 
-  test('transferRestrictionToTransferManager should convert a Transfer Restriction to a polkadot TransferManager object', () => {
+  it('should convert a Transfer Restriction to a polkadot TransferManager object', () => {
     const count = new BigNumber(10);
     let value = {
       type: TransferRestrictionType.Count,
@@ -5394,7 +5565,7 @@ describe('transferRestrictionToTransferManager and signatoryToSignerValue', () =
     expect(result).toBe(fakeResult);
   });
 
-  test('transferManagerToTransferRestriction should convert a polkadot Signatory object to a SignerValue', () => {
+  it('should convert a polkadot Signatory object to a SignerValue', () => {
     const count = new BigNumber(10);
     let fakeResult = {
       type: TransferRestrictionType.Count,
@@ -5421,7 +5592,7 @@ describe('transferRestrictionToTransferManager and signatoryToSignerValue', () =
   });
 });
 
-describe('stoTierToPriceTier', () => {
+describe('offeringTierToPriceTier', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -5436,7 +5607,7 @@ describe('stoTierToPriceTier', () => {
     dsMockUtils.cleanup();
   });
 
-  test('offeringTierToPriceTier should convert an Offering Tier into a polkadot PriceTier object', () => {
+  it('should convert an Offering Tier into a polkadot PriceTier object', () => {
     const context = dsMockUtils.getContextInstance();
     const total = new BigNumber(100);
     const price = new BigNumber(1000);
@@ -5444,7 +5615,7 @@ describe('stoTierToPriceTier', () => {
     const rawPrice = dsMockUtils.createMockBalance(price);
     const fakeResult = 'PriceTier' as unknown as PriceTier;
 
-    const stoTier: OfferingTier = {
+    const offeringTier: OfferingTier = {
       price,
       amount: total,
     };
@@ -5466,14 +5637,14 @@ describe('stoTierToPriceTier', () => {
       })
       .returns(fakeResult);
 
-    const result = stoTierToPriceTier(stoTier, context);
+    const result = offeringTierToPriceTier(offeringTier, context);
 
     expect(result).toBe(fakeResult);
   });
 });
 
 describe('txGroupToTxTags', () => {
-  test('should return the corresponding group of TxTags', () => {
+  it('should return the corresponding group of TxTags', () => {
     let result = txGroupToTxTags(TxGroup.PortfolioManagement);
 
     expect(result).toEqual([
@@ -5568,7 +5739,7 @@ describe('txGroupToTxTags', () => {
 });
 
 describe('transactionPermissionsToTxGroups', () => {
-  test('should return all completed groups in the tag array', () => {
+  it('should return all completed groups in the tag array', () => {
     expect(
       transactionPermissionsToTxGroups({
         values: [
@@ -5643,7 +5814,7 @@ describe('fundraiserTierToTier', () => {
     dsMockUtils.cleanup();
   });
 
-  test('fundraiserTierToTier should convert a polkadot FundraiserTier object to a FundraiserTier', () => {
+  it('should convert a polkadot FundraiserTier object to a FundraiserTier', () => {
     const amount = new BigNumber(5);
     const price = new BigNumber(5);
     const remaining = new BigNumber(5);
@@ -5663,7 +5834,7 @@ describe('fundraiserTierToTier', () => {
   });
 });
 
-describe('fundraiserToStoDetails', () => {
+describe('fundraiserToOfferingDetails', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -5676,7 +5847,7 @@ describe('fundraiserToStoDetails', () => {
     dsMockUtils.cleanup();
   });
 
-  test('fundraiserToStoDetails should convert a polkadot Fundraiser object to a StoDetails', () => {
+  it('should convert a polkadot Fundraiser object to a StoDetails', () => {
     const context = dsMockUtils.getContextInstance();
 
     const someDid = 'someDid';
@@ -5928,99 +6099,103 @@ describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPer
     dsMockUtils.cleanup();
   });
 
-  test('calendarPeriodToMeshCalendarPeriod should throw an error if amount is negative', () => {
-    const context = dsMockUtils.getContextInstance();
+  describe('calendarPeriodToMeshCalendarPeriod', () => {
+    it('should throw an error if amount is negative', () => {
+      const context = dsMockUtils.getContextInstance();
 
-    expect(() =>
-      calendarPeriodToMeshCalendarPeriod(
-        { unit: CalendarUnit.Month, amount: new BigNumber(-3) },
-        context
-      )
-    ).toThrow('Calendar period cannot have a negative amount');
+      expect(() =>
+        calendarPeriodToMeshCalendarPeriod(
+          { unit: CalendarUnit.Month, amount: new BigNumber(-3) },
+          context
+        )
+      ).toThrow('Calendar period cannot have a negative amount');
+    });
+
+    it('should convert a CalendarPeriod to a polkadot CalendarPeriod object', () => {
+      const amount = new BigNumber(1);
+      const value = { unit: CalendarUnit.Month, amount };
+      const fakeResult = 'Period' as unknown as MeshCalendarPeriod;
+      const context = dsMockUtils.getContextInstance();
+
+      const createTypeStub = dsMockUtils.getCreateTypeStub();
+      const rawAmount = dsMockUtils.createMockU64(amount);
+
+      createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
+      createTypeStub
+        .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
+        .returns(fakeResult);
+
+      const result = calendarPeriodToMeshCalendarPeriod(value, context);
+
+      expect(result).toBe(fakeResult);
+    });
   });
 
-  test('calendarPeriodToMeshCalendarPeriod should convert a CalendarPeriod to a polkadot CalendarPeriod object', () => {
-    const amount = new BigNumber(1);
-    const value = { unit: CalendarUnit.Month, amount };
-    const fakeResult = 'Period' as unknown as MeshCalendarPeriod;
-    const context = dsMockUtils.getContextInstance();
+  describe('meshCalendarPeriodToCalendarPeriod', () => {
+    it('should convert a polkadot CalendarPeriod object to a CalendarPeriod', () => {
+      let fakeResult = { unit: CalendarUnit.Second, amount: new BigNumber(1) };
+      let calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Second'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
 
-    const createTypeStub = dsMockUtils.getCreateTypeStub();
-    const rawAmount = dsMockUtils.createMockU64(amount);
+      let result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
 
-    createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
-    createTypeStub
-      .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
-      .returns(fakeResult);
+      fakeResult = { unit: CalendarUnit.Minute, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Minute'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
 
-    const result = calendarPeriodToMeshCalendarPeriod(value, context);
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
 
-    expect(result).toBe(fakeResult);
-  });
+      fakeResult = { unit: CalendarUnit.Hour, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Hour'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
 
-  test('meshCalendarPeriodToCalendarPeriod should convert a polkadot CalendarPeriod object to a CalendarPeriod', () => {
-    let fakeResult = { unit: CalendarUnit.Second, amount: new BigNumber(1) };
-    let calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Second'),
-      amount: dsMockUtils.createMockU64(fakeResult.amount),
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Day, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Day'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Week, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Week'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Month, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Month'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { unit: CalendarUnit.Year, amount: new BigNumber(1) };
+      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Year'),
+        amount: dsMockUtils.createMockU64(fakeResult.amount),
+      });
+
+      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
+      expect(result).toEqual(fakeResult);
     });
-
-    let result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { unit: CalendarUnit.Minute, amount: new BigNumber(1) };
-    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Minute'),
-      amount: dsMockUtils.createMockU64(fakeResult.amount),
-    });
-
-    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { unit: CalendarUnit.Hour, amount: new BigNumber(1) };
-    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Hour'),
-      amount: dsMockUtils.createMockU64(fakeResult.amount),
-    });
-
-    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { unit: CalendarUnit.Day, amount: new BigNumber(1) };
-    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Day'),
-      amount: dsMockUtils.createMockU64(fakeResult.amount),
-    });
-
-    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { unit: CalendarUnit.Week, amount: new BigNumber(1) };
-    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Week'),
-      amount: dsMockUtils.createMockU64(fakeResult.amount),
-    });
-
-    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { unit: CalendarUnit.Month, amount: new BigNumber(1) };
-    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Month'),
-      amount: dsMockUtils.createMockU64(fakeResult.amount),
-    });
-
-    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = { unit: CalendarUnit.Year, amount: new BigNumber(1) };
-    calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Year'),
-      amount: dsMockUtils.createMockU64(fakeResult.amount),
-    });
-
-    result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -6037,7 +6212,7 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
     dsMockUtils.cleanup();
   });
 
-  test('scheduleSpecToMeshScheduleSpec should convert a ScheduleDetails object to a polkadot ScheduleSpec object', () => {
+  it('should convert a ScheduleDetails object to a polkadot ScheduleSpec object', () => {
     const start = new Date('10/14/1987');
     const amount = new BigNumber(1);
     const period = { unit: CalendarUnit.Month, amount };
@@ -6112,7 +6287,7 @@ describe('storedScheduleToCheckpointScheduleParams', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a polkadot StoredSchedule object to a CheckpointScheduleParams object', () => {
+  it('should convert a polkadot StoredSchedule object to a CheckpointScheduleParams object', () => {
     const start = new Date('10/14/1987');
     const nextCheckpointDate = new Date('10/14/2021');
     const id = new BigNumber(1);
@@ -6161,7 +6336,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a polkadot CorporateAction object to a CorporateActionParams object', () => {
+  it('should convert a polkadot CorporateAction object to a CorporateActionParams object', () => {
     const kind = CorporateActionKind.UnpredictableBenefit;
     const declarationDate = new Date('10/14/1987');
     const description = 'someDescription';
@@ -6274,7 +6449,7 @@ describe('distributionToDividendDistributionParams', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a polkadot Distribution object to a DividendDistributionParams object', () => {
+  it('should convert a polkadot Distribution object to a DividendDistributionParams object', () => {
     const from = new BigNumber(1);
     const did = 'someDid';
     const currency = 'USD';
@@ -6332,7 +6507,7 @@ describe('corporateActionKindToCaKind', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a string to a polkadot CAKind object', () => {
+  it('should convert a string to a polkadot CAKind object', () => {
     const value = CorporateActionKind.IssuerNotice;
     const fakeResult = 'issuerNotice' as unknown as CAKind;
     const context = dsMockUtils.getContextInstance();
@@ -6358,7 +6533,7 @@ describe('checkpointToRecordDateSpec', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a Checkpoint to a polkadot RecordDateSpec', () => {
+  it('should convert a Checkpoint to a polkadot RecordDateSpec', () => {
     const id = new BigNumber(1);
     const value = entityMockUtils.getCheckpointInstance({ id });
 
@@ -6375,7 +6550,7 @@ describe('checkpointToRecordDateSpec', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  test('should convert a Date to a polkadot RecordDateSpec', () => {
+  it('should convert a Date to a polkadot RecordDateSpec', () => {
     const value = new Date('10/14/2022');
 
     const fakeResult = 'recordDateSpec' as unknown as RecordDateSpec;
@@ -6391,7 +6566,7 @@ describe('checkpointToRecordDateSpec', () => {
     expect(result).toEqual(fakeResult);
   });
 
-  test('should convert a CheckpointSchedule to a polkadot RecordDateSpec', () => {
+  it('should convert a CheckpointSchedule to a polkadot RecordDateSpec', () => {
     const id = new BigNumber(1);
     const value = entityMockUtils.getCheckpointScheduleInstance({ id });
 
@@ -6424,7 +6599,7 @@ describe('targetIdentitiesToCorporateActionTargets', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a polkadot TargetIdentities object to a CorporateActionTargets object', () => {
+  it('should convert a polkadot TargetIdentities object to a CorporateActionTargets object', () => {
     const fakeResult = {
       identities: [expect.objectContaining({ did: 'someDid' })],
       treatment: TargetTreatment.Include,
@@ -6462,7 +6637,7 @@ describe('targetsToTargetIdentities', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should convert a CorporateActionTargets object to a polkadot TargetIdentities object', () => {
+  it('should convert a CorporateActionTargets object to a polkadot TargetIdentities object', () => {
     const did = 'someDid';
     const treatment = TargetTreatment.Include;
     const value = { identities: [entityMockUtils.getIdentityInstance({ did })], treatment };
@@ -6501,7 +6676,7 @@ describe('corporateActionIdentifierToCaId', () => {
     dsMockUtils.cleanup();
   });
 
-  test('corporateActionIdentifierToCaId should convert a CorporateActionIdentifier object to a polkadot CAId object', () => {
+  it('should convert a CorporateActionIdentifier object to a polkadot CAId object', () => {
     const context = dsMockUtils.getContextInstance();
     const args = {
       ticker: 'SOME_TICKER',
@@ -6540,7 +6715,7 @@ describe('stringToSignature', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToSignature should convert a string to a polkadot Signature object', () => {
+  it('should convert a string to a polkadot Signature object', () => {
     const value = 'someValue';
     const fakeResult = 'convertedSignature' as unknown as Signature;
     const context = dsMockUtils.getContextInstance();
@@ -6566,7 +6741,7 @@ describe('stringToRistrettoPoint', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToRistrettoPoint should convert a string to a polkadot RistrettoPoint object', () => {
+  it('should convert a string to a polkadot RistrettoPoint object', () => {
     const value = 'someValue';
     const fakeResult = 'convertedRistrettoPoint' as unknown as RistrettoPoint;
     const context = dsMockUtils.getContextInstance();
@@ -6592,7 +6767,7 @@ describe('stringToScalar', () => {
     dsMockUtils.cleanup();
   });
 
-  test('stringToScalar should convert a string to a polkadot Scalar object', () => {
+  it('should convert a string to a polkadot Scalar object', () => {
     const value = 'someValue';
     const fakeResult = 'convertedScalar' as unknown as Scalar;
     const context = dsMockUtils.getContextInstance();
@@ -6618,7 +6793,7 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
     dsMockUtils.cleanup();
   });
 
-  test('scopeClaimProofToMeshScopeClaimProof should convert a proof and a scopeId to a polkadot ScopeClaimProof object', () => {
+  it('should convert a proof and a scopeId to a polkadot ScopeClaimProof object', () => {
     const [
       scopeId,
       proofScopeIdWellFormed,
@@ -6723,7 +6898,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     dsMockUtils.cleanup();
   });
 
-  test('transactionPermissionsToExtrinsicPermissions should convert a TransactionPermissions to a polkadot ExtrinsicPermissions object', () => {
+  it('should convert a TransactionPermissions to a polkadot ExtrinsicPermissions object', () => {
     const value = {
       values: [TxTags.sto.Invest],
       type: PermissionType.Include,
@@ -6764,7 +6939,7 @@ describe('agentGroupToPermissionGroup', () => {
     dsMockUtils.cleanup();
   });
 
-  test('agentGroupToPermissionGroup should convert a polkadot AgentGroup object to a PermissionGroup entity', () => {
+  it('should convert a polkadot AgentGroup object to a PermissionGroup entity', () => {
     const ticker = 'SOME_TICKER';
     const context = dsMockUtils.getContextInstance();
 

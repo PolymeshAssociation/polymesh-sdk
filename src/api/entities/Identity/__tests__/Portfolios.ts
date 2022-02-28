@@ -66,12 +66,12 @@ describe('Portfolios class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Portfolios.prototype instanceof Namespace).toBe(true);
   });
 
   describe('method: getPortfolios', () => {
-    test('should retrieve all the portfolios for the Identity', async () => {
+    it('should retrieve all the portfolios for the Identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         entries: [
           tuple(
@@ -94,7 +94,7 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getCustodiedPortfolios', () => {
-    test('should retrieve all the Portfolios custodied by the Identity', async () => {
+    it('should retrieve all the Portfolios custodied by the Identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody');
 
       const entries = [
@@ -139,13 +139,13 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getPortfolio', () => {
-    test('should return the default portfolio for the signing Identity', async () => {
+    it('should return the default portfolio for the signing Identity', async () => {
       const result = await portfolios.getPortfolio();
       expect(result instanceof DefaultPortfolio).toBe(true);
       expect(result.owner.did).toEqual(did);
     });
 
-    test('should return a numbered portfolio', async () => {
+    it('should return a numbered portfolio', async () => {
       const portfolioId = new BigNumber(1);
 
       const result = await portfolios.getPortfolio({ portfolioId });
@@ -154,7 +154,7 @@ describe('Portfolios class', () => {
       expect(result.id).toEqual(portfolioId);
     });
 
-    test("should throw an error if a numbered portfolio doesn't exist", () => {
+    it("should throw an error if a numbered portfolio doesn't exist", () => {
       const portfolioId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -170,7 +170,7 @@ describe('Portfolios class', () => {
   });
 
   describe('method: delete', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolioId = new BigNumber(5);
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 

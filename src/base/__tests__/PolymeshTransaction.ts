@@ -29,7 +29,7 @@ describe('Polymesh Transaction class', () => {
   });
 
   describe('get: args', () => {
-    test('should return unwrapped args', () => {
+    it('should return unwrapped args', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
@@ -48,7 +48,7 @@ describe('Polymesh Transaction class', () => {
   });
 
   describe('method: supportsSubsidy', () => {
-    test('should return whether the transaction supports subsidy', () => {
+    it('should return whether the transaction supports subsidy', () => {
       context.supportsSubsidy.onFirstCall().returns(false);
 
       const transaction = dsMockUtils.createTxStub('identity', 'leaveIdentityAsKey');

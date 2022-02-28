@@ -32,7 +32,7 @@ describe('Polymesh Transaction Batch class', () => {
   });
 
   describe('get: transactions', () => {
-    test('should return unwrapped transactions', () => {
+    it('should return unwrapped transactions', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
@@ -78,7 +78,7 @@ describe('Polymesh Transaction Batch class', () => {
         }),
       });
     });
-    test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
+    it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const batchStub = dsMockUtils.createTxStub('utility', 'batchAtomic', { autoResolve: false });
       const args = tuple('A_TICKER');
@@ -114,7 +114,7 @@ describe('Polymesh Transaction Batch class', () => {
       expect(tx.status).toBe(TransactionStatus.Succeeded);
     });
 
-    test('should throw an error when one of the transactions in the batch fails', async () => {
+    it('should throw an error when one of the transactions in the batch fails', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const batchStub = dsMockUtils.createTxStub('utility', 'batchAtomic', { autoResolve: false });
       const args = tuple('ANOTHER_TICKER');
@@ -141,7 +141,7 @@ describe('Polymesh Transaction Batch class', () => {
   });
 
   describe('method: supportsSubsidy', () => {
-    test('should return false', () => {
+    it('should return false', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 

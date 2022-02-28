@@ -64,7 +64,7 @@ describe('redeemTokens procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a redeem transaction to the queue', async () => {
+  it('should add a redeem transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'redeem');
@@ -93,7 +93,7 @@ describe('redeemTokens procedure', () => {
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
   });
 
-  test('should throw an error if the portfolio has not sufficient balance to redeem', () => {
+  it('should throw an error if the portfolio has not sufficient balance to redeem', () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         details: {
@@ -121,7 +121,7 @@ describe('redeemTokens procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       const params = {
         ticker,
         amount,

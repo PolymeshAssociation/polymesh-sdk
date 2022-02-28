@@ -54,7 +54,7 @@ describe('launchOffering procedure', () => {
   let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
-  let stoTierToPriceTierStub: sinon.SinonStub<[OfferingTier, Context], PriceTier>;
+  let offeringTierToPriceTierStub: sinon.SinonStub<[OfferingTier, Context], PriceTier>;
   let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
   let portfolioIdToPortfolioStub: sinon.SinonStub;
   let ticker: string;
@@ -100,7 +100,7 @@ describe('launchOffering procedure', () => {
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
     );
-    stoTierToPriceTierStub = sinon.stub(utilsConversionModule, 'stoTierToPriceTier');
+    offeringTierToPriceTierStub = sinon.stub(utilsConversionModule, 'offeringTierToPriceTier');
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
@@ -166,7 +166,7 @@ describe('launchOffering procedure', () => {
     portfolioIdToMeshPortfolioIdStub
       .withArgs(raisingPortfolioId, mockContext)
       .returns(rawRaisingPortfolio);
-    stoTierToPriceTierStub.withArgs({ amount, price }, mockContext).returns(rawTiers[0]);
+    offeringTierToPriceTierStub.withArgs({ amount, price }, mockContext).returns(rawTiers[0]);
     bigNumberToU64Stub.withArgs(venue.id, mockContext).returns(rawVenueId);
     dateToMomentStub.withArgs(start, mockContext).returns(rawStart);
     dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
@@ -200,7 +200,7 @@ describe('launchOffering procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if no valid Venue was supplied or found', async () => {
+  it('should throw an error if no valid Venue was supplied or found', async () => {
     portfolio.getAssetBalances.resolves([{ free: new BigNumber(20) }]);
     entityMockUtils.configureMocks({
       identityOptions: {
@@ -236,7 +236,7 @@ describe('launchOffering procedure', () => {
     expect(err?.message).toBe('A valid Venue for the Offering was neither supplied nor found');
   });
 
-  test("should throw an error if Asset tokens offered exceed the Portfolio's balance", async () => {
+  it("should throw an error if Asset tokens offered exceed the Portfolio's balance", async () => {
     portfolio.getAssetBalances.resolves([{ free: new BigNumber(1) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
@@ -255,7 +255,7 @@ describe('launchOffering procedure', () => {
     expect(err?.message).toBe("There isn't enough free balance in the offering Portfolio");
   });
 
-  test('should add a create fundraiser transaction to the queue', async () => {
+  it('should add a create fundraiser transaction to the queue', async () => {
     portfolio.getAssetBalances.resolves([{ free: new BigNumber(1000) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
@@ -351,7 +351,7 @@ describe('launchOffering procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new Offering', () => {
+    it('should return the new Offering', () => {
       const result = createOfferingResolver(ticker, mockContext)({} as ISubmittableResult);
 
       expect(result).toEqual(
@@ -361,7 +361,7 @@ describe('launchOffering procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
         offeringPortfolioId,
         raisingPortfolioId,
@@ -392,7 +392,7 @@ describe('launchOffering procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the offering and raising portfolio ids', async () => {
+    it('should return the offering and raising portfolio ids', async () => {
       const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 

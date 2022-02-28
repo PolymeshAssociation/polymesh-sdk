@@ -50,7 +50,7 @@ describe('rescheduleInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the instruction is not Failed', () => {
+  it('should throw an error if the instruction is not Failed', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
@@ -67,7 +67,7 @@ describe('rescheduleInstruction procedure', () => {
     ).rejects.toThrow('Only failed Instructions can be rescheduled');
   });
 
-  test('should add a reschedule Instruction transaction to the queue', async () => {
+  it('should add a reschedule Instruction transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('settlement', 'rescheduleInstruction');

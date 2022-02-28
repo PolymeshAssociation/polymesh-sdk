@@ -56,7 +56,7 @@ describe('delay', () => {
     jest.useRealTimers();
   });
 
-  test('should resolve after the supplied timeout', () => {
+  it('should resolve after the supplied timeout', () => {
     const delayPromise = delay(5000);
 
     jest.advanceTimersByTime(5000);
@@ -82,29 +82,33 @@ describe('serialize and unserialize', () => {
     baz: 'baz',
   };
 
-  test('serialize returns the same unique id for the same pojo', () => {
-    expect(serialize(entityType, pojo1)).toBe(serialize(entityType, pojo1));
-    expect(serialize(entityType, pojo1)).toBe(serialize(entityType, inversePojo1));
+  describe('serialize', () => {
+    it('should return the same unique id for the same pojo', () => {
+      expect(serialize(entityType, pojo1)).toBe(serialize(entityType, pojo1));
+      expect(serialize(entityType, pojo1)).toBe(serialize(entityType, inversePojo1));
+    });
+
+    it('should return a different unique id for different pojos', () => {
+      expect(serialize(entityType, pojo1)).not.toBe(serialize(entityType, pojo2));
+    });
   });
 
-  test('serialize returns a different unique id for different pojos', () => {
-    expect(serialize(entityType, pojo1)).not.toBe(serialize(entityType, pojo2));
-  });
+  describe('unserialize', () => {
+    it('should recover the serialized object', () => {
+      expect(unserialize(serialize(entityType, pojo1))).toEqual(pojo1);
+      expect(unserialize(serialize(entityType, inversePojo1))).toEqual(pojo1);
+    });
 
-  test('unserialize recovers the serialized object', () => {
-    expect(unserialize(serialize(entityType, pojo1))).toEqual(pojo1);
-    expect(unserialize(serialize(entityType, inversePojo1))).toEqual(pojo1);
-  });
+    const errorMsg = 'Wrong ID format';
 
-  const errorMsg = 'Wrong ID format';
+    it('should throw an error if the argument has an incorrect format', () => {
+      expect(() => unserialize('unformatted')).toThrowError(errorMsg);
+    });
 
-  test('unserialize throws an error if the argument has an incorrect format', () => {
-    expect(() => unserialize('unformatted')).toThrowError(errorMsg);
-  });
-
-  test('unserialize throws an error if the serialized string is not valid JSON', () => {
-    const fakeSerialized = Buffer.from('someEntity:nonJsonString').toString('base64');
-    expect(() => unserialize(fakeSerialized)).toThrowError(errorMsg);
+    it('should throw an error if the serialized string is not valid JSON', () => {
+      const fakeSerialized = Buffer.from('someEntity:nonJsonString').toString('base64');
+      expect(() => unserialize(fakeSerialized)).toThrowError(errorMsg);
+    });
   });
 });
 
@@ -129,20 +133,20 @@ describe('getDid', () => {
     dsMockUtils.cleanup();
   });
 
-  test('getDid should extract the DID from an Identity', async () => {
+  it('should extract the DID from an Identity', async () => {
     entityMockUtils.initMocks();
     const result = await getDid(entityMockUtils.getIdentityInstance({ did }), context);
 
     expect(result).toBe(did);
   });
 
-  test('getDid should return the passed DID', async () => {
+  it('should return the passed DID', async () => {
     const result = await getDid(did, context);
 
     expect(result).toBe(did);
   });
 
-  test('getDid should return the signing Identity DID if nothing is passed', async () => {
+  it('should return the signing Identity DID if nothing is passed', async () => {
     const result = await getDid(undefined, context);
 
     expect(result).toBe((await context.getSigningIdentity()).did);
@@ -150,7 +154,7 @@ describe('getDid', () => {
 });
 
 describe('unwrapValue', () => {
-  test('should unwrap a Post Transaction Value', async () => {
+  it('should unwrap a Post Transaction Value', async () => {
     const wrapped = new PostTransactionValue(async () => 1);
     await wrapped.run({} as ISubmittableResult);
 
@@ -159,13 +163,13 @@ describe('unwrapValue', () => {
     expect(unwrapped).toEqual(1);
   });
 
-  test('should return a non Post Transaction Value as is', () => {
+  it('should return a non Post Transaction Value as is', () => {
     expect(unwrapValue(1)).toBe(1);
   });
 });
 
 describe('unwrapValues', () => {
-  test('should unwrap all Post Transaction Values in the array', async () => {
+  it('should unwrap all Post Transaction Values in the array', async () => {
     const values = [1, 2, 3, 4, 5];
     const wrapped = values.map(value => new PostTransactionValue(async () => value));
     await Promise.all(wrapped.map(postValue => postValue.run({} as ISubmittableResult)));
@@ -186,7 +190,7 @@ describe('filterEventRecords', () => {
     filterRecordsStub.reset();
   });
 
-  test('returns the corresponding Event Record', () => {
+  it('should return the corresponding Event Record', () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     const fakeResult = 'event';
@@ -197,7 +201,7 @@ describe('filterEventRecords', () => {
     expect(eventRecord[0]).toBe(fakeResult);
   });
 
-  test("throws if the Event wasn't fired", () => {
+  it("should throw an error if the Event wasn't fired", () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     filterRecordsStub.withArgs(mod, eventName).returns([]);
@@ -209,7 +213,7 @@ describe('filterEventRecords', () => {
 });
 
 describe('createClaim', () => {
-  test('createClaim should create Claim objects from claims data provided by middleware', () => {
+  it('should create Claim objects from claims data provided by middleware', () => {
     let type = 'Jurisdiction';
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
@@ -267,7 +271,7 @@ describe('createClaim', () => {
 });
 
 describe('padString', () => {
-  test('should pad a string on the right side to cover the supplied length', () => {
+  it('should pad a string on the right side to cover the supplied length', () => {
     const value = 'someString';
     const fakeResult = `${value}\0\0`;
 
@@ -278,7 +282,7 @@ describe('padString', () => {
 });
 
 describe('removePadding', () => {
-  test('should remove all null character padding from the input', () => {
+  it('should remove all null character padding from the input', () => {
     const expected = 'someString';
 
     const result = removePadding(`${expected}\0\0\0`);
@@ -288,7 +292,7 @@ describe('removePadding', () => {
 });
 
 describe('requestPaginated', () => {
-  test('should fetch and return entries and the hex value of the last key', async () => {
+  it('should fetch and return entries and the hex value of the last key', async () => {
     const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       entries: [
         tuple(['ticker0'], dsMockUtils.createMockU32(new BigNumber(0))),
@@ -326,7 +330,7 @@ describe('requestPaginated', () => {
 });
 
 describe('requestAtBlock', () => {
-  test('should fetch and return the value at a certain block (current if left empty)', async () => {
+  it('should fetch and return the value at a certain block (current if left empty)', async () => {
     const context = dsMockUtils.getContextInstance({
       isArchiveNode: true,
     });
@@ -362,7 +366,7 @@ describe('requestAtBlock', () => {
     expect(res).toBe(returnValue);
   });
 
-  test('should throw an error if the node is not archive', () => {
+  it('should throw an error if the node is not archive', () => {
     const context = dsMockUtils.getContextInstance({
       isArchiveNode: false,
     });
@@ -385,7 +389,7 @@ describe('requestAtBlock', () => {
 });
 
 describe('batchArguments', () => {
-  test('should return chunks of data', () => {
+  it('should return chunks of data', () => {
     const tag = TxTags.asset.AddDocuments;
     const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
 
@@ -400,7 +404,7 @@ describe('batchArguments', () => {
     expect(batches[3].length).toBe(1);
   });
 
-  test('should use a custom batching function to group elements', () => {
+  it('should use a custom batching function to group elements', () => {
     const tag = TxTags.corporateAction.InitiateCorporateAction;
     const expectedBatchLength = DEFAULT_MAX_BATCH_ELEMENTS;
 
@@ -420,7 +424,7 @@ describe('batchArguments', () => {
     expect(batches[2].length).toBeLessThan(expectedBatchLength);
   });
 
-  test('should throw an error if a custom batch has a size bigger than the limit', () => {
+  it('should throw an error if a custom batch has a size bigger than the limit', () => {
     const tag = TxTags.asset.AddDocuments;
     const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
 
@@ -433,14 +437,14 @@ describe('batchArguments', () => {
 });
 
 describe('calculateNextKey', () => {
-  test('should return NextKey null as there are less elements than the default page size', () => {
+  it('should return NextKey null as there are less elements than the default page size', () => {
     const totalCount = new BigNumber(20);
     const nextKey = calculateNextKey(totalCount);
 
     expect(nextKey).toBeNull();
   });
 
-  test('should return NextKey null as it is the last page', () => {
+  it('should return NextKey null as it is the last page', () => {
     const totalCount = new BigNumber(50);
     const currentPageSize = new BigNumber(30);
     const currentStart = new BigNumber(31);
@@ -449,7 +453,7 @@ describe('calculateNextKey', () => {
     expect(nextKey).toBeNull();
   });
 
-  test('should return NextKey', () => {
+  it('should return NextKey', () => {
     const totalCount = new BigNumber(50);
     const currentPageSize = new BigNumber(30);
     const currentStart = new BigNumber(0);
@@ -460,11 +464,11 @@ describe('calculateNextKey', () => {
 });
 
 describe('isPrintableAscii', () => {
-  test('should return true if the string only contains printable ASCII characters', () => {
+  it('should return true if the string only contains printable ASCII characters', () => {
     expect(isPrintableAscii('TICKER')).toBe(true);
   });
 
-  test("should return false if the string doesn't contain only printable ASCII characters", () => {
+  it("should return false if the string doesn't contain only printable ASCII characters", () => {
     expect(isPrintableAscii(String.fromCharCode(10000000))).toBe(false);
   });
 });
@@ -488,7 +492,7 @@ describe('createProcedureMethod', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should return a ProcedureMethod object', async () => {
+  it('should return a ProcedureMethod object', async () => {
     const prepare = sinon.stub();
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
@@ -513,7 +517,7 @@ describe('createProcedureMethod', () => {
     sinon.assert.calledWithExactly(checkAuthorization, procArgs, context, {});
   });
 
-  test('should return a NoArgsProcedureMethod object', async () => {
+  it('should return a NoArgsProcedureMethod object', async () => {
     const prepare = sinon.stub();
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
@@ -539,7 +543,7 @@ describe('createProcedureMethod', () => {
 });
 
 describe('assertIsInteger', () => {
-  test('should not throw if the argument is an integer', async () => {
+  it('should not throw if the argument is an integer', async () => {
     try {
       assertIsInteger(new BigNumber(1));
     } catch (_) {
@@ -547,7 +551,7 @@ describe('assertIsInteger', () => {
     }
   });
 
-  test('assertIsInteger should throw an error if the argument is not an integer', async () => {
+  it('should throw an error if the argument is not an integer', async () => {
     expect(() => assertIsInteger(new BigNumber('noInteger'))).toThrow(
       'The number must be an integer'
     );
@@ -557,10 +561,10 @@ describe('assertIsInteger', () => {
 });
 
 describe('assertIsPositive', () => {
-  test('should not throw an error if the argument is positive', () => {
+  it('should not throw an error if the argument is positive', () => {
     expect(() => assertIsPositive(new BigNumber(43))).not.toThrow();
   });
-  test('should throw an error if the argument is negative', async () => {
+  it('should throw an error if the argument is negative', async () => {
     expect(() => assertIsPositive(new BigNumber(-3))).toThrow('The number must be positive');
   });
 });
@@ -568,21 +572,21 @@ describe('assertIsPositive', () => {
 describe('assertAddressValid', () => {
   const ss58Format = new BigNumber(42);
 
-  test('should throw an error if the address is not a valid ss58 address', async () => {
+  it('should throw an error if the address is not a valid ss58 address', async () => {
     expect(() =>
       // cSpell: disable-next-line
       assertAddressValid('foo', ss58Format)
     ).toThrow('The supplied address is not a valid SS58 address');
   });
 
-  test('should throw an error if the address is prefixed with an invalid ss58', async () => {
+  it('should throw an error if the address is prefixed with an invalid ss58', async () => {
     expect(() =>
       // cSpell: disable-next-line
       assertAddressValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
     ).toThrow("The supplied address is not encoded with the chain's SS58 format");
   });
 
-  test('should not throw if the address is valid and prefixed with valid ss58', async () => {
+  it('should not throw if the address is valid and prefixed with valid ss58', async () => {
     expect(() =>
       assertAddressValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
@@ -590,7 +594,7 @@ describe('assertAddressValid', () => {
 });
 
 describe('getTicker', () => {
-  test('should return an Asset symbol', async () => {
+  it('should return an Asset symbol', async () => {
     const symbol = 'ASSET';
     let result = getTicker(symbol);
 
@@ -602,7 +606,7 @@ describe('getTicker', () => {
 });
 
 describe('periodComplexity', () => {
-  test('should calculate complexity for any period', () => {
+  it('should calculate complexity for any period', () => {
     const period: CalendarPeriod = {
       unit: CalendarUnit.Second,
       amount: new BigNumber(1),
@@ -641,7 +645,7 @@ describe('periodComplexity', () => {
 });
 
 describe('optionize', () => {
-  test('should transform a conversion util into a version that returns null if the first input is falsy, passing along the rest if not', () => {
+  it('should transform a conversion util into a version that returns null if the first input is falsy, passing along the rest if not', () => {
     const number = new BigNumber(1);
 
     const toString = (value: BigNumber, foo: string, bar: number): string =>
@@ -656,7 +660,7 @@ describe('optionize', () => {
 });
 
 describe('isModuleOrTagMatch', () => {
-  test("should return true if two tags/modules are equal, or if one is the other one's module", () => {
+  it("should return true if two tags/modules are equal, or if one is the other one's module", () => {
     let result = isModuleOrTagMatch(TxTags.identity.AddInvestorUniquenessClaim, ModuleName.Sto);
     expect(result).toEqual(false);
 
@@ -690,7 +694,7 @@ describe('getCheckpointValue', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
+  it('should return value as it is for valid params of type Checkpoint, CheckpointSchedule or Date', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
     const mockAsset = entityMockUtils.getAssetInstance();
     let result = await getCheckpointValue(mockCheckpointSchedule, mockAsset, context);
@@ -705,7 +709,7 @@ describe('getCheckpointValue', () => {
     expect(result).toEqual(mockCheckpointDate);
   });
 
-  test('should return Checkpoint instance for params with type `Existing`', async () => {
+  it('should return Checkpoint instance for params with type `Existing`', async () => {
     const mockCheckpoint = entityMockUtils.getCheckpointInstance();
     const mockCaCheckpointTypeParams = {
       id: new BigNumber(1),
@@ -719,7 +723,7 @@ describe('getCheckpointValue', () => {
     expect(result).toEqual(mockCheckpoint);
   });
 
-  test('should return Checkpoint instance for params with type `Scheduled`', async () => {
+  it('should return Checkpoint instance for params with type `Scheduled`', async () => {
     const mockCheckpointSchedule = entityMockUtils.getCheckpointScheduleInstance();
     const mockCaCheckpointTypeParams = {
       id: new BigNumber(1),
@@ -801,7 +805,7 @@ describe('getPortfolioIdByName', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should return null if no portfolio with given name is found', async () => {
+  it('should return null if no portfolio with given name is found', async () => {
     nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
 
@@ -809,7 +813,7 @@ describe('getPortfolioIdByName', () => {
     expect(result).toBeNull();
   });
 
-  test('should return portfolio number for given portfolio name', async () => {
+  it('should return portfolio number for given portfolio name', async () => {
     nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(2)));
 
     let result = await getPortfolioIdByName(identityId, rawName, context);
