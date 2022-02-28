@@ -53,7 +53,7 @@ describe('waivePermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Identity is not an Agent for the Asset', async () => {
+  it('should throw an error if the Identity is not an Agent for the Asset', async () => {
     const asset = entityMockUtils.getAssetInstance({
       ticker,
       permissionsGetAgents: [
@@ -94,7 +94,7 @@ describe('waivePermissions procedure', () => {
     expect(error.message).toBe('The Identity is not an Agent for the Asset');
   });
 
-  test('should add an abdicate transaction to the queue', async () => {
+  it('should add an abdicate transaction to the queue', async () => {
     const asset = entityMockUtils.getAssetInstance({
       ticker,
       permissionsGetAgents: [
@@ -125,7 +125,7 @@ describe('waivePermissions procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the Asset', () => {
+    it('should return the Asset', () => {
       const asset = entityMockUtils.getAssetInstance({
         ticker,
       });
@@ -147,7 +147,7 @@ describe('waivePermissions procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const asset = entityMockUtils.getAssetInstance({
         ticker,
       });

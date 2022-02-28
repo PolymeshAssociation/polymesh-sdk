@@ -59,7 +59,7 @@ describe('payDividends procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a stop Offering transaction to the queue', async () => {
+  it('should add a stop Offering transaction to the queue', async () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
 
@@ -90,7 +90,7 @@ describe('payDividends procedure', () => {
     });
   });
 
-  test('should throw an error if the Distribution is expired', async () => {
+  it('should throw an error if the Distribution is expired', async () => {
     const targets = ['someDid'];
     const date = new Date(new Date().getTime() + 1000 * 60 * 60);
     distribution = entityMockUtils.getDividendDistributionInstance({
@@ -114,7 +114,7 @@ describe('payDividends procedure', () => {
     });
   });
 
-  test('should throw an error if the Distribution is expired', async () => {
+  it('should throw an error if the Distribution is expired', async () => {
     const targets = ['someDid'];
     const date = new Date(new Date().getTime() - 1000);
     distribution = entityMockUtils.getDividendDistributionInstance({
@@ -138,7 +138,7 @@ describe('payDividends procedure', () => {
     });
   });
 
-  test('should throw an error if some of the supplied targets are not included in the Distribution', async () => {
+  it('should throw an error if some of the supplied targets are not included in the Distribution', async () => {
     const excludedDid = 'someDid';
 
     dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
@@ -170,7 +170,7 @@ describe('payDividends procedure', () => {
     expect(err.data.excluded[0].did).toBe(excludedDid);
   });
 
-  test('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
+  it('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
     const dids = ['someDid', 'otherDid'];
     const targets = [dids[0], entityMockUtils.getIdentityInstance({ isEqual: true, did: dids[1] })];
 
@@ -212,7 +212,7 @@ describe('payDividends procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

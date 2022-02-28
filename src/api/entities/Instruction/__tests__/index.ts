@@ -65,12 +65,12 @@ describe('Instruction class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Instruction.prototype instanceof Entity).toBe(true);
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Instruction.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(true);
       expect(Instruction.isUniqueIdentifiers({})).toBe(false);
       expect(Instruction.isUniqueIdentifiers({ id: 3 })).toBe(false);
@@ -96,7 +96,7 @@ describe('Instruction class', () => {
       bigNumberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
-    test('should return whether the instruction is executed', async () => {
+    it('should return whether the instruction is executed', async () => {
       const status = InternalInstructionStatus.Unknown;
       const createdAt = new Date('10/14/1987');
       const tradeDate = new Date('11/17/1987');
@@ -168,7 +168,7 @@ describe('Instruction class', () => {
       bigNumberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
-    test('should return whether the instruction is pending', async () => {
+    it('should return whether the instruction is pending', async () => {
       const status = InstructionStatus.Pending;
       const createdAt = new Date('10/14/1987');
       const tradeDate = new Date('11/17/1987');
@@ -234,7 +234,7 @@ describe('Instruction class', () => {
       bigNumberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
-    test('should return whether the instruction exists', async () => {
+    it('should return whether the instruction exists', async () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
@@ -270,7 +270,7 @@ describe('Instruction class', () => {
       bigNumberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
-    test('should return the Instruction details', async () => {
+    it('should return the Instruction details', async () => {
       let status = InstructionStatus.Pending;
       const createdAt = new Date('10/14/1987');
       const tradeDate = new Date('11/17/1987');
@@ -365,7 +365,7 @@ describe('Instruction class', () => {
       expect(result.venue.id).toEqual(venueId);
     });
 
-    test('should throw an error if the Instruction is not pending', () => {
+    it('should throw an error if the Instruction is not pending', () => {
       dsMockUtils
         .createQueryStub('settlement', 'instructionDetails')
         .withArgs(rawId)
@@ -412,9 +412,9 @@ describe('Instruction class', () => {
       ];
       const authsReceivedEntries = rawStorageKey.map(([instructionId, portfolioId]) =>
         tuple(
-          {
+          ({
             args: [instructionId, portfolioId],
-          } as unknown as StorageKey,
+          } as unknown) as StorageKey,
           dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
       );
@@ -448,7 +448,7 @@ describe('Instruction class', () => {
       dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
     });
 
-    test('should throw an error if the instruction is not pending', () => {
+    it('should throw an error if the instruction is not pending', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
@@ -467,7 +467,7 @@ describe('Instruction class', () => {
       );
     });
 
-    test('should return a list of Affirmation Statuses', async () => {
+    it('should return a list of Affirmation Statuses', async () => {
       const { data } = await instruction.getAffirmations();
 
       expect(data).toHaveLength(1);
@@ -512,7 +512,7 @@ describe('Instruction class', () => {
       });
     });
 
-    test("should return the instruction's legs", async () => {
+    it("should return the instruction's legs", async () => {
       const fromDid = 'fromDid';
       const toDid = 'toDid';
       const ticker = 'SOME_TICKER';
@@ -521,7 +521,7 @@ describe('Instruction class', () => {
       entityMockUtils.configureMocks({ assetOptions: { ticker } });
 
       const entries = [
-        tuple(['instructionId', 'legId'] as unknown as StorageKey, {
+        tuple((['instructionId', 'legId'] as unknown) as StorageKey, {
           from: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(fromDid),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -545,7 +545,7 @@ describe('Instruction class', () => {
       expect(leg[0].to.owner.did).toBe(toDid);
     });
 
-    test('should throw an error if the instruction is not pending', () => {
+    it('should throw an error if the instruction is not pending', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
@@ -570,8 +570,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -594,8 +594,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -619,8 +619,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -644,8 +644,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -679,7 +679,7 @@ describe('Instruction class', () => {
       bigNumberToU64Stub.withArgs(id, context).returns(rawId);
     });
 
-    test('should return Pending Instruction status', async () => {
+    it('should return Pending Instruction status', async () => {
       const queryResult = dsMockUtils.createMockInstruction({
         /* eslint-disable @typescript-eslint/naming-convention */
         instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
@@ -703,7 +703,7 @@ describe('Instruction class', () => {
       });
     });
 
-    test('should return Executed Instruction status', async () => {
+    it('should return Executed Instruction status', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -751,7 +751,7 @@ describe('Instruction class', () => {
       });
     });
 
-    test('should return Failed Instruction status', async () => {
+    it('should return Failed Instruction status', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -813,7 +813,7 @@ describe('Instruction class', () => {
       });
     });
 
-    test("should throw an error if Instruction status couldn't be determied", async () => {
+    it("should throw an error if Instruction status couldn't be determied", async () => {
       const queryVariables = {
         moduleId: ModuleIdEnum.Settlement,
         eventId: EventIdEnum.InstructionExecuted,
@@ -863,7 +863,7 @@ describe('Instruction class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       expect(instruction.toJson()).toBe('1');
     });
   });

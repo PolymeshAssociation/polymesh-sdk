@@ -51,7 +51,7 @@ describe('Network Class', () => {
   });
 
   describe('method: getLatestBlock', () => {
-    test('should return the latest block number', async () => {
+    it('should return the latest block number', async () => {
       const blockNumber = new BigNumber(100);
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true, latestBlock: blockNumber } });
@@ -64,7 +64,7 @@ describe('Network Class', () => {
   });
 
   describe('method: getNetworkVersion', () => {
-    test('should return the network version', async () => {
+    it('should return the network version', async () => {
       const networkVersion = '1.0.0';
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true, networkVersion } });
@@ -77,7 +77,7 @@ describe('Network Class', () => {
   });
 
   describe('method: getNetworkProperties', () => {
-    test('should return current network information', async () => {
+    it('should return current network information', async () => {
       const name = 'someName';
       const version = new BigNumber(1);
       const fakeResult = {
@@ -94,7 +94,7 @@ describe('Network Class', () => {
   });
 
   describe('method: getProtocolFees', () => {
-    test('should return the fees associated to the supplied transaction', async () => {
+    it('should return the fees associated to the supplied transaction', async () => {
       dsMockUtils.configureMocks({ contextOptions: { transactionFee: new BigNumber(500) } });
 
       const fee = await network.getProtocolFees({ tag: TxTags.asset.CreateAsset });
@@ -104,7 +104,7 @@ describe('Network Class', () => {
   });
 
   describe('method: getTreasuryAccount', () => {
-    test('should return the treasury account', async () => {
+    it('should return the treasury account', async () => {
       const treasuryAddress = '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR';
 
       expect(network.getTreasuryAccount().address).toEqual(treasuryAddress);
@@ -123,12 +123,12 @@ describe('Network Class', () => {
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
     });
 
-    test('should return the POLYX balance of the treasury account', async () => {
+    it('should return the POLYX balance of the treasury account', async () => {
       const result = await network.getTreasuryBalance();
       expect(result).toEqual(fakeBalance.free);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
       entityMockUtils.configureMocks({
@@ -148,13 +148,13 @@ describe('Network Class', () => {
   });
 
   describe('method: transferPolyx', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         to: 'someAccount',
         amount: new BigNumber(50),
       };
 
-      const expectedQueue = '' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -173,7 +173,7 @@ describe('Network Class', () => {
       eventId: EventIdEnum.AssetCreated,
     };
 
-    test('should return a single event', async () => {
+    it('should return a single event', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -202,7 +202,7 @@ describe('Network Class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryStub(
         eventByIndexedArgs({
           ...variables,
@@ -223,7 +223,7 @@ describe('Network Class', () => {
       eventId: EventIdEnum.AssetCreated,
     };
 
-    test('should return a list of events', async () => {
+    it('should return a list of events', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -261,7 +261,7 @@ describe('Network Class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryStub(
         eventsByIndexedArgs({
           ...variables,
@@ -284,7 +284,7 @@ describe('Network Class', () => {
   describe('method: getTransactionByHash', () => {
     const variable = { txHash: 'someHash' };
 
-    test('should return a transaction', async () => {
+    it('should return a transaction', async () => {
       const blockNumber = new BigNumber(1);
       const blockHash = 'someHash';
       const extrinsicIdx = new BigNumber(2);
@@ -359,7 +359,7 @@ describe('Network Class', () => {
       });
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       dsMockUtils.createApolloQueryStub(
         transactionByHash({
           transactionHash: variable.txHash,

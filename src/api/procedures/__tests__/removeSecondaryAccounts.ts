@@ -54,7 +54,7 @@ describe('removeSecondaryAccounts procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a remove secondary items transaction to the queue', async () => {
+  it('should add a remove secondary items transaction to the queue', async () => {
     const { accounts } = args;
     const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
@@ -92,7 +92,7 @@ describe('removeSecondaryAccounts procedure', () => {
     });
   });
 
-  test('should throw an error if attempting to remove the primary Account', () => {
+  it('should throw an error if attempting to remove the primary Account', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
 
@@ -104,7 +104,7 @@ describe('removeSecondaryAccounts procedure', () => {
     ).rejects.toThrow('You cannot remove the primary Account');
   });
 
-  test('should throw an error if at least one of the secondary Accounts to remove is not present in the secondary Accounts list', () => {
+  it('should throw an error if at least one of the secondary Accounts to remove is not present in the secondary Accounts list', () => {
     const { accounts } = args;
     const signerValue = { type: SignerType.Account, value: accounts[0].address };
 

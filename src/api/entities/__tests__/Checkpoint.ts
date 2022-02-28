@@ -48,12 +48,12 @@ describe('Checkpoint class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Checkpoint.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign ticker and id to instance', () => {
+    it('should assign ticker and id to instance', () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       expect(checkpoint.asset.ticker).toBe(ticker);
@@ -62,7 +62,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
       expect(Checkpoint.isUniqueIdentifiers({})).toBe(false);
       expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
@@ -71,7 +71,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: createdAt', () => {
-    test("should return the Checkpoint's creation date", async () => {
+    it("should return the Checkpoint's creation date", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const timestamp = 12000;
 
@@ -86,7 +86,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: totalSupply', () => {
-    test("should return the Checkpoint's total supply", async () => {
+    it("should return the Checkpoint's total supply", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const balance = new BigNumber(10000000000);
       const expected = new BigNumber(balance).shiftedBy(-6);
@@ -109,7 +109,7 @@ describe('Checkpoint class', () => {
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     });
 
-    test("should return the Checkpoint's Asset Holder balances", async () => {
+    it("should return the Checkpoint's Asset Holder balances", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       const balanceOf = [
@@ -140,7 +140,7 @@ describe('Checkpoint class', () => {
       });
 
       const balanceOfEntries = rawBalanceOf.map(({ identityId, balance }) =>
-        tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, balance)
+        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, balance)
       );
 
       dsMockUtils.createQueryStub('asset', 'balanceOf');
@@ -184,7 +184,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: balance', () => {
-    test("should return a specific Identity's balance at the Checkpoint", async () => {
+    it("should return a specific Identity's balance at the Checkpoint", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const balance = new BigNumber(10000000000);
 
@@ -225,7 +225,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the checkpoint exists', async () => {
+    it('should return whether the checkpoint exists', async () => {
       sinon.stub(utilsConversionModule, 'stringToTicker');
 
       const checkpoint = new Checkpoint({ id, ticker }, context);
@@ -249,7 +249,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const checkpoint = new Checkpoint({ id: new BigNumber(1), ticker: 'SOME_TICKER' }, context);
       expect(checkpoint.toJson()).toEqual({
         id: '1',

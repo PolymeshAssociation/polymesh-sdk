@@ -75,7 +75,7 @@ describe('moveFunds procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if both portfolios do not have the same owner', () => {
+  it('should throw an error if both portfolios do not have the same owner', () => {
     const fromId = new BigNumber(1);
     const fromDid = 'someDid';
     const toId = new BigNumber(2);
@@ -99,7 +99,7 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Both portfolios should have the same owner');
   });
 
-  test('should throw an error if both portfolios are the same', () => {
+  it('should throw an error if both portfolios are the same', () => {
     const id = new BigNumber(1);
     const did = 'someDid';
     const samePortfolio = new NumberedPortfolio({ id, did }, mockContext);
@@ -118,7 +118,7 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
-  test('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
+  it('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
@@ -137,10 +137,10 @@ describe('moveFunds procedure', () => {
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        getAssetBalances: [
+        getAssetBalances: ([
           { asset: asset1, free: new BigNumber(50) },
           { asset: asset2, free: new BigNumber(10) },
-        ] as unknown as PortfolioBalance[],
+        ] as unknown) as PortfolioBalance[],
       },
     });
 
@@ -170,7 +170,7 @@ describe('moveFunds procedure', () => {
     expect(error.data.balanceExceeded).toMatchObject(items);
   });
 
-  test('should add a move portfolio funds transaction to the queue', async () => {
+  it('should add a move portfolio funds transaction to the queue', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
@@ -185,11 +185,11 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         did,
-        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
+        getAssetBalances: ([{ asset, total: new BigNumber(150) }] as unknown) as PortfolioBalance[],
       },
       defaultPortfolioOptions: {
         did,
-        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
+        getAssetBalances: ([{ asset, total: new BigNumber(150) }] as unknown) as PortfolioBalance[],
       },
     });
 
@@ -317,20 +317,20 @@ describe('moveFunds procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const fromId = new BigNumber(1);
       const toId = new BigNumber(10);
       const did = 'someDid';
-      let from: DefaultPortfolio | NumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance(
-        { did, id: fromId }
-      );
+      let from:
+        | DefaultPortfolio
+        | NumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id: fromId });
       const to = entityMockUtils.getNumberedPortfolioInstance({ did, id: toId });
 
-      let args = {
+      let args = ({
         from,
-      } as unknown as Params;
+      } as unknown) as Params;
 
       let portfolioId: PortfolioId = { did, number: fromId };
 
@@ -348,10 +348,10 @@ describe('moveFunds procedure', () => {
 
       from = entityMockUtils.getDefaultPortfolioInstance({ did });
 
-      args = {
+      args = ({
         from,
         to: toId,
-      } as unknown as Params;
+      } as unknown) as Params;
 
       portfolioId = { did };
 
@@ -367,10 +367,10 @@ describe('moveFunds procedure', () => {
         },
       });
 
-      args = {
+      args = ({
         from,
         to,
-      } as unknown as Params;
+      } as unknown) as Params;
 
       portfolioId = { did };
 

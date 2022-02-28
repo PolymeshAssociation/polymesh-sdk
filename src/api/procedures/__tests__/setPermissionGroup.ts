@@ -84,7 +84,7 @@ describe('setPermissionGroup procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the target is the last agent with full permissions', async () => {
+  it('should throw an error if the target is the last agent with full permissions', async () => {
     const group = entityMockUtils.getKnownPermissionGroupInstance({
       ticker,
       type: PermissionGroupType.Full,
@@ -130,7 +130,7 @@ describe('setPermissionGroup procedure', () => {
     );
   });
 
-  test('should throw an error if the target is not an agent', async () => {
+  it('should throw an error if the target is not an agent', async () => {
     const proc = procedureMockUtils.getInstance<
       Params,
       CustomPermissionGroup | KnownPermissionGroup,
@@ -162,18 +162,19 @@ describe('setPermissionGroup procedure', () => {
     expect(error.message).toBe('The target must already be an Agent for the Asset');
   });
 
-  test('should throw an error if the Agent is already part of the permission group', async () => {
+  it('should throw an error if the Agent is already part of the permission group', async () => {
     const identity = entityMockUtils.getIdentityInstance({
       assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
         ticker,
         type: PermissionGroupType.PolymeshV1Caa,
       }),
     });
-    let group: Mocked<CustomPermissionGroup | KnownPermissionGroup> =
-      entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
-        type: PermissionGroupType.PolymeshV1Caa,
-      });
+    let group: Mocked<
+      CustomPermissionGroup | KnownPermissionGroup
+    > = entityMockUtils.getKnownPermissionGroupInstance({
+      ticker,
+      type: PermissionGroupType.PolymeshV1Caa,
+    });
     const proc = procedureMockUtils.getInstance<
       Params,
       CustomPermissionGroup | KnownPermissionGroup,
@@ -225,7 +226,7 @@ describe('setPermissionGroup procedure', () => {
     expect(error.message).toBe('The Agent is already part of this permission group');
   });
 
-  test('should add a change group transaction to the queue', async () => {
+  it('should add a change group transaction to the queue', async () => {
     const id = new BigNumber(1);
     const identity = entityMockUtils.getIdentityInstance({
       assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
@@ -348,7 +349,7 @@ describe('setPermissionGroup procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the Asset', () => {
+    it('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<
         Params,
         CustomPermissionGroup | KnownPermissionGroup,
@@ -379,7 +380,7 @@ describe('setPermissionGroup procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<
         Params,
         CustomPermissionGroup | KnownPermissionGroup,

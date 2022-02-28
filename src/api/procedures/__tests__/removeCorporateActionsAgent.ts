@@ -46,7 +46,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a remove corporate agent transaction to the queue', async () => {
+  it('should add a remove corporate agent transaction to the queue', async () => {
     const did = 'someDid';
 
     entityMockUtils.configureMocks({
@@ -69,7 +69,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
-  test('should throw an error if Corporate Actions Agent list has more than one identity', () => {
+  it('should throw an error if Corporate Actions Agent list has more than one identity', () => {
     const args = {
       id,
       ticker,
@@ -92,7 +92,7 @@ describe('removeCorporateActionsAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

@@ -56,7 +56,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getIssuedClaims', () => {
-    test('should return a list of issued claims', async () => {
+    it('should return a list of issued claims', async () => {
       const target = 'someDid';
       const getIdentityClaimsFromMiddleware: ResultSet<ClaimData> = {
         data: [
@@ -87,7 +87,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getIdentitiesWithClaims', () => {
-    test('should return a list of Identities with claims associated to them', async () => {
+    it('should return a list of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
@@ -203,7 +203,7 @@ describe('Claims Class', () => {
       expect(result.next).toEqual(null);
     });
 
-    test('should return a list of Identities with claims associated to them filtered by scope', async () => {
+    it('should return a list of Identities with claims associated to them filtered by scope', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
@@ -313,7 +313,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -326,7 +326,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -347,7 +347,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const ticker = 'SOME_ASSET';
       const cddId = 'someId';
       const proof = 'someProof';
@@ -362,7 +362,7 @@ describe('Claims Class', () => {
         expiry,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -380,7 +380,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -393,7 +393,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -414,7 +414,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -427,7 +427,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -444,7 +444,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getCddClaims', () => {
-    test('should return a list of cdd claims', async () => {
+    it('should return a list of cdd claims', async () => {
       const target = 'someTarget';
 
       const identityClaims: ClaimData[] = [
@@ -475,7 +475,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getClaimScopes', () => {
-    test('should return a list of scopes and tickers', async () => {
+    it('should return a list of scopes and tickers', async () => {
       const target = 'someTarget';
       const ticker = 'FAKETICKER';
       const someDid = 'someDid';
@@ -534,7 +534,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should return a list of claims issued with an Identity as target', async () => {
+    it('should return a list of claims issued with an Identity as target', async () => {
       const did = 'someDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
@@ -636,7 +636,7 @@ describe('Claims Class', () => {
       expect(result.next).toBeNull();
     });
 
-    test('should return a list of claims issued with an Identity as target from chain', async () => {
+    it('should return a list of claims issued with an Identity as target from chain', async () => {
       const target = 'someTarget';
       const issuer = 'someIssuer';
       const otherIssuer = 'otherIssuer';
@@ -720,7 +720,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getInvestorUniquenessClaims', () => {
-    test('should return a list of claim data', async () => {
+    it('should return a list of claim data', async () => {
       const target = 'someTarget';
 
       const scope = {
@@ -757,7 +757,7 @@ describe('Claims Class', () => {
     });
   });
 
-  test('should return a list of claims issued with an Identity as target and a given Scope', async () => {
+  it('should return a list of claims issued with an Identity as target and a given Scope', async () => {
     const did = 'someDid';
     const issuerDid = 'someIssuerDid';
     const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };

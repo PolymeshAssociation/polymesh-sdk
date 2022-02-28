@@ -69,7 +69,7 @@ describe('removeExternalAgent procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the Asset', () => {
+    it('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
@@ -85,7 +85,7 @@ describe('removeExternalAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         asset,
       });
@@ -101,7 +101,7 @@ describe('removeExternalAgent procedure', () => {
     });
   });
 
-  test('should throw an error if the identity is not an External Agent', () => {
+  it('should throw an error if the identity is not an External Agent', () => {
     const args = {
       target,
       ticker,
@@ -118,7 +118,7 @@ describe('removeExternalAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the agent to remove is the last one assigned to the full group', () => {
+  it('should throw an error if the agent to remove is the last one assigned to the full group', () => {
     const args = {
       target,
       ticker,
@@ -143,7 +143,7 @@ describe('removeExternalAgent procedure', () => {
     );
   });
 
-  test('should add a remove agent transaction to the queue', async () => {
+  it('should add a remove agent transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance({
