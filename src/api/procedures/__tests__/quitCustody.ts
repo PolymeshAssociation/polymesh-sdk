@@ -131,8 +131,9 @@ describe('quitCustody procedure', () => {
       });
       let boundFunc = getAuthorization.bind(proc);
 
-      let portfolio: DefaultPortfolio | NumberedPortfolio =
-        entityMockUtils.getNumberedPortfolioInstance({ id, did });
+      let portfolio:
+        | DefaultPortfolio
+        | NumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({ id, did });
 
       let args = {
         portfolio,

@@ -145,7 +145,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: checkpoint', () => {
     it('should just pass the call down the line', async () => {
-      const fakeResult = 'checkpoint' as unknown as Checkpoint;
+      const fakeResult = ('checkpoint' as unknown) as Checkpoint;
       sinon.stub(CorporateActionBase.prototype, 'checkpoint').resolves(fakeResult);
 
       const result = await dividendDistribution.checkpoint();
@@ -182,7 +182,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: claim', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -197,7 +197,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: pay', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
       const identityTargets = ['identityDid'];
 
       procedureMockUtils
@@ -245,7 +245,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: modifyCheckpoint', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
       const args = {
         checkpoint: new Date(),
       };
@@ -475,7 +475,7 @@ describe('DividendDistribution class', () => {
 
   describe('method: reclaimFunds', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

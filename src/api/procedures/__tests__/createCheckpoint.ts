@@ -38,7 +38,7 @@ describe('createCheckpoint procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    checkpoint = 'checkpoint' as unknown as PostTransactionValue<Checkpoint>;
+    checkpoint = ('checkpoint' as unknown) as PostTransactionValue<Checkpoint>;
   });
 
   let addTransactionStub: sinon.SinonStub;

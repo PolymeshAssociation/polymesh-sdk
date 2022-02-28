@@ -57,7 +57,7 @@ describe('Documents class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -94,12 +94,12 @@ describe('Documents class', () => {
       ];
       const entries = expectedDocuments.map(({ name, uri, contentHash, type, filedAt }, index) =>
         tuple(
-          {
+          ({
             args: [
               dsMockUtils.createMockTicker(asset.ticker),
               dsMockUtils.createMockU32(new BigNumber(index)),
             ],
-          } as unknown as StorageKey,
+          } as unknown) as StorageKey,
           dsMockUtils.createMockDocument({
             uri: dsMockUtils.createMockDocumentUri(uri),
             name: dsMockUtils.createMockDocumentName(name),

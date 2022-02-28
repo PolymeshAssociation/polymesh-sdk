@@ -57,7 +57,7 @@ describe('Identities Class', () => {
         targetAccount: 'someTarget',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Identity>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -74,7 +74,7 @@ describe('Identities Class', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
       const args = { name: 'someName' };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()

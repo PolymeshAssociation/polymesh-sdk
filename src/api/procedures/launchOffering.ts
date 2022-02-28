@@ -90,14 +90,14 @@ export interface Storage {
 /**
  * @hidden
  */
-export const createOfferingResolver =
-  (ticker: string, context: Context) =>
-  (receipt: ISubmittableResult): Offering => {
-    const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
-    const newFundraiserId = u64ToBigNumber(data[1]);
+export const createOfferingResolver = (ticker: string, context: Context) => (
+  receipt: ISubmittableResult
+): Offering => {
+  const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
+  const newFundraiserId = u64ToBigNumber(data[1]);
 
-    return new Offering({ id: newFundraiserId, ticker }, context);
-  };
+  return new Offering({ id: newFundraiserId, ticker }, context);
+};
 
 /**
  * @hidden

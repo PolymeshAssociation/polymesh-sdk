@@ -92,7 +92,7 @@ describe('AssetHolder class', () => {
         balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
 
         balanceOfEntries.push(
-          tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
+          tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
         );
 
         expectedHolders.push({
@@ -130,7 +130,7 @@ describe('AssetHolder class', () => {
       balanceToBigNumberStub.withArgs(fakeBalance).returns(balance);
 
       balanceOfEntries.push(
-        tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
+        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, fakeBalance)
       );
 
       expectedHolders.push({

@@ -50,7 +50,7 @@ describe('reserveTicker procedure', () => {
     args = {
       ticker,
     };
-    reservation = 'reservation' as unknown as PostTransactionValue<TickerReservation>;
+    reservation = ('reservation' as unknown) as PostTransactionValue<TickerReservation>;
   });
 
   let addTransactionStub: sinon.SinonStub;

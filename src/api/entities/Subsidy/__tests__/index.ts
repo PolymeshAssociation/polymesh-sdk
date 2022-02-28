@@ -75,7 +75,7 @@ describe('Subsidy class', () => {
     it('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = { subsidy };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('mockQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

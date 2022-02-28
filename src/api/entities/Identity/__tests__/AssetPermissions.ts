@@ -135,7 +135,7 @@ describe('AssetPermissions class', () => {
         },
         asset,
       };
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -376,7 +376,7 @@ describe('AssetPermissions class', () => {
         identity,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

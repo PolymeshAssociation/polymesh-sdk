@@ -29,7 +29,7 @@ describe('createPortfolio procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    numberedPortfolio = 'numberedPortfolio' as unknown as PostTransactionValue<NumberedPortfolio>;
+    numberedPortfolio = ('numberedPortfolio' as unknown) as PostTransactionValue<NumberedPortfolio>;
 
     stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
     getPortfolioIdByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdByName');

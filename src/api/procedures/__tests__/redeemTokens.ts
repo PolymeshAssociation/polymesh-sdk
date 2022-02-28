@@ -77,10 +77,10 @@ describe('redeemTokens procedure', () => {
       },
       defaultPortfolioOptions: {
         getAssetBalances: [
-          {
+          ({
             asset: entityMockUtils.getAssetInstance({ ticker }),
             free: new BigNumber(500),
-          } as unknown as PortfolioBalance,
+          } as unknown) as PortfolioBalance,
         ],
       },
     });
@@ -102,10 +102,10 @@ describe('redeemTokens procedure', () => {
       },
       defaultPortfolioOptions: {
         getAssetBalances: [
-          {
+          ({
             asset: entityMockUtils.getAssetInstance({ ticker }),
             free: new BigNumber(0),
-          } as unknown as PortfolioBalance,
+          } as unknown) as PortfolioBalance,
         ],
       },
     });

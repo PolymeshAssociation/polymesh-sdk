@@ -35,7 +35,7 @@ describe('registerIdentity procedure', () => {
       utilsConversionModule,
       'secondaryAccountToMeshSecondaryKey'
     );
-    identity = 'identity' as unknown as PostTransactionValue<Identity>;
+    identity = ('identity' as unknown) as PostTransactionValue<Identity>;
   });
 
   beforeEach(() => {

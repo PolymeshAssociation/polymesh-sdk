@@ -102,14 +102,14 @@ describe('setAssetRequirements procedure', () => {
       id: new BigNumber(index),
     }));
     senderConditions = [
-      'senderConditions0' as unknown as MeshCondition[],
-      'senderConditions1' as unknown as MeshCondition[],
-      'senderConditions2' as unknown as MeshCondition[],
+      ('senderConditions0' as unknown) as MeshCondition[],
+      ('senderConditions1' as unknown) as MeshCondition[],
+      ('senderConditions2' as unknown) as MeshCondition[],
     ];
     receiverConditions = [
-      'receiverConditions0' as unknown as MeshCondition[],
-      'receiverConditions1' as unknown as MeshCondition[],
-      'receiverConditions2' as unknown as MeshCondition[],
+      ('receiverConditions0' as unknown) as MeshCondition[],
+      ('receiverConditions1' as unknown) as MeshCondition[],
+      ('receiverConditions2' as unknown) as MeshCondition[],
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -238,7 +238,9 @@ describe('setAssetRequirements procedure', () => {
         },
       });
 
-      expect(boundFunc({ ...params, requirements: [1] as unknown as InputCondition[][] })).toEqual({
+      expect(
+        boundFunc({ ...params, requirements: ([1] as unknown) as InputCondition[][] })
+      ).toEqual({
         permissions: {
           transactions: [TxTags.complianceManager.ReplaceAssetCompliance],
           assets: [expect.objectContaining({ ticker })],

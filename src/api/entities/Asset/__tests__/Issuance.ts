@@ -48,7 +48,7 @@ describe('Issuance class', () => {
         amount: new BigNumber(100),
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()

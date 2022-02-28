@@ -473,7 +473,7 @@ describe('createAsset procedure', () => {
     });
 
     it('should return the new custom AssetType', () => {
-      const fakeResult = 'assetType' as unknown as AssetType;
+      const fakeResult = ('assetType' as unknown) as AssetType;
       internalAssetTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
       const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
 

@@ -437,9 +437,9 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       const boundFunc = prepareStorage.bind(proc);
       const target = entityMockUtils.getAccountInstance({ getIdentity: null });
 
-      const result = await boundFunc({
+      const result = await boundFunc(({
         authRequest: { target },
-      } as unknown as ConsumeJoinOrRotateAuthorizationParams);
+      } as unknown) as ConsumeJoinOrRotateAuthorizationParams);
 
       expect(result).toEqual({
         currentAccount: mockContext.getCurrentAccount(),

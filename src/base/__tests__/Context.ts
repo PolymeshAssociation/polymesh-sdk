@@ -947,7 +947,7 @@ describe('Context class', () => {
 
       txTagToProtocolOpStub
         .withArgs(TxTags.asset.CreateAsset, context)
-        .returns('someProtocolOp' as unknown as ProtocolOp);
+        .returns(('someProtocolOp' as unknown) as ProtocolOp);
       txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
 
       dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
@@ -1278,7 +1278,7 @@ describe('Context class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -1342,6 +1342,7 @@ describe('Context class', () => {
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
         claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
@@ -1355,6 +1356,7 @@ describe('Context class', () => {
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
       };
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const fakeClaims = [
         {
@@ -1491,25 +1493,25 @@ describe('Context class', () => {
       dsMockUtils.throwOnMiddlewareQuery();
 
       await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
       await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Error');
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
       return expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
+        context.queryMiddleware(('query' as unknown) as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware query: Some Message');
     });
 
     it('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+      const fakeQuery = ('fakeQuery' as unknown) as GraphqlQuery<unknown>;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1756,7 +1758,7 @@ describe('Context class', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pair = 'something' as unknown as any;
+      const pair = ('something' as unknown) as any;
 
       context.addPair({ pair });
 
@@ -1781,6 +1783,7 @@ describe('Context class', () => {
         accountSeed: '0x6'.padEnd(66, '0'),
       });
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const corporateActions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
@@ -1863,6 +1866,7 @@ describe('Context class', () => {
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[1] }),
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[2] }),
       ];
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         entries: [

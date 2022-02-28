@@ -123,12 +123,12 @@ describe('reclaimDividendDistributionFunds procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', async () => {
-      const params = {
+      const params = ({
         distribution: {
           origin,
           asset: { ticker },
         },
-      } as unknown as Params;
+      } as unknown) as Params;
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);

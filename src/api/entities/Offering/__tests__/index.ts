@@ -225,7 +225,7 @@ describe('Offering class', () => {
         id,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -255,7 +255,7 @@ describe('Offering class', () => {
         end,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -298,7 +298,7 @@ describe('Offering class', () => {
         totalCount: 1,
         items,
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
@@ -352,7 +352,7 @@ describe('Offering class', () => {
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Offering>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -371,7 +371,7 @@ describe('Offering class', () => {
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Offering>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -403,7 +403,7 @@ describe('Offering class', () => {
         purchaseAmount,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

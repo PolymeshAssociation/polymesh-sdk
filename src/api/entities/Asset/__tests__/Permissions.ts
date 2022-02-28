@@ -81,7 +81,7 @@ describe('Permissions class', () => {
         permissions: { transactions: {} as TransactionPermissions },
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -106,7 +106,7 @@ describe('Permissions class', () => {
         permissions: { transactions: {} as TransactionPermissions },
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -130,7 +130,7 @@ describe('Permissions class', () => {
         target,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
