@@ -298,7 +298,7 @@ describe('Offering class', () => {
         totalCount: 1,
         items,
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 

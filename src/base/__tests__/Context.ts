@@ -1278,7 +1278,7 @@ describe('Context class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -1342,6 +1342,7 @@ describe('Context class', () => {
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
         claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
@@ -1355,6 +1356,7 @@ describe('Context class', () => {
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
       };
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const fakeClaims = [
         {
@@ -1781,6 +1783,7 @@ describe('Context class', () => {
         accountSeed: '0x6'.padEnd(66, '0'),
       });
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const corporateActions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
@@ -1863,6 +1866,7 @@ describe('Context class', () => {
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[1] }),
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[2] }),
       ];
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         entries: [
