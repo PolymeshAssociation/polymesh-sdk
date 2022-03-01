@@ -1969,7 +1969,7 @@ describe('Context class', () => {
   });
 
   describe('method: createType', () => {
-    test('should call polymeshApi and return the result', async () => {
+    it('should call polymeshApi and return the result', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
@@ -1981,7 +1981,7 @@ describe('Context class', () => {
       expect(result).toEqual('abc');
     });
 
-    test('should throw a PolymeshError if createType throws', async () => {
+    it('should throw a PolymeshError if createType throws', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
