@@ -59,12 +59,12 @@ describe('CorporateActions class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(CorporateActions.prototype instanceof Namespace).toBe(true);
   });
 
   describe('method: setDefaultConfig', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets = {
         identities: ['someDid'],
         treatment: TargetTreatment.Exclude,
@@ -76,7 +76,7 @@ describe('CorporateActions class', () => {
           percentage: new BigNumber(20),
         },
       ];
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -100,10 +100,10 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: setAgent', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const target = 'someDid';
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -117,8 +117,8 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: removeAgent', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -132,8 +132,8 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: remove', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
       const corporateAction = new BigNumber(100);
 
       procedureMockUtils
@@ -151,7 +151,7 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: getAgents', () => {
-    test('should retrieve a list of agent identities', async () => {
+    it('should retrieve a list of agent identities', async () => {
       const did = 'someDid';
       const otherDid = 'otherDid';
       const fakeTicker = 'TEST';
@@ -176,7 +176,7 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: getDefaultConfig', () => {
-    test("should retrieve the Asset's Corporate Actions Default Config", async () => {
+    it("should retrieve the Asset's Corporate Actions Default Config", async () => {
       const dids = ['someDid', 'otherDid'];
       const defaultTaxWithholding = new BigNumber(10);
 

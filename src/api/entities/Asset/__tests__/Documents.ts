@@ -33,7 +33,7 @@ describe('Documents class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Documents.prototype instanceof Namespace).toBe(true);
   });
 
@@ -42,7 +42,7 @@ describe('Documents class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const documents = new Documents(asset, context);
@@ -57,7 +57,7 @@ describe('Documents class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -75,7 +75,7 @@ describe('Documents class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all documents linked to the Asset', async () => {
+    it('should retrieve all documents linked to the Asset', async () => {
       const asset = entityMockUtils.getAssetInstance();
       dsMockUtils.createQueryStub('asset', 'assetDocuments');
       const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
@@ -94,12 +94,12 @@ describe('Documents class', () => {
       ];
       const entries = expectedDocuments.map(({ name, uri, contentHash, type, filedAt }, index) =>
         tuple(
-          {
+          ({
             args: [
               dsMockUtils.createMockTicker(asset.ticker),
               dsMockUtils.createMockU32(new BigNumber(index)),
             ],
-          } as unknown as StorageKey,
+          } as unknown) as StorageKey,
           dsMockUtils.createMockDocument({
             uri: dsMockUtils.createMockDocumentUri(uri),
             name: dsMockUtils.createMockDocumentName(name),

@@ -53,7 +53,7 @@ describe('Checkpoints class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Checkpoints.prototype instanceof Namespace).toBe(true);
   });
 
@@ -62,8 +62,8 @@ describe('Checkpoints class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Checkpoint>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Checkpoint>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -81,7 +81,7 @@ describe('Checkpoints class', () => {
       sinon.restore();
     });
 
-    test('should return the requested Checkpoint', async () => {
+    it('should return the requested Checkpoint', async () => {
       const id = new BigNumber(1);
 
       const result = await checkpoints.getOne({ id });
@@ -90,7 +90,7 @@ describe('Checkpoints class', () => {
       expect(result.asset.ticker).toBe(ticker);
     });
 
-    test('should throw an error if the Checkpoint does not exist', async () => {
+    it('should throw an error if the Checkpoint does not exist', async () => {
       const id = new BigNumber(1);
 
       entityMockUtils.configureMocks({ checkpointOptions: { exists: false } });
@@ -104,7 +104,7 @@ describe('Checkpoints class', () => {
       sinon.restore();
     });
 
-    test('should return all created checkpoints with their timestamps and total supply', async () => {
+    it('should return all created checkpoints with their timestamps and total supply', async () => {
       const stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
 
       dsMockUtils.createQueryStub('checkpoint', 'totalSupply');
@@ -132,7 +132,7 @@ describe('Checkpoints class', () => {
       }));
 
       const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
-        tuple({ args: [rawTicker, checkpointId] } as unknown as StorageKey, balance)
+        tuple(({ args: [rawTicker, checkpointId] } as unknown) as StorageKey, balance)
       );
 
       requestPaginatedStub.resolves({ entries: totalSupplyEntries, lastKey: null });

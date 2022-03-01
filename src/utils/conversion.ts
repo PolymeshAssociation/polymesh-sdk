@@ -2828,7 +2828,7 @@ export function granularCanTransferResultToTransferBreakdown(
 /**
  * @hidden
  */
-export function stoTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
+export function offeringTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
   const { price, amount } = tier;
   return context.createType('PriceTier', {
     total: bigNumberToBalance(amount, context),

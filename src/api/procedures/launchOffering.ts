@@ -19,10 +19,10 @@ import {
   bigNumberToBalance,
   bigNumberToU64,
   dateToMoment,
+  offeringTierToPriceTier,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  stoTierToPriceTier,
   stringToText,
   stringToTicker,
   u64ToBigNumber,
@@ -90,14 +90,14 @@ export interface Storage {
 /**
  * @hidden
  */
-export const createOfferingResolver =
-  (ticker: string, context: Context) =>
-  (receipt: ISubmittableResult): Offering => {
-    const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
-    const newFundraiserId = u64ToBigNumber(data[1]);
+export const createOfferingResolver = (ticker: string, context: Context) => (
+  receipt: ISubmittableResult
+): Offering => {
+  const [{ data }] = filterEventRecords(receipt, 'sto', 'FundraiserCreated');
+  const newFundraiserId = u64ToBigNumber(data[1]);
 
-    return new Offering({ id: newFundraiserId, ticker }, context);
-  };
+  return new Offering({ id: newFundraiserId, ticker }, context);
+};
 
 /**
  * @hidden
@@ -170,7 +170,7 @@ export async function prepareLaunchOffering(
     });
   }
 
-  const [sto] = this.addTransaction({
+  const [offering] = this.addTransaction({
     transaction: tx.sto.createFundraiser,
     resolvers: [createOfferingResolver(ticker, context)],
     args: [
@@ -178,7 +178,7 @@ export async function prepareLaunchOffering(
       stringToTicker(ticker, context),
       portfolioIdToMeshPortfolioId(raisingPortfolioId, context),
       stringToTicker(raisingCurrency, context),
-      tiers.map(tier => stoTierToPriceTier(tier, context)),
+      tiers.map(tier => offeringTierToPriceTier(tier, context)),
       bigNumberToU64(venueId, context),
       optionize(dateToMoment)(start, context),
       optionize(dateToMoment)(end, context),
@@ -187,7 +187,7 @@ export async function prepareLaunchOffering(
     ],
   });
 
-  return sto;
+  return offering;
 }
 
 /**
