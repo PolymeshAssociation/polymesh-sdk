@@ -2,7 +2,6 @@ import { bool, Bytes, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
-import { create } from 'lodash';
 import {
   AgentGroup,
   AGId,
@@ -53,14 +52,7 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Account,
-  Context,
-  controllerTransfer,
-  DefaultPortfolio,
-  Identity,
-  NumberedPortfolio,
-} from '~/internal';
+import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
