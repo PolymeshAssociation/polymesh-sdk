@@ -2,7 +2,7 @@ import { ApiPromise, Keyring } from '@polkadot/api';
 import { AddressOrPair } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { CallFunction, TypeDef, TypeDefInfo } from '@polkadot/types/types';
+import { CallFunction, InterfaceTypes, TypeDef, TypeDefInfo } from '@polkadot/types/types';
 import { hexToU8a } from '@polkadot/util';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
@@ -1200,5 +1200,22 @@ export class Context {
     cloned.polymeshApi = Context.createPolymeshApiProxy(cloned);
 
     return cloned;
+  }
+
+  /**
+   *  @hidden
+   *
+   * Creates an instance of a type as registered in the polymeshApi instance
+   */
+  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): InterfaceTypes[K] {
+    try {
+      return this.polymeshApi.createType(type, params);
+    } catch (error) {
+      throw new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message: `Could not create internal Polymesh type: "${type}". Please report this error to the Polymath team`,
+        data: { type, params, error },
+      });
+    }
   }
 }
