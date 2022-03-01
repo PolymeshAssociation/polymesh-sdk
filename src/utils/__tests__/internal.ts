@@ -187,9 +187,9 @@ describe('unwrapValues', () => {
 
 describe('filterEventRecords', () => {
   const filterRecordsStub = sinon.stub();
-  const mockReceipt = ({
+  const mockReceipt = {
     filterRecords: filterRecordsStub,
-  } as unknown) as ISubmittableResult;
+  } as unknown as ISubmittableResult;
 
   afterEach(() => {
     filterRecordsStub.reset();
@@ -502,10 +502,10 @@ describe('createProcedureMethod', () => {
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
     const fakeProcedure = (): Procedure<number, void> =>
-      (({
+      ({
         prepare,
         checkAuthorization,
-      } as unknown) as Procedure<number, void>);
+      } as unknown as Procedure<number, void>);
 
     const method: ProcedureMethod<number, void> = createProcedureMethod(
       { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
@@ -527,10 +527,10 @@ describe('createProcedureMethod', () => {
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
     const fakeProcedure = (): Procedure<void, void> =>
-      (({
+      ({
         prepare,
         checkAuthorization,
-      } as unknown) as Procedure<void, void>);
+      } as unknown as Procedure<void, void>);
 
     const method = createProcedureMethod(
       { getProcedureAndArgs: () => [fakeProcedure, undefined], transformer, voidArgs: true },
@@ -576,7 +576,7 @@ describe('assertIsPositive', () => {
 
 describe('getCommonKeyring', () => {
   it('should return a common keyring', async () => {
-    const fakeKeyring = ('keyring' as unknown) as CommonKeyring;
+    const fakeKeyring = 'keyring' as unknown as CommonKeyring;
     let result = getCommonKeyring(fakeKeyring);
 
     expect(result).toBe(fakeKeyring);
@@ -855,6 +855,10 @@ describe('getPortfolioIdByName', () => {
 describe('getIdentity', () => {
   let context: Context;
 
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
   });
@@ -862,10 +866,6 @@ describe('getIdentity', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
-  });
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
   });
 
   afterAll(() => {
