@@ -14,6 +14,7 @@ import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
+  assertExpectedChainVersion,
   assertFormatValid,
   assertIsInteger,
   assertIsPositive,

@@ -14,6 +14,8 @@ import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { chunk, groupBy, map, mapValues, padEnd } from 'lodash';
 import { ModuleName, TxTag } from 'polymesh-types/types';
+import { satisfies } from 'semver';
+import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
   Context,
@@ -52,6 +54,8 @@ import {
   DEFAULT_GQL_PAGE_SIZE,
   DEFAULT_MAX_BATCH_ELEMENTS,
   MAX_BATCH_ELEMENTS,
+  SUPPORTED_VERSION_RANGE,
+  SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString } from '~/utils/conversion';
 
@@ -709,4 +713,61 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
   }
 
   return obj as HumanReadableType<T>;
+}
+
+/**
+ * @hidden
+ *
+ * Checks chain version. This function uses a websocket as it's intended to be called during initialization
+ * @param nodeUrl - URL for the chain node
+ * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
+ */
+export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
+  const sendRequest = () => {
+    const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
+    client.send(JSON.stringify(msg));
+  };
+
+  const client = new W3CWebSocket(nodeUrl);
+  client.onerror = function () {
+    client.close();
+    const error = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: `Could not connect to the Polymesh node at ${nodeUrl}`,
+    });
+    fail(error);
+  };
+
+  let success: () => void;
+  let fail: (reason?: Error) => void;
+  const signal = new Promise((resolve, reject) => {
+    success = resolve;
+    fail = reject;
+  }) as Promise<void>;
+
+  client.onmessage = msg => {
+    client.close();
+    const { result: version } = JSON.parse(msg.data.toString());
+
+    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
+      const error = new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Unsupported Polymesh version. Please upgrade the SDK',
+        data: {
+          polymeshVersion: version,
+          supportedVersionRange: SUPPORTED_VERSION_RANGE,
+        },
+      });
+      fail(error);
+    } else {
+      success();
+      fail();
+    }
+  };
+
+  client.onopen = function () {
+    sendRequest();
+  };
+
+  return signal;
 }

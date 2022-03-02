@@ -137,7 +137,7 @@ import {
   ZkProofData,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
-import WebSocketAsPromised from 'websocket-as-promised';
+import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
@@ -186,20 +186,6 @@ function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
 
 let apolloConstructorStub: SinonStub;
 
-/**
- * Create a mock instance of the WebSocketAsPromised lib
- */
-function createWebSocketAsPromised(): WebSocketAsPromised {
-  return ({
-    open: sinon.stub(),
-    send: sinon.stub(),
-    sendRequest: sinon.stub().resolves({ result: '4.1.0' }),
-    close: sinon.stub(),
-  } as unknown) as WebSocketAsPromised;
-}
-
-let webSocketAsPromisedConstructorStub: SinonStub;
-
 export type MockContext = Mocked<Context>;
 
 export enum MockTxStatus {
@@ -228,16 +214,6 @@ const mockInstanceContainer = {
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
   apolloInstance: createApolloClient(),
-  webSocketAsPromisedInstance: createWebSocketAsPromised(),
-};
-
-const MockWebSocketAsPromisedClass = class {
-  /**
-   * @hidden
-   */
-  public constructor() {
-    return webSocketAsPromisedConstructorStub();
-  }
 };
 
 let apiPromiseCreateStub: SinonStub;
@@ -500,8 +476,6 @@ export const mockApolloModule = (path: string) => (): Record<string, unknown> =>
   ...jest.requireActual(path),
   ApolloClient: MockApolloClientClass,
 });
-
-export const mockWebSocketAsPromisedModule = () => (): unknown => MockWebSocketAsPromisedClass;
 
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
@@ -959,11 +933,6 @@ export function initMocks(opts?: {
   // Apollo
   apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
 
-  // WebSocketAsPromised
-  webSocketAsPromisedConstructorStub = sinon
-    .stub()
-    .returns(mockInstanceContainer.webSocketAsPromisedInstance);
-
   txMocksData.clear();
   errorStub = sinon.stub().throws(new Error('Error'));
 }
@@ -977,7 +946,6 @@ export function cleanup(): void {
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
   mockInstanceContainer.apolloInstance = createApolloClient();
-  mockInstanceContainer.webSocketAsPromisedInstance = createWebSocketAsPromised();
 }
 
 /**
