@@ -972,7 +972,7 @@ export function configureMocks(opts?: {
  * @hidden
  * Initialize the factory by adding default all-purpose functionality to the mock manager
  *
- * @param opts.mockContext - if defined, the internal [[Context]] class will also be mocked with custom properties
+ * @param opts.mockContext - if defined, the internal {@link Context} class will also be mocked with custom properties
  */
 export function initMocks(opts?: {
   contextOptions?: ContextOptions;
@@ -1033,7 +1033,7 @@ export function reset(): void {
  * @param mod - name of the module
  * @param tx - name of the transaction function
  * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
- *  If set to false, the transaction lifecycle will be controlled by [[updateTxStatus]]
+ *  If set to false, the transaction lifecycle will be controlled by {@link updateTxStatus}
  */
 export function createTxStub<
   ModuleName extends keyof Extrinsics,

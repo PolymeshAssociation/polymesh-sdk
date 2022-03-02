@@ -296,7 +296,7 @@ export class Polymesh {
    *
    * @note the SDK will become unusable after this operation. It will throw an error when attempting to
    *   access any chain or middleware data. If you wish to continue using the SDK, you must
-   *   create a new instance by calling [[connect]]
+   *   create a new instance by calling {@link connect}
    */
   public disconnect(): Promise<void> {
     return this.context.disconnect();
@@ -320,7 +320,7 @@ export class Polymesh {
 
   /**
    * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
-   *   you must explicitly call [[setSigner]]
+   *   you must explicitly call {@link setSigner}
    *
    * @param params.accountUri - account URI
    */
@@ -341,7 +341,7 @@ export class Polymesh {
   /**
    * Set the SDK's current signing key to the provided address
    *
-   * @note the key must have been previously added via [[addSigner]]
+   * @note the key must have been previously added via {@link addSigner}
    */
   public setSigner(signer: string | Account): void {
     this.context.setPair(signerToString(signer));

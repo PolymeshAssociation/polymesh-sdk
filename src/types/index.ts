@@ -559,7 +559,7 @@ export enum TransferStatus {
 
 /**
  * Akin to TransferStatus, these are a bit more granular and specific. Every TransferError translates to
- *   a [[TransferStatus]], but two or more TransferErrors can represent the same TransferStatus, and
+ *   a {@link TransferStatus}, but two or more TransferErrors can represent the same TransferStatus, and
  *   not all Transfer Statuses are represented by a TransferError
  */
 export enum TransferError {
@@ -1178,7 +1178,7 @@ export type PortfolioLike =
 /**
  * Permissions to grant to a Signer over an Identity
  *
- * @link [[Permissions]]
+ * {@link Permissions}
  *
  * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
  */

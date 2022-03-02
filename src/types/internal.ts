@@ -44,8 +44,8 @@ export type Queries = QueryableStorage<'promise'>;
 export type Consts = QueryableConsts<'promise'>;
 
 /**
- * Transform a tuple of types into an array of [[PostTransactionValue]].
- * For each type in the tuple, the corresponding [[PostTransactionValue]] resolves to that type
+ * Transform a tuple of types into an array of {@link PostTransactionValue}.
+ * For each type in the tuple, the corresponding {@link PostTransactionValue} resolves to that type
  *
  * @param Values - types of the values to be wrapped
  */
@@ -54,12 +54,12 @@ export type PostTransactionValueArray<Values extends unknown[]> = {
 };
 
 /**
- * Either a specific type or a [[PostTransactionValue]] that wraps a value of that type
+ * Either a specific type or a {@link PostTransactionValue} that wraps a value of that type
  */
 export type MaybePostTransactionValue<T> = PostTransactionValue<T> | T;
 
 /**
- * Apply the [[MaybePostTransactionValue]] type to all members of a tuple
+ * Apply the {@link MaybePostTransactionValue} type to all members of a tuple
  */
 export type MapMaybePostTransactionValue<T extends unknown[]> = {
   [K in keyof T]: MaybePostTransactionValue<T[K]>;
@@ -95,7 +95,7 @@ export type TxWithArgs<Args extends unknown[] = unknown[]> = BaseTx<Args> &
       }
     : {
         /**
-         * arguments that the transaction will receive (some of them can be [[PostTransactionValue]] from an earlier transaction)
+         * arguments that the transaction will receive (some of them can be {@link PostTransactionValue} from an earlier transaction)
          */
         args: MapMaybePostTransactionValue<Args>;
       });
@@ -118,28 +118,28 @@ export type TxDataWithFees<Args extends unknown[] = unknown[]> = TxData<Args> &
   Omit<TxWithArgs<Args>, 'args'>;
 
 /**
- * Apply the [[PolymeshTx]] type to all args in an array
+ * Apply the {@link PolymeshTx} type to all args in an array
  */
 export type MapPolymeshTx<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? PolymeshTx<ArgsArray[K]> : never;
 };
 
 /**
- * Apply the [[TxWithArgs]] type to all args in an array
+ * Apply the {@link TxWithArgs} type to all args in an array
  */
 export type MapTxWithArgs<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxWithArgs<ArgsArray[K]> : never;
 };
 
 /**
- * Apply the [[TxData]] type to all args in an array
+ * Apply the {@link TxData} type to all args in an array
  */
 export type MapTxData<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
 
 /**
- * Apply the [[TxDataWithFees]] type to all args in an array
+ * Apply the {@link TxDataWithFees} type to all args in an array
  */
 export type MapTxDataWithFees<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxDataWithFees<ArgsArray[K]> : never;
@@ -156,7 +156,7 @@ export type ResolverFunctionArray<Values extends unknown[]> = {
  * Base Transaction Schema
  *
  * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
+ * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
  */
 export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
   /**
@@ -187,7 +187,7 @@ export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
  * Schema of a transaction batch
  *
  * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
+ * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
  */
 export interface BatchTransactionSpec<
   ArgsArray extends unknown[][],
@@ -203,7 +203,7 @@ export interface BatchTransactionSpec<
  * Schema of a specific transaction
  *
  * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in [[PostTransactionValue]] after the transaction runs
+ * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
  */
 export type TransactionSpec<
   Args extends unknown[],

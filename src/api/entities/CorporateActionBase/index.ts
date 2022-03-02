@@ -56,7 +56,7 @@ export interface Params {
 export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unknown> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, ticker } = identifier as UniqueIdentifiers;

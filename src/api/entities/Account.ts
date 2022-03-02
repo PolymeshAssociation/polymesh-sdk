@@ -62,7 +62,7 @@ export interface UniqueIdentifiers {
 export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { address } = identifier as UniqueIdentifiers;

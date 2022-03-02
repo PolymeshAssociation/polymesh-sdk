@@ -1,4 +1,10 @@
 import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Account,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  AuthorizationRequest,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Authorizations,
   Context,
   createPortfolio,
   Identity,
@@ -36,9 +42,9 @@ export class Identities {
    * Register an Identity
    *
    * @note must be a CDD provider
-   * @note this may create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
-   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this may create {@link AuthorizationRequest Authorization Requests} which have to be accepted by the `targetAccount`.
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived `authorizations.getReceived`}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne `authorizations.getOne`}
    *
    * @note required role:
    *   - Customer Due Diligence Provider

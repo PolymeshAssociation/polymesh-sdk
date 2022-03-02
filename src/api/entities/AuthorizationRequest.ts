@@ -49,7 +49,7 @@ export interface Params {
 export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { authId } = identifier as UniqueIdentifiers;

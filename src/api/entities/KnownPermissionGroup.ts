@@ -19,7 +19,7 @@ export interface UniqueIdentifiers {
 export class KnownPermissionGroup extends PermissionGroup {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { type, ticker } = identifier as UniqueIdentifiers;

@@ -118,7 +118,7 @@ export class Schedules extends Namespace<Asset> {
 
   /**
    * Calculate the sum of the complexity of all current Checkpoint Schedules for this Asset.
-   *   The number cannot exceed the Asset's maximum complexity (obtained via [[maxComplexity]])
+   *   The number cannot exceed the Asset's maximum complexity (obtained via {@link maxComplexity})
    */
   public async currentComplexity(): Promise<BigNumber> {
     const schedules = await this.get();

@@ -1,7 +1,11 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 
 import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Account,
   Asset,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Authorizations,
   Context,
   Identity,
   modifyCaDefaultConfig,
@@ -75,9 +79,9 @@ export class CorporateActions extends Namespace<Asset> {
   /**
    * Assign a new Corporate Actions Agent for the Asset
    *
-   * @note this may create AuthorizationRequests which have to be accepted by
-   *   the corresponding Account. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this may create {@link AuthorizationRequest AuthorizationRequests} which have to be accepted by the `target` Identity.
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived `authorizations.getReceived`}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne `authorizations.getOne`}
    *
    * @deprecated in favor of `inviteAgent`
    */
