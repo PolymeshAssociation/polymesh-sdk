@@ -53,7 +53,7 @@ describe('Distributions class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Distributions.prototype instanceof Namespace).toBe(true);
   });
 
@@ -62,14 +62,14 @@ describe('Distributions class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const distributions = new Distributions(asset, context);
 
-      const args = { foo: 'bar' } as unknown as ConfigureDividendDistributionParams;
+      const args = ({ foo: 'bar' } as unknown) as ConfigureDividendDistributionParams;
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<DividendDistribution>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<DividendDistribution>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -91,7 +91,7 @@ describe('Distributions class', () => {
       sinon.restore();
     });
 
-    test('should return the requested Distribution', async () => {
+    it('should return the requested Distribution', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
 
@@ -146,7 +146,7 @@ describe('Distributions class', () => {
       expect(details.remainingFunds).toEqual(new BigNumber(5000));
     });
 
-    test('should throw an error if the Distribution does not exist', async () => {
+    it('should throw an error if the Distribution does not exist', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
 
@@ -214,7 +214,7 @@ describe('Distributions class', () => {
       sinon.restore();
     });
 
-    test('should return all distributions associated to the Asset', async () => {
+    it('should return all distributions associated to the Asset', async () => {
       const ticker = 'SOME_TICKER';
 
       const context = dsMockUtils.getContextInstance();

@@ -26,7 +26,7 @@ describe('createVenue procedure', () => {
     dsMockUtils.initMocks();
     stringToVenueDetailsStub = sinon.stub(utilsConversionModule, 'stringToVenueDetails');
     venueTypeToMeshVenueTypeStub = sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType');
-    venue = 'venue' as unknown as PostTransactionValue<Venue>;
+    venue = ('venue' as unknown) as PostTransactionValue<Venue>;
   });
 
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe('createVenue procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a createVenue transaction to the queue', async () => {
+  it('should add a createVenue transaction to the queue', async () => {
     const description = 'description';
     const type = VenueType.Distribution;
     const args = {
@@ -96,7 +96,7 @@ describe('createCreateVenueResolver', () => {
     filterEventRecordsStub.reset();
   });
 
-  test('should return the new Venue', () => {
+  it('should return the new Venue', () => {
     const fakeContext = {} as Context;
 
     const result = createCreateVenueResolver(fakeContext)({} as ISubmittableResult);

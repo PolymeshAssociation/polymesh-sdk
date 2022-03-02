@@ -96,7 +96,7 @@ describe('addAssetRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied requirement is already a part of the Asset', () => {
+  it('should throw an error if the supplied requirement is already a part of the Asset', () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         complianceRequirementsGet: {
@@ -117,10 +117,10 @@ describe('addAssetRequirement procedure', () => {
     );
   });
 
-  test('should add an add compliance requirement transaction to the queue', async () => {
-    const fakeConditions = ['condition'] as unknown as Condition[];
-    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
-    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
+  it('should add an add compliance requirement transaction to the queue', async () => {
+    const fakeConditions = (['condition'] as unknown) as Condition[];
+    const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
+    const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
 
     requirementToComplianceRequirementStub
       .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
@@ -150,7 +150,7 @@ describe('addAssetRequirement procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {

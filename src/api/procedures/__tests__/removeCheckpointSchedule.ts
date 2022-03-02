@@ -62,7 +62,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Schedule no longer exists', () => {
+  it('should throw an error if the Schedule no longer exists', () => {
     const args = {
       ticker,
       schedule: id,
@@ -83,7 +83,7 @@ describe('removeCheckpointSchedule procedure', () => {
     );
   });
 
-  test('should throw an error if Schedule Ref Count is not zero', () => {
+  it('should throw an error if Schedule Ref Count is not zero', () => {
     const args = {
       ticker,
       schedule: id,
@@ -106,7 +106,7 @@ describe('removeCheckpointSchedule procedure', () => {
     );
   });
 
-  test('should add a remove schedule transaction to the queue', async () => {
+  it('should add a remove schedule transaction to the queue', async () => {
     const args = {
       ticker,
       schedule: id,
@@ -143,7 +143,7 @@ describe('removeCheckpointSchedule procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

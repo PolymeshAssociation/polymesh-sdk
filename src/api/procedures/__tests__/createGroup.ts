@@ -95,7 +95,7 @@ describe('createGroup procedure', () => {
       .stub(utilsInternalModule, 'filterEventRecords')
       .returns([dsMockUtils.createMockIEvent(['someDid', rawTicker, rawAgId])]);
 
-    test('should return the new CustomPermissionGroup', () => {
+    it('should return the new CustomPermissionGroup', () => {
       const result = createCreateGroupResolver(mockContext)({} as ISubmittableResult);
 
       expect(result.id).toEqual(agId);
@@ -103,7 +103,7 @@ describe('createGroup procedure', () => {
     });
   });
 
-  test('should throw an error if there already exists a group with exactly the same permissions', async () => {
+  it('should throw an error if there already exists a group with exactly the same permissions', async () => {
     const customId = new BigNumber(1);
 
     let proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
@@ -185,7 +185,7 @@ describe('createGroup procedure', () => {
     expect(error.data.groupId).toEqual(PermissionGroupType.Full);
   });
 
-  test('should add a create group transaction to the queue', async () => {
+  it('should add a create group transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
@@ -255,7 +255,7 @@ describe('createGroup procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the Asset', () => {
+    it('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext
       );
@@ -270,7 +270,7 @@ describe('createGroup procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext,
         {

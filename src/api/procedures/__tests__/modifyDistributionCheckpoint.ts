@@ -53,7 +53,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the distribution has already started', async () => {
+  it('should throw an error if the distribution has already started', async () => {
     const args = {
       distribution: entityMockUtils.getDividendDistributionInstance({
         paymentDate: new Date('10/14/1987'),
@@ -74,7 +74,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
     expect(err.message).toBe('Cannot modify a Distribution checkpoint after the payment date');
   });
 
-  test('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
+  it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
     const checkpoint = new Date(new Date().getTime() + 1000);
     const args = {
       distribution: entityMockUtils.getDividendDistributionInstance({
@@ -96,7 +96,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
     expect(err.message).toBe('Payment date must be after the Checkpoint date');
   });
 
-  test('should throw an error if the checkpoint date is after the expiry date', async () => {
+  it('should throw an error if the checkpoint date is after the expiry date', async () => {
     const checkpoint = new Date(new Date().getTime() + 1000);
     const paymentDate = new Date(checkpoint.getTime() + 2000);
     const args = {
@@ -124,7 +124,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
     expect(err.message).toBe('Expiry date must be after the Checkpoint date');
   });
 
-  test('should add a modifyCaCheckpoint procedure transaction to the queue', async () => {
+  it('should add a modifyCaCheckpoint procedure transaction to the queue', async () => {
     const checkpoint = entityMockUtils.getCheckpointInstance();
     const distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate: new Date(new Date().getTime() + 100000),
@@ -147,7 +147,7 @@ describe('modifyDistributionCheckpoint procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

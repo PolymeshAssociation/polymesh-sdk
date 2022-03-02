@@ -79,7 +79,7 @@ describe('setGroupPermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if new permissions are the same as the current ones', async () => {
+  it('should throw an error if new permissions are the same as the current ones', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     permissionsLikeToPermissionsStub.returns(permissions);
@@ -105,7 +105,7 @@ describe('setGroupPermissions procedure', () => {
     expect(error.message).toBe('New permissions are the same as the current ones');
   });
 
-  test('should add a set group permissions transaction to the queue', async () => {
+  it('should add a set group permissions transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const fakePermissions = { transactions: permissions.transactions };
@@ -132,7 +132,7 @@ describe('setGroupPermissions procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

@@ -58,12 +58,12 @@ describe('CheckpointSchedule class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(CheckpointSchedule.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign ticker and id to instance', () => {
+    it('should assign ticker and id to instance', () => {
       let schedule = new CheckpointSchedule(
         { id, ticker, start, period, remaining: new BigNumber(0), nextCheckpointDate },
         context
@@ -110,7 +110,7 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(
         CheckpointSchedule.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })
       ).toBe(true);
@@ -121,7 +121,7 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: details', () => {
-    test('should throw an error if Schedule does not exists', async () => {
+    it('should throw an error if Schedule does not exists', async () => {
       const checkpointSchedule = new CheckpointSchedule(
         { id: new BigNumber(2), ticker, period, start, remaining, nextCheckpointDate },
         context
@@ -149,7 +149,7 @@ describe('CheckpointSchedule class', () => {
       expect(error.message).toBe('Schedule no longer exists. It was either removed or it expired');
     });
 
-    test('should return the Schedule details ', async () => {
+    it('should return the Schedule details ', async () => {
       const rawRemaining = new BigNumber(2);
       const checkpointSchedule = new CheckpointSchedule(
         { id, ticker, period, start, remaining, nextCheckpointDate },
@@ -186,7 +186,7 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: getCheckpoints', () => {
-    test("should throw an error if the schedule doesn't exist", async () => {
+    it("should throw an error if the schedule doesn't exist", async () => {
       const schedule = new CheckpointSchedule(
         { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
         context
@@ -212,7 +212,7 @@ describe('CheckpointSchedule class', () => {
       expect(err.message).toBe('Schedule no longer exists. It was either removed or it expired');
     });
 
-    test('should return all the checkpoints created by the schedule', async () => {
+    it('should return all the checkpoints created by the schedule', async () => {
       const schedule = new CheckpointSchedule(
         { id, ticker, start, period, remaining, nextCheckpointDate },
         context
@@ -246,7 +246,7 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the schedule exists', async () => {
+    it('should return whether the schedule exists', async () => {
       let schedule = new CheckpointSchedule(
         { id, ticker, start, period, remaining, nextCheckpointDate },
         context
@@ -276,7 +276,7 @@ describe('CheckpointSchedule class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const schedule = new CheckpointSchedule(
         {
           id: new BigNumber(1),

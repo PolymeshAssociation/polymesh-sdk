@@ -75,7 +75,7 @@ describe('setCustodian procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the passed Account has a pending authorization to accept', () => {
+  it('should throw an error if the passed Account has a pending authorization to accept', () => {
     const did = 'someDid';
     const args = { targetIdentity: 'targetIdentity', did };
 
@@ -109,7 +109,7 @@ describe('setCustodian procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const did = 'someDid';
     const id = new BigNumber(1);
     const expiry = new Date('1/1/2040');
@@ -187,7 +187,7 @@ describe('setCustodian procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const id = new BigNumber(1);
