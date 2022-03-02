@@ -73,6 +73,7 @@ export enum IdentityTx {
   GcRevokeCddClaim = 'identity.gcRevokeCddClaim',
   AddInvestorUniquenessClaimV2 = 'identity.addInvestorUniquenessClaimV2',
   RevokeClaimByIndex = 'identity.revokeClaimByIndex',
+  RotatePrimaryKeyToSecondary = 'identity.rotatePrimaryKeyToSecondary',
 }
 
 export enum CddServiceProvidersTx {
@@ -178,6 +179,7 @@ export enum BridgeTx {
   HandleScheduledBridgeTx = 'bridge.handleScheduledBridgeTx',
   AddFreezeAdmin = 'bridge.addFreezeAdmin',
   RemoveFreezeAdmin = 'bridge.removeFreezeAdmin',
+  RemoveTxs = 'bridge.removeTxs',
 }
 
 export enum StakingTx {

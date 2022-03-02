@@ -573,7 +573,7 @@ describe('stringToTicker and tickerToString', () => {
     const context = dsMockUtils.getContextInstance();
 
     expect(() => stringToTicker(value, context)).toThrow(
-      'Only printable ASCII is alowed as ticker name'
+      'Only printable ASCII is allowed as ticker name'
     );
   });
 
@@ -1022,6 +1022,24 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.TransferAssetOwnership,
+      value: 'TICKER',
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH))
+      .returns(fakeTicker);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: fakeTicker })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
@@ -1145,9 +1163,26 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationDataToAuthorization(authorizationData, context);
     expect(result).toEqual(fakeResult);
+
+    const ticker = 'SOME_TICKER';
+    const type = PermissionGroupType.Full;
+    fakeResult = {
+      type: AuthorizationType.BecomeAgent,
+      value: entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type,
+      }),
+    };
+
+    authorizationData = dsMockUtils.createMockAuthorizationData({
+      BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
+    });
+
+    result = authorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
   });
 
-  test('shoould throw an error if the authorization has an unsupported type', () => {
+  test('should throw an error if the authorization has an unsupported type', () => {
     const context = dsMockUtils.getContextInstance();
     const authorizationData = dsMockUtils.createMockAuthorizationData(
       'Whatever' as 'RotatePrimaryKey'
