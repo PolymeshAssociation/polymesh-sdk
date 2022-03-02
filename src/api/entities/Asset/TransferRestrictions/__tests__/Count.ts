@@ -22,7 +22,7 @@ describe('Count class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Count.prototype instanceof Namespace).toBe(true);
   });
 });

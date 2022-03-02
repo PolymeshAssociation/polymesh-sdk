@@ -63,7 +63,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Distribution is not expired', async () => {
+  it('should throw an error if the Distribution is not expired', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let err;
@@ -78,7 +78,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     expect(err.data.expiryDate).toEqual(expiryDate);
   });
 
-  test('should throw an error if the Distribution was already reclaimed', async () => {
+  it('should throw an error if the Distribution was already reclaimed', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let err;
@@ -102,7 +102,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     expect(err.message).toBe('Distribution funds have already been reclaimed');
   });
 
-  test('should add a reclaim transaction to the queue', async () => {
+  it('should add a reclaim transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('capitalDistribution', 'reclaim');
@@ -122,13 +122,13 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
-      const params = {
+    it('should return the appropriate roles and permissions', async () => {
+      const params = ({
         distribution: {
           origin,
           asset: { ticker },
         },
-      } as unknown as Params;
+      } as unknown) as Params;
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);

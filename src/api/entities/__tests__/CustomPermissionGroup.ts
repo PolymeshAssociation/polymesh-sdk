@@ -43,12 +43,12 @@ describe('CustomPermissionGroup class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend PermissionGroup', () => {
+  it('should extend PermissionGroup', () => {
     expect(CustomPermissionGroup.prototype instanceof PermissionGroup).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign id to instance', () => {
+    it('should assign id to instance', () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       expect(customPermissionGroup.id).toBe(id);
@@ -57,7 +57,7 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(CustomPermissionGroup.isUniqueIdentifiers({ id: new BigNumber(1), ticker })).toBe(
         true
       );
@@ -67,7 +67,7 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
         assetOptions: {
           toJson: ticker,
@@ -82,7 +82,7 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: setPermissions', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       const args = {
@@ -91,7 +91,7 @@ describe('CustomPermissionGroup class', () => {
         },
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -108,7 +108,7 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: getPermissions', () => {
-    test('should return a list of permissions and transaction groups', async () => {
+    it('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       sinon.stub(utilsConversionModule, 'bigNumberToU32');
@@ -146,7 +146,7 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the Custom Permission Group exists', async () => {
+    it('should return whether the Custom Permission Group exists', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {

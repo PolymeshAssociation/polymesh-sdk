@@ -750,6 +750,7 @@ function configureContext(opts: ContextOptions): void {
     addPair: sinon.stub().returns(opts.addPair),
     getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
     supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
+    createType: sinon.stub(),
   } as unknown as MockContext;
 
   contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);

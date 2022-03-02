@@ -59,11 +59,11 @@ describe('Account class', () => {
     sinon.restore();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Account.prototype instanceof Entity).toBe(true);
   });
 
-  test('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
+  it('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
     assertFormatValidStub.throws();
 
     expect(() => {
@@ -75,7 +75,7 @@ describe('Account class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Account.isUniqueIdentifiers({ address: 'someAddress' })).toBe(true);
       expect(Account.isUniqueIdentifiers({})).toBe(false);
       expect(Account.isUniqueIdentifiers({ address: 3 })).toBe(false);
@@ -98,13 +98,13 @@ describe('Account class', () => {
       account = new Account({ address }, context);
     });
 
-    test("should return the account's balance", async () => {
+    it("should return the account's balance", async () => {
       const result = await account.getBalance();
 
       expect(result).toEqual(fakeResult);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
       const callback = sinon.stub();
 
@@ -136,13 +136,13 @@ describe('Account class', () => {
       context.accountSubsidy.resolves(fakeResult);
     });
 
-    test('should return Subsidy with allowance', async () => {
+    it('should return Subsidy with allowance', async () => {
       const result = await account.getSubsidy();
 
       expect(result).toEqual(fakeResult);
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
       const callback = sinon.stub();
 
@@ -159,7 +159,7 @@ describe('Account class', () => {
   });
 
   describe('method: getIdentity', () => {
-    test('should return the Identity associated to the Account', async () => {
+    it('should return the Identity associated to the Account', async () => {
       const did = 'someDid';
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockIdentityId(did),
@@ -169,7 +169,7 @@ describe('Account class', () => {
       expect(result?.did).toBe(did);
     });
 
-    test('should return null if there is no Identity associated to the Account', async () => {
+    it('should return null if there is no Identity associated to the Account', async () => {
       dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
         returnValue: dsMockUtils.createMockIdentityId(),
       });
@@ -181,7 +181,7 @@ describe('Account class', () => {
   });
 
   describe('method: getTransactionHistory', () => {
-    test('should return a list of transactions', async () => {
+    it('should return a list of transactions', async () => {
       const tag = TxTags.identity.CddRegisterDid;
       const moduleId = ModuleIdEnum.Identity;
       const callId = CallIdEnum.CddRegisterDid;
@@ -235,7 +235,7 @@ describe('Account class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
@@ -243,6 +243,7 @@ describe('Account class', () => {
       dsMockUtils.createQueryStub('system', 'blockHash', {
         multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
       });
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryStub(
         transactions({
           block_id: blockNumber1.toNumber(),
@@ -258,6 +259,7 @@ describe('Account class', () => {
           transactions: transactionsQueryResponse,
         }
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       let result = await account.getTransactionHistory({
         blockNumber: blockNumber1,
@@ -310,6 +312,7 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createApolloQueryStub(
         transactions({
           block_id: undefined,
@@ -325,6 +328,7 @@ describe('Account class', () => {
           transactions: transactionsQueryResponse,
         }
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       result = await account.getTransactionHistory();
 
@@ -337,9 +341,10 @@ describe('Account class', () => {
   });
 
   describe('method: isFrozen', () => {
-    test('should return if the Account is frozen or not', async () => {
+    it('should return if the Account is frozen or not', async () => {
       const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('identity', 'didRecords').returns(
         dsMockUtils.createMockDidRecord({
           primary_key: dsMockUtils.createMockAccountId(address),
@@ -347,6 +352,7 @@ describe('Account class', () => {
           secondary_keys: [],
         })
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
       const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
         returnValue: dsMockUtils.createMockBool(false),
       });
@@ -375,19 +381,19 @@ describe('Account class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       expect(account.toJson()).toBe(account.address);
     });
   });
 
   describe('method: exists', () => {
-    test('should return true', () => {
+    it('should return true', () => {
       return expect(account.exists()).resolves.toBe(true);
     });
   });
 
   describe('method: getPermissions', () => {
-    test('should return full permissions if the Account is the primary Account', async () => {
+    it('should return full permissions if the Account is the primary Account', async () => {
       context = dsMockUtils.getContextInstance({
         primaryAccount: address,
       });
@@ -404,7 +410,7 @@ describe('Account class', () => {
       });
     });
 
-    test("should return the Account's permissions if it is a secondary Account", async () => {
+    it("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
         assets: null,
         transactions: null,
@@ -439,7 +445,7 @@ describe('Account class', () => {
   });
 
   describe('method: checkPermissions', () => {
-    test('should return whether the Account has the passed permissions', async () => {
+    it('should return whether the Account has the passed permissions', async () => {
       context = dsMockUtils.getContextInstance({
         primaryAccount: address,
       });
@@ -641,7 +647,7 @@ describe('Account class', () => {
       });
     });
 
-    test('should exempt certain transactions from requiring permissions', async () => {
+    it('should exempt certain transactions from requiring permissions', async () => {
       context = dsMockUtils.getContextInstance({
         primaryAccount: address,
       });
@@ -667,7 +673,7 @@ describe('Account class', () => {
   });
 
   describe('method: hasPermissions', () => {
-    test('should return whether the Account has the passed permissions', async () => {
+    it('should return whether the Account has the passed permissions', async () => {
       const mockAccount = entityMockUtils.getAccountInstance({ address });
       context = dsMockUtils.getContextInstance({
         primaryAccount: address,
@@ -682,8 +688,8 @@ describe('Account class', () => {
   });
 
   describe('method: leaveIdentity', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
 
       const args = {
         account,
