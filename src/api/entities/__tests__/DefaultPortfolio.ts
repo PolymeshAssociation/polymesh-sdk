@@ -2,7 +2,7 @@ import { Context, DefaultPortfolio, Portfolio } from '~/internal';
 import { dsMockUtils } from '~/testUtils/mocks';
 
 describe('DefaultPortfolio class', () => {
-  test('should extend Portfolio', () => {
+  it('should extend Portfolio', () => {
     expect(DefaultPortfolio.prototype instanceof Portfolio).toBe(true);
   });
 
@@ -25,7 +25,7 @@ describe('DefaultPortfolio class', () => {
   });
 
   describe('exists', () => {
-    test('should return true', () => {
+    it('should return true', () => {
       const portfolio = new DefaultPortfolio({ did: 'someDid' }, context);
 
       return expect(portfolio.exists()).resolves.toBe(true);
