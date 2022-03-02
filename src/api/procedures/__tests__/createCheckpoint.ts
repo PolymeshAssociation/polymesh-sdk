@@ -39,7 +39,7 @@ describe('createCheckpoint procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    checkpoint = 'checkpoint' as unknown as PostTransactionValue<Checkpoint>;
+    checkpoint = ('checkpoint' as unknown) as PostTransactionValue<Checkpoint>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -61,7 +61,7 @@ describe('createCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a create checkpoint transaction to the queue', async () => {
+  it('should add a create checkpoint transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('checkpoint', 'createCheckpoint');
@@ -94,7 +94,7 @@ describe('createCheckpoint procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new Checkpoint', () => {
+    it('should return the new Checkpoint', () => {
       const result = createCheckpointResolver(ticker, mockContext)({} as ISubmittableResult);
       expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
@@ -102,7 +102,7 @@ describe('createCheckpoint procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

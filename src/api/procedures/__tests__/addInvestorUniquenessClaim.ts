@@ -173,7 +173,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add an add investor uniqueness claim transaction to the queue', async () => {
+  it('should add an add investor uniqueness claim transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
       mockContext
     );
@@ -208,7 +208,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     });
   });
 
-  test('should add an add investor uniqueness claim v2 transaction to the queue', async () => {
+  it('should add an add investor uniqueness claim v2 transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
       mockContext
     );
@@ -243,7 +243,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     });
   });
 
-  test('should throw an error if the expiry date is in the past', async () => {
+  it('should throw an error if the expiry date is in the past', async () => {
     const commonArgs = {
       scope,
       cddId,
@@ -265,7 +265,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const commonArgs = {
         scope,
         cddId,

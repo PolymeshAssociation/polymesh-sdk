@@ -74,7 +74,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should instantiate Context and return a Polymesh instance', async () => {
+    it('should instantiate Context and return a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
       });
@@ -82,7 +82,7 @@ describe('Polymesh Class', () => {
       expect(polymesh instanceof Polymesh).toBe(true);
     });
 
-    test('should instantiate Context with a seed and return a Polymesh instance', async () => {
+    it('should instantiate Context with a seed and return a Polymesh instance', async () => {
       const accountSeed = 'Alice'.padEnd(66, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
 
@@ -102,7 +102,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should instantiate Context with a keyring and return a Polymesh instance', async () => {
+    it('should instantiate Context with a keyring and return a Polymesh instance', async () => {
       const keyring = {} as Keyring;
       const createStub = dsMockUtils.getContextCreateStub();
 
@@ -122,7 +122,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should instantiate Context with a ui keyring and return a Polymesh instance', async () => {
+    it('should instantiate Context with a ui keyring and return a Polymesh instance', async () => {
       const keyring = {} as Keyring;
       const createStub = dsMockUtils.getContextCreateStub();
 
@@ -142,7 +142,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should instantiate Context with a uri and return a Polymesh instance', async () => {
+    it('should instantiate Context with a uri and return a Polymesh instance', async () => {
       const accountUri = '//uri';
       const createStub = dsMockUtils.getContextCreateStub();
 
@@ -162,7 +162,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should instantiate Context with a mnemonic and return a Polymesh instance', async () => {
+    it('should instantiate Context with a mnemonic and return a Polymesh instance', async () => {
       const accountMnemonic = 'lorem ipsum dolor sit';
       const createStub = dsMockUtils.getContextCreateStub();
 
@@ -182,7 +182,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
+    it('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
       const accountUri = '//uri';
       const createStub = dsMockUtils.getContextCreateStub();
       const middleware = {
@@ -209,7 +209,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should throw an error if the Polymesh version does not satisfy the supported version range', async () => {
+    it('should throw an error if the Polymesh version does not satisfy the supported version range', async () => {
       jest.spyOn(semver, 'satisfies').mockImplementationOnce(() => false);
 
       let err;
@@ -225,7 +225,7 @@ describe('Polymesh Class', () => {
       expect(err.data.supportedVersionRange).toBe(SUPPORTED_VERSION_RANGE);
     });
 
-    test('should throw an error if the middleware credentials are incorrect', async () => {
+    it('should throw an error if the middleware credentials are incorrect', async () => {
       const accountUri = '//uri';
       const middleware = {
         link: 'wrong',
@@ -279,7 +279,7 @@ describe('Polymesh Class', () => {
       expect(err).toBeUndefined();
     });
 
-    test('should set an optional signer for the polkadot API', async () => {
+    it('should set an optional signer for the polkadot API', async () => {
       const accountSeed = 'Alice'.padEnd(66, ' ');
       const createStub = dsMockUtils.getContextCreateStub();
       const signer = 'signer' as PolkadotSigner;
@@ -302,7 +302,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
     });
 
-    test('should throw if Context fails in the connection process', async () => {
+    it('should throw if Context fails in the connection process', async () => {
       dsMockUtils.throwOnApiCreation();
       const nodeUrl = 'wss://some.url';
       const polymeshApiPromise = Polymesh.connect({
@@ -314,7 +314,7 @@ describe('Polymesh Class', () => {
       );
     });
 
-    test('should throw if Polkadot fails in the connection process', async () => {
+    it('should throw if Polkadot fails in the connection process', async () => {
       dsMockUtils.throwOnApiCreation(new Error());
 
       const nodeUrl = 'wss://some.url';
@@ -327,7 +327,7 @@ describe('Polymesh Class', () => {
       );
     });
 
-    test('should throw if Context create method fails', () => {
+    it('should throw if Context create method fails', () => {
       dsMockUtils.throwOnContextCreation();
       const nodeUrl = 'wss://some.url';
       const polymeshApiPromise = Polymesh.connect({
@@ -341,7 +341,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: getCurrentIdentity', () => {
-    test('should return the current Identity', async () => {
+    it('should return the current Identity', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
@@ -358,7 +358,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: onConnectionError', () => {
-    test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
+    it('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
       const polkadot = dsMockUtils.getApiInstance();
 
       const polymesh = await Polymesh.connect({
@@ -382,7 +382,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: onDisconnect', () => {
-    test('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
+    it('should call the supplied listener when the event is emitted and return an unsubscribe callback', async () => {
       const polkadot = dsMockUtils.getApiInstance();
 
       const polymesh = await Polymesh.connect({
@@ -406,7 +406,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: disconnect', () => {
-    test('should call the underlying disconnect function', async () => {
+    it('should call the underlying disconnect function', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',
@@ -422,7 +422,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: addSigner', () => {
-    test('should call the underlying addPair function', async () => {
+    it('should call the underlying addPair function', async () => {
       const pair = {
         address: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
         publicKey: 'someKey',
@@ -469,7 +469,7 @@ describe('Polymesh Class', () => {
   });
 
   describe('method: setSigner', () => {
-    test('should call the underlying setPair function', async () => {
+    it('should call the underlying setPair function', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         accountUri: '//uri',

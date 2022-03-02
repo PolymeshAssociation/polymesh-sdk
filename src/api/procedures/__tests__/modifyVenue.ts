@@ -46,7 +46,7 @@ describe('modifyVenue procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied description is the same as the current one', () => {
+  it('should throw an error if the supplied description is the same as the current one', () => {
     const description = 'someDetails';
 
     const args = {
@@ -65,7 +65,7 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied type is the same as the current one', () => {
+  it('should throw an error if the supplied type is the same as the current one', () => {
     const type = VenueType.Exchange;
 
     const args = {
@@ -85,7 +85,7 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  test('should add an update venue transaction to the queue', async () => {
+  it('should add an update venue transaction to the queue', async () => {
     const description = 'someDetails';
     const type = VenueType.Exchange;
 
@@ -143,7 +143,7 @@ describe('modifyVenue procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       let args = {

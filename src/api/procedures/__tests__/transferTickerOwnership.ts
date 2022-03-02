@@ -104,7 +104,7 @@ describe('transferTickerOwnership procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if an Asset with that ticker has already been launched', () => {
+  it('should throw an error if an Asset with that ticker has already been launched', () => {
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {
@@ -121,7 +121,7 @@ describe('transferTickerOwnership procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     await prepareTransferTickerOwnership.call(proc, args);
@@ -136,7 +136,7 @@ describe('transferTickerOwnership procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
+  it('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     await prepareTransferTickerOwnership.call(proc, { ...args, expiry });
@@ -152,7 +152,7 @@ describe('transferTickerOwnership procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

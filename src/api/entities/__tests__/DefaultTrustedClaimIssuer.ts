@@ -31,12 +31,12 @@ describe('DefaultTrustedClaimIssuer class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(DefaultTrustedClaimIssuer.prototype instanceof Identity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign ticker and Identity to instance', () => {
+    it('should assign ticker and Identity to instance', () => {
       const did = 'someDid';
       const ticker = 'SOME_TICKER';
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
@@ -47,7 +47,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(
         DefaultTrustedClaimIssuer.isUniqueIdentifiers({ did: 'someDid', ticker: 'symbol' })
       ).toBe(true);
@@ -65,7 +65,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       identityId: did,
     };
 
-    test('should return the event identifier object of the trusted claim issuer creation', async () => {
+    it('should return the event identifier object of the trusted claim issuer creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
       const eventIdx = new BigNumber(1);
@@ -87,7 +87,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       expect(result).toEqual(fakeResult);
     });
 
-    test('should return null if the query result is empty', async () => {
+    it('should return null if the query result is empty', async () => {
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
       dsMockUtils.createApolloQueryStub(eventByAddedTrustedClaimIssuer(variables), {});
@@ -136,7 +136,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       sinon.restore();
     });
 
-    test('should return the claim types for which the Claim Issuer is trusted', async () => {
+    it('should return the claim types for which the Claim Issuer is trusted', async () => {
       let trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'someDid', ticker }, context);
 
       let result = await trustedClaimIssuer.trustedFor();
@@ -150,7 +150,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       expect(result).toEqual([ClaimType.Exempted]);
     });
 
-    test('should throw an error if the Identity is no longer a trusted Claim Issuer', async () => {
+    it('should throw an error if the Identity is no longer a trusted Claim Issuer', async () => {
       const did = 'randomDid';
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 

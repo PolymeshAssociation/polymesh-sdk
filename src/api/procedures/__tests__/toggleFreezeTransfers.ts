@@ -51,7 +51,7 @@ describe('toggleFreezeTransfers procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if freeze is set to true and the Asset is already frozen', () => {
+  it('should throw an error if freeze is set to true and the Asset is already frozen', () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         isFrozen: true,
@@ -68,7 +68,7 @@ describe('toggleFreezeTransfers procedure', () => {
     ).rejects.toThrow('The Asset is already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the Asset is already unfrozen', () => {
+  it('should throw an error if freeze is set to false and the Asset is already unfrozen', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
@@ -79,7 +79,7 @@ describe('toggleFreezeTransfers procedure', () => {
     ).rejects.toThrow('The Asset is already unfrozen');
   });
 
-  test('should add a freeze transaction to the queue', async () => {
+  it('should add a freeze transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'freeze');
@@ -94,7 +94,7 @@ describe('toggleFreezeTransfers procedure', () => {
     expect(ticker).toBe(result.ticker);
   });
 
-  test('should add a unfreeze transaction to the queue', async () => {
+  it('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         isFrozen: true,
@@ -116,7 +116,7 @@ describe('toggleFreezeTransfers procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

@@ -163,7 +163,7 @@ describe('addInstruction procedure', () => {
       asset: rawTicker,
     };
 
-    instruction = ['instruction'] as unknown as PostTransactionValue<[Instruction]>;
+    instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
   });
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
@@ -263,7 +263,7 @@ describe('addInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the instructions array is empty', async () => {
+  it('should throw an error if the instructions array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
@@ -280,7 +280,7 @@ describe('addInstruction procedure', () => {
     expect(error.code).toBe(ErrorCode.ValidationError);
   });
 
-  test('should throw an error if the legs array is empty', async () => {
+  it('should throw an error if the legs array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
@@ -302,7 +302,7 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  test("should throw an error if the Venue doesn't exist", async () => {
+  it("should throw an error if the Venue doesn't exist", async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
@@ -323,7 +323,7 @@ describe('addInstruction procedure', () => {
     expect(error.code).toBe(ErrorCode.DataUnavailable);
   });
 
-  test('should throw an error if the legs array exceeds limit', async () => {
+  it('should throw an error if the legs array exceeds limit', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
     });
@@ -353,7 +353,7 @@ describe('addInstruction procedure', () => {
     expect(error.code).toBe(ErrorCode.LimitExceeded);
   });
 
-  test('should throw an error if the end block is in the past', async () => {
+  it('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
 
     entityMockUtils.configureMocks({
@@ -394,7 +394,7 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  test('should throw an error if the value date is before the trade date', async () => {
+  it('should throw an error if the value date is before the trade date', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -434,7 +434,7 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  test('should add an add and authorize instruction transaction to the queue', async () => {
+  it('should add an add and authorize instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -463,7 +463,7 @@ describe('addInstruction procedure', () => {
     expect(result).toBe(instruction);
   });
 
-  test('should add an add instruction transaction to the queue', async () => {
+  it('should add an add instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -510,7 +510,7 @@ describe('addInstruction procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
         portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
       });
@@ -556,7 +556,7 @@ describe('addInstruction procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the list of portfolios that will be affirmed', async () => {
+    it('should return the list of portfolios that will be affirmed', async () => {
       const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
@@ -608,7 +608,7 @@ describe('createAddInstructionResolver', () => {
     filterEventRecordsStub.reset();
   });
 
-  test('should return the new Instruction', () => {
+  it('should return the new Instruction', () => {
     const fakeContext = {} as Context;
 
     const result = createAddInstructionResolver(fakeContext)({} as ISubmittableResult);
@@ -616,13 +616,13 @@ describe('createAddInstructionResolver', () => {
     expect(result[0].id).toEqual(id);
   });
 
-  test('should return a list of new Instructions', () => {
+  it('should return a list of new Instructions', () => {
     const fakeContext = {} as Context;
     const previousInstructionId = new BigNumber(2);
 
-    const previousInstructions = {
+    const previousInstructions = ({
       value: [new Instruction({ id: previousInstructionId }, fakeContext)],
-    } as unknown as PostTransactionValue<Instruction[]>;
+    } as unknown) as PostTransactionValue<Instruction[]>;
 
     const result = createAddInstructionResolver(
       fakeContext,

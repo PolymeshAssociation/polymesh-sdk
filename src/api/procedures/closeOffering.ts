@@ -30,11 +30,11 @@ export async function prepareCloseOffering(
   } = this;
   const { ticker, id } = args;
 
-  const sto = new Offering({ ticker, id }, context);
+  const offering = new Offering({ ticker, id }, context);
 
   const {
     status: { sale },
-  } = await sto.details();
+  } = await offering.details();
 
   if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
     throw new PolymeshError({

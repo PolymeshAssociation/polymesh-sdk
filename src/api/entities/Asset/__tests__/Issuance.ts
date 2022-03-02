@@ -29,7 +29,7 @@ describe('Issuance class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Issuance.prototype instanceof Namespace).toBe(true);
   });
 
@@ -38,7 +38,7 @@ describe('Issuance class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const issuance = new Issuance(asset, context);
@@ -48,7 +48,7 @@ describe('Issuance class', () => {
         amount: new BigNumber(100),
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()

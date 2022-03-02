@@ -39,7 +39,7 @@ describe('Identities Class', () => {
   });
 
   describe('method: getIdentity', () => {
-    test('should return an Identity object with the passed did', async () => {
+    it('should return an Identity object with the passed did', async () => {
       const params = { did: 'testDid' };
 
       const identity = new Identity(params, context);
@@ -52,12 +52,12 @@ describe('Identities Class', () => {
   });
 
   describe('method: registerIdentity', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         targetAccount: 'someTarget',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Identity>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Identity>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -71,10 +71,10 @@ describe('Identities Class', () => {
   });
 
   describe('method: createPortfolio', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const args = { name: 'someName' };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -88,7 +88,7 @@ describe('Identities Class', () => {
   });
 
   describe('method: isIdentityValid', () => {
-    test('should return true if the supplied Identity exists', async () => {
+    it('should return true if the supplied Identity exists', async () => {
       const did = 'someDid';
 
       const result = await identities.isIdentityValid({
@@ -98,7 +98,7 @@ describe('Identities Class', () => {
       expect(result).toBe(true);
     });
 
-    test('should return false if the supplied Identity is invalid', async () => {
+    it('should return false if the supplied Identity is invalid', async () => {
       const did = 'someDid';
       entityMockUtils.configureMocks({ identityOptions: { exists: false } });
 

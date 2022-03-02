@@ -64,7 +64,7 @@ describe('linkCaDocs procedure', () => {
         filing_date: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enabled @typescript-eslint/naming-convention */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     documentEntries = [];
@@ -112,7 +112,7 @@ describe('linkCaDocs procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if some of the provided documents are not associated to the Asset', async () => {
+  it('should throw an error if some of the provided documents are not associated to the Asset', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const name = 'customName';
 
@@ -140,7 +140,7 @@ describe('linkCaDocs procedure', () => {
     expect(error.data.documents[0].name).toEqual(name);
   });
 
-  test('should add a link ca doc transaction to the queue', async () => {
+  it('should add a link ca doc transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareLinkCaDocs.call(proc, args);
@@ -152,7 +152,7 @@ describe('linkCaDocs procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

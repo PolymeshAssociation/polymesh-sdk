@@ -44,7 +44,7 @@ describe('TrustedClaimIssuers class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(TrustedClaimIssuers.prototype instanceof Namespace).toBe(true);
   });
 
@@ -53,7 +53,7 @@ describe('TrustedClaimIssuers class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
@@ -65,7 +65,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -91,7 +91,7 @@ describe('TrustedClaimIssuers class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
@@ -103,7 +103,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -129,7 +129,7 @@ describe('TrustedClaimIssuers class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
@@ -138,7 +138,7 @@ describe('TrustedClaimIssuers class', () => {
         claimIssuers: ['someDid', 'otherDid'],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -206,7 +206,7 @@ describe('TrustedClaimIssuers class', () => {
       sinon.restore();
     });
 
-    test('should return the current default trusted claim issuers', async () => {
+    it('should return the current default trusted claim issuers', async () => {
       trustedClaimIssuerStub.withArgs(rawTicker).resolves(claimIssuers);
 
       const result = await trustedClaimIssuers.get();
@@ -216,7 +216,7 @@ describe('TrustedClaimIssuers class', () => {
       );
     });
 
-    test('should allow subscription', async () => {
+    it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
       trustedClaimIssuerStub.withArgs(rawTicker).callsFake((_, cbFunc) => {

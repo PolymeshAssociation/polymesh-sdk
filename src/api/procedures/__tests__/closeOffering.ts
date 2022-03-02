@@ -65,7 +65,7 @@ describe('closeOffering procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a stop sto transaction to the queue', async () => {
+  it('should add a stop sto transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await prepareCloseOffering.call(proc, { ticker, id });
@@ -76,7 +76,7 @@ describe('closeOffering procedure', () => {
     });
   });
 
-  test('should throw an error if the Offering is already closed', async () => {
+  it('should throw an error if the Offering is already closed', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -97,7 +97,7 @@ describe('closeOffering procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
