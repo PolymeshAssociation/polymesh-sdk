@@ -722,7 +722,7 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
  */
-export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
+export function assertExpectedChainVersion(nodeUrl: string): Promise<unknown> {
   const client = new W3CWebSocket(nodeUrl);
 
   client.onerror = function (error: Error) {
@@ -735,12 +735,12 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
     fail(err);
   };
 
-  let success: () => void;
+  let success: (value: void) => void;
   let fail: (reason?: Error) => void;
   const signal = new Promise((resolve, reject) => {
     success = resolve;
     fail = reject;
-  }) as Promise<void>;
+  });
 
   client.onmessage = msg => {
     client.close();
