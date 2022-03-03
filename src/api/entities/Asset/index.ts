@@ -11,11 +11,7 @@ import {
 } from 'polymesh-types/types';
 
 import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Account,
   AuthorizationRequest,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Authorizations,
   Context,
   controllerTransfer,
   ControllerTransferParams,

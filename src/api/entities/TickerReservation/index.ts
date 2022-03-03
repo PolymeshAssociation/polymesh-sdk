@@ -2,12 +2,8 @@ import { QueryableStorageEntry } from '@polkadot/api/types';
 import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
 
 import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Account,
   Asset,
   AuthorizationRequest,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Authorizations,
   Context,
   createAsset,
   CreateAssetParams,

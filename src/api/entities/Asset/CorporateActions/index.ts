@@ -1,11 +1,7 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 
 import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Account,
   Asset,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Authorizations,
   Context,
   Identity,
   modifyCaDefaultConfig,

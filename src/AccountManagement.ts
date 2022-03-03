@@ -1,11 +1,7 @@
 import {
   Account,
   AuthorizationRequest,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Authorizations,
   Context,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Identity,
   inviteAccount,
   InviteAccountParams,
   modifySignerPermissions,

@@ -1,7 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Authorizations } from '~/internal';
 import {
   Asset,
   AuthorizationRequest,

@@ -6,8 +6,6 @@ import {
   Account,
   Asset,
   AuthorizationRequest,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Authorizations,
   Context,
   Entity,
   Identity,
