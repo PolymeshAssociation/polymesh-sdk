@@ -106,7 +106,7 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   it('should throw an error if the supplied requirement id does not belong to the Asset', () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
     args = {
       ticker,
       id: new BigNumber(2),
@@ -133,9 +133,9 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   it('should add a modify compliance requirement transaction to the queue', async () => {
-    const fakeConditions = ([{ claim: '' }] as unknown) as Condition[];
-    const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
-    const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
+    const fakeConditions = [{ claim: '' }] as unknown as Condition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
     const rawComplianceRequirement = dsMockUtils.createMockComplianceRequirement({
       /* eslint-disable @typescript-eslint/naming-convention */

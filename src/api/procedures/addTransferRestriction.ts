@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { flatten, uniq } from 'lodash';
+import { uniq } from 'lodash';
 
 import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
 import {
@@ -11,7 +11,6 @@ import {
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import {
   stringToScopeId,
   stringToTicker,
@@ -19,7 +18,7 @@ import {
   transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, batchArguments } from '~/utils/internal';
+import { checkTxType } from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
@@ -98,12 +97,10 @@ export async function prepareAddTransferRestriction(
   );
 
   const transactions = [
-    assembleBatchTransactions(
-      tuple({
-        transaction: statistics.addTransferManager,
-        argsArray: [tuple(rawTicker, rawTransferManager)],
-      })
-    ),
+    checkTxType({
+      transaction: statistics.addTransferManager,
+      args: [rawTicker, rawTransferManager],
+    }),
   ];
 
   const identityScopes = await P.map(exemptedIdentities, identityValue => {
@@ -133,17 +130,16 @@ export async function prepareAddTransferRestriction(
 
     const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
 
-    const txArgsArray = batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).map(
-      scopeIdBatch => ({
+    transactions.push(
+      checkTxType({
         transaction: statistics.addExemptedEntities,
-        feeMultiplier: new BigNumber(scopeIdBatch.length),
-        argsArray: [tuple(rawTicker, rawTransferManager, scopeIdBatch)],
+        feeMultiplier: new BigNumber(scopeIds.length),
+        args: [rawTicker, rawTransferManager, scopeIds],
       })
     );
-    transactions.push(assembleBatchTransactions(tuple(...txArgsArray)));
   }
 
-  this.addBatchTransaction({ transactions: flatten(transactions) });
+  this.addBatchTransaction({ transactions });
 
   return restrictionAmount.plus(1);
 }

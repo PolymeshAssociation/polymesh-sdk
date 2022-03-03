@@ -55,6 +55,7 @@ import {
   MapTxWithArgs,
   MaybePostTransactionValue,
   PolymeshTx,
+  TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
@@ -857,7 +858,6 @@ export async function getCheckpointValue(
 
 interface TxAndArgsArray<Args extends unknown[] = unknown[]> {
   transaction: PolymeshTx<Args>;
-  feeMultiplier?: BigNumber;
   argsArray: Args[];
 }
 
@@ -869,12 +869,12 @@ type MapTxAndArgsArray<Args extends unknown[][]> = {
 /**
  * @hidden
  */
-function mapArgs<Args extends unknown[] | []>(
-  txAndArgsArray: TxAndArgsArray<Args>
-): MapTxWithArgs<Args[]> {
-  const { argsArray, ...rest } = txAndArgsArray;
+function mapArgs<Args extends unknown[] | []>({
+  transaction,
+  argsArray,
+}: TxAndArgsArray<Args>): MapTxWithArgs<Args[]> {
   return argsArray.map(args => ({
-    ...rest,
+    transaction,
     args,
   })) as unknown as MapTxWithArgs<Args[]>;
 }
@@ -938,4 +938,14 @@ export async function getPortfolioIdByName(
   }
 
   return portfolioId;
+}
+
+/**
+ * @hidden
+ *
+ * Check if a transaction matches the type of its args. Returns the same value but stripped of the types. This function has no logic, it's strictly
+ *   for type safety around `addBatchTransaction`
+ */
+export function checkTxType<Args extends unknown[]>(tx: TxWithArgs<Args>): TxWithArgs<unknown[]> {
+  return tx as unknown as TxWithArgs<unknown[]>;
 }

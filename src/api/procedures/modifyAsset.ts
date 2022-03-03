@@ -1,16 +1,13 @@
-import { flatten } from 'lodash';
-
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, SecurityIdentifier, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import {
   securityIdentifierToAssetIdentifier,
   stringToAssetName,
   stringToFundingRoundName,
   stringToTicker,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
+import { checkTxType, hasSameElements } from '~/utils/internal';
 
 export type ModifyAssetParams =
   | {
@@ -99,10 +96,12 @@ export async function prepareModifyAsset(
       });
     }
 
-    transactions.push({
-      transaction: tx.asset.makeDivisible,
-      args: [rawTicker],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.makeDivisible,
+        args: [rawTicker],
+      })
+    );
   }
 
   if (newName) {
@@ -113,10 +112,12 @@ export async function prepareModifyAsset(
       });
     }
 
-    transactions.push({
-      transaction: tx.asset.renameAsset,
-      args: [rawTicker, stringToAssetName(newName, context)],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.renameAsset,
+        args: [rawTicker, stringToAssetName(newName, context)],
+      })
+    );
   }
 
   if (newFundingRound) {
@@ -127,10 +128,12 @@ export async function prepareModifyAsset(
       });
     }
 
-    transactions.push({
-      transaction: tx.asset.setFundingRound,
-      args: [rawTicker, stringToFundingRoundName(newFundingRound, context)],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.setFundingRound,
+        args: [rawTicker, stringToFundingRoundName(newFundingRound, context)],
+      })
+    );
   }
 
   if (newIdentifiers) {
@@ -143,14 +146,17 @@ export async function prepareModifyAsset(
       });
     }
 
-    const rawIdentifiers = newIdentifiers.map(newIdentifier =>
-      securityIdentifierToAssetIdentifier(newIdentifier, context)
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.updateIdentifiers,
+        args: [
+          rawTicker,
+          newIdentifiers.map(newIdentifier =>
+            securityIdentifierToAssetIdentifier(newIdentifier, context)
+          ),
+        ],
+      })
     );
-
-    transactions.push({
-      transaction: tx.asset.updateIdentifiers,
-      args: [rawTicker, rawIdentifiers],
-    });
   }
 
   this.addBatchTransaction({ transactions });

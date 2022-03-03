@@ -1,17 +1,15 @@
 import BigNumber from 'bignumber.js';
-import { flatten } from 'lodash';
 import { DocumentId, TxTags } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { AssetDocument, ErrorCode } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import {
   assetDocumentToDocument,
   documentToAssetDocument,
   stringToTicker,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, batchArguments, hasSameElements } from '~/utils/internal';
+import { checkTxType, hasSameElements } from '~/utils/internal';
 
 export interface SetAssetDocumentsParams {
   /**
@@ -62,28 +60,26 @@ export async function prepareSetAssetDocuments(
   const transactions = [];
 
   if (currentDocIds.length) {
-    const txArgsArray = batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).map(
-      docIdBatch => ({
+    transactions.push(
+      checkTxType({
         transaction: tx.asset.removeDocuments,
-        feeMultiplier: new BigNumber(docIdBatch.length),
-        argsArray: [tuple(docIdBatch, rawTicker)],
+        feeMultiplier: new BigNumber(currentDocIds.length),
+        args: [currentDocIds, rawTicker],
       })
     );
-    transactions.push(assembleBatchTransactions(tuple(...txArgsArray)));
   }
 
   if (rawDocuments.length) {
-    const txArgsArray = batchArguments(rawDocuments, TxTags.asset.AddDocuments).map(
-      rawDocumentBatch => ({
+    transactions.push(
+      checkTxType({
         transaction: tx.asset.addDocuments,
-        feeMultiplier: new BigNumber(rawDocumentBatch.length),
-        argsArray: [tuple(rawDocumentBatch, rawTicker)],
+        feeMultiplier: new BigNumber(rawDocuments.length),
+        args: [rawDocuments, rawTicker],
       })
     );
-    transactions.push(assembleBatchTransactions(tuple(...txArgsArray)));
   }
 
-  this.addBatchTransaction({ transactions: flatten(transactions) });
+  this.addBatchTransaction({ transactions });
 
   return new Asset({ ticker }, context);
 }

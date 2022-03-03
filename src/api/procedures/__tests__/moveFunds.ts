@@ -137,10 +137,10 @@ describe('moveFunds procedure', () => {
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        getAssetBalances: ([
+        getAssetBalances: [
           { asset: asset1, free: new BigNumber(50) },
           { asset: asset2, free: new BigNumber(10) },
-        ] as unknown) as PortfolioBalance[],
+        ] as unknown as PortfolioBalance[],
       },
     });
 
@@ -185,11 +185,11 @@ describe('moveFunds procedure', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         did,
-        getAssetBalances: ([{ asset, total: new BigNumber(150) }] as unknown) as PortfolioBalance[],
+        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
       },
       defaultPortfolioOptions: {
         did,
-        getAssetBalances: ([{ asset, total: new BigNumber(150) }] as unknown) as PortfolioBalance[],
+        getAssetBalances: [{ asset, total: new BigNumber(150) }] as unknown as PortfolioBalance[],
       },
     });
 
@@ -323,14 +323,14 @@ describe('moveFunds procedure', () => {
       const fromId = new BigNumber(1);
       const toId = new BigNumber(10);
       const did = 'someDid';
-      let from:
-        | DefaultPortfolio
-        | NumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance({ did, id: fromId });
+      let from: DefaultPortfolio | NumberedPortfolio = entityMockUtils.getNumberedPortfolioInstance(
+        { did, id: fromId }
+      );
       const to = entityMockUtils.getNumberedPortfolioInstance({ did, id: toId });
 
-      let args = ({
+      let args = {
         from,
-      } as unknown) as Params;
+      } as unknown as Params;
 
       let portfolioId: PortfolioId = { did, number: fromId };
 
@@ -348,10 +348,10 @@ describe('moveFunds procedure', () => {
 
       from = entityMockUtils.getDefaultPortfolioInstance({ did });
 
-      args = ({
+      args = {
         from,
         to: toId,
-      } as unknown) as Params;
+      } as unknown as Params;
 
       portfolioId = { did };
 
@@ -367,10 +367,10 @@ describe('moveFunds procedure', () => {
         },
       });
 
-      args = ({
+      args = {
         from,
         to,
-      } as unknown) as Params;
+      } as unknown as Params;
 
       portfolioId = { did };
 

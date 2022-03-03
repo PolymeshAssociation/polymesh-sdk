@@ -1,11 +1,8 @@
-import { flatten } from 'lodash';
-
 import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import { bigNumberToU64, stringToVenueDetails, venueTypeToMeshVenueType } from '~/utils/conversion';
-import { assembleBatchTransactions } from '~/utils/internal';
+import { checkTxType } from '~/utils/internal';
 
 export type ModifyVenueParams =
   | {
@@ -64,31 +61,23 @@ export async function prepareModifyVenue(
 
   if (description) {
     transactions.push(
-      assembleBatchTransactions(
-        tuple({
-          transaction: tx.settlement.updateVenueDetails,
-          argsArray: [
-            tuple(bigNumberToU64(venueId, context), stringToVenueDetails(description, context)),
-          ],
-        })
-      )
+      checkTxType({
+        transaction: tx.settlement.updateVenueDetails,
+        args: [bigNumberToU64(venueId, context), stringToVenueDetails(description, context)],
+      })
     );
   }
 
   if (type) {
     transactions.push(
-      assembleBatchTransactions(
-        tuple({
-          transaction: tx.settlement.updateVenueType,
-          argsArray: [
-            tuple(bigNumberToU64(venueId, context), venueTypeToMeshVenueType(type, context)),
-          ],
-        })
-      )
+      checkTxType({
+        transaction: tx.settlement.updateVenueType,
+        args: [bigNumberToU64(venueId, context), venueTypeToMeshVenueType(type, context)],
+      })
     );
   }
 
-  this.addBatchTransaction({ transactions: flatten(transactions) });
+  this.addBatchTransaction({ transactions });
 }
 
 /**

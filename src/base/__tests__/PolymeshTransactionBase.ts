@@ -180,10 +180,10 @@ describe('Polymesh Transaction Base class', () => {
       const args = tuple('YET_ANOTHER_TICKER');
       const firstStub = sinon.stub().resolves(1);
       const secondStub = sinon.stub().resolves('someString');
-      const postTransactionValues = ([
+      const postTransactionValues = [
         { run: firstStub },
         { run: secondStub },
-      ] as unknown) as PostTransactionValueArray<[number, string]>;
+      ] as unknown as PostTransactionValueArray<[number, string]>;
 
       const tx = new PolymeshTransaction(
         {
