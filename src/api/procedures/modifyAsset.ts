@@ -99,14 +99,10 @@ export async function prepareModifyAsset(
       });
     }
 
-    transactions.push(
-      assembleBatchTransactions(
-        tuple({
-          transaction: tx.asset.makeDivisible,
-          argsArray: [tuple(rawTicker)],
-        })
-      )
-    );
+    transactions.push({
+      transaction: tx.asset.makeDivisible,
+      args: [rawTicker],
+    });
   }
 
   if (newName) {
@@ -117,14 +113,10 @@ export async function prepareModifyAsset(
       });
     }
 
-    transactions.push(
-      assembleBatchTransactions(
-        tuple({
-          transaction: tx.asset.renameAsset,
-          argsArray: [tuple(rawTicker, stringToAssetName(newName, context))],
-        })
-      )
-    );
+    transactions.push({
+      transaction: tx.asset.renameAsset,
+      args: [rawTicker, stringToAssetName(newName, context)],
+    });
   }
 
   if (newFundingRound) {
@@ -135,14 +127,10 @@ export async function prepareModifyAsset(
       });
     }
 
-    transactions.push(
-      assembleBatchTransactions(
-        tuple({
-          transaction: tx.asset.setFundingRound,
-          argsArray: [tuple(rawTicker, stringToFundingRoundName(newFundingRound, context))],
-        })
-      )
-    );
+    transactions.push({
+      transaction: tx.asset.setFundingRound,
+      args: [rawTicker, stringToFundingRoundName(newFundingRound, context)],
+    });
   }
 
   if (newIdentifiers) {
@@ -159,17 +147,13 @@ export async function prepareModifyAsset(
       securityIdentifierToAssetIdentifier(newIdentifier, context)
     );
 
-    transactions.push(
-      assembleBatchTransactions(
-        tuple({
-          transaction: tx.asset.updateIdentifiers,
-          argsArray: [tuple(rawTicker, rawIdentifiers)],
-        })
-      )
-    );
+    transactions.push({
+      transaction: tx.asset.updateIdentifiers,
+      args: [rawTicker, rawIdentifiers],
+    });
   }
 
-  this.addBatchTransaction({ transactions: flatten(transactions) });
+  this.addBatchTransaction({ transactions });
 
   return asset;
 }
