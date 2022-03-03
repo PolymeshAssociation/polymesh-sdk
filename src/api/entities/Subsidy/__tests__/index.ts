@@ -94,7 +94,7 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    test('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = { allowance: new BigNumber(50) };
 
       const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
@@ -118,7 +118,7 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    test('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = { allowance: new BigNumber(50) };
 
       const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
@@ -145,7 +145,7 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    test('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = { allowance: new BigNumber(50) };
 
       const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
