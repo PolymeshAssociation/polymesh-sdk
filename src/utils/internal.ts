@@ -723,19 +723,16 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
  */
 export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
-  const sendRequest = () => {
-    const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
-    client.send(JSON.stringify(msg));
-  };
-
   const client = new W3CWebSocket(nodeUrl);
-  client.onerror = function () {
+
+  client.onerror = function (error: Error) {
     client.close();
-    const error = new PolymeshError({
+    const err = new PolymeshError({
       code: ErrorCode.FatalError,
       message: `Could not connect to the Polymesh node at ${nodeUrl}`,
+      data: { error },
     });
-    fail(error);
+    fail(err);
   };
 
   let success: () => void;
@@ -748,7 +745,6 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
   client.onmessage = msg => {
     client.close();
     const { result: version } = JSON.parse(msg.data.toString());
-
     if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
       const error = new PolymeshError({
         code: ErrorCode.FatalError,
@@ -765,8 +761,9 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
     }
   };
 
-  client.onopen = function () {
-    sendRequest();
+  client.onopen = () => {
+    const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
+    client.send(JSON.stringify(msg));
   };
 
   return signal;

@@ -6,10 +6,18 @@ import { ModuleName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { SecurityToken } from '~/api/entities/SecurityToken';
-import { Context, PostTransactionValue, Procedure } from '~/internal';
+import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { CalendarPeriod, CalendarUnit, ClaimType, CommonKeyring, CountryCode } from '~/types';
+import { getWebSocketInstance, MockWebSocket } from '~/testUtils/mocks/dataSources';
+import {
+  CalendarPeriod,
+  CalendarUnit,
+  ClaimType,
+  CommonKeyring,
+  CountryCode,
+  ErrorCode,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
@@ -41,6 +49,8 @@ import {
   unwrapValue,
   unwrapValues,
 } from '../internal';
+
+jest.mock('websocket', require('~/testUtils/mocks/dataSources').mockWebSocketModule());
 
 describe('delay', () => {
   beforeAll(() => {
@@ -659,5 +669,51 @@ describe('isModuleOrTagMatch', () => {
       TxTags.identity.AddClaim
     );
     expect(result).toEqual(false);
+  });
+});
+
+describe('assertExpectedChainVersion', () => {
+  let client: MockWebSocket;
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    client = getWebSocketInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should resolve if it receives expected chain version', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.onopen();
+
+    return expect(signal).resolves.not.toThrow();
+  });
+
+  it('should throw an error given an unexpected version', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendVersion('3.0.0');
+    const expectedError = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh version. Please upgrade the SDK',
+    });
+    return expect(signal).rejects.toThrowError(expectedError);
+  });
+
+  it('should throw an error if the version does not match', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    const expectedError = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Could not connect to the Polymesh node at ws://example.com',
+    });
+    client.triggerError(new Error('could not connect'));
+    return expect(signal).rejects.toThrowError(expectedError);
   });
 });
