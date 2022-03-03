@@ -56,7 +56,8 @@
     "gc_add_cdd_claim": "gc_add_cdd_claim",
     "gc_revoke_cdd_claim": "gc_revoke_cdd_claim",
     "add_investor_uniqueness_claim_v2": "add_investor_uniqueness_claim_v2",
-    "revoke_claim_by_index": "revoke_claim_by_index"
+    "revoke_claim_by_index": "revoke_claim_by_index",
+    "rotate_primary_key_to_secondary": "rotate_primary_key_to_secondary"
   },
   "CddServiceProviders": {
     "set_active_members_limit": "set_active_members_limit",
@@ -152,7 +153,8 @@
     "unfreeze_txs": "unfreeze_txs",
     "handle_scheduled_bridge_tx": "handle_scheduled_bridge_tx",
     "add_freeze_admin": "add_freeze_admin",
-    "remove_freeze_admin": "remove_freeze_admin"
+    "remove_freeze_admin": "remove_freeze_admin",
+    "remove_txs": "remove_txs"
   },
   "Staking": {
     "bond": "bond",

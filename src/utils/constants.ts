@@ -127,10 +127,15 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_VERSION_RANGE = '4.0.x';
+export const SUPPORTED_VERSION_RANGE = '4.1.x';
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',
   method: 'system_version',
   params: [],
 };
+
+/**
+ * Default CDD ID associated with an Identity on chain. Used for Identities onboarded without PUIS
+ */
+export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
