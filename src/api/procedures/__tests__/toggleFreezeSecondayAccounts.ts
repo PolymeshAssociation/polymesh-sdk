@@ -1,4 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -9,6 +8,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 
 describe('toggleFreezeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;

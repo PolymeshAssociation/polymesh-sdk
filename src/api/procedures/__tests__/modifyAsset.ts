@@ -1,11 +1,11 @@
-import { AssetName, FundingRoundName, Ticker, TxTags } from 'polymesh-types/types';
+import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { isEqual, remove } from 'lodash';
-import { DocumentId, TxTags } from 'polymesh-types/types';
+import { DocumentId } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AssetDocument, ErrorCode } from '~/types';
+import { AssetDocument, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   corporateActionIdentifierToCaId,

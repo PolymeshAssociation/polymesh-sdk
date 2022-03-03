@@ -4,6 +4,7 @@ import sinon from 'sinon';
 import { Context, Entity, Subsidy, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { AllowanceOperation } from '~/types/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -83,6 +84,84 @@ describe('Subsidy class', () => {
         .resolves(expectedQueue);
 
       const queue = await subsidy.quit();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: setAllowance', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = { allowance: new BigNumber(50) };
+
+      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          { args: { ...args, subsidy, operation: AllowanceOperation.Set }, transformer: undefined },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await subsidy.setAllowance(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: increaseAllowance', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = { allowance: new BigNumber(50) };
+
+      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ...args, subsidy, operation: AllowanceOperation.Increase },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await subsidy.increaseAllowance(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: decreaseAllowance', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = { allowance: new BigNumber(50) };
+
+      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ...args, subsidy, operation: AllowanceOperation.Decrease },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await subsidy.decreaseAllowance(args);
 
       expect(queue).toBe(expectedQueue);
     });

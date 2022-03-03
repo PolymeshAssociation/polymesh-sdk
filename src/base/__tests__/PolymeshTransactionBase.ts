@@ -1,7 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -14,7 +13,7 @@ import {
 import { fakePromise } from '~/testUtils';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransactionStatus } from '~/types';
+import { TransactionStatus, TxTags } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';

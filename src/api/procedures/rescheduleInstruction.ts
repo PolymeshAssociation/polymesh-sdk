@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 
 import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, InstructionStatus } from '~/types';
+import { ErrorCode, InstructionStatus, TxTags } from '~/types';
 import { bigNumberToU64 } from '~/utils/conversion';
 
 /**

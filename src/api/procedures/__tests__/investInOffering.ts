@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId, Ticker, TxTags } from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -21,6 +21,7 @@ import {
   PortfolioBalance,
   PortfolioLike,
   RoleType,
+  TxTags,
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
