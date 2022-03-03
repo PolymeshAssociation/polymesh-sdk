@@ -1,11 +1,11 @@
-import { AssetName, FundingRoundName, Ticker, TxTags } from 'polymesh-types/types';
+import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -63,7 +63,7 @@ describe('modifyAsset procedure', () => {
   it('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    return expect(prepareModifyAsset.call(proc, ({} as unknown) as Params)).rejects.toThrow(
+    return expect(prepareModifyAsset.call(proc, {} as unknown as Params)).rejects.toThrow(
       'Nothing to modify'
     );
   });

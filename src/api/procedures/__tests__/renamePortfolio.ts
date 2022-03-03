@@ -1,13 +1,13 @@
 import { Text, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
 import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 

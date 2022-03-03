@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -10,6 +9,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

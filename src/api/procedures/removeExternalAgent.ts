@@ -1,8 +1,6 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { isFullGroupType } from '~/api/procedures/utils';
 import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 import { getIdentity } from '~/utils/internal';

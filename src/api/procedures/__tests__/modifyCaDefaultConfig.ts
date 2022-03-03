@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import * as utilsProcedureModule from '~/api/procedures/utils';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InputTargets, TargetTreatment } from '~/types';
+import { InputTargets, TargetTreatment, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -72,9 +72,9 @@ describe('modifyCaDefaultConfig procedure', () => {
   it('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    return expect(
-      prepareModifyCaDefaultConfig.call(proc, ({} as unknown) as Params)
-    ).rejects.toThrow('Nothing to modify');
+    return expect(prepareModifyCaDefaultConfig.call(proc, {} as unknown as Params)).rejects.toThrow(
+      'Nothing to modify'
+    );
   });
 
   it('should throw an error if the new targets are the same as the current ones', () => {

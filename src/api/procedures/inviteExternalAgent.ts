@@ -1,5 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   Asset,
@@ -19,6 +17,7 @@ import {
   SignerType,
   TransactionPermissions,
   TxGroup,
+  TxTags,
 } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {

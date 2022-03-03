@@ -2,7 +2,7 @@ import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { range } from 'lodash';
-import { IdentityId, ModuleName, PortfolioName, TxTags } from 'polymesh-types/types';
+import { IdentityId, ModuleName, PortfolioName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, PostTransactionValue, Procedure } from '~/internal';
@@ -16,6 +16,7 @@ import {
   CommonKeyring,
   CountryCode,
   ProcedureMethod,
+  TxTags,
 } from '~/types';
 import { tuple } from '~/types/utils';
 import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';

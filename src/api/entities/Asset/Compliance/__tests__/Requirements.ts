@@ -84,7 +84,7 @@ describe('Requirements class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -128,7 +128,7 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -155,7 +155,7 @@ describe('Requirements class', () => {
         requirement: new BigNumber(10),
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -178,7 +178,7 @@ describe('Requirements class', () => {
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -303,7 +303,7 @@ describe('Requirements class', () => {
             }),
           ],
         } as AssetCompliance,
-        (defaultClaimIssuers as unknown) as Vec<IdentityId>,
+        defaultClaimIssuers as unknown as Vec<IdentityId>,
       ];
 
       expected = {
@@ -426,7 +426,7 @@ describe('Requirements class', () => {
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -449,7 +449,7 @@ describe('Requirements class', () => {
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -483,7 +483,7 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -578,7 +578,7 @@ describe('Requirements class', () => {
     });
 
     it('should return the current requirement compliance and whether the transfer complies', async () => {
-      const rawResponse = ('response' as unknown) as AssetComplianceResult;
+      const rawResponse = 'response' as unknown as AssetComplianceResult;
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
@@ -595,7 +595,7 @@ describe('Requirements class', () => {
     });
 
     it('should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
-      const rawResponse = ('response' as unknown) as AssetComplianceResult;
+      const rawResponse = 'response' as unknown as AssetComplianceResult;
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')

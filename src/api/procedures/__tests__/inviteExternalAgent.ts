@@ -1,4 +1,4 @@
-import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import { AgentGroup, AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Account, Asset, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, PermissionType, SignerValue } from '~/types';
+import { Authorization, PermissionType, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

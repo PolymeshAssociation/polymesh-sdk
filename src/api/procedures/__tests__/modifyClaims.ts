@@ -1,7 +1,7 @@
 import { Option } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -14,7 +14,7 @@ import { Context, Identity } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Claim, ClaimType, RoleType, ScopeType } from '~/types';
+import { Claim, ClaimType, RoleType, ScopeType, TxTags } from '~/types';
 import { ClaimOperation, PolymeshTx } from '~/types/internal';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -186,7 +186,7 @@ describe('modifyClaims procedure', () => {
           data: [
             {
               target: new Identity({ did: someDid }, mockContext),
-              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuer: 'issuerIdentity' as unknown as Identity,
               issuedAt: new Date(),
               expiry: null,
               claim: defaultCddClaim,
@@ -318,7 +318,7 @@ describe('modifyClaims procedure', () => {
           data: [
             {
               target: new Identity({ did: someDid }, mockContext),
-              issuer: ('issuerIdentity' as unknown) as Identity,
+              issuer: 'issuerIdentity' as unknown as Identity,
               issuedAt: new Date(),
               expiry: null,
               claim: { type: ClaimType.CustomerDueDiligence, id: otherId },

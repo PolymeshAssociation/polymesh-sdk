@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { ScopeId, Ticker, TransferManager, TxTags } from 'polymesh-types/types';
+import { ScopeId, Ticker, TransferManager } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -14,7 +14,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransferRestriction, TransferRestrictionType } from '~/types';
+import { TransferRestriction, TransferRestrictionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

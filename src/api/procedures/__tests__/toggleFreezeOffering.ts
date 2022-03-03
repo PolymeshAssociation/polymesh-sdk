@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Context, Offering } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus } from '~/types';
+import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

@@ -1,5 +1,4 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -8,7 +7,7 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import {
   identityIdToString,
   stringToIdentityId,

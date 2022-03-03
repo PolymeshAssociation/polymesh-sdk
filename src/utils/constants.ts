@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 
-import { TransactionArgumentType } from '~/types';
+import { TransactionArgumentType, TxTags } from '~/types';
 
 /**
  * Maximum amount of decimals for on-chain values
