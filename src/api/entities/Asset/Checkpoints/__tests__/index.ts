@@ -63,7 +63,7 @@ describe('Checkpoints class', () => {
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<Checkpoint>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Checkpoint>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -132,7 +132,7 @@ describe('Checkpoints class', () => {
       }));
 
       const totalSupplyEntries = rawTotalSupply.map(({ checkpointId, balance }) =>
-        tuple(({ args: [rawTicker, checkpointId] } as unknown) as StorageKey, balance)
+        tuple({ args: [rawTicker, checkpointId] } as unknown as StorageKey, balance)
       );
 
       requestPaginatedStub.resolves({ entries: totalSupplyEntries, lastKey: null });

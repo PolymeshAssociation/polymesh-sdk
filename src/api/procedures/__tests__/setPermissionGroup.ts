@@ -169,12 +169,11 @@ describe('setPermissionGroup procedure', () => {
         type: PermissionGroupType.PolymeshV1Caa,
       }),
     });
-    let group: Mocked<
-      CustomPermissionGroup | KnownPermissionGroup
-    > = entityMockUtils.getKnownPermissionGroupInstance({
-      ticker,
-      type: PermissionGroupType.PolymeshV1Caa,
-    });
+    let group: Mocked<CustomPermissionGroup | KnownPermissionGroup> =
+      entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.PolymeshV1Caa,
+      });
     const proc = procedureMockUtils.getInstance<
       Params,
       CustomPermissionGroup | KnownPermissionGroup,

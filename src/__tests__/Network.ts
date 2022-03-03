@@ -153,7 +153,7 @@ describe('Network Class', () => {
         amount: new BigNumber(50),
       };
 
-      const expectedQueue = ('' as unknown) as TransactionQueue<void>;
+      const expectedQueue = '' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

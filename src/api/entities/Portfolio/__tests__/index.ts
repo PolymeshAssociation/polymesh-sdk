@@ -314,7 +314,7 @@ describe('Portfolio class', () => {
         items: [{ asset: 'someAsset', amount: new BigNumber(100) }],
       };
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -330,7 +330,7 @@ describe('Portfolio class', () => {
   describe('method: quitCustody', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -359,7 +359,7 @@ describe('Portfolio class', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolio = new NonAbstract({ id, did }, context);
       const targetIdentity = 'someTarget';
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
