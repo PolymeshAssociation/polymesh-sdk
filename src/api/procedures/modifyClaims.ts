@@ -14,6 +14,7 @@ import {
   ProcedureAuthorization,
 } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
+import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimToMeshClaim,
@@ -143,10 +144,10 @@ const findInvalidCddClaims = async (
 
       if (issuedClaimsForTarget.length) {
         // we know both claims are CDD claims
-        const { id: newCddId } = issuedClaimsForTarget[0].claim as CddClaim;
-        const { id: currentCddId } = claim as CddClaim;
+        const { id: currentCddId } = issuedClaimsForTarget[0].claim as CddClaim;
+        const { id: newCddId } = claim as CddClaim;
 
-        if (newCddId !== currentCddId) {
+        if (newCddId !== currentCddId && ![currentCddId, newCddId].includes(DEFAULT_CDD_ID)) {
           invalidCddClaims.push({
             target: targetIdentity,
             currentCddId,
