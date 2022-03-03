@@ -79,7 +79,7 @@ describe('modifyAllowance procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Subsidy does not exist', () =>
+  it('should throw an error if the Subsidy does not exist', () =>
     expect(() =>
       prepareModifyAllowance.call(proc, {
         ...args,
@@ -87,7 +87,7 @@ describe('modifyAllowance procedure', () => {
       })
     ).rejects.toThrowError('The Subsidy no longer exists'));
 
-  test('should throw an error if the allowance to be set is same as the current allowance', () =>
+  it('should throw an error if the allowance to be set is same as the current allowance', () =>
     expect(
       prepareModifyAllowance.call(proc, {
         ...args,
@@ -95,7 +95,7 @@ describe('modifyAllowance procedure', () => {
       })
     ).rejects.toThrowError('Amount of allowance to set is equal to the current allowance'));
 
-  test('should throw an error if the amount of allowance to decrease is more than the current allowance', () =>
+  it('should throw an error if the amount of allowance to decrease is more than the current allowance', () =>
     expect(
       prepareModifyAllowance.call(proc, {
         ...args,
@@ -106,7 +106,7 @@ describe('modifyAllowance procedure', () => {
       'Amount of allowance to decrease cannot be more than the current allowance'
     ));
 
-  test('should add a transaction to the queue', async () => {
+  it('should add a transaction to the queue', async () => {
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     const updatePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'updatePolyxLimit');
@@ -142,7 +142,7 @@ describe('modifyAllowance procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const boundFunc = getAuthorization.bind(proc);
 
       let result = boundFunc(args);
