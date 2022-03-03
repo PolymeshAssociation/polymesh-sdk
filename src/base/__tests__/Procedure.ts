@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
+import { PosRatio, ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, PolymeshTransaction, Procedure } from '~/internal';
@@ -12,7 +12,7 @@ import {
   procedureMockUtils,
 } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import { Role, RoleType } from '~/types';
+import { Role, RoleType, TxTag, TxTags } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -288,7 +288,7 @@ describe('Procedure class', () => {
 
       posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
       txTags.forEach(txTag =>
-        txTagToProtocolOpStub.withArgs(txTag, context).returns((txTag as unknown) as ProtocolOp)
+        txTagToProtocolOpStub.withArgs(txTag, context).returns(txTag as unknown as ProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>
@@ -406,14 +406,14 @@ describe('Procedure class', () => {
       };
 
       let proc = new Procedure(func, {
-        roles: [({ type: 'FakeRole' } as unknown) as Role],
+        roles: [{ type: 'FakeRole' } as unknown as Role],
       });
 
       context = dsMockUtils.getContextInstance({
         isFrozen: false,
         checkRoles: {
           result: false,
-          missingRoles: [({ type: 'FakeRole' } as unknown) as Role],
+          missingRoles: [{ type: 'FakeRole' } as unknown as Role],
         },
         checkPermissions: {
           result: false,

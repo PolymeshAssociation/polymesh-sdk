@@ -99,7 +99,7 @@ describe('Portfolios class', () => {
 
       const entries = [
         tuple(
-          ({
+          {
             args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
@@ -107,11 +107,11 @@ describe('Portfolios class', () => {
                 kind: dsMockUtils.createMockPortfolioKind('Default'),
               }),
             ],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockBool(true)
         ),
         tuple(
-          ({
+          {
             args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
@@ -119,7 +119,7 @@ describe('Portfolios class', () => {
                 kind: dsMockUtils.createMockPortfolioKind({ User: rawNumberedPortfolioId }),
               }),
             ],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockBool(true)
         ),
       ];
@@ -172,7 +172,7 @@ describe('Portfolios class', () => {
   describe('method: delete', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolioId = new BigNumber(5);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

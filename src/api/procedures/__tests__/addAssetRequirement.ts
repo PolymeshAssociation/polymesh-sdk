@@ -118,9 +118,9 @@ describe('addAssetRequirement procedure', () => {
   });
 
   it('should add an add compliance requirement transaction to the queue', async () => {
-    const fakeConditions = (['condition'] as unknown) as Condition[];
-    const fakeSenderConditions = ('senderConditions' as unknown) as MeshCondition[];
-    const fakeReceiverConditions = ('receiverConditions' as unknown) as MeshCondition[];
+    const fakeConditions = ['condition'] as unknown as Condition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
 
     requirementToComplianceRequirementStub
       .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)

@@ -1,4 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -9,6 +8,7 @@ import {
 import { Context, modifyCaCheckpoint } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 
 jest.mock(
   '~/api/entities/CheckpointSchedule',
