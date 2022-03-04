@@ -347,7 +347,6 @@ export class Polymesh {
     this.context.setPair(signerToString(signer));
   }
 
-  // TODO @monitz87: remove when the dApp team no longer needs it
   /* eslint-disable @typescript-eslint/naming-convention */
   /* istanbul ignore next: only for testing purposes */
   /**

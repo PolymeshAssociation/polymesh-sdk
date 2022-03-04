@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { DecoratedRpc, Signer } from '@polkadot/api/types';
 import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
@@ -519,8 +519,7 @@ let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 let constsModule = {} as Consts;
 
-// TODO cast rpcModule to a better type
-let rpcModule = {} as any;
+let rpcModule = {} as DecoratedRpc<any, any>;
 
 let queryMultiStub = sinon.stub();
 
