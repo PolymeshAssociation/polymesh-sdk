@@ -1,3 +1,6 @@
+import P from 'bluebird';
+import { range } from 'lodash';
+
 /**
  * @hidden
  *
@@ -9,4 +12,17 @@ export async function fakePromise(): Promise<void> {
   await new Promise(resolve => setImmediate(() => resolve(null)));
   await new Promise(resolve => setImmediate(() => resolve(null)));
   await new Promise(resolve => setImmediate(() => resolve(null)));
+}
+
+/**
+ * @hidden
+ *
+ * Awaits multiple promises and advances jest time after each one
+ */
+export async function manyFakePromises(): Promise<void> {
+  await P.each(range(6), async () => {
+    await fakePromise();
+
+    jest.advanceTimersByTime(2000);
+  });
 }
