@@ -289,19 +289,15 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary Account of the Identity unfreezes all secondary Accounts
    */
   public async isFrozen(): Promise<boolean> {
-    const { address } = this;
-
     const identity = await this.getIdentity();
 
     if (identity === null) {
       return false;
     }
 
-    const {
-      account: { address: primaryAccountAddress },
-    } = await identity.getPrimaryAccount();
+    const { account } = await identity.getPrimaryAccount();
 
-    if (address === primaryAccountAddress) {
+    if (account.isEqual(this)) {
       return false;
     }
 

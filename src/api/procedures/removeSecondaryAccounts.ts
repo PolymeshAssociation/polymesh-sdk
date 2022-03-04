@@ -28,17 +28,12 @@ export async function prepareRemoveSecondaryAccounts(
 
   const identity = await context.getCurrentIdentity();
 
-  const [
-    {
-      account: { address: primaryAccountAddress },
-    },
-    secondaryAccounts,
-  ] = await Promise.all([identity.getPrimaryAccount(), identity.getSecondaryAccounts()]);
+  const [{ account: primaryAccount }, secondaryAccounts] = await Promise.all([
+    identity.getPrimaryAccount(),
+    identity.getSecondaryAccounts(),
+  ]);
 
-  const isPrimaryAccountPresent = find(
-    accounts,
-    ({ address }) => address === primaryAccountAddress
-  );
+  const isPrimaryAccountPresent = find(accounts, account => account.isEqual(primaryAccount));
 
   if (isPrimaryAccountPresent) {
     throw new PolymeshError({
