@@ -9,9 +9,6 @@ import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 import { TxTag } from 'polymesh-types/types';
-import { satisfies } from 'semver';
-import { w3cwebsocket as W3CWebSocket } from 'websocket';
-import WebSocketAsPromised from 'websocket-as-promised';
 
 import {
   Account,
@@ -52,16 +49,16 @@ import {
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
+import {
+  assertExpectedChainVersion,
+  createProcedureMethod,
+  getDid,
+  isPrintableAscii,
+} from '~/utils/internal';
 
 import { Claims } from './Claims';
-// import { Governance } from './Governance';
 import { Middleware } from './Middleware';
-import {
-  SUPPORTED_VERSION_RANGE,
-  SYSTEM_VERSION_RPC_CALL,
-  TREASURY_MODULE_ADDRESS,
-} from './utils/constants';
+import { TREASURY_MODULE_ADDRESS } from './utils/constants';
 
 interface ConnectParamsBase {
   nodeUrl: string;
@@ -193,31 +190,16 @@ export class Polymesh {
     } = params;
     let context: Context;
 
-    /* istanbul ignore next: part of configuration, doesn't need to be tested */
-    const wsp = new WebSocketAsPromised(nodeUrl, {
-      createWebSocket: url => (new W3CWebSocket(url) as unknown) as WebSocket,
-      packMessage: data => JSON.stringify(data),
-      unpackMessage: data => JSON.parse(data.toString()),
-      attachRequestId: (data, requestId) => Object.assign({ id: requestId }, data),
-      extractRequestId: data => data && data.id,
+    await assertExpectedChainVersion(nodeUrl).catch(error => {
+      if (
+        error instanceof PolymeshError &&
+        error.message.includes('Unsupported Polymesh version')
+      ) {
+        console.warn(error.message);
+      } else {
+        throw error;
+      }
     });
-
-    await wsp.open();
-
-    const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
-
-    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'Unsupported Polymesh version. Please upgrade the SDK',
-        data: {
-          polymeshVersion: version,
-          supportedVersionRange: SUPPORTED_VERSION_RANGE,
-        },
-      });
-    }
-
-    await wsp.close();
 
     try {
       const { types, rpc } = schema;
