@@ -1,4 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -9,6 +8,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 
 describe('toggleFreezeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
@@ -39,7 +39,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if freeze is set to true and the secondary Accounts are already frozen', () => {
+  it('should throw an error if freeze is set to true and the secondary Accounts are already frozen', () => {
     const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
       mockContext
     );
@@ -54,7 +54,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     ).rejects.toThrow('The secondary Accounts are already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the secondary Accounts are already unfrozen', () => {
+  it('should throw an error if freeze is set to false and the secondary Accounts are already unfrozen', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: false,
@@ -72,7 +72,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     ).rejects.toThrow('The secondary Accounts are already unfrozen');
   });
 
-  test('should add a freeze secondary Accounts transaction to the queue', async () => {
+  it('should add a freeze secondary Accounts transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: false,
@@ -92,7 +92,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
     sinon.assert.calledWith(addTransactionStub, { transaction });
   });
 
-  test('should add a unfreeze secondary Accounts transaction to the queue', async () => {
+  it('should add a unfreeze secondary Accounts transaction to the queue', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         areSecondaryAccountsFrozen: true,
@@ -113,7 +113,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<ToggleFreezeSecondaryAccountsParams, void>(
         mockContext
       );

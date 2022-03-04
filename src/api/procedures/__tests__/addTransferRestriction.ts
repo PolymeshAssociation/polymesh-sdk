@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { ScopeId, Ticker, TransferManager, TxTags } from 'polymesh-types/types';
+import { ScopeId, Ticker, TransferManager } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,7 +12,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransferRestriction, TransferRestrictionType } from '~/types';
+import { TransferRestriction, TransferRestrictionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -102,7 +102,7 @@ describe('addTransferRestriction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add an add transfer manager transaction to the queue', async () => {
+  it('should add an add transfer manager transaction to the queue', async () => {
     args = {
       type: TransferRestrictionType.Count,
       exemptedScopeIds: [],
@@ -143,7 +143,7 @@ describe('addTransferRestriction procedure', () => {
     expect(result).toEqual(new BigNumber(1));
   });
 
-  test('should add an add exempted entities transaction to the queue', async () => {
+  it('should add an add exempted entities transaction to the queue', async () => {
     const did = 'someDid';
     const scopeId = 'someScopeId';
     const rawScopeId = dsMockUtils.createMockScopeId(scopeId);
@@ -194,7 +194,7 @@ describe('addTransferRestriction procedure', () => {
     expect(result).toEqual(new BigNumber(1));
   });
 
-  test('should throw an error if attempting to add a restriction that already exists', async () => {
+  it('should throw an error if attempting to add a restriction that already exists', async () => {
     args = {
       type: TransferRestrictionType.Count,
       exemptedScopeIds: [],
@@ -220,7 +220,7 @@ describe('addTransferRestriction procedure', () => {
     expect(err.message).toBe('Cannot add the same restriction more than once');
   });
 
-  test('should throw an error if attempting to add a restriction when the restriction limit has been reached', async () => {
+  it('should throw an error if attempting to add a restriction when the restriction limit has been reached', async () => {
     args = {
       type: TransferRestrictionType.Count,
       count,
@@ -246,7 +246,7 @@ describe('addTransferRestriction procedure', () => {
     expect(err.data).toEqual({ limit: new BigNumber(3) });
   });
 
-  test('should throw an error if exempted scope IDs are repeated', async () => {
+  it('should throw an error if exempted scope IDs are repeated', async () => {
     args = {
       type: TransferRestrictionType.Count,
       exemptedScopeIds: ['someScopeId', 'someScopeId'],
@@ -275,7 +275,7 @@ describe('addTransferRestriction procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       args = {
         ticker,
         count,

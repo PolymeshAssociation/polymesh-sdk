@@ -168,7 +168,7 @@ describe('initiateCorporateAction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the declaration date is in the future', async () => {
+  it('should throw an error if the declaration date is in the future', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
     let err;
@@ -191,7 +191,7 @@ describe('initiateCorporateAction procedure', () => {
     expect(err.message).toBe('Declaration date must be in the past');
   });
 
-  test('should throw an error if the description is too long', async () => {
+  it('should throw an error if the description is too long', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
     maxDetailsLengthQueryStub.returns(dsMockUtils.createMockU32(new BigNumber(1)));
@@ -215,7 +215,7 @@ describe('initiateCorporateAction procedure', () => {
     });
   });
 
-  test('should add a initiate corporate action transaction to the queue', async () => {
+  it('should add a initiate corporate action transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
     const result = await prepareInitiateCorporateAction.call(proc, {
@@ -311,7 +311,7 @@ describe('initiateCorporateAction procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the CAId ', () => {
+    it('should return the CAId ', () => {
       const result = createCaIdResolver()({} as ISubmittableResult);
 
       expect(result).toBe(id);
@@ -319,7 +319,7 @@ describe('initiateCorporateAction procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

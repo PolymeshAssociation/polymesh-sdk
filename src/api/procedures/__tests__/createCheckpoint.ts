@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,6 +12,7 @@ import {
 import { Checkpoint, Context, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -60,7 +61,7 @@ describe('createCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a create checkpoint transaction to the queue', async () => {
+  it('should add a create checkpoint transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('checkpoint', 'createCheckpoint');
@@ -93,7 +94,7 @@ describe('createCheckpoint procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new Checkpoint', () => {
+    it('should return the new Checkpoint', () => {
       const result = createCheckpointResolver(ticker, mockContext)({} as ISubmittableResult);
       expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
@@ -101,7 +102,7 @@ describe('createCheckpoint procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

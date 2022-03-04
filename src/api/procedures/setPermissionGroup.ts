@@ -1,4 +1,4 @@
-import { AgentGroup, TxTags } from 'polymesh-types/types';
+import { AgentGroup } from 'polymesh-types/types';
 
 import { isFullGroupType } from '~/api/procedures/utils';
 import {
@@ -11,7 +11,7 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { ErrorCode, Identity, TransactionPermissions, TxGroup } from '~/types';
+import { ErrorCode, Identity, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { isEntity } from '~/utils';
 import {

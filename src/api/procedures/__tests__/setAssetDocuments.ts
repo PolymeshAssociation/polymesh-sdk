@@ -1,6 +1,6 @@
 import { Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker, TxTags } from 'polymesh-types/types';
+import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -13,7 +13,7 @@ import {
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AssetDocument } from '~/types';
+import { AssetDocument, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -77,7 +77,7 @@ describe('setAssetDocuments procedure', () => {
         filing_date: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enabled @typescript-eslint/naming-convention */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>
@@ -123,7 +123,7 @@ describe('setAssetDocuments procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the new list is the same as the current one', () => {
+  it('should throw an error if the new list is the same as the current one', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocs: documents,
       currentDocIds: [],
@@ -134,7 +134,7 @@ describe('setAssetDocuments procedure', () => {
     );
   });
 
-  test('should add a remove documents transaction and an add documents transaction to the queue', async () => {
+  it('should add a remove documents transaction and an add documents transaction to the queue', async () => {
     const docIds = [documentEntries[0][0][1]];
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocIds: docIds,
@@ -156,7 +156,7 @@ describe('setAssetDocuments procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
+  it('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocIds: [],
       currentDocs: [],
@@ -173,7 +173,7 @@ describe('setAssetDocuments procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should not add an add documents transaction if there are no documents passed as arguments', async () => {
+  it('should not add an add documents transaction if there are no documents passed as arguments', async () => {
     const docIds = [documentEntries[0][0][1]];
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocs: [documents[0]],
@@ -192,7 +192,7 @@ describe('setAssetDocuments procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
         currentDocIds: [documentEntries[0][0][1]],
         currentDocs: [],
@@ -224,7 +224,7 @@ describe('setAssetDocuments procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the current documents and their ids', async () => {
+    it('should return the current documents and their ids', async () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 

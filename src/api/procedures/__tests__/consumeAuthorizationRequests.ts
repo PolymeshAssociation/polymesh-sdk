@@ -1,6 +1,6 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Signatory, TxTags } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, SignerValue } from '~/types';
+import { Authorization, AuthorizationType, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -191,7 +191,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a batch of accept authorization transactions (dependent on the type of auth) to the queue and ignore expired requests', async () => {
+  it('should add a batch of accept authorization transactions (dependent on the type of auth) to the queue and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
@@ -244,7 +244,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     });
   });
 
-  test('should add a batch of remove authorization transactions to the queue and ignore expired requests', async () => {
+  it('should add a batch of remove authorization transactions to the queue and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
@@ -264,7 +264,7 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
+    it('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );

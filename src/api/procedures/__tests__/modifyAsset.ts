@@ -1,11 +1,11 @@
-import { AssetName, FundingRoundName, Ticker, TxTags } from 'polymesh-types/types';
+import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -60,7 +60,7 @@ describe('modifyAsset procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the user has not passed any arguments', () => {
+  it('should throw an error if the user has not passed any arguments', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(prepareModifyAsset.call(proc, {} as unknown as Params)).rejects.toThrow(
@@ -68,7 +68,7 @@ describe('modifyAsset procedure', () => {
     );
   });
 
-  test('should throw an error if makeDivisible is set to true and the Asset is already divisible', () => {
+  it('should throw an error if makeDivisible is set to true and the Asset is already divisible', () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         details: { isDivisible: true },
@@ -85,7 +85,7 @@ describe('modifyAsset procedure', () => {
     ).rejects.toThrow('The Asset is already divisible');
   });
 
-  test('should throw an error if newName is the same name currently in the Asset', () => {
+  it('should throw an error if newName is the same name currently in the Asset', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
@@ -96,7 +96,7 @@ describe('modifyAsset procedure', () => {
     ).rejects.toThrow('New name is the same as current name');
   });
 
-  test('should throw an error if newFundingRound is the same funding round name currently in the Asset', () => {
+  it('should throw an error if newFundingRound is the same funding round name currently in the Asset', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
@@ -107,7 +107,7 @@ describe('modifyAsset procedure', () => {
     ).rejects.toThrow('New funding round name is the same as current funding round');
   });
 
-  test('should throw an error if newIdentifiers are the same identifiers currently in the Asset', () => {
+  it('should throw an error if newIdentifiers are the same identifiers currently in the Asset', () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         getIdentifiers: identifiers,
@@ -124,7 +124,7 @@ describe('modifyAsset procedure', () => {
     ).rejects.toThrow('New identifiers are the same as current identifiers');
   });
 
-  test('should add a make divisible transaction to the queue', async () => {
+  it('should add a make divisible transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'makeDivisible');
@@ -138,7 +138,7 @@ describe('modifyAsset procedure', () => {
     expect(result.ticker).toBe(ticker);
   });
 
-  test('should add a rename Asset transaction to the queue', async () => {
+  it('should add a rename Asset transaction to the queue', async () => {
     const newName = 'NEW_NAME';
     const rawAssetName = dsMockUtils.createMockAssetName(newName);
     stringToAssetNameStub.withArgs(newName, mockContext).returns(rawAssetName);
@@ -156,7 +156,7 @@ describe('modifyAsset procedure', () => {
     expect(result.ticker).toBe(ticker);
   });
 
-  test('should add a set funding round transaction to the queue', async () => {
+  it('should add a set funding round transaction to the queue', async () => {
     const newFundingRound = 'Series B';
     const rawFundingRound = dsMockUtils.createMockFundingRoundName(newFundingRound);
     stringToFundingRoundNameStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
@@ -177,7 +177,7 @@ describe('modifyAsset procedure', () => {
     expect(result.ticker).toBe(ticker);
   });
 
-  test('should add a update identifiers transaction to the queue', async () => {
+  it('should add a update identifiers transaction to the queue', async () => {
     const rawIdentifier = dsMockUtils.createMockAssetIdentifier({
       Isin: dsMockUtils.createMockU8aFixed(identifiers[0].value),
     });
@@ -200,7 +200,7 @@ describe('modifyAsset procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const name = 'NEW NAME';

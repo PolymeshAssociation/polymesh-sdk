@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PosRatio, ProtocolOp, TxTag, TxTags } from 'polymesh-types/types';
+import { PosRatio, ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, PolymeshTransaction, Procedure } from '~/internal';
@@ -12,7 +12,7 @@ import {
   procedureMockUtils,
 } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import { Role, RoleType } from '~/types';
+import { Role, RoleType, TxTag, TxTags } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -55,7 +55,7 @@ describe('Procedure class', () => {
   });
 
   describe('method: checkAuthorization', () => {
-    test('should return whether the current user has sufficient authorization to run the procedure', async () => {
+    it('should return whether the current user has sufficient authorization to run the procedure', async () => {
       const prepareFunc = sinon.stub();
       const authFunc = sinon.stub();
       const authorization: ProcedureAuthorization = {
@@ -226,7 +226,7 @@ describe('Procedure class', () => {
       });
     });
 
-    test('should throw an error if the Procedure requires permissions over more than one Asset', () => {
+    it('should throw an error if the Procedure requires permissions over more than one Asset', () => {
       const prepareFunc = sinon.stub();
       const authFunc = sinon.stub();
       authFunc.resolves({
@@ -296,7 +296,7 @@ describe('Procedure class', () => {
       );
     });
 
-    test('should prepare and return a transaction queue with the corresponding transactions, arguments, fees and return value', async () => {
+    it('should prepare and return a transaction queue with the corresponding transactions, arguments, fees and return value', async () => {
       const ticker = 'MY_ASSET';
       const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
@@ -376,7 +376,7 @@ describe('Procedure class', () => {
       );
     });
 
-    test('should throw any errors encountered during preparation', () => {
+    it('should throw any errors encountered during preparation', () => {
       const ticker = 'MY_ASSET';
       const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
@@ -394,7 +394,7 @@ describe('Procedure class', () => {
       return expect(proc.prepare({ args: procArgs }, context)).rejects.toThrow(errorMsg);
     });
 
-    test("should throw an error if the caller doesn't have the appropriate roles", async () => {
+    it("should throw an error if the caller doesn't have the appropriate roles", async () => {
       const ticker = 'MY_ASSET';
       const secondaryAccounts = ['0x1', '0x2'];
       const procArgs = {
@@ -490,7 +490,7 @@ describe('Procedure class', () => {
   });
 
   describe('method: addTransaction', () => {
-    test('should return an array of post transaction values corresponding to the resolver functions passed to it', async () => {
+    it('should return an array of post transaction values corresponding to the resolver functions passed to it', async () => {
       const resolvedNum = 1;
       const resolvedStr = 'something';
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
@@ -517,7 +517,7 @@ describe('Procedure class', () => {
   });
 
   describe('method: addBatchTransaction', () => {
-    test('should return an array of post transaction values corresponding to the resolver functions passed to it', async () => {
+    it('should return an array of post transaction values corresponding to the resolver functions passed to it', async () => {
       const ticker = 'MY_ASSET';
       const resolvedNum = 1;
       const resolvedStr = 'something';
@@ -551,7 +551,7 @@ describe('Procedure class', () => {
       expect(str.value).toBe(resolvedStr);
     });
 
-    test('should add a non-batch transaction to the queue if only one transaction is passed', async () => {
+    it('should add a non-batch transaction to the queue if only one transaction is passed', async () => {
       const ticker = 'MY_ASSET';
       const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
 
@@ -569,7 +569,7 @@ describe('Procedure class', () => {
   });
 
   describe('method: addProcedure', () => {
-    test('should return the return value of the passed procedure', async () => {
+    it('should return the return value of the passed procedure', async () => {
       const returnValue = 1;
 
       const proc1 = new Procedure(async () => returnValue);
@@ -581,7 +581,7 @@ describe('Procedure class', () => {
       expect(result).toBe(returnValue);
     });
 
-    test('should throw any validation errors encountered while preparing the passed procedure', () => {
+    it('should throw any validation errors encountered while preparing the passed procedure', () => {
       const errorMsg = 'Procedure Error';
 
       const proc1 = new Procedure(async () => {
@@ -603,14 +603,14 @@ describe('Procedure class', () => {
       proc = new Procedure(async () => undefined);
     });
 
-    test('should return the storage', () => {
+    it('should return the storage', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._storage = { something: 'yeah' };
 
       expect(proc.storage).toEqual({ something: 'yeah' });
     });
 
-    test("should throw an error if the storage hasn't been set", () => {
+    it("should throw an error if the storage hasn't been set", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._storage = null;
 
@@ -625,14 +625,14 @@ describe('Procedure class', () => {
       proc = new Procedure(async () => undefined);
     });
 
-    test('should return the context', () => {
+    it('should return the context', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._context = 'context';
 
       expect(proc.context).toBe('context');
     });
 
-    test("should throw an error if the context hasn't been set", () => {
+    it("should throw an error if the context hasn't been set", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (proc as any)._context = null;
 

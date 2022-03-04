@@ -1,24 +1,19 @@
 import { Moment } from '@polkadot/types/interfaces';
 import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType } from '~/types';
-import {
-  ClaimOperation,
-  Extrinsics,
-  MapMaybePostTransactionValue,
-  ProcedureAuthorization,
-} from '~/types/internal';
+import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType, TxTags } from '~/types';
+import { ClaimOperation, ProcedureAuthorization } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
+import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimToMeshClaim,
   dateToMoment,
-  identityIdToString,
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
@@ -53,15 +48,6 @@ interface RevokeClaimsParams {
 }
 
 export type ModifyClaimsParams = AddClaimsParams | EditClaimsParams | RevokeClaimsParams;
-
-/**
- * @hidden
- */
-export function groupByDid([target]: MapMaybePostTransactionValue<
-  Parameters<Extrinsics['identity']['revokeClaim']> | Parameters<Extrinsics['identity']['addClaim']>
->): string {
-  return identityIdToString(target as IdentityId);
-}
 
 const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean => {
   let isSameScope = true;
@@ -143,10 +129,10 @@ const findInvalidCddClaims = async (
 
       if (issuedClaimsForTarget.length) {
         // we know both claims are CDD claims
-        const { id: newCddId } = issuedClaimsForTarget[0].claim as CddClaim;
-        const { id: currentCddId } = claim as CddClaim;
+        const { id: currentCddId } = issuedClaimsForTarget[0].claim as CddClaim;
+        const { id: newCddId } = claim as CddClaim;
 
-        if (newCddId !== currentCddId) {
+        if (newCddId !== currentCddId && ![currentCddId, newCddId].includes(DEFAULT_CDD_ID)) {
           invalidCddClaims.push({
             target: typeof target === 'string' ? new Identity({ did: target }, context) : target,
             currentCddId,

@@ -80,7 +80,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Authorization Request is expired', async () => {
+  it('should throw an error if the Authorization Request is expired', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -107,7 +107,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     ).rejects.toThrow('The Authorization Request has expired');
   });
 
-  test('should throw an error if the passed Account is already part of an Identity', async () => {
+  it('should throw an error if the passed Account is already part of an Identity', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -146,7 +146,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     expect(error.message).toBe('The target Account is already part of an Identity');
   });
 
-  test('should add a acceptMultisigSignerAsKey transaction to the queue if the target is an Account', async () => {
+  it('should add a acceptMultisigSignerAsKey transaction to the queue if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -186,7 +186,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     });
   });
 
-  test('should add a acceptMultisigSignerAsIdentity transaction to the queue if the target is an Identity', async () => {
+  it('should add a acceptMultisigSignerAsIdentity transaction to the queue if the target is an Identity', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -220,7 +220,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     });
   });
 
-  test('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
+  it('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -289,7 +289,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       const proc = procedureMockUtils.getInstance<
         ConsumeAddMultiSigSignerAuthorizationParams,
         void

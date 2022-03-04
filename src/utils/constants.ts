@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 
-import { TransactionArgumentType } from '~/types';
+import { TransactionArgumentType, TxTags } from '~/types';
 
 /**
  * Maximum amount of decimals for on-chain values
@@ -139,3 +138,8 @@ export const SYSTEM_VERSION_RPC_CALL = {
  * Maximum amount of legs allowed in a single instruction
  */
 export const MAX_LEGS_LENGTH = 10;
+
+/**
+ * Default CDD ID associated with an Identity on chain. Used for Identities onboarded without PUIS
+ */
+export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';

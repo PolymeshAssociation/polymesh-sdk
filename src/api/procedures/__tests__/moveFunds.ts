@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { MovePortfolioItem, PortfolioId as MeshPortfolioId, TxTags } from 'polymesh-types/types';
+import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
@@ -7,7 +7,7 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioMovement, RoleType } from '~/types';
+import { PortfolioBalance, PortfolioMovement, RoleType, TxTags } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -75,7 +75,7 @@ describe('moveFunds procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if both portfolios do not have the same owner', () => {
+  it('should throw an error if both portfolios do not have the same owner', () => {
     const fromId = new BigNumber(1);
     const fromDid = 'someDid';
     const toId = new BigNumber(2);
@@ -99,7 +99,7 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Both portfolios should have the same owner');
   });
 
-  test('should throw an error if both portfolios are the same', () => {
+  it('should throw an error if both portfolios are the same', () => {
     const id = new BigNumber(1);
     const did = 'someDid';
     const samePortfolio = new NumberedPortfolio({ id, did }, mockContext);
@@ -118,7 +118,7 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
-  test('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
+  it('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
@@ -170,7 +170,7 @@ describe('moveFunds procedure', () => {
     expect(error.data.balanceExceeded).toMatchObject(items);
   });
 
-  test('should add a move portfolio funds transaction to the queue', async () => {
+  it('should add a move portfolio funds transaction to the queue', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
@@ -317,7 +317,7 @@ describe('moveFunds procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const fromId = new BigNumber(1);

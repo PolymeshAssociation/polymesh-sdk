@@ -1,13 +1,13 @@
 import { Text, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
 import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -64,7 +64,7 @@ describe('renamePortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the new name is the same as the current one', () => {
+  it('should throw an error if the new name is the same as the current one', () => {
     getPortfolioIdByNameStub.returns(id);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
@@ -78,7 +78,7 @@ describe('renamePortfolio procedure', () => {
     ).rejects.toThrow('New name is the same as current name');
   });
 
-  test('should throw an error if there already is a portfolio with the new name', () => {
+  it('should throw an error if there already is a portfolio with the new name', () => {
     getPortfolioIdByNameStub.returns(new BigNumber(2));
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
@@ -92,7 +92,7 @@ describe('renamePortfolio procedure', () => {
     ).rejects.toThrow('A Portfolio with that name already exists');
   });
 
-  test('should add a rename portfolio transaction to the queue', async () => {
+  it('should add a rename portfolio transaction to the queue', async () => {
     getPortfolioIdByNameStub.returns(undefined);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
@@ -114,7 +114,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

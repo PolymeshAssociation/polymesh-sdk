@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -10,6 +9,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -56,7 +56,7 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the Corporate Action is a Distribution and it doesn't exist", () => {
+  it("should throw an error if the Corporate Action is a Distribution and it doesn't exist", () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
@@ -71,7 +71,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow("The Distribution doesn't exist");
   });
 
-  test("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", () => {
+  it("should throw an error if the Corporate Action is not a Distribution and the Corporate Action doesn't exist", () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(),
     });
@@ -88,7 +88,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow("The Corporate Action doesn't exist");
   });
 
-  test('should throw an error if the distribution has already started', () => {
+  it('should throw an error if the distribution has already started', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
@@ -119,7 +119,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow('The Distribution has already started');
   });
 
-  test('should throw an error if the corporate action does not exist', () => {
+  it('should throw an error if the corporate action does not exist', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
@@ -132,7 +132,7 @@ describe('removeCorporateAction procedure', () => {
     ).rejects.toThrow("The Corporate Action doesn't exist");
   });
 
-  test('should add a remove corporate agent transaction to the queue', async () => {
+  it('should add a remove corporate agent transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('corporateAction', 'removeCa');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -185,7 +185,7 @@ describe('removeCorporateAction procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

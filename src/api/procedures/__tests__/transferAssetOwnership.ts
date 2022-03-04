@@ -1,7 +1,7 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
+import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,7 +12,7 @@ import {
 import { AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, SignerType, SignerValue } from '~/types';
+import { Authorization, AuthorizationType, SignerType, SignerValue, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -94,7 +94,7 @@ describe('transferAssetOwnership procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     await prepareTransferAssetOwnership.call(proc, args);
@@ -109,7 +109,7 @@ describe('transferAssetOwnership procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
+  it('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     await prepareTransferAssetOwnership.call(proc, { ...args, expiry });
@@ -125,7 +125,7 @@ describe('transferAssetOwnership procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

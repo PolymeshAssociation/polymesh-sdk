@@ -1,7 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -14,7 +13,7 @@ import {
 import { fakePromise } from '~/testUtils';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransactionStatus } from '~/types';
+import { TransactionStatus, TxTags } from '~/types';
 import { PostTransactionValueArray } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -62,7 +61,7 @@ describe('Polymesh Transaction Base class', () => {
       });
     });
 
-    test('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
+    it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: false,
       });
@@ -94,7 +93,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Succeeded);
     });
 
-    test('should unwrap PostTransactionValue arguments', async () => {
+    it('should unwrap PostTransactionValue arguments', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: false,
       });
@@ -129,7 +128,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Succeeded);
     });
 
-    test('should update the transaction status', async () => {
+    it('should update the transaction status', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: false,
       });
@@ -175,7 +174,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Succeeded);
     });
 
-    test('should resolve all postValues', async () => {
+    it('should resolve all postValues', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('YET_ANOTHER_TICKER');
       const firstStub = sinon.stub().resolves(1);
@@ -201,7 +200,7 @@ describe('Polymesh Transaction Base class', () => {
       sinon.assert.calledOnce(secondStub);
     });
 
-    test('should throw an error when the transaction is aborted', async () => {
+    it('should throw an error when the transaction is aborted', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: dsMockUtils.MockTxStatus.Aborted,
       });
@@ -222,7 +221,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Aborted);
     });
 
-    test('should throw an error when the transaction fails', async () => {
+    it('should throw an error when the transaction fails', async () => {
       let transaction = dsMockUtils.createTxStub('asset', 'registerTicker', { autoResolve: false });
       const args = tuple('PLEASE_MAKE_IT_STOP');
 
@@ -308,7 +307,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Failed);
     });
 
-    test('should throw an error when the transaction is rejected', async () => {
+    it('should throw an error when the transaction is rejected', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: dsMockUtils.MockTxStatus.Rejected,
       });
@@ -329,7 +328,7 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: onStatusChange', () => {
-    test("should execute a callback when the transaction's status changes", async () => {
+    it("should execute a callback when the transaction's status changes", async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('I_HAVE_LOST_THE_WILL_TO_LIVE');
 
@@ -353,7 +352,7 @@ describe('Polymesh Transaction Base class', () => {
       sinon.assert.calledWith(listenerStub.thirdCall, TransactionStatus.Succeeded);
     });
 
-    test('should return an unsubscribe function', async () => {
+    it('should return an unsubscribe function', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: false,
       });
@@ -407,7 +406,7 @@ describe('Polymesh Transaction Base class', () => {
       );
     });
 
-    test('should fetch (if missing) and return transaction fees', async () => {
+    it('should fetch (if missing) and return transaction fees', async () => {
       const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker', { gas: rawGasFees[0] });
       const tx2 = dsMockUtils.createTxStub('asset', 'createAsset', { gas: rawGasFees[1] });
       dsMockUtils.createTxStub('utility', 'batchAtomic', { gas: rawGasFees[1] });
@@ -499,7 +498,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(result?.gas).toEqual(new BigNumber(10));
     });
 
-    test('should return null if the transaction arguments are not ready', async () => {
+    it('should return null if the transaction arguments are not ready', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         gas: rawGasFees[0],
       });
@@ -522,7 +521,7 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: getPayingAccount', () => {
-    test('should return null if the current Account should pay', async () => {
+    it('should return null if the current Account should pay', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const args = tuple('SOMETHING');
@@ -541,7 +540,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(result).toBeNull();
     });
 
-    test('should return null if the transaction ignores subsidy', async () => {
+    it('should return null if the transaction ignores subsidy', async () => {
       const transaction = dsMockUtils.createTxStub('relayer', 'removePayingKey');
       const account = entityMockUtils.getAccountInstance();
       const allowance = new BigNumber(100);
@@ -567,7 +566,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(result).toBeNull();
     });
 
-    test('should return a null allowance if the transaction is paid for a fixed third party', async () => {
+    it('should return a null allowance if the transaction is paid for a fixed third party', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = entityMockUtils.getAccountInstance();
       const paidForBy = entityMockUtils.getIdentityInstance({
@@ -600,7 +599,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(result?.allowance).toBeNull();
     });
 
-    test('should return the account and allowance if the transaction is being subsidized', async () => {
+    it('should return the account and allowance if the transaction is being subsidized', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = expect.objectContaining({ address: 'subsidizer' });
       const allowance = new BigNumber(100);

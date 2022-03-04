@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,7 +12,7 @@ import {
 import { Context, PostTransactionValue, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TickerReservationStatus } from '~/types';
+import { RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -92,7 +92,7 @@ describe('reserveTicker procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the ticker is already reserved', async () => {
+  it('should throw an error if the ticker is already reserved', async () => {
     const expiryDate = new Date(new Date().getTime() + 1000);
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
@@ -119,7 +119,7 @@ describe('reserveTicker procedure', () => {
     expect(error.data).toMatchObject({ expiryDate });
   });
 
-  test('should throw an error if the current reservation is permanent', async () => {
+  it('should throw an error if the current reservation is permanent', async () => {
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {
@@ -145,7 +145,7 @@ describe('reserveTicker procedure', () => {
     expect(error.data).toMatchObject({ expiryDate: null });
   });
 
-  test('should throw an error if an Asset with that ticker has already been launched', () => {
+  it('should throw an error if an Asset with that ticker has already been launched', () => {
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {
@@ -164,7 +164,7 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', () => {
+  it('should throw an error if extendPeriod property is set to true and the ticker has not been reserved or the reservation has expired', () => {
     const expiryDate = new Date(2019, 1, 1);
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
@@ -184,7 +184,7 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  test('should add a register ticker transaction to the queue', async () => {
+  it('should add a register ticker transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
     );
@@ -238,7 +238,7 @@ describe('tickerReservationResolver', () => {
     filterEventRecordsStub.reset();
   });
 
-  test('should return the new Ticker Reservation', () => {
+  it('should return the new Ticker Reservation', () => {
     const fakeContext = {} as Context;
 
     const result = createTickerReservationResolver(fakeContext)({} as ISubmittableResult);
@@ -248,7 +248,7 @@ describe('tickerReservationResolver', () => {
 });
 
 describe('getAuthorization', () => {
-  test('should return the appropriate roles and permissions', () => {
+  it('should return the appropriate roles and permissions', () => {
     const ticker = 'someTicker';
     const args = {
       ticker,

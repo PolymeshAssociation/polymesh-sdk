@@ -50,7 +50,7 @@ describe('quitSubsidy procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Subsidy does not exist', async () => {
+  it('should throw an error if the Subsidy does not exist', async () => {
     const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
 
     let error;
@@ -66,7 +66,7 @@ describe('quitSubsidy procedure', () => {
     expect(error.message).toBe('The Subsidy no longer exists');
   });
 
-  test('should add a transaction to the queue', async () => {
+  it('should add a transaction to the queue', async () => {
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
     const removePayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'removePayingKey');
 
@@ -89,7 +89,7 @@ describe('quitSubsidy procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
 
       const boundFunc = getAuthorization.bind(proc);

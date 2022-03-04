@@ -1,7 +1,5 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { Account, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 
 export interface LeaveIdentityParams {

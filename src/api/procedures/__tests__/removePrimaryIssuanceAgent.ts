@@ -1,4 +1,4 @@
-import { IdentityId, Ticker, TxTags } from 'polymesh-types/types';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -9,6 +9,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -56,7 +57,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a remove primary issuance agent transaction to the queue', async () => {
+  it('should add a remove primary issuance agent transaction to the queue', async () => {
     const args = {
       ticker,
     };
@@ -77,7 +78,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
-  test('should throw an error if Primary Issuance Agent list has more than one identity', () => {
+  it('should throw an error if Primary Issuance Agent list has more than one identity', () => {
     const args = {
       ticker,
     };
@@ -101,7 +102,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

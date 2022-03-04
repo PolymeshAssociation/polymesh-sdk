@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyVenue } from '~/api/procedures/modifyVenue';
 import { Context, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, VenueType } from '~/types';
+import { RoleType, TxTags, VenueType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -47,7 +46,7 @@ describe('modifyVenue procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied description is the same as the current one', () => {
+  it('should throw an error if the supplied description is the same as the current one', () => {
     const description = 'someDetails';
 
     const args = {
@@ -66,7 +65,7 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied type is the same as the current one', () => {
+  it('should throw an error if the supplied type is the same as the current one', () => {
     const type = VenueType.Exchange;
 
     const args = {
@@ -86,7 +85,7 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  test('should add an update venue transaction to the queue', async () => {
+  it('should add an update venue transaction to the queue', async () => {
     const description = 'someDetails';
     const type = VenueType.Exchange;
 
@@ -144,7 +143,7 @@ describe('modifyVenue procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       let args = {

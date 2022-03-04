@@ -105,7 +105,7 @@ describe('modifyComplianceRequirement procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied requirement id does not belong to the Asset', () => {
+  it('should throw an error if the supplied requirement id does not belong to the Asset', () => {
     const fakeConditions = ['condition'] as unknown as Condition[];
     args = {
       ticker,
@@ -119,7 +119,7 @@ describe('modifyComplianceRequirement procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied requirement conditions have no change', () => {
+  it('should throw an error if the supplied requirement conditions have no change', () => {
     args = {
       ticker,
       id: new BigNumber(1),
@@ -132,7 +132,7 @@ describe('modifyComplianceRequirement procedure', () => {
     );
   });
 
-  test('should add a modify compliance requirement transaction to the queue', async () => {
+  it('should add a modify compliance requirement transaction to the queue', async () => {
     const fakeConditions = [{ claim: '' }] as unknown as Condition[];
     const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
@@ -166,7 +166,7 @@ describe('modifyComplianceRequirement procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {

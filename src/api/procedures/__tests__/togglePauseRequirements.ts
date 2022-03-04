@@ -1,5 +1,5 @@
 import { bool } from '@polkadot/types';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -10,6 +10,7 @@ import {
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -61,7 +62,7 @@ describe('togglePauseRequirements procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if pause is set to true and the asset compliance requirements are already paused', () => {
+  it('should throw an error if pause is set to true and the asset compliance requirements are already paused', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(
@@ -72,7 +73,7 @@ describe('togglePauseRequirements procedure', () => {
     ).rejects.toThrow('Requirements are already paused');
   });
 
-  test('should throw an error if pause is set to false and the asset compliance requirements are already unpaused', () => {
+  it('should throw an error if pause is set to false and the asset compliance requirements are already unpaused', () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
       paused: false,
     });
@@ -89,7 +90,7 @@ describe('togglePauseRequirements procedure', () => {
     ).rejects.toThrow('Requirements are already unpaused');
   });
 
-  test('should add a pause asset compliance transaction to the queue', async () => {
+  it('should add a pause asset compliance transaction to the queue', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
       paused: false,
     });
@@ -110,7 +111,7 @@ describe('togglePauseRequirements procedure', () => {
     expect(ticker).toBe(result.ticker);
   });
 
-  test('should add a resume asset compliance transaction to the queue', async () => {
+  it('should add a resume asset compliance transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetCompliance');
@@ -126,7 +127,7 @@ describe('togglePauseRequirements procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {

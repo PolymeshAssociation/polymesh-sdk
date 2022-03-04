@@ -1,6 +1,6 @@
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import { AgentGroup, AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, SignerValue } from '~/types';
+import { Authorization, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -83,7 +83,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the supplied target doesn't exist", () => {
+  it("should throw an error if the supplied target doesn't exist", () => {
     const args = {
       target,
       ticker,
@@ -98,7 +98,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
+  it('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: target })],
@@ -118,7 +118,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied expiry date is not a future date', () => {
+  it('should throw an error if the supplied expiry date is not a future date', () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         corporateActionsGetAgents: [],
@@ -138,7 +138,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const args = {
       target,
       ticker,
@@ -170,7 +170,7 @@ describe('modifyCorporateActionAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

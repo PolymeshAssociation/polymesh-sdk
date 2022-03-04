@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, TxTags } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, RoleType } from '~/types';
+import { PortfolioBalance, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -65,7 +65,7 @@ describe('deletePortfolio procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Portfolio has balance in it', () => {
+  it('should throw an error if the Portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         getAssetBalances: [
@@ -85,7 +85,7 @@ describe('deletePortfolio procedure', () => {
     ).rejects.toThrow('Only empty Portfolios can be deleted');
   });
 
-  test('should throw an error if the Portfolio has balance in it', () => {
+  it('should throw an error if the Portfolio has balance in it', () => {
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         exists: false,
@@ -102,7 +102,7 @@ describe('deletePortfolio procedure', () => {
     ).rejects.toThrow("The Portfolio doesn't exist");
   });
 
-  test('should add a delete portfolio transaction to the queue', async () => {
+  it('should add a delete portfolio transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'deletePortfolio');
@@ -133,7 +133,7 @@ describe('deletePortfolio procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {

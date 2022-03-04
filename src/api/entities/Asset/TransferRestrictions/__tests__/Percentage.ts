@@ -22,7 +22,7 @@ describe('Percentage class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Percentage.prototype instanceof Namespace).toBe(true);
   });
 });

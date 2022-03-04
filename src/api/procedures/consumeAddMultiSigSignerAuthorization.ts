@@ -1,7 +1,6 @@
-import { TxTag, TxTags } from 'polymesh-types/types';
-
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
+import { TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU64,
@@ -98,7 +97,7 @@ export async function getAuthorization(
   } else {
     calledByTarget = !!identity?.isEqual(target);
     hasRoles = calledByTarget;
-    permissions = { transactions:  [TxTags.multiSig.AcceptMultisigSignerAsIdentity] };
+    permissions = { transactions: [TxTags.multiSig.AcceptMultisigSignerAsIdentity] };
   }
 
   if (accept) {

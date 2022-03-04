@@ -97,7 +97,7 @@ describe('Settlements class', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Settlements.prototype instanceof Namespace).toBe(true);
   });
 
@@ -132,7 +132,7 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a status value representing whether the transaction can be made from the current Identity', async () => {
+    it('should return a status value representing whether the transaction can be made from the current Identity', async () => {
       const currentIdentity = await mockContext.getCurrentIdentity();
       const { did: currentDid } = currentIdentity;
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
@@ -180,7 +180,7 @@ describe('Settlements class', () => {
       expect(result).toBe(TransferStatus.Success);
     });
 
-    test('should return a status value representing whether the transaction can be made from another Identity', async () => {
+    it('should return a status value representing whether the transaction can be made from another Identity', async () => {
       const rawResponse = dsMockUtils.createMockCanTransferResult({
         Ok: dsMockUtils.createMockU8(statusCode),
       });
@@ -250,7 +250,7 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    test('should return a transfer breakdown representing whether the transaction can be made from the current Identity', async () => {
+    it('should return a transfer breakdown representing whether the transaction can be made from the current Identity', async () => {
       const currentIdentity = await mockContext.getCurrentIdentity();
       const { did: currentDid } = currentIdentity;
       const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
@@ -289,7 +289,7 @@ describe('Settlements class', () => {
       expect(result).toEqual(expected);
     });
 
-    test('should return a transfer breakdown representing whether the transaction can be made from another Identity', async () => {
+    it('should return a transfer breakdown representing whether the transaction can be made from another Identity', async () => {
       const response = 'rpcResponse' as unknown as GranularCanTransferResult;
 
       portfolioIdToMeshPortfolioIdStub

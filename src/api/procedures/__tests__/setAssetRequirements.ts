@@ -178,7 +178,7 @@ describe('setAssetRequirements procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the new list is the same as the current one', () => {
+  it('should throw an error if the new list is the same as the current one', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     return expect(prepareSetAssetRequirements.call(proc, args)).rejects.toThrow(
@@ -186,7 +186,7 @@ describe('setAssetRequirements procedure', () => {
     );
   });
 
-  test('should add a reset asset compliance transaction to the queue if the new requirements are empty', async () => {
+  it('should add a reset asset compliance transaction to the queue if the new requirements are empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const result = await prepareSetAssetRequirements.call(proc, { ...args, requirements: [] });
@@ -200,7 +200,7 @@ describe('setAssetRequirements procedure', () => {
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  test('should add a replace asset compliance transactions to the queue', async () => {
+  it('should add a replace asset compliance transactions to the queue', async () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         complianceRequirementsGet: {
@@ -222,7 +222,7 @@ describe('setAssetRequirements procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const params = {

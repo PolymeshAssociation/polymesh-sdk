@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ScheduleSpec as MeshScheduleSpec, Ticker, TxTags } from 'polymesh-types/types';
+import { ScheduleSpec as MeshScheduleSpec, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,7 +12,7 @@ import {
 import { CheckpointSchedule, Context, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CalendarUnit } from '~/types';
+import { CalendarUnit, TxTags } from '~/types';
 import { ScheduleSpec } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -72,7 +72,7 @@ describe('createCheckpointSchedule procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the start date is in the past', () => {
+  it('should throw an error if the start date is in the past', () => {
     const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
 
     return expect(
@@ -85,7 +85,7 @@ describe('createCheckpointSchedule procedure', () => {
     ).rejects.toThrow('Schedule start date must be in the future');
   });
 
-  test('should add a create checkpoint schedule transaction to the queue', async () => {
+  it('should add a create checkpoint schedule transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('checkpoint', 'createSchedule');
@@ -175,7 +175,7 @@ describe('createCheckpointSchedule procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new CheckpointSchedule', () => {
+    it('should return the new CheckpointSchedule', () => {
       const result = createCheckpointScheduleResolver(
         ticker,
         mockContext
@@ -188,7 +188,7 @@ describe('createCheckpointSchedule procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 

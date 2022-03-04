@@ -55,7 +55,7 @@ describe('registerIdentity procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should add a cddRegisterIdentity transaction to the queue', async () => {
+  it('should add a cddRegisterIdentity transaction to the queue', async () => {
     const targetAccount = 'someAccount';
     const secondaryAccounts = [
       {
@@ -136,7 +136,7 @@ describe('createRegisterIdentityResolver', () => {
     filterEventRecordsStub.reset();
   });
 
-  test('should return the new Identity', () => {
+  it('should return the new Identity', () => {
     const fakeContext = {} as Context;
 
     const result = createRegisterIdentityResolver(fakeContext)({} as ISubmittableResult);

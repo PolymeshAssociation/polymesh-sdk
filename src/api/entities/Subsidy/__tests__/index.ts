@@ -4,6 +4,7 @@ import sinon from 'sinon';
 import { Context, Entity, Subsidy, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { AllowanceOperation } from '~/types/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -44,12 +45,12 @@ describe('Subsidy class', () => {
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Subsidy.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign beneficiary and subsidizer to instance', () => {
+    it('should assign beneficiary and subsidizer to instance', () => {
       const fakeResult = expect.objectContaining({
         beneficiary: expect.objectContaining({ address: beneficiary }),
         subsidizer: expect.objectContaining({ address: subsidizer }),
@@ -60,7 +61,7 @@ describe('Subsidy class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Subsidy.isUniqueIdentifiers({ beneficiary, subsidizer })).toBe(true);
       expect(Subsidy.isUniqueIdentifiers({})).toBe(false);
       expect(Subsidy.isUniqueIdentifiers({ beneficiary: 1, subsidizer: 2 })).toBe(false);
@@ -72,7 +73,7 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    test('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = { subsidy };
 
       const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
@@ -88,8 +89,86 @@ describe('Subsidy class', () => {
     });
   });
 
+  describe('method: setAllowance', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = { allowance: new BigNumber(50) };
+
+      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          { args: { ...args, subsidy, operation: AllowanceOperation.Set }, transformer: undefined },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await subsidy.setAllowance(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: increaseAllowance', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = { allowance: new BigNumber(50) };
+
+      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ...args, subsidy, operation: AllowanceOperation.Increase },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await subsidy.increaseAllowance(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: decreaseAllowance', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = { allowance: new BigNumber(50) };
+
+      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ...args, subsidy, operation: AllowanceOperation.Decrease },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await subsidy.decreaseAllowance(args);
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
   describe('method: exists', () => {
-    test('should return whether the Subsidy exists', async () => {
+    it('should return whether the Subsidy exists', async () => {
       context.accountSubsidy.onFirstCall().returns(null);
       await expect(subsidy.exists()).resolves.toBe(false);
 
@@ -118,7 +197,7 @@ describe('Subsidy class', () => {
   });
 
   describe('method: getAllowance', () => {
-    test('should throw an error if the Subsidy relationship does not exist', async () => {
+    it('should throw an error if the Subsidy relationship does not exist', async () => {
       context.accountSubsidy.onFirstCall().returns(null);
 
       let error;
@@ -150,7 +229,7 @@ describe('Subsidy class', () => {
       expect(error.message).toBe('The Subsidy no longer exists');
     });
 
-    test('should return allowance of the Subsidy relationship', async () => {
+    it('should return allowance of the Subsidy relationship', async () => {
       const allowance = new BigNumber(100);
       context.accountSubsidy.returns({
         subsidy: entityMockUtils.getSubsidyInstance(),
@@ -161,7 +240,7 @@ describe('Subsidy class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       subsidy.beneficiary.toJson = sinon.stub().returns(beneficiary);
       subsidy.subsidizer.toJson = sinon.stub().returns(subsidizer);
       expect(subsidy.toJson()).toEqual({ beneficiary, subsidizer });

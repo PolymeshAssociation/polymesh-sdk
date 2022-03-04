@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Context, Offering } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus } from '~/types';
+import { OfferingBalanceStatus, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -66,7 +66,7 @@ describe('toggleFreezeOffering procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Offering has reached its end date', () => {
+  it('should throw an error if the Offering has reached its end date', () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -90,7 +90,7 @@ describe('toggleFreezeOffering procedure', () => {
     ).rejects.toThrow('The Offering has already ended');
   });
 
-  test('should throw an error if freeze is set to true and the Offering is already frozen', () => {
+  it('should throw an error if freeze is set to true and the Offering is already frozen', () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -114,7 +114,7 @@ describe('toggleFreezeOffering procedure', () => {
     ).rejects.toThrow('The Offering is already frozen');
   });
 
-  test('should throw an error if freeze is set to false and the Offering status is live or close', async () => {
+  it('should throw an error if freeze is set to false and the Offering status is live or close', async () => {
     const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     entityMockUtils.configureMocks({
@@ -158,7 +158,7 @@ describe('toggleFreezeOffering procedure', () => {
     ).rejects.toThrow('The Offering is already closed');
   });
 
-  test('should add a freeze transaction to the queue', async () => {
+  it('should add a freeze transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('sto', 'freezeFundraiser');
@@ -174,7 +174,7 @@ describe('toggleFreezeOffering procedure', () => {
     expect(offering.asset.ticker).toBe(result.asset.ticker);
   });
 
-  test('should add a unfreeze transaction to the queue', async () => {
+  it('should add a unfreeze transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -203,7 +203,7 @@ describe('toggleFreezeOffering procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(
         mockContext
       );

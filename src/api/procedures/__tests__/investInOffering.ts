@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId, Ticker, TxTags } from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -21,6 +21,7 @@ import {
   PortfolioBalance,
   PortfolioLike,
   RoleType,
+  TxTags,
 } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -134,7 +135,7 @@ describe('investInOffering procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Offering is not accepting investments', () => {
+  it('should throw an error if the Offering is not accepting investments', () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -156,7 +157,7 @@ describe('investInOffering procedure', () => {
     );
   });
 
-  test('should throw an error if the minimum investment is not reached', async () => {
+  it('should throw an error if the minimum investment is not reached', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -198,7 +199,7 @@ describe('investInOffering procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(0));
   });
 
-  test("should throw an error if the funding Portfolio doesn't have enough balance to purchase the Assets", async () => {
+  it("should throw an error if the funding Portfolio doesn't have enough balance to purchase the Assets", async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -243,7 +244,7 @@ describe('investInOffering procedure', () => {
     expect(error.data.priceTotal).toEqual(new BigNumber(50));
   });
 
-  test('should throw an error if the Offering does not have enough remaining Assets', async () => {
+  it('should throw an error if the Offering does not have enough remaining Assets', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -287,7 +288,7 @@ describe('investInOffering procedure', () => {
     );
   });
 
-  test('should add an invest transaction to the queue', async () => {
+  it('should add an invest transaction to the queue', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -364,7 +365,7 @@ describe('investInOffering procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         purchasePortfolioId,
         fundingPortfolioId,
@@ -399,7 +400,7 @@ describe('investInOffering procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the investment and funding portfolio ids', () => {
+    it('should return the investment and funding portfolio ids', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 

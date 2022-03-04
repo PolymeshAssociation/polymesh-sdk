@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId, TxTags } from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -13,7 +13,7 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TxTags } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -69,7 +69,7 @@ describe('quitCustody procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the current Identity is the Portfolio owner', async () => {
+  it('should throw an error if the current Identity is the Portfolio owner', async () => {
     const portfolio = new NumberedPortfolio({ id, did }, mockContext);
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
@@ -89,7 +89,7 @@ describe('quitCustody procedure', () => {
     expect(error.message).toBe('The Portfolio owner cannot quit custody');
   });
 
-  test('should add a quit portfolio custody transaction to the queue', async () => {
+  it('should add a quit portfolio custody transaction to the queue', async () => {
     const portfolio = entityMockUtils.getNumberedPortfolioInstance({
       id,
       did,
@@ -123,7 +123,7 @@ describe('quitCustody procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       let portfolioId: PortfolioId = { did, number: id };
 
       let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
@@ -172,7 +172,7 @@ describe('quitCustody procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the portfolio id', async () => {
+    it('should return the portfolio id', async () => {
       const portfolio = new NumberedPortfolio({ id, did }, mockContext);
 
       const portfolioId: { did: string; number?: BigNumber } = { did, number: id };

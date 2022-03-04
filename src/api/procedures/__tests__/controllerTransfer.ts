@@ -1,6 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId, Ticker, TxTags } from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, RoleType } from '~/types';
+import { PortfolioBalance, RoleType, TxTags } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -94,7 +94,7 @@ describe('controllerTransfer procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Portfolio does not have enough balance to transfer', () => {
+  it('should throw an error if the Portfolio does not have enough balance to transfer', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(
@@ -106,7 +106,7 @@ describe('controllerTransfer procedure', () => {
     ).rejects.toThrow('The origin Portfolio does not have enough free balance for this transfer');
   });
 
-  test('should add a controller transfer transaction to the queue', async () => {
+  it('should add a controller transfer transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'controllerTransfer');
@@ -124,7 +124,7 @@ describe('controllerTransfer procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       const portfolioId = {
         did: 'oneDid',
       };

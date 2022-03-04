@@ -1,4 +1,4 @@
-import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import { AgentGroup, AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Account, Asset, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, PermissionType, SignerValue } from '~/types';
+import { Authorization, PermissionType, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -96,7 +96,7 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the Asset', () => {
+    it('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
         mockContext
       );
@@ -115,7 +115,7 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
         mockContext,
         {
@@ -134,7 +134,7 @@ describe('inviteExternalAgent procedure', () => {
     });
   });
 
-  test('should throw an error if the target identity is already an External Agent', () => {
+  it('should throw an error if the target identity is already an External Agent', () => {
     const args = {
       target,
       ticker,
@@ -160,7 +160,7 @@ describe('inviteExternalAgent procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
