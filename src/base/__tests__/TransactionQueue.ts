@@ -1,12 +1,11 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
-import { noop, range } from 'lodash';
+import { noop } from 'lodash';
 import sinon from 'sinon';
 
 import { Context, PostTransactionValue, TransactionQueue } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
-import { fakePromise } from '~/testUtils';
+import { fakePromise, manyFakePromises } from '~/testUtils';
 import { dsMockUtils, entityMockUtils, polymeshTransactionMockUtils } from '~/testUtils/mocks';
 import { TransactionQueueStatus, TransactionStatus } from '~/types';
 
@@ -538,11 +537,7 @@ describe('Transaction Queue class', () => {
 
       await queue.run();
 
-      await P.each(range(6), async () => {
-        await fakePromise();
-
-        jest.advanceTimersByTime(2000);
-      });
+      await manyFakePromises();
 
       sinon.assert.calledWith(listenerStub.firstCall, undefined);
     });
@@ -568,11 +563,7 @@ describe('Transaction Queue class', () => {
 
       await queue.run();
 
-      await P.each(range(6), async () => {
-        await fakePromise();
-
-        jest.advanceTimersByTime(2000);
-      });
+      await manyFakePromises();
 
       expect(listenerStub.getCall(0).args[0].message).toBe('Timed out');
     });
@@ -618,11 +609,7 @@ describe('Transaction Queue class', () => {
 
       await queue.run();
 
-      await P.each(range(6), async () => {
-        await fakePromise();
-
-        jest.advanceTimersByTime(2000);
-      });
+      await manyFakePromises();
 
       unsub();
 
