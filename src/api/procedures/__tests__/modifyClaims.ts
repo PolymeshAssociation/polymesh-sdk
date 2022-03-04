@@ -35,7 +35,6 @@ describe('modifyClaims procedure', () => {
   let defaultCddClaim: Claim;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
-  let defaultCddClaim: Claim;
   let iuClaim: Claim;
   let expiry: Date;
   let args: ModifyClaimsParams;

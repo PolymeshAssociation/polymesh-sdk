@@ -7,19 +7,13 @@ import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType, TxTags } from '~/types';
-import {
-  ClaimOperation,
-  Extrinsics,
-  MapMaybePostTransactionValue,
-  ProcedureAuthorization,
-} from '~/types/internal';
+import { ClaimOperation, ProcedureAuthorization } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimToMeshClaim,
   dateToMoment,
-  identityIdToString,
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
