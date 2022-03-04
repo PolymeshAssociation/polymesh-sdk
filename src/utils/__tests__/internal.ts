@@ -183,9 +183,9 @@ describe('unwrapValues', () => {
 
 describe('filterEventRecords', () => {
   const filterRecordsStub = sinon.stub();
-  const mockReceipt = ({
+  const mockReceipt = {
     filterRecords: filterRecordsStub,
-  } as unknown) as ISubmittableResult;
+  } as unknown as ISubmittableResult;
 
   afterEach(() => {
     filterRecordsStub.reset();
@@ -498,10 +498,10 @@ describe('createProcedureMethod', () => {
     const checkAuthorization = sinon.stub();
     const transformer = sinon.stub();
     const fakeProcedure = (): Procedure<number, void> =>
-      (({
+      ({
         prepare,
         checkAuthorization,
-      } as unknown) as Procedure<number, void>);
+      } as unknown as Procedure<number, void>);
 
     const method = createProcedureMethod(
       { getProcedureAndArgs: (args: number) => [fakeProcedure, args], transformer },
@@ -529,7 +529,7 @@ describe('assertIsInteger', () => {
   });
 
   test('assertIsInteger should throw an error if the argument is not an integer', async () => {
-    expect(() => assertIsInteger(('noInteger' as unknown) as BigNumber)).toThrow(
+    expect(() => assertIsInteger('noInteger' as unknown as BigNumber)).toThrow(
       'The number must be an integer'
     );
 
@@ -548,7 +548,7 @@ describe('assertIsPositive', () => {
 
 describe('getCommonKeyring', () => {
   test('should return a common keyring', async () => {
-    const fakeKeyring = ('keyring' as unknown) as CommonKeyring;
+    const fakeKeyring = 'keyring' as unknown as CommonKeyring;
     let result = getCommonKeyring(fakeKeyring);
 
     expect(result).toBe(fakeKeyring);
@@ -707,7 +707,7 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).rejects.toThrowError(expectedError);
   });
 
-  it('should throw an error if the version does not match', () => {
+  it('should throw an error if the node cannot be reached', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
