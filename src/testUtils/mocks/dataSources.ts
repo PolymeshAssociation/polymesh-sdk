@@ -197,14 +197,14 @@ function createWebSocket(): MockWebSocket {
  */
 export class MockWebSocket {
   /**
-   *@hidden
+   * @hidden
    */
   onopen(): void {
     // stub for onopen
   }
 
   /**
-   *@hidden
+   * @hidden
    */
   onclose(): void {
     // stub for onclose
@@ -212,21 +212,21 @@ export class MockWebSocket {
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
   /**
-   *@hidden
+   * @hidden
    */
   onerror(_err: Error): void {
     // stub for onerror
   }
 
   /**
-   *@hidden
+   * @hidden
    */
   onmessage(msg: Record<string, unknown>): void {
     // stub for onmessage
   }
 
   /**
-   *@hidden
+   * @hidden
    */
   close(): void {
     // stub for close
@@ -237,7 +237,7 @@ export class MockWebSocket {
    */
   send(msg: string): void {
     const response = { data: '{ "result": "4.1.1" }' };
-    setTimeout(() => this.onmessage(response), 10);
+    this.onmessage(response);
   }
   /* eslint-enable @typescript-eslint/no-unused-vars */
 

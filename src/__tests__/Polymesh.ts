@@ -219,7 +219,7 @@ describe('Polymesh Class', () => {
       });
     });
 
-    test('should warn if the Polymesh version does not satisfy the supported version range', async () => {
+    it('should warn if the Polymesh version does not satisfy the supported version range', async () => {
       const error = new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Unsupported Polymesh version. Please upgrade the SDK',
@@ -239,7 +239,7 @@ describe('Polymesh Class', () => {
       warn.mockRestore();
     });
 
-    test('should throw an error if the Polymesh version check could not connect to the node', async () => {
+    it('should throw an error if the Polymesh version check could not connect to the node', async () => {
       const error = new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Unable to connect',

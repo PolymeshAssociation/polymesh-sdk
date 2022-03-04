@@ -722,49 +722,41 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
  */
-export function assertExpectedChainVersion(nodeUrl: string): Promise<unknown> {
-  const client = new W3CWebSocket(nodeUrl);
+export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const client = new W3CWebSocket(nodeUrl);
 
-  client.onerror = function (error: Error) {
-    client.close();
-    const err = new PolymeshError({
-      code: ErrorCode.FatalError,
-      message: `Could not connect to the Polymesh node at ${nodeUrl}`,
-      data: { error },
-    });
-    fail(err);
-  };
+    client.onopen = () => {
+      const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
+      client.send(JSON.stringify(msg));
+    };
 
-  let success: (value: void) => void;
-  let fail: (reason?: Error) => void;
-  const signal = new Promise((resolve, reject) => {
-    success = resolve;
-    fail = reject;
-  });
+    client.onmessage = msg => {
+      client.close();
+      const { result: version } = JSON.parse(msg.data.toString());
+      if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
+        const error = new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'Unsupported Polymesh version. Please upgrade the SDK',
+          data: {
+            polymeshVersion: version,
+            supportedVersionRange: SUPPORTED_VERSION_RANGE,
+          },
+        });
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
 
-  client.onmessage = msg => {
-    client.close();
-    const { result: version } = JSON.parse(msg.data.toString());
-    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
-      const error = new PolymeshError({
+    client.onerror = (error: Error) => {
+      client.close();
+      const err = new PolymeshError({
         code: ErrorCode.FatalError,
-        message: 'Unsupported Polymesh version. Please upgrade the SDK',
-        data: {
-          polymeshVersion: version,
-          supportedVersionRange: SUPPORTED_VERSION_RANGE,
-        },
+        message: `Could not connect to the Polymesh node at ${nodeUrl}`,
+        data: { error },
       });
-      fail(error);
-    } else {
-      success();
-      fail();
-    }
-  };
-
-  client.onopen = () => {
-    const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
-    client.send(JSON.stringify(msg));
-  };
-
-  return signal;
+      reject(err);
+    };
+  });
 }
