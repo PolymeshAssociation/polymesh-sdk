@@ -12,7 +12,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { chunk, differenceWith, flatMap, groupBy, isEqual, map, mapValues, padEnd } from 'lodash';
+import { differenceWith, flatMap, isEqual, mapValues, padEnd } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
 
 import {
@@ -58,11 +58,7 @@ import {
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
-import {
-  DEFAULT_GQL_PAGE_SIZE,
-  DEFAULT_MAX_BATCH_ELEMENTS,
-  MAX_BATCH_ELEMENTS,
-} from '~/utils/constants';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
@@ -342,58 +338,6 @@ export async function requestAtBlock<F extends AnyFunction>(
   }
 
   return query(...args);
-}
-
-/**
- * @hidden
- *
- * Separates an array into smaller batches
- *
- * @param args - elements to separate
- * @param tag - transaction for which the elements are arguments. This serves to determine the size of the batches. A null value
- *   means that the minimum batch size will be used
- * @param groupByFn - optional function that takes an element and returns a value by which to group the elements.
- *   If supplied, all elements of the same group will be contained in the same batch
- */
-export function batchArguments<Args>(
-  args: Args[],
-  tag: TxTag | null,
-  groupByFn?: (obj: Args) => string
-): Args[][] {
-  const batchLimit = (tag && MAX_BATCH_ELEMENTS[tag]) ?? DEFAULT_MAX_BATCH_ELEMENTS;
-
-  if (!groupByFn) {
-    return chunk(args, batchLimit);
-  }
-
-  const groups = map(groupBy(args, groupByFn), group => group).sort(
-    ({ length: first }, { length: second }) => first - second
-  );
-
-  const batches: Args[][] = [];
-
-  groups.forEach(group => {
-    if (group.length > batchLimit) {
-      throw new PolymeshError({
-        code: ErrorCode.UnexpectedError,
-        message: 'Batch size exceeds limit. Please report this to the Polymath team',
-        data: {
-          batch: group,
-          limit: batchLimit,
-        },
-      });
-    }
-    let batchIndex = batches.findIndex(batch => batch.length + group.length <= batchLimit);
-
-    if (batchIndex === -1) {
-      batchIndex = batches.length;
-      batches[batchIndex] = [];
-    }
-
-    batches[batchIndex] = [...batches[batchIndex], ...group];
-  });
-
-  return batches;
 }
 
 /**

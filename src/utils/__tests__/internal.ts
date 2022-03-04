@@ -1,7 +1,6 @@
 import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { range } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -19,14 +18,12 @@ import {
   TxTags,
 } from '~/types';
 import { tuple } from '~/types/utils';
-import { DEFAULT_MAX_BATCH_ELEMENTS, MAX_BATCH_ELEMENTS } from '~/utils/constants';
 
 import {
   assertFormatValid,
   assertIsInteger,
   assertIsPositive,
   assertKeyringFormatValid,
-  batchArguments,
   calculateNextKey,
   createClaim,
   createProcedureMethod,
@@ -390,54 +387,6 @@ describe('requestAtBlock', () => {
         context
       )
     ).rejects.toThrow('Cannot query previous blocks in a non-archive node');
-  });
-});
-
-describe('batchArguments', () => {
-  it('should return chunks of data', () => {
-    const tag = TxTags.asset.AddDocuments;
-    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
-
-    const elements = range(0, 3 * expectedBatchLength + 1);
-
-    const batches = batchArguments(elements, tag);
-
-    expect(batches.length).toBe(4);
-    expect(batches[0].length).toBe(expectedBatchLength);
-    expect(batches[1].length).toBe(expectedBatchLength);
-    expect(batches[2].length).toBe(expectedBatchLength);
-    expect(batches[3].length).toBe(1);
-  });
-
-  it('should use a custom batching function to group elements', () => {
-    const tag = TxTags.corporateAction.InitiateCorporateAction;
-    const expectedBatchLength = DEFAULT_MAX_BATCH_ELEMENTS;
-
-    const elements = range(0, 2 * expectedBatchLength);
-
-    let batches = batchArguments(elements, tag, element => `${element % 2}`); // separate odd from even
-
-    expect(batches.length).toBe(2);
-    expect(batches[0]).toEqual(range(0, 2 * expectedBatchLength, 2));
-    expect(batches[1]).toEqual(range(1, 2 * expectedBatchLength, 2));
-
-    batches = batchArguments(elements, tag, element => `${element % 5}`); // separate in 5 groups
-
-    expect(batches.length).toBe(3);
-    expect(batches[0].length).toBeLessThan(expectedBatchLength);
-    expect(batches[1].length).toBeLessThan(expectedBatchLength);
-    expect(batches[2].length).toBeLessThan(expectedBatchLength);
-  });
-
-  it('should throw an error if a custom batch has a size bigger than the limit', () => {
-    const tag = TxTags.asset.AddDocuments;
-    const expectedBatchLength = MAX_BATCH_ELEMENTS[tag];
-
-    const elements = range(0, 3 * expectedBatchLength);
-
-    expect(() => batchArguments(elements, tag, element => `${element % 2}`)).toThrowError(
-      'Batch size exceeds limit'
-    );
   });
 });
 
