@@ -55,15 +55,6 @@ interface RevokeClaimsParams {
 
 export type ModifyClaimsParams = AddClaimsParams | EditClaimsParams | RevokeClaimsParams;
 
-/**
- * @hidden
- */
-export function groupByDid([target]: MapMaybePostTransactionValue<
-  Parameters<Extrinsics['identity']['revokeClaim']> | Parameters<Extrinsics['identity']['addClaim']>
->): string {
-  return identityIdToString(target as IdentityId);
-}
-
 const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean => {
   let isSameScope = true;
 
