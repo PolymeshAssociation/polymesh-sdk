@@ -92,7 +92,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
 
     const claimIssuer = claimIssuers
       .map(issuer => trustedIssuerToTrustedClaimIssuer(issuer, context))
-      .find(({ identity: { did: issuerDid } }) => did === issuerDid);
+      .find(({ identity }) => this.isEqual(identity));
 
     if (!claimIssuer) {
       throw new PolymeshError({

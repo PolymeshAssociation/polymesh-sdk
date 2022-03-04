@@ -91,7 +91,7 @@ export async function getAuthorization(
 
   let permissions;
   if (target instanceof Account) {
-    calledByTarget = currentAccount.address === target.address;
+    calledByTarget = target.isEqual(currentAccount);
     hasRoles = calledByTarget;
     // An account accepting multisig cannot be part of an Identity, so we cannot check for permissions
   } else {
