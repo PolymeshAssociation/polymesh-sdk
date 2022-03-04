@@ -1,7 +1,19 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, Context, Entity, PolymeshError, quitSubsidy } from '~/internal';
-import { ErrorCode, NoArgsProcedureMethod } from '~/types';
+import {
+  Account,
+  Context,
+  DecreaseAllowanceParams,
+  Entity,
+  IncreaseAllowanceParams,
+  modifyAllowance,
+  ModifyAllowanceParams,
+  PolymeshError,
+  quitSubsidy,
+  SetAllowanceParams,
+} from '~/internal';
+import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { AllowanceOperation } from '~/types/internal';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
@@ -55,6 +67,60 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
       { getProcedureAndArgs: () => [quitSubsidy, { subsidy: this }], voidArgs: true },
       context
     );
+
+    this.setAllowance = createProcedureMethod<
+      Pick<ModifyAllowanceParams, 'allowance'>,
+      ModifyAllowanceParams,
+      void
+    >(
+      {
+        getProcedureAndArgs: args => [
+          modifyAllowance,
+          {
+            ...args,
+            subsidy: this,
+            operation: AllowanceOperation.Set,
+          } as ModifyAllowanceParams,
+        ],
+      },
+      context
+    );
+
+    this.increaseAllowance = createProcedureMethod<
+      Pick<ModifyAllowanceParams, 'allowance'>,
+      ModifyAllowanceParams,
+      void
+    >(
+      {
+        getProcedureAndArgs: args => [
+          modifyAllowance,
+          {
+            ...args,
+            subsidy: this,
+            operation: AllowanceOperation.Increase,
+          } as ModifyAllowanceParams,
+        ],
+      },
+      context
+    );
+
+    this.decreaseAllowance = createProcedureMethod<
+      Pick<ModifyAllowanceParams, 'allowance'>,
+      ModifyAllowanceParams,
+      void
+    >(
+      {
+        getProcedureAndArgs: args => [
+          modifyAllowance,
+          {
+            ...args,
+            subsidy: this,
+            operation: AllowanceOperation.Decrease,
+          } as ModifyAllowanceParams,
+        ],
+      },
+      context
+    );
   }
 
   /**
@@ -63,6 +129,31 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
    * @note both the beneficiary and the subsidizer are allowed to unilaterally quit the Subsidy
    */
   public quit: NoArgsProcedureMethod<void>;
+
+  /**
+   * Set allowance for this Subsidy relationship
+   *
+   * @note Only the subsidizer is allowed to set the allowance
+   *
+   * @throws if the allowance to set is equal to the current allowance
+   */
+  public setAllowance: ProcedureMethod<Pick<SetAllowanceParams, 'allowance'>, void>;
+
+  /**
+   * Increase allowance for this Subsidy relationship
+   *
+   * @note Only the subsidizer is allowed to increase the allowance
+   */
+  public increaseAllowance: ProcedureMethod<Pick<IncreaseAllowanceParams, 'allowance'>, void>;
+
+  /**
+   * Decrease allowance for this Subsidy relationship
+   *
+   * @note Only the subsidizer is allowed to decrease the allowance
+   *
+   * @throws if the amount to decrease by is more than the existing allowance
+   */
+  public decreaseAllowance: ProcedureMethod<Pick<DecreaseAllowanceParams, 'allowance'>, void>;
 
   /**
    * Determine whether this Subsidy relationship exists on chain

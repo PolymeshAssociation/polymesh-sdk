@@ -1,8 +1,8 @@
 import { difference, intersection, isEqual, sortBy } from 'lodash';
-import { IdentityId, Ticker, TrustedIssuer, TxTags } from 'polymesh-types/types';
+import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer } from '~/types';
+import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer, TxTags } from '~/types';
 import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {

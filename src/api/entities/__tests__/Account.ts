@@ -689,7 +689,7 @@ describe('Account class', () => {
 
   describe('method: leaveIdentity', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       const args = {
         account,

@@ -1,8 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { PermissionedAccount, PermissionsLike, RoleType } from '~/types';
+import { PermissionedAccount, PermissionsLike, RoleType, TxTags } from '~/types';
 import { Modify } from '~/types/utils';
 import {
   identityIdToString,
