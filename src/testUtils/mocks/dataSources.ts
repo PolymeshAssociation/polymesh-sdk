@@ -35,6 +35,7 @@ import {
   Signer as PolkadotSigner,
 } from '@polkadot/types/types';
 import { hexToU8a, stringToU8a } from '@polkadot/util';
+import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
@@ -162,7 +163,6 @@ import {
   PermissionedAccount,
   ResultSet,
   SignerType,
-  SigningManager,
   SubsidyWithAllowance,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
@@ -2772,7 +2772,6 @@ export const createMockVenueType = (
 export const createMockVenue = (venue?: { creator: IdentityId; venue_type: VenueType }): Venue => {
   const vn = venue || {
     creator: createMockIdentityId(),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     venue_type: createMockVenueType(),
   };
 

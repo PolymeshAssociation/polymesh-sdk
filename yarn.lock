@@ -3060,6 +3060,11 @@
     "@types/websocket" "^1.0.3"
     websocket "^1.0.34"
 
+"@polymathnetwork/signing-manager-types@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@polymathnetwork/signing-manager-types/-/signing-manager-types-1.0.3.tgz#80f8696c34e6e1a6a570e2d25ae967b614f5822a"
+  integrity sha512-4o0gxlvDAgS08MlnAkxqJJ6B9CGTj47/rhjUdPoH1GJ1AbnLAX3TCoZvr/qgBZe+7SLKPd8fur2o2x1m4KtSfw==
+
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/@samverschueren/stream-to-observable/-/stream-to-observable-0.3.0.tgz#ecdf48d532c58ea477acfcab80348424f8d0662f"

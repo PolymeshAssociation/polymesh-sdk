@@ -1,4 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -16,7 +17,7 @@ import { Identities } from '~/Identities';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Settlements } from '~/Settlements';
-import { ErrorCode, MiddlewareConfig, SigningManager } from '~/types';
+import { ErrorCode, MiddlewareConfig } from '~/types';
 import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 import { signerToString } from '~/utils/conversion';
 
