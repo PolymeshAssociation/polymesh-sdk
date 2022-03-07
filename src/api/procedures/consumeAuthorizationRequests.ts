@@ -112,7 +112,7 @@ export async function getAuthorization(
   const { context } = this;
 
   let identity: Identity;
-  const fetchIdentity = async () => identity || context.getCurrentIdentity();
+  const fetchIdentity = async () => identity || context.getSigningIdentity();
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 

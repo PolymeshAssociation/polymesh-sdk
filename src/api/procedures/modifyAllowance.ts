@@ -118,7 +118,7 @@ export function getAuthorization(
     operation,
   } = args;
 
-  const currentAccount = context.getCurrentAccount();
+  const currentAccount = context.getSigningAccount();
 
   const hasRoles = subsidizer.isEqual(currentAccount);
 

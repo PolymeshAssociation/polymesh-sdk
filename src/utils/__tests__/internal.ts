@@ -799,7 +799,7 @@ describe('getIdentity', () => {
   });
 
   test('should return currentIdentity when given undefined value', async () => {
-    const expectedIdentity = await context.getCurrentIdentity();
+    const expectedIdentity = await context.getSigningIdentity();
     const result = await getIdentity(undefined, context);
     expect(result).toEqual(expectedIdentity);
   });

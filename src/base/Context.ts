@@ -3,6 +3,7 @@ import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import {
   CallFunction,
+  InterfaceTypes,
   Signer as PolkadotSigner,
   TypeDef,
   TypeDefInfo,

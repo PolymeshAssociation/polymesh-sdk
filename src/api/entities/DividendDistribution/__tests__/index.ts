@@ -433,7 +433,7 @@ describe('DividendDistribution class', () => {
       expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
       expect(result?.paid).toBe(false);
 
-      (context.getCurrentIdentity as SinonStub).resolves(
+      (context.getSigningIdentity as SinonStub).resolves(
         entityMockUtils.getIdentityInstance({ did, isEqual: false })
       );
 

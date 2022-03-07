@@ -138,7 +138,7 @@ export async function getIdentity(
   context: Context
 ): Promise<Identity> {
   if (!value) {
-    return context.getCurrentIdentity();
+    return context.getSigningIdentity();
   } else {
     return asIdentity(value, context);
   }
