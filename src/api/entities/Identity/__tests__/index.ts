@@ -121,6 +121,7 @@ describe('Identity class', () => {
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
 
       let result = await identity.checkRoles(roles);
 
@@ -149,6 +150,8 @@ describe('Identity class', () => {
         result: false,
         missingRoles: [{ type: RoleType.TickerOwner, ticker: 'otherTicker' }],
       });
+
+      spy.mockRestore();
     });
   });
 
@@ -164,16 +167,19 @@ describe('Identity class', () => {
     it('should check whether the Identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
 
       let hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(true);
 
       identity.did = 'otherDid';
+      spy.mockReturnValue(false);
 
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+      spy.mockRestore();
     });
 
     it('should check whether the Identity has the CDD Provider role', async () => {
@@ -212,15 +218,18 @@ describe('Identity class', () => {
         },
       });
 
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
       let hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(true);
 
       identity.did = 'otherDid';
 
+      spy.mockReturnValue(false);
       hasRole = await identity.hasRole(role);
 
       expect(hasRole).toBe(false);
+      spy.mockRestore();
     });
 
     it('should check whether the Identity has the Portfolio Custodian role', async () => {
@@ -290,10 +299,12 @@ describe('Identity class', () => {
         { type: RoleType.TickerOwner, ticker: 'someTicker' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
+      const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
 
       const hasRole = await identity.hasRoles(roles);
 
       expect(hasRole).toBe(true);
+      spy.mockRestore();
     });
 
     it("should return false if at least one role isn't possessed by the Identity", async () => {
@@ -503,7 +514,7 @@ describe('Identity class', () => {
         primary_key: dsMockUtils.createMockAccountId(accountId),
         secondary_keys: [],
       });
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const account = expect.objectContaining({ address: accountId });
 
@@ -840,6 +851,7 @@ describe('Identity class', () => {
 
       const multiStub = sinon.stub();
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id1),
@@ -887,6 +899,7 @@ describe('Identity class', () => {
           value_date: dsMockUtils.createMockOption(),
         }),
       ]);
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       instructionDetailsStub.multi = multiStub;
 
@@ -985,7 +998,6 @@ describe('Identity class', () => {
 
       userAuthsStub.entries = entriesStub;
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const instructionDetailsStub = dsMockUtils.createQueryStub(
         'settlement',
         'instructionDetails',
@@ -996,6 +1008,7 @@ describe('Identity class', () => {
 
       const multiStub = sinon.stub();
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
         dsMockUtils.createMockInstruction({
           instruction_id: dsMockUtils.createMockU64(id1),
@@ -1232,7 +1245,7 @@ describe('Identity class', () => {
           }),
         ],
       });
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     it('should return a list of Signers', async () => {

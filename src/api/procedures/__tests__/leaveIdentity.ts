@@ -4,7 +4,7 @@ import { prepareLeaveIdentity } from '~/api/procedures/leaveIdentity';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionedAccount } from '~/types';
+import { PermissionedAccount, TxTags } from '~/types';
 
 jest.mock(
   '~/api/entities/Asset',

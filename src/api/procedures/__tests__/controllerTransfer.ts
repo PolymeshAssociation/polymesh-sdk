@@ -1,6 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId, Ticker, TxTags } from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, RoleType } from '~/types';
+import { PortfolioBalance, RoleType, TxTags } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

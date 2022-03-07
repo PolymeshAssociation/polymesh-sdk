@@ -1145,4 +1145,21 @@ export class Context {
 
     return cloned;
   }
+
+  /**
+   *  @hidden
+   *
+   * Creates an instance of a type as registered in the polymeshApi instance
+   */
+  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): InterfaceTypes[K] {
+    try {
+      return this.polymeshApi.createType(type, params);
+    } catch (error) {
+      throw new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message: `Could not create internal Polymesh type: "${type}". Please report this error to the Polymath team`,
+        data: { type, params, error },
+      });
+    }
+  }
 }

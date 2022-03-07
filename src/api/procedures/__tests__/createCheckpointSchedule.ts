@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ScheduleSpec as MeshScheduleSpec, Ticker, TxTags } from 'polymesh-types/types';
+import { ScheduleSpec as MeshScheduleSpec, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,7 +12,7 @@ import {
 import { CheckpointSchedule, Context, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CalendarUnit } from '~/types';
+import { CalendarUnit, TxTags } from '~/types';
 import { ScheduleSpec } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';

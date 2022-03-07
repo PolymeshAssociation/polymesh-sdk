@@ -36,7 +36,6 @@
         "selector": "typeLike",
         "format": ["StrictPascalCase"]
       },
-
       {
         "selector": "typeProperty",
         "format": ["StrictPascalCase", "strictCamelCase"],

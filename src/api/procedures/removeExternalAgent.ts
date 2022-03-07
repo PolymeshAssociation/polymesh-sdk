@@ -1,11 +1,9 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { isFullGroupType } from '~/api/procedures/utils';
 import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
-import { getDid } from '~/utils/internal';
+import { getIdentity } from '~/utils/internal';
 
 export interface RemoveExternalAgentParams {
   target: string | Identity;
@@ -44,12 +42,12 @@ export async function prepareRemoveExternalAgent(
 
   const { ticker, target } = args;
 
-  const [currentAgents, did] = await Promise.all([
+  const [currentAgents, targetIdentity] = await Promise.all([
     asset.permissions.getAgents(),
-    getDid(target, context),
+    getIdentity(target, context),
   ]);
 
-  const agentWithGroup = currentAgents.find(({ agent: { did: agentDid } }) => agentDid === did);
+  const agentWithGroup = currentAgents.find(({ agent }) => agent.isEqual(targetIdentity));
 
   if (!agentWithGroup) {
     throw new PolymeshError({
@@ -70,7 +68,7 @@ export async function prepareRemoveExternalAgent(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawAgent = stringToIdentityId(did, context);
+  const rawAgent = stringToIdentityId(targetIdentity.did, context);
 
   this.addTransaction({
     transaction: externalAgents.removeAgent,

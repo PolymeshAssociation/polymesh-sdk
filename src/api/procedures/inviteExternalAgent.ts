@@ -1,5 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   Asset,
@@ -19,6 +17,7 @@ import {
   SignerType,
   TransactionPermissions,
   TxGroup,
+  TxTags,
 } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
@@ -27,7 +26,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { getDid, optionize } from '~/utils/internal';
+import { optionize } from '~/utils/internal';
 
 export interface InviteExternalAgentParams {
   target: string | Identity;
@@ -84,12 +83,9 @@ export async function prepareInviteExternalAgent(
   const issuer = await context.getSigningIdentity();
   const targetIdentity = await context.getIdentity(target);
 
-  const [currentAgents, did] = await Promise.all([
-    asset.permissions.getAgents(),
-    getDid(target, context),
-  ]);
+  const currentAgents = await asset.permissions.getAgents();
 
-  const isAgent = !!currentAgents.find(({ agent: { did: agentDid } }) => agentDid === did);
+  const isAgent = !!currentAgents.find(({ agent }) => agent.isEqual(targetIdentity));
 
   if (isAgent) {
     throw new PolymeshError({

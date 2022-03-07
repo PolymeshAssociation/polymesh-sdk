@@ -1,8 +1,6 @@
-import { TxTag, TxTags } from 'polymesh-types/types';
-
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU64,
@@ -103,7 +101,7 @@ export async function getAuthorization(
   let calledByTarget: boolean;
 
   if (target instanceof Account) {
-    calledByTarget = signingAccount.address === target.address;
+    calledByTarget = target.isEqual(signingAccount);
     hasRoles = calledByTarget;
     transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
   } else {

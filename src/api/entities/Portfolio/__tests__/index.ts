@@ -109,10 +109,12 @@ describe('Portfolio class', () => {
       expect(result).toBe(true);
 
       portfolio = new NonAbstract({ did: 'notTheSigningIdentity' }, context);
+      const spy = jest.spyOn(portfolio.owner, 'isEqual').mockReturnValue(false);
 
       result = await portfolio.isOwnedBy({ identity: did });
 
       expect(result).toBe(false);
+      spy.mockRestore();
     });
   });
 
@@ -141,6 +143,10 @@ describe('Portfolio class', () => {
       );
       identityIdToStringStub.returns(custodianDid);
 
+      const spy = jest
+        .spyOn(portfolio, 'getCustodian')
+        .mockResolvedValue(entityMockUtils.getIdentityInstance({ isEqual: false }));
+
       let result = await portfolio.isCustodiedBy();
       expect(result).toEqual(false);
 
@@ -148,9 +154,13 @@ describe('Portfolio class', () => {
         dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(signingIdentityDid))
       );
       identityIdToStringStub.returns(signingIdentityDid);
+      spy.mockResolvedValue(entityMockUtils.getIdentityInstance({ isEqual: true }));
 
-      result = await portfolio.isCustodiedBy({ identity: signingIdentityDid });
+      result = await portfolio.isCustodiedBy({
+        identity: entityMockUtils.getIdentityInstance({ isEqual: true }),
+      });
       expect(result).toEqual(true);
+      spy.mockRestore();
     });
   });
 
@@ -460,7 +470,7 @@ describe('Portfolio class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);

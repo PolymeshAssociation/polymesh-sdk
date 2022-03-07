@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyVenue } from '~/api/procedures/modifyVenue';
 import { Context, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, VenueType } from '~/types';
+import { RoleType, TxTags, VenueType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -16,7 +15,7 @@ jest.mock(
 
 describe('modifyVenue procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
   let venueId: BigNumber;
 
   let venue: Venue;
@@ -31,7 +30,7 @@ describe('modifyVenue procedure', () => {
   beforeEach(() => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     venue = entityMockUtils.getVenueInstance({ id: venueId });
   });
@@ -113,13 +112,17 @@ describe('modifyVenue procedure', () => {
 
     await prepareModifyVenue.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: updateVenueDetailsTransaction,
-      args: [rawId, rawDetails],
-    });
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: updateVenueTypeTransaction,
-      args: [rawId, rawType],
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: [
+        {
+          transaction: updateVenueDetailsTransaction,
+          args: [rawId, rawDetails],
+        },
+        {
+          transaction: updateVenueTypeTransaction,
+          args: [rawId, rawType],
+        },
+      ],
     });
 
     await prepareModifyVenue.call(proc, {
@@ -127,9 +130,13 @@ describe('modifyVenue procedure', () => {
       type,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: updateVenueTypeTransaction,
-      args: [rawId, rawType],
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: updateVenueTypeTransaction,
+          args: [rawId, rawType],
+        },
+      ],
     });
 
     await prepareModifyVenue.call(proc, {
@@ -137,9 +144,13 @@ describe('modifyVenue procedure', () => {
       description,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: updateVenueDetailsTransaction,
-      args: [rawId, rawDetails],
+    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+      transactions: [
+        {
+          transaction: updateVenueDetailsTransaction,
+          args: [rawId, rawDetails],
+        },
+      ],
     });
   });
 

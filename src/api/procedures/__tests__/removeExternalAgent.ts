@@ -1,4 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -8,10 +7,10 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/removeExternalAgent';
-import { Asset, Context, Identity } from '~/internal';
+import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionGroupType } from '~/types';
+import { PermissionGroupType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -128,7 +127,7 @@ describe('removeExternalAgent procedure', () => {
       asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
@@ -149,14 +148,14 @@ describe('removeExternalAgent procedure', () => {
       asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.ExceptMeta,
             }),
           },
           {
-            agent: { did: 'otherDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
@@ -183,14 +182,14 @@ describe('removeExternalAgent procedure', () => {
       asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
             }),
           },
           {
-            agent: { did: 'otherDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,

@@ -127,12 +127,12 @@ export function assertSecondaryAccounts(
   secondaryAccounts: PermissionedAccount[]
 ): void {
   const notInTheList: string[] = [];
-  accounts.forEach(({ address }) => {
-    const isPresent = secondaryAccounts.find(
-      ({ account: { address: existingAddress } }) => existingAddress === address
+  accounts.forEach(account => {
+    const isPresent = secondaryAccounts.find(({ account: existingAccount }) =>
+      account.isEqual(existingAccount)
     );
     if (!isPresent) {
-      notInTheList.push(address);
+      notInTheList.push(account.address);
     }
   });
 

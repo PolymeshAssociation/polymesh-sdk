@@ -1,6 +1,6 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ProtocolOp, TxTags } from 'polymesh-types/types';
+import { ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
@@ -14,6 +14,7 @@ import {
   ErrorCode,
   TargetTreatment,
   TransactionArgumentType,
+  TxTags,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -1090,7 +1091,7 @@ describe('Context class', () => {
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -1153,6 +1154,7 @@ describe('Context class', () => {
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
         claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
@@ -1166,6 +1168,7 @@ describe('Context class', () => {
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
       };
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const fakeClaims = [
         {
@@ -1529,6 +1532,7 @@ describe('Context class', () => {
         middlewareApi,
       });
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const corporateActions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
@@ -1611,6 +1615,7 @@ describe('Context class', () => {
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[1] }),
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[2] }),
       ];
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         entries: [
@@ -1724,6 +1729,37 @@ describe('Context class', () => {
 
       expect(context.supportsSubsidy({ tag: TxTags.system.FillBlock })).toBe(false);
       expect(context.supportsSubsidy({ tag: TxTags.asset.CreateAsset })).toBe(true);
+    });
+  });
+
+  describe('method: createType', () => {
+    it('should call polymeshApi and return the result', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.getCreateTypeStub().withArgs('Bytes', 'abc').returns('abc');
+
+      const result = context.createType('Bytes', 'abc');
+      expect(result).toEqual('abc');
+    });
+
+    it('should throw a PolymeshError if createType throws', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.getCreateTypeStub().throws('Could not create Polymesh type');
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message:
+          'Could not create internal Polymesh type: "Bytes". Please report this error to the Polymath team',
+      });
+
+      expect(() => context.createType('Bytes', 'abc')).toThrowError(expectedError);
     });
   });
 });

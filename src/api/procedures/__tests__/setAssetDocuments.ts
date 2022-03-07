@@ -1,6 +1,6 @@
 import { Vec } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker, TxTags } from 'polymesh-types/types';
+import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -13,7 +13,7 @@ import {
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AssetDocument } from '~/types';
+import { AssetDocument, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -77,7 +77,7 @@ describe('setAssetDocuments procedure', () => {
         filing_date: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enabled @typescript-eslint/naming-convention */
+        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>
@@ -89,13 +89,13 @@ describe('setAssetDocuments procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
 
   let removeDocumentsTransaction: PolymeshTx<[Vec<DocumentId>, Ticker]>;
   let addDocumentsTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     dsMockUtils.createQueryStub('asset', 'assetDocuments', {
       entries: [documentEntries[0]],
@@ -143,15 +143,19 @@ describe('setAssetDocuments procedure', () => {
 
     const result = await prepareSetAssetDocuments.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
-      transaction: removeDocumentsTransaction,
-      feeMultiplier: new BigNumber(1),
-      args: [docIds, rawTicker],
-    });
-    sinon.assert.calledWith(addTransactionStub.secondCall, {
-      transaction: addDocumentsTransaction,
-      feeMultiplier: new BigNumber(rawDocuments.length),
-      args: [rawDocuments, rawTicker],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: removeDocumentsTransaction,
+          feeMultiplier: new BigNumber(1),
+          args: [docIds, rawTicker],
+        },
+        {
+          transaction: addDocumentsTransaction,
+          feeMultiplier: new BigNumber(rawDocuments.length),
+          args: [rawDocuments, rawTicker],
+        },
+      ],
     });
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
@@ -164,12 +168,15 @@ describe('setAssetDocuments procedure', () => {
 
     const result = await prepareSetAssetDocuments.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
-      transaction: addDocumentsTransaction,
-      feeMultiplier: new BigNumber(rawDocuments.length),
-      args: [rawDocuments, rawTicker],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: addDocumentsTransaction,
+          feeMultiplier: new BigNumber(rawDocuments.length),
+          args: [rawDocuments, rawTicker],
+        },
+      ],
     });
-    sinon.assert.calledOnce(addTransactionStub);
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
@@ -182,12 +189,15 @@ describe('setAssetDocuments procedure', () => {
 
     const result = await prepareSetAssetDocuments.call(proc, { ...args, documents: [] });
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
-      transaction: removeDocumentsTransaction,
-      feeMultiplier: new BigNumber(1),
-      args: [docIds, rawTicker],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: removeDocumentsTransaction,
+          feeMultiplier: new BigNumber(1),
+          args: [docIds, rawTicker],
+        },
+      ],
     });
-    sinon.assert.calledOnce(addTransactionStub);
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 

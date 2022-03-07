@@ -1,7 +1,5 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 

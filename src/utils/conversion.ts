@@ -238,7 +238,7 @@ export function tickerToDid(ticker: string): string {
  * @hidden
  */
 export function stringToAssetName(name: string, context: Context): AssetName {
-  return context.polymeshApi.createType('AssetName', name);
+  return context.createType('AssetName', name);
 }
 
 /**
@@ -252,7 +252,7 @@ export function assetNameToString(name: AssetName): string {
  * @hidden
  */
 export function booleanToBool(value: boolean, context: Context): bool {
-  return context.polymeshApi.createType('bool', value);
+  return context.createType('bool', value);
 }
 
 /**
@@ -266,7 +266,7 @@ export function boolToBoolean(value: bool): boolean {
  * @hidden
  */
 export function stringToBytes(bytes: string, context: Context): Bytes {
-  return context.polymeshApi.createType('Bytes', bytes);
+  return context.createType('Bytes', bytes);
 }
 
 /**
@@ -301,7 +301,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
     });
   }
 
-  return context.polymeshApi.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
+  return context.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
 }
 
 /**
@@ -316,7 +316,7 @@ export function tickerToString(ticker: Ticker): string {
  * @hidden
  */
 export function stringToInvestorZKProofData(proof: string, context: Context): InvestorZKProofData {
-  return context.polymeshApi.createType('InvestorZKProofData', proof);
+  return context.createType('InvestorZKProofData', proof);
 }
 /* eslint-enable @typescript-eslint/naming-convention */
 
@@ -324,7 +324,7 @@ export function stringToInvestorZKProofData(proof: string, context: Context): In
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return context.polymeshApi.createType('Moment', date.getTime());
+  return context.createType('Moment', date.getTime());
 }
 
 /**
@@ -340,7 +340,7 @@ export function momentToDate(moment: Moment): Date {
 export function stringToAccountId(accountId: string, context: Context): AccountId {
   assertAddressValid(accountId, context.ss58Format);
 
-  return context.polymeshApi.createType('AccountId', accountId);
+  return context.createType('AccountId', accountId);
 }
 
 /**
@@ -361,14 +361,14 @@ export function hashToString(hash: Hash): string {
  * @hidden
  */
 export function stringToHash(hash: string, context: Context): Hash {
-  return context.polymeshApi.createType('Hash', hash);
+  return context.createType('Hash', hash);
 }
 
 /**
  * @hidden
  */
 export function stringToIdentityId(identityId: string, context: Context): IdentityId {
-  return context.polymeshApi.createType('IdentityId', identityId);
+  return context.createType('IdentityId', identityId);
 }
 
 /**
@@ -382,7 +382,7 @@ export function identityIdToString(identityId: IdentityId): string {
  * @hidden
  */
 export function stringToEcdsaSignature(signature: string, context: Context): EcdsaSignature {
-  return context.polymeshApi.createType('EcdsaSignature', signature);
+  return context.createType('EcdsaSignature', signature);
 }
 
 /**
@@ -404,7 +404,7 @@ export function signatoryToAccount(signatory: Signatory, context: Context): Acco
  * @hidden
  */
 export function signerValueToSignatory(signer: SignerValue, context: Context): Signatory {
-  return context.polymeshApi.createType('Signatory', {
+  return context.createType('Signatory', {
     [signer.type]: signer.value,
   });
 }
@@ -478,7 +478,7 @@ export function u64ToBigNumber(value: u64): BigNumber {
 export function bigNumberToU64(value: BigNumber, context: Context): u64 {
   assertIsInteger(value);
   assertIsPositive(value);
-  return context.polymeshApi.createType('u64', value.toString());
+  return context.createType('u64', value.toString());
 }
 
 /**
@@ -494,7 +494,7 @@ export function percentageToPermill(value: BigNumber, context: Context): Permill
     });
   }
 
-  return context.polymeshApi.createType('Permill', value.shiftedBy(4).toString()); // (value : 100) * 10^6
+  return context.createType('Permill', value.shiftedBy(4).toString()); // (value : 100) * 10^6
 }
 
 /**
@@ -598,7 +598,7 @@ export function portfolioIdToMeshPortfolioId(
   context: Context
 ): MeshPortfolioId {
   const { did, number } = portfolioId;
-  return context.polymeshApi.createType('PortfolioId', {
+  return context.createType('PortfolioId', {
     did: stringToIdentityId(did, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
     kind: number ? { User: bigNumberToU64(number, context) } : 'Default',
@@ -609,7 +609,7 @@ export function portfolioIdToMeshPortfolioId(
  * @hidden
  */
 export function stringToText(text: string, context: Context): Text {
-  return context.polymeshApi.createType('Text', text);
+  return context.createType('Text', text);
 }
 
 /**
@@ -925,7 +925,7 @@ export function permissionsToMeshPermissions(
     portfolio,
   };
 
-  return context.polymeshApi.createType('Permissions', value);
+  return context.createType('Permissions', value);
 }
 
 /**
@@ -935,7 +935,7 @@ export function transactionPermissionsToExtrinsicPermissions(
   transactionPermissions: TransactionPermissions | null,
   context: Context
 ): ExtrinsicPermissions {
-  return context.polymeshApi.createType(
+  return context.createType(
     'ExtrinsicPermissions',
     transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
   );
@@ -1059,7 +1059,7 @@ export function permissionGroupIdentifierToAgentGroup(
   permissionGroup: PermissionGroupIdentifier,
   context: Context
 ): AgentGroup {
-  return context.polymeshApi.createType(
+  return context.createType(
     'AgentGroup',
     typeof permissionGroup !== 'object'
       ? permissionGroup
@@ -1118,7 +1118,7 @@ export function authorizationToAuthorizationData(
     value = auth.value;
   }
 
-  return context.polymeshApi.createType('AuthorizationData', {
+  return context.createType('AuthorizationData', {
     [auth.type]: value,
   });
 }
@@ -1130,7 +1130,7 @@ export function authorizationTypeToMeshAuthorizationType(
   authorizationType: AuthorizationType,
   context: Context
 ): MeshAuthorizationType {
-  return context.polymeshApi.createType('AuthorizationType', authorizationType);
+  return context.createType('AuthorizationType', authorizationType);
 }
 
 /**
@@ -1263,7 +1263,7 @@ export function bigNumberToBalance(value: BigNumber, context: Context, divisible
     }
   }
 
-  return context.polymeshApi.createType('Balance', value.shiftedBy(6).toString());
+  return context.createType('Balance', value.shiftedBy(6).toString());
 }
 
 /**
@@ -1287,7 +1287,7 @@ export function stringToMemo(value: string, context: Context): Memo {
     });
   }
 
-  return context.polymeshApi.createType('Memo', padString(value, MAX_MEMO_LENGTH));
+  return context.createType('Memo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -1296,7 +1296,7 @@ export function stringToMemo(value: string, context: Context): Memo {
 export function bigNumberToU32(value: BigNumber, context: Context): u32 {
   assertIsInteger(value);
   assertIsPositive(value);
-  return context.polymeshApi.createType('u32', value.toString());
+  return context.createType('u32', value.toString());
 }
 
 /**
@@ -1396,7 +1396,7 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
  * @hidden
  */
 export function internalAssetTypeToAssetType(type: InternalAssetType, context: Context): AssetType {
-  return context.polymeshApi.createType('AssetType', type);
+  return context.createType('AssetType', type);
 }
 
 /**
@@ -1577,7 +1577,7 @@ export function securityIdentifierToAssetIdentifier(
     });
   }
 
-  return context.polymeshApi.createType('AssetIdentifier', { [type]: value });
+  return context.createType('AssetIdentifier', { [type]: value });
 }
 
 /**
@@ -1615,7 +1615,7 @@ export function assetIdentifierToSecurityIdentifier(
  * @hidden
  */
 export function stringToFundingRoundName(roundName: string, context: Context): FundingRoundName {
-  return context.polymeshApi.createType('FundingRoundName', roundName);
+  return context.createType('FundingRoundName', roundName);
 }
 
 /**
@@ -1629,7 +1629,7 @@ export function fundingRoundNameToString(roundName: FundingRoundName): string {
  * @hidden
  */
 export function stringToDocumentName(docName: string, context: Context): DocumentName {
-  return context.polymeshApi.createType('DocumentName', docName);
+  return context.createType('DocumentName', docName);
 }
 
 /**
@@ -1643,7 +1643,7 @@ export function documentNameToString(docName: DocumentName): string {
  * @hidden
  */
 export function stringToDocumentType(docType: string, context: Context): DocumentType {
-  return context.polymeshApi.createType('DocumentType', docType);
+  return context.createType('DocumentType', docType);
 }
 
 /**
@@ -1657,7 +1657,7 @@ export function documentTypeToString(docType: DocumentType): string {
  * @hidden
  */
 export function stringToDocumentUri(docUri: string, context: Context): DocumentUri {
-  return context.polymeshApi.createType('DocumentUri', docUri);
+  return context.createType('DocumentUri', docUri);
 }
 
 /**
@@ -1671,10 +1671,8 @@ export function documentUriToString(docUri: DocumentUri): string {
  * @hidden
  */
 export function stringToDocumentHash(docHash: string | undefined, context: Context): DocumentHash {
-  const { polymeshApi } = context;
-
   if (docHash === undefined) {
-    return polymeshApi.createType('DocumentHash', 'None');
+    return context.createType('DocumentHash', 'None');
   }
 
   if (!isHex(docHash, -1, true)) {
@@ -1703,7 +1701,7 @@ export function stringToDocumentHash(docHash: string | undefined, context: Conte
 
   const { maxLength, key } = type;
 
-  return context.polymeshApi.createType('DocumentHash', {
+  return context.createType('DocumentHash', {
     [key]: hexToU8a(docHash.padEnd(maxLength, '0')),
   });
 }
@@ -1754,7 +1752,7 @@ export function assetDocumentToDocument(
   { uri, contentHash, name, filedAt, type }: AssetDocument,
   context: Context
 ): Document {
-  return context.polymeshApi.createType('Document', {
+  return context.createType('Document', {
     uri: stringToDocumentUri(uri, context),
     name: stringToDocumentName(name, context),
     /* eslint-disable @typescript-eslint/naming-convention */
@@ -1844,7 +1842,7 @@ export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
       break;
   }
 
-  return context.polymeshApi.createType('Scope', {
+  return context.createType('Scope', {
     [type]: scopeValue,
   });
 }
@@ -1877,7 +1875,7 @@ export function meshScopeToScope(scope: MeshScope): Scope {
  * @hidden
  */
 export function stringToCddId(cddId: string, context: Context): CddId {
-  return context.polymeshApi.createType('CddId', cddId);
+  return context.createType('CddId', cddId);
 }
 
 /**
@@ -1891,7 +1889,7 @@ export function cddIdToString(cddId: CddId): string {
  * @hidden
  */
 export function stringToScopeId(scopeId: string, context: Context): ScopeId {
-  return context.polymeshApi.createType('ScopeId', scopeId);
+  return context.createType('ScopeId', scopeId);
 }
 
 /**
@@ -1939,7 +1937,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
     }
   }
 
-  return context.polymeshApi.createType('Claim', { [claim.type]: value });
+  return context.createType('Claim', { [claim.type]: value });
 }
 
 /**
@@ -2084,7 +2082,7 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
  * @hidden
  */
 export function stringToTargetIdentity(did: string | null, context: Context): TargetIdentity {
-  return context.polymeshApi.createType(
+  return context.createType(
     'TargetIdentity',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     did ? { Specific: stringToIdentityId(did, context) } : 'ExternalAgent'
@@ -2176,7 +2174,7 @@ export function trustedClaimIssuerToTrustedIssuer(
     trustedFor = { Specific: claimTypes };
   }
 
-  return context.polymeshApi.createType('TrustedIssuer', {
+  return context.createType('TrustedIssuer', {
     issuer: stringToIdentityId(did, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
     trusted_for: trustedFor,
@@ -2190,7 +2188,6 @@ export function requirementToComplianceRequirement(
   requirement: InputRequirement,
   context: Context
 ): ComplianceRequirement {
-  const { polymeshApi } = context;
   const senderConditions: MeshCondition[] = [];
   const receiverConditions: MeshCondition[] = [];
 
@@ -2214,7 +2211,7 @@ export function requirementToComplianceRequirement(
 
     const { target, trustedClaimIssuers = [] } = condition;
 
-    const meshCondition = polymeshApi.createType('Condition', {
+    const meshCondition = context.createType('Condition', {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       condition_type: {
         [type]: conditionContent,
@@ -2233,7 +2230,7 @@ export function requirementToComplianceRequirement(
     }
   });
 
-  return polymeshApi.createType('ComplianceRequirement', {
+  return context.createType('ComplianceRequirement', {
     /* eslint-disable @typescript-eslint/naming-convention */
     sender_conditions: senderConditions,
     receiver_conditions: receiverConditions,
@@ -2455,7 +2452,7 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     });
   }
 
-  return context.polymeshApi.createType('ProtocolOp', value);
+  return context.createType('ProtocolOp', value);
 }
 
 /**
@@ -2530,7 +2527,7 @@ export function addressToKey(address: string, context: Context): string {
  * @hidden
  */
 export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
-  const { section, method } = context.polymeshApi.createType('Proposal', bytes);
+  const { section, method } = context.createType('Proposal', bytes);
 
   return extrinsicIdentifierToTxTag({
     moduleId: section.toLowerCase() as ModuleIdEnum,
@@ -2552,10 +2549,9 @@ export function secondaryAccountToMeshSecondaryKey(
   secondaryKey: PermissionedAccount,
   context: Context
 ): MeshSecondaryKey {
-  const { polymeshApi } = context;
   const { account, permissions } = secondaryKey;
 
-  return polymeshApi.createType('SecondaryKey', {
+  return context.createType('SecondaryKey', {
     signer: signerValueToSignatory(signerToSignerValue(account), context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
@@ -2584,14 +2580,14 @@ export function meshVenueTypeToVenueType(type: MeshVenueType): VenueType {
  * @hidden
  */
 export function venueTypeToMeshVenueType(type: VenueType, context: Context): MeshVenueType {
-  return context.polymeshApi.createType('VenueType', type);
+  return context.createType('VenueType', type);
 }
 
 /**
  * @hidden
  */
 export function stringToVenueDetails(details: string, context: Context): VenueDetails {
-  return context.polymeshApi.createType('VenueDetails', details);
+  return context.createType('VenueDetails', details);
 }
 
 /**
@@ -2654,7 +2650,7 @@ export function endConditionToSettlementType(
     };
   }
 
-  return context.polymeshApi.createType('SettlementType', value);
+  return context.createType('SettlementType', value);
 }
 
 /**
@@ -2695,7 +2691,7 @@ export function portfolioMovementToMovePortfolioItem(
   context: Context
 ): MovePortfolioItem {
   const { asset, amount, memo } = portfolioItem;
-  return context.polymeshApi.createType('MovePortfolioItem', {
+  return context.createType('MovePortfolioItem', {
     ticker: stringToTicker(getTicker(asset), context),
     amount: bigNumberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),
@@ -2706,7 +2702,7 @@ export function portfolioMovementToMovePortfolioItem(
  * @hidden
  */
 export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
-  return context.polymeshApi.createType('ClaimType', claimType);
+  return context.createType('ClaimType', claimType);
 }
 
 /**
@@ -2728,7 +2724,7 @@ export function transferRestrictionToTransferManager(
     tmValue = percentageToPermill(value, context);
   }
 
-  return context.polymeshApi.createType('TransferManager', {
+  return context.createType('TransferManager', {
     [tmType]: tmValue,
   });
 }
@@ -2837,7 +2833,7 @@ export function granularCanTransferResultToTransferBreakdown(
  */
 export function offeringTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
   const { price, amount } = tier;
-  return context.polymeshApi.createType('PriceTier', {
+  return context.createType('PriceTier', {
     total: bigNumberToBalance(amount, context),
     price: bigNumberToBalance(price, context),
   });
@@ -3053,7 +3049,7 @@ export function calendarPeriodToMeshCalendarPeriod(
     });
   }
 
-  return context.polymeshApi.createType('CalendarPeriod', {
+  return context.createType('CalendarPeriod', {
     unit: stringUpperFirst(unit),
     amount: bigNumberToU64(amount, context),
   });
@@ -3098,7 +3094,7 @@ export function scheduleSpecToMeshScheduleSpec(
 ): MeshScheduleSpec {
   const { start, period, repetitions } = details;
 
-  return context.polymeshApi.createType('ScheduleSpec', {
+  return context.createType('ScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
       period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
@@ -3134,7 +3130,7 @@ export function storedScheduleToCheckpointScheduleParams(
  * @hidden
  */
 export function stringToSignature(signature: string, context: Context): Signature {
-  return context.polymeshApi.createType('Signature', signature);
+  return context.createType('Signature', signature);
 }
 
 /**
@@ -3193,21 +3189,21 @@ export function meshCorporateActionToCorporateActionParams(
  * @hidden
  */
 export function stringToRistrettoPoint(ristrettoPoint: string, context: Context): RistrettoPoint {
-  return context.polymeshApi.createType('RistrettoPoint', ristrettoPoint);
+  return context.createType('RistrettoPoint', ristrettoPoint);
 }
 
 /**
  * @hidden
  */
 export function corporateActionKindToCaKind(kind: CorporateActionKind, context: Context): CAKind {
-  return context.polymeshApi.createType('CAKind', kind);
+  return context.createType('CAKind', kind);
 }
 
 /**
  * @hidden
  */
 export function stringToScalar(scalar: string, context: Context): Scalar {
-  return context.polymeshApi.createType('Scalar', scalar);
+  return context.createType('Scalar', scalar);
 }
 
 /**
@@ -3229,7 +3225,7 @@ export function checkpointToRecordDateSpec(
     /* eslint-enable @typescript-eslint/naming-convention */
   }
 
-  return context.polymeshApi.createType('RecordDateSpec', value);
+  return context.createType('RecordDateSpec', value);
 }
 
 /**
@@ -3240,13 +3236,12 @@ export function scopeClaimProofToMeshScopeClaimProof(
   scopeId: string,
   context: Context
 ): MeshScopeClaimProof {
-  const { polymeshApi } = context;
   const {
     proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
   } = proof;
 
-  const zkProofData = polymeshApi.createType('ZkProofData', {
+  const zkProofData = context.createType('ZkProofData', {
     /* eslint-disable @typescript-eslint/naming-convention */
     challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
     subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
@@ -3254,7 +3249,7 @@ export function scopeClaimProofToMeshScopeClaimProof(
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  return polymeshApi.createType('ScopeClaimProof', {
+  return context.createType('ScopeClaimProof', {
     /* eslint-disable @typescript-eslint/naming-convention */
     proof_scope_id_wellformed: stringToSignature(proofScopeIdWellFormed, context),
     proof_scope_id_cdd_id_match: zkProofData,
@@ -3289,12 +3284,11 @@ export function targetsToTargetIdentities(
   },
   context: Context
 ): TargetIdentities {
-  const { polymeshApi } = context;
   const { treatment, identities } = targets;
 
-  return polymeshApi.createType('TargetIdentities', {
+  return context.createType('TargetIdentities', {
     identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
-    treatment: polymeshApi.createType('TargetTreatment', treatment),
+    treatment: context.createType('TargetTreatment', treatment),
   });
 }
 
@@ -3332,7 +3326,7 @@ export function corporateActionIdentifierToCaId(
   context: Context
 ): CAId {
   const { ticker, localId } = corporateActionIdentifier;
-  return context.polymeshApi.createType('CAId', {
+  return context.createType('CAId', {
     ticker: stringToTicker(ticker, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
     local_id: bigNumberToU32(localId, context),

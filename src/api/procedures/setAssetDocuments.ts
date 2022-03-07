@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
-import { DocumentId, TxTags } from 'polymesh-types/types';
+import { DocumentId } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AssetDocument, ErrorCode } from '~/types';
+import { AssetDocument, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
   documentToAssetDocument,
   stringToTicker,
 } from '~/utils/conversion';
-import { batchArguments, hasSameElements } from '~/utils/internal';
+import { checkTxType, hasSameElements } from '~/utils/internal';
 
 export interface SetAssetDocumentsParams {
   /**
@@ -57,25 +57,29 @@ export async function prepareSetAssetDocuments(
 
   const rawTicker = stringToTicker(ticker, context);
 
+  const transactions = [];
+
   if (currentDocIds.length) {
-    batchArguments(currentDocIds, TxTags.asset.RemoveDocuments).forEach(docIdBatch => {
-      this.addTransaction({
+    transactions.push(
+      checkTxType({
         transaction: tx.asset.removeDocuments,
-        feeMultiplier: new BigNumber(docIdBatch.length),
-        args: [docIdBatch, rawTicker],
-      });
-    });
+        feeMultiplier: new BigNumber(currentDocIds.length),
+        args: [currentDocIds, rawTicker],
+      })
+    );
   }
 
   if (rawDocuments.length) {
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
-      this.addTransaction({
+    transactions.push(
+      checkTxType({
         transaction: tx.asset.addDocuments,
-        feeMultiplier: new BigNumber(rawDocumentBatch.length),
-        args: [rawDocumentBatch, rawTicker],
-      });
-    });
+        feeMultiplier: new BigNumber(rawDocuments.length),
+        args: [rawDocuments, rawTicker],
+      })
+    );
   }
+
+  this.addBatchTransaction({ transactions });
 
   return new Asset({ ticker }, context);
 }

@@ -368,3 +368,9 @@ export enum InstructionStatus {
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
 export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
+
+export enum AllowanceOperation {
+  Set = 'Set',
+  Increase = 'Increase',
+  Decrease = 'Decrease',
+}

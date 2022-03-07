@@ -402,10 +402,7 @@ export class Claims {
     const identitiesWithClaims = issuers.map(identity => {
       return {
         identity,
-        claims: filter(
-          identityClaimsFromChain,
-          ({ issuer: { did: issuerDid } }) => issuerDid === identity.did
-        ),
+        claims: filter(identityClaimsFromChain, ({ issuer }) => issuer.isEqual(identity)),
       };
     });
 

@@ -172,6 +172,7 @@ interface AccountOptions extends EntityOptions {
 interface SubsidyOptions extends EntityOptions {
   beneficiary?: string;
   subsidizer?: string;
+  getAllowance?: EntityGetter<BigNumber>;
 }
 
 interface VenueOptions extends EntityOptions {
@@ -619,6 +620,7 @@ const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
     uuid!: string;
     beneficiary!: Account;
     subsidizer!: Account;
+    getAllowance!: sinon.SinonStub;
 
     /**
      * @hidden
@@ -634,11 +636,13 @@ const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
       this.uuid = 'subsidy';
       this.beneficiary = getAccountInstance({ address: opts.beneficiary });
       this.subsidizer = getAccountInstance({ address: opts.subsidizer });
+      this.getAllowance = createEntityGetterStub(opts.getAllowance);
     }
   },
   () => ({
     beneficiary: 'beneficiary',
     subsidizer: 'subsidizer',
+    getAllowance: new BigNumber(100),
     toJson: {
       beneficiary: 'beneficiary',
       subsidizer: 'subsidizer',

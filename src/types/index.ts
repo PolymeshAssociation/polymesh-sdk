@@ -367,7 +367,7 @@ export enum ConditionType {
 export interface ConditionBase {
   target: ConditionTarget;
   /**
-   * if undefined, the default trusted claim issuers for the Token are used
+   * if undefined, the default trusted claim issuers for the Asset are used
    */
   trustedClaimIssuers?: TrustedClaimIssuer[];
 }
@@ -376,7 +376,7 @@ export type InputConditionBase = Modify<
   ConditionBase,
   {
     /**
-     * if undefined, the default trusted claim issuers for the Token are used
+     * if undefined, the default trusted claim issuers for the Asset are used
      */
     trustedClaimIssuers?: InputTrustedClaimIssuer[];
   }

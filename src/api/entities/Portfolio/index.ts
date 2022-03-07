@@ -35,7 +35,7 @@ import {
   calculateNextKey,
   createProcedureMethod,
   getAsset,
-  getDid,
+  getIdentity,
   toHumanReadable,
 } from '~/utils/internal';
 
@@ -108,14 +108,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    * @param args.identity - defaults to the signing Identity
    */
   public async isOwnedBy(args?: { identity: string | Identity }): Promise<boolean> {
-    const {
-      owner: { did: ownerDid },
-      context,
-    } = this;
+    const { owner, context } = this;
 
-    const did = await getDid(args?.identity, context);
+    const identity = await getIdentity(args?.identity, context);
 
-    return ownerDid === did;
+    return owner.isEqual(identity);
   }
 
   /**
@@ -126,12 +123,12 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   public async isCustodiedBy(args?: { identity: string | Identity }): Promise<boolean> {
     const { context } = this;
 
-    const [portfolioCustodian, targetDid] = await Promise.all([
+    const [portfolioCustodian, targetIdentity] = await Promise.all([
       this.getCustodian(),
-      getDid(args?.identity, context),
+      getIdentity(args?.identity, context),
     ]);
 
-    return portfolioCustodian.did === targetDid;
+    return portfolioCustodian.isEqual(targetIdentity);
   }
 
   /**

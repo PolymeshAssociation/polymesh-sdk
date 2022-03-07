@@ -1,6 +1,6 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Signatory, TxTags } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,7 @@ import {
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, SignerValue } from '~/types';
+import { Authorization, AuthorizationType, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -311,7 +311,12 @@ describe('consumeAuthorizationRequests procedure', () => {
       });
 
       args.authRequests[0].target = entityMockUtils.getIdentityInstance({
-        did: 'notTheSigningIdentity',
+        isEqual: false,
+        did: 'someoneElse',
+      });
+      args.authRequests[0].issuer = entityMockUtils.getIdentityInstance({
+        isEqual: false,
+        did: 'someoneElse',
       });
       args.accept = false;
 
@@ -326,7 +331,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       });
 
-      args.authRequests[0].target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
+      args.authRequests[0].target = entityMockUtils.getAccountInstance({ isEqual: false });
 
       result = await boundFunc(args);
       expect(result).toEqual({

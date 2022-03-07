@@ -2,7 +2,7 @@ import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
-import { AssetType, CustomAssetTypeId, TxTags } from 'polymesh-types/types';
+import { AssetType, CustomAssetTypeId } from 'polymesh-types/types';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
@@ -12,6 +12,7 @@ import {
   RoleType,
   SecurityIdentifier,
   TickerReservationStatus,
+  TxTags,
 } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import {
@@ -26,7 +27,7 @@ import {
   stringToFundingRoundName,
   stringToTicker,
 } from '~/utils/conversion';
-import { batchArguments, filterEventRecords } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -214,13 +215,11 @@ export async function prepareCreateAsset(
 
   if (documents?.length) {
     const rawDocuments = documents.map(doc => assetDocumentToDocument(doc, context));
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
-      this.addTransaction({
-        transaction: tx.asset.addDocuments,
-        isCritical: false,
-        feeMultiplier: new BigNumber(rawDocumentBatch.length),
-        args: [rawDocumentBatch, rawTicker],
-      });
+    this.addTransaction({
+      transaction: tx.asset.addDocuments,
+      isCritical: false,
+      feeMultiplier: new BigNumber(rawDocuments.length),
+      args: [rawDocuments, rawTicker],
     });
   }
 

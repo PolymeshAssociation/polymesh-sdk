@@ -273,19 +273,15 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary Account of the Identity unfreezes all secondary Accounts
    */
   public async isFrozen(): Promise<boolean> {
-    const { address } = this;
-
     const identity = await this.getIdentity();
 
     if (identity === null) {
       return false;
     }
 
-    const {
-      account: { address: primaryAccountAddress },
-    } = await identity.getPrimaryAccount();
+    const { account } = await identity.getPrimaryAccount();
 
-    if (address === primaryAccountAddress) {
+    if (account.isEqual(this)) {
       return false;
     }
 
@@ -498,22 +494,24 @@ function getMissingTransactionPermissions(
           exceptionMatches
         );
       } else {
+        /*
+         * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
+         *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
+         *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
+         *   removing the entire Identity module from the result, which doesn't make sense
+         */
+        const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName) => {
+          if (!tx.includes('.')) {
+            return tx === exemptedTx;
+          }
+
+          return isModuleOrTagMatch(tx, exemptedTx);
+        };
+
         const excludedTransactions = differenceWith(
           transactionsValues,
           exemptedTransactions,
-          (tx, exemptedTx) => {
-            /*
-             * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
-             *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
-             *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
-             *   removing the entire Identity module from the result, which doesn't make sense
-             */
-            if (!tx.includes('.')) {
-              return tx === exemptedTx;
-            }
-
-            return isModuleOrTagMatch(tx, exemptedTx);
-          }
+          txComparator
         );
 
         missingPermissions = difference(

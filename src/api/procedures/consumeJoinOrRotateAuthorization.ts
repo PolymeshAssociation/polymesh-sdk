@@ -1,8 +1,6 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
-import { AuthorizationType, ErrorCode } from '~/types';
+import { AuthorizationType, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU64,

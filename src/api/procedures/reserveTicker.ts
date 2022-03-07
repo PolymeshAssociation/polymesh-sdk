@@ -1,5 +1,4 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -8,7 +7,7 @@ import {
   Procedure,
   TickerReservation,
 } from '~/internal';
-import { ErrorCode, RoleType, TickerReservationStatus } from '~/types';
+import { ErrorCode, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';

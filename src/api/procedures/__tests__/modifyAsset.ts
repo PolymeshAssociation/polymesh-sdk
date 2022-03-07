@@ -1,11 +1,11 @@
-import { AssetName, FundingRoundName, Ticker, TxTags } from 'polymesh-types/types';
+import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { SecurityIdentifier, SecurityIdentifierType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -22,6 +22,7 @@ describe('modifyAsset procedure', () => {
   let rawTicker: Ticker;
   let fundingRound: string;
   let identifiers: SecurityIdentifier[];
+  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -41,10 +42,8 @@ describe('modifyAsset procedure', () => {
     ];
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -134,7 +133,10 @@ describe('modifyAsset procedure', () => {
       makeDivisible: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, sinon.match({ transaction, args: [rawTicker] }));
+    sinon.assert.calledWith(
+      addBatchTransactionStub,
+      sinon.match({ transactions: [{ transaction, args: [rawTicker] }] })
+    );
     expect(result.ticker).toBe(ticker);
   });
 
@@ -152,7 +154,14 @@ describe('modifyAsset procedure', () => {
       name: newName,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAssetName] });
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction,
+          args: [rawTicker, rawAssetName],
+        },
+      ],
+    });
     expect(result.ticker).toBe(ticker);
   });
 
@@ -170,9 +179,13 @@ describe('modifyAsset procedure', () => {
       fundingRound: newFundingRound,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction,
-      args: [rawTicker, rawFundingRound],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction,
+          args: [rawTicker, rawFundingRound],
+        },
+      ],
     });
     expect(result.ticker).toBe(ticker);
   });
@@ -192,9 +205,13 @@ describe('modifyAsset procedure', () => {
       identifiers,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction,
-      args: [rawTicker, [rawIdentifier]],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction,
+          args: [rawTicker, [rawIdentifier]],
+        },
+      ],
     });
     expect(result.ticker).toBe(ticker);
   });

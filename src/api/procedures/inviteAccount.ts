@@ -1,5 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   Account,
@@ -16,6 +14,7 @@ import {
   PermissionsLike,
   PermissionType,
   SignerType,
+  TxTags,
 } from '~/types';
 import {
   authorizationToAuthorizationData,

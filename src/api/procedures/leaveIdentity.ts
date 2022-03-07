@@ -25,9 +25,8 @@ export async function prepareLeaveIdentity(this: Procedure<void, void>): Promise
   }
 
   const secondaryAccounts = await signingIdentity.getSecondaryAccounts();
-  const { address } = signingAccount;
-  const isSecondaryAccount = secondaryAccounts.find(
-    ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
+  const isSecondaryAccount = secondaryAccounts.find(({ account }) =>
+    account.isEqual(signingAccount)
   );
 
   if (!isSecondaryAccount) {

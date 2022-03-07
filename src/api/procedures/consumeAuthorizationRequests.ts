@@ -3,7 +3,7 @@ import P from 'bluebird';
 import { forEach, mapValues } from 'lodash';
 
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, Procedure } from '~/internal';
+import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
 import { AuthorizationType, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -13,7 +13,7 @@ import {
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, getDid } from '~/utils/internal';
+import { assembleBatchTransactions } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -111,26 +111,25 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  let did: string;
+  let identity: Identity;
+  const fetchIdentity = async () => identity || context.getCurrentIdentity();
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
-
-  const fetchDid = async (): Promise<string> => getDid(did, context);
 
   const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
     let condition;
 
     if (target instanceof Account) {
-      const { address } = context.getSigningAccount();
-      condition = address === target.address;
+      const account = context.getSigningAccount();
+      condition = target.isEqual(account);
     } else {
-      did = await fetchDid();
-      condition = did === target.did;
+      identity = await fetchIdentity();
+      condition = target.isEqual(identity);
     }
 
     if (!accept) {
-      did = await fetchDid();
-      condition = condition || did === issuer.did;
+      identity = await fetchIdentity();
+      condition = condition || issuer.isEqual(identity);
     }
 
     return condition;
