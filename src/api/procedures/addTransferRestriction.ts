@@ -18,7 +18,7 @@ import {
   transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
+import { checkTxType } from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
@@ -96,10 +96,12 @@ export async function prepareAddTransferRestriction(
     context
   );
 
-  this.addTransaction({
-    transaction: statistics.addTransferManager,
-    args: [rawTicker, rawTransferManager],
-  });
+  const transactions = [
+    checkTxType({
+      transaction: statistics.addTransferManager,
+      args: [rawTicker, rawTransferManager],
+    }),
+  ];
 
   const identityScopes = await P.map(exemptedIdentities, identityValue => {
     let identity: Identity;
@@ -128,14 +130,16 @@ export async function prepareAddTransferRestriction(
 
     const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
 
-    batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).forEach(scopeIdBatch => {
-      this.addTransaction({
+    transactions.push(
+      checkTxType({
         transaction: statistics.addExemptedEntities,
-        feeMultiplier: new BigNumber(scopeIdBatch.length),
-        args: [rawTicker, rawTransferManager, scopeIdBatch],
-      });
-    });
+        feeMultiplier: new BigNumber(scopeIds.length),
+        args: [rawTicker, rawTransferManager, scopeIds],
+      })
+    );
   }
+
+  this.addBatchTransaction({ transactions });
 
   return restrictionAmount.plus(1);
 }
