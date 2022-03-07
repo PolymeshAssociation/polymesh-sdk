@@ -13,7 +13,7 @@ import {
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { getDid, requestPaginated, toHumanReadable } from '~/utils/internal';
+import { getIdentity, requestPaginated, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -199,11 +199,10 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       id,
     } = this;
 
-    const did = await getDid(args?.identity, context);
-    const identity = new Identity({ did }, context);
+    const identity = await getIdentity(args?.identity, context);
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawIdentityId = stringToIdentityId(did, context);
+    const rawIdentityId = stringToIdentityId(identity.did, context);
 
     const balanceUpdates = await checkpoint.balanceUpdates(rawTicker, rawIdentityId);
     const firstUpdatedCheckpoint = balanceUpdates.find(checkpointId =>

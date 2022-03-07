@@ -2,6 +2,7 @@ import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, stringToVenueDetails, venueTypeToMeshVenueType } from '~/utils/conversion';
+import { checkTxType } from '~/utils/internal';
 
 export type ModifyVenueParams =
   | {
@@ -56,19 +57,27 @@ export async function prepareModifyVenue(
     });
   }
 
+  const transactions = [];
+
   if (description) {
-    this.addTransaction({
-      transaction: tx.settlement.updateVenueDetails,
-      args: [bigNumberToU64(venueId, context), stringToVenueDetails(description, context)],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: tx.settlement.updateVenueDetails,
+        args: [bigNumberToU64(venueId, context), stringToVenueDetails(description, context)],
+      })
+    );
   }
 
   if (type) {
-    this.addTransaction({
-      transaction: tx.settlement.updateVenueType,
-      args: [bigNumberToU64(venueId, context), venueTypeToMeshVenueType(type, context)],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: tx.settlement.updateVenueType,
+        args: [bigNumberToU64(venueId, context), venueTypeToMeshVenueType(type, context)],
+      })
+    );
   }
+
+  this.addBatchTransaction({ transactions });
 }
 
 /**

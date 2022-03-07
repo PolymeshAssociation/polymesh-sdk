@@ -138,16 +138,23 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
     it('should return the claim types for which the Claim Issuer is trusted', async () => {
       let trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'someDid', ticker }, context);
+      let spy = jest.spyOn(trustedClaimIssuer, 'isEqual').mockReturnValue(true);
 
       let result = await trustedClaimIssuer.trustedFor();
 
       expect(result).toBeNull();
+      spy.mockRestore();
 
       trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did: 'otherDid', ticker }, context);
 
+      spy = jest
+        .spyOn(trustedClaimIssuer, 'isEqual')
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       result = await trustedClaimIssuer.trustedFor();
 
       expect(result).toEqual([ClaimType.Exempted]);
+      spy.mockRestore();
     });
 
     it('should throw an error if the Identity is no longer a trusted Claim Issuer', async () => {

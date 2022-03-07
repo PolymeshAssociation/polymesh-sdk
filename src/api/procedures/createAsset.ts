@@ -27,7 +27,7 @@ import {
   stringToFundingRoundName,
   stringToTicker,
 } from '~/utils/conversion';
-import { batchArguments, filterEventRecords } from '~/utils/internal';
+import { filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -215,13 +215,11 @@ export async function prepareCreateAsset(
 
   if (documents?.length) {
     const rawDocuments = documents.map(doc => assetDocumentToDocument(doc, context));
-    batchArguments(rawDocuments, TxTags.asset.AddDocuments).forEach(rawDocumentBatch => {
-      this.addTransaction({
-        transaction: tx.asset.addDocuments,
-        isCritical: false,
-        feeMultiplier: new BigNumber(rawDocumentBatch.length),
-        args: [rawDocumentBatch, rawTicker],
-      });
+    this.addTransaction({
+      transaction: tx.asset.addDocuments,
+      isCritical: false,
+      feeMultiplier: new BigNumber(rawDocuments.length),
+      args: [rawDocuments, rawTicker],
     });
   }
 

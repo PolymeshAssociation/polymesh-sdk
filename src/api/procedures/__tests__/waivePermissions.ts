@@ -61,12 +61,14 @@ describe('waivePermissions procedure', () => {
           group: entityMockUtils.getKnownPermissionGroupInstance(),
           agent: entityMockUtils.getIdentityInstance({
             did: 'aDifferentDid',
+            isEqual: false,
           }),
         },
         {
           group: entityMockUtils.getKnownPermissionGroupInstance(),
           agent: entityMockUtils.getIdentityInstance({
             did: 'anotherDifferentDid',
+            isEqual: false,
           }),
         },
       ],

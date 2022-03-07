@@ -6,7 +6,6 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  groupByDid,
   ModifyClaimsParams,
   prepareModifyClaims,
 } from '~/api/procedures/modifyClaims';
@@ -33,9 +32,9 @@ describe('modifyClaims procedure', () => {
   let someDid: string;
   let otherDid: string;
   let cddId: string;
+  let defaultCddClaim: Claim;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
-  let defaultCddClaim: Claim;
   let iuClaim: Claim;
   let expiry: Date;
   let args: ModifyClaimsParams;
@@ -170,13 +169,6 @@ describe('modifyClaims procedure', () => {
 
     expect(error.message).toBe('Some of the supplied Identity IDs do not exist');
     expect(error.data).toMatchObject({ nonExistentDids: [otherDid] });
-  });
-
-  describe('groupByDid', () => {
-    it('should return the DID of the target identity', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(groupByDid([rawOtherDid] as any)).toBe(otherDid);
-    });
   });
 
   it('should add a batch of add claim transactions to the queue', async () => {

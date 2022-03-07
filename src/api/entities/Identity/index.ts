@@ -119,7 +119,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const reservation = new TickerReservation({ ticker }, context);
       const { owner } = await reservation.details();
 
-      return owner?.did === did;
+      return owner ? this.isEqual(owner) : false;
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {
@@ -136,7 +136,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
       const { owner } = await venue.details();
 
-      return owner.did === did;
+      return this.isEqual(owner);
     } else if (isPortfolioCustodianRole(role)) {
       const { portfolioId } = role;
 
