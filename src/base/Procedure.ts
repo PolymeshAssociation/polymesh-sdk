@@ -446,9 +446,10 @@ export class Procedure<
     this.transactions.push(
       new PolymeshTransactionBatch<(unknown[] | [])[]>(
         {
-          transactions: transactions.map(({ transaction, args: txArgs }) => ({
+          transactions: transactions.map(({ transaction, args: txArgs, feeMultiplier }) => ({
             transaction,
             args: txArgs,
+            feeMultiplier,
           })),
           postTransactionValues,
           isCritical,
