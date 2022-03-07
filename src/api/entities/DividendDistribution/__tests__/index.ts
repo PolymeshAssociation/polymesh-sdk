@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 
 import {
   Checkpoint,
@@ -308,15 +308,15 @@ describe('DividendDistribution class', () => {
 
   describe('method: getParticipants', () => {
     it('should return the distribution participants', async () => {
-      const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded' });
+      const excluded = entityMockUtils.getIdentityInstance({ did: 'excluded', isEqual: true });
 
       const balances = [
         {
-          identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+          identity: entityMockUtils.getIdentityInstance({ did: 'someDid', isEqual: false }),
           balance: new BigNumber(10000),
         },
         {
-          identity: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+          identity: entityMockUtils.getIdentityInstance({ did: 'otherDid', isEqual: false }),
           balance: new BigNumber(0),
         },
         {
@@ -416,7 +416,7 @@ describe('DividendDistribution class', () => {
       });
 
       let result = await dividendDistribution.getParticipant({
-        identity: did,
+        identity: entityMockUtils.getIdentityInstance({ isEqual: false, did }),
       });
 
       expect(result?.identity.did).toBe(did);
@@ -426,12 +426,16 @@ describe('DividendDistribution class', () => {
       dividendDistribution.paymentDate = new Date('10/14/1987');
 
       result = await dividendDistribution.getParticipant({
-        identity: did,
+        identity: entityMockUtils.getIdentityInstance({ isEqual: false, did }),
       });
 
       expect(result?.identity.did).toBe(did);
       expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
       expect(result?.paid).toBe(false);
+
+      (context.getCurrentIdentity as SinonStub).resolves(
+        entityMockUtils.getIdentityInstance({ did, isEqual: false })
+      );
 
       result = await dividendDistribution.getParticipant();
 

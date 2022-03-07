@@ -168,7 +168,7 @@ describe('inviteExternalAgent procedure', () => {
         asset: entityMockUtils.getAssetInstance({
           permissionsGetAgents: [
             {
-              agent: { did: 'otherDid' } as Identity,
+              agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
               group: entityMockUtils.getCustomPermissionGroupInstance(),
             },
           ],

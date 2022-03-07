@@ -133,6 +133,29 @@ export async function getDid(
 
 /**
  * @hidden
+ * Given an Identity, return the Identity, given a DID returns the corresponding Identity, if value is falsy, then return currentIdentity
+ */
+export async function getIdentity(
+  value: string | Identity | undefined,
+  context: Context
+): Promise<Identity> {
+  if (!value) {
+    return context.getCurrentIdentity();
+  } else {
+    return asIdentity(value, context);
+  }
+}
+
+/**
+ * @hidden
+ * Given a DID return the corresponding Identity, given an Identity return the Identity
+ */
+export function asIdentity(value: string | Identity, context: Context): Identity {
+  return typeof value === 'string' ? new Identity({ did: value }, context) : value;
+}
+
+/**
+ * @hidden
  */
 export function createClaim(
   claimType: string,
