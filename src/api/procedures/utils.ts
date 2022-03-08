@@ -329,59 +329,6 @@ export function assertRequirementsNotTooComplex(
 
 /**
  * @hidden
- */
-export async function assertAuthorizationRequestValid(
-  authRequest: AuthorizationRequest,
-  context: Context
-): Promise<void> {
-  const exists = await authRequest.exists();
-  if (!exists) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Authorization Request no longer exists',
-    });
-  }
-  if (authRequest.isExpired()) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Authorization Request has expired',
-      data: {
-        expiry: authRequest.expiry,
-      },
-    });
-  }
-  const { data } = authRequest;
-  switch (data.type) {
-    case AuthorizationType.RotatePrimaryKey:
-      return assertPrimaryKeyRotationAuthorizationValid(authRequest);
-    case AuthorizationType.AttestPrimaryKeyRotation:
-      return assertAttestPrimaryKeyAuthorizationValid(authRequest);
-    case AuthorizationType.TransferTicker:
-      return assertTransferTickerAuthorizationValid(data, context);
-    case AuthorizationType.TransferAssetOwnership:
-      return assertTransferAssetOwnershipAuthorizationValid(data, context);
-    case AuthorizationType.BecomeAgent:
-      // no additional checks
-      return;
-    case AuthorizationType.AddMultiSigSigner:
-      // no additional checks
-      return;
-    case AuthorizationType.PortfolioCustody:
-      // no additional checks
-      return;
-    case AuthorizationType.JoinIdentity:
-      return assertJoinOrRotateAuthorizationValid(authRequest);
-    case AuthorizationType.AddRelayerPayingKey:
-      return assertAddRelayerPayingKeyAuthorizationValid(data);
-    case AuthorizationType.RotatePrimaryKeyToSecondary:
-      return assertJoinOrRotateAuthorizationValid(authRequest);
-    default:
-      throw new UnreachableCaseError(data); // ensures switch statement covers all values
-  }
-}
-
-/**
- * @hidden
  *
  * Asserts valid primary key rotation authorization
  */
@@ -546,6 +493,71 @@ async function assertJoinOrRotateAuthorizationValid(
   }
 }
 
+/**
+ * @hidden
+ *
+ * Helper class to ensure a code path is unreachable. For example this can be used for ensuring switch statements are exhaustive
+ */
+export class UnreachableCaseError extends Error {
+  /** This should never be called */
+  constructor(val: never) {
+    super(`Unreachable case: ${JSON.stringify(val)}`);
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertAuthorizationRequestValid(
+  authRequest: AuthorizationRequest,
+  context: Context
+): Promise<void> {
+  const exists = await authRequest.exists();
+  if (!exists) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Authorization Request no longer exists',
+    });
+  }
+  if (authRequest.isExpired()) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Authorization Request has expired',
+      data: {
+        expiry: authRequest.expiry,
+      },
+    });
+  }
+  const { data } = authRequest;
+  switch (data.type) {
+    case AuthorizationType.RotatePrimaryKey:
+      return assertPrimaryKeyRotationAuthorizationValid(authRequest);
+    case AuthorizationType.AttestPrimaryKeyRotation:
+      return assertAttestPrimaryKeyAuthorizationValid(authRequest);
+    case AuthorizationType.TransferTicker:
+      return assertTransferTickerAuthorizationValid(data, context);
+    case AuthorizationType.TransferAssetOwnership:
+      return assertTransferAssetOwnershipAuthorizationValid(data, context);
+    case AuthorizationType.BecomeAgent:
+      // no additional checks
+      return;
+    case AuthorizationType.AddMultiSigSigner:
+      // no additional checks
+      return;
+    case AuthorizationType.PortfolioCustody:
+      // no additional checks
+      return;
+    case AuthorizationType.JoinIdentity:
+      return assertJoinOrRotateAuthorizationValid(authRequest);
+    case AuthorizationType.AddRelayerPayingKey:
+      return assertAddRelayerPayingKeyAuthorizationValid(data);
+    case AuthorizationType.RotatePrimaryKeyToSecondary:
+      return assertJoinOrRotateAuthorizationValid(authRequest);
+    default:
+      throw new UnreachableCaseError(data); // ensures switch statement covers all values
+  }
+}
+
 export const createAuthorizationResolver =
   (
     auth: MaybePostTransactionValue<Authorization>,
@@ -566,15 +578,3 @@ export const createAuthorizationResolver =
     const authId = u64ToBigNumber(data[3]);
     return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
   };
-
-/**
- * @hidden
- *
- * Helper class to ensure a code path is unreachable. For example this can be used for ensuring switch statements are exhaustive
- */
-export class UnreachableCaseError extends Error {
-  /** This should never be called */
-  constructor(val: never) {
-    super(`Unreachable case: ${JSON.stringify(val)}`);
-  }
-}
