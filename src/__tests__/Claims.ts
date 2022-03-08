@@ -151,7 +151,7 @@ describe('Claims Class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -275,7 +275,7 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -477,7 +477,7 @@ describe('Claims Class', () => {
   describe('method: getClaimScopes', () => {
     it('should return a list of scopes and tickers', async () => {
       const target = 'someTarget';
-      const ticker = 'FAKETICKER';
+      const ticker = 'FAKE_TICKER';
       const someDid = 'someDid';
       const fakeClaimData = [
         {
@@ -582,7 +582,7 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       sinon
         .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
@@ -808,7 +808,7 @@ describe('Claims Class', () => {
       ],
     };
 
-    dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+    dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
     sinon
       .stub(utilsConversionModule, 'toIdentityWithClaimsArray')

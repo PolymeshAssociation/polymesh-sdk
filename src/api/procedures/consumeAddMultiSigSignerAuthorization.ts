@@ -42,7 +42,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
   const rawAuthId = bigNumberToU64(authId, context);
 
   if (!accept) {
-    const { address } = context.getCurrentAccount();
+    const { address } = context.getSigningAccount();
 
     const paidByThirdParty = address === signerToString(target);
     const addTransactionArgs: { paidForBy?: Identity } = {};
@@ -95,13 +95,13 @@ export async function getAuthorization(
   let hasRoles;
   let transactions: TxTag[] = [];
 
-  const currentAccount = context.getCurrentAccount();
-  const identity = await currentAccount.getIdentity();
+  const signingAccount = context.getSigningAccount();
+  const identity = await signingAccount.getIdentity();
 
   let calledByTarget: boolean;
 
   if (target instanceof Account) {
-    calledByTarget = target.isEqual(currentAccount);
+    calledByTarget = target.isEqual(signingAccount);
     hasRoles = calledByTarget;
     transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
   } else {

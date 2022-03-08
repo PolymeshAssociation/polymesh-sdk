@@ -112,7 +112,7 @@ export async function getAuthorization(
   const { context } = this;
 
   let identity: Identity;
-  const fetchIdentity = async () => identity || context.getCurrentIdentity();
+  const fetchIdentity = async () => identity || context.getSigningIdentity();
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
 
@@ -120,7 +120,7 @@ export async function getAuthorization(
     let condition;
 
     if (target instanceof Account) {
-      const account = context.getCurrentAccount();
+      const account = context.getSigningAccount();
       condition = target.isEqual(account);
     } else {
       identity = await fetchIdentity();

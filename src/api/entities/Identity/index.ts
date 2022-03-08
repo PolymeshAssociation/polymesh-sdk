@@ -84,7 +84,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * identity ID as stored in the blockchain
+   * Identity ID as stored in the blockchain
    */
   public did: string;
 

@@ -79,7 +79,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
    * | Rotate Primary Key to Secondary | Permissions                     |
    * | Transfer Ticker                 | Ticker                          |
    * | Add MultiSig Signer             | Account                         |
-   * | Transfer Token Ownership        | Ticker                          |
+   * | Transfer Asset Ownership        | Ticker                          |
    * | Join Identity                   | Permissions                     |
    * | Portfolio Custody               | Portfolio                       |
    */
