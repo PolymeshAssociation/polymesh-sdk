@@ -221,7 +221,11 @@ import {
   padString,
   removePadding,
 } from '~/utils/internal';
-import { isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
+import {
+  isIdentityCondition,
+  isMultiClaimCondition,
+  isSingleClaimCondition,
+} from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -1118,31 +1122,33 @@ export function authorizationToAuthorizationData(
 ): AuthorizationData {
   let value;
 
-  if (auth.type === AuthorizationType.RotatePrimaryKey) {
+  const { type } = auth;
+
+  if (type === AuthorizationType.RotatePrimaryKey) {
     value = null;
-  } else if (auth.type === AuthorizationType.JoinIdentity) {
+  } else if (type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
-  } else if (auth.type === AuthorizationType.PortfolioCustody) {
+  } else if (type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
-  } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
+  } else if (type === AuthorizationType.TransferAssetOwnership) {
     value = stringToTicker(auth.value, context);
-  } else if (auth.type === AuthorizationType.RotatePrimaryKeyToSecondary) {
+  } else if (type === AuthorizationType.RotatePrimaryKeyToSecondary) {
     value = permissionsToMeshPermissions(auth.value, context);
-  } else if (auth.type === AuthorizationType.BecomeAgent) {
+  } else if (type === AuthorizationType.BecomeAgent) {
     const ticker = stringToTicker(auth.value.asset.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {
       const { id } = auth.value;
       value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
     } else {
-      const { type } = auth.value;
-      value = [ticker, permissionGroupIdentifierToAgentGroup(type, context)];
+      const { type: groupType } = auth.value;
+      value = [ticker, permissionGroupIdentifierToAgentGroup(groupType, context)];
     }
   } else {
     value = auth.value;
   }
 
   return context.createType('AuthorizationData', {
-    [auth.type]: value,
+    [type]: value,
   });
 }
 
@@ -2223,7 +2229,7 @@ export function requirementToComplianceRequirement(
     } else if (isMultiClaimCondition(condition)) {
       const { claims } = condition;
       conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
-    } else if (condition.type === ConditionType.IsIdentity) {
+    } else if (isIdentityCondition(condition)) {
       const { identity } = condition;
       conditionContent = stringToTargetIdentity(signerToString(identity), context);
     } else {
@@ -2660,7 +2666,7 @@ export function meshAffirmationStatusToAffirmationStatus(
 export function endConditionToSettlementType(
   endCondition:
     | { type: InstructionType.SettleOnAffirmation }
-    | { type: InstructionType; value: BigNumber },
+    | { type: InstructionType.SettleOnBlock; value: BigNumber },
   context: Context
 ): SettlementType {
   let value;

@@ -748,6 +748,8 @@ export function conditionsAreEqual(
   b: Condition | InputCondition
 ): boolean {
   let equalClaims = false;
+  const { type: aType, trustedClaimIssuers: aClaimIssuers = [] } = a;
+  const { type: bType, trustedClaimIssuers: bClaimIssuers = [] } = b;
 
   if (isSingleClaimCondition(a) && isSingleClaimCondition(b)) {
     equalClaims = isEqual(a.claim, b.claim);
@@ -756,14 +758,11 @@ export function conditionsAreEqual(
     const { claims: bClaims } = b;
 
     equalClaims = hasSameElements(aClaims, bClaims);
-  } else if (a.type === ConditionType.IsIdentity && b.type === ConditionType.IsIdentity) {
+  } else if (aType === ConditionType.IsIdentity && bType === ConditionType.IsIdentity) {
     equalClaims = signerToString(a.identity) === signerToString(b.identity);
-  } else if (a.type === ConditionType.IsExternalAgent && b.type === ConditionType.IsExternalAgent) {
+  } else if (aType === ConditionType.IsExternalAgent && bType === ConditionType.IsExternalAgent) {
     equalClaims = true;
   }
-
-  const { trustedClaimIssuers: aClaimIssuers = [] } = a;
-  const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
   const equalClaimIssuers = hasSameElements(
     aClaimIssuers,

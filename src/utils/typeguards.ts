@@ -32,7 +32,9 @@ import {
   CddProviderRole,
   Claim,
   ClaimType,
+  ConditionType,
   ExemptedClaim,
+  IdentityCondition,
   IdentityRole,
   InputCondition,
   InputConditionBase,
@@ -302,6 +304,15 @@ export function isMultiClaimCondition(
   condition: InputCondition
 ): condition is InputConditionBase & MultiClaimCondition {
   return 'claims' in condition;
+}
+
+/**
+ * Return whether Condition has multiple Claims
+ */
+export function isIdentityCondition(
+  condition: InputCondition
+): condition is InputConditionBase & IdentityCondition {
+  return 'identity' in condition;
 }
 
 /**

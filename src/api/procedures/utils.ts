@@ -49,7 +49,7 @@ export async function assertInstructionValid(
   context: Context
 ): Promise<void> {
   const details = await instruction.details();
-  const { status } = details;
+  const { status, type } = details;
 
   if (status !== InstructionStatus.Pending) {
     throw new PolymeshError({
@@ -58,7 +58,7 @@ export async function assertInstructionValid(
     });
   }
 
-  if (details.type === InstructionType.SettleOnBlock) {
+  if (type === InstructionType.SettleOnBlock) {
     const latestBlock = await context.getLatestBlock();
     const { endBlock } = details;
 
