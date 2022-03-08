@@ -29,7 +29,7 @@ export class Settlements extends Namespace<Asset> {
    *   they would become locked. From that point, further calls to this function would yield failed results because of the funds being locked, even though they haven't been
    *   transferred yet
    *
-   * @param args.from - sender Portfolio (optional, defaults to the current Identity's Default Portfolio)
+   * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)
    * @param args.to - receiver Portfolio
    * @param args.amount - amount of tokens to transfer
    *
@@ -54,16 +54,15 @@ export class Settlements extends Namespace<Asset> {
     let isDivisible;
 
     if (!from) {
-      [{ isDivisible }, from] = await Promise.all([parent.details(), context.getCurrentIdentity()]);
+      [{ isDivisible }, from] = await Promise.all([parent.details(), context.getSigningIdentity()]);
     } else {
       ({ isDivisible } = await parent.details());
     }
 
     /*
-     * The RPC requires a sender account ID (although it's not being used at the moment). We use the current account
-     * or a dummy Account (Alice's in testnet) if the SDK was instanced without one
+     * The RPC requires a sender Account ID (although it's not being used at the moment). We use a dummy Account (Alice's in testnet)
      */
-    const senderAddress = context.currentPair?.address || DUMMY_ACCOUNT_ID;
+    const senderAddress = DUMMY_ACCOUNT_ID;
 
     const fromPortfolioId = portfolioLikeToPortfolioId(from);
     const toPortfolioId = portfolioLikeToPortfolioId(to);
@@ -100,7 +99,7 @@ export class Settlements extends Namespace<Asset> {
    *   they would become locked. From that point, further calls to this function would yield failed results because of the funds being locked, even though they haven't been
    *   transferred yet
    *
-   * @param args.from - sender Portfolio (optional, defaults to the current Identity's Default Portfolio)
+   * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)
    * @param args.to - receiver Portfolio
    * @param args.amount - amount of tokens to transfer
    *
@@ -124,7 +123,7 @@ export class Settlements extends Namespace<Asset> {
     let isDivisible;
 
     if (!from) {
-      [{ isDivisible }, from] = await Promise.all([parent.details(), context.getCurrentIdentity()]);
+      [{ isDivisible }, from] = await Promise.all([parent.details(), context.getSigningIdentity()]);
     } else {
       ({ isDivisible } = await parent.details());
     }

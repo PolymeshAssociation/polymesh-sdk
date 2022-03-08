@@ -11,7 +11,7 @@ import {
 
 export interface ModifySignerPermissionsParams {
   /**
-   * list of secondary accounts
+   * list of secondary Accounts
    */
   secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
 }
@@ -32,7 +32,7 @@ export async function prepareModifySignerPermissions(
 
   const { secondaryAccounts } = args;
 
-  const identity = await context.getCurrentIdentity();
+  const identity = await context.getSigningIdentity();
 
   const existingSecondaryAccounts = await identity.getSecondaryAccounts();
 

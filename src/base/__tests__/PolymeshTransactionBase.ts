@@ -1,5 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
-import { ISubmittableResult } from '@polkadot/types/types';
+import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -31,7 +31,8 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   const txSpec = {
-    signer: 'signer',
+    signingAddress: 'signingAddress',
+    signer: 'signer' as PolkadotSigner,
     isCritical: false,
     fee: new BigNumber(100),
   };
@@ -521,7 +522,7 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: getPayingAccount', () => {
-    it('should return null if the current Account should pay', async () => {
+    it('should return null if the signing Account should pay', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
 
       const args = tuple('SOMETHING');
@@ -599,7 +600,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(result?.allowance).toBeNull();
     });
 
-    it('should return the account and allowance if the transaction is being subsidized', async () => {
+    it('should return the Account and allowance if the transaction is being subsidized', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const account = expect.objectContaining({ address: 'subsidizer' });
       const allowance = new BigNumber(100);

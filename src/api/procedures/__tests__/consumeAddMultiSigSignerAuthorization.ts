@@ -32,7 +32,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     targetAddress = 'someAddress';
     dsMockUtils.initMocks({
       contextOptions: {
-        currentPairAddress: targetAddress,
+        signingAddress: targetAddress,
       },
     });
     procedureMockUtils.initMocks();
@@ -294,7 +294,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
         ConsumeAddMultiSigSignerAuthorizationParams,
         void
       >(mockContext);
-      const { address } = mockContext.getCurrentAccount();
+      const { address } = mockContext.getSigningAccount();
       const constructorParams = {
         authId,
         expiry: null,
@@ -317,12 +317,12 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       });
 
       args.authRequest.target = entityMockUtils.getIdentityInstance({
-        did: 'notTheCurrentIdentity',
+        did: 'notTheSigningIdentity',
       });
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: false,
+          signingIdentityIsEqual: false,
         },
       });
 
@@ -336,11 +336,11 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       });
 
       args.accept = false;
-      args.authRequest.issuer = await mockContext.getCurrentIdentity();
+      args.authRequest.issuer = await mockContext.getSigningIdentity();
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: true,
+          signingIdentityIsEqual: true,
         },
       });
 
@@ -354,7 +354,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: false,
+          signingIdentityIsEqual: false,
         },
       });
 
@@ -367,7 +367,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
         },
       });
 
-      mockContext.getCurrentAccount.returns(
+      mockContext.getSigningAccount.returns(
         entityMockUtils.getAccountInstance({ address, getIdentity: null })
       );
 

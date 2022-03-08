@@ -419,7 +419,7 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const identity = await context.getCurrentIdentity();
+  const identity = await context.getSigningIdentity();
 
   const portfoliosToAffirm = await P.map(instructions, async ({ legs }) => {
     const portfolios = await P.map(legs, async ({ from, to }) => {

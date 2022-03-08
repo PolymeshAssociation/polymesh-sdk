@@ -250,7 +250,7 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const { did } = await context.getCurrentIdentity();
+  const { did } = await context.getSigningIdentity();
 
   let portfolio = originPortfolio || new DefaultPortfolio({ did }, context);
 

@@ -23,7 +23,7 @@ export async function prepareToggleFreezeSecondaryAccounts(
   } = this;
   const { freeze } = args;
 
-  const identity = await context.getCurrentIdentity();
+  const identity = await context.getSigningIdentity();
 
   const areSecondaryAccountsFrozen = await identity.areSecondaryAccountsFrozen();
 

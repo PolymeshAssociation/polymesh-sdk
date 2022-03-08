@@ -61,7 +61,7 @@ export async function prepareClaimClassicTicker(
   const [classicReservation, { expiry, owner: reservationOwner }, { did }] = await Promise.all([
     asset.classicTickers(rawTicker),
     asset.tickers(rawTicker),
-    context.getCurrentIdentity(),
+    context.getSigningIdentity(),
   ]);
 
   if (classicReservation.isNone) {

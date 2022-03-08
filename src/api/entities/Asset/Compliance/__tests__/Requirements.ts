@@ -532,7 +532,7 @@ describe('Requirements class', () => {
     let context: Mocked<Context>;
     let asset: Asset;
     let requirements: Requirements;
-    let currentDid: string;
+    let signingDid: string;
     let fromDid: string;
     let toDid: string;
     let rawFromDid: IdentityId;
@@ -560,14 +560,14 @@ describe('Requirements class', () => {
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance();
       requirements = new Requirements(asset, context);
-      ({ did: currentDid } = await context.getCurrentIdentity());
+      ({ did: signingDid } = await context.getSigningIdentity());
 
       rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
       rawToDid = dsMockUtils.createMockIdentityId(toDid);
-      rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
+      rawCurrentDid = dsMockUtils.createMockIdentityId(signingDid);
       rawTicker = dsMockUtils.createMockTicker(asset.ticker);
 
-      stringToIdentityIdStub.withArgs(currentDid, context).returns(rawCurrentDid);
+      stringToIdentityIdStub.withArgs(signingDid, context).returns(rawCurrentDid);
       stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
       stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
       stringToTickerStub.withArgs(asset.ticker, context).returns(rawTicker);

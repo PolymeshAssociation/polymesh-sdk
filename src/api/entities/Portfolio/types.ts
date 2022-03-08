@@ -20,7 +20,7 @@ export interface HistoricSettlement {
   blockHash: string;
   status: SettlementResult;
   /**
-   * Array of accounts that participated by affirming the settlement
+   * Array of Accounts that participated by affirming the settlement
    */
   accounts: Account[];
   legs: SettlementLeg[];

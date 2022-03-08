@@ -17,7 +17,7 @@ export enum TickerReservationStatus {
 
 export interface TickerReservationDetails {
   /**
-   * identity ID of the owner of the ticker, null if it hasn't been reserved
+   * Identity ID of the owner of the ticker, null if it hasn't been reserved
    */
   owner: Identity | null;
   /**
