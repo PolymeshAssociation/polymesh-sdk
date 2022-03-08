@@ -294,7 +294,7 @@ export function isInvestorUniquenessV2Claim(claim: Claim): claim is InvestorUniq
 export function isSingleClaimCondition(
   condition: InputCondition
 ): condition is InputConditionBase & SingleClaimCondition {
-  return 'claim' in condition;
+  return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
 }
 
 /**
@@ -303,7 +303,7 @@ export function isSingleClaimCondition(
 export function isMultiClaimCondition(
   condition: InputCondition
 ): condition is InputConditionBase & MultiClaimCondition {
-  return 'claims' in condition;
+  return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
 }
 
 /**
@@ -312,7 +312,7 @@ export function isMultiClaimCondition(
 export function isIdentityCondition(
   condition: InputCondition
 ): condition is InputConditionBase & IdentityCondition {
-  return 'identity' in condition;
+  return condition.type === ConditionType.IsIdentity;
 }
 
 /**
