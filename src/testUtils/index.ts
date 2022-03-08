@@ -19,7 +19,7 @@ export async function fakePromise(): Promise<void> {
  *
  * Awaits multiple promises and advances jest time after each one
  */
-export async function manyFakePromises(): Promise<void> {
+export async function fakePromises(): Promise<void> {
   await P.each(range(6), async () => {
     await fakePromise();
 
