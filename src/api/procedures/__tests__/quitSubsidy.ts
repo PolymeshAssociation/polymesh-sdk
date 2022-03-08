@@ -102,7 +102,7 @@ describe('quitSubsidy procedure', () => {
         },
       });
 
-      mockContext.getCurrentAccount.onSecondCall().returns(subsidizer);
+      mockContext.getSigningAccount.onSecondCall().returns(subsidizer);
 
       result = await boundFunc(args);
       expect(result).toEqual({
@@ -112,7 +112,7 @@ describe('quitSubsidy procedure', () => {
         },
       });
 
-      mockContext.getCurrentAccount.onThirdCall().returns(beneficiary);
+      mockContext.getSigningAccount.onThirdCall().returns(beneficiary);
 
       result = await boundFunc(args);
       expect(result).toEqual({

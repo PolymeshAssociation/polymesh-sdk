@@ -52,7 +52,7 @@ export async function prepareTransferTickerOwnership(
     context,
   } = this;
   const { ticker, target, expiry = null } = args;
-  const issuer = await context.getCurrentIdentity();
+  const issuer = await context.getSigningIdentity();
   const targetIdentity = await context.getIdentity(target);
 
   const tickerReservation = new TickerReservation({ ticker }, context);

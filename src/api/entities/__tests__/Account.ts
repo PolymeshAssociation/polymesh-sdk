@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Account, Context, Entity, TransactionQueue } from '~/internal';
+import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -28,14 +28,14 @@ describe('Account class', () => {
   let address: string;
   let key: string;
   let account: Account;
-  let assertFormatValidStub: sinon.SinonStub;
+  let assertAddressValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    assertFormatValidStub = sinon.stub(utilsInternalModule, 'assertFormatValid');
+    assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
 
     address = 'someAddress';
@@ -64,12 +64,12 @@ describe('Account class', () => {
   });
 
   it('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
-    assertFormatValidStub.throws();
+    assertAddressValidStub.throws();
 
-    expect(() => {
-      // eslint-disable-next-line no-new
-      new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context);
-    }).toThrow();
+    expect(
+      // cSpell: disable-next-line
+      () => new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context)
+    ).toThrow();
 
     sinon.reset();
   });
@@ -98,7 +98,7 @@ describe('Account class', () => {
       account = new Account({ address }, context);
     });
 
-    it("should return the account's balance", async () => {
+    it("should return the Account's balance", async () => {
       const result = await account.getBalance();
 
       expect(result).toEqual(fakeResult);
@@ -136,7 +136,7 @@ describe('Account class', () => {
       context.accountSubsidy.resolves(fakeResult);
     });
 
-    it('should return Subsidy with allowance', async () => {
+    it('should return the Subsidy with allowance', async () => {
       const result = await account.getSubsidy();
 
       expect(result).toEqual(fakeResult);
@@ -237,7 +237,7 @@ describe('Account class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
 
       dsMockUtils.createQueryStub('system', 'blockHash', {
@@ -684,25 +684,6 @@ describe('Account class', () => {
       const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual(true);
-    });
-  });
-
-  describe('method: leaveIdentity', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
-
-      const args = {
-        account,
-      };
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
-
-      const queue = await account.leaveIdentity();
-
-      expect(queue).toBe(expectedQueue);
     });
   });
 });

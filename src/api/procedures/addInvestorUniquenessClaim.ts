@@ -33,7 +33,7 @@ export async function prepareAddInvestorUniquenessClaim(
   } = this;
   const { scope, cddId, scopeId, proof, expiry } = args;
 
-  const { did } = await context.getCurrentIdentity();
+  const { did } = await context.getSigningIdentity();
 
   if (expiry && expiry < new Date()) {
     throw new PolymeshError({

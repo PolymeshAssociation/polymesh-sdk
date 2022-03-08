@@ -1,6 +1,6 @@
-import { AddressOrPair, SubmittableExtrinsic } from '@polkadot/api/types';
+import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { DispatchError } from '@polkadot/types/interfaces';
-import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
+import { ISubmittableResult, RegistryError, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 
@@ -83,7 +83,14 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    *
    * Account that will sign the transaction
    */
-  protected signer: AddressOrPair;
+  protected signingAddress: string;
+
+  /**
+   * @hidden
+   *
+   * object that performs the payload signing logic
+   */
+  protected signer: PolkadotSigner;
 
   /**
    * @hidden
@@ -100,13 +107,15 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    * @hidden
    */
   constructor(transactionSpec: BaseTransactionSpec<Values>, context: Context) {
-    const { postTransactionValues, signer, isCritical, fee, paidForBy } = transactionSpec;
+    const { postTransactionValues, signingAddress, signer, isCritical, fee, paidForBy } =
+      transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
     }
 
     this.emitter = new EventEmitter();
+    this.signingAddress = signingAddress;
     this.signer = signer;
     this.isCritical = isCritical;
     this.protocolFee = fee;
@@ -158,6 +167,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    *   throwing any pertinent errors
    */
   private async internalRun(): Promise<ISubmittableResult> {
+    const { signingAddress, signer } = this;
     this.updateStatus(TransactionStatus.Unapproved);
 
     return new Promise((resolve, reject) => {
@@ -166,56 +176,64 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
 
       // nonce: -1 takes pending transactions into consideration.
       // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
-      const gettingUnsub = txWithArgs.signAndSend(this.signer, { nonce: -1 }, receipt => {
-        const { status } = receipt;
-        let unsubscribe = false;
+      const gettingUnsub = txWithArgs.signAndSend(
+        signingAddress,
+        { nonce: -1, signer },
+        receipt => {
+          const { status } = receipt;
+          let unsubscribe = false;
 
-        // isCompleted === isFinalized || isInBlock || isError
-        if (receipt.isCompleted) {
-          if (receipt.isInBlock) {
-            const blockHash = status.asInBlock;
+          // isCompleted === isFinalized || isInBlock || isError
+          if (receipt.isCompleted) {
+            if (receipt.isInBlock) {
+              const blockHash = status.asInBlock;
 
-            /*
-             * this must be done to ensure that the block hash and number are set before the success event
-             *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
-             *   one resolves
-             */
-            settingBlockData = this.context.polymeshApi.rpc.chain
-              .getBlock(blockHash)
-              .then(({ block }) => {
-                this.blockHash = hashToString(blockHash);
-                this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
-              });
+              /*
+               * this must be done to ensure that the block hash and number are set before the success event
+               *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
+               *   one resolves
+               */
+              settingBlockData = this.context.polymeshApi.rpc.chain
+                .getBlock(blockHash)
+                .then(({ block }) => {
+                  this.blockHash = hashToString(blockHash);
+                  this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
+                });
 
-            const failed = receipt.findRecord('system', 'ExtrinsicFailed');
+              const failed = receipt.findRecord('system', 'ExtrinsicFailed');
 
-            if (failed) {
+              if (failed) {
+                unsubscribe = true;
+                settingBlockData.then(() => {
+                  this.handleExtrinsicFailure(
+                    resolve,
+                    reject,
+                    failed.event.data[0] as DispatchError
+                  );
+                });
+              }
+            } else {
               unsubscribe = true;
-              settingBlockData.then(() => {
-                this.handleExtrinsicFailure(resolve, reject, failed.event.data[0] as DispatchError);
+            }
+
+            if (unsubscribe) {
+              gettingUnsub.then(unsub => {
+                unsub();
               });
             }
-          } else {
-            unsubscribe = true;
-          }
 
-          if (unsubscribe) {
-            gettingUnsub.then(unsub => {
-              unsub();
-            });
-          }
+            if (receipt.isFinalized) {
+              settingBlockData.then(() => {
+                this.handleExtrinsicSuccess(resolve, reject, receipt);
+              });
+            }
 
-          if (receipt.isFinalized) {
-            settingBlockData.then(() => {
-              this.handleExtrinsicSuccess(resolve, reject, receipt);
-            });
-          }
-
-          if (receipt.isError) {
-            reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+            if (receipt.isError) {
+              reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+            }
           }
         }
-      });
+      );
 
       gettingUnsub
         .then(() => {
@@ -306,7 +324,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    * @note this value might change if the transaction is run at a later time. This can be due to a governance vote
    */
   public async getFees(): Promise<Fees | null> {
-    const { signer } = this;
+    const { signingAddress } = this;
     let { protocolFee: protocol } = this;
 
     let composedTx;
@@ -317,7 +335,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       return null;
     }
 
-    const paymentInfoPromise = composedTx.paymentInfo(signer);
+    const paymentInfoPromise = composedTx.paymentInfo(signingAddress);
 
     if (!protocol) {
       protocol = await this.getProtocolFees();

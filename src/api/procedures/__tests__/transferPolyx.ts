@@ -12,6 +12,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -29,6 +30,7 @@ describe('transferPolyx procedure', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    sinon.stub(utilsInternalModule, 'assertAddressValid');
   });
 
   beforeEach(() => {
@@ -44,6 +46,7 @@ describe('transferPolyx procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+    sinon.restore();
   });
 
   it('should throw an error if the user has insufficient balance to transfer', () => {
@@ -76,7 +79,7 @@ describe('transferPolyx procedure', () => {
   it("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     mockContext = dsMockUtils.getContextInstance({
       validCdd: false,
@@ -92,7 +95,7 @@ describe('transferPolyx procedure', () => {
   it("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     entityMockUtils.configureMocks({
       accountOptions: {
@@ -119,7 +122,7 @@ describe('transferPolyx procedure', () => {
 
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
     sinon.stub(utilsConversionModule, 'bigNumberToBalance').returns(rawAmount);

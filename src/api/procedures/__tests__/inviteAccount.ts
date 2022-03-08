@@ -249,7 +249,7 @@ describe('inviteAccount procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
-        withSeed: true,
+        withSigningManager: true,
         sentAuthorizations: sentAuthorizations,
         secondaryAccounts: [
           {

@@ -209,6 +209,7 @@ import {
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
 import {
+  assertAddressValid,
   assertIsInteger,
   assertIsPositive,
   conditionsAreEqual,
@@ -337,6 +338,8 @@ export function momentToDate(moment: Moment): Date {
  * @hidden
  */
 export function stringToAccountId(accountId: string, context: Context): AccountId {
+  assertAddressValid(accountId, context.ss58Format);
+
   return context.createType('AccountId', accountId);
 }
 

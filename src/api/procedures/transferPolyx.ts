@@ -73,7 +73,7 @@ export async function prepareTransferPolyx(
     });
   }
 
-  const senderIdentity = await context.getCurrentIdentity();
+  const senderIdentity = await context.getSigningIdentity();
 
   const [senderCdd, receiverCdd] = await Promise.all([
     senderIdentity.hasValidCdd(),

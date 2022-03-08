@@ -80,7 +80,7 @@ export async function prepareInviteExternalAgent(
 
   const { ticker, target, permissions, expiry = null } = args;
 
-  const issuer = await context.getCurrentIdentity();
+  const issuer = await context.getSigningIdentity();
   const targetIdentity = await context.getIdentity(target);
 
   const currentAgents = await asset.permissions.getAgents();

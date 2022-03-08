@@ -106,7 +106,7 @@ describe('claimDividends procedure', () => {
     });
   });
 
-  it('should throw an error if the current Identity is not included in the Distribution', async () => {
+  it('should throw an error if the signing Identity is not included in the Distribution', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: null,
@@ -122,10 +122,10 @@ describe('claimDividends procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('The current Identity is not included in this Distribution');
+    expect(err.message).toBe('The signing Identity is not included in this Distribution');
   });
 
-  it('should throw an error if the current Identity has already claimed', async () => {
+  it('should throw an error if the signing Identity has already claimed', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: {
@@ -145,7 +145,7 @@ describe('claimDividends procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('The current Identity has already claimed dividends');
+    expect(err.message).toBe('The signing Identity has already claimed dividends');
   });
 
   it('should add a claim dividends transaction to the queue', async () => {

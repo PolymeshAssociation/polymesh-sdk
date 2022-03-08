@@ -71,7 +71,7 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getPortfolios', () => {
-    it('should retrieve all the portfolios for the identity', async () => {
+    it('should retrieve all the portfolios for the Identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         entries: [
           tuple(
@@ -139,7 +139,7 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getPortfolio', () => {
-    it('should return the default portfolio for the current identity', async () => {
+    it('should return the default portfolio for the signing Identity', async () => {
       const result = await portfolios.getPortfolio();
       expect(result instanceof DefaultPortfolio).toBe(true);
       expect(result.owner.did).toEqual(did);
