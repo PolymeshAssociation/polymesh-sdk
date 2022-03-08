@@ -34,7 +34,7 @@ export async function prepareRedeemTokens(
 
   const [{ isDivisible }, { did }] = await Promise.all([
     asset.details(),
-    context.getCurrentIdentity(),
+    context.getSigningIdentity(),
   ]);
 
   const defaultPortfolio = new DefaultPortfolio({ did }, context);
@@ -68,7 +68,7 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  const { did } = await context.getCurrentIdentity();
+  const { did } = await context.getSigningIdentity();
 
   return {
     permissions: {

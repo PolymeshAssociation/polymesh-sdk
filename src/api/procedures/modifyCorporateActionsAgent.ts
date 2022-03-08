@@ -10,7 +10,7 @@ import {
 
 export interface ModifyCorporateActionsAgentParams {
   /**
-   * identity to be set as Corporate Actions Agent
+   * Identity to be set as Corporate Actions Agent
    */
   target: string | Identity;
   /**

@@ -1,37 +1,32 @@
-import { Account, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { TxTags } from 'polymesh-types/types';
 
-export interface LeaveIdentityParams {
-  account: Account;
-}
+import { PolymeshError, Procedure } from '~/internal';
+import { ErrorCode } from '~/types';
 
 /**
  * @hidden
  */
-export async function prepareLeaveIdentity(
-  this: Procedure<LeaveIdentityParams, void>,
-  args: LeaveIdentityParams
-): Promise<void> {
+export async function prepareLeaveIdentity(this: Procedure<void, void>): Promise<void> {
   const {
     context: {
       polymeshApi: { tx },
     },
+    context,
   } = this;
-  const { account } = args;
 
-  const currentIdentity = await account.getIdentity();
+  const signingAccount = context.getSigningAccount();
+  const signingIdentity = await signingAccount.getIdentity();
 
-  if (!currentIdentity) {
+  if (!signingIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'There is no Identity associated to this Account',
+      message: 'There is no Identity associated to the signing Account',
     });
   }
 
-  const secondaryAccounts = await currentIdentity.getSecondaryAccounts();
-  const isSecondaryAccount = secondaryAccounts.find(({ account: secondaryAccount }) =>
-    secondaryAccount.isEqual(account)
+  const secondaryAccounts = await signingIdentity.getSecondaryAccounts();
+  const isSecondaryAccount = secondaryAccounts.find(({ account }) =>
+    account.isEqual(signingAccount)
   );
 
   if (!isSecondaryAccount) {
@@ -47,28 +42,11 @@ export async function prepareLeaveIdentity(
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<LeaveIdentityParams, void>,
-  { account }: LeaveIdentityParams
-): ProcedureAuthorization {
-  const currentAccount = this.context.getCurrentAccount();
-
-  const hasRoles = account.isEqual(currentAccount);
-
-  const permissions = {
-    assets: [],
-    portfolios: [],
-    transactions: [TxTags.identity.LeaveIdentityAsKey],
-  };
-
-  return {
-    roles: hasRoles || 'Only the current Account can leave its Identity',
-    permissions,
-  };
-}
-
-/**
- * @hidden
- */
-export const leaveIdentity = (): Procedure<LeaveIdentityParams, void> =>
-  new Procedure(prepareLeaveIdentity, getAuthorization);
+export const leaveIdentity = (): Procedure<void, void> =>
+  new Procedure(prepareLeaveIdentity, {
+    permissions: {
+      assets: [],
+      portfolios: [],
+      transactions: [TxTags.identity.LeaveIdentityAsKey],
+    },
+  });

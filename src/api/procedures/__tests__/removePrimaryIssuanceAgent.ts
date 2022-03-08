@@ -78,7 +78,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
-  it('should throw an error if Primary Issuance Agent list has more than one identity', () => {
+  it('should throw an error if primary issuance agent list has more than one Identity', () => {
     const args = {
       ticker,
     };

@@ -264,11 +264,11 @@ describe('consumeAuthorizationRequests procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return whether the current Identity or Account is the target of all non-expired requests if trying to accept', async () => {
+    it('should return whether the signing Identity or Account is the target of all non-expired requests if trying to accept', async () => {
       const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
         mockContext
       );
-      const { did } = await mockContext.getCurrentIdentity();
+      const { did } = await mockContext.getSigningIdentity();
       const constructorParams = [
         {
           authId: new BigNumber(1),
@@ -282,7 +282,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         {
           authId: new BigNumber(2),
           expiry: new Date('10/14/1987'), // expired
-          target: entityMockUtils.getIdentityInstance({ did: 'notTheCurrentIdentity' }),
+          target: entityMockUtils.getIdentityInstance({ did: 'notTheSigningIdentity' }),
           issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid2' }),
           data: {
             type: AuthorizationType.PortfolioCustody,

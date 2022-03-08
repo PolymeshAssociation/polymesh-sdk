@@ -97,18 +97,18 @@ describe('Portfolio class', () => {
     let did: string;
 
     beforeAll(() => {
-      did = 'currentIdentity';
+      did = 'signingIdentity';
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
-    it('should return whether the current Identity is the Portfolio owner', async () => {
+    it('should return whether the signing Identity is the Portfolio owner', async () => {
       let portfolio = new NonAbstract({ did }, context);
 
       let result = await portfolio.isOwnedBy();
 
       expect(result).toBe(true);
 
-      portfolio = new NonAbstract({ did: 'notTheCurrentIdentity' }, context);
+      portfolio = new NonAbstract({ did: 'notTheSigningIdentity' }, context);
       const spy = jest.spyOn(portfolio.owner, 'isEqual').mockReturnValue(false);
 
       result = await portfolio.isOwnedBy({ identity: did });
@@ -134,7 +134,7 @@ describe('Portfolio class', () => {
     it('should return the custodian of the portfolio', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
       const custodianDid = 'custodianDid';
-      const currentIdentityDid = 'currentIdentity';
+      const signingIdentityDid = 'signingIdentity';
       const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
       const portfolioCustodianStub = dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
 
@@ -151,9 +151,9 @@ describe('Portfolio class', () => {
       expect(result).toEqual(false);
 
       portfolioCustodianStub.returns(
-        dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(currentIdentityDid))
+        dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(signingIdentityDid))
       );
-      identityIdToStringStub.returns(currentIdentityDid);
+      identityIdToStringStub.returns(signingIdentityDid);
       spy.mockResolvedValue(entityMockUtils.getIdentityInstance({ isEqual: true }));
 
       result = await portfolio.isCustodiedBy({
@@ -472,7 +472,7 @@ describe('Portfolio class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
       sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
 

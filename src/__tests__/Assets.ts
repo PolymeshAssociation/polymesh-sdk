@@ -193,7 +193,7 @@ describe('Assets Class', () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
         entries: [
@@ -214,7 +214,7 @@ describe('Assets Class', () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
         entries: [
@@ -236,7 +236,7 @@ describe('Assets Class', () => {
       const unreadableTicker = String.fromCharCode(65533);
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
         entries: [
@@ -342,7 +342,7 @@ describe('Assets Class', () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
         entries: [
@@ -359,11 +359,11 @@ describe('Assets Class', () => {
       expect(asset[0].ticker).toBe(fakeTicker);
     });
 
-    it('should return a list of Assets owned by the current Identity if no did is supplied', async () => {
+    it('should return a list of Assets owned by the signing Identity if no did is supplied', async () => {
       const fakeTicker = 'TEST';
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
         entries: [
@@ -385,7 +385,7 @@ describe('Assets Class', () => {
       const unreadableTicker = String.fromCharCode(65533);
       const did = 'someDid';
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
         entries: [

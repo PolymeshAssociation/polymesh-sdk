@@ -1,5 +1,4 @@
 import {
-  AddressOrPair,
   AugmentedEvents,
   AugmentedSubmittable,
   QueryableConsts,
@@ -7,7 +6,7 @@ import {
   SubmittableExtrinsic,
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
-import { ISubmittableResult } from '@polkadot/types/types';
+import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
@@ -166,7 +165,11 @@ export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
   /**
    * Account that will sign the transaction
    */
-  signer: AddressOrPair;
+  signingAddress: string;
+  /**
+   * object that handles the payload signing logic
+   */
+  signer: PolkadotSigner;
   /**
    * whether this tx failing makes the entire tx queue fail or not
    */
@@ -176,8 +179,8 @@ export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
    */
   fee?: BigNumber;
   /**
-   * third party Identity that will pay for the transaction (for example when joining an identity/multisig as a secondary key).
-   *   This is separate from a subsidy, and takes precedence over it. If the current Account is being subsidized and
+   * third party Identity that will pay for the transaction (for example when joining an Identity/multisig as a secondary key).
+   *   This is separate from a subsidy, and takes precedence over it. If the signing Account is being subsidized and
    *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` Identity
    */
   paidForBy?: Identity;

@@ -111,7 +111,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the current identity is not the custodian of any of the involved portfolios', () => {
+  it('should throw an error if the signing Identity is not the custodian of any of the involved portfolios', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -135,10 +135,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         id,
         operation: InstructionAffirmationOperation.Affirm,
       })
-    ).rejects.toThrow('Current Identity is not involved in this Instruction');
+    ).rejects.toThrow('The signing Identity is not involved in this Instruction');
   });
 
-  it("should throw an error if the operation is Affirm and all of the current Identity's Portfolios are affirmed", () => {
+  it("should throw an error if the operation is Affirm and all of the signing Identity's Portfolios are affirmed", () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],

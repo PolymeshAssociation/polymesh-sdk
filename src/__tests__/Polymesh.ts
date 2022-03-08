@@ -1,5 +1,4 @@
-import { Keyring } from '@polkadot/api';
-import { Signer as PolkadotSigner } from '@polkadot/api/types';
+import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
 import semver from 'semver';
@@ -82,108 +81,24 @@ describe('Polymesh Class', () => {
       expect(polymesh instanceof Polymesh).toBe(true);
     });
 
-    it('should instantiate Context with a seed and return a Polymesh instance', async () => {
-      const accountSeed = 'Alice'.padEnd(66, ' ');
+    it('should instantiate Context with a Signing Manager and return a Polymesh instance', async () => {
+      const signingManager = 'signingManager' as unknown as SigningManager;
       const createStub = dsMockUtils.getContextCreateStub();
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        accountSeed,
+        signingManager,
       });
 
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        accountSeed,
-        accountUri: undefined,
-        accountMnemonic: undefined,
-        keyring: undefined,
-      });
-    });
-
-    it('should instantiate Context with a keyring and return a Polymesh instance', async () => {
-      const keyring = {} as Keyring;
-      const createStub = dsMockUtils.getContextCreateStub();
-
-      await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        keyring,
-      });
-
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
-        keyring,
-        accountSeed: undefined,
-        accountUri: undefined,
-        accountMnemonic: undefined,
-      });
-    });
-
-    it('should instantiate Context with a ui keyring and return a Polymesh instance', async () => {
-      const keyring = {} as Keyring;
-      const createStub = dsMockUtils.getContextCreateStub();
-
-      await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        keyring: { keyring },
-      });
-
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
-        keyring: { keyring },
-        accountSeed: undefined,
-        accountUri: undefined,
-        accountMnemonic: undefined,
-      });
-    });
-
-    it('should instantiate Context with a uri and return a Polymesh instance', async () => {
-      const accountUri = '//uri';
-      const createStub = dsMockUtils.getContextCreateStub();
-
-      await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri,
-      });
-
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
-        accountUri,
-        accountSeed: undefined,
-        accountMnemonic: undefined,
-        keyring: undefined,
-      });
-    });
-
-    it('should instantiate Context with a mnemonic and return a Polymesh instance', async () => {
-      const accountMnemonic = 'lorem ipsum dolor sit';
-      const createStub = dsMockUtils.getContextCreateStub();
-
-      await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountMnemonic,
-      });
-
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
-        accountMnemonic,
-        accountSeed: undefined,
-        accountUri: undefined,
-        keyring: undefined,
+        signingManager,
       });
     });
 
     it('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
-      const accountUri = '//uri';
       const createStub = dsMockUtils.getContextCreateStub();
       const middleware = {
         link: 'someLink',
@@ -194,7 +109,6 @@ describe('Polymesh Class', () => {
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        accountUri,
         middleware,
       });
 
@@ -202,10 +116,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        accountUri,
-        accountSeed: undefined,
-        accountMnemonic: undefined,
-        keyring: undefined,
+        signingManager: undefined,
       });
     });
 
@@ -226,7 +137,6 @@ describe('Polymesh Class', () => {
     });
 
     it('should throw an error if the middleware credentials are incorrect', async () => {
-      const accountUri = '//uri';
       const middleware = {
         link: 'wrong',
         key: 'alsoWrong',
@@ -238,7 +148,6 @@ describe('Polymesh Class', () => {
       try {
         await Polymesh.connect({
           nodeUrl: 'wss://some.url',
-          accountUri,
           middleware,
         });
       } catch (e) {
@@ -253,7 +162,6 @@ describe('Polymesh Class', () => {
       try {
         await Polymesh.connect({
           nodeUrl: 'wss://some.url',
-          accountUri,
           middleware,
         });
       } catch (e) {
@@ -269,7 +177,6 @@ describe('Polymesh Class', () => {
       try {
         await Polymesh.connect({
           nodeUrl: 'wss://some.url',
-          accountUri,
           middleware,
         });
       } catch (e) {
@@ -277,29 +184,6 @@ describe('Polymesh Class', () => {
       }
 
       expect(err).toBeUndefined();
-    });
-
-    it('should set an optional signer for the polkadot API', async () => {
-      const accountSeed = 'Alice'.padEnd(66, ' ');
-      const createStub = dsMockUtils.getContextCreateStub();
-      const signer = 'signer' as PolkadotSigner;
-
-      await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountSeed,
-        signer,
-      });
-
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
-        accountSeed,
-        accountUri: undefined,
-        accountMnemonic: undefined,
-        keyring: undefined,
-      });
-      sinon.assert.calledWith(dsMockUtils.getApiInstance().setSigner, signer);
     });
 
     it('should throw if Context fails in the connection process', async () => {
@@ -340,20 +224,20 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: getCurrentIdentity', () => {
-    it('should return the current Identity', async () => {
+  describe('method: getSigningIdentity', () => {
+    it('should return the signing Identity', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
+        signingManager: 'signingManager' as unknown as SigningManager,
       });
 
       const context = dsMockUtils.getContextInstance();
-      const [result, currentIdentity] = await Promise.all([
-        polymesh.getCurrentIdentity(),
-        context.getCurrentIdentity(),
+      const [result, signingIdentity] = await Promise.all([
+        polymesh.getSigningIdentity(),
+        context.getSigningIdentity(),
       ]);
 
-      expect(result).toEqual(currentIdentity);
+      expect(result).toEqual(signingIdentity);
     });
   });
 
@@ -363,7 +247,6 @@ describe('Polymesh Class', () => {
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
       });
 
       const callback = sinon.stub();
@@ -387,7 +270,6 @@ describe('Polymesh Class', () => {
 
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
       });
 
       const callback = sinon.stub();
@@ -409,7 +291,6 @@ describe('Polymesh Class', () => {
     it('should call the underlying disconnect function', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
         middleware: {
           link: 'someLink',
           key: 'someKey',
@@ -421,58 +302,11 @@ describe('Polymesh Class', () => {
     });
   });
 
-  describe('method: addSigner', () => {
-    it('should call the underlying addPair function', async () => {
-      const pair = {
-        address: '5EYCAe5ijAx5xEfZdpCna3grUpY1M9M5vLUH5vpmwV1EnaYR',
-        publicKey: 'someKey',
-        meta: {},
-      };
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          addPair: pair,
-        },
-      });
+  describe('method: setSigningAccount', () => {
+    it('should call the underlying setSigningAccount function', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
-        middleware: {
-          link: 'someLink',
-          key: 'someKey',
-        },
-      });
-
-      let params:
-        | {
-            accountSeed: string;
-          }
-        | {
-            accountUri: string;
-          }
-        | {
-            accountMnemonic: string;
-          } = { accountSeed: '0x1' };
-
-      let account = polymesh.addSigner(params);
-      expect(account.address).toBe(pair.address);
-
-      params = { accountMnemonic: 'something' };
-
-      account = polymesh.addSigner(params);
-      expect(account.address).toBe(pair.address);
-
-      params = { accountUri: '//Something' };
-
-      account = polymesh.addSigner(params);
-      expect(account.address).toBe(pair.address);
-    });
-  });
-
-  describe('method: setSigner', () => {
-    it('should call the underlying setPair function', async () => {
-      const polymesh = await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        accountUri: '//uri',
+        signingManager: 'signingManager' as unknown as SigningManager,
         middleware: {
           link: 'someLink',
           key: 'someKey',
@@ -481,8 +315,26 @@ describe('Polymesh Class', () => {
 
       const address = 'address';
 
-      polymesh.setSigner(address);
-      sinon.assert.calledWith(dsMockUtils.getContextInstance().setPair, address);
+      polymesh.setSigningAccount(address);
+      sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningAddress, address);
+    });
+  });
+
+  describe('method: setSigningManager', () => {
+    it('should call the underlying setSigningManager function', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        signingManager: 'signingManager' as unknown as SigningManager,
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+
+      const signingManager = 'manager' as unknown as SigningManager;
+
+      polymesh.setSigningManager(signingManager);
+      sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningManager, signingManager);
     });
   });
 });

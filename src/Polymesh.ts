@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Signer as PolkadotSigner } from '@polkadot/api/types';
+import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
 import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
@@ -17,16 +17,16 @@ import { Identities } from '~/Identities';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Settlements } from '~/Settlements';
-import { CommonKeyring, ErrorCode, MiddlewareConfig, UiKeyring } from '~/types';
+import { ErrorCode, MiddlewareConfig } from '~/types';
 import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 import { signerToString } from '~/utils/conversion';
 
 import { Claims } from './Claims';
 import { Network } from './Network';
 
-interface ConnectParamsBase {
+interface ConnectParams {
   nodeUrl: string;
-  signer?: PolkadotSigner;
+  signingManager?: SigningManager;
   middleware?: MiddlewareConfig;
 }
 
@@ -78,69 +78,16 @@ export class Polymesh {
   }
 
   /**
-   * Create the instance and connect to the Polymesh node using an account seed
+   * Create an SDK instance and connect to a Polymesh node
    *
    * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
-   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
-   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
-   * @param params.accountSeed - hex seed of the account
-   */
-  static async connect(params: ConnectParamsBase & { accountSeed: string }): Promise<Polymesh>;
-
-  /**
-   * Create the instance and connect to the Polymesh node using a keyring
-   *
-   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
-   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
-   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
-   * @param params.keyring - object that holds several accounts (useful when using a wallet browser extension)
-   */
-  static async connect(
-    params: ConnectParamsBase & {
-      keyring: CommonKeyring | UiKeyring;
-    }
-  ): Promise<Polymesh>;
-
-  /**
-   * Create the instance and connect to the Polymesh node using an account URI
-   *
-   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
-   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
+   * @param params.signingManager - object in charge of managing keys and signing transactions
+   *   (optional, if not passed the SDK will not be able to submit transactions). Can be set later with
+   *   `setSigningManager`
    * @param params.middleware - middleware API URL and key (optional, used for historic queries)
    */
-  static async connect(params: ConnectParamsBase & { accountUri: string }): Promise<Polymesh>;
-
-  /**
-   * Create the instance and connect to the Polymesh node using an account mnemonic
-   *
-   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
-   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
-   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
-   * @param params.accountMnemonic - account mnemonic
-   */
-  static async connect(params: ConnectParamsBase & { accountMnemonic: string }): Promise<Polymesh>;
-
-  /**
-   * Create the instance and connect to the Polymesh node without an account
-   *
-   * @param params.nodeUrl - URL of the Polymesh node this instance will be connecting to
-   * @param params.signer - injected signer object (optional, only relevant if using a wallet browser extension)
-   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
-   */
-  static async connect(params: ConnectParamsBase): Promise<Polymesh>;
-
-  // eslint-disable-next-line require-jsdoc
-  static async connect(
-    params: ConnectParamsBase & {
-      accountSeed?: string;
-      keyring?: CommonKeyring | UiKeyring;
-      accountUri?: string;
-      accountMnemonic?: string;
-      middleware?: MiddlewareConfig;
-    }
-  ): Promise<Polymesh> {
-    const { nodeUrl, accountSeed, keyring, accountUri, accountMnemonic, signer, middleware } =
-      params;
+  static async connect(params: ConnectParams): Promise<Polymesh> {
+    const { nodeUrl, signingManager, middleware } = params;
     let context: Context;
 
     /* istanbul ignore next: part of configuration, doesn't need to be tested */
@@ -209,17 +156,10 @@ export class Polymesh {
         });
       }
 
-      if (signer) {
-        polymeshApi.setSigner(signer);
-      }
-
       context = await Context.create({
         polymeshApi,
         middlewareApi,
-        accountSeed,
-        accountUri,
-        accountMnemonic,
-        keyring,
+        signingManager,
       });
     } catch (err) {
       const { message, code } = err;
@@ -251,10 +191,12 @@ export class Polymesh {
   }
 
   /**
-   * Retrieve the Identity associated to the current Account (null if there is none)
+   * Retrieve the Identity associated to the signing Account (null if there is none)
+   *
+   * @throws if there is no signing Account associated to the SDK
    */
-  public getCurrentIdentity(): Promise<Identity | null> {
-    return this.context.getCurrentAccount().getIdentity();
+  public getSigningIdentity(): Promise<Identity | null> {
+    return this.context.getSigningAccount().getIdentity();
   }
 
   /**
@@ -303,52 +245,23 @@ export class Polymesh {
   }
 
   /**
-   * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
-   *   you must explicitly call `setSigner`
+   * Set the SDK's signing Account to the provided one
    *
-   * @param params.accountSeed - hex seed of the account
+   * @throws if the passed Account is not present in the Signing Manager (or there is no Signing Manager)
    */
-  public addSigner(params: { accountSeed: string }): Account;
-
-  /**
-   * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
-   *   you must explicitly call `setSigner`
-   *
-   * @param params.accountMnemonic - account mnemonic
-   */
-  public addSigner(params: { accountMnemonic: string }): Account;
-
-  /**
-   * Adds a new signing key to the SDK instance. This will not change the current signer. For that,
-   *   you must explicitly call [[setSigner]]
-   *
-   * @param params.accountUri - account URI
-   */
-  public addSigner(params: { accountUri: string }): Account;
-
-  // eslint-disable-next-line require-jsdoc
-  public addSigner(params: {
-    accountSeed?: string;
-    accountUri?: string;
-    accountMnemonic?: string;
-  }): Account {
-    const { context } = this;
-    const { address } = this.context.addPair(params);
-
-    return new Account({ address }, context);
+  public async setSigningAccount(signer: string | Account): Promise<void> {
+    return this.context.setSigningAddress(signerToString(signer));
   }
 
   /**
-   * Set the SDK's current signing key to the provided address
-   *
-   * @note the key must have been previously added via [[addSigner]]
+   * Set the SDK's Signing Manager to the provided one
    */
-  public setSigner(signer: string | Account): void {
-    this.context.setPair(signerToString(signer));
+  public setSigningManager(signingManager: SigningManager): Promise<void> {
+    return this.context.setSigningManager(signingManager);
   }
 
   /* eslint-disable @typescript-eslint/naming-convention */
-  /* istanbul ignore next: only for testing purposes */
+  /* istanbul ignore next: not part of the official public API */
   /**
    * Polkadot client
    */
@@ -356,7 +269,15 @@ export class Polymesh {
     return this.context.polymeshApi;
   }
 
-  /* istanbul ignore next: only for testing purposes */
+  /* istanbul ignore next: not part of the official public API */
+  /**
+   * signing address (to manually submit transactions with the polkadot API)
+   */
+  public get _signingAddress(): string {
+    return this.context.getSigningAddress();
+  }
+
+  /* istanbul ignore next: not part of the official public API */
   /**
    * Middleware client
    */

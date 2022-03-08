@@ -33,7 +33,7 @@ export class PolymeshTransaction<
    * @hidden
    *
    * amount by which the protocol fees are multiplied. The total fees of some transactions depend on the size of the input.
-   *   For example, when adding documents to a Security Token, the fees are proportional to the amount of documents being added
+   *   For example, when adding documents to an Asset, the fees are proportional to the amount of documents being added
    *
    * @note defaults to 1
    */

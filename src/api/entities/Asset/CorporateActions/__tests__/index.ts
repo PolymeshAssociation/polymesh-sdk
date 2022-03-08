@@ -151,7 +151,7 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: getAgents', () => {
-    it('should retrieve a list of agent identities', async () => {
+    it('should retrieve a list of agent Identities', async () => {
       const did = 'someDid';
       const otherDid = 'otherDid';
       const fakeTicker = 'TEST';
