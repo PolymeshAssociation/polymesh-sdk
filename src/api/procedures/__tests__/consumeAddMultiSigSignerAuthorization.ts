@@ -132,7 +132,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
             expiry: null,
             data: {
               type: AuthorizationType.AddMultiSigSigner,
-              value: 'someAddress',
+              value: 'multisigAddr',
             },
           },
           mockContext
@@ -150,6 +150,9 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
+    dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
+      returnValue: dsMockUtils.createMockAccountId(),
+    });
 
     const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
 
@@ -242,7 +245,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
           expiry: null,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'someAddress',
+            value: 'multiSigAddr',
           },
         },
         mockContext
@@ -255,7 +258,11 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       args: [rawSignatory, rawAuthId, rawFalse],
     });
 
-    target = entityMockUtils.getAccountInstance({ address: targetAddress });
+    target = entityMockUtils.getAccountInstance({
+      address: targetAddress,
+      isEqual: false,
+      getIdentity: null,
+    });
 
     await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -266,7 +273,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
           expiry: null,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'someAddress',
+            value: 'multiSigAddr',
           },
         },
         mockContext
@@ -306,9 +313,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       let result = await boundFunc(args);
       expect(result).toEqual({
         roles: true,
-        permissions: {
-          transactions: [TxTags.multiSig.AcceptMultisigSignerAsKey],
-        },
+        permissions: undefined,
       });
 
       args.authRequest.target = entityMockUtils.getIdentityInstance({
