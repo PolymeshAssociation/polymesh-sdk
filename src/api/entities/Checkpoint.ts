@@ -101,6 +101,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Retrieve all Asset Holder balances at this Checkpoint
    *
+   * @note current Asset holders who didn't hold any tokens when the Checkpoint was created will be listed with a balance of 0
    * @note supports pagination
    */
   public async allBalances(
