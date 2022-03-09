@@ -87,7 +87,7 @@ Here is an overview of the parameters passed to the `connect` function:
 **NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), you would use the `BrowserExtensionSigningManager` provided by `@polymathnetwork/browser-extension-signing-manager`
 
 ```typescript
-import { Polymesh, Keyring } from '@polymathnetwork/polymesh-sdk';
+import { Polymesh } from '@polymathnetwork/polymesh-sdk';
 import { BrowserExtensionSigningManager } from '@polymathnetwork/browser-extension-signing-manager';
 
 async function run() {
