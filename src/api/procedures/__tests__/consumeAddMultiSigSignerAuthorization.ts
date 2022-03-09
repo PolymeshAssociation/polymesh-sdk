@@ -32,7 +32,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     targetAddress = 'someAddress';
     dsMockUtils.initMocks({
       contextOptions: {
-        currentPairAddress: targetAddress,
+        signingAddress: targetAddress,
       },
     });
     procedureMockUtils.initMocks();
@@ -132,7 +132,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
             expiry: null,
             data: {
               type: AuthorizationType.AddMultiSigSigner,
-              value: 'someAddress',
+              value: 'multisigAddr',
             },
           },
           mockContext
@@ -150,6 +150,9 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
+    dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
+      returnValue: dsMockUtils.createMockAccountId(),
+    });
 
     const transaction = dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
 
@@ -242,7 +245,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
           expiry: null,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'someAddress',
+            value: 'multiSigAddr',
           },
         },
         mockContext
@@ -255,7 +258,11 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       args: [rawSignatory, rawAuthId, rawFalse],
     });
 
-    target = entityMockUtils.getAccountInstance({ address: targetAddress });
+    target = entityMockUtils.getAccountInstance({
+      address: targetAddress,
+      isEqual: false,
+      getIdentity: null,
+    });
 
     await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -266,7 +273,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
           expiry: null,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'someAddress',
+            value: 'multiSigAddr',
           },
         },
         mockContext
@@ -287,7 +294,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
         ConsumeAddMultiSigSignerAuthorizationParams,
         void
       >(mockContext);
-      const { address } = mockContext.getCurrentAccount();
+      const { address } = mockContext.getSigningAccount();
       const constructorParams = {
         authId,
         expiry: null,
@@ -306,18 +313,16 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       let result = await boundFunc(args);
       expect(result).toEqual({
         roles: true,
-        permissions: {
-          transactions: [TxTags.multiSig.AcceptMultisigSignerAsKey],
-        },
+        permissions: undefined,
       });
 
       args.authRequest.target = entityMockUtils.getIdentityInstance({
-        did: 'notTheCurrentIdentity',
+        did: 'notTheSigningIdentity',
       });
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: false,
+          signingIdentityIsEqual: false,
         },
       });
 
@@ -331,11 +336,11 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       });
 
       args.accept = false;
-      args.authRequest.issuer = await mockContext.getCurrentIdentity();
+      args.authRequest.issuer = await mockContext.getSigningIdentity();
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: true,
+          signingIdentityIsEqual: true,
         },
       });
 
@@ -349,7 +354,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: false,
+          signingIdentityIsEqual: false,
         },
       });
 
@@ -362,7 +367,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
         },
       });
 
-      mockContext.getCurrentAccount.returns(
+      mockContext.getSigningAccount.returns(
         entityMockUtils.getAccountInstance({ address, getIdentity: null })
       );
 

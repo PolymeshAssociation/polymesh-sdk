@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ApiPromise, Keyring } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
 import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
@@ -27,8 +26,16 @@ import {
   Signature,
   SignedBlock,
 } from '@polkadot/types/interfaces';
-import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/types';
+import {
+  Codec,
+  IEvent,
+  IKeyringPair,
+  ISubmittableResult,
+  Registry,
+  Signer as PolkadotSigner,
+} from '@polkadot/types/types';
 import { hexToU8a, stringToU8a } from '@polkadot/util';
+import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
@@ -153,7 +160,6 @@ import {
   CountryCode as CountryCodeEnum,
   DistributionWithDetails,
   ExtrinsicData,
-  KeyringPair,
   PermissionedAccount,
   ResultSet,
   SignerType,
@@ -176,7 +182,6 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
       apiEmitter.on(event, listener),
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
-    setSigner: sinon.stub() as (signer: Signer) => void,
     disconnect: sinon.stub() as () => Promise<void>,
   } as Mutable<ApiPromise> & EventEmitter;
 }
@@ -233,6 +238,7 @@ const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   keyringInstance: {} as Mutable<Keyring>,
+  signingManagerInstance: {} as Mutable<SigningManager>,
   apolloInstance: createApolloClient(),
   webSocketAsPromisedInstance: createWebSocketAsPromised(),
 };
@@ -298,7 +304,7 @@ interface Pair {
 
 interface ContextOptions {
   did?: string;
-  withSeed?: boolean;
+  withSigningManager?: boolean;
   balance?: AccountBalance;
   subsidy?: SubsidyWithAllowance;
   hasRoles?: boolean;
@@ -311,12 +317,12 @@ interface ContextOptions {
   assetBalance?: BigNumber;
   invalidDids?: string[];
   transactionFee?: BigNumber;
-  currentPairAddress?: string;
-  currentPairIsLocked?: boolean;
+  signingAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
+  getExternalSigner?: PolkadotSigner;
   primaryAccount?: string;
   secondaryAccounts?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
@@ -330,8 +336,8 @@ interface ContextOptions {
   getDividendDistributionsForAssets?: DistributionWithDetails[];
   isFrozen?: boolean;
   addPair?: Pair;
-  getAccounts?: Account[];
-  currentIdentityIsEqual?: boolean;
+  getSigningAccounts?: Account[];
+  signingIdentityIsEqual?: boolean;
   networkVersion?: string;
   supportsSubsidy?: boolean;
 }
@@ -349,6 +355,11 @@ interface KeyringOptions {
    * Whether keyring functions should throw
    */
   error?: boolean;
+}
+
+interface SigningManagerOptions {
+  getAccounts?: string[] | IKeyringPair[];
+  getExternalSigner?: PolkadotSigner | null;
 }
 
 export interface StubQuery {
@@ -526,7 +537,7 @@ let queryMultiStub = sinon.stub();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
-  withSeed: true,
+  withSigningManager: true,
   balance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
@@ -544,12 +555,12 @@ const defaultContextOptions: ContextOptions = {
   checkAssetPermissions: {
     result: true,
   },
+  getExternalSigner: 'signer' as PolkadotSigner,
   validCdd: true,
   assetBalance: new BigNumber(1000),
   invalidDids: [],
   transactionFee: new BigNumber(200),
-  currentPairAddress: '0xdummy',
-  currentPairIsLocked: false,
+  signingAddress: '0xdummy',
   issuedClaims: {
     data: [
       {
@@ -611,8 +622,8 @@ const defaultContextOptions: ContextOptions = {
     isLocked: false,
     publicKey: 'someKey',
   },
-  getAccounts: [],
-  currentIdentityIsEqual: true,
+  getSigningAccounts: [],
+  signingIdentityIsEqual: true,
   networkVersion: '1.0.0',
   supportsSubsidy: true,
 };
@@ -648,12 +659,17 @@ const defaultKeyringOptions: KeyringOptions = {
   encodeAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
 };
 let keyringOptions: KeyringOptions = defaultKeyringOptions;
+const defaultSigningManagerOptions: SigningManagerOptions = {
+  getAccounts: ['someAccount', 'otherAccount'],
+  getExternalSigner: 'signer' as PolkadotSigner,
+};
+let signingManagerOptions = defaultSigningManagerOptions;
 
 /**
  * @hidden
  */
 function configureContext(opts: ContextOptions): void {
-  const getCurrentIdentity = sinon.stub();
+  const getSigningIdentity = sinon.stub();
   const identity = {
     did: opts.did,
     hasRoles: sinon.stub().resolves(opts.hasRoles),
@@ -680,17 +696,17 @@ function configureContext(opts: ContextOptions): void {
       checkPermissions: sinon.stub().resolves(opts.checkAssetPermissions),
     },
     areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
-    isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
+    isEqual: sinon.stub().returns(opts.signingIdentityIsEqual),
   };
-  opts.withSeed
-    ? getCurrentIdentity.resolves(identity)
-    : getCurrentIdentity.throws(
-        new Error('The current Account does not have an associated identity')
+  opts.withSigningManager
+    ? getSigningIdentity.resolves(identity)
+    : getSigningIdentity.throws(
+        new Error('The signing Account does not have an associated Identity')
       );
-  const getCurrentAccount = sinon.stub();
-  opts.withSeed
-    ? getCurrentAccount.returns({
-        address: opts.currentPairAddress,
+  const getSigningAccount = sinon.stub();
+  opts.withSigningManager
+    ? getSigningAccount.returns({
+        address: opts.signingAddress,
         getBalance: sinon.stub().resolves(opts.balance),
         getSubsidy: sinon.stub().resolves(opts.subsidy),
         getIdentity: sinon.stub().resolves(identity),
@@ -699,32 +715,28 @@ function configureContext(opts: ContextOptions): void {
         checkPermissions: sinon.stub().resolves(opts.checkPermissions),
         isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
-    : getCurrentAccount.throws(new Error('There is no Account associated with the SDK'));
-  const currentPair = opts.withSeed
-    ? ({
-        address: opts.currentPairAddress,
-        isLocked: opts.currentPairIsLocked,
-      } as KeyringPair)
-    : undefined;
-  const getCurrentPair = sinon.stub();
-  opts.withSeed
-    ? getCurrentPair.returns(currentPair)
-    : getCurrentPair.throws(
+    : getSigningAccount.throws(new Error('There is no Account associated with the SDK'));
+  const signingAddress = opts.withSigningManager ? opts.signingAddress : undefined;
+  const getSigningAddress = sinon.stub();
+  opts.withSigningManager
+    ? getSigningAddress.returns(signingAddress)
+    : getSigningAddress.throws(
         new Error('There is no Account associated with the current SDK instance')
       );
 
   const contextInstance = {
-    currentPair,
-    getCurrentIdentity,
-    getCurrentAccount,
-    getCurrentPair,
+    signingAddress,
+    getSigningIdentity,
+    getSigningAccount,
+    getSigningAddress,
     accountBalance: sinon.stub().resolves(opts.balance),
     accountSubsidy: sinon.stub().resolves(opts.subsidy),
-    getAccounts: sinon.stub().returns(opts.getAccounts),
-    setPair: sinon.stub().callsFake(address => {
-      contextInstance.currentPair = { address } as KeyringPair;
+    getSigningAccounts: sinon.stub().resolves(opts.getSigningAccounts),
+    setSigningAddress: sinon.stub().callsFake(address => {
+      (contextInstance as any).signingAddress = { address } as IKeyringPair;
     }),
-    getSigner: sinon.stub().returns(currentPair),
+    setSigningManager: sinon.stub(),
+    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
     queryMiddleware: sinon
@@ -900,6 +912,31 @@ function initApi(): void {
 }
 
 /**
+ * Create a mock instance of a Signing Manager
+ */
+function configureSigningManager(opts: SigningManagerOptions): void {
+  const signingManagerInstance = {
+    getAccounts: sinon.stub().resolves(opts.getAccounts),
+    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
+    setSs58Format: sinon.stub(),
+  };
+
+  Object.assign(
+    mockInstanceContainer.signingManagerInstance,
+    signingManagerInstance as unknown as SigningManager
+  );
+}
+
+/**
+ * @hidden
+ */
+function initSigningManager(opts?: SigningManagerOptions): void {
+  signingManagerOptions = { ...defaultSigningManagerOptions, ...opts };
+
+  configureSigningManager(signingManagerOptions);
+}
+
+/**
  * @hidden
  */
 function configureKeyring(opts: KeyringOptions): void {
@@ -959,6 +996,7 @@ function initKeyring(opts?: KeyringOptions): void {
 export function configureMocks(opts?: {
   contextOptions?: ContextOptions;
   keyringOptions?: KeyringOptions;
+  signingManagerOptions?: SigningManagerOptions;
 }): void {
   const tempKeyringOptions = { ...defaultKeyringOptions, ...opts?.keyringOptions };
 
@@ -967,6 +1005,13 @@ export function configureMocks(opts?: {
   const tempContextOptions = { ...defaultContextOptions, ...opts?.contextOptions };
 
   configureContext(tempContextOptions);
+
+  const tempSigningManagerOptions = {
+    ...defaultSigningManagerOptions,
+    ...opts?.signingManagerOptions,
+  };
+
+  configureSigningManager(tempSigningManagerOptions);
 }
 
 /**
@@ -978,6 +1023,7 @@ export function configureMocks(opts?: {
 export function initMocks(opts?: {
   contextOptions?: ContextOptions;
   keyringOptions?: KeyringOptions;
+  signingManagerOptions?: SigningManagerOptions;
 }): void {
   /*
     NOTE: the idea is to expand this function to mock things as we need them
@@ -992,6 +1038,9 @@ export function initMocks(opts?: {
 
   // Keyring
   initKeyring(opts?.keyringOptions);
+
+  // Signing Manager
+  initSigningManager(opts?.signingManagerOptions);
 
   // Apollo
   apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
@@ -1013,6 +1062,7 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
+  mockInstanceContainer.signingManagerInstance = {} as Mutable<SigningManager>;
   mockInstanceContainer.apolloInstance = createApolloClient();
   mockInstanceContainer.webSocketAsPromisedInstance = createWebSocketAsPromised();
 }
@@ -1429,6 +1479,17 @@ export function getKeyringInstance(opts?: KeyringOptions): Mocked<Keyring> {
     configureKeyring({ ...defaultKeyringOptions, ...opts });
   }
   return mockInstanceContainer.keyringInstance as Mocked<Keyring>;
+}
+
+/**
+ * @hidden
+ * Retrieve an instance of the mocked SigningManager
+ */
+export function getSigningManagerInstance(opts?: SigningManagerOptions): Mocked<SigningManager> {
+  if (opts) {
+    configureSigningManager({ ...defaultSigningManagerOptions, ...opts });
+  }
+  return mockInstanceContainer.signingManagerInstance as Mocked<SigningManager>;
 }
 
 /**
@@ -2712,7 +2773,6 @@ export const createMockVenueType = (
 export const createMockVenue = (venue?: { creator: IdentityId; venue_type: VenueType }): Venue => {
   const vn = venue || {
     creator: createMockIdentityId(),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     venue_type: createMockVenueType(),
   };
 

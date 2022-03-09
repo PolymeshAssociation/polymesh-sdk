@@ -177,7 +177,7 @@ describe('Transaction Queue class', () => {
       return expect(runPromise).rejects.toThrow('Transaction Error');
     });
 
-    it("should throw an error if the current Account doesn't have enough balance to pay the transaction fees", () => {
+    it("should throw an error if the signing Account doesn't have enough balance to pay the transaction fees", () => {
       const transactionSpecs = [
         {
           args: [1],

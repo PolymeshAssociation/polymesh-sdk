@@ -98,7 +98,7 @@ export class Settlements {
   }
 
   /**
-   * Create a Venue under the ownership of the Current Identity
+   * Create a Venue under the ownership of the signing Identity
    */
   public createVenue: ProcedureMethod<CreateVenueParams, Venue>;
 

@@ -538,7 +538,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getSecondaryAccounts: [],
     areSecondaryAccountsFrozen: false,
     getPrimaryAccount: {
-      acccount: getAccountInstance(),
+      account: getAccountInstance(),
       permissions: {
         assets: null,
         portfolios: null,

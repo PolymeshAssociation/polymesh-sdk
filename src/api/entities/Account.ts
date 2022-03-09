@@ -10,7 +10,7 @@ import {
   union,
 } from 'lodash';
 
-import { Asset, Authorizations, Context, Entity, Identity, leaveIdentity } from '~/internal';
+import { Asset, Authorizations, Context, Entity, Identity } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
@@ -19,7 +19,6 @@ import {
   DefaultPortfolio,
   ExtrinsicData,
   ModuleName,
-  NoArgsProcedureMethod,
   NumberedPortfolio,
   Permissions,
   PermissionType,
@@ -45,12 +44,7 @@ import {
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import {
-  assertFormatValid,
-  calculateNextKey,
-  createProcedureMethod,
-  isModuleOrTagMatch,
-} from '~/utils/internal';
+import { assertAddressValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   address: string;
@@ -92,22 +86,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const { address } = identifiers;
 
-    assertFormatValid(address, context.ss58Format);
+    assertAddressValid(address, context.ss58Format);
 
     this.address = address;
     this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
-
-    this.leaveIdentity = createProcedureMethod(
-      { getProcedureAndArgs: () => [leaveIdentity, { account: this }], voidArgs: true },
-      context
-    );
   }
-
-  /**
-   * Leave the Account's Identity. This operation can only be done if the Account is a secondary Account for the Identity
-   */
-  public leaveIdentity: NoArgsProcedureMethod<void>;
 
   /**
    * Get the free/locked POLYX balance of the Account
@@ -310,7 +294,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public async getPermissions(): Promise<Permissions> {
     const { context, address } = this;
 
-    const currentIdentity = await context.getCurrentIdentity();
+    const signingIdentity = await context.getSigningIdentity();
 
     const [
       {
@@ -318,8 +302,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       },
       secondaryAccounts,
     ] = await Promise.all([
-      currentIdentity.getPrimaryAccount(),
-      currentIdentity.getSecondaryAccounts(),
+      signingIdentity.getPrimaryAccount(),
+      signingIdentity.getSecondaryAccounts(),
     ]);
 
     if (address === primaryAccountAddress) {

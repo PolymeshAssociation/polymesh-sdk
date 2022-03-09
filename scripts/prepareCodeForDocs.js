@@ -71,14 +71,14 @@ const createReplacementSignature = (_, funcName, type) => {
   const name = funcName.replace('abstract ', '');
   const isAbstract = name !== funcName;
 
+  // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
   const implementation = ` {
     return {} as ${returnType};
   }`;
 
-  // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
   return `*
-   * @note this method is of type {@link ${kind}}, which means you can call {@link ${kind}.checkAuthorization | ${name}.checkAuthorization}
-   *   on it to see whether the Current Account has the required permissions to run it
+   * @note this method is of type {@link ${kind}}, which means you can call \`${name}.checkAuthorization\`
+   *   on it to see whether the signing Account and Identity have the required roles and permissions to run it
    */
   public ${funcName}${funcArgs}: ${returnType}${isAbstract ? ';' : implementation}`;
 };

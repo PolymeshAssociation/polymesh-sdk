@@ -1,5 +1,5 @@
 import { Keyring } from '@polkadot/api';
-import { IKeyringPair, TypeDef } from '@polkadot/types/types';
+import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
@@ -367,7 +367,7 @@ export enum ConditionType {
 export interface ConditionBase {
   target: ConditionTarget;
   /**
-   * if undefined, the default trusted claim issuers for the Token are used
+   * if undefined, the default trusted claim issuers for the Asset are used
    */
   trustedClaimIssuers?: TrustedClaimIssuer[];
 }
@@ -376,7 +376,7 @@ export type InputConditionBase = Modify<
   ConditionBase,
   {
     /**
-     * if undefined, the default trusted claim issuers for the Token are used
+     * if undefined, the default trusted claim issuers for the Asset are used
      */
     trustedClaimIssuers?: InputTrustedClaimIssuer[];
   }
@@ -663,10 +663,6 @@ export interface EventIdentifier {
   eventIndex: BigNumber;
 }
 
-export interface KeyringPair extends IKeyringPair {
-  isLocked: boolean;
-}
-
 export interface Balance {
   /**
    * balance available for transferring and paying fees
@@ -761,9 +757,9 @@ export interface ThirdPartyFees extends PayingAccount {
 
 /**
  * Breakdown of transaction fees for a Transaction Queue. In most cases, the entirety of the Queue's fees
- *   will be paid by either the current Account or a third party. In some rare cases,
- *   fees can be split between them (for example, if the current Account is being subsidized, but one of the
- *   transactions in the queue terminates the subsidy, leaving the current Account with the responsibility of
+ *   will be paid by either the signing Account or a third party. In some rare cases,
+ *   fees can be split between them (for example, if the signing Account is being subsidized, but one of the
+ *   transactions in the queue terminates the subsidy, leaving the signing Account with the responsibility of
  *   paying for the rest of the transactions)
  */
 export interface FeesBreakdown {
@@ -1230,7 +1226,7 @@ export interface ProcedureAuthorizationStatus {
    */
   accountFrozen: boolean;
   /**
-   * true only if the Procedure requires an Identity but the current Account
+   * true only if the Procedure requires an Identity but the signing Account
    *   doesn't have one associated
    */
   noIdentity: boolean;
@@ -1340,7 +1336,7 @@ export interface ProcedureOpts {
   /**
    * Account or address of a signing key to replace the current one (for this procedure only)
    */
-  signer?: string | Account;
+  signingAccount?: string | Account;
 }
 
 export interface ProcedureMethod<
@@ -1401,8 +1397,21 @@ export interface HistoricAgentOperation {
   history: EventIdentifier[];
 }
 
+/**
+ * URI|mnemonic|hex representation of a private key
+ */
+export type PrivateKey =
+  | {
+      uri: string;
+    }
+  | {
+      mnemonic: string;
+    }
+  | {
+      seed: string;
+    };
+
 export { TxTags, TxTag, ModuleName };
-export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';
 export * from '~/base/types';

@@ -62,7 +62,7 @@ export class Assets {
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
 
   /**
-   * Claim a ticker symbol that was reserved in Polymath Classic (Ethereum). The Ethereum account
+   * Claim a ticker symbol that was reserved in Polymath Classic (Ethereum). The Ethereum Account
    *   that owns the ticker must sign a special message that contains the DID of the Identity that will own the ticker
    *   in Polymesh, and provide the signed data to this call
    */
@@ -109,7 +109,7 @@ export class Assets {
    * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include Assets that
    *   have already been launched
    *
-   * @param args.owner - defaults to the current Identity
+   * @param args.owner - defaults to the signing Identity
    *
    * @note reservations with unreadable characters in their tickers will be left out
    */

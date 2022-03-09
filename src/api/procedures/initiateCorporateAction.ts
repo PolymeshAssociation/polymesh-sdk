@@ -59,7 +59,7 @@ export interface InitiateCorporateActionParams {
   checkpoint?: InputCaCheckpoint;
   description: string;
   /**
-   * Asset Holder identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
+   * Asset Holder Identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
    *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa
    */
   targets?: Modify<

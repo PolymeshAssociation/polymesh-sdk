@@ -18,7 +18,7 @@ if (!fs.existsSync(sandboxFilePath)) {
 
 const devConfig = {
   devtool: 'cheap-module-source-map',
-  entry: path.resolve(__dirname, SANDBOX_FILE_NAME),
+  entry: ['babel-polyfill', path.resolve(__dirname, SANDBOX_FILE_NAME)],
   mode: 'development',
   module: {
     rules: [
@@ -30,9 +30,29 @@ const devConfig = {
         },
       },
       {
-        test: /\.mjs$/,
+        test: /\.m?js$/,
         include: /node_modules/,
-        type: 'javascript/auto',
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              [
+                '@babel/preset-env',
+                {
+                  exclude: ['transform-exponentiation-operator'],
+                },
+              ],
+            ],
+            plugins: [
+              '@babel/plugin-transform-modules-commonjs',
+              '@babel/plugin-transform-runtime',
+            ],
+          },
+        },
+      },
+      {
+        test: /\.js$/,
+        loader: require.resolve('@open-wc/webpack-import-meta-loader'),
       },
     ],
   },

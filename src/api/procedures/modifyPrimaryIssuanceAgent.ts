@@ -10,7 +10,7 @@ import {
 
 export interface ModifyPrimaryIssuanceAgentParams {
   /**
-   * identity to be set as primary issuance agent
+   * Identity to be set as primary issuance agent
    */
   target: string | Identity;
   /**

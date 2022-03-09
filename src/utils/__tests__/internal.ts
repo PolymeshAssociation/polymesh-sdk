@@ -1,4 +1,3 @@
-import { Keyring } from '@polkadot/api';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId, ModuleName, PortfolioName } from 'polymesh-types/types';
@@ -12,7 +11,6 @@ import {
   CalendarPeriod,
   CalendarUnit,
   ClaimType,
-  CommonKeyring,
   CountryCode,
   ProcedureMethod,
   TxTags,
@@ -20,17 +18,15 @@ import {
 import { tuple } from '~/types/utils';
 
 import {
-  assertFormatValid,
+  assertAddressValid,
   assertIsInteger,
   assertIsPositive,
-  assertKeyringFormatValid,
   calculateNextKey,
   createClaim,
   createProcedureMethod,
   delay,
   filterEventRecords,
   getCheckpointValue,
-  getCommonKeyring,
   getDid,
   getIdentity,
   getPortfolioIdByName,
@@ -149,10 +145,10 @@ describe('getDid', () => {
     expect(result).toBe(did);
   });
 
-  it('should return the current Identity DID if nothing is passed', async () => {
+  it('should return the signing Identity DID if nothing is passed', async () => {
     const result = await getDid(undefined, context);
 
-    expect(result).toBe((await context.getCurrentIdentity()).did);
+    expect(result).toBe((await context.getSigningIdentity()).did);
   });
 });
 
@@ -524,47 +520,27 @@ describe('assertIsPositive', () => {
   });
 });
 
-describe('getCommonKeyring', () => {
-  it('should return a common keyring', async () => {
-    const fakeKeyring = 'keyring' as unknown as CommonKeyring;
-    let result = getCommonKeyring(fakeKeyring);
-
-    expect(result).toBe(fakeKeyring);
-
-    result = getCommonKeyring({ keyring: fakeKeyring });
-    expect(result).toBe(fakeKeyring);
-  });
-});
-
-describe('assertFormatValid', () => {
+describe('assertAddressValid', () => {
   const ss58Format = new BigNumber(42);
+
+  it('should throw an error if the address is not a valid ss58 address', async () => {
+    expect(() =>
+      // cSpell: disable-next-line
+      assertAddressValid('foo', ss58Format)
+    ).toThrow('The supplied address is not a valid SS58 address');
+  });
 
   it('should throw an error if the address is prefixed with an invalid ss58', async () => {
     expect(() =>
-      assertFormatValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
+      // cSpell: disable-next-line
+      assertAddressValid('ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8', ss58Format)
     ).toThrow("The supplied address is not encoded with the chain's SS58 format");
   });
 
-  it('should not throw if the address is prefixed with valid ss58', async () => {
+  it('should not throw if the address is valid and prefixed with valid ss58', async () => {
     expect(() =>
-      assertFormatValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
+      assertAddressValid('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', ss58Format)
     ).not.toThrow();
-  });
-});
-
-describe('assertKeyringFormatValid', () => {
-  const ss58Format = new BigNumber(42);
-  const keyring = new Keyring({ ss58Format: ss58Format.toNumber() });
-
-  it('should not throw if the keyring is set with valid ss58', async () => {
-    expect(() => assertKeyringFormatValid(keyring, ss58Format)).not.toThrow();
-  });
-
-  it('should throw an error if the keyring is set with an invalid ss58', async () => {
-    keyring.setSS58Format(12);
-    expect(() => assertKeyringFormatValid(keyring, ss58Format)).toThrow(
-      "The supplied keyring is not using the chain's SS58 format"
-    );
   });
 });
 
@@ -823,7 +799,7 @@ describe('getIdentity', () => {
   });
 
   test('should return currentIdentity when given undefined value', async () => {
-    const expectedIdentity = await context.getCurrentIdentity();
+    const expectedIdentity = await context.getSigningIdentity();
     const result = await getIdentity(undefined, context);
     expect(result).toEqual(expectedIdentity);
   });

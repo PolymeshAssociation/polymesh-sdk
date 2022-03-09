@@ -38,7 +38,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     targetAddress = 'someAddress';
     dsMockUtils.initMocks({
       contextOptions: {
-        currentPairAddress: targetAddress,
+        signingAddress: targetAddress,
       },
     });
     procedureMockUtils.initMocks();
@@ -94,7 +94,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -131,7 +131,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -168,7 +168,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -215,7 +215,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -262,7 +262,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -303,7 +303,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: true,
     });
 
@@ -347,7 +347,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       void,
       Storage
     >(mockContext, {
-      currentAccount: targetAccount,
+      signingAccount: targetAccount,
       calledByTarget: false,
     });
 
@@ -393,7 +393,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
       mockContext,
       {
-        currentAccount: targetAccount,
+        signingAccount: targetAccount,
         calledByTarget: true,
       }
     );
@@ -428,7 +428,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    it("should return the current Account, whether the target is the caller and the target's identity (if any)", async () => {
+    it("should return the signing Account, whether the target is the caller and the target's Identity (if any)", async () => {
       const proc = procedureMockUtils.getInstance<
         ConsumeJoinOrRotateAuthorizationParams,
         void,
@@ -442,7 +442,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       } as unknown as ConsumeJoinOrRotateAuthorizationParams);
 
       expect(result).toEqual({
-        currentAccount: mockContext.getCurrentAccount(),
+        signingAccount: mockContext.getSigningAccount(),
         calledByTarget: true,
       });
     });
@@ -455,10 +455,10 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
         void,
         Storage
       >(mockContext, {
-        currentAccount: targetAccount,
+        signingAccount: targetAccount,
         calledByTarget: true,
       });
-      const { address } = mockContext.getCurrentAccount();
+      const { address } = mockContext.getSigningAccount();
       const constructorParams = {
         authId,
         expiry: null,
@@ -480,11 +480,11 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       });
 
       args.accept = false;
-      args.authRequest.issuer = await mockContext.getCurrentIdentity();
+      args.authRequest.issuer = await mockContext.getSigningIdentity();
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          currentIdentityIsEqual: true,
+          signingIdentityIsEqual: true,
         },
       });
 
@@ -497,12 +497,12 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       });
 
       targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
-      mockContext.getCurrentAccount.returns(targetAccount);
+      mockContext.getSigningAccount.returns(targetAccount);
 
       proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,
         {
-          currentAccount: targetAccount,
+          signingAccount: targetAccount,
           calledByTarget: false,
         }
       );
@@ -525,7 +525,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,
         {
-          currentAccount: targetAccount,
+          signingAccount: targetAccount,
           calledByTarget: false,
         }
       );
@@ -550,7 +550,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,
         {
-          currentAccount: targetAccount,
+          signingAccount: targetAccount,
           calledByTarget: true,
         }
       );

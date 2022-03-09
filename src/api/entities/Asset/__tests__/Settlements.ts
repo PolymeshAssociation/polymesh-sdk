@@ -47,7 +47,6 @@ describe('Settlements class', () => {
   let amount: BigNumber;
   let toDid: string;
   let ticker: string;
-  let accountId: string;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -78,12 +77,10 @@ describe('Settlements class', () => {
     bigNumberToBalanceStub.withArgs(amount, mockContext, false).returns(rawAmount);
     settlements = new Settlements(mockAsset, mockContext);
     ticker = mockAsset.ticker;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    accountId = mockContext.currentPair!.address;
-    rawAccountId = dsMockUtils.createMockAccountId(accountId);
+    rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawToDid = dsMockUtils.createMockIdentityId(toDid);
-    stringToAccountIdStub.withArgs(accountId, mockContext).returns(rawAccountId);
+    stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawAccountId);
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     stringToIdentityIdStub.withArgs(toDid, mockContext).returns(rawToDid);
   });
@@ -132,30 +129,27 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    it('should return a status value representing whether the transaction can be made from the current Identity', async () => {
-      const currentIdentity = await mockContext.getCurrentIdentity();
-      const { did: currentDid } = currentIdentity;
-      const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
+    it('should return a status value representing whether the transaction can be made from the signing Identity', async () => {
+      const signingIdentity = await mockContext.getSigningIdentity();
+      const { did: signingDid } = signingIdentity;
+      const rawSigningDid = dsMockUtils.createMockIdentityId(signingDid);
 
       const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
-      const currentDefaultPortfolioId = { did: currentDid };
+      const currentDefaultPortfolioId = { did: signingDid };
 
-      fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: currentDid }));
+      fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: signingDid }));
       toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
 
-      portfolioLikeToPortfolioIdStub.withArgs(currentIdentity).returns(currentDefaultPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(signingIdentity).returns(currentDefaultPortfolioId);
       portfolioIdToMeshPortfolioIdStub
         .withArgs(currentDefaultPortfolioId, mockContext)
         .returns(rawFromPortfolio);
       portfolioIdToPortfolioStub.withArgs(currentDefaultPortfolioId, mockContext).returns(
         entityMockUtils.getDefaultPortfolioInstance({
-          did: currentDid,
+          did: signingDid,
         })
       );
-      stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
-
-      // also test the case where the SDK was instanced without an account
-      mockContext.currentPair = undefined;
+      stringToIdentityIdStub.withArgs(signingDid, mockContext).returns(rawSigningDid);
       stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawDummyAccountId);
 
       const rawResponse = dsMockUtils.createMockCanTransferResult({
@@ -166,7 +160,7 @@ describe('Settlements class', () => {
         .createRpcStub('asset', 'canTransfer')
         .withArgs(
           rawDummyAccountId,
-          rawCurrentDid,
+          rawSigningDid,
           rawFromPortfolio,
           rawToDid,
           rawToPortfolio,
@@ -250,24 +244,24 @@ describe('Settlements class', () => {
       stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
     });
 
-    it('should return a transfer breakdown representing whether the transaction can be made from the current Identity', async () => {
-      const currentIdentity = await mockContext.getCurrentIdentity();
-      const { did: currentDid } = currentIdentity;
-      const rawCurrentDid = dsMockUtils.createMockIdentityId(currentDid);
+    it('should return a transfer breakdown representing whether the transaction can be made from the signing Identity', async () => {
+      const signingIdentity = await mockContext.getSigningIdentity();
+      const { did: signingDid } = signingIdentity;
+      const rawSigningDid = dsMockUtils.createMockIdentityId(signingDid);
 
-      const currentDefaultPortfolioId = { did: currentDid };
+      const currentDefaultPortfolioId = { did: signingDid };
 
-      portfolioLikeToPortfolioIdStub.withArgs(currentIdentity).returns(currentDefaultPortfolioId);
+      portfolioLikeToPortfolioIdStub.withArgs(signingIdentity).returns(currentDefaultPortfolioId);
       portfolioIdToMeshPortfolioIdStub
         .withArgs(currentDefaultPortfolioId, mockContext)
         .returns(rawFromPortfolio);
       portfolioIdToPortfolioStub.withArgs(currentDefaultPortfolioId, mockContext).returns(
         entityMockUtils.getDefaultPortfolioInstance({
-          did: currentDid,
-          getCustodian: entityMockUtils.getIdentityInstance({ did: currentDid }),
+          did: signingDid,
+          getCustodian: entityMockUtils.getIdentityInstance({ did: signingDid }),
         })
       );
-      stringToIdentityIdStub.withArgs(currentDid, mockContext).returns(rawCurrentDid);
+      stringToIdentityIdStub.withArgs(signingDid, mockContext).returns(rawSigningDid);
 
       toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
 
@@ -275,7 +269,7 @@ describe('Settlements class', () => {
 
       dsMockUtils
         .createRpcStub('asset', 'canTransferGranular')
-        .withArgs(rawCurrentDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
+        .withArgs(rawSigningDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
         .returns(response);
 
       const expected = 'breakdown' as unknown as TransferBreakdown;
