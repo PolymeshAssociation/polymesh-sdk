@@ -1,6 +1,6 @@
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTag, TxTags } from '~/types';
+import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
+import { TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU64,
@@ -37,8 +37,6 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
 
   const { target, authId, issuer } = authRequest;
 
-  await assertAuthorizationRequestValid(authRequest, context);
-
   const rawAuthId = bigNumberToU64(authId, context);
 
   if (!accept) {
@@ -64,20 +62,12 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
     return;
   }
 
-  let transaction = multiSig.acceptMultisigSignerAsIdentity;
+  await assertAuthorizationRequestValid(authRequest, context);
 
-  if (target instanceof Account) {
-    const existingIdentity = await target.getIdentity();
-
-    if (existingIdentity) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The target Account is already part of an Identity',
-      });
-    }
-
-    transaction = multiSig.acceptMultisigSignerAsKey;
-  }
+  const transaction =
+    target instanceof Account
+      ? multiSig.acceptMultisigSignerAsKey
+      : multiSig.acceptMultisigSignerAsIdentity;
 
   this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
 }
@@ -93,21 +83,21 @@ export async function getAuthorization(
   const { context } = this;
 
   let hasRoles;
-  let transactions: TxTag[] = [];
 
   const signingAccount = context.getSigningAccount();
   const identity = await signingAccount.getIdentity();
 
   let calledByTarget: boolean;
 
+  let permissions;
   if (target instanceof Account) {
     calledByTarget = target.isEqual(signingAccount);
     hasRoles = calledByTarget;
-    transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
+    // An account accepting multisig cannot be part of an Identity, so we cannot check for permissions
   } else {
     calledByTarget = !!identity?.isEqual(target);
     hasRoles = calledByTarget;
-    transactions = [TxTags.multiSig.AcceptMultisigSignerAsIdentity];
+    permissions = { transactions: [TxTags.multiSig.AcceptMultisigSignerAsIdentity] };
   }
 
   if (accept) {
@@ -115,13 +105,11 @@ export async function getAuthorization(
       roles:
         hasRoles ||
         '"AddMultiSigSigner" Authorization Requests can only be accepted by the target Signer',
-      permissions: {
-        transactions,
-      },
+      permissions,
     };
   }
 
-  transactions = [TxTags.identity.RemoveAuthorization];
+  const transactions = [TxTags.identity.RemoveAuthorization];
 
   /*
    * if the target is removing the auth request and they don't have an Identity,

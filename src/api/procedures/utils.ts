@@ -406,6 +406,43 @@ export async function assertTransferAssetOwnershipAuthorizationValid(
 /**
  * @hidden
  *
+ * Asserts valid add multisig signer authorization
+ */
+export async function assertMultiSigSignerAuthorizationValid(
+  data: GenericAuthorizationData,
+  target: Signer,
+  context: Context
+): Promise<void> {
+  if (target instanceof Account) {
+    const { address } = target;
+    if (address === data.value) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'A multisig cannot be its own signer',
+      });
+    }
+
+    const exitingIdentity = await target.getIdentity();
+    if (exitingIdentity) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already part of an Identity',
+      });
+    }
+
+    const multiSig = await context.polymeshApi.query.multiSig.keyToMultiSig(address);
+    if (!multiSig.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already associated to a multisig address',
+      });
+    }
+  }
+}
+
+/**
+ * @hidden
+ *
  * Asserts valid add relayer paying key authorization
  */
 export async function assertAddRelayerPayingKeyAuthorizationValid(
@@ -528,7 +565,7 @@ export async function assertAuthorizationRequestValid(
       },
     });
   }
-  const { data } = authRequest;
+  const { data, target } = authRequest;
   switch (data.type) {
     case AuthorizationType.RotatePrimaryKey:
       return assertPrimaryKeyRotationAuthorizationValid(authRequest);
@@ -542,8 +579,7 @@ export async function assertAuthorizationRequestValid(
       // no additional checks
       return;
     case AuthorizationType.AddMultiSigSigner:
-      // no additional checks
-      return;
+      return assertMultiSigSignerAuthorizationValid(data, target, context);
     case AuthorizationType.PortfolioCustody:
       // no additional checks
       return;
