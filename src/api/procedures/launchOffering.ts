@@ -138,9 +138,9 @@ export async function prepareLaunchOffering(
     const venues = await offeringPortfolioOwner.getVenues();
 
     const offeringVenues = await P.filter(venues, async ownedVenue => {
-      const details = await ownedVenue.details();
+      const { type } = await ownedVenue.details();
 
-      return details.type === VenueType.Sto;
+      return type === VenueType.Sto;
     });
 
     if (offeringVenues.length) {

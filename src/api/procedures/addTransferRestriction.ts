@@ -53,7 +53,7 @@ export async function prepareAddTransferRestriction(
     },
     context,
   } = this;
-  const { ticker, exemptedScopeIds = [], exemptedIdentities = [] } = args;
+  const { ticker, exemptedScopeIds = [], exemptedIdentities = [], type } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -72,7 +72,7 @@ export async function prepareAddTransferRestriction(
 
   let value: BigNumber;
 
-  if (args.type === TransferRestrictionType.Count) {
+  if (type === TransferRestrictionType.Count) {
     value = args.count;
   } else {
     value = args.percentage;
@@ -81,7 +81,7 @@ export async function prepareAddTransferRestriction(
   const exists = !!currentTms.find(transferManager => {
     const restriction = transferManagerToTransferRestriction(transferManager);
 
-    return restriction.type === args.type && restriction.value.eq(value);
+    return restriction.type === type && restriction.value.eq(value);
   });
 
   if (exists) {
@@ -91,10 +91,7 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  const rawTransferManager = transferRestrictionToTransferManager(
-    { type: args.type, value },
-    context
-  );
+  const rawTransferManager = transferRestrictionToTransferManager({ type, value }, context);
 
   const transactions = [
     checkTxType({

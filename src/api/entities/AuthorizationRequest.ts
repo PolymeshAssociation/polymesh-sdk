@@ -51,7 +51,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { authId } = identifier as UniqueIdentifiers;
 
     return authId instanceof BigNumber;

@@ -58,7 +58,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, ticker } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber && typeof ticker === 'string';

@@ -96,7 +96,7 @@ export class Assets {
 
     if (callback) {
       return reservation.details(({ status: reservationStatus }) => {
-        // eslint-disable-next-line standard/no-callback-literal
+        // eslint-disable-next-line node/no-callback-literal
         callback(reservationStatus === TickerReservationStatus.Free);
       });
     }
