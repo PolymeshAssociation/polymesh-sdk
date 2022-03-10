@@ -187,8 +187,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    *   by the destinatary
    *
    * @note this will create {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | `authorizations.getReceived`}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | `authorizations.getOne`}
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    *
    * @note required role:
    *   - Ticker Owner

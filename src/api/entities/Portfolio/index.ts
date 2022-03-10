@@ -210,8 +210,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    * Send an invitation to an Identity to assign it as custodian for this Portfolio
    *
    * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `targetIdentity`.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | `authorizations.getReceived`}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | `authorizations.getOne`}
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    *
    * @note required role:
    *   - Portfolio Custodian

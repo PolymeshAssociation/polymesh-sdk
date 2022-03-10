@@ -77,7 +77,7 @@ const createReplacementSignature = (_, funcName, type) => {
   }`;
 
   return `*
-   * @note this method is of type {@link ${kind}}, which means you can call \`${name}.checkAuthorization\`
+   * @note this method is of type {@link ${kind}}, which means you can call {@link ${kind}.checkAuthorization | ${name}.checkAuthorization}
    *   on it to see whether the signing Account and Identity have the required roles and permissions to run it
    */
   public ${funcName}${funcArgs}: ${returnType}${isAbstract ? ';' : implementation}`;

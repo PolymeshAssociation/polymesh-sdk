@@ -184,8 +184,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *   by the recipient
    *
    * @note this will create {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | `authorizations.getReceived`}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | `authorizations.getOne`}
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    */
   public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
   /**
@@ -435,8 +435,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * Assign a new primary issuance agent for the Asset
    *
    * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | `authorizations.getReceived`}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | `authorizations.getOne`}
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    *
    * @deprecated in favor of `inviteAgent`
    */
