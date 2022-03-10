@@ -37,7 +37,7 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
    * @hidden
    * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { beneficiary, subsidizer } = identifier as UniqueIdentifiers;
 
     return typeof beneficiary === 'string' && typeof subsidizer === 'string';

@@ -24,7 +24,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
    * @hidden
    * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did, ticker } = identifier as UniqueIdentifiers;
 
     return typeof did === 'string' && typeof ticker === 'string';

@@ -1,6 +1,7 @@
 /* istanbul ignore file */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 import sinon from 'sinon';
@@ -411,7 +412,7 @@ function createMockEntityClass<Options extends EntityOptions>(
     /**
      * @hidden
      */
-    public configure(opts: Partial<Options>) {
+    public override configure(opts: Partial<Options>) {
       const fullOpts = MockClass.mergeOptions(opts);
 
       super.configure(fullOpts);

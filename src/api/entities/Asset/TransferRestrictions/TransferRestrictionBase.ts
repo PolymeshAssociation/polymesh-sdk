@@ -151,12 +151,13 @@ export abstract class TransferRestrictionBase<
         },
       },
       context,
+      type,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
     const activeTms = await statistics.activeTransferManagers(rawTicker);
     const filteredTms = activeTms.filter(tm => {
-      if (this.type === TransferRestrictionType.Count) {
+      if (type === TransferRestrictionType.Count) {
         return tm.isCountTransferManager;
       }
 
@@ -178,7 +179,7 @@ export abstract class TransferRestrictionBase<
       const { value } = transferManagerToTransferRestriction(filteredTms[index]);
       let restriction;
 
-      if (this.type === TransferRestrictionType.Count) {
+      if (type === TransferRestrictionType.Count) {
         restriction = {
           count: value,
         };

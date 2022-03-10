@@ -61,7 +61,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    * @hidden
    * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did, id } = identifier as UniqueIdentifiers;
 
     return typeof did === 'string' && (id === undefined || id instanceof BigNumber);

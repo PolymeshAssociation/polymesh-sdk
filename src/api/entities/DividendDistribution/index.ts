@@ -121,7 +121,7 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * type of dividend distribution being represented. The chain enforces it to be either PredictableBenefit or UnpredictableBenefit
    */
-  protected kind!:
+  protected declare kind:
     | CorporateActionKind.UnpredictableBenefit
     | CorporateActionKind.PredictableBenefit;
 
@@ -224,7 +224,7 @@ export class DividendDistribution extends CorporateActionBase {
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,
    *   the corresponding CheckpointSchedule is returned instead
    */
-  public async checkpoint(): Promise<Checkpoint | CheckpointSchedule> {
+  public override async checkpoint(): Promise<Checkpoint | CheckpointSchedule> {
     const exists = await this.exists();
 
     if (!exists) {
@@ -243,7 +243,7 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * Retrieve whether the Distribution exists
    */
-  public async exists(): Promise<boolean> {
+  public override async exists(): Promise<boolean> {
     const distribution = await this.fetchDistribution();
 
     return distribution.isSome;
@@ -578,7 +578,7 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * Return the Dividend Distribution's static data
    */
-  public toJson(): HumanReadable {
+  public override toJson(): HumanReadable {
     const { origin, currency, perShare, maxAmount, expiryDate, paymentDate } = this;
 
     const parentReadable = super.toJson();
