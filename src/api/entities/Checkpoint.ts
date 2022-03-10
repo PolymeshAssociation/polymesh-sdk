@@ -101,8 +101,10 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Retrieve all Asset Holder balances at this Checkpoint
    *
-   * @note current Asset holders who didn't hold any tokens when the Checkpoint was created will be listed with a balance of 0
    * @note supports pagination
+   * @note current Asset holders who didn't hold any tokens when the Checkpoint was created will be listed with a balance of 0.
+   * This arises from a chain storage optimization and pagination. Checkpoints use a balance difference approach to prevent duplicating
+   * unchanged balances which current holders get included in the balance calculation. Filtering the 0 balance accounts would interfere with pagination offsets.
    */
   public async allBalances(
     paginationOpts?: PaginationOptions
