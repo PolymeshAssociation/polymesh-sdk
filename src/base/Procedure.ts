@@ -61,7 +61,7 @@ async function getAgentPermissionsResult(
  * @hidden
  *
  * Represents an operation performed on the Polymesh blockchain.
- * A Procedure can be prepared to yield a [[TransactionQueue]] that can be run
+ * A Procedure can be prepared to yield a {@link TransactionQueue} that can be run
  */
 export class Procedure<Args = void, ReturnValue = void, Storage = Record<string, unknown>> {
   private prepareTransactions: (
@@ -258,7 +258,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
   }
 
   /**
-   * Build a [[TransactionQueue]] that can be run
+   * Build a {@link TransactionQueue} that can be run
    *
    * @param args.args - arguments required to prepare the queue
    * @param args.transformer - optional function that transforms the Procedure result
@@ -350,7 +350,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
    * Appends a transaction into this Procedure's queue. This defines
    *   what will be run by the TransactionQueue when it is started
    *
-   * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
+   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
   public addTransaction<TxArgs extends unknown[] | [], Values extends unknown[] = []>(
     args: AddTransactionArgs<TxArgs, Values>
@@ -437,7 +437,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
    * Appends a batch of transactions into this Procedure's queue. This defines
    *   what will be run by the TransactionQueue when it is started
    *
-   * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
+   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
   public addBatchTransaction<ArgsArray extends (unknown[] | [])[], Values extends unknown[] = []>(
     args: AddBatchTransactionArgs<Values, ArgsArray>

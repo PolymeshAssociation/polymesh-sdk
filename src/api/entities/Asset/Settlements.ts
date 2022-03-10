@@ -33,7 +33,7 @@ export class Settlements extends Namespace<Asset> {
    * @param args.to - receiver Portfolio
    * @param args.amount - amount of tokens to transfer
    *
-   * @deprecated in favor of [[canTransfer]]
+   * @deprecated in favor of {@link canTransfer}
    */
   public async canSettle(args: {
     from?: PortfolioLike;
