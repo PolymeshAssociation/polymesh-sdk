@@ -24,7 +24,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public addRestriction!: ProcedureMethod<
+  public declare addRestriction: ProcedureMethod<
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
     BigNumber
   >;
@@ -34,7 +34,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public setRestrictions!: ProcedureMethod<
+  public declare setRestrictions: ProcedureMethod<
     Omit<SetPercentageTransferRestrictionsParams, 'type'>,
     BigNumber
   >;
@@ -44,7 +44,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions!: NoArgsProcedureMethod<BigNumber>;
+  public declare removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
    * Retrieve all active Percentage Transfer Restrictions
@@ -53,5 +53,5 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public get!: () => Promise<ActiveTransferRestrictions<PercentageTransferRestriction>>;
+  public declare get: () => Promise<ActiveTransferRestrictions<PercentageTransferRestriction>>;
 }

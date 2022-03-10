@@ -30,15 +30,40 @@ import { signerToString } from '~/utils/conversion';
 
 /**
  * @hidden
+ */
+function assertOnlyOneAsset(assets: Asset[]) {
+  if (assets.length > 1) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message:
+        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team',
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+async function getAgentPermissionsResult(
+  identity: Identity | null,
+  asset: Asset,
+  transactions: TxTag[] | null
+): Promise<CheckPermissionsResult<SignerType.Identity>> {
+  return identity
+    ? identity.assetPermissions.checkPermissions({
+        asset,
+        transactions,
+      })
+    : { result: false, missingPermissions: transactions };
+}
+
+/**
+ * @hidden
  *
  * Represents an operation performed on the Polymesh blockchain.
  * A Procedure can be prepared to yield a [[TransactionQueue]] that can be run
  */
-export class Procedure<
-  Args extends unknown = void,
-  ReturnValue extends unknown = void,
-  Storage extends unknown = Record<string, unknown>
-> {
+export class Procedure<Args = void, ReturnValue = void, Storage = Record<string, unknown>> {
   private prepareTransactions: (
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
@@ -376,17 +401,17 @@ export class Procedure<
    *
    * @returns whichever value is returned by the passed Procedure
    */
-  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+  public async addProcedure<ProcArgs, R, S>(
     procedure: Procedure<ProcArgs, R, S>,
     args: ProcArgs
   ): Promise<MaybePostTransactionValue<R>>;
 
-  public async addProcedure<R extends unknown, S extends unknown>(
+  public async addProcedure<R, S>(
     procedure: Procedure<void, R, S>
   ): Promise<MaybePostTransactionValue<R>>;
 
   // eslint-disable-next-line require-jsdoc
-  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+  public async addProcedure<ProcArgs, R, S>(
     procedure: Procedure<void | ProcArgs, R, S>,
     args: ProcArgs = {} as ProcArgs
   ): Promise<MaybePostTransactionValue<R>> {
@@ -501,33 +526,4 @@ export class Procedure<
 
     return context;
   }
-}
-
-/**
- * @hidden
- */
-function assertOnlyOneAsset(assets: Asset[]) {
-  if (assets.length > 1) {
-    throw new PolymeshError({
-      code: ErrorCode.FatalError,
-      message:
-        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team',
-    });
-  }
-}
-
-/**
- * @hidden
- */
-async function getAgentPermissionsResult(
-  identity: Identity | null,
-  asset: Asset,
-  transactions: TxTag[] | null
-): Promise<CheckPermissionsResult<SignerType.Identity>> {
-  return identity
-    ? identity.assetPermissions.checkPermissions({
-        asset,
-        transactions,
-      })
-    : { result: false, missingPermissions: transactions };
 }
