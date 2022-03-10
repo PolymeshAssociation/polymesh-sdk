@@ -89,7 +89,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { ticker } = identifier as UniqueIdentifiers;
 
     return typeof ticker === 'string';

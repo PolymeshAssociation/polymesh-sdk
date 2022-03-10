@@ -91,7 +91,7 @@ export class PolymeshTransaction<
   }
 
   // eslint-disable-next-line require-jsdoc
-  protected ignoresSubsidy(): boolean {
+  protected override ignoresSubsidy(): boolean {
     /*
      * this is the only extrinsic so far that always has to be
      *   paid by the caller

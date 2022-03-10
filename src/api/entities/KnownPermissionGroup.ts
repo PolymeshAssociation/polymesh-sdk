@@ -21,7 +21,7 @@ export class KnownPermissionGroup extends PermissionGroup {
    * @hidden
    * Check if a value is of type [[UniqueIdentifiers]]
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { type, ticker } = identifier as UniqueIdentifiers;
 
     return type in PermissionGroupType && typeof ticker === 'string';

@@ -9,6 +9,8 @@
   },
   "rules": {
     "no-useless-constructor": "off",
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": ["error"],
     "@typescript-eslint/no-useless-constructor": "error",
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/no-var-requires": "off",
@@ -72,7 +74,7 @@
         }
       }
     ],
-    "simple-import-sort/sort": "error",
+    "simple-import-sort/imports": "error",
     "sort-imports": "off",
     "import/order": "off",
     "no-dupe-class-members": "off",

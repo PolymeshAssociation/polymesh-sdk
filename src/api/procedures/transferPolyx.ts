@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, Identity, PolymeshError, Procedure } from '~/internal';
-import { AccountBalance, ErrorCode, TxTags } from '~/types';
+import { Account, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToBalance,
@@ -51,10 +51,10 @@ export async function prepareTransferPolyx(
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
 
-  const [{ free: freeBalance }, receiverIdentity] = await Promise.all<
-    AccountBalance,
-    Identity | null
-  >([context.accountBalance(), toAccount.getIdentity()]);
+  const [{ free: freeBalance }, receiverIdentity] = await Promise.all([
+    context.accountBalance(),
+    toAccount.getIdentity(),
+  ]);
 
   if (amount.isGreaterThan(freeBalance)) {
     throw new PolymeshError({

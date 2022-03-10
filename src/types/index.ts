@@ -1117,7 +1117,6 @@ export interface PlainTransactionArgument {
 
 export interface ArrayTransactionArgument {
   type: TransactionArgumentType.Array;
-  // eslint-disable-next-line no-use-before-define
   internal: TransactionArgument;
 }
 
@@ -1131,7 +1130,6 @@ export interface ComplexTransactionArgument {
     | TransactionArgumentType.RichEnum
     | TransactionArgumentType.Object
     | TransactionArgumentType.Tuple;
-  // eslint-disable-next-line no-use-before-define
   internal: TransactionArgument[];
 }
 

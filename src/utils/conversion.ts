@@ -221,7 +221,11 @@ import {
   padString,
   removePadding,
 } from '~/utils/internal';
-import { isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
+import {
+  isIdentityCondition,
+  isMultiClaimCondition,
+  isSingleClaimCondition,
+} from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
@@ -877,6 +881,19 @@ function buildPalletPermissions(
 /**
  * @hidden
  */
+export function transactionPermissionsToExtrinsicPermissions(
+  transactionPermissions: TransactionPermissions | null,
+  context: Context
+): ExtrinsicPermissions {
+  return context.createType(
+    'ExtrinsicPermissions',
+    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
+  );
+}
+
+/**
+ * @hidden
+ */
 export function permissionsToMeshPermissions(
   permissions: Permissions,
   context: Context
@@ -926,19 +943,6 @@ export function permissionsToMeshPermissions(
   };
 
   return context.createType('Permissions', value);
-}
-
-/**
- * @hidden
- */
-export function transactionPermissionsToExtrinsicPermissions(
-  transactionPermissions: TransactionPermissions | null,
-  context: Context
-): ExtrinsicPermissions {
-  return context.createType(
-    'ExtrinsicPermissions',
-    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
-  );
 }
 
 /**
@@ -1055,6 +1059,29 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
+export function bigNumberToU32(value: BigNumber, context: Context): u32 {
+  assertIsInteger(value);
+  assertIsPositive(value);
+  return context.createType('u32', value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u32ToBigNumber(value: u32): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u8ToBigNumber(value: u8): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
 export function permissionGroupIdentifierToAgentGroup(
   permissionGroup: PermissionGroupIdentifier,
   context: Context
@@ -1095,31 +1122,33 @@ export function authorizationToAuthorizationData(
 ): AuthorizationData {
   let value;
 
-  if (auth.type === AuthorizationType.RotatePrimaryKey) {
+  const { type } = auth;
+
+  if (type === AuthorizationType.RotatePrimaryKey) {
     value = null;
-  } else if (auth.type === AuthorizationType.JoinIdentity) {
+  } else if (type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
-  } else if (auth.type === AuthorizationType.PortfolioCustody) {
+  } else if (type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
-  } else if (auth.type === AuthorizationType.TransferAssetOwnership) {
+  } else if (type === AuthorizationType.TransferAssetOwnership) {
     value = stringToTicker(auth.value, context);
-  } else if (auth.type === AuthorizationType.RotatePrimaryKeyToSecondary) {
+  } else if (type === AuthorizationType.RotatePrimaryKeyToSecondary) {
     value = permissionsToMeshPermissions(auth.value, context);
-  } else if (auth.type === AuthorizationType.BecomeAgent) {
+  } else if (type === AuthorizationType.BecomeAgent) {
     const ticker = stringToTicker(auth.value.asset.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {
       const { id } = auth.value;
       value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
     } else {
-      const { type } = auth.value;
-      value = [ticker, permissionGroupIdentifierToAgentGroup(type, context)];
+      const { type: groupType } = auth.value;
+      value = [ticker, permissionGroupIdentifierToAgentGroup(groupType, context)];
     }
   } else {
     value = auth.value;
   }
 
   return context.createType('AuthorizationData', {
-    [auth.type]: value,
+    [type]: value,
   });
 }
 
@@ -1131,6 +1160,76 @@ export function authorizationTypeToMeshAuthorizationType(
   context: Context
 ): MeshAuthorizationType {
   return context.createType('AuthorizationType', authorizationType);
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToBalance(value: BigNumber, context: Context, divisible = true): Balance {
+  assertIsPositive(value);
+
+  if (value.isGreaterThan(MAX_BALANCE)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The value exceeds the maximum possible balance',
+      data: {
+        currentValue: value,
+        amountLimit: MAX_BALANCE,
+      },
+    });
+  }
+
+  if (divisible) {
+    if (value.decimalPlaces() > MAX_DECIMALS) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The value has more decimal places than allowed',
+        data: {
+          currentValue: value,
+          decimalsLimit: MAX_DECIMALS,
+        },
+      });
+    }
+  } else {
+    if (value.decimalPlaces()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The value has decimals but the Asset is indivisible',
+      });
+    }
+  }
+
+  return context.createType('Balance', value.shiftedBy(6).toString());
+}
+
+/**
+ * @hidden
+ */
+export function balanceToBigNumber(balance: Balance): BigNumber {
+  return new BigNumber(balance.toString()).shiftedBy(-6);
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(
+  agentGroup: AgentGroup,
+  ticker: string,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
+  switch (permissionGroupIdentifier) {
+    case PermissionGroupType.ExceptMeta:
+    case PermissionGroupType.Full:
+    case PermissionGroupType.PolymeshV1Caa:
+    case PermissionGroupType.PolymeshV1Pia: {
+      return new KnownPermissionGroup({ type: permissionGroupIdentifier, ticker }, context);
+    }
+    default: {
+      const { custom: id } = permissionGroupIdentifier;
+      return new CustomPermissionGroup({ id, ticker }, context);
+    }
+  }
 }
 
 /**
@@ -1229,53 +1328,6 @@ export function authorizationDataToAuthorization(
 /**
  * @hidden
  */
-export function bigNumberToBalance(value: BigNumber, context: Context, divisible = true): Balance {
-  assertIsPositive(value);
-
-  if (value.isGreaterThan(MAX_BALANCE)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The value exceeds the maximum possible balance',
-      data: {
-        currentValue: value,
-        amountLimit: MAX_BALANCE,
-      },
-    });
-  }
-
-  if (divisible) {
-    if (value.decimalPlaces() > MAX_DECIMALS) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The value has more decimal places than allowed',
-        data: {
-          currentValue: value,
-          decimalsLimit: MAX_DECIMALS,
-        },
-      });
-    }
-  } else {
-    if (value.decimalPlaces()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The value has decimals but the Asset is indivisible',
-      });
-    }
-  }
-
-  return context.createType('Balance', value.shiftedBy(6).toString());
-}
-
-/**
- * @hidden
- */
-export function balanceToBigNumber(balance: Balance): BigNumber {
-  return new BigNumber(balance.toString()).shiftedBy(-6);
-}
-
-/**
- * @hidden
- */
 export function stringToMemo(value: string, context: Context): Memo {
   if (value.length > MAX_MEMO_LENGTH) {
     throw new PolymeshError({
@@ -1288,29 +1340,6 @@ export function stringToMemo(value: string, context: Context): Memo {
   }
 
   return context.createType('Memo', padString(value, MAX_MEMO_LENGTH));
-}
-
-/**
- * @hidden
- */
-export function bigNumberToU32(value: BigNumber, context: Context): u32 {
-  assertIsInteger(value);
-  assertIsPositive(value);
-  return context.createType('u32', value.toString());
-}
-
-/**
- * @hidden
- */
-export function u32ToBigNumber(value: u32): BigNumber {
-  return new BigNumber(value.toString());
-}
-
-/**
- * @hidden
- */
-export function u8ToBigNumber(value: u8): BigNumber {
-  return new BigNumber(value.toString());
 }
 
 /**
@@ -2200,7 +2229,7 @@ export function requirementToComplianceRequirement(
     } else if (isMultiClaimCondition(condition)) {
       const { claims } = condition;
       conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
-    } else if (condition.type === ConditionType.IsIdentity) {
+    } else if (isIdentityCondition(condition)) {
       const { identity } = condition;
       conditionContent = stringToTargetIdentity(signerToString(identity), context);
     } else {
@@ -2637,7 +2666,7 @@ export function meshAffirmationStatusToAffirmationStatus(
 export function endConditionToSettlementType(
   endCondition:
     | { type: InstructionType.SettleOnAffirmation }
-    | { type: InstructionType; value: BigNumber },
+    | { type: InstructionType.SettleOnBlock; value: BigNumber },
   context: Context
 ): SettlementType {
   let value;
@@ -3331,27 +3360,4 @@ export function corporateActionIdentifierToCaId(
     // eslint-disable-next-line @typescript-eslint/naming-convention
     local_id: bigNumberToU32(localId, context),
   });
-}
-
-/**
- * @hidden
- */
-export function agentGroupToPermissionGroup(
-  agentGroup: AgentGroup,
-  ticker: string,
-  context: Context
-): KnownPermissionGroup | CustomPermissionGroup {
-  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
-  switch (permissionGroupIdentifier) {
-    case PermissionGroupType.ExceptMeta:
-    case PermissionGroupType.Full:
-    case PermissionGroupType.PolymeshV1Caa:
-    case PermissionGroupType.PolymeshV1Pia: {
-      return new KnownPermissionGroup({ type: permissionGroupIdentifier, ticker }, context);
-    }
-    default: {
-      const { custom: id } = permissionGroupIdentifier;
-      return new CustomPermissionGroup({ id, ticker }, context);
-    }
-  }
 }
