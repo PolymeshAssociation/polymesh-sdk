@@ -119,14 +119,14 @@ export class AccountManagement {
   /**
    * Send an invitation to an Account to join the signing Identity as a secondary Account
    *
-   * @note this will create an AuthorizationRequest which has to be accepted by
-   *   the corresponding Account. An Account can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `targetAccount`.
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    */
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
   /**
-   * Freeze all of the secondary Accounts in the signing Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the Accounts are unfrozen via [[unfreezeSecondaryAccounts]]
+   * Freeze all of the secondary Accounts in the signing Identity. This means revoking their permission to perform any operation on the blockchain and freezing their funds until the Accounts are unfrozen via {@link unfreezeSecondaryAccounts}
    */
   public freezeSecondaryAccounts: NoArgsProcedureMethod<void>;
 
@@ -138,8 +138,9 @@ export class AccountManagement {
   /**
    * Send an Authorization Request to an Account to subsidize its transaction fees
    *
-   * @note this will create an AuthorizationRequest which has to be accepted by
-   *   the beneficiary Account. An Account can fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `beneficiary` Account.
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    */
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
 
