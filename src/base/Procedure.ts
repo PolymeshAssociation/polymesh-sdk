@@ -30,15 +30,40 @@ import { signerToString } from '~/utils/conversion';
 
 /**
  * @hidden
+ */
+function assertOnlyOneAsset(assets: Asset[]) {
+  if (assets.length > 1) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message:
+        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team',
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
+async function getAgentPermissionsResult(
+  identity: Identity | null,
+  asset: Asset,
+  transactions: TxTag[] | null
+): Promise<CheckPermissionsResult<SignerType.Identity>> {
+  return identity
+    ? identity.assetPermissions.checkPermissions({
+        asset,
+        transactions,
+      })
+    : { result: false, missingPermissions: transactions };
+}
+
+/**
+ * @hidden
  *
  * Represents an operation performed on the Polymesh blockchain.
- * A Procedure can be prepared to yield a [[TransactionQueue]] that can be run
+ * A Procedure can be prepared to yield a {@link TransactionQueue} that can be run
  */
-export class Procedure<
-  Args extends unknown = void,
-  ReturnValue extends unknown = void,
-  Storage extends unknown = Record<string, unknown>
-> {
+export class Procedure<Args = void, ReturnValue = void, Storage = Record<string, unknown>> {
   private prepareTransactions: (
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
@@ -233,7 +258,7 @@ export class Procedure<
   }
 
   /**
-   * Build a [[TransactionQueue]] that can be run
+   * Build a {@link TransactionQueue} that can be run
    *
    * @param args.args - arguments required to prepare the queue
    * @param args.transformer - optional function that transforms the Procedure result
@@ -326,7 +351,7 @@ export class Procedure<
    * Appends a transaction into this Procedure's queue. This defines
    *   what will be run by the TransactionQueue when it is started
    *
-   * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
+   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
   public addTransaction<TxArgs extends unknown[] | [], Values extends unknown[] = []>(
     args: AddTransactionArgs<TxArgs, Values>
@@ -377,17 +402,17 @@ export class Procedure<
    *
    * @returns whichever value is returned by the passed Procedure
    */
-  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+  public async addProcedure<ProcArgs, R, S>(
     procedure: Procedure<ProcArgs, R, S>,
     args: ProcArgs
   ): Promise<MaybePostTransactionValue<R>>;
 
-  public async addProcedure<R extends unknown, S extends unknown>(
+  public async addProcedure<R, S>(
     procedure: Procedure<void, R, S>
   ): Promise<MaybePostTransactionValue<R>>;
 
   // eslint-disable-next-line require-jsdoc
-  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+  public async addProcedure<ProcArgs, R, S>(
     procedure: Procedure<void | ProcArgs, R, S>,
     args: ProcArgs = {} as ProcArgs
   ): Promise<MaybePostTransactionValue<R>> {
@@ -413,7 +438,7 @@ export class Procedure<
    * Appends a batch of transactions into this Procedure's queue. This defines
    *   what will be run by the TransactionQueue when it is started
    *
-   * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
+   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
   public addBatchTransaction<ArgsArray extends (unknown[] | [])[], Values extends unknown[] = []>(
     args: AddBatchTransactionArgs<Values, ArgsArray>
@@ -502,33 +527,4 @@ export class Procedure<
 
     return context;
   }
-}
-
-/**
- * @hidden
- */
-function assertOnlyOneAsset(assets: Asset[]) {
-  if (assets.length > 1) {
-    throw new PolymeshError({
-      code: ErrorCode.FatalError,
-      message:
-        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team',
-    });
-  }
-}
-
-/**
- * @hidden
- */
-async function getAgentPermissionsResult(
-  identity: Identity | null,
-  asset: Asset,
-  transactions: TxTag[] | null
-): Promise<CheckPermissionsResult<SignerType.Identity>> {
-  return identity
-    ? identity.assetPermissions.checkPermissions({
-        asset,
-        transactions,
-      })
-    : { result: false, missingPermissions: transactions };
 }

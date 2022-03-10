@@ -46,6 +46,181 @@ import {
 } from '~/utils/conversion';
 import { assertAddressValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
 
+/**
+ * @hidden
+ *
+ * Calculate the difference between the required Asset permissions and the current ones
+ */
+function getMissingAssetPermissions(
+  requiredPermissions: Asset[] | null | undefined,
+  currentPermissions: SectionPermissions<Asset> | null
+): SimplePermissions['assets'] {
+  if (currentPermissions === null) {
+    return undefined;
+  } else if (requiredPermissions === null) {
+    return null;
+  } else if (requiredPermissions) {
+    const { type: permissionType, values: assetValues } = currentPermissions;
+
+    if (requiredPermissions.length) {
+      let missingPermissions: Asset[];
+
+      if (permissionType === PermissionType.Include) {
+        missingPermissions = differenceBy(requiredPermissions, assetValues, 'ticker');
+      } else {
+        missingPermissions = intersectionBy(requiredPermissions, assetValues, 'ticker');
+      }
+
+      if (missingPermissions.length) {
+        return missingPermissions;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * @hidden
+ *
+ * Calculate the difference between the required Transaction permissions and the current ones
+ */
+function getMissingTransactionPermissions(
+  requiredPermissions: TxTag[] | null | undefined,
+  currentPermissions: TransactionPermissions | null
+): SimplePermissions['transactions'] {
+  // these transactions are allowed to any Account, independent of permissions
+  const exemptedTransactions: (TxTag | ModuleName)[] = [
+    TxTags.identity.LeaveIdentityAsKey,
+    TxTags.identity.JoinIdentityAsKey,
+    TxTags.multiSig.AcceptMultisigSignerAsKey,
+    ...difference(Object.values(TxTags.balances), [
+      TxTags.balances.DepositBlockRewardReserveBalance,
+      TxTags.balances.BurnAccountBalance,
+    ]),
+    ModuleName.Staking,
+    ModuleName.Sudo,
+    ModuleName.Session,
+    ModuleName.Authorship,
+    ModuleName.Babe,
+    ModuleName.Grandpa,
+    ModuleName.ImOnline,
+    ModuleName.Indices,
+    ModuleName.Scheduler,
+    ModuleName.System,
+    ModuleName.Timestamp,
+  ];
+
+  if (currentPermissions === null) {
+    return undefined;
+  } else if (requiredPermissions === null) {
+    return null;
+  } else if (requiredPermissions) {
+    const {
+      type: transactionsType,
+      values: transactionsValues,
+      exceptions = [],
+    } = currentPermissions;
+    if (requiredPermissions.length) {
+      let missingPermissions: TxTag[];
+
+      const exceptionMatches = intersection(requiredPermissions, exceptions);
+
+      if (transactionsType === PermissionType.Include) {
+        const includedTransactions = union(transactionsValues, exemptedTransactions);
+
+        missingPermissions = union(
+          differenceWith(requiredPermissions, includedTransactions, isModuleOrTagMatch),
+          exceptionMatches
+        );
+      } else {
+        /*
+         * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
+         *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
+         *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
+         *   removing the entire Identity module from the result, which doesn't make sense
+         */
+        const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName) => {
+          if (!tx.includes('.')) {
+            return tx === exemptedTx;
+          }
+
+          return isModuleOrTagMatch(tx, exemptedTx);
+        };
+
+        const excludedTransactions = differenceWith(
+          transactionsValues,
+          exemptedTransactions,
+          txComparator
+        );
+
+        missingPermissions = difference(
+          intersectionWith(requiredPermissions, excludedTransactions, isModuleOrTagMatch),
+          exceptionMatches
+        );
+      }
+
+      if (missingPermissions.length) {
+        return missingPermissions;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * @hidden
+ *
+ * Calculate the difference between the required Transaction permissions and the current ones
+ */
+function getMissingPortfolioPermissions(
+  requiredPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null | undefined,
+  currentPermissions: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null
+): SimplePermissions['portfolios'] {
+  if (currentPermissions === null) {
+    return undefined;
+  } else if (requiredPermissions === null) {
+    return null;
+  } else if (requiredPermissions) {
+    const { type: portfoliosType, values: portfoliosValues } = currentPermissions;
+
+    if (requiredPermissions.length) {
+      let missingPermissions: (DefaultPortfolio | NumberedPortfolio)[];
+
+      const portfolioComparator = (
+        a: DefaultPortfolio | NumberedPortfolio,
+        b: DefaultPortfolio | NumberedPortfolio
+      ) => {
+        const aId = portfolioToPortfolioId(a);
+        const bId = portfolioToPortfolioId(b);
+
+        return isEqual(aId, bId);
+      };
+
+      if (portfoliosType === PermissionType.Include) {
+        missingPermissions = differenceWith(
+          requiredPermissions,
+          portfoliosValues,
+          portfolioComparator
+        );
+      } else {
+        missingPermissions = intersectionWith(
+          requiredPermissions,
+          portfoliosValues,
+          portfolioComparator
+        );
+      }
+
+      if (missingPermissions.length) {
+        return missingPermissions;
+      }
+    }
+  }
+
+  return undefined;
+}
+
 export interface UniqueIdentifiers {
   address: string;
 }
@@ -56,9 +231,9 @@ export interface UniqueIdentifiers {
 export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { address } = identifier as UniqueIdentifiers;
 
     return typeof address === 'string';
@@ -404,179 +579,4 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public toJson(): string {
     return this.address;
   }
-}
-
-/**
- * @hidden
- *
- * Calculate the difference between the required Asset permissions and the current ones
- */
-function getMissingAssetPermissions(
-  requiredPermissions: Asset[] | null | undefined,
-  currentPermissions: SectionPermissions<Asset> | null
-): SimplePermissions['assets'] {
-  if (currentPermissions === null) {
-    return undefined;
-  } else if (requiredPermissions === null) {
-    return null;
-  } else if (requiredPermissions) {
-    const { type: permissionType, values: assetValues } = currentPermissions;
-
-    if (requiredPermissions.length) {
-      let missingPermissions: Asset[];
-
-      if (permissionType === PermissionType.Include) {
-        missingPermissions = differenceBy(requiredPermissions, assetValues, 'ticker');
-      } else {
-        missingPermissions = intersectionBy(requiredPermissions, assetValues, 'ticker');
-      }
-
-      if (missingPermissions.length) {
-        return missingPermissions;
-      }
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * @hidden
- *
- * Calculate the difference between the required Transaction permissions and the current ones
- */
-function getMissingTransactionPermissions(
-  requiredPermissions: TxTag[] | null | undefined,
-  currentPermissions: TransactionPermissions | null
-): SimplePermissions['transactions'] {
-  // these transactions are allowed to any Account, independent of permissions
-  const exemptedTransactions: (TxTag | ModuleName)[] = [
-    TxTags.identity.LeaveIdentityAsKey,
-    TxTags.identity.JoinIdentityAsKey,
-    TxTags.multiSig.AcceptMultisigSignerAsKey,
-    ...difference(Object.values(TxTags.balances), [
-      TxTags.balances.DepositBlockRewardReserveBalance,
-      TxTags.balances.BurnAccountBalance,
-    ]),
-    ModuleName.Staking,
-    ModuleName.Sudo,
-    ModuleName.Session,
-    ModuleName.Authorship,
-    ModuleName.Babe,
-    ModuleName.Grandpa,
-    ModuleName.ImOnline,
-    ModuleName.Indices,
-    ModuleName.Scheduler,
-    ModuleName.System,
-    ModuleName.Timestamp,
-  ];
-
-  if (currentPermissions === null) {
-    return undefined;
-  } else if (requiredPermissions === null) {
-    return null;
-  } else if (requiredPermissions) {
-    const {
-      type: transactionsType,
-      values: transactionsValues,
-      exceptions = [],
-    } = currentPermissions;
-    if (requiredPermissions.length) {
-      let missingPermissions: TxTag[];
-
-      const exceptionMatches = intersection(requiredPermissions, exceptions);
-
-      if (transactionsType === PermissionType.Include) {
-        const includedTransactions = union(transactionsValues, exemptedTransactions);
-
-        missingPermissions = union(
-          differenceWith(requiredPermissions, includedTransactions, isModuleOrTagMatch),
-          exceptionMatches
-        );
-      } else {
-        /*
-         * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
-         *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
-         *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
-         *   removing the entire Identity module from the result, which doesn't make sense
-         */
-        const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName) => {
-          if (!tx.includes('.')) {
-            return tx === exemptedTx;
-          }
-
-          return isModuleOrTagMatch(tx, exemptedTx);
-        };
-
-        const excludedTransactions = differenceWith(
-          transactionsValues,
-          exemptedTransactions,
-          txComparator
-        );
-
-        missingPermissions = difference(
-          intersectionWith(requiredPermissions, excludedTransactions, isModuleOrTagMatch),
-          exceptionMatches
-        );
-      }
-
-      if (missingPermissions.length) {
-        return missingPermissions;
-      }
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * @hidden
- *
- * Calculate the difference between the required Transaction permissions and the current ones
- */
-function getMissingPortfolioPermissions(
-  requiredPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null | undefined,
-  currentPermissions: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null
-): SimplePermissions['portfolios'] {
-  if (currentPermissions === null) {
-    return undefined;
-  } else if (requiredPermissions === null) {
-    return null;
-  } else if (requiredPermissions) {
-    const { type: portfoliosType, values: portfoliosValues } = currentPermissions;
-
-    if (requiredPermissions.length) {
-      let missingPermissions: (DefaultPortfolio | NumberedPortfolio)[];
-
-      const portfolioComparator = (
-        a: DefaultPortfolio | NumberedPortfolio,
-        b: DefaultPortfolio | NumberedPortfolio
-      ) => {
-        const aId = portfolioToPortfolioId(a);
-        const bId = portfolioToPortfolioId(b);
-
-        return isEqual(aId, bId);
-      };
-
-      if (portfoliosType === PermissionType.Include) {
-        missingPermissions = differenceWith(
-          requiredPermissions,
-          portfoliosValues,
-          portfolioComparator
-        );
-      } else {
-        missingPermissions = intersectionWith(
-          requiredPermissions,
-          portfoliosValues,
-          portfolioComparator
-        );
-      }
-
-      if (missingPermissions.length) {
-        return missingPermissions;
-      }
-    }
-  }
-
-  return undefined;
 }

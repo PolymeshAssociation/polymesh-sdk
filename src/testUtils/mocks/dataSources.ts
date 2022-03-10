@@ -885,7 +885,7 @@ export function configureMocks(opts?: {
  * @hidden
  * Initialize the factory by adding default all-purpose functionality to the mock manager
  *
- * @param opts.mockContext - if defined, the internal [[Context]] class will also be mocked with custom properties
+ * @param opts.mockContext - if defined, the internal {@link Context} class will also be mocked with custom properties
  */
 export function initMocks(opts?: {
   contextOptions?: ContextOptions;
@@ -946,7 +946,7 @@ export function reset(): void {
  * @param mod - name of the module
  * @param tx - name of the transaction function
  * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
- *  If set to false, the transaction lifecycle will be controlled by [[updateTxStatus]]
+ *  If set to false, the transaction lifecycle will be controlled by {@link updateTxStatus}
  */
 export function createTxStub<
   ModuleName extends keyof Extrinsics,
@@ -1421,6 +1421,25 @@ export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
+  const codec: Record<string, unknown> = {};
+
+  if (typeof enumValue === 'string') {
+    codec[`is${upperFirst(enumValue)}`] = true;
+  } else if (typeof enumValue === 'object') {
+    const key = Object.keys(enumValue)[0];
+
+    codec[`is${upperFirst(key)}`] = true;
+    codec[`as${upperFirst(key)}`] = enumValue[key];
+  }
+
+  return createMockCodec(codec, false) as Enum;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAgentGroup = (
   agentGroup?: 'Full' | 'ExceptMeta' | 'PolymeshV1Caa' | 'PolymeshV1Pia' | { Custom: AGId }
 ): AgentGroup => {
@@ -1693,25 +1712,6 @@ export const createMockBool = (value?: boolean | bool): bool => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
-  const codec: Record<string, unknown> = {};
-
-  if (typeof enumValue === 'string') {
-    codec[`is${upperFirst(enumValue)}`] = true;
-  } else if (typeof enumValue === 'object') {
-    const key = Object.keys(enumValue)[0];
-
-    codec[`is${upperFirst(key)}`] = true;
-    codec[`as${upperFirst(key)}`] = enumValue[key];
-  }
-
-  return createMockCodec(codec, false) as Enum;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockPortfolioKind = (
   portfolioKind?: 'Default' | { User: u64 } | PortfolioKind
 ): PortfolioKind => {
@@ -1845,6 +1845,35 @@ export const createMockDocument = (document?: {
     },
     !document
   ) as Document;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPalletName = (name?: string | PalletName): PalletName => {
+  if (isCodec<PalletName>(name)) {
+    return name;
+  }
+
+  return createMockStringCodec(name) as PalletName;
+};
+
+/**
+ * @hidden
+ */
+export const createMockDispatchableNames = (
+  dispatchableNames?:
+    | 'Whole'
+    | { These: DispatchableName[] }
+    | { Except: DispatchableName[] }
+    | DispatchableNames
+): DispatchableNames => {
+  if (isCodec<DispatchableNames>(dispatchableNames)) {
+    return dispatchableNames;
+  }
+
+  return createMockEnum(dispatchableNames) as DispatchableNames;
 };
 
 /**
@@ -2009,18 +2038,6 @@ export const createMockFundingRoundName = (roundName?: string): FundingRoundName
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPalletName = (name?: string | PalletName): PalletName => {
-  if (isCodec<PalletName>(name)) {
-    return name;
-  }
-
-  return createMockStringCodec(name) as PalletName;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockDispatchableName = (name?: string | DispatchableName): DispatchableName => {
   if (isCodec<DispatchableName>(name)) {
     return name;
@@ -2035,29 +2052,6 @@ export const createMockDispatchableName = (name?: string | DispatchableName): Di
  */
 export const createMockFundraiserName = (name?: string): FundraiserName =>
   createMockStringCodec(name) as FundraiserName;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPermissions = (permissions?: {
-  asset: AssetPermissions;
-  extrinsic: ExtrinsicPermissions;
-  portfolio: PortfolioPermissions;
-}): Permissions => {
-  const perms = permissions || {
-    asset: createMockAssetPermissions(),
-    extrinsic: createMockExtrinsicPermissions(),
-    portfolio: createMockPortfolioPermissions(),
-  };
-
-  return createMockCodec(
-    {
-      ...perms,
-    },
-    !permissions
-  ) as Permissions;
-};
 
 /**
  * @hidden
@@ -2088,19 +2082,25 @@ export const createMockPortfolioPermissions = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDispatchableNames = (
-  dispatchableNames?:
-    | 'Whole'
-    | { These: DispatchableName[] }
-    | { Except: DispatchableName[] }
-    | DispatchableNames
-): DispatchableNames => {
-  if (isCodec<DispatchableNames>(dispatchableNames)) {
-    return dispatchableNames;
-  }
+export const createMockPermissions = (permissions?: {
+  asset: AssetPermissions;
+  extrinsic: ExtrinsicPermissions;
+  portfolio: PortfolioPermissions;
+}): Permissions => {
+  const perms = permissions || {
+    asset: createMockAssetPermissions(),
+    extrinsic: createMockExtrinsicPermissions(),
+    portfolio: createMockPortfolioPermissions(),
+  };
 
-  return createMockEnum(dispatchableNames) as DispatchableNames;
+  return createMockCodec(
+    {
+      ...perms,
+    },
+    !permissions
+  ) as Permissions;
 };
 
 /**
@@ -3404,23 +3404,32 @@ export const createMockClassicTickerRegistration = (
 /**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockSignedBlock = (
-  signedBlock?:
-    | SignedBlock
+export const createMockHeader = (
+  header?:
+    | Header
     | {
-        block: Block | Parameters<typeof createMockBlock>[0];
+        parentHash: Hash | Parameters<typeof createMockHash>[0];
+        number: Compact<u32>;
+        stateRoot: Hash | Parameters<typeof createMockHash>[0];
+        extrinsicsRoot: Hash | Parameters<typeof createMockHash>[0];
       }
-): SignedBlock => {
-  const { block } = signedBlock || {
-    block: createMockBlock(),
+): Header => {
+  const { parentHash, number, stateRoot, extrinsicsRoot } = header || {
+    parentHash: createMockHash(),
+    number: createMockCompact(),
+    stateRoot: createMockHash(),
+    extrinsicsRoot: createMockHash(),
   };
 
   return createMockCodec(
     {
-      block: createMockBlock(block),
+      parentHash: createMockHash(parentHash),
+      number: createMockCompact(number.unwrap()),
+      stateRoot: createMockHash(stateRoot),
+      extrinsicsRoot: createMockHash(extrinsicsRoot),
     },
-    !signedBlock
-  ) as SignedBlock;
+    !header
+  ) as Header;
 };
 
 /**
@@ -3448,30 +3457,21 @@ export const createMockBlock = (
 /**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockHeader = (
-  header?:
-    | Header
+export const createMockSignedBlock = (
+  signedBlock?:
+    | SignedBlock
     | {
-        parentHash: Hash | Parameters<typeof createMockHash>[0];
-        number: Compact<u32>;
-        stateRoot: Hash | Parameters<typeof createMockHash>[0];
-        extrinsicsRoot: Hash | Parameters<typeof createMockHash>[0];
+        block: Block | Parameters<typeof createMockBlock>[0];
       }
-): Header => {
-  const { parentHash, number, stateRoot, extrinsicsRoot } = header || {
-    parentHash: createMockHash(),
-    number: createMockCompact(),
-    stateRoot: createMockHash(),
-    extrinsicsRoot: createMockHash(),
+): SignedBlock => {
+  const { block } = signedBlock || {
+    block: createMockBlock(),
   };
 
   return createMockCodec(
     {
-      parentHash: createMockHash(parentHash),
-      number: createMockCompact(number.unwrap()),
-      stateRoot: createMockHash(stateRoot),
-      extrinsicsRoot: createMockHash(extrinsicsRoot),
+      block: createMockBlock(block),
     },
-    !header
-  ) as Header;
+    !signedBlock
+  ) as SignedBlock;
 };

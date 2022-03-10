@@ -131,6 +131,14 @@ export async function getDid(
 
 /**
  * @hidden
+ * Given a DID return the corresponding Identity, given an Identity return the Identity
+ */
+export function asIdentity(value: string | Identity, context: Context): Identity {
+  return typeof value === 'string' ? new Identity({ did: value }, context) : value;
+}
+
+/**
+ * @hidden
  * Given an Identity, return the Identity, given a DID returns the corresponding Identity, if value is falsy, then return currentIdentity
  */
 export async function getIdentity(
@@ -142,14 +150,6 @@ export async function getIdentity(
   } else {
     return asIdentity(value, context);
   }
-}
-
-/**
- * @hidden
- * Given a DID return the corresponding Identity, given an Identity return the Identity
- */
-export function asIdentity(value: string | Identity, context: Context): Identity {
-  return typeof value === 'string' ? new Identity({ did: value }, context) : value;
 }
 
 /**
@@ -210,7 +210,7 @@ export function createClaim(
  *
  * Unwrap a Post Transaction Value
  */
-export function unwrapValue<T extends unknown>(value: MaybePostTransactionValue<T>): T {
+export function unwrapValue<T>(value: MaybePostTransactionValue<T>): T {
   if (value instanceof PostTransactionValue) {
     return value.value;
   }
@@ -387,7 +387,7 @@ export function calculateNextKey(
  * Create a method that prepares a procedure
  */
 export function createProcedureMethod<
-  ProcedureArgs extends unknown,
+  ProcedureArgs,
   ProcedureReturnValue,
   Storage = Record<string, unknown>
 >(
@@ -404,7 +404,7 @@ export function createProcedureMethod<
   context: Context
 ): NoArgsProcedureMethod<ProcedureReturnValue, ProcedureReturnValue>;
 export function createProcedureMethod<
-  ProcedureArgs extends unknown,
+  ProcedureArgs,
   ProcedureReturnValue,
   ReturnValue,
   Storage = Record<string, unknown>
@@ -425,7 +425,7 @@ export function createProcedureMethod<
 export function createProcedureMethod<
   // eslint-disable-next-line @typescript-eslint/ban-types
   MethodArgs extends {},
-  ProcedureArgs extends unknown,
+  ProcedureArgs,
   ProcedureReturnValue,
   Storage = Record<string, unknown>
 >(
@@ -445,7 +445,7 @@ export function createProcedureMethod<
 export function createProcedureMethod<
   // eslint-disable-next-line @typescript-eslint/ban-types
   MethodArgs extends {},
-  ProcedureArgs extends unknown,
+  ProcedureArgs,
   ProcedureReturnValue,
   ReturnValue,
   Storage = Record<string, unknown>
@@ -467,7 +467,7 @@ export function createProcedureMethod<
 // eslint-disable-next-line require-jsdoc
 export function createProcedureMethod<
   MethodArgs,
-  ProcedureArgs extends unknown,
+  ProcedureArgs,
   ProcedureReturnValue,
   ReturnValue = ProcedureReturnValue,
   Storage = Record<string, unknown>
@@ -726,6 +726,21 @@ export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
 /**
  * @hidden
  *
+ * Return whether the two arrays have same elements.
+ * It uses a `comparator` function to check if elements are equal.
+ * If no comparator function is provided, it uses `isEqual` function of `lodash`
+ */
+export function hasSameElements<T>(
+  first: T[],
+  second: T[],
+  comparator: (a: T, b: T) => boolean = isEqual
+): boolean {
+  return !differenceWith(first, second, comparator).length && first.length === second.length;
+}
+
+/**
+ * @hidden
+ *
  * Perform a deep comparison between two compliance conditions
  */
 export function conditionsAreEqual(
@@ -733,6 +748,8 @@ export function conditionsAreEqual(
   b: Condition | InputCondition
 ): boolean {
   let equalClaims = false;
+  const { type: aType, trustedClaimIssuers: aClaimIssuers = [] } = a;
+  const { type: bType, trustedClaimIssuers: bClaimIssuers = [] } = b;
 
   if (isSingleClaimCondition(a) && isSingleClaimCondition(b)) {
     equalClaims = isEqual(a.claim, b.claim);
@@ -741,14 +758,11 @@ export function conditionsAreEqual(
     const { claims: bClaims } = b;
 
     equalClaims = hasSameElements(aClaims, bClaims);
-  } else if (a.type === ConditionType.IsIdentity && b.type === ConditionType.IsIdentity) {
+  } else if (aType === ConditionType.IsIdentity && bType === ConditionType.IsIdentity) {
     equalClaims = signerToString(a.identity) === signerToString(b.identity);
-  } else if (a.type === ConditionType.IsExternalAgent && b.type === ConditionType.IsExternalAgent) {
+  } else if (aType === ConditionType.IsExternalAgent && bType === ConditionType.IsExternalAgent) {
     equalClaims = true;
   }
-
-  const { trustedClaimIssuers: aClaimIssuers = [] } = a;
-  const { trustedClaimIssuers: bClaimIssuers = [] } = b;
 
   const equalClaimIssuers = hasSameElements(
     aClaimIssuers,
@@ -826,21 +840,6 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
   txsAndArgs: MapTxAndArgsArray<ArgsArray>
 ): MapTxWithArgs<unknown[][]> {
   return flatMap(txsAndArgs, mapArgs) as unknown as MapTxWithArgs<unknown[][]>;
-}
-
-/**
- * @hidden
- *
- * Return whether the two arrays have same elements.
- * It uses a `comparator` function to check if elements are equal.
- * If no comparator function is provided, it uses `isEqual` function of `lodash`
- */
-export function hasSameElements<T>(
-  first: T[],
-  second: T[],
-  comparator: (a: T, b: T) => boolean = isEqual
-): boolean {
-  return !differenceWith(first, second, comparator).length && first.length === second.length;
 }
 
 /**

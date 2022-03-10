@@ -41,9 +41,9 @@ export function addInstructionTransformer([instruction]: Instruction[]): Instruc
 export class Venue extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber;

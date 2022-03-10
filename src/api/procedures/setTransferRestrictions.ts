@@ -217,7 +217,7 @@ export async function prepareStorage(
   args: SetTransferRestrictionsParams
 ): Promise<Storage> {
   const { context } = this;
-  const { ticker } = args;
+  const { ticker, type, restrictions } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -236,23 +236,21 @@ export async function prepareStorage(
   const toAddExemptionPromises: [TransferRestriction, Promise<string[]>][] = [];
   let occupiedSlots = currentCountRestrictions.length + currentPercentageRestrictions.length;
 
-  if (args.type === TransferRestrictionType.Count) {
-    args.restrictions.forEach(
-      ({ exemptedScopeIds = [], exemptedIdentities = [], count: value }) => {
-        const restriction = { type: TransferRestrictionType.Count, value };
-        toAddRestrictions.push(restriction);
-        toAddExemptionPromises.push(
-          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds, context, ticker))
-        );
-      }
-    );
+  if (type === TransferRestrictionType.Count) {
+    restrictions.forEach(({ exemptedScopeIds = [], exemptedIdentities = [], count: value }) => {
+      const restriction = { type: TransferRestrictionType.Count, value };
+      toAddRestrictions.push(restriction);
+      toAddExemptionPromises.push(
+        tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds, context, ticker))
+      );
+    });
     currentCountRestrictions.forEach(({ exemptedScopeIds = [], count: value }) => {
       const restriction = { type: TransferRestrictionType.Count, value };
       currentRestrictions.push(restriction);
       currentExemptions.push(tuple(restriction, exemptedScopeIds));
     });
   } else {
-    args.restrictions.forEach(
+    restrictions.forEach(
       ({ exemptedIdentities = [], exemptedScopeIds = [], percentage: value }) => {
         const restriction = { type: TransferRestrictionType.Percentage, value };
         toAddRestrictions.push(restriction);

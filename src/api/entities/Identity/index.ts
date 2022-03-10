@@ -75,9 +75,9 @@ export interface UniqueIdentifiers {
 export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Checks if a value is of type [[UniqueIdentifiers]]
+   * Checks if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did } = identifier as UniqueIdentifiers;
 
     return typeof did === 'string';
