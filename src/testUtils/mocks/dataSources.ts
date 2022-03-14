@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ApiPromise, Keyring } from '@polkadot/api';
+import { ApiPromise } from '@polkadot/api';
 import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
@@ -29,7 +29,6 @@ import {
 import {
   Codec,
   IEvent,
-  IKeyringPair,
   ISubmittableResult,
   Registry,
   Signer as PolkadotSigner,
@@ -237,7 +236,6 @@ const MockApolloClientClass = class {
 const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
-  keyringInstance: {} as Mutable<Keyring>,
   signingManagerInstance: {} as Mutable<SigningManager>,
   apolloInstance: createApolloClient(),
   webSocketAsPromisedInstance: createWebSocketAsPromised(),
@@ -263,17 +261,6 @@ const MockApiPromiseClass = class {
 
 const MockWsProviderClass = class {};
 
-let keyringConstructorStub: SinonStub;
-
-const MockKeyringClass = class {
-  /**
-   * @hidden
-   */
-  public constructor() {
-    return keyringConstructorStub();
-  }
-};
-
 let contextCreateStub: SinonStub;
 
 const MockContextClass = class {
@@ -294,14 +281,6 @@ interface TxMockData {
   status: MockTxStatus;
   resolved: boolean;
 }
-
-interface Pair {
-  address: string;
-  meta: Record<string, unknown>;
-  publicKey: string;
-  isLocked?: boolean;
-}
-
 interface ContextOptions {
   did?: string;
   withSigningManager?: boolean;
@@ -335,30 +314,14 @@ interface ContextOptions {
   areSecondaryAccountsFrozen?: boolean;
   getDividendDistributionsForAssets?: DistributionWithDetails[];
   isFrozen?: boolean;
-  addPair?: Pair;
   getSigningAccounts?: Account[];
   signingIdentityIsEqual?: boolean;
   networkVersion?: string;
   supportsSubsidy?: boolean;
 }
 
-interface KeyringOptions {
-  getPair?: Pair;
-  getPairs?: Pair[];
-  addFromUri?: Pair;
-  addFromSeed?: Pair;
-  addFromMnemonic?: Pair;
-  addPair?: Pair;
-  encodeAddress?: string;
-  /**
-   * @hidden
-   * Whether keyring functions should throw
-   */
-  error?: boolean;
-}
-
 interface SigningManagerOptions {
-  getAccounts?: string[] | IKeyringPair[];
+  getAccounts?: string[];
   getExternalSigner?: PolkadotSigner | null;
 }
 
@@ -510,7 +473,6 @@ export const mockPolkadotModule = (path: string) => (): Record<string, unknown> 
   ...jest.requireActual(path),
   ApiPromise: MockApiPromiseClass,
   WsProvider: MockWsProviderClass,
-  Keyring: MockKeyringClass,
 });
 
 export const mockContextModule = (path: string) => (): Record<string, unknown> => ({
@@ -616,49 +578,12 @@ const defaultContextOptions: ContextOptions = {
   getDividendDistributionsForAssets: [],
   areSecondaryAccountsFrozen: false,
   isFrozen: false,
-  addPair: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    isLocked: false,
-    publicKey: 'someKey',
-  },
   getSigningAccounts: [],
   signingIdentityIsEqual: true,
   networkVersion: '1.0.0',
   supportsSubsidy: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
-const defaultKeyringOptions: KeyringOptions = {
-  getPair: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey1',
-  },
-  getPairs: [
-    {
-      address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-      meta: {},
-      publicKey: 'publicKey2',
-    },
-  ],
-  addFromSeed: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey3',
-  },
-  addFromUri: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey4',
-  },
-  addFromMnemonic: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey5',
-  },
-  encodeAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-};
-let keyringOptions: KeyringOptions = defaultKeyringOptions;
 const defaultSigningManagerOptions: SigningManagerOptions = {
   getAccounts: ['someAccount', 'otherAccount'],
   getExternalSigner: 'signer' as PolkadotSigner,
@@ -733,7 +658,7 @@ function configureContext(opts: ContextOptions): void {
     accountSubsidy: sinon.stub().resolves(opts.subsidy),
     getSigningAccounts: sinon.stub().resolves(opts.getSigningAccounts),
     setSigningAddress: sinon.stub().callsFake(address => {
-      (contextInstance as any).signingAddress = { address } as IKeyringPair;
+      (contextInstance as any).signingAddress = address;
     }),
     setSigningManager: sinon.stub(),
     getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
@@ -759,7 +684,6 @@ function configureContext(opts: ContextOptions): void {
     getDividendDistributionsForAssets: sinon
       .stub()
       .resolves(opts.getDividendDistributionsForAssets),
-    addPair: sinon.stub().returns(opts.addPair),
     getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
     supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
     createType: sinon.stub(),
@@ -938,70 +862,13 @@ function initSigningManager(opts?: SigningManagerOptions): void {
 
 /**
  * @hidden
- */
-function configureKeyring(opts: KeyringOptions): void {
-  const {
-    error,
-    getPair,
-    getPairs,
-    addFromUri,
-    addFromSeed,
-    addFromMnemonic,
-    addPair,
-    encodeAddress,
-  } = opts;
-
-  const err = new Error('Error');
-
-  const keyringInstance = {
-    getPair: sinon.stub().returns(getPair),
-    getPairs: sinon.stub().returns(getPairs),
-    addFromSeed: sinon.stub().returns(addFromSeed),
-    addFromUri: sinon.stub().returns(addFromUri),
-    addFromMnemonic: sinon.stub().returns(addFromMnemonic),
-    addPair: sinon.stub().returns(addPair),
-    encodeAddress: sinon.stub().returns(encodeAddress),
-  };
-
-  if (error) {
-    keyringInstance.getPair.throws(err);
-    keyringInstance.getPairs.throws(err);
-    keyringInstance.addFromSeed.throws(err);
-    keyringInstance.addFromUri.throws(err);
-    keyringInstance.addFromMnemonic.throws(err);
-    keyringInstance.encodeAddress.throws(err);
-  }
-
-  Object.assign(mockInstanceContainer.keyringInstance, keyringInstance as unknown as Keyring);
-
-  keyringConstructorStub.returns(keyringInstance);
-}
-
-/**
- * @hidden
- */
-function initKeyring(opts?: KeyringOptions): void {
-  keyringConstructorStub = sinon.stub();
-
-  keyringOptions = { ...defaultKeyringOptions, ...opts };
-
-  configureKeyring(keyringOptions);
-}
-
-/**
- * @hidden
  *
  * Temporarily change instance mock configuration (calling .reset will go back to the configuration passed in `initMocks`)
  */
 export function configureMocks(opts?: {
   contextOptions?: ContextOptions;
-  keyringOptions?: KeyringOptions;
   signingManagerOptions?: SigningManagerOptions;
 }): void {
-  const tempKeyringOptions = { ...defaultKeyringOptions, ...opts?.keyringOptions };
-
-  configureKeyring(tempKeyringOptions);
-
   const tempContextOptions = { ...defaultContextOptions, ...opts?.contextOptions };
 
   configureContext(tempContextOptions);
@@ -1022,7 +889,6 @@ export function configureMocks(opts?: {
  */
 export function initMocks(opts?: {
   contextOptions?: ContextOptions;
-  keyringOptions?: KeyringOptions;
   signingManagerOptions?: SigningManagerOptions;
 }): void {
   /*
@@ -1035,9 +901,6 @@ export function initMocks(opts?: {
 
   // Api
   initApi();
-
-  // Keyring
-  initKeyring(opts?.keyringOptions);
 
   // Signing Manager
   initSigningManager(opts?.signingManagerOptions);
@@ -1061,7 +924,6 @@ export function initMocks(opts?: {
 export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
-  mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
   mockInstanceContainer.signingManagerInstance = {} as Mutable<SigningManager>;
   mockInstanceContainer.apolloInstance = createApolloClient();
   mockInstanceContainer.webSocketAsPromisedInstance = createWebSocketAsPromised();
@@ -1074,7 +936,7 @@ export function cleanup(): void {
 export function reset(): void {
   cleanup();
 
-  initMocks({ contextOptions, keyringOptions });
+  initMocks({ contextOptions });
 }
 
 /**
@@ -1468,17 +1330,6 @@ export function getContextInstance(opts?: ContextOptions): MockContext {
  */
 export function getContextCreateStub(): SinonStub {
   return contextCreateStub;
-}
-
-/**
- * @hidden
- * Retrieve an instance of the mocked Keyring
- */
-export function getKeyringInstance(opts?: KeyringOptions): Mocked<Keyring> {
-  if (opts) {
-    configureKeyring({ ...defaultKeyringOptions, ...opts });
-  }
-  return mockInstanceContainer.keyringInstance as Mocked<Keyring>;
 }
 
 /**

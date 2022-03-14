@@ -1,4 +1,3 @@
-import { Keyring } from '@polkadot/api';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
@@ -639,21 +638,6 @@ export type UnsubCallback = () => void;
 export interface MiddlewareConfig {
   link: string;
   key: string;
-}
-
-export type CommonKeyring = Pick<
-  Keyring,
-  | 'getPair'
-  | 'getPairs'
-  | 'addFromSeed'
-  | 'addFromUri'
-  | 'addFromMnemonic'
-  | 'addPair'
-  | 'encodeAddress'
->;
-
-export interface UiKeyring {
-  keyring: CommonKeyring;
 }
 
 export interface EventIdentifier {
