@@ -168,7 +168,7 @@ export class TransactionQueue<
       throw err;
     } finally {
       this.hasRun = true;
-      this.emitWhenMiddlewareIsSynced();
+      await this.emitWhenMiddlewareIsSynced();
     }
 
     return res;
@@ -418,6 +418,11 @@ export class TransactionQueue<
 
     let done = false;
 
+    /*
+     * We do not await this promise because it is supposed to run in the background, and
+     * any errors encountered are emitted. If the user isn't listening, they shouldn't
+     * care about middleware (or other) errors anyway
+     */
     P.each(range(6), async i => {
       if (done) {
         return;
@@ -445,7 +450,18 @@ export class TransactionQueue<
       }
 
       return delay(2000);
-    });
+    }).catch(
+      /* istanbul ignore next: very hard to test, extreme edge case */
+      err => {
+        this.emitter.emit(
+          Event.ProcessedByMiddleware,
+          new PolymeshError({
+            code: ErrorCode.UnexpectedError,
+            message: err.message || 'Unexpected error',
+          })
+        );
+      }
+    );
   }
 
   /**

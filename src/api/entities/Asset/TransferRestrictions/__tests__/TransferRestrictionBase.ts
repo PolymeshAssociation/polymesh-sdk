@@ -72,7 +72,7 @@ describe('TransferRestrictionBase class', () => {
 
       const args: Omit<AddCountTransferRestrictionParams, 'type'> = {
         count: new BigNumber(3),
-        exemptedScopeIds: ['someScopeId'],
+        exemptedIdentities: ['someScopeId'],
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
@@ -100,7 +100,7 @@ describe('TransferRestrictionBase class', () => {
 
       const args: Omit<AddPercentageTransferRestrictionParams, 'type'> = {
         percentage: new BigNumber(3),
-        exemptedScopeIds: ['someScopeId'],
+        exemptedIdentities: ['someScopeId'],
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
@@ -141,7 +141,7 @@ describe('TransferRestrictionBase class', () => {
       const count = new Count(asset, context);
 
       const args: Omit<SetCountTransferRestrictionsParams, 'type'> = {
-        restrictions: [{ count: new BigNumber(3), exemptedScopeIds: ['someScopeId'] }],
+        restrictions: [{ count: new BigNumber(3), exemptedIdentities: ['someScopeId'] }],
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
@@ -168,7 +168,7 @@ describe('TransferRestrictionBase class', () => {
       const percentage = new Percentage(asset, context);
 
       const args: Omit<SetPercentageTransferRestrictionsParams, 'type'> = {
-        restrictions: [{ percentage: new BigNumber(49), exemptedScopeIds: ['someScopeId'] }],
+        restrictions: [{ percentage: new BigNumber(49), exemptedIdentities: ['someScopeId'] }],
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
@@ -264,11 +264,11 @@ describe('TransferRestrictionBase class', () => {
     beforeAll(() => {
       scopeId = 'someScopeId';
       countRestriction = {
-        exemptedScopeIds: [scopeId],
+        exemptedIds: [scopeId],
         count: new BigNumber(10),
       };
       percentageRestriction = {
-        exemptedScopeIds: [scopeId],
+        exemptedIds: [scopeId],
         percentage: new BigNumber(49),
       };
       rawCountRestriction = dsMockUtils.createMockTransferManager({

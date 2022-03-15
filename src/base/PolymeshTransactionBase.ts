@@ -1,5 +1,5 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types';
-import { DispatchError } from '@polkadot/types/interfaces';
+import { DispatchError, EventRecord } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
@@ -8,6 +8,7 @@ import { Context, Identity, PolymeshError } from '~/internal';
 import { ErrorCode, Fees, PayingAccount, PayingAccountType, TransactionStatus } from '~/types';
 import { BaseTransactionSpec, PostTransactionValueArray } from '~/types/internal';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
+import { defusePromise } from '~/utils/internal';
 
 /**
  * @hidden
@@ -181,7 +182,9 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
         { nonce: -1, signer },
         receipt => {
           const { status } = receipt;
-          let unsubscribe = false;
+          let isLastCallback = false;
+          let unsubscribing = Promise.resolve();
+          let extrinsicFailedEvent: EventRecord | undefined;
 
           // isCompleted === isFinalized || isInBlock || isError
           if (receipt.isCompleted) {
@@ -193,44 +196,52 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
                *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
                *   one resolves
                */
-              settingBlockData = this.context.polymeshApi.rpc.chain
-                .getBlock(blockHash)
-                .then(({ block }) => {
+              settingBlockData = defusePromise(
+                this.context.polymeshApi.rpc.chain.getBlock(blockHash).then(({ block }) => {
                   this.blockHash = hashToString(blockHash);
                   this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
-                });
+                })
+              );
 
-              const failed = receipt.findRecord('system', 'ExtrinsicFailed');
+              // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+              extrinsicFailedEvent = receipt.findRecord('system', 'ExtrinsicFailed');
 
-              if (failed) {
-                unsubscribe = true;
-                settingBlockData.then(() => {
-                  this.handleExtrinsicFailure(
-                    resolve,
-                    reject,
-                    failed.event.data[0] as DispatchError
-                  );
-                });
-              }
+              // extrinsic failed so we can unsubscribe
+              isLastCallback = !!extrinsicFailedEvent;
             } else {
-              unsubscribe = true;
+              // isFinalized || isError so we know we can unsubscribe
+              isLastCallback = true;
             }
 
-            if (unsubscribe) {
-              gettingUnsub.then(unsub => {
+            if (isLastCallback) {
+              unsubscribing = gettingUnsub.then(unsub => {
                 unsub();
               });
             }
 
-            if (receipt.isFinalized) {
-              settingBlockData.then(() => {
+            /*
+             * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
+             * Primarily for consistent error handling
+             */
+            let finishing = Promise.resolve();
+
+            if (extrinsicFailedEvent) {
+              const {
+                event: { data },
+              } = extrinsicFailedEvent;
+
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
+                this.handleExtrinsicFailure(resolve, reject, data[0] as DispatchError);
+              });
+            } else if (receipt.isFinalized) {
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
                 this.handleExtrinsicSuccess(resolve, reject, receipt);
               });
-            }
-
-            if (receipt.isError) {
+            } else if (receipt.isError) {
               reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
             }
+
+            finishing.catch((err: Error) => reject(err));
           }
         }
       );

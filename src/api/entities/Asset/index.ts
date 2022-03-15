@@ -281,6 +281,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
           assetName,
           disabledInvestorUniqueness
         );
+
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(result);
       });
     }
@@ -324,6 +326,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     if (callback) {
       return asset.fundingRound(rawTicker, round => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(round));
       });
     }
@@ -358,6 +361,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     if (callback) {
       return asset.identifiers(rawTicker, identifiers => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(identifiers.map(assetIdentifierToSecurityIdentifier));
       });
     }
@@ -423,6 +427,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     if (callback) {
       return asset.frozen(rawTicker, frozen => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(boolToBoolean(frozen));
       });
     }
@@ -489,6 +494,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     if (callback) {
       return statistics.investorCountPerAsset(rawTicker, count => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(u64ToBigNumber(count));
       });
     }

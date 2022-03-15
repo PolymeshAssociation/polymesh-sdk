@@ -223,6 +223,7 @@ export enum MockTxStatus {
   InBlock = 'InBlock',
   BatchFailed = 'BatchFailed',
   FinalizedFailed = 'FinalizedFailed',
+  FailedToUnsubscribe = 'FailedToUnsubscribe',
 }
 
 const MockApolloClientClass = class {
@@ -484,7 +485,7 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   if (status === MockTxStatus.Failed) {
     return failReasonToReceipt(failReason);
   }
-  if (status === MockTxStatus.Succeeded) {
+  if ([MockTxStatus.Succeeded, MockTxStatus.FailedToUnsubscribe].includes(status)) {
     return successReceipt;
   }
   if (status === MockTxStatus.Ready) {
@@ -1372,12 +1373,23 @@ export function updateTxStatus<
     throw new Error(`Status is already ${status}`);
   }
 
-  if ([MockTxStatus.Aborted, MockTxStatus.Failed, MockTxStatus.Succeeded].includes(status)) {
+  if (
+    [
+      MockTxStatus.Aborted,
+      MockTxStatus.Failed,
+      MockTxStatus.Succeeded,
+      MockTxStatus.FailedToUnsubscribe,
+    ].includes(status)
+  ) {
     txMocksData.set(tx, {
       ...txMockData,
       status,
       resolved: true,
     });
+  }
+
+  if (status === MockTxStatus.FailedToUnsubscribe) {
+    (txMockData.unsubCallback as sinon.SinonStub).throws('Unsub error');
   }
 
   txMockData.statusCallback(statusToReceipt(status, failReason));

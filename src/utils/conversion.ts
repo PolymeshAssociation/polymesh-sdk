@@ -96,7 +96,6 @@ import {
 } from 'polymesh-types/types';
 
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
-// import { ProposalDetails } from '~/api/types';
 import {
   Account,
   Asset,
@@ -119,7 +118,6 @@ import {
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
-  // Proposal,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
 import {
@@ -209,12 +207,13 @@ import {
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
 import {
+  asDid,
   assertAddressValid,
   assertIsInteger,
   assertIsPositive,
+  asTicker,
   conditionsAreEqual,
   createClaim,
-  getTicker,
   isModuleOrTagMatch,
   isPrintableAscii,
   optionize,
@@ -561,11 +560,7 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
     const { identity: valueIdentity } = value;
     ({ id: number } = value);
 
-    if (typeof valueIdentity === 'string') {
-      did = valueIdentity;
-    } else {
-      ({ did } = valueIdentity);
-    }
+    did = asDid(valueIdentity);
   }
 
   return { did, number };
@@ -2721,7 +2716,7 @@ export function portfolioMovementToMovePortfolioItem(
 ): MovePortfolioItem {
   const { asset, amount, memo } = portfolioItem;
   return context.createType('MovePortfolioItem', {
-    ticker: stringToTicker(getTicker(asset), context),
+    ticker: stringToTicker(asTicker(asset), context),
     amount: bigNumberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),
   });

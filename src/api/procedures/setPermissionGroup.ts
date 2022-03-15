@@ -19,7 +19,7 @@ import {
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
-import { getAsset } from '~/utils/internal';
+import { asAsset } from '~/utils/internal';
 
 interface AssetBase {
   /**
@@ -182,7 +182,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    asset: getAsset(asset, context),
+    asset: asAsset(asset, context),
   };
 }
 

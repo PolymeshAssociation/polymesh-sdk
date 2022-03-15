@@ -164,6 +164,7 @@ export class Requirements extends Namespace<Asset> {
           ],
         ],
         res => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
           callback(assembleResult(res));
         }
       );

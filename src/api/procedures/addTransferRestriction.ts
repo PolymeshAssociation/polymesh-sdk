@@ -1,8 +1,6 @@
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
-import { uniq } from 'lodash';
 
-import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -18,7 +16,7 @@ import {
   transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType } from '~/utils/internal';
+import { checkTxType, getExemptedIds } from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
@@ -53,7 +51,7 @@ export async function prepareAddTransferRestriction(
     },
     context,
   } = this;
-  const { ticker, exemptedScopeIds = [], exemptedIdentities = [], type } = args;
+  const { ticker, exemptedIdentities = [], type } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
@@ -100,38 +98,18 @@ export async function prepareAddTransferRestriction(
     }),
   ];
 
-  const identityScopes = await P.map(exemptedIdentities, identityValue => {
-    let identity: Identity;
-    if (typeof identityValue === 'string') {
-      identity = new Identity({ did: identityValue }, context);
-    } else {
-      identity = identityValue;
-    }
-
-    return identity.getScopeId({ asset: ticker });
-  });
-
-  const exempted: string[] = [...exemptedScopeIds, ...identityScopes];
-
-  const exemptedLength = exempted.length;
-
-  if (exemptedLength) {
-    const hasDuplicates = uniq(exempted).length !== exemptedLength;
-
-    if (hasDuplicates) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'One or more of the passed exempted Scope IDs/Identities are repeated',
-      });
-    }
-
-    const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
+  if (exemptedIdentities.length) {
+    const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
 
     transactions.push(
       checkTxType({
         transaction: statistics.addExemptedEntities,
-        feeMultiplier: new BigNumber(scopeIds.length),
-        args: [rawTicker, rawTransferManager, scopeIds],
+        feeMultiplier: new BigNumber(exemptedIds.length),
+        args: [
+          rawTicker,
+          rawTransferManager,
+          exemptedIds.map(entityId => stringToScopeId(entityId, context)),
+        ],
       })
     );
   }
@@ -146,13 +124,11 @@ export async function prepareAddTransferRestriction(
  */
 export function getAuthorization(
   this: Procedure<AddTransferRestrictionParams, BigNumber>,
-  { ticker, exemptedScopeIds = [], exemptedIdentities = [] }: AddTransferRestrictionParams
+  { ticker, exemptedIdentities = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.AddTransferManager];
 
-  const exempted = [...exemptedScopeIds, ...exemptedIdentities];
-
-  if (exempted.length) {
+  if (exemptedIdentities.length) {
     transactions.push(TxTags.statistics.AddExemptedEntities);
   }
 

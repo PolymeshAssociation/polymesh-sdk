@@ -95,7 +95,7 @@ describe('subsidizeAccount procedure', () => {
       mockContext
     );
 
-    expect(prepareSubsidizeAccount.call(proc, args)).rejects.toThrow(
+    return expect(prepareSubsidizeAccount.call(proc, args)).rejects.toThrow(
       'The Beneficiary Account already has a pending invitation to add this account as a subsidizer'
     );
   });

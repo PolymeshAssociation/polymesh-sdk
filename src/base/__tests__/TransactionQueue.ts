@@ -120,7 +120,7 @@ describe('Transaction Queue class', () => {
       // Idle -> Running -> Succeeded
       expect(queue.status).toBe(TransactionQueueStatus.Idle);
 
-      queue.run();
+      queue.run().catch(noop);
 
       await fakePromise();
 
@@ -476,7 +476,7 @@ describe('Transaction Queue class', () => {
       const listenerStub = sinon.stub();
       const unsub = queue.onStatusChange(q => listenerStub(q.status));
 
-      queue.run();
+      queue.run().catch(noop);
 
       await fakePromise();
 

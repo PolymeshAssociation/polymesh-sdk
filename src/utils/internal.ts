@@ -11,8 +11,9 @@ import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/typ
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import stringify from 'json-stable-stringify';
-import { differenceWith, flatMap, isEqual, mapValues, padEnd } from 'lodash';
+import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
 
 import {
@@ -135,6 +136,14 @@ export async function getDid(
  */
 export function asIdentity(value: string | Identity, context: Context): Identity {
   return typeof value === 'string' ? new Identity({ did: value }, context) : value;
+}
+
+/**
+ * @hidden
+ * DID | Identity -> DID
+ */
+export function asDid(value: string | Identity): string {
+  return typeof value === 'string' ? value : value.did;
 }
 
 /**
@@ -582,14 +591,14 @@ export function assertAddressValid(address: string, ss58Format: BigNumber): void
 /**
  * @hidden
  */
-export function getTicker(asset: string | Asset): string {
+export function asTicker(asset: string | Asset): string {
   return typeof asset === 'string' ? asset : asset.ticker;
 }
 
 /**
  * @hidden
  */
-export function getAsset(asset: string | Asset, context: Context): Asset {
+export function asAsset(asset: string | Asset, context: Context): Asset {
   return typeof asset === 'string' ? new Asset({ ticker: asset }, context) : asset;
 }
 
@@ -795,7 +804,7 @@ export async function getCheckpointValue(
   ) {
     return checkpoint;
   }
-  const assetEntity = getAsset(asset, context);
+  const assetEntity = asAsset(asset, context);
   const { type, id } = checkpoint;
   if (type === CaCheckpointType.Existing) {
     return assetEntity.checkpoints.getOne({ id });
@@ -885,4 +894,91 @@ export async function getPortfolioIdByName(
  */
 export function checkTxType<Args extends unknown[]>(tx: TxWithArgs<Args>): TxWithArgs<unknown[]> {
   return tx as unknown as TxWithArgs<unknown[]>;
+}
+
+/**
+ * @hidden
+ *
+ * Add an empty handler to a promise to avoid false positive unhandled promise errors. The original promise
+ *   is returned, so rejections are still bubbled up and caught properly. This is an ugly hack and should be used
+ *   sparingly and only if you KNOW that rejections will be handled properly down the line
+ *
+ * More info:
+ *
+ * - https://github.com/facebook/jest/issues/6028#issuecomment-567851031
+ * - https://stackoverflow.com/questions/59060508/how-to-handle-an-unhandled-promise-rejection-asynchronously
+ * - https://stackoverflow.com/questions/40920179/should-i-refrain-from-handling-promise-rejection-asynchronously/40921505#40921505
+ */
+export function defusePromise<T>(promise: Promise<T>): Promise<T> {
+  promise.catch(noop);
+
+  return promise;
+}
+
+/**
+ * @hidden
+ *
+ * Transform an array of Identities into exempted IDs for Transfer Managers. If the asset requires
+ *   investor uniqueness, Scope IDs are fetched and returned. Otherwise, we use Identity IDs
+ *
+ * @note fetches missing scope IDs from the chain
+ * @note even though the signature for `addExemptedEntities` requires `ScopeId`s as parameters,
+ *   it accepts and handles `IdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
+ *   for `U8aFixed`
+ *
+ * @throws
+ *   - if the Asset requires Investor Uniqueness and one or more of the passed Identities don't have Scope IDs
+ *   - if there are duplicated Identities/ScopeIDs
+ */
+export async function getExemptedIds(
+  identities: (string | Identity)[],
+  context: Context,
+  ticker: string
+): Promise<string[]> {
+  const asset = new Asset({ ticker }, context);
+  const { requiresInvestorUniqueness } = await asset.details();
+
+  const didsWithNoScopeId: string[] = [];
+
+  const exemptedIds: string[] = [];
+
+  const identityEntities = identities.map(identity => asIdentity(identity, context));
+
+  if (requiresInvestorUniqueness) {
+    const scopeIds = await P.map(identityEntities, async identity =>
+      identity.getScopeId({ asset: ticker })
+    );
+
+    scopeIds.forEach((scopeId, index) => {
+      if (!scopeId) {
+        didsWithNoScopeId.push(identityEntities[index].did);
+      } else {
+        exemptedIds.push(scopeId);
+      }
+    });
+
+    if (didsWithNoScopeId.length) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Identities must have an Investor Uniqueness claim Scope ID in order to be exempted from Transfer Restrictions for Asset "${ticker}"`,
+        data: {
+          didsWithNoScopeId,
+        },
+      });
+    }
+  } else {
+    exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
+  }
+
+  const hasDuplicates = uniq(exemptedIds).length !== exemptedIds.length;
+
+  if (hasDuplicates) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'One or more of the passed exempted Identities are repeated or have the same Scope ID',
+    });
+  }
+
+  return exemptedIds;
 }

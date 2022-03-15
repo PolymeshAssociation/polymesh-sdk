@@ -40,7 +40,7 @@ describe('setTransferRestrictions procedure', () => {
   let percentage: BigNumber;
   let countTm: TransferRestriction;
   let percentageTm: TransferRestriction;
-  let scopeId: string;
+  let exemptedDid: string;
   let rawTicker: Ticker;
   let rawCount: u64;
   let rawPercentage: Permill;
@@ -64,7 +64,7 @@ describe('setTransferRestrictions procedure', () => {
     percentage = new BigNumber(49);
     countTm = { type: TransferRestrictionType.Count, value: count };
     percentageTm = { type: TransferRestrictionType.Percentage, value: percentage };
-    scopeId = 'scopeId';
+    exemptedDid = 'exemptedDid';
     args = {
       ticker,
       restrictions: [{ count }],
@@ -106,14 +106,14 @@ describe('setTransferRestrictions procedure', () => {
     rawPercentageTm = dsMockUtils.createMockTransferManager({
       PercentageTransferManager: rawPercentage,
     });
-    rawScopeId = dsMockUtils.createMockScopeId(scopeId);
+    rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
 
     transferRestrictionToTransferManagerStub.withArgs(countTm, mockContext).returns(rawCountTm);
     transferRestrictionToTransferManagerStub
       .withArgs(percentageTm, mockContext)
       .returns(rawPercentageTm);
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    stringToScopeIdStub.withArgs(scopeId, mockContext).returns(rawScopeId);
+    stringToScopeIdStub.withArgs(exemptedDid, mockContext).returns(rawScopeId);
   });
 
   afterEach(() => {
@@ -136,7 +136,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(0),
-        exemptionsRepeated: false,
       }
     );
 
@@ -169,7 +168,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(0),
-        exemptionsRepeated: false,
       }
     );
 
@@ -196,7 +194,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [[rawTicker, rawCountTm, [rawScopeId]]],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(0),
-        exemptionsRepeated: false,
       }
     );
 
@@ -223,7 +220,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
         occupiedSlots: new BigNumber(0),
-        exemptionsRepeated: false,
       }
     );
 
@@ -250,7 +246,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(0),
-        exemptionsRepeated: false,
       }
     );
 
@@ -278,7 +273,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(0),
-        exemptionsRepeated: false,
       }
     );
 
@@ -302,7 +296,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(3),
-        exemptionsRepeated: false,
       }
     );
 
@@ -320,32 +313,6 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.data).toEqual({ availableSlots: new BigNumber(0) });
   });
 
-  it('should throw an error if exempted scope IDs are repeated for a restriction', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
-      mockContext,
-      {
-        restrictionsToRemove: [],
-        restrictionsToAdd: [],
-        exemptionsToAdd: [],
-        exemptionsToRemove: [],
-        occupiedSlots: new BigNumber(0),
-        exemptionsRepeated: true,
-      }
-    );
-
-    let err;
-
-    try {
-      await prepareSetTransferRestrictions.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe(
-      'One or more restrictions have repeated exempted Scope IDs/Identities'
-    );
-  });
-
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
@@ -356,7 +323,6 @@ describe('setTransferRestrictions procedure', () => {
           exemptionsToAdd: [],
           exemptionsToRemove: [],
           occupiedSlots: new BigNumber(0),
-          exemptionsRepeated: false,
         }
       );
 
@@ -378,7 +344,6 @@ describe('setTransferRestrictions procedure', () => {
           exemptionsToAdd: [[rawTicker, rawCountTm, [rawScopeId]]],
           exemptionsToRemove: [],
           occupiedSlots: new BigNumber(0),
-          exemptionsRepeated: false,
         }
       );
 
@@ -400,7 +365,6 @@ describe('setTransferRestrictions procedure', () => {
           exemptionsToAdd: [],
           exemptionsToRemove: [],
           occupiedSlots: new BigNumber(0),
-          exemptionsRepeated: false,
         }
       );
 
@@ -422,7 +386,6 @@ describe('setTransferRestrictions procedure', () => {
           exemptionsToAdd: [],
           exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
           occupiedSlots: new BigNumber(0),
-          exemptionsRepeated: false,
         }
       );
 
@@ -439,13 +402,11 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    let did: string;
     let identityScopeId: string;
 
     let rawIdentityScopeId: ScopeId;
 
     beforeAll(() => {
-      did = 'someDid';
       identityScopeId = 'someScopeId';
 
       rawIdentityScopeId = dsMockUtils.createMockScopeId(identityScopeId);
@@ -506,7 +467,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
       });
 
       args.restrictions = [];
@@ -521,11 +481,10 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
       });
 
       getCountStub.resolves({
-        restrictions: [{ count, exemptedScopeIds: [scopeId] }],
+        restrictions: [{ count, exemptedIds: [exemptedDid] }],
         availableSlots: 1,
       });
 
@@ -537,7 +496,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [[rawTicker, rawCountTm, [rawScopeId]]],
         occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
       });
 
       getPercentageStub.resolves({
@@ -549,7 +507,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictions: [
           {
             percentage,
-            exemptedScopeIds: [scopeId],
+            exemptedIdentities: [exemptedDid],
           },
         ],
         ticker,
@@ -564,7 +522,6 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId]]],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
       });
 
       getPercentageStub.resolves({
@@ -576,7 +533,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictions: [
           {
             percentage,
-            exemptedScopeIds: [scopeId],
+            exemptedIdentities: [exemptedDid],
           },
         ],
         ticker,
@@ -591,11 +548,10 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId]]],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
       });
 
       getPercentageStub.resolves({
-        restrictions: [{ percentage, exemptedScopeIds: [scopeId] }],
+        restrictions: [{ percentage, exemptedIds: [exemptedDid] }],
         availableSlots: 1,
       });
 
@@ -617,11 +573,10 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [],
         exemptionsToRemove: [[rawTicker, rawPercentageTm, [rawScopeId]]],
         occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
       });
 
       getPercentageStub.resolves({
-        restrictions: [{ percentage, exemptedScopeIds: [] }],
+        restrictions: [{ percentage, exemptedIds: [] }],
         availableSlots: 1,
       });
 
@@ -629,7 +584,7 @@ describe('setTransferRestrictions procedure', () => {
         restrictions: [
           {
             percentage,
-            exemptedScopeIds: [scopeId],
+            exemptedIdentities: [exemptedDid],
           },
         ],
         ticker,
@@ -644,56 +599,26 @@ describe('setTransferRestrictions procedure', () => {
         exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId]]],
         exemptionsToRemove: [],
         occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
       });
+    });
 
+    it('should throw an error if exempted entities are repeated', () => {
+      const proc = procedureMockUtils.getInstance<
+        SetTransferRestrictionsParams,
+        BigNumber,
+        Storage
+      >(mockContext);
+
+      const boundFunc = prepareStorage.bind(proc);
       args = {
-        restrictions: [
-          {
-            percentage,
-            exemptedScopeIds: [scopeId],
-            exemptedIdentities: [did],
-          },
-        ],
+        type: TransferRestrictionType.Count,
+        restrictions: [{ count, exemptedIdentities: [exemptedDid, exemptedDid] }],
         ticker,
-        type: TransferRestrictionType.Percentage,
       };
 
-      result = await boundFunc(args);
-
-      expect(result).toEqual({
-        restrictionsToAdd: [],
-        restrictionsToRemove: [],
-        exemptionsToAdd: [[rawTicker, rawPercentageTm, [rawScopeId, rawIdentityScopeId]]],
-        exemptionsToRemove: [],
-        occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: false,
-      });
-
-      args = {
-        restrictions: [
-          {
-            percentage,
-            exemptedScopeIds: [scopeId, scopeId],
-            exemptedIdentities: [entityMockUtils.getIdentityInstance()],
-          },
-        ],
-        ticker,
-        type: TransferRestrictionType.Percentage,
-      };
-
-      result = await boundFunc(args);
-
-      expect(result).toEqual({
-        restrictionsToAdd: [],
-        restrictionsToRemove: [],
-        exemptionsToAdd: [
-          [rawTicker, rawPercentageTm, [rawScopeId, rawScopeId, rawIdentityScopeId]],
-        ],
-        exemptionsToRemove: [],
-        occupiedSlots: new BigNumber(1),
-        exemptionsRepeated: true,
-      });
+      return expect(boundFunc(args)).rejects.toThrow(
+        'One or more of the passed exempted Identities are repeated or have the same Scope ID'
+      );
     });
   });
 });

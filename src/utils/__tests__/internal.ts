@@ -21,6 +21,7 @@ import {
   assertAddressValid,
   assertIsInteger,
   assertIsPositive,
+  asTicker,
   calculateNextKey,
   createClaim,
   createProcedureMethod,
@@ -28,9 +29,9 @@ import {
   filterEventRecords,
   getCheckpointValue,
   getDid,
+  getExemptedIds,
   getIdentity,
   getPortfolioIdByName,
-  getTicker,
   hasSameElements,
   isModuleOrTagMatch,
   isPrintableAscii,
@@ -45,6 +46,11 @@ import {
   unwrapValue,
   unwrapValues,
 } from '../internal';
+
+jest.mock(
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+);
 
 describe('delay', () => {
   beforeAll(() => {
@@ -544,14 +550,14 @@ describe('assertAddressValid', () => {
   });
 });
 
-describe('getTicker', () => {
+describe('asTicker', () => {
   it('should return an Asset symbol', async () => {
     const symbol = 'ASSET';
-    let result = getTicker(symbol);
+    let result = asTicker(symbol);
 
     expect(result).toBe(symbol);
 
-    result = getTicker(new Asset({ ticker: symbol }, dsMockUtils.getContextInstance()));
+    result = asTicker(new Asset({ ticker: symbol }, dsMockUtils.getContextInstance()));
     expect(result).toBe(symbol);
   });
 });
@@ -783,6 +789,7 @@ describe('getIdentity', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -798,21 +805,101 @@ describe('getIdentity', () => {
     dsMockUtils.cleanup();
   });
 
-  test('should return currentIdentity when given undefined value', async () => {
+  it('should return currentIdentity when given undefined value', async () => {
     const expectedIdentity = await context.getSigningIdentity();
     const result = await getIdentity(undefined, context);
     expect(result).toEqual(expectedIdentity);
   });
 
-  test('should return an Identity if given an Identity', async () => {
+  it('should return an Identity if given an Identity', async () => {
     const identity = entityMockUtils.getIdentityInstance();
     const result = await getIdentity(identity, context);
     expect(result).toEqual(identity);
   });
 
-  test('should return the Identity given its DID', async () => {
+  it('should return the Identity given its DID', async () => {
     const identity = entityMockUtils.getIdentityInstance();
     const result = await getIdentity(identity.did, context);
     expect(result.did).toEqual(identity.did);
+  });
+});
+
+describe('getExemptedIds', () => {
+  let context: Context;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a list of DIDs if the Asset does not support PUIS', async () => {
+    const asset = entityMockUtils.getAssetInstance({
+      details: { requiresInvestorUniqueness: false },
+    });
+    const dids = ['someDid', 'otherDid'];
+
+    const result = await getExemptedIds(dids, context, asset.ticker);
+
+    expect(result).toEqual(dids);
+  });
+
+  it('should return a list of Scope IDs if the Asset supports PUIS', async () => {
+    entityMockUtils.configureMocks({
+      assetOptions: {
+        details: {
+          requiresInvestorUniqueness: true,
+        },
+      },
+    });
+    const scopeIds = ['someScopeId', 'otherScopeId'];
+    const identities = scopeIds.map(scopeId =>
+      entityMockUtils.getIdentityInstance({ getScopeId: scopeId })
+    );
+
+    const result = await getExemptedIds(identities, context, 'SOME_TICKER');
+
+    expect(result).toEqual(scopeIds);
+  });
+
+  it('should throw an error if one or more of the passed Identities have no Scope ID for the Asset', () => {
+    entityMockUtils.configureMocks({
+      assetOptions: {
+        details: {
+          requiresInvestorUniqueness: true,
+        },
+      },
+    });
+    const scopeIds = ['someScopeId', null];
+    const identities = scopeIds.map(scopeId =>
+      entityMockUtils.getIdentityInstance({ getScopeId: scopeId })
+    );
+
+    return expect(getExemptedIds(identities, context, 'SOME_TICKER')).rejects.toThrow(
+      'Identities must have an Investor Uniqueness claim Scope ID in order to be exempted from Transfer Restrictions for Asset "SOME_TICKER"'
+    );
+  });
+
+  it('should throw an error if the exempted IDs have duplicates', () => {
+    const asset = entityMockUtils.getAssetInstance({
+      details: { requiresInvestorUniqueness: false },
+    });
+    const dids = ['someDid', 'someDid'];
+
+    return expect(getExemptedIds(dids, context, asset.ticker)).rejects.toThrow(
+      'One or more of the passed exempted Identities are repeated or have the same Scope ID'
+    );
   });
 });

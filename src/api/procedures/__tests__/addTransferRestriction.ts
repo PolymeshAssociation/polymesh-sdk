@@ -105,7 +105,7 @@ describe('addTransferRestriction procedure', () => {
   it('should add an add transfer manager transaction to the queue', async () => {
     args = {
       type: TransferRestrictionType.Count,
-      exemptedScopeIds: [],
+      exemptedIdentities: [],
       count,
       ticker,
     };
@@ -132,7 +132,7 @@ describe('addTransferRestriction procedure', () => {
 
     args = {
       type: TransferRestrictionType.Percentage,
-      exemptedScopeIds: [],
+      exemptedIdentities: [],
       percentage,
       ticker,
     };
@@ -157,10 +157,12 @@ describe('addTransferRestriction procedure', () => {
     const rawScopeId = dsMockUtils.createMockScopeId(scopeId);
     const identityScopeId = 'anotherScopeId';
     const rawIdentityScopeId = dsMockUtils.createMockScopeId(identityScopeId);
-    entityMockUtils.configureMocks({ identityOptions: { getScopeId: identityScopeId } });
+    entityMockUtils.configureMocks({
+      identityOptions: { getScopeId: identityScopeId },
+      assetOptions: { details: { requiresInvestorUniqueness: true } },
+    });
     args = {
       type: TransferRestrictionType.Count,
-      exemptedScopeIds: [scopeId],
       exemptedIdentities: [did],
       count,
       ticker,
@@ -188,8 +190,8 @@ describe('addTransferRestriction procedure', () => {
         },
         {
           transaction: addExemptedEntitiesTransaction,
-          feeMultiplier: new BigNumber(2),
-          args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+          feeMultiplier: new BigNumber(1),
+          args: [rawTicker, rawCountTm, [rawIdentityScopeId]],
         },
       ],
     });
@@ -209,8 +211,8 @@ describe('addTransferRestriction procedure', () => {
         },
         {
           transaction: addExemptedEntitiesTransaction,
-          feeMultiplier: new BigNumber(2),
-          args: [rawTicker, rawCountTm, [rawScopeId, rawIdentityScopeId]],
+          feeMultiplier: new BigNumber(1),
+          args: [rawTicker, rawCountTm, [rawIdentityScopeId]],
         },
       ],
     });
@@ -221,7 +223,7 @@ describe('addTransferRestriction procedure', () => {
   it('should throw an error if attempting to add a restriction that already exists', async () => {
     args = {
       type: TransferRestrictionType.Count,
-      exemptedScopeIds: [],
+      exemptedIdentities: [],
       count,
       ticker,
     };
@@ -270,10 +272,10 @@ describe('addTransferRestriction procedure', () => {
     expect(err.data).toEqual({ limit: new BigNumber(3) });
   });
 
-  it('should throw an error if exempted scope IDs are repeated', async () => {
+  it('should throw an error if exempted entities are repeated', async () => {
     args = {
       type: TransferRestrictionType.Count,
-      exemptedScopeIds: ['someScopeId', 'someScopeId'],
+      exemptedIdentities: ['someScopeId', 'someScopeId'],
       count,
       ticker,
     };
@@ -294,7 +296,7 @@ describe('addTransferRestriction procedure', () => {
     }
 
     expect(err.message).toBe(
-      'One or more of the passed exempted Scope IDs/Identities are repeated'
+      'One or more of the passed exempted Identities are repeated or have the same Scope ID'
     );
   });
 
@@ -318,7 +320,7 @@ describe('addTransferRestriction procedure', () => {
           portfolios: [],
         },
       });
-      expect(boundFunc({ ...args, exemptedScopeIds: ['someScopeId'] })).toEqual({
+      expect(boundFunc({ ...args, exemptedIdentities: ['someScopeId'] })).toEqual({
         permissions: {
           assets: [expect.objectContaining({ ticker })],
           transactions: [

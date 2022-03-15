@@ -138,6 +138,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     if (callback) {
       const fundraiserName = await fetchName();
       return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(fundraiserData, fundraiserName));
       });
     }

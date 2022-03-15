@@ -33,6 +33,7 @@
     "dispatchable",
     "dispatchables",
     "Encodable",
+    "Externalagents",
     "Extrinsics",
     "Falsyable",
     "inmemory",
