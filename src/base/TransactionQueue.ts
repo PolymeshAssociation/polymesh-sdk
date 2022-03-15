@@ -95,7 +95,7 @@ export class TransactionQueue<
    * Create a transaction queue
    *
    * @param args.transactions - list of transactions to be run in this queue
-   * @param args.procedureResult - value that will be returned by the queue after it is run. It can be a [[PostTransactionValue]]
+   * @param args.procedureResult - value that will be returned by the queue after it is run. It can be a {@link PostTransactionValue}
    * @param args.transformer - function that transforms the procedure's return value before returning it after the queue is run
    */
   constructor(
