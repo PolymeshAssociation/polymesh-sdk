@@ -22,7 +22,7 @@ export const DUMMY_ACCOUNT_ID = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQ
  */
 export const IGNORE_CHECKSUM = true;
 /**
- * Default format for Keyring (used when the chain doesn't specify one)
+ * Default SS58 format for encoding addresses (used when the chain doesn't specify one)
  */
 export const DEFAULT_SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;

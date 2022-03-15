@@ -35,9 +35,9 @@ export interface UniqueIdentifiers {
 export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { ticker } = identifier as UniqueIdentifiers;
 
     return typeof ticker === 'string';
@@ -186,9 +186,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted
    *   by the destinatary
    *
-   * @note this will create [[AuthorizationRequest | Authorization Requests]] which have to be accepted by
-   *   the corresponding [[Account | Accounts]] and/or [[Identity | Identities]]. An Account or Identity can
-   *   fetch its pending Authorization Requests by calling `authorizations.getReceived`
+   * @note this will create {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    *
    * @note required role:
    *   - Ticker Owner

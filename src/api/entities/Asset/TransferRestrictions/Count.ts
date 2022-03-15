@@ -24,7 +24,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public addRestriction!: ProcedureMethod<
+  public declare addRestriction: ProcedureMethod<
     Omit<AddCountTransferRestrictionParams, 'type'>,
     BigNumber
   >;
@@ -34,7 +34,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public setRestrictions!: ProcedureMethod<
+  public declare setRestrictions: ProcedureMethod<
     Omit<SetCountTransferRestrictionsParams, 'type'>,
     BigNumber
   >;
@@ -44,7 +44,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
-  public removeRestrictions!: NoArgsProcedureMethod<BigNumber>;
+  public declare removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
    * Retrieve all active Count Transfer Restrictions
@@ -53,5 +53,5 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public get!: () => Promise<ActiveTransferRestrictions<CountTransferRestriction>>;
+  public declare get: () => Promise<ActiveTransferRestrictions<CountTransferRestriction>>;
 }

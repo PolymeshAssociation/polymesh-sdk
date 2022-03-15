@@ -1,4 +1,3 @@
-import { Keyring } from '@polkadot/api';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
@@ -559,7 +558,7 @@ export enum TransferStatus {
 
 /**
  * Akin to TransferStatus, these are a bit more granular and specific. Every TransferError translates to
- *   a [[TransferStatus]], but two or more TransferErrors can represent the same TransferStatus, and
+ *   a {@link TransferStatus}, but two or more TransferErrors can represent the same TransferStatus, and
  *   not all Transfer Statuses are represented by a TransferError
  */
 export enum TransferError {
@@ -639,21 +638,6 @@ export type UnsubCallback = () => void;
 export interface MiddlewareConfig {
   link: string;
   key: string;
-}
-
-export type CommonKeyring = Pick<
-  Keyring,
-  | 'getPair'
-  | 'getPairs'
-  | 'addFromSeed'
-  | 'addFromUri'
-  | 'addFromMnemonic'
-  | 'addPair'
-  | 'encodeAddress'
->;
-
-export interface UiKeyring {
-  keyring: CommonKeyring;
 }
 
 export interface EventIdentifier {
@@ -1117,7 +1101,6 @@ export interface PlainTransactionArgument {
 
 export interface ArrayTransactionArgument {
   type: TransactionArgumentType.Array;
-  // eslint-disable-next-line no-use-before-define
   internal: TransactionArgument;
 }
 
@@ -1131,7 +1114,6 @@ export interface ComplexTransactionArgument {
     | TransactionArgumentType.RichEnum
     | TransactionArgumentType.Object
     | TransactionArgumentType.Tuple;
-  // eslint-disable-next-line no-use-before-define
   internal: TransactionArgument[];
 }
 
@@ -1174,7 +1156,7 @@ export type PortfolioLike =
 /**
  * Permissions to grant to a Signer over an Identity
  *
- * @link [[Permissions]]
+ * {@link Permissions}
  *
  * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
  */

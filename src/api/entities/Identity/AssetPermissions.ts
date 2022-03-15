@@ -52,6 +52,30 @@ import {
 } from '~/utils/internal';
 
 /**
+ * @hidden
+ *
+ * Check whether a tag is "present" in (represented by) a set of values and exceptions, using the following criteria:
+ *
+ * - if type is include:
+ *   the passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
+ * - if type is exclude:
+ *   the passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
+ */
+function isPresent(
+  tag: TxTag,
+  values: (TxTag | ModuleName)[],
+  exceptions: TxTag[] | undefined,
+  flipResult: boolean
+) {
+  const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
+  const isInExceptions = !!exceptions?.includes(tag);
+
+  const result = isInValues && !isInExceptions;
+
+  return flipResult ? result : !result;
+}
+
+/**
  * Handles all Asset Permissions (External Agents) related functionality on the Identity side
  */
 export class AssetPermissions extends Namespace<Identity> {
@@ -423,28 +447,4 @@ export class AssetPermissions extends Namespace<Identity> {
       count,
     };
   }
-}
-
-/**
- * @hidden
- *
- * Check whether a tag is "present" in (represented by) a set of values and exceptions, using the following criteria:
- *
- * - if type is include:
- *   the passed tags are in the values array AND are not in the exceptions array (isInValues && !isInExceptions)
- * - if type is exclude:
- *   the passed tags are not in the values array OR are in the exceptions array (!isInValues || isInExceptions)
- */
-function isPresent(
-  tag: TxTag,
-  values: (TxTag | ModuleName)[],
-  exceptions: TxTag[] | undefined,
-  flipResult: boolean
-) {
-  const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
-  const isInExceptions = !!exceptions?.includes(tag);
-
-  const result = isInValues && !isInExceptions;
-
-  return flipResult ? result : !result;
 }
