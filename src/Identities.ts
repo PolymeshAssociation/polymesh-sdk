@@ -62,7 +62,7 @@ export class Identities {
   /**
    * Return whether the supplied Identity/DID exists
    */
-  public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
+  public isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
     return asIdentity(args.identity, this.context).exists();
   }
 }
