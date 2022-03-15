@@ -264,7 +264,6 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
    * @param args.transformer - optional function that transforms the Procedure result
    * @param context - context in which the resulting queue will run
    * @param opts.signer - address that will be used as a signer for this procedure
-   *   (it must have already been added to the keyring)
    */
   public async prepare<QueueReturnType>(
     args: {
@@ -278,6 +277,8 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       const { args: procArgs, transformer } = args;
       const ctx = await this.setup(procArgs, context, opts);
 
+      // parallelize the async calls
+      const prepareTransactionsPromise = this.prepareTransactions(procArgs);
       const { roles, signerPermissions, agentPermissions, accountFrozen, noIdentity } =
         await this._checkAuthorization(procArgs, ctx);
 
@@ -336,7 +337,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
         });
       }
 
-      const procedureResult = await this.prepareTransactions(procArgs);
+      const procedureResult = await prepareTransactionsPromise;
       return new TransactionQueue(
         { transactions: this.transactions, procedureResult, transformer },
         ctx
