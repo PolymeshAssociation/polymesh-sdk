@@ -55,7 +55,7 @@ export class Identities {
    *
    * @throws if there is no Identity with the passed DID
    */
-  public async getIdentity(args: { did: string }): Promise<Identity> {
+  public getIdentity(args: { did: string }): Promise<Identity> {
     return this.context.getIdentity(args.did);
   }
 
