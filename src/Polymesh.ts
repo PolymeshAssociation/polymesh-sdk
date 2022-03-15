@@ -239,7 +239,7 @@ export class Polymesh {
    *
    * @note the SDK will become unusable after this operation. It will throw an error when attempting to
    *   access any chain or middleware data. If you wish to continue using the SDK, you must
-   *   create a new instance by calling [[connect]]
+   *   create a new instance by calling {@link connect}
    */
   public disconnect(): Promise<void> {
     return this.context.disconnect();

@@ -68,7 +68,7 @@ export class Portfolios extends Namespace<Identity> {
   /**
    * Retrieve all Portfolios custodied by this Identity.
    *   This only includes portfolios owned by a different Identity but custodied by this one.
-   *   To fetch Portfolios owned by this Identity, use [[getPortfolios]]
+   *   To fetch Portfolios owned by this Identity, use {@link getPortfolios}
    *
    * @note supports pagination
    */

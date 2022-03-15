@@ -339,7 +339,7 @@ describe('Procedure class', () => {
             sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
         }),
-        { ...context, signingAddress: { address: 'something' } }
+        { ...context, signingAddress: 'something' }
       );
       sinon.assert.calledWith(context.setSigningAddress, 'something');
 

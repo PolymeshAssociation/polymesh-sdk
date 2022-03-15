@@ -42,7 +42,7 @@ interface TxGroupParams extends AssetBase {
  *   - A Known Permission Group and an Asset. The Identity will be assigned as an Agent of that Group for that Asset
  *   - A set of Transaction Permissions and an Asset. A Custom Permission Group will be created for that Asset with those permissions, and
  *     the Identity will be assigned as an Agent of that Group for that Asset
- *   - An array of [[TxGroup]]s that represent a set of permissions. A Custom Permission Group will be created with those permissions, and
+ *   - An array of {@link TxGroup | Transaction Groups} that represent a set of permissions. A Custom Permission Group will be created with those permissions, and
  *     the Identity will be assigned as an Agent of that Group for that Asset
  */
 export interface SetPermissionGroupParams {

@@ -30,7 +30,7 @@ export interface UniqueIdentifiers {
 export class NumberedPortfolio extends Portfolio {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
   public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did, id } = identifier as UniqueIdentifiers;
