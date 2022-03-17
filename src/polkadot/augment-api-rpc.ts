@@ -100,6 +100,7 @@ import type {
   GranularCanTransferResult,
   IdentityId,
   KeyIdentityData,
+  PipId,
   PortfolioId,
   ProtocolOp,
   Signatory,
@@ -755,6 +756,7 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
             | 'PortfolioCustody'
             | 'BecomeAgent'
             | 'AddRelayerPayingKey'
+            | 'RotatePrimaryKeyToSecondary'
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -852,7 +854,7 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
        **/
       getVotes: AugmentedRpc<
         (
-          index: u32 | AnyNumber | Uint8Array,
+          index: PipId | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<VoteCount>
       >;
@@ -863,7 +865,7 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           address: AccountId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<Vec<u32>>
+        ) => Observable<Vec<PipId>>
       >;
       /**
        * Retrieves proposal address indices voted on
@@ -872,7 +874,7 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           address: AccountId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<Vec<u32>>
+        ) => Observable<Vec<PipId>>
       >;
     };
     protocolFee: {

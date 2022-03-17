@@ -308,6 +308,10 @@ declare module '@polkadot/api/types/events' {
        **/
       TimelockChanged: AugmentedEvent<ApiType, [IdentityId, BlockNumber]>;
       /**
+       * Notification of removing a transaction.
+       **/
+      TxRemoved: AugmentedEvent<ApiType, [IdentityId, BridgeTx]>;
+      /**
        * An event emitted after a vector of transactions is handled. The parameter is a vector of
        * tuples of recipient account, its nonce, and the status of the processed transaction.
        **/
@@ -1512,6 +1516,24 @@ declare module '@polkadot/api/types/events' {
        * caller DID, Removed DID, New add DID.
        **/
       MembersSwapped: AugmentedEvent<ApiType, [IdentityId, IdentityId, IdentityId]>;
+    };
+    testUtils: {
+      /**
+       * Shows the `DID` associated to the `AccountId`, and a flag indicates if that DID has a
+       * valid CDD claim.
+       * (Target DID, Target Account, a valid CDD claim exists)
+       **/
+      CddStatus: AugmentedEvent<ApiType, [Option<IdentityId>, AccountId, bool]>;
+      /**
+       * Emits the `IdentityId` and the `AccountId` of the caller.
+       * (Caller DID, Caller account)
+       **/
+      DidStatus: AugmentedEvent<ApiType, [IdentityId, AccountId]>;
+      /**
+       * A new mocked `InvestorUid` has been created for the given Identity.
+       * (Target DID, New InvestorUid)
+       **/
+      MockInvestorUIDCreated: AugmentedEvent<ApiType, [IdentityId, InvestorUid]>;
     };
     treasury: {
       /**

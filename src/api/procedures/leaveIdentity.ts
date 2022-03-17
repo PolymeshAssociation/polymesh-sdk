@@ -1,76 +1,52 @@
 import { TxTags } from 'polymesh-types/types';
 
-import { Account, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
-import { signerToString } from '~/utils/conversion';
-
-export interface LeaveIdentityParams {
-  account: Account;
-}
 
 /**
  * @hidden
  */
-export async function prepareLeaveIdentity(
-  this: Procedure<LeaveIdentityParams, void>,
-  args: LeaveIdentityParams
-): Promise<void> {
+export async function prepareLeaveIdentity(this: Procedure<void, void>): Promise<void> {
   const {
     context: {
       polymeshApi: { tx },
     },
+    context,
   } = this;
-  const { account } = args;
 
-  const currentIdentity = await account.getIdentity();
+  const signingAccount = context.getSigningAccount();
+  const signingIdentity = await signingAccount.getIdentity();
 
-  if (!currentIdentity) {
+  if (!signingIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'There is no Identity associated to this Account',
+      message: 'There is no Identity associated to the signing Account',
     });
   }
 
-  const secondaryKeys = await currentIdentity.getSecondaryKeys();
-  const { address } = account;
-  const isSecondaryKey = secondaryKeys.find(({ signer }) => address === signerToString(signer));
+  const secondaryAccounts = await signingIdentity.getSecondaryAccounts();
+  const isSecondaryAccount = secondaryAccounts.find(({ account }) =>
+    account.isEqual(signingAccount)
+  );
 
-  if (!isSecondaryKey) {
+  if (!isSecondaryAccount) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Only Secondary Keys are allowed to leave an Identity',
+      message: 'Only secondary Accounts are allowed to leave an Identity',
     });
   }
 
-  this.addTransaction(tx.identity.leaveIdentityAsKey, {});
+  this.addTransaction({ transaction: tx.identity.leaveIdentityAsKey });
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<LeaveIdentityParams, void>,
-  { account }: LeaveIdentityParams
-): ProcedureAuthorization {
-  const currentAccount = this.context.getCurrentAccount();
-
-  const hasRoles = account.isEqual(currentAccount);
-
-  const permissions = {
-    tokens: [],
-    portfolios: [],
-    transactions: [TxTags.identity.LeaveIdentityAsKey],
-  };
-
-  return {
-    roles: hasRoles || 'Only the current Account can leave its Identity',
-    permissions,
-  };
-}
-
-/**
- * @hidden
- */
-export const leaveIdentity = (): Procedure<LeaveIdentityParams, void> =>
-  new Procedure(prepareLeaveIdentity, getAuthorization);
+export const leaveIdentity = (): Procedure<void, void> =>
+  new Procedure(prepareLeaveIdentity, {
+    permissions: {
+      assets: [],
+      portfolios: [],
+      transactions: [TxTags.identity.LeaveIdentityAsKey],
+    },
+  });

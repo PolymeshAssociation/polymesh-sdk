@@ -1,21 +1,21 @@
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
+  Asset,
   Checkpoint,
-  CheckpointSchedule,
   DividendDistribution,
   modifyCaCheckpoint,
   PolymeshError,
   Procedure,
-  SecurityToken,
 } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, InputCaCheckpoint, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
+import { getCheckpointValue } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export interface ModifyDistributionCheckpointParams {
-  checkpoint: Checkpoint | CheckpointSchedule | Date;
+  checkpoint: InputCaCheckpoint;
 }
 
 export type Params = ModifyDistributionCheckpointParams & {
@@ -32,7 +32,7 @@ export async function prepareModifyDistributionCheckpoint(
   const {
     checkpoint,
     distribution,
-    distribution: { paymentDate, expiryDate },
+    distribution: { paymentDate, expiryDate, asset },
   } = args;
 
   const now = new Date();
@@ -40,22 +40,14 @@ export async function prepareModifyDistributionCheckpoint(
   if (paymentDate <= now) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Distribution is already in its payment period',
+      message: 'Cannot modify a Distribution checkpoint after the payment date',
     });
   }
 
-  if (!(checkpoint instanceof Checkpoint)) {
-    await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
-  }
+  const checkpointValue = await getCheckpointValue(checkpoint, asset, this.context);
 
-  if (expiryDate && expiryDate < now) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Distribution has already expired',
-      data: {
-        expiryDate,
-      },
-    });
+  if (!(checkpointValue instanceof Checkpoint)) {
+    await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
   }
 
   await this.addProcedure(modifyCaCheckpoint(), {
@@ -71,7 +63,7 @@ export function getAuthorization(
   this: Procedure<Params, void>,
   {
     distribution: {
-      token: { ticker },
+      asset: { ticker },
     },
   }: Params
 ): ProcedureAuthorization {
@@ -80,7 +72,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.ChangeRecordDate],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [],
     },
   };

@@ -4,7 +4,7 @@ import { CustomPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  numberToU32,
+  bigNumberToU32,
   permissionsLikeToPermissions,
   stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
@@ -54,23 +54,20 @@ export async function prepareSetGroupPermissions(
   }
 
   const {
-    token: { ticker },
+    asset: { ticker },
     id,
   } = group;
   const rawTicker = stringToTicker(ticker, context);
-  const rawAgId = numberToU32(id, context);
+  const rawAgId = bigNumberToU32(id, context);
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
     transactions,
     context
   );
 
-  this.addTransaction(
-    externalAgents.setGroupPermissions,
-    {},
-    rawTicker,
-    rawAgId,
-    rawExtrinsicPermissions
-  );
+  this.addTransaction({
+    transaction: externalAgents.setGroupPermissions,
+    args: [rawTicker, rawAgId, rawExtrinsicPermissions],
+  });
 }
 
 /**
@@ -78,13 +75,13 @@ export async function prepareSetGroupPermissions(
  */
 export function getAuthorization(
   this: Procedure<Params>,
-  { group: { token } }: Params
+  { group: { asset } }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
       transactions: [TxTags.externalAgents.SetGroupPermissions],
       portfolios: [],
-      tokens: [token],
+      assets: [asset],
     },
   };
 }

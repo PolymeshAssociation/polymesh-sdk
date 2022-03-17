@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { hexStripPrefix } from '@polkadot/util';
 import gql from 'graphql-tag';
 
@@ -123,9 +124,11 @@ export function proposalVotes(
         },
       },
       mapper: ({ proposalVotes: results }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = results!;
         return {
           proposalVotes: nodes.map(node => {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             return { __typename: 'ProposalVote', ...node };
           }),
         };
@@ -134,6 +137,9 @@ export function proposalVotes(
   };
 }
 
+/**
+ *  @hidden
+ */
 function mapProposalVotesOrder(
   orderInput?: Maybe<ProposalVotesOrderByInput>
 ): ProposalVotesOrderBy {
@@ -255,9 +261,11 @@ export function didsWithClaims(
     v2: {
       request: { query: queryV2, variables: variablesV2 },
       mapper: ({ identityWithClaims }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes, totalCount } = identityWithClaims!;
         return {
           didsWithClaims: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'IdentityWithClaimsResult',
             totalCount,
             items: nodes.map(identityWithClaimsMapper),
@@ -273,30 +281,32 @@ export function didsWithClaims(
 function identityWithClaimsMapper(
   node: Maybe<{ id: string; claims: ClaimsConnection }>
 ): IdentityWithClaims {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const { id, claims } = node!;
   const { nodes } = claims;
   return {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     __typename: 'IdentityWithClaims',
     did: id,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     claims: nodes.map(n => mapClaim(n!)),
   };
 }
 
-function createIdentityWithClaimsFilter(
-  variables: QueryDidsWithClaimsArgs
-): { filter: string; claimFilter: string; args: string; variablesV2: QueryDidsWithClaimsArgsV2 } {
+/**
+ *  @hidden
+ */
+function createIdentityWithClaimsFilter(variables: QueryDidsWithClaimsArgs): {
+  filter: string;
+  claimFilter: string;
+  args: string;
+  variablesV2: QueryDidsWithClaimsArgsV2;
+} {
   let filter = '';
   let args = ' ';
   let claimFilter = '';
-  const {
-    dids,
-    claimTypes,
-    trustedClaimIssuers,
-    scope,
-    includeExpired,
-    count,
-    ...rest
-  } = variables;
+  const { dids, claimTypes, trustedClaimIssuers, scope, includeExpired, count, ...rest } =
+    variables;
   if (dids) {
     args += ', $dids: [String!]';
     filter += 'id: { in: $dids }\n';
@@ -336,6 +346,10 @@ function createIdentityWithClaimsFilter(
     },
   };
 }
+
+/**
+ *  @hidden
+ */
 function mapClaim({
   type,
   scope,
@@ -348,6 +362,7 @@ function mapClaim({
   targetDidId,
 }: ClaimV2): ClaimV1 {
   return {
+    /* eslint-disable @typescript-eslint/naming-convention */
     __typename: 'Claim',
     type: type as ClaimTypeEnum,
     scope: scope ? { ...scope, __typename: 'Scope' } : scope,
@@ -358,6 +373,7 @@ function mapClaim({
     expiry: expiry ? Number(expiry) : expiry,
     jurisdiction,
     targetDID: targetDidId,
+    /* eslint-enable @typescript-eslint/naming-convention */
   };
 }
 
@@ -420,6 +436,7 @@ export function eventByIndexedArgs(
     v2: {
       request: { query: queryV2, variables },
       mapper: ({ events }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = events!;
         const event = nodes[0];
         if (!event) {
@@ -434,19 +451,31 @@ export function eventByIndexedArgs(
     },
   };
 }
+
+/**
+ *  @hidden
+ */
 function mapEvent({ blockId, eventIdx, extrinsicIdx, parentBlock }: EventV2): DeepPartial<EventV1> {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const { datetime } = parentBlock!;
   return {
+    /* eslint-disable @typescript-eslint/naming-convention */
     __typename: 'Event',
     block_id: blockId,
     event_idx: eventIdx,
     extrinsic_idx: extrinsicIdx,
     block: { __typename: 'Block', datetime },
+    /* eslint-enable @typescript-eslint/naming-convention */
   };
 }
-function createEventFilter(
-  variables: QueryEventByIndexedArgsArgs
-): { filter: string; args: string } {
+
+/**
+ *  @hidden
+ */
+function createEventFilter(variables: QueryEventByIndexedArgsArgs): {
+  filter: string;
+  args: string;
+} {
   let filter = '';
   let args = ' ';
   const { eventArg0, eventArg1, eventArg2 } = variables;
@@ -532,8 +561,10 @@ export function eventsByIndexedArgs(
     v2: {
       request: { query: queryV2, variables },
       mapper: ({ events }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = events!;
         return {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           eventsByIndexedArgs: nodes.map(e => mapEvent(e!)),
         };
       },
@@ -594,6 +625,7 @@ export function transactionByHash(
     v2: {
       request: { query: queryV2, variables },
       mapper: ({ extrinsics }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = extrinsics!;
         if (!nodes[0]) {
           return { transactionByHash: null };
@@ -605,6 +637,10 @@ export function transactionByHash(
     },
   };
 }
+
+/**
+ *  @hidden
+ */
 function mapTransaction(
   {
     blockId,
@@ -621,9 +657,11 @@ function mapTransaction(
   context: Context
 ): DeepPartial<ExtrinsicV1> {
   return {
+    /* eslint-disable @typescript-eslint/naming-convention */
     __typename: 'Extrinsic',
     block_id: blockId,
     extrinsic_hash: extrinsicHash,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     address: keyToAddress('0x' + address!, context),
     nonce,
     module_id: moduleId as ModuleIdEnum,
@@ -632,13 +670,14 @@ function mapTransaction(
     success,
     spec_version_id: specVersionId,
     extrinsic_idx: extrinsicIdx,
+    /* eslint-enable @typescript-eslint/naming-convention */
   };
 }
 
 /**
  * @hidden
  *
- * Get the tickers of all the tokens for which the passed DID is a trusted claim issuer
+ * Get the tickers of all the Assets for which the passed DID is a trusted claim issuer
  */
 export function tokensByTrustedClaimIssuer(
   variables: QueryTokensByTrustedClaimIssuerArgs
@@ -670,7 +709,9 @@ export function tokensByTrustedClaimIssuer(
     v2: {
       request: { query: queryV2, variables },
       mapper: ({ trustedClaimIssuerTickers }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = trustedClaimIssuerTickers!;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return { tokensByTrustedClaimIssuer: nodes.map(n => n!.ticker) };
       },
     },
@@ -680,7 +721,7 @@ export function tokensByTrustedClaimIssuer(
 /**
  * @hidden
  *
- * Get all tickers of tokens that were held at some point by the given did
+ * Get all tickers of Assets that were held at some point by the given did
  */
 export function tokensHeldByDid(
   variables: QueryTokensHeldByDidArgs
@@ -726,11 +767,14 @@ export function tokensHeldByDid(
     },
     v2: {
       mapper: ({ heldTokens }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { totalCount, nodes } = heldTokens!;
         return {
           tokensHeldByDid: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'StringResult',
             totalCount,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             items: nodes.map(node => node!.token),
           },
         };
@@ -826,11 +870,14 @@ export function transactions(
     v2: {
       request: { query: queryV2, variables: variablesV2 },
       mapper: ({ extrinsics }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes, totalCount } = extrinsics!;
         return {
           transactions: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'ExtrinsicResult',
             totalCount,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             items: nodes.map(node => mapTransaction(node!, context)),
           },
         };
@@ -838,12 +885,17 @@ export function transactions(
     },
   };
 }
+
+/**
+ * @hidden
+ */
 function createTransactionsFilter(
   variables: QueryTransactionsArgs,
   context: Context
 ): { filter: string; args: string; variablesV2: QueryTransactionsArgsV2 } {
   let filterString = '';
   let args = ' ';
+  /* eslint-disable @typescript-eslint/naming-convention */
   const {
     success,
     address,
@@ -854,6 +906,7 @@ function createTransactionsFilter(
     count = 25,
     ...rest
   } = variables;
+  /* eslint-enable @typescript-eslint/naming-convention */
   if (success !== undefined) {
     args += ', $success: Boolean';
     filterString += 'success: { equalTo: $success}\n';
@@ -880,15 +933,21 @@ function createTransactionsFilter(
     variablesV2: {
       ...rest,
       count,
+      /* eslint-disable @typescript-eslint/naming-convention */
       call_id,
       block_id,
       module_id,
+      /* eslint-enable @typescript-eslint/naming-convention */
       address: address ? hexStripPrefix(addressToKey(address, context)) : address,
       success,
       orderBy: [mapTransactionOrderBy(orderBy || undefined)],
     },
   };
 }
+
+/**
+ * @hidden
+ */
 function mapTransactionOrderBy(
   { field, order }: TransactionOrderByInput = {
     field: TransactionOrderFields.BlockId,
@@ -963,10 +1022,13 @@ export function scopesByIdentity(
     v2: {
       request: { query: queryV2, variables },
       mapper: ({ claimScopes }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = claimScopes!;
         return {
           scopesByIdentity: nodes.map(node => ({
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             ...node!,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'ClaimScope',
           })),
         };
@@ -986,6 +1048,7 @@ export function issuerDidsWithClaimsByTarget(
   QueryIssuerDidsWithClaimsByTargetArgs,
   'issuerIdentityWithClaims',
   'issuerDidsWithClaimsByTarget',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   QueryDidsWithClaimsArgsV2 & { target: string; targetJSON: string }
 > {
   const query = gql`
@@ -1067,9 +1130,11 @@ export function issuerDidsWithClaimsByTarget(
         variables: { ...variablesV2, target: variables.target, targetJSON: variables.target },
       },
       mapper: ({ issuerIdentityWithClaims }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes, totalCount } = issuerIdentityWithClaims!;
         return {
           issuerDidsWithClaimsByTarget: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'IdentityWithClaimsResult',
             totalCount,
             items: nodes.map(identityWithClaimsMapper),
@@ -1108,7 +1173,14 @@ export function latestProcessedBlock(): MultiGraphqlQuery<undefined, 'blocks', '
     },
     v2: {
       request: { query: queryV2, variables: undefined },
-      mapper: r => ({ latestBlock: { __typename: 'Block', id: r.blocks!.nodes[0]!.blockId } }),
+      mapper: r => ({
+        latestBlock: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          __typename: 'Block',
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          id: r.blocks!.nodes[0]!.blockId,
+        },
+      }),
     },
   };
 }
@@ -1204,6 +1276,7 @@ export function eventByAddedTrustedClaimIssuer(
         variables: { ...variables, ticker: removeNullChars(variables.ticker) },
       },
       mapper: ({ events }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = events!;
         const node = nodes[0];
         if (!node) {
@@ -1212,11 +1285,17 @@ export function eventByAddedTrustedClaimIssuer(
         const { blockId, eventIdx, extrinsicIdx, parentBlock } = node;
         return {
           eventByAddedTrustedClaimIssuer: {
+            /* eslint-disable @typescript-eslint/naming-convention */
             __typename: 'Event',
             block_id: blockId,
             event_idx: eventIdx,
             extrinsic_idx: extrinsicIdx,
-            block: { __typename: 'Block', datetime: parentBlock!.datetime },
+            block: {
+              __typename: 'Block',
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              datetime: parentBlock!.datetime,
+            },
+            /* eslint-enable @typescript-eslint/naming-convention */
           },
         };
       },
@@ -1351,6 +1430,7 @@ export function settlements(
       mapper: ({ settlements: result }) => {
         return {
           settlements: {
+            /* eslint-disable @typescript-eslint/naming-convention */
             __typename: 'SettlementResult',
             totalCount: result?.totalCount,
             items: (result?.nodes as V2Settlement[]).map(n => ({
@@ -1380,6 +1460,7 @@ export function settlements(
                     : SettlementDirectionEnum.Incoming,
               })),
             })),
+            /* eslint-enable @typescript-eslint/naming-convention */
           },
         };
       },
@@ -1444,6 +1525,7 @@ export function investments(
 
         return {
           investments: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'InvestmentResult',
             totalCount,
             items,
@@ -1506,6 +1588,7 @@ export function getWithholdingTaxesOfCa(
     v2: {
       request: { query: queryV2, variables: { ...variables, ticker, localId } },
       mapper: ({ withholdingTaxesOfCas }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = withholdingTaxesOfCas!;
         const node = nodes[0];
         if (!node) {
@@ -1517,6 +1600,7 @@ export function getWithholdingTaxesOfCa(
 
         return {
           getWithholdingTaxesOfCA: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'WithholdingTaxesOfCA',
             taxes,
           },
@@ -1613,14 +1697,17 @@ export function getHistoryOfPaymentEventsForCa(
     v2: {
       request: { query: queryV2, variables: { ...variables, localId, ticker } },
       mapper: ({ historyOfPaymentEventsForCas }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes, totalCount } = historyOfPaymentEventsForCas!;
         return {
           getHistoryOfPaymentEventsForCA: {
+            /* eslint-disable @typescript-eslint/naming-convention */
             __typename: 'HistoryOfPaymentEventsForCAResults',
             totalCount,
             items: nodes.map(node => {
               return { ...node, __typename: 'HistoryOfPaymentEventsForCA' };
             }),
+            /* eslint-enable @typescript-eslint/naming-convention */
           },
         };
       },
@@ -1631,7 +1718,7 @@ export function getHistoryOfPaymentEventsForCa(
 /**
  * @hidden
  *
- * Get the transaction history of each external agent of a token
+ * Get the transaction history of each external agent of an Asset
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
@@ -1676,18 +1763,23 @@ export function tickerExternalAgentHistory(
     v2: {
       request: { query: queryV2, variables },
       mapper: ({ tickerExternalAgentHistories }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes } = tickerExternalAgentHistories!;
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         const byDid = new Map<string, (AgentHistoryEvent & { __typename: string })[]>();
 
         for (const node of nodes) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const { did, datetime, blockId, eventIdx, type } = node!;
           const events = byDid.get(did) || [];
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           events.push({ datetime, block_id: blockId, event_idx: eventIdx, __typename: type });
           byDid.set(did, events);
         }
 
         return {
           tickerExternalAgentHistory: [...byDid.entries()].map(([did, history]) => ({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             __typename: 'AgentHistory',
             did,
             history,
@@ -1705,7 +1797,7 @@ type QueryTickerExternalAgentActionsArgsV2 = Modify<
 /**
  * @hidden
  *
- * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Security Token
+ * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
  */
 export function tickerExternalAgentActions(
   variables: QueryTickerExternalAgentActionsArgs
@@ -1787,25 +1879,27 @@ export function tickerExternalAgentActions(
     v2: {
       request: { query: queryV2, variables: variablesV2 },
       mapper: ({ tickerExternalAgentActions: result }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { nodes, totalCount } = result!;
         return {
           tickerExternalAgentActions: {
+            /* eslint-disable @typescript-eslint/naming-convention */
             __typename: 'TickerExternalAgentActionsResult',
             totalCount,
-            items: nodes.map(
-              (node): DeepPartial<TickerExternalAgentAction> => {
-                const { blockId, datetime, eventIdx, palletName, eventId, callerDid } = node!;
-                return {
-                  __typename: 'TickerExternalAgentAction',
-                  block_id: blockId,
-                  datetime,
-                  event_idx: eventIdx,
-                  pallet_name: palletName as ModuleIdEnum,
-                  event_id: eventId as EventIdEnum,
-                  caller_did: callerDid,
-                };
-              }
-            ),
+            items: nodes.map((node): DeepPartial<TickerExternalAgentAction> => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              const { blockId, datetime, eventIdx, palletName, eventId, callerDid } = node!;
+              return {
+                __typename: 'TickerExternalAgentAction',
+                block_id: blockId,
+                datetime,
+                event_idx: eventIdx,
+                pallet_name: palletName as ModuleIdEnum,
+                event_id: eventId as EventIdEnum,
+                caller_did: callerDid,
+              };
+            }),
+            /* eslint-enable @typescript-eslint/naming-convention */
           },
         };
       },
@@ -1813,15 +1907,17 @@ export function tickerExternalAgentActions(
   };
 }
 
-function createTickerExternalAgentActionsFilter(
-  variables: QueryTickerExternalAgentActionsArgs
-): {
+/**
+ * @hidden
+ */
+function createTickerExternalAgentActionsFilter(variables: QueryTickerExternalAgentActionsArgs): {
   filter: string;
   args: string;
   variablesV2: QueryTickerExternalAgentActionsArgsV2;
 } {
   let filter = '';
   let args = ' ';
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { caller_did, pallet_name, event_id, max_block, order, ...rest } = variables;
   if (caller_did) {
     args += ', $caller_did: String!';
@@ -1845,9 +1941,11 @@ function createTickerExternalAgentActionsFilter(
     args,
     variablesV2: {
       ...rest,
+      /* eslint-disable @typescript-eslint/naming-convention */
       caller_did,
       pallet_name,
       event_id,
+      /* eslint-enable @typescript-eslint/naming-convention */
       order:
         order === Order.Asc
           ? [

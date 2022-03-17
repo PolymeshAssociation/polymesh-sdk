@@ -66,6 +66,7 @@ import type {
   FundraiserName,
   IdentityId,
   InstructionId,
+  InvestorUid,
   InvestorZKProofData,
   ItnRewardStatus,
   Leg,
@@ -941,6 +942,26 @@ declare module '@polkadot/api/types/submittable' {
         [AccountId]
       >;
       /**
+       * Remove given bridge transactions.
+       *
+       * ## Errors
+       * - `BadAdmin` if `origin` is not `Self::admin()` account.
+       * - `NotFrozen` if a tx in `bridge_txs` is not frozen.
+       **/
+      removeTxs: AugmentedSubmittable<
+        (
+          bridgeTxs:
+            | Vec<BridgeTx>
+            | (
+                | BridgeTx
+                | { nonce?: any; recipient?: any; amount?: any; tx_hash?: any }
+                | string
+                | Uint8Array
+              )[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<BridgeTx>]
+      >;
+      /**
        * Unfreezes transaction handling in the bridge module if it is frozen.
        *
        * ## Errors
@@ -1041,6 +1062,7 @@ declare module '@polkadot/api/types/submittable' {
        * - `UnauthorizedCustodian` if the caller is not the custodian of `portfolio`.
        * - `InsufficientPortfolioBalance` if `portfolio` has less than `amount` of `currency`.
        * - `InsufficientBalance` if the protocol fee couldn't be charged.
+       * - `CANotBenefit` if the CA is not of kind PredictableBenefit/UnpredictableBenefit
        *
        * # Permissions
        * * Asset
@@ -2212,8 +2234,14 @@ declare module '@polkadot/api/types/submittable' {
     identity: {
       /**
        * Call this with the new primary key. By invoking this method, caller accepts authorization
-       * with the new primary key. If a CDD service provider approved this change, primary key of
-       * the DID is updated.
+       * to become the new primary key of the issuing identity. If a CDD service provider approved
+       * this change (or this is not required), primary key of the DID is updated.
+       *
+       * The caller (new primary key) must be either a secondary key of the issuing identity, or
+       * unlinked to any identity.
+       *
+       * Differs from rotate_primary_key_to_secondary in that it will unlink the old primary key
+       * instead of leaving it as a secondary key.
        *
        * # Arguments
        * * `owner_auth_id` Authorization from the owner who initiated the change
@@ -2243,6 +2271,7 @@ declare module '@polkadot/api/types/submittable' {
             | { PortfolioCustody: any }
             | { BecomeAgent: any }
             | { AddRelayerPayingKey: any }
+            | { RotatePrimaryKeyToSecondary: any }
             | string
             | Uint8Array,
           expiry: Option<Moment> | null | object | string | Uint8Array
@@ -2566,6 +2595,29 @@ declare module '@polkadot/api/types/submittable' {
           scope: Option<Scope> | null | object | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [IdentityId, ClaimType, Option<Scope>]
+      >;
+      /**
+       * Call this with the new primary key. By invoking this method, caller accepts authorization
+       * to become the new primary key of the issuing identity. If a CDD service provider approved
+       * this change, (or this is not required), primary key of the DID is updated.
+       *
+       * The caller (new primary key) must be either a secondary key of the issuing identity, or
+       * unlinked to any identity.
+       *
+       * Differs from accept_primary_key in that it will leave the old primary key as a secondary
+       * key with the permissions specified in the corresponding RotatePrimaryKeyToSecondary authorization
+       * instead of unlinking the old primary key.
+       *
+       * # Arguments
+       * * `owner_auth_id` Authorization from the owner who initiated the change
+       * * `cdd_auth_id` Authorization from a CDD service provider
+       **/
+      rotatePrimaryKeyToSecondary: AugmentedSubmittable<
+        (
+          authId: u64 | AnyNumber | Uint8Array,
+          optionalCddAuthId: Option<u64> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Option<u64>]
       >;
       /**
        * Sets permissions for an specific `target_key` key.
@@ -4180,10 +4232,6 @@ declare module '@polkadot/api/types/submittable' {
        * - Read: Bonded, Ledger, [Origin Account], Current Era, History Depth, Locks
        * - Write: Bonded, Payee, [Origin Account], Locks, Ledger
        * # </weight>
-       * # Arguments
-       * * origin Stash account (signer of the extrinsic).
-       * * controller Account that controls the operation of stash.
-       * * payee Destination where reward can be transferred.
        **/
       bond: AugmentedSubmittable<
         (
@@ -4231,10 +4279,6 @@ declare module '@polkadot/api/types/submittable' {
        * - Read: Era Election Status, Bonded, Ledger, [Origin Account], Locks
        * - Write: [Origin Account], Locks, Ledger
        * # </weight>
-       *
-       * # Arguments
-       * * origin Stash account (signer of the extrinsic).
-       * * max_additional Extra amount that need to be bonded.
        **/
       bondExtra: AugmentedSubmittable<
         (
@@ -4410,9 +4454,6 @@ declare module '@polkadot/api/types/submittable' {
         [Vec<LookupSource>]
       >;
       /**
-       * Polymesh-Note - Weight changes to 1/4 of the actual weight that is calculated using the
-       * upstream benchmarking process.
-       *
        * Pay out all the stakers behind a single validator for a single era.
        *
        * - `validator_stash` is the stash account of the validator. Their nominators, up to
@@ -4457,9 +4498,9 @@ declare module '@polkadot/api/types/submittable' {
         [AccountId, EraIndex]
       >;
       /**
-       * Remove all data structure concerning a staker/stash once its balance is zero.
+       * Remove all data structure concerning a staker/stash once its balance is at the minimum.
        * This is essentially equivalent to `withdraw_unbonded` except it can be called by anyone
-       * and the target `stash` must have no funds left.
+       * and the target `stash` must have no funds left beyond the ED.
        *
        * This can be called from any origin.
        *
@@ -4829,10 +4870,6 @@ declare module '@polkadot/api/types/submittable' {
        * - Read: EraElectionStatus, Ledger, CurrentEra, Locks, \[Origin Account\]
        * - Write: Locks, Ledger, \[Origin Account\]
        * </weight>
-       *
-       * # Arguments
-       * * origin Controller (Signer of the extrinsic).
-       * * value Balance needs to be unbonded.
        **/
       unbond: AugmentedSubmittable<
         (value: Compact<BalanceOf> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -4921,8 +4958,10 @@ declare module '@polkadot/api/types/submittable' {
        * - Reads: EraElectionStatus, Ledger, Current Era, Locks, [Origin Account]
        * - Writes: [Origin Account], Locks, Ledger
        * Kill:
-       * - Reads: EraElectionStatus, Ledger, Current Era, Bonded, Slashing Spans, \[Origin Account\], Locks
-       * - Writes: Bonded, Slashing Spans (if S > 0), Ledger, Payee, Validators, Nominators, [Origin Account], Locks
+       * - Reads: EraElectionStatus, Ledger, Current Era, Bonded, Slashing Spans, [Origin
+       * Account], Locks
+       * - Writes: Bonded, Slashing Spans (if S > 0), Ledger, Payee, Validators, Nominators,
+       * [Origin Account], Locks
        * - Writes Each: SpanSlash * S
        * NOTE: Weight annotation is the kill scenario, we refund otherwise.
        * # </weight>
@@ -5614,6 +5653,58 @@ declare module '@polkadot/api/types/submittable' {
           add: IdentityId | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [IdentityId, IdentityId]
+      >;
+    };
+    testUtils: {
+      /**
+       * Emits an event with caller's identity and CDD status.
+       **/
+      getCddOf: AugmentedSubmittable<
+        (of: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId]
+      >;
+      /**
+       * Emits an event with caller's identity.
+       **/
+      getMyDid: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Registers a new Identity for the `target_account` and issues a CDD claim to it.
+       * The Investor UID is generated deterministically by the hash of the generated DID and
+       * then we fix it to be compliant with UUID v4.
+       *
+       * # See
+       * - [RFC 4122: UUID](https://tools.ietf.org/html/rfc4122)
+       *
+       * # Failure
+       * - `origin` has to be an active CDD provider. Inactive CDD providers cannot add new
+       * claims.
+       * - `target_account` (primary key of the new Identity) can be linked to just one and only
+       * one identity.
+       **/
+      mockCddRegisterDid: AugmentedSubmittable<
+        (targetAccount: AccountId | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId]
+      >;
+      /**
+       * Generates a new `IdentityID` for the caller, and issues a self-generated CDD claim.
+       *
+       * The caller account will be the primary key of that identity.
+       * For each account of `secondary_keys`, a new `JoinIdentity` authorization is created, so
+       * each of them will need to accept it before become part of this new `IdentityID`.
+       *
+       * # Errors
+       * - `AlreadyLinked` if the caller account or if any of the given `secondary_keys` has already linked to an `IdentityID`
+       * - `SecondaryKeysContainPrimaryKey` if `secondary_keys` contains the caller account.
+       * - `DidAlreadyExists` if auto-generated DID already exists.
+       **/
+      registerDid: AugmentedSubmittable<
+        (
+          uid: InvestorUid | string | Uint8Array,
+          secondaryKeys:
+            | Vec<SecondaryKey>
+            | (SecondaryKey | { signer?: any; permissions?: any } | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [InvestorUid, Vec<SecondaryKey>]
       >;
     };
     timestamp: {

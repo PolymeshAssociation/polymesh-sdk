@@ -27,7 +27,7 @@ export async function prepareClaimDividends(
     distribution,
     distribution: {
       id: localId,
-      token: { ticker },
+      asset: { ticker },
       paymentDate,
       expiryDate,
     },
@@ -40,7 +40,7 @@ export async function prepareClaimDividends(
   if (!participant) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The current Identity is not included in this Distribution',
+      message: 'The signing Identity is not included in this Distribution',
     });
   }
 
@@ -49,13 +49,16 @@ export async function prepareClaimDividends(
   if (paid) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The current Identity has already claimed dividends',
+      message: 'The signing Identity has already claimed dividends',
     });
   }
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
 
-  this.addTransaction(tx.capitalDistribution.claim, {}, rawCaId);
+  this.addTransaction({
+    transaction: tx.capitalDistribution.claim,
+    args: [rawCaId],
+  });
 }
 
 /**
@@ -65,7 +68,7 @@ export const claimDividends = (): Procedure<Params, void> =>
   new Procedure(prepareClaimDividends, {
     permissions: {
       transactions: [TxTags.capitalDistribution.Claim],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

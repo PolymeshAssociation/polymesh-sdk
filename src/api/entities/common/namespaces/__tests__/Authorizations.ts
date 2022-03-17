@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Context, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { AuthorizationType, SignerValue } from '~/types';
+import { AuthorizationType, Identity, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Authorizations } from '../Authorizations';
@@ -33,11 +33,10 @@ describe('Authorizations class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Authorizations.prototype instanceof Namespace).toBe(true);
   });
 
@@ -62,7 +61,7 @@ describe('Authorizations class', () => {
       );
     });
 
-    test('should retrieve all pending authorizations received by the identity and filter out expired ones', async () => {
+    it('should retrieve all pending authorizations received by the Identity and filter out expired ones', async () => {
       const did = 'someDid';
       const filter = AuthorizationType.RotatePrimaryKey;
       const context = dsMockUtils.getContextInstance({ did });
@@ -92,9 +91,9 @@ describe('Authorizations class', () => {
 
       const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
         dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+          auth_id: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
-            expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
+            expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
           authorization_data: dsMockUtils.createMockAuthorizationData({
             TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
@@ -144,11 +143,12 @@ describe('Authorizations class', () => {
 
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-      sinon.stub(utilsConversionModule, 'numberToU64');
+      sinon.stub(utilsConversionModule, 'bigNumberToU64');
     });
 
-    test('should return the requested Authorization Request', async () => {
+    it('should return the requested Authorization Request', async () => {
       const did = 'someDid';
+      const issuerDid = 'alice';
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
@@ -158,38 +158,30 @@ describe('Authorizations class', () => {
 
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
-      const target = identity;
-      const issuer = entityMockUtils.getIdentityInstance({ did: 'alice' });
-
-      const authParams = {
-        authId,
-        expiry: null,
-        data,
-        target,
-        issuer,
-      };
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
-            auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+            auth_id: dsMockUtils.createMockU64(authId),
             authorization_data: dsMockUtils.createMockAuthorizationData({
               TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),
             expiry: dsMockUtils.createMockOption(),
-            authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
+            authorized_by: dsMockUtils.createMockIdentityId(issuerDid),
           })
         ),
       });
 
-      entityMockUtils.getAuthorizationRequestInstance(authParams);
-
       const result = await authsNamespace.getOne({ id });
 
-      expect(result).toEqual(entityMockUtils.getAuthorizationRequestInstance(authParams));
+      expect(result.authId).toEqual(authId);
+      expect(result.expiry).toBeNull();
+      expect(result.data).toEqual(data);
+      expect((result.target as Identity).did).toEqual(did);
+      expect(result.issuer.did).toEqual(issuerDid);
     });
 
-    test('should throw an error if the Authorization Request does not exist', async () => {
+    it('should throw an error if the Authorization Request does not exist', async () => {
       const did = 'someDid';
       const context = dsMockUtils.getContextInstance({ did });
       const identity = entityMockUtils.getIdentityInstance({ did });

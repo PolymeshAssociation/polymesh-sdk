@@ -51,6 +51,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidAssetIdentifier: AugmentedError<ApiType>;
       /**
+       * Invalid `CustomAssetTypeId`.
+       **/
+      InvalidCustomAssetTypeId: AugmentedError<ApiType>;
+      /**
        * An invalid Ethereum `EcdsaSignature`.
        **/
       InvalidEthereumSignature: AugmentedError<ApiType>;
@@ -62,6 +66,10 @@ declare module '@polkadot/api/types/errors' {
        * Transfer validation check failed.
        **/
       InvalidTransfer: AugmentedError<ApiType>;
+      /**
+       * Investor Uniqueness claims are not allowed for this asset.
+       **/
+      InvestorUniquenessClaimNotAllowed: AugmentedError<ApiType>;
       /**
        * Number of Transfer Manager extensions attached to an asset is equal to MaxNumberOfTMExtensionForAsset.
        **/
@@ -267,7 +275,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       CannotClaimBeforeStart: AugmentedError<ApiType>;
       /**
-       * A corporate ballot was made for a non-benefit CA.
+       * A capital distribution was made for a non-benefit CA.
        **/
       CANotBenefit: AugmentedError<ApiType>;
       /**
@@ -1212,6 +1220,10 @@ declare module '@polkadot/api/types/errors' {
        **/
       BadState: AugmentedError<ApiType>;
       /**
+       * A nomination target was supplied that was blocked or otherwise not a validator.
+       **/
+      BadTarget: AugmentedError<ApiType>;
+      /**
        * When the amount to be bonded is less than `MinimumBond`
        **/
       BondTooSmall: AugmentedError<ApiType>;
@@ -1343,9 +1355,21 @@ declare module '@polkadot/api/types/errors' {
        **/
       SnapshotUnavailable: AugmentedError<ApiType>;
       /**
+       * Validator or nominator stash identity does not exist.
+       **/
+      StashIdentityDoesNotExist: AugmentedError<ApiType>;
+      /**
+       * Nominator stash was not CDDed.
+       **/
+      StashIdentityNotCDDed: AugmentedError<ApiType>;
+      /**
        * Validator stash identity was not permissioned.
        **/
       StashIdentityNotPermissioned: AugmentedError<ApiType>;
+      /**
+       * Too many nomination targets supplied.
+       **/
+      TooManyTargets: AugmentedError<ApiType>;
     };
     statistics: {
       /**

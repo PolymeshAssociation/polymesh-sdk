@@ -19,16 +19,16 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/Sto',
-  require('~/testUtils/mocks/entities').mockStoModule('~/api/entities/Sto')
+  '~/api/entities/Offering',
+  require('~/testUtils/mocks/entities').mockOfferingModule('~/api/entities/Offering')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('createGroup procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const transactions = {
     type: PermissionType.Include,
     values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
@@ -84,31 +84,30 @@ describe('createGroup procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   describe('createCreateGroupResolver', () => {
     const agId = new BigNumber(1);
-    const rawAgId = dsMockUtils.createMockU64(agId.toNumber());
+    const rawAgId = dsMockUtils.createMockU64(agId);
     sinon
       .stub(utilsInternalModule, 'filterEventRecords')
       .returns([dsMockUtils.createMockIEvent(['someDid', rawTicker, rawAgId])]);
 
-    test('should return the new CustomPermissionGroup', () => {
+    it('should return the new CustomPermissionGroup', () => {
       const result = createCreateGroupResolver(mockContext)({} as ISubmittableResult);
 
       expect(result.id).toEqual(agId);
-      expect(result.token.ticker).toEqual(ticker);
+      expect(result.asset.ticker).toEqual(ticker);
     });
   });
 
-  test('should throw an error if there already exists a group with exactly the same permissions', async () => {
+  it('should throw an error if there already exists a group with exactly the same permissions', async () => {
     const customId = new BigNumber(1);
 
     let proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetGroups: {
           custom: [
@@ -143,7 +142,7 @@ describe('createGroup procedure', () => {
     expect(error.data.groupId).toEqual(customId);
 
     proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         ticker,
         permissionsGetGroups: {
           custom: [],
@@ -162,7 +161,7 @@ describe('createGroup procedure', () => {
     });
 
     permissionsLikeToPermissionsStub.returns({
-      tokens: null,
+      assets: null,
       portfolios: null,
       transactionGroups: [],
       transactions: null,
@@ -186,11 +185,11 @@ describe('createGroup procedure', () => {
     expect(error.data.groupId).toEqual(PermissionGroupType.Full);
   });
 
-  test('should add a create group transaction to the queue', async () => {
+  it('should add a create group transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
-        token: entityMockUtils.getSecurityTokenInstance({
+        asset: entityMockUtils.getAssetInstance({
           ticker,
           permissionsGetGroups: {
             custom: [
@@ -221,10 +220,11 @@ describe('createGroup procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      externalAgentsCreateGroupTransaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker,
-      rawExtrinsicPermissions
+      sinon.match({
+        transaction: externalAgentsCreateGroupTransaction,
+        resolvers: sinon.match.array,
+        args: [rawTicker, rawExtrinsicPermissions],
+      })
     );
 
     permissionsLikeToPermissionsStub
@@ -246,15 +246,16 @@ describe('createGroup procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      externalAgentsCreateGroupTransaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker,
-      rawExtrinsicPermissions
+      sinon.match({
+        transaction: externalAgentsCreateGroupTransaction,
+        resolvers: sinon.match.array,
+        args: [rawTicker, rawExtrinsicPermissions],
+      })
     );
   });
 
   describe('prepareStorage', () => {
-    test('should return the security token', () => {
+    it('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext
       );
@@ -263,17 +264,17 @@ describe('createGroup procedure', () => {
       const result = boundFunc({ ticker } as Params);
 
       expect(result).toEqual({
-        token: entityMockUtils.getSecurityTokenInstance({ ticker }),
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
         mockContext,
         {
-          token: entityMockUtils.getSecurityTokenInstance({
+          asset: entityMockUtils.getAssetInstance({
             ticker,
           }),
         }
@@ -283,7 +284,7 @@ describe('createGroup procedure', () => {
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.CreateGroup],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

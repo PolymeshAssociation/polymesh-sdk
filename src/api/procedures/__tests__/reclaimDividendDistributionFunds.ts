@@ -13,18 +13,18 @@ import { DefaultPortfolio, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('reclaimDividendDistributionFunds procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
 
   let origin: DefaultPortfolio;
   let distribution: DividendDistribution;
@@ -59,12 +59,11 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Distribution is not expired', async () => {
+  it('should throw an error if the Distribution is not expired', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let err;
@@ -79,7 +78,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     expect(err.data.expiryDate).toEqual(expiryDate);
   });
 
-  test('should throw an error if the Distribution was already reclaimed', async () => {
+  it('should throw an error if the Distribution was already reclaimed', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let err;
@@ -103,7 +102,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     expect(err.message).toBe('Distribution funds have already been reclaimed');
   });
 
-  test('should add a reclaim transaction to the queue', async () => {
+  it('should add a reclaim transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('capitalDistribution', 'reclaim');
@@ -116,17 +115,20 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), transaction, {}, rawCaId);
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+      transaction,
+      args: [rawCaId],
+    });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
-      const params = ({
+    it('should return the appropriate roles and permissions', async () => {
+      const params = {
         distribution: {
           origin,
-          token: { ticker },
+          asset: { ticker },
         },
-      } as unknown) as Params;
+      } as unknown as Params;
 
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
@@ -137,8 +139,8 @@ describe('reclaimDividendDistributionFunds procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did } }],
         permissions: {
           transactions: [TxTags.capitalDistribution.Reclaim],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
-          portfolios: [origin],
+          assets: [expect.objectContaining({ ticker })],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
         },
       });
     });

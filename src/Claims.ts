@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { filter, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import {
@@ -15,7 +16,6 @@ import {
   ClaimData,
   ClaimScope,
   ClaimType,
-  Ensured,
   IdentityWithClaims,
   InvestorUniquenessClaim,
   ProcedureMethod,
@@ -25,6 +25,7 @@ import {
   ScopeType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
+import { Ensured } from '~/types/utils';
 import {
   scopeToMiddlewareScope,
   signerToString,
@@ -102,7 +103,7 @@ export class Claims {
   }
 
   /**
-   * Add an Investor Uniqueness Claim to the current Identity
+   * Add an Investor Uniqueness Claim to the signing Identity
    */
   public addInvestorUniquenessClaim: ProcedureMethod<AddInvestorUniquenessClaimParams, void>;
 
@@ -134,7 +135,7 @@ export class Claims {
   /**
    * Retrieve all claims issued by an Identity
    *
-   * @param opts.target - identity (optional, defaults to the current Identity)
+   * @param opts.target - Identity (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
@@ -144,8 +145,8 @@ export class Claims {
     opts: {
       target?: string | Identity;
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<ClaimData>> {
     const { context } = this;
@@ -164,8 +165,8 @@ export class Claims {
   /**
    * Retrieve a list of Identities with claims associated to them. Can be filtered using parameters
    *
-   * @param opts.targets - identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.scope - scope of the claims to fetch. Defaults to any scope
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
@@ -182,8 +183,8 @@ export class Claims {
       scope?: Scope;
       claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
@@ -207,17 +208,18 @@ export class Claims {
         ),
         claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
         includeExpired,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
     const {
       data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount: count },
+        didsWithClaims: { items: didsWithClaimsList, totalCount },
       },
     } = result;
 
+    const count = new BigNumber(totalCount);
     const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
     const next = calculateNextKey(count, size, start);
 
@@ -232,7 +234,7 @@ export class Claims {
    * Retrieve all scopes in which claims have been made for the target Identity.
    *   If the scope is an asset DID, the corresponding ticker is returned as well
    *
-   * @param opts.target - identity for which to fetch claim scopes (optional, defaults to the current Identity)
+   * @param opts.target - Identity for which to fetch claim scopes (optional, defaults to the signing Identity)
    */
   public async getClaimScopes(opts: { target?: string | Identity } = {}): Promise<ClaimScope[]> {
     const { context } = this;
@@ -281,7 +283,7 @@ export class Claims {
   /**
    * Retrieve the list of CDD claims for a target Identity
    *
-   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
+   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    */
   public async getCddClaims(
@@ -305,7 +307,7 @@ export class Claims {
   /**
    * Retrieve the list of InvestorUniqueness claims for a target Identity
    *
-   * @param opts.target - identity for which to fetch CDD claims (optional, defaults to the current Identity)
+   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    */
   public async getInvestorUniquenessClaims(
@@ -329,7 +331,7 @@ export class Claims {
   /**
    * Retrieve all claims issued about an Identity, grouped by claim issuer
    *
-   * @param opts.target - identity for which to fetch targeting claims (optional, defaults to the current Identity)
+   * @param opts.target - Identity for which to fetch targeting claims (optional, defaults to the signing Identity)
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
@@ -341,8 +343,8 @@ export class Claims {
       scope?: Scope;
       trustedClaimIssuers?: (string | Identity)[];
       includeExpired?: boolean;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
@@ -362,20 +364,18 @@ export class Claims {
             signerToString(trustedClaimIssuer)
           ),
           includeExpired,
-          count: size,
-          skip: start,
+          count: size?.toNumber(),
+          skip: start?.toNumber(),
         })
       );
 
       const {
         data: {
-          issuerDidsWithClaimsByTarget: {
-            items: issuerDidsWithClaimsByTargetList,
-            totalCount: count,
-          },
+          issuerDidsWithClaimsByTarget: { items: issuerDidsWithClaimsByTargetList, totalCount },
         },
       } = result;
 
+      const count = new BigNumber(totalCount);
       const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
       const next = calculateNextKey(count, size, start);
 
@@ -402,17 +402,14 @@ export class Claims {
     const identitiesWithClaims = issuers.map(identity => {
       return {
         identity,
-        claims: filter(
-          identityClaimsFromChain,
-          ({ issuer: { did: issuerDid } }) => issuerDid === identity.did
-        ),
+        claims: filter(identityClaimsFromChain, ({ issuer }) => issuer.isEqual(identity)),
       };
     });
 
     return {
       data: identitiesWithClaims,
       next: null,
-      count: identitiesWithClaims.length,
+      count: new BigNumber(identitiesWithClaims.length),
     };
   }
 }

@@ -8,8 +8,8 @@ import {
 } from '~/internal';
 import { GroupPermissions, ProcedureMethod } from '~/types';
 import {
+  bigNumberToU32,
   extrinsicPermissionsToTransactionPermissions,
-  numberToU32,
   stringToTicker,
   transactionPermissionsToTxGroups,
   u32ToBigNumber,
@@ -27,14 +27,14 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a group of custom permissions for a Security Token
+ * Represents a group of custom permissions for an Asset
  */
 export class CustomPermissionGroup extends PermissionGroup {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, ticker } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber && typeof ticker === 'string';
@@ -74,12 +74,12 @@ export class CustomPermissionGroup extends PermissionGroup {
         },
       },
       context,
-      token: { ticker },
+      asset: { ticker },
       id,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawAgId = numberToU32(id, context);
+    const rawAgId = bigNumberToU32(id, context);
 
     const rawGroupPermissions = await externalAgents.groupPermissions(rawTicker, rawAgId);
 
@@ -98,12 +98,12 @@ export class CustomPermissionGroup extends PermissionGroup {
    */
   public async exists(): Promise<boolean> {
     const {
-      token: { ticker },
+      asset: { ticker },
       id,
       context,
     } = this;
 
-    const nextId = await context.polymeshApi.query.externalAgents.agIdSequence(
+    const nextId = await context.polymeshApi.query.externalAgents.aGIdSequence(
       stringToTicker(ticker, context)
     );
 
@@ -115,11 +115,11 @@ export class CustomPermissionGroup extends PermissionGroup {
    * Return the Group's static data
    */
   public toJson(): HumanReadable {
-    const { id, token } = this;
+    const { id, asset } = this;
 
     return toHumanReadable({
       id,
-      ticker: token,
+      ticker: asset,
     });
   }
 }

@@ -668,6 +668,7 @@ export default {
         PortfolioCustody: 'PortfolioId',
         BecomeAgent: '(Ticker, AgentGroup)',
         AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
+        RotatePrimaryKeyToSecondary: 'Permissions',
       },
     },
     SmartExtensionType: {
@@ -841,6 +842,7 @@ export default {
         PortfolioCustody: '',
         BecomeAgent: '',
         AddRelayerPayingKey: '',
+        RotatePrimaryKeyToSecondary: '',
       },
     },
     ProposalDetails: {
@@ -1280,7 +1282,7 @@ export default {
         params: [
           {
             name: 'index',
-            type: 'u32',
+            type: 'PipId',
             isOptional: false,
           },
           {
@@ -1305,7 +1307,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Vec<u32>',
+        type: 'Vec<PipId>',
       },
       votedOn: {
         description: 'Retrieves proposal address indices voted on',
@@ -1321,7 +1323,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Vec<u32>',
+        type: 'Vec<PipId>',
       },
     },
     protocolFee: {

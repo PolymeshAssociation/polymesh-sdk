@@ -32,7 +32,7 @@ export interface ClaimClassicTickerParams {
  *   `0x1230000000000000000000000000000000000000000000000000000000000000`, the message will be
  *   `classic_claim1230000000000000000000000000000000000000000000000000000000000000`
  */
-function generateClassicSigneableMessage(did: string): string {
+function generateClassicSignableMessage(did: string): string {
   const strippedDid = did.replace('0x', '');
 
   return stringToHex(`${CLASSIC_CLAIM_SIGNATURE_PREFIX}${strippedDid}`);
@@ -61,7 +61,7 @@ export async function prepareClaimClassicTicker(
   const [classicReservation, { expiry, owner: reservationOwner }, { did }] = await Promise.all([
     asset.classicTickers(rawTicker),
     asset.tickers(rawTicker),
-    context.getCurrentIdentity(),
+    context.getSigningIdentity(),
   ]);
 
   if (classicReservation.isNone) {
@@ -98,7 +98,7 @@ export async function prepareClaimClassicTicker(
 
   try {
     signerAddress = recoverPersonalSignature({
-      data: generateClassicSigneableMessage(did),
+      data: generateClassicSignableMessage(did),
       sig: ethereumSignature,
     }).toLowerCase();
   } catch (err) {
@@ -114,19 +114,17 @@ export async function prepareClaimClassicTicker(
   if (signerAddress !== u8aToString(ethOwner).toLowerCase()) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The account that signed the message is not the classic Ticker owner',
+      message: 'The Account that signed the message is not the classic Ticker owner',
       data: {
         signerAddress,
       },
     });
   }
 
-  this.addTransaction(
-    tx.asset.claimClassicTicker,
-    {},
-    rawTicker,
-    stringToEcdsaSignature(ethereumSignature, context)
-  );
+  this.addTransaction({
+    transaction: tx.asset.claimClassicTicker,
+    args: [rawTicker, stringToEcdsaSignature(ethereumSignature, context)],
+  });
 
   return new TickerReservation({ ticker }, context);
 }
@@ -137,7 +135,7 @@ export async function prepareClaimClassicTicker(
 export const claimClassicTicker = (): Procedure<ClaimClassicTickerParams, TickerReservation> =>
   new Procedure(prepareClaimClassicTicker, {
     permissions: {
-      tokens: [],
+      assets: [],
       transactions: [TxTags.asset.ClaimClassicTicker],
       portfolios: [],
     },

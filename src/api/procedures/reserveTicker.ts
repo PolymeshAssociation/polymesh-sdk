@@ -1,5 +1,4 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { TxTags } from 'polymesh-types/types';
 
 import {
   Context,
@@ -8,7 +7,7 @@ import {
   Procedure,
   TickerReservation,
 } from '~/internal';
-import { ErrorCode, RoleType, TickerReservationStatus } from '~/types';
+import { ErrorCode, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
@@ -25,14 +24,14 @@ export interface ReserveTickerParams {
  * @hidden
  * NOTE: this might seem redundant but it's done in case some mutation is done on the ticker on chain (e.g. upper case or truncating)
  */
-export const createTickerReservationResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): TickerReservation => {
-  const [{ data }] = filterEventRecords(receipt, 'asset', 'TickerRegistered');
-  const newTicker = tickerToString(data[1]);
+export const createTickerReservationResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): TickerReservation => {
+    const [{ data }] = filterEventRecords(receipt, 'asset', 'TickerRegistered');
+    const newTicker = tickerToString(data[1]);
 
-  return new TickerReservation({ ticker: newTicker }, context);
-};
+    return new TickerReservation({ ticker: newTicker }, context);
+  };
 
 /**
  * @hidden
@@ -55,10 +54,10 @@ export async function prepareReserveTicker(
 
   const { expiryDate, status } = await reservation.details();
 
-  if (status === TickerReservationStatus.TokenCreated) {
+  if (status === TickerReservationStatus.AssetCreated) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: `A Security Token with ticker "${ticker}" already exists`,
+      message: `An Asset with ticker "${ticker}" already exists`,
     });
   } else if (status === TickerReservationStatus.Reserved) {
     if (!extendPeriod) {
@@ -79,13 +78,11 @@ export async function prepareReserveTicker(
     }
   }
 
-  const [newReservation] = this.addTransaction(
-    tx.asset.registerTicker,
-    {
-      resolvers: [createTickerReservationResolver(context)],
-    },
-    rawTicker
-  );
+  const [newReservation] = this.addTransaction({
+    transaction: tx.asset.registerTicker,
+    resolvers: [createTickerReservationResolver(context)],
+    args: [rawTicker],
+  });
 
   return newReservation;
 }
@@ -101,7 +98,7 @@ export function getAuthorization({
   const auth: ProcedureAuthorization = {
     permissions: {
       transactions: [TxTags.asset.RegisterTicker],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };

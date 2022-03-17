@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -10,16 +9,17 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyCaCheckpoint procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -44,12 +44,11 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the checkpoint does not exist', async () => {
+  it('should throw an error if the checkpoint does not exist', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: entityMockUtils.getCheckpointInstance({
@@ -70,7 +69,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe("Checkpoint doesn't exist");
   });
 
-  test('should throw an error if checkpoint schedule no longer exists', async () => {
+  it('should throw an error if checkpoint schedule no longer exists', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: entityMockUtils.getCheckpointScheduleInstance({
@@ -91,7 +90,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe("Checkpoint Schedule doesn't exist");
   });
 
-  test('should throw an error if date is in the past', async () => {
+  it('should throw an error if date is in the past', async () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: new Date(new Date().getTime() - 100000),
@@ -110,17 +109,17 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe('Checkpoint date must be in the future');
   });
 
-  test('should add a change record date transaction to the queue', async () => {
+  it('should add a change record date transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const id = new BigNumber(1);
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+    const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
 
     sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
 
     const rawRecordDateSpec = dsMockUtils.createMockRecordDateSpec({
-      Scheduled: dsMockUtils.createMockMoment(new Date().getTime()),
+      Scheduled: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime())),
     });
 
     sinon.stub(utilsConversionModule, 'checkpointToRecordDateSpec').returns(rawRecordDateSpec);
@@ -134,13 +133,10 @@ describe('modifyCaCheckpoint procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -151,13 +147,10 @@ describe('modifyCaCheckpoint procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -166,13 +159,10 @@ describe('modifyCaCheckpoint procedure', () => {
       checkpoint: new Date(new Date().getTime() + 100000),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      changeRecordDateTransaction,
-      {},
-      rawCaId,
-      rawRecordDateSpec
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, rawRecordDateSpec],
+    });
 
     await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({
@@ -181,22 +171,25 @@ describe('modifyCaCheckpoint procedure', () => {
       checkpoint: null,
     });
 
-    sinon.assert.calledWith(addTransactionStub, changeRecordDateTransaction, {}, rawCaId, null);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: changeRecordDateTransaction,
+      args: [rawCaId, null],
+    });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         corporateAction: {
-          token: { ticker },
+          asset: { ticker },
         },
       } as Params;
 
       expect(boundFunc(args)).toEqual({
         permissions: {
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.corporateAction.ChangeRecordDate],
           portfolios: [],
         },

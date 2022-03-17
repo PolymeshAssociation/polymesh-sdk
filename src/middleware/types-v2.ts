@@ -1782,17 +1782,18 @@ export type IdentityWithClaimFilter = {
 };
 
 /** A connection to a list of `IssuerIdentityWithClaim` values, with data from `Claim`. */
-export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection = {
-  __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection';
-  /** A list of `IssuerIdentityWithClaim` objects. */
-  nodes: Array<Maybe<IssuerIdentityWithClaim>>;
-  /** A list of edges which contains the `IssuerIdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
-  edges: Array<IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** The count of *all* `IssuerIdentityWithClaim` you could get from the connection. */
-  totalCount: Scalars['Int'];
-};
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection =
+  {
+    __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection';
+    /** A list of `IssuerIdentityWithClaim` objects. */
+    nodes: Array<Maybe<IssuerIdentityWithClaim>>;
+    /** A list of edges which contains the `IssuerIdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
+    edges: Array<IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `IssuerIdentityWithClaim` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
 
 /** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
 export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge = {
@@ -1806,15 +1807,16 @@ export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuer
 };
 
 /** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
-export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdgeClaimsArgs = {
-  first?: Maybe<Scalars['Int']>;
-  last?: Maybe<Scalars['Int']>;
-  offset?: Maybe<Scalars['Int']>;
-  before?: Maybe<Scalars['Cursor']>;
-  after?: Maybe<Scalars['Cursor']>;
-  orderBy?: Maybe<Array<ClaimsOrderBy>>;
-  filter?: Maybe<ClaimFilter>;
-};
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdgeClaimsArgs =
+  {
+    first?: Maybe<Scalars['Int']>;
+    last?: Maybe<Scalars['Int']>;
+    offset?: Maybe<Scalars['Int']>;
+    before?: Maybe<Scalars['Cursor']>;
+    after?: Maybe<Scalars['Cursor']>;
+    orderBy?: Maybe<Array<ClaimsOrderBy>>;
+    filter?: Maybe<ClaimFilter>;
+  };
 
 /** A connection to a list of `IdentityWithClaim` values. */
 export type IdentityWithClaimsConnection = {
@@ -2142,17 +2144,18 @@ export type IssuerIdentityWithClaimFilter = {
 };
 
 /** A connection to a list of `IdentityWithClaim` values, with data from `Claim`. */
-export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection = {
-  __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection';
-  /** A list of `IdentityWithClaim` objects. */
-  nodes: Array<Maybe<IdentityWithClaim>>;
-  /** A list of edges which contains the `IdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
-  edges: Array<IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** The count of *all* `IdentityWithClaim` you could get from the connection. */
-  totalCount: Scalars['Int'];
-};
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection =
+  {
+    __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection';
+    /** A list of `IdentityWithClaim` objects. */
+    nodes: Array<Maybe<IdentityWithClaim>>;
+    /** A list of edges which contains the `IdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
+    edges: Array<IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `IdentityWithClaim` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
 
 /** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
 export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge = {
@@ -2166,15 +2169,16 @@ export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDid
 };
 
 /** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
-export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdgeClaimsArgs = {
-  first?: Maybe<Scalars['Int']>;
-  last?: Maybe<Scalars['Int']>;
-  offset?: Maybe<Scalars['Int']>;
-  before?: Maybe<Scalars['Cursor']>;
-  after?: Maybe<Scalars['Cursor']>;
-  orderBy?: Maybe<Array<ClaimsOrderBy>>;
-  filter?: Maybe<ClaimFilter>;
-};
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdgeClaimsArgs =
+  {
+    first?: Maybe<Scalars['Int']>;
+    last?: Maybe<Scalars['Int']>;
+    offset?: Maybe<Scalars['Int']>;
+    before?: Maybe<Scalars['Cursor']>;
+    after?: Maybe<Scalars['Cursor']>;
+    orderBy?: Maybe<Array<ClaimsOrderBy>>;
+    filter?: Maybe<ClaimFilter>;
+  };
 
 /** A connection to a list of `IssuerIdentityWithClaim` values. */
 export type IssuerIdentityWithClaimsConnection = {

@@ -1,6 +1,12 @@
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
+[![Types](https://img.shields.io/npm/types/@polymathnetwork/polymesh-sdk)](https://)
+[![npm](https://img.shields.io/npm/v/@polymathnetwork/polymesh-sdk)](https://www.npmjs.com/package/@polymathnetwork/polymesh-sdk)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=PolymathNetwork_polymesh-sdk&metric=coverage)](https://sonarcloud.io/dashboard?id=PolymathNetwork_polymesh-sdk)
+[![Github Actions Workflow](https://github.com/PolymathNetwork/polymesh-sdk/actions/workflows/main.yml/badge.svg)](https://github.com/Polymathnetwork/polymesh-sdk/actions)
+[![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=PolymathNetwork_polymesh-sdk&metric=alert_status)](https://sonarcloud.io/dashboard?id=PolymathNetwork_polymesh-sdk)
+[![Issues](https://img.shields.io/github/issues/PolymathNetwork/polymesh-sdk)](https://github.com/PolymathNetwork/polymesh-sdk/issues)
 
 ## @polymathnetwork/polymesh-sdk
 
@@ -8,7 +14,7 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v4.0.0
+This release is compatible with Polymesh v4.1.0
 
 <!--- End of section --->
 
@@ -46,17 +52,27 @@ Or, if you're using yarn
 
 `yarn add @polymathnetwork/polymesh-sdk`
 
+**NOTE** if using TypeScript the compiler option "skipLibCheck" should be set to true in your tsconfig.json file
+
 #### Initializing the client
 
-Before you can start registering Tickers and creating Security Tokens, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
+Before you can start registering Tickers and creating Assets, you have to connect the Polymesh SDK client to a Polymesh node. This is a pretty straightforward process:
 
 ```typescript
 import { Polymesh } from '@polymathnetwork/polymesh-sdk';
+import { LocalSigningManager } from '@polymathnetwork/local-signing-manager';
 
 async function run() {
+  const signingManager = await LocalSigningManager.create({
+    accounts: [
+      {
+        seed: 'YOU_WISH',
+      },
+    ],
+  });
   const polyClient = await Polymesh.connect({
     nodeUrl: 'wss://some-node-url.com',
-    accountSeed: 'YOUWISH',
+    signingManager,
   });
 
   // do stuff with the client
@@ -66,22 +82,20 @@ async function run() {
 Here is an overview of the parameters passed to the `connect` function:
 
 - `nodeUrl` is a URL that points to a running Polymesh node
-- `accountSeed` is the seed (akin to a private key) of the account that will be performing transactions
+- `signingManager` is an object that complies with the `SigningManager` interface. It holds the Accounts capable of signing transactions, and the signing logic itself. In this example, `LocalSigningManager` is a simple signing manager that holds private keys in memory and signs with them
 
-**NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), there is no need to provide the account seed. Instead, you pass a Keyring object that contains the address, and a signer for that address (which you would typically get from the wallet extension)
+**NOTE:** if using the SDK on a browser environment \(i.e. with the Polymesh wallet browser extension\), you would use the `BrowserExtensionSigningManager` provided by `@polymathnetwork/browser-extension-signing-manager`
 
 ```typescript
-import { Polymesh, Keyring } from '@polymathnetwork/polymesh-sdk';
+import { Polymesh } from '@polymathnetwork/polymesh-sdk';
+import { BrowserExtensionSigningManager } from '@polymathnetwork/browser-extension-signing-manager';
 
 async function run() {
-  const keyring = new Keyring();
-  keyring.addFromAddress(accountAddress);
-  const signer = getSignerFromExtension(); // this is not an existing function, how you get this depends on the extension
+  const signingManager = await BrowserExtensionSigningManager.create('MY_APP_NAME'); // The Polymesh wallet extension will ask the user to authorize MY_APP_NAME for access
 
   const polyClient = await Polymesh.connect({
     nodeUrl: 'wss://some-node-url.com',
-    keyring,
-    signer,
+    signingManager,
   });
 
   // do stuff with the client

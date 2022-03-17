@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 
 import { TransactionArgumentType } from '~/types';
 
@@ -19,28 +18,11 @@ export const MAX_BALANCE = new BigNumber(Math.pow(10, 12));
  */
 export const DUMMY_ACCOUNT_ID = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
 /**
- * Map of transaction tags to the theoretical limit of transactions that a batch of that type supports.
- *   This takes block size into account
- */
-export const MAX_BATCH_ELEMENTS: Record<string, number> = {
-  [TxTags.asset.AddDocuments]: 20,
-  [TxTags.asset.RemoveDocuments]: 20,
-  [TxTags.identity.RemoveAuthorization]: 100,
-  [TxTags.identity.AddClaim]: 200,
-  [TxTags.identity.RevokeClaim]: 200,
-  [TxTags.complianceManager.RemoveDefaultTrustedClaimIssuer]: 200,
-  [TxTags.complianceManager.AddDefaultTrustedClaimIssuer]: 200,
-  [TxTags.settlement.AddInstruction]: 50,
-  [TxTags.settlement.AddAndAffirmInstruction]: 50,
-  [TxTags.capitalDistribution.PushBenefit]: 1000,
-};
-export const DEFAULT_MAX_BATCH_ELEMENTS = 20;
-/**
- * Whether or not to ingnore the checksum when encoding/decoding polkadot addresses
+ * Whether or not to ignore the checksum when encoding/decoding polkadot addresses
  */
 export const IGNORE_CHECKSUM = true;
 /**
- * Default format for Keyrings (used when the chain doesn't specify one)
+ * Default SS58 format for encoding addresses (used when the chain doesn't specify one)
  */
 export const DEFAULT_SS58_FORMAT = 42;
 export const MAX_CONCURRENT_REQUESTS = 200;
@@ -49,7 +31,7 @@ export const DEFAULT_GQL_PAGE_SIZE = 25;
 /**
  * Limit to the page size used when fetching large amounts of data from the chain (same goes for `.multi` calls)
  */
-export const MAX_PAGE_SIZE = 1000;
+export const MAX_PAGE_SIZE = new BigNumber(1000);
 /**
  * Prefix for the data that must be signed in Ethereum by a classic Ticker owner in order
  *   to claim their Ticker
@@ -127,7 +109,7 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_VERSION_RANGE = '>=4.0.0';
+export const SUPPORTED_VERSION_RANGE = '4.1.x';
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',
@@ -139,3 +121,8 @@ export const SYSTEM_VERSION_RPC_CALL = {
  * Maximum amount of legs allowed in a single instruction
  */
 export const MAX_LEGS_LENGTH = 10;
+
+/**
+ * Default CDD ID associated with an Identity on chain. Used for Identities onboarded without PUIS
+ */
+export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';

@@ -152,6 +152,8 @@ export interface AuthorizationData extends Enum {
   readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
   readonly isAddRelayerPayingKey: boolean;
   readonly asAddRelayerPayingKey: ITuple<[AccountId, AccountId, Balance]>;
+  readonly isRotatePrimaryKeyToSecondary: boolean;
+  readonly asRotatePrimaryKeyToSecondary: Permissions;
 }
 
 /** @name AuthorizationNonce */
@@ -168,6 +170,7 @@ export interface AuthorizationType extends Enum {
   readonly isPortfolioCustody: boolean;
   readonly isBecomeAgent: boolean;
   readonly isAddRelayerPayingKey: boolean;
+  readonly isRotatePrimaryKeyToSecondary: boolean;
 }
 
 /** @name BallotMeta */

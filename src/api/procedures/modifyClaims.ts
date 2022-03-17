@@ -1,40 +1,27 @@
 import { Moment } from '@polkadot/types/interfaces';
 import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId, TxTags } from 'polymesh-types/types';
+import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import {
-  CddClaim,
-  Claim,
-  ClaimTarget,
-  ClaimType,
-  Ensured,
-  ErrorCode,
-  isInvestorUniquenessClaim,
-  isScopedClaim,
-  RoleType,
-} from '~/types';
-import {
-  ClaimOperation,
-  Extrinsics,
-  MapMaybePostTransactionValue,
-  ProcedureAuthorization,
-} from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType, TxTags } from '~/types';
+import { ClaimOperation, ProcedureAuthorization } from '~/types/internal';
+import { Ensured, tuple } from '~/types/utils';
+import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   balanceToBigNumber,
   claimToMeshClaim,
   dateToMoment,
-  identityIdToString,
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
   stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
+import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
+import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
 
 interface AddClaimsParams {
   /**
@@ -61,15 +48,6 @@ interface RevokeClaimsParams {
 }
 
 export type ModifyClaimsParams = AddClaimsParams | EditClaimsParams | RevokeClaimsParams;
-
-/**
- * @hidden
- */
-export function groupByDid([target]: MapMaybePostTransactionValue<
-  Parameters<Extrinsics['identity']['revokeClaim']> | Parameters<Extrinsics['identity']['addClaim']>
->): string {
-  return identityIdToString(target as IdentityId);
-}
 
 const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean => {
   let isSameScope = true;
@@ -124,7 +102,7 @@ const findPositiveBalanceIuClaims = (claims: ClaimTarget[], context: Context): P
 /**
  * @hidden
  *
- * Return all new CDD claims for identities that have an existing CDD claim with a different ID
+ * Return all new CDD claims for Identities that have an existing CDD claim with a different ID
  */
 const findInvalidCddClaims = async (
   claims: ClaimTarget[],
@@ -144,19 +122,19 @@ const findInvalidCddClaims = async (
     });
 
     newCddClaims.forEach(({ target, claim }) => {
-      const did = signerToString(target);
-      const issuedClaimsForTarget = issuedCddClaims.data.filter(
-        ({ target: issuedTarget }) => issuedTarget.did === did
+      const targetIdentity = asIdentity(target, context);
+      const issuedClaimsForTarget = issuedCddClaims.data.filter(({ target: issuedTarget }) =>
+        targetIdentity.isEqual(issuedTarget)
       );
 
       if (issuedClaimsForTarget.length) {
         // we know both claims are CDD claims
-        const { id: newCddId } = issuedClaimsForTarget[0].claim as CddClaim;
-        const { id: currentCddId } = claim as CddClaim;
+        const { id: currentCddId } = issuedClaimsForTarget[0].claim as CddClaim;
+        const { id: newCddId } = claim as CddClaim;
 
-        if (newCddId !== currentCddId) {
+        if (newCddId !== currentCddId && ![currentCddId, newCddId].includes(DEFAULT_CDD_ID)) {
           invalidCddClaims.push({
-            target: typeof target === 'string' ? new Identity({ did: target }, context) : target,
+            target: targetIdentity,
             currentCddId,
             newCddId,
           });
@@ -223,7 +201,7 @@ export async function prepareModifyClaims(
 
   // skip validation if the middleware is unavailable
   if (shouldValidateWithMiddleware) {
-    const { did: currentDid } = await context.getCurrentIdentity();
+    const { did: currentDid } = await context.getSigningIdentity();
     const {
       data: {
         didsWithClaims: { items: currentClaims },
@@ -251,7 +229,7 @@ export async function prepareModifyClaims(
     if (claimsByOtherIssuers.length) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the current Identity`,
+        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the signing Identity`,
         data: {
           claimsByOtherIssuers,
         },
@@ -273,11 +251,14 @@ export async function prepareModifyClaims(
       });
     }
 
-    this.addBatchTransaction(
-      identity.revokeClaim,
-      { groupByFn: groupByDid },
-      modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim))
+    const transactions = assembleBatchTransactions(
+      tuple({
+        transaction: identity.revokeClaim,
+        argsArray: modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim)),
+      })
     );
+
+    this.addBatchTransaction({ transactions });
 
     return;
   }
@@ -296,7 +277,14 @@ export async function prepareModifyClaims(
     }
   }
 
-  this.addBatchTransaction(identity.addClaim, { groupByFn: groupByDid }, modifyClaimArgs);
+  const txs = assembleBatchTransactions(
+    tuple({
+      transaction: identity.addClaim,
+      argsArray: modifyClaimArgs,
+    })
+  );
+
+  this.addBatchTransaction({ transactions: txs });
 }
 
 /**
@@ -310,7 +298,7 @@ export function getAuthorization({
     transactions: [
       operation === ClaimOperation.Revoke ? TxTags.identity.RevokeClaim : TxTags.identity.AddClaim,
     ],
-    tokens: [],
+    assets: [],
     portfolios: [],
   };
   if (claims.some(({ claim: { type } }) => type === ClaimType.CustomerDueDiligence)) {

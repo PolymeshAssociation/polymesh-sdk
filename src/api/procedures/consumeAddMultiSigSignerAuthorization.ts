@@ -1,11 +1,10 @@
-import { TxTag, TxTags } from 'polymesh-types/types';
-
-import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
+import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
+import { TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToU64,
   booleanToBool,
-  numberToU64,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
@@ -36,57 +35,41 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
   } = this;
   const { authRequest, accept } = args;
 
-  const { target, authId, expiry, issuer } = authRequest;
+  const { target, authId, issuer } = authRequest;
 
-  if (authRequest.isExpired()) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Authorization Request has expired',
-      data: {
-        expiry,
-      },
-    });
-  }
-
-  const rawAuthId = numberToU64(authId, context);
+  const rawAuthId = bigNumberToU64(authId, context);
 
   if (!accept) {
-    const { address } = context.getCurrentAccount();
+    const { address } = context.getSigningAccount();
 
     const paidByThirdParty = address === signerToString(target);
-    const opts: { paidForBy?: Identity } = {};
+    const addTransactionArgs: { paidForBy?: Identity } = {};
 
     if (paidByThirdParty) {
-      opts.paidForBy = issuer;
+      addTransactionArgs.paidForBy = issuer;
     }
 
-    this.addTransaction(
-      identity.removeAuthorization,
-      opts,
-      signerValueToSignatory(signerToSignerValue(target), context),
-      rawAuthId,
-      booleanToBool(paidByThirdParty, context)
-    );
+    this.addTransaction({
+      transaction: identity.removeAuthorization,
+      ...addTransactionArgs,
+      args: [
+        signerValueToSignatory(signerToSignerValue(target), context),
+        rawAuthId,
+        booleanToBool(paidByThirdParty, context),
+      ],
+    });
 
     return;
   }
 
-  let transaction = multiSig.acceptMultisigSignerAsIdentity;
+  await assertAuthorizationRequestValid(authRequest, context);
 
-  if (target instanceof Account) {
-    const existingIdentity = await target.getIdentity();
+  const transaction =
+    target instanceof Account
+      ? multiSig.acceptMultisigSignerAsKey
+      : multiSig.acceptMultisigSignerAsIdentity;
 
-    if (existingIdentity) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The target Account is already part of an Identity',
-      });
-    }
-
-    transaction = multiSig.acceptMultisigSignerAsKey;
-  }
-
-  this.addTransaction(transaction, { paidForBy: issuer }, rawAuthId);
+  this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
 }
 
 /**
@@ -100,21 +83,21 @@ export async function getAuthorization(
   const { context } = this;
 
   let hasRoles;
-  let transactions: TxTag[] = [];
 
-  const currentAccount = context.getCurrentAccount();
-  const identity = await currentAccount.getIdentity();
+  const signingAccount = context.getSigningAccount();
+  const identity = await signingAccount.getIdentity();
 
   let calledByTarget: boolean;
 
+  let permissions;
   if (target instanceof Account) {
-    calledByTarget = currentAccount.address === target.address;
+    calledByTarget = target.isEqual(signingAccount);
     hasRoles = calledByTarget;
-    transactions = [TxTags.multiSig.AcceptMultisigSignerAsKey];
+    // An account accepting multisig cannot be part of an Identity, so we cannot check for permissions
   } else {
     calledByTarget = !!identity?.isEqual(target);
     hasRoles = calledByTarget;
-    transactions = [TxTags.multiSig.AcceptMultisigSignerAsIdentity];
+    permissions = { transactions: [TxTags.multiSig.AcceptMultisigSignerAsIdentity] };
   }
 
   if (accept) {
@@ -122,13 +105,11 @@ export async function getAuthorization(
       roles:
         hasRoles ||
         '"AddMultiSigSigner" Authorization Requests can only be accepted by the target Signer',
-      permissions: {
-        transactions,
-      },
+      permissions,
     };
   }
 
-  transactions = [TxTags.identity.RemoveAuthorization];
+  const transactions = [TxTags.identity.RemoveAuthorization];
 
   /*
    * if the target is removing the auth request and they don't have an Identity,
@@ -154,5 +135,6 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const consumeAddMultiSigSignerAuthorization = (): Procedure<ConsumeAddMultiSigSignerAuthorizationParams> =>
-  new Procedure(prepareConsumeAddMultiSigSignerAuthorization, getAuthorization);
+export const consumeAddMultiSigSignerAuthorization =
+  (): Procedure<ConsumeAddMultiSigSignerAuthorizationParams> =>
+    new Procedure(prepareConsumeAddMultiSigSignerAuthorization, getAuthorization);

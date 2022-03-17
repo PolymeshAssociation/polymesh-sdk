@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
 import {
+  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
@@ -11,12 +12,11 @@ import {
   LinkCaDocsParams,
   ModifyCaCheckpointParams,
   PolymeshError,
-  SecurityToken,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod } from '~/types';
-import { HumanReadableType } from '~/types/utils';
+import { ErrorCode, InputCaCheckpoint, ProcedureMethod } from '~/types';
+import { HumanReadableType, Modify } from '~/types/utils';
 import {
-  numberToU32,
+  bigNumberToU32,
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
@@ -50,15 +50,15 @@ export interface Params {
 }
 
 /**
- * Represents an action initiated by the issuer of a Security Token which may affect the positions of
- *   the Tokenholders
+ * Represents an action initiated by the issuer of an Asset which may affect the positions of
+ *   the Asset Holders
  */
 export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unknown> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, ticker } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber && typeof ticker === 'string';
@@ -70,9 +70,9 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   public id: BigNumber;
 
   /**
-   * Security Token affected by this Corporate Action
+   * Asset affected by this Corporate Action
    */
-  public token: SecurityToken;
+  public asset: Asset;
 
   /**
    * date at which the Corporate Action was created
@@ -85,22 +85,25 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   public description: string;
 
   /**
-   * tokenholder identities related to this Corporate action. If the treatment is `Exclude`, the Identities
-   *   are not targeted by the Action, and any identities left out of the array will be targeted, and vice versa
+   * Asset Holder Identities related to this Corporate action. If the treatment is `Exclude`, the Identities
+   *   in the array will not be targeted by the Action, Identities not in the array will be targeted, and vice versa
    */
   public targets: CorporateActionTargets;
 
   /**
-   * default percentage of tax withholding for this Corporate Action
+   * default percentage (0-100) of tax withholding for this Corporate Action
    */
   public defaultTaxWithholding: BigNumber;
 
   /**
-   * percentage of tax withholding per Identity. Any Identity not present
+   * percentage (0-100) of tax withholding per Identity. Any Identity not present
    *   in this array uses the default tax withholding percentage
    */
   public taxWithholdings: TaxWithholding[];
 
+  /**
+   * type of corporate action being represented
+   */
   protected kind: CorporateActionKind;
 
   /**
@@ -122,7 +125,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.token = new SecurityToken({ ticker }, context);
+    this.asset = new Asset({ ticker }, context);
     this.kind = kind;
     this.declarationDate = declarationDate;
     this.description = description;
@@ -147,9 +150,12 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    * Modify the Corporate Action's Checkpoint
    */
   public abstract modifyCheckpoint: ProcedureMethod<
-    Omit<ModifyCaCheckpointParams, 'checkpoint'> & {
-      checkpoint: Checkpoint | CheckpointSchedule | Date;
-    },
+    Modify<
+      ModifyCaCheckpointParams,
+      {
+        checkpoint: InputCaCheckpoint;
+      }
+    >,
     void
   >;
 
@@ -173,7 +179,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
         polymeshApi: { query },
       },
       context,
-      token: { ticker },
+      asset: { ticker },
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
@@ -235,12 +241,12 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       },
       context,
       id,
-      token: { ticker },
+      asset: { ticker },
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
 
-    return query.corporateAction.corporateActions(rawTicker, numberToU32(id, context));
+    return query.corporateAction.corporateActions(rawTicker, bigNumberToU32(id, context));
   }
 
   /**
@@ -248,7 +254,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
    */
   public toJson(): HumanReadable {
     const {
-      token,
+      asset,
       id,
       declarationDate,
       description,
@@ -258,7 +264,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     } = this;
 
     return toHumanReadable({
-      ticker: token,
+      ticker: asset,
       id,
       declarationDate,
       defaultTaxWithholding,

@@ -1,29 +1,32 @@
-import { Keyring } from '@polkadot/api';
-import { IKeyringPair, TypeDef } from '@polkadot/types/types';
+import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
-import { DividendDistributionDetails, ScheduleDetails, StoDetails } from '~/api/entities/types';
+import {
+  DividendDistributionDetails,
+  OfferingDetails,
+  ScheduleDetails,
+  SubsidyData,
+} from '~/api/entities/types';
 import { CountryCode } from '~/generated/types';
-// NOTE uncomment in Governance v2 upgrade
-// import { ProposalDetails } from '~/api/entities/Proposal/types';
 import {
   Account,
+  Asset,
   Checkpoint,
   CheckpointSchedule,
   CustomPermissionGroup,
   DefaultPortfolio,
+  DefaultTrustedClaimIssuer,
   DividendDistribution,
   Identity,
   Instruction,
   KnownPermissionGroup,
   NumberedPortfolio,
-  /*, Proposal */
-  SecurityToken,
-  Sto,
+  Offering,
   TransactionQueue,
 } from '~/internal';
 import { PortfolioId } from '~/types/internal';
+import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
 
@@ -124,42 +127,7 @@ export type Role =
   | PortfolioCustodianRole
   | IdentityRole;
 
-/**
- * @hidden
- */
-export function isPortfolioCustodianRole(role: Role): role is PortfolioCustodianRole {
-  return role.type === RoleType.PortfolioCustodian;
-}
-
-/**
- * @hidden
- */
-export function isVenueOwnerRole(role: Role): role is VenueOwnerRole {
-  return role.type === RoleType.VenueOwner;
-}
-
-/**
- * @hidden
- */
-export function isCddProviderRole(role: Role): role is CddProviderRole {
-  return role.type === RoleType.CddProvider;
-}
-
-/**
- * @hidden
- */
-export function isTickerOwnerRole(role: Role): role is TickerOwnerRole {
-  return role.type === RoleType.TickerOwner;
-}
-
-/**
- * @hidden
- */
-export function isIdentityRole(role: Role): role is IdentityRole {
-  return role.type === RoleType.Identity;
-}
-
-export enum KnownTokenType {
+export enum KnownAssetType {
   EquityCommon = 'EquityCommon',
   EquityPreferred = 'EquityPreferred',
   Commodity = 'Commodity',
@@ -172,7 +140,7 @@ export enum KnownTokenType {
   StableCoin = 'StableCoin',
 }
 
-export enum TokenIdentifierType {
+export enum SecurityIdentifierType {
   Isin = 'Isin',
   Cusip = 'Cusip',
   Cins = 'Cins',
@@ -185,15 +153,15 @@ export enum TokenIdentifierType {
 /**
  * Alphanumeric standardized security identifier
  */
-export interface TokenIdentifier {
-  type: TokenIdentifierType;
+export interface SecurityIdentifier {
+  type: SecurityIdentifierType;
   value: string;
 }
 
 /**
  * Document attached to a token
  */
-export interface TokenDocument {
+export interface AssetDocument {
   name: string;
   uri: string;
   /**
@@ -217,6 +185,7 @@ export enum AuthorizationType {
   PortfolioCustody = 'PortfolioCustody',
   BecomeAgent = 'BecomeAgent',
   AddRelayerPayingKey = 'AddRelayerPayingKey',
+  RotatePrimaryKeyToSecondary = 'RotatePrimaryKeyToSecondary',
 }
 
 export enum ConditionTarget {
@@ -252,58 +221,82 @@ export enum ClaimType {
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
-export type CddClaim = { type: ClaimType.CustomerDueDiligence; id: string };
+export interface AccreditedClaim {
+  type: ClaimType.Accredited;
+  scope: Scope;
+}
 
-export type InvestorUniquenessClaim = {
+export interface AffiliateClaim {
+  type: ClaimType.Affiliate;
+  scope: Scope;
+}
+
+export interface BuyLockupClaim {
+  type: ClaimType.BuyLockup;
+  scope: Scope;
+}
+
+export interface SellLockupClaim {
+  type: ClaimType.SellLockup;
+  scope: Scope;
+}
+
+export interface CddClaim {
+  type: ClaimType.CustomerDueDiligence;
+  id: string;
+}
+
+export interface KycClaim {
+  type: ClaimType.KnowYourCustomer;
+  scope: Scope;
+}
+
+export interface JurisdictionClaim {
+  type: ClaimType.Jurisdiction;
+  code: CountryCode;
+  scope: Scope;
+}
+
+export interface ExemptedClaim {
+  type: ClaimType.Exempted;
+  scope: Scope;
+}
+
+export interface BlockedClaim {
+  type: ClaimType.Blocked;
+  scope: Scope;
+}
+
+export interface InvestorUniquenessClaim {
   type: ClaimType.InvestorUniqueness;
   scope: Scope;
   cddId: string;
   scopeId: string;
-};
+}
 
-export type InvestorUniquenessV2Claim = {
+export interface NoDataClaim {
+  type: ClaimType.NoData;
+}
+
+export interface InvestorUniquenessV2Claim {
   type: ClaimType.InvestorUniquenessV2;
   cddId: string;
-};
+}
 
 export type ScopedClaim =
-  | { type: ClaimType.Jurisdiction; code: CountryCode; scope: Scope }
+  | JurisdictionClaim
   | InvestorUniquenessClaim
-  | {
-      type: Exclude<
-        ClaimType,
-        | ClaimType.NoData
-        | ClaimType.Jurisdiction
-        | ClaimType.CustomerDueDiligence
-        | ClaimType.InvestorUniqueness
-        | ClaimType.InvestorUniquenessV2
-      >;
-      scope: Scope;
-    };
+  | AccreditedClaim
+  | AffiliateClaim
+  | BuyLockupClaim
+  | SellLockupClaim
+  | KycClaim
+  | ExemptedClaim
+  | BlockedClaim;
 
-export type UnscopedClaim = { type: ClaimType.NoData } | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = NoDataClaim | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
-
-/**
- * @hidden
- */
-export function isScopedClaim(claim: Claim): claim is ScopedClaim {
-  const { type } = claim;
-
-  return ![
-    ClaimType.NoData,
-    ClaimType.CustomerDueDiligence,
-    ClaimType.InvestorUniquenessV2,
-  ].includes(type);
-}
-
-/**
- * @hidden
- */
-export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
-  return claim.type === ClaimType.InvestorUniqueness;
-}
 
 export interface ClaimData<ClaimType = Claim> {
   target: Identity;
@@ -321,13 +314,19 @@ export interface IdentityWithClaims {
 export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;
-  extrinsicIdx: number;
+  extrinsicIdx: BigNumber;
+  /**
+   * public key of the signer. Unsigned transactions have no signer, in which case this value is null (example: an enacted governance proposal)
+   */
   address: string | null;
-  nonce: number;
+  /**
+   * nonce of the transaction. Null for unsigned transactions where address is null
+   */
+  nonce: BigNumber | null;
   txTag: TxTag;
   params: Record<string, unknown>[];
   success: boolean;
-  specVersionId: number;
+  specVersionId: BigNumber;
   extrinsicHash: string;
 }
 
@@ -336,13 +335,24 @@ export interface ClaimScope {
   ticker?: string;
 }
 
-export interface TrustedClaimIssuer {
-  identity: Identity;
+/**
+ * @param IsDefault - whether the Identity is a default trusted claim issuer for an asset or just
+ *   for a specific compliance condition. Defaults to false
+ */
+export interface TrustedClaimIssuer<IsDefault extends boolean = false> {
+  identity: IsDefault extends true ? DefaultTrustedClaimIssuer : Identity;
   /**
-   * an undefined value means that the issuer is trusted for all claim types.
+   * a null value means that the issuer is trusted for all claim types
    */
-  trustedFor?: ClaimType[];
+  trustedFor: ClaimType[] | null;
 }
+
+export type InputTrustedClaimIssuer = Modify<
+  TrustedClaimIssuer,
+  {
+    identity: string | Identity;
+  }
+>;
 
 export enum ConditionType {
   IsPresent = 'IsPresent',
@@ -353,51 +363,78 @@ export enum ConditionType {
   IsIdentity = 'IsIdentity',
 }
 
-export type ConditionBase = { target: ConditionTarget; trustedClaimIssuers?: TrustedClaimIssuer[] };
+export interface ConditionBase {
+  target: ConditionTarget;
+  /**
+   * if undefined, the default trusted claim issuers for the Asset are used
+   */
+  trustedClaimIssuers?: TrustedClaimIssuer[];
+}
 
-export type SingleClaimCondition = ConditionBase & {
+export type InputConditionBase = Modify<
+  ConditionBase,
+  {
+    /**
+     * if undefined, the default trusted claim issuers for the Asset are used
+     */
+    trustedClaimIssuers?: InputTrustedClaimIssuer[];
+  }
+>;
+
+export interface SingleClaimCondition {
   type: ConditionType.IsPresent | ConditionType.IsAbsent;
   claim: Claim;
-};
+}
 
-export type MultiClaimCondition = ConditionBase & {
+export interface MultiClaimCondition {
   type: ConditionType.IsAnyOf | ConditionType.IsNoneOf;
   claims: Claim[];
-};
+}
 
-export type IdentityCondition = ConditionBase & {
+export interface IdentityCondition {
   type: ConditionType.IsIdentity;
   identity: Identity;
-};
+}
 
-export type ExternalAgentCondition = ConditionBase & {
+export interface ExternalAgentCondition {
   type: ConditionType.IsExternalAgent;
-};
+}
 
-export type Condition =
+export type Condition = (
   | SingleClaimCondition
   | MultiClaimCondition
   | IdentityCondition
-  | ExternalAgentCondition;
+  | ExternalAgentCondition
+) &
+  ConditionBase;
 
-/**
- * @hidden
- */
-export function isSingleClaimCondition(condition: Condition): condition is SingleClaimCondition {
-  return [ConditionType.IsPresent, ConditionType.IsAbsent].includes(condition.type);
-}
-
-/**
- * @hidden
- */
-export function isMultiClaimCondition(condition: Condition): condition is MultiClaimCondition {
-  return [ConditionType.IsAnyOf, ConditionType.IsNoneOf].includes(condition.type);
-}
+export type InputCondition = (
+  | SingleClaimCondition
+  | MultiClaimCondition
+  | Modify<
+      IdentityCondition,
+      {
+        identity: string | Identity;
+      }
+    >
+  | ExternalAgentCondition
+) &
+  InputConditionBase;
 
 export interface Requirement {
-  id: number;
+  id: BigNumber;
   conditions: Condition[];
 }
+
+export interface ComplianceRequirements {
+  requirements: Requirement[];
+  /**
+   * used for conditions where no trusted claim issuers were specified
+   */
+  defaultTrustedClaimIssuers: TrustedClaimIssuer[];
+}
+
+export type InputRequirement = Modify<Requirement, { conditions: InputCondition[] }>;
 
 export interface ConditionCompliance {
   condition: Condition;
@@ -405,7 +442,7 @@ export interface ConditionCompliance {
 }
 
 export interface RequirementCompliance {
-  id: number;
+  id: BigNumber;
   conditions: ConditionCompliance[];
   complies: boolean;
 }
@@ -521,7 +558,7 @@ export enum TransferStatus {
 
 /**
  * Akin to TransferStatus, these are a bit more granular and specific. Every TransferError translates to
- *   a [[TransferStatus]], but two or more TransferErrors can represent the same TransferStatus, and
+ *   a {@link TransferStatus}, but two or more TransferErrors can represent the same TransferStatus, and
  *   not all Transfer Statuses are represented by a TransferError
  */
 export enum TransferError {
@@ -553,7 +590,7 @@ export enum TransferError {
    * translates to TransferStatus.ScopeClaimMissing
    *
    * occurs if one of the participants doesn't have a valid Investor Uniqueness Claim for
-   *   the Security Token
+   *   the Asset
    */
   ScopeClaimMissing = 'ScopeClaimMissing',
   /**
@@ -565,7 +602,7 @@ export enum TransferError {
   /**
    * translates to TransferStatus.TransfersHalted
    *
-   * occurs if the Security Token's transfers are frozen
+   * occurs if the Asset's transfers are frozen
    */
   TransfersFrozen = 'TransfersFrozen',
   /**
@@ -609,56 +646,46 @@ export interface MiddlewareConfig {
   key: string;
 }
 
-export type CommonKeyring = Pick<
-  Keyring,
-  | 'getPair'
-  | 'getPairs'
-  | 'addFromSeed'
-  | 'addFromUri'
-  | 'addFromMnemonic'
-  | 'addPair'
-  | 'encodeAddress'
->;
-
-export interface UiKeyring {
-  keyring: CommonKeyring;
-}
-
 export interface EventIdentifier {
   blockNumber: BigNumber;
   blockHash: string;
   blockDate: Date;
-  eventIndex: number;
-}
-
-export interface KeyringPair extends IKeyringPair {
-  isLocked: boolean;
+  eventIndex: BigNumber;
 }
 
 export interface Balance {
+  /**
+   * balance available for transferring and paying fees
+   */
   free: BigNumber;
+  /**
+   * unavailable balance, either bonded for staking or locked for some other purpose
+   */
   locked: BigNumber;
+  /**
+   * free + locked
+   */
   total: BigNumber;
 }
 
 export type AccountBalance = Balance;
 
 export interface PaginationOptions {
-  size: number;
+  size: BigNumber;
   start?: string;
 }
 
-export type NextKey = string | number | null;
+export type NextKey = string | BigNumber | null;
 
 export interface ResultSet<T> {
   data: T[];
   next: NextKey;
-  count?: number;
+  count?: BigNumber;
 }
 
 export interface NetworkProperties {
   name: string;
-  version: number;
+  version: BigNumber;
 }
 
 export interface Fees {
@@ -673,22 +700,45 @@ export interface Fees {
 }
 
 /**
- * Breakdown of the fees that will be paid by a specific third party in a Transaction Queue
+ * Type of relationship between a paying account and a beneficiary
  */
-export interface ThirdPartyFees {
+export enum PayingAccountType {
   /**
-   * third party Account that will pay for the fees
+   * the paying Account is currently subsidizing the caller
+   */
+  Subsidy = 'Subsidy',
+  /**
+   * the paying Account is paying for a specific transaction because of
+   *   chain-specific constraints (i.e. the caller is accepting an invitation to an Identity
+   *   and cannot have any funds to pay for it by definition)
+   */
+  Other = 'Other',
+}
+
+/**
+ * Represents a relationship in which a third party Account
+ *   is paying for a transaction on behalf of the caller
+ */
+export interface PayingAccount {
+  type: PayingAccountType;
+  /**
+   * Account that pays for the transaction
    */
   account: Account;
+  /**
+   * total amount that will be paid for
+   */
+  allowance: BigNumber | null;
+}
+
+/**
+ * Breakdown of the fees that will be paid by a specific third party in a Transaction Queue
+ */
+export interface ThirdPartyFees extends PayingAccount {
   /**
    * fees that will be paid by the third party Account
    */
   fees: Fees;
-  /**
-   * maximum amount that the third party Account can pay on behalf of the current Account. A null
-   *   value signifies no limit
-   */
-  allowance: BigNumber | null;
   /**
    * free balance of the third party Account
    */
@@ -697,9 +747,9 @@ export interface ThirdPartyFees {
 
 /**
  * Breakdown of transaction fees for a Transaction Queue. In most cases, the entirety of the Queue's fees
- *   will be paid by either the current Account or a third party. In some rare cases,
- *   fees can be split between them (for example, if the current Account is being subsidized, but one of the
- *   transactions in the queue terminates the subsidy, leaving the current Account with the responsibility of
+ *   will be paid by either the signing Account or a third party. In some rare cases,
+ *   fees can be split between them (for example, if the signing Account is being subsidized, but one of the
+ *   transactions in the queue terminates the subsidy, leaving the signing Account with the responsibility of
  *   paying for the rest of the transactions)
  */
 export interface FeesBreakdown {
@@ -709,11 +759,11 @@ export interface FeesBreakdown {
    */
   thirdPartyFees: ThirdPartyFees[];
   /**
-   * fees that must be paid by the current Account
+   * fees that must be paid by the caller Account
    */
   accountFees: Fees;
   /**
-   * free balance of the current Account
+   * free balance of the caller Account
    */
   accountBalance: BigNumber;
 }
@@ -757,14 +807,14 @@ export enum TxGroup {
    * - TxTags.asset.AddDocuments
    * - TxTags.asset.RemoveDocuments
    */
-  TokenManagement = 'TokenManagement',
+  AssetManagement = 'AssetManagement',
   /**
    * - TxTags.asset.Freeze
    * - TxTags.asset.Unfreeze
    * - TxTags.identity.AddAuthorization
    * - TxTags.identity.RemoveAuthorization
    */
-  AdvancedTokenManagement = 'AdvancedTokenManagement',
+  AdvancedAssetManagement = 'AdvancedAssetManagement',
   /**
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.settlement.CreateVenue
@@ -826,7 +876,7 @@ export enum PermissionType {
 /**
  * Signer/agent permissions for a specific type
  *
- * @param T - type of Permissions (Security Token, Transaction, Portfolio, etc)
+ * @param T - type of Permissions (Asset, Transaction, Portfolio, etc)
  */
 export interface SectionPermissions<T> {
   /**
@@ -854,14 +904,14 @@ export interface TransactionPermissions extends SectionPermissions<TxTag | Modul
 
 /**
  * Permissions a Secondary Key has over the Identity. A null value means the key has
- *   all permissions of that type (i.e. if `tokens` is null, the key has permissions over all
- *   of the Identity's Security Tokens)
+ *   all permissions of that type (i.e. if `assets` is null, the key has permissions over all
+ *   of the Identity's Assets)
  */
 export interface Permissions {
   /**
-   * Security Tokens over which this key has permissions
+   * Assets over which this key has permissions
    */
-  tokens: SectionPermissions<SecurityToken> | null;
+  assets: SectionPermissions<Asset> | null;
   /**
    * Transactions this key can execute
    */
@@ -879,20 +929,28 @@ export interface Permissions {
 }
 
 /**
- * Security Token permissions shared by agents in a group
+ * Asset permissions shared by agents in a group
  */
 export type GroupPermissions = Pick<Permissions, 'transactions' | 'transactionGroups'>;
 
 /**
+ * All Permission Groups of a specific Asset, separated by `known` and `custom`
+ */
+export interface PermissionGroups {
+  known: KnownPermissionGroup[];
+  custom: CustomPermissionGroup[];
+}
+
+/**
  * This represents positive permissions (i.e. only "includes"). It is used
- *   for specifying procedure requirements and querying if an account has certain
+ *   for specifying procedure requirements and querying if an Account has certain
  *   permissions. Null values represent full permissions in that category
  */
 export interface SimplePermissions {
   /**
-   * list of required Security Tokens permissions
+   * list of required Asset permissions
    */
-  tokens?: SecurityToken[] | null;
+  assets?: Asset[] | null;
   /**
    * list of required Transaction permissions
    */
@@ -910,7 +968,7 @@ export interface CheckRolesResult {
    */
   missingRoles?: Role[];
   /**
-   * whether the signer posseses all the required roles or not
+   * whether the signer possesses all the required roles or not
    */
   result: boolean;
   /**
@@ -966,41 +1024,58 @@ export enum PermissionGroupType {
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
-export interface Subsidy {
-  /**
-   * Account whose transactions are being paid for
-   */
-  beneficiary: Account;
-  /**
-   * Account that is paying for the transactions
-   */
-  subsidizer: Account;
-  /**
-   * amount of POLYX to be subsidized. This can be increased/decreased later on
-   */
-  allowance: BigNumber;
-}
+export type RotatePrimaryKeyAuthorizationData = {
+  type: AuthorizationType.RotatePrimaryKey;
+};
 
+export type RotatePrimaryKeyToSecondaryData = {
+  type: AuthorizationType.RotatePrimaryKeyToSecondary;
+  value: Permissions;
+};
+
+export type JoinIdentityAuthorizationData = {
+  type: AuthorizationType.JoinIdentity;
+  value: Permissions;
+};
+
+export type PortfolioCustodyAuthorizationData = {
+  type: AuthorizationType.PortfolioCustody;
+  value: NumberedPortfolio | DefaultPortfolio;
+};
+
+export type BecomeAgentAuthorizationData = {
+  type: AuthorizationType.BecomeAgent;
+  value: KnownPermissionGroup | CustomPermissionGroup;
+};
+
+export type AddRelayerPayingKeyAuthorizationData = {
+  type: AuthorizationType.AddRelayerPayingKey;
+  value: SubsidyData;
+};
+
+export type GenericAuthorizationData = {
+  type: Exclude<
+    AuthorizationType,
+    | AuthorizationType.RotatePrimaryKey
+    | AuthorizationType.JoinIdentity
+    | AuthorizationType.PortfolioCustody
+    | AuthorizationType.BecomeAgent
+    | AuthorizationType.AddRelayerPayingKey
+    | AuthorizationType.RotatePrimaryKeyToSecondary
+  >;
+  value: string;
+};
 /**
  * Authorization request data corresponding to type
  */
 export type Authorization =
-  | { type: AuthorizationType.RotatePrimaryKey }
-  | { type: AuthorizationType.JoinIdentity; value: Permissions }
-  | { type: AuthorizationType.PortfolioCustody; value: NumberedPortfolio | DefaultPortfolio }
-  | { type: AuthorizationType.BecomeAgent; value: KnownPermissionGroup | CustomPermissionGroup }
-  | { type: AuthorizationType.AddRelayerPayingKey; value: Subsidy }
-  | {
-      type: Exclude<
-        AuthorizationType,
-        | AuthorizationType.RotatePrimaryKey
-        | AuthorizationType.JoinIdentity
-        | AuthorizationType.PortfolioCustody
-        | AuthorizationType.BecomeAgent
-        | AuthorizationType.AddRelayerPayingKey
-      >;
-      value: string;
-    };
+  | RotatePrimaryKeyAuthorizationData
+  | JoinIdentityAuthorizationData
+  | PortfolioCustodyAuthorizationData
+  | BecomeAgentAuthorizationData
+  | AddRelayerPayingKeyAuthorizationData
+  | RotatePrimaryKeyToSecondaryData
+  | GenericAuthorizationData;
 
 export enum TransactionArgumentType {
   Did = 'Did',
@@ -1032,7 +1107,6 @@ export interface PlainTransactionArgument {
 
 export interface ArrayTransactionArgument {
   type: TransactionArgumentType.Array;
-  // eslint-disable-next-line no-use-before-define
   internal: TransactionArgument;
 }
 
@@ -1046,7 +1120,6 @@ export interface ComplexTransactionArgument {
     | TransactionArgumentType.RichEnum
     | TransactionArgumentType.Object
     | TransactionArgumentType.Tuple;
-  // eslint-disable-next-line no-use-before-define
   internal: TransactionArgument[];
 }
 
@@ -1063,15 +1136,9 @@ export type TransactionArgument = {
 
 export type Signer = Identity | Account;
 
-// NOTE uncomment in Governance v2 upgrade
-// export interface ProposalWithDetails {
-//   proposal: Proposal;
-//   details: ProposalDetails;
-// }
-
-export interface StoWithDetails {
-  sto: Sto;
-  details: StoDetails;
+export interface OfferingWithDetails {
+  offering: Offering;
+  details: OfferingDetails;
 }
 
 export interface CheckpointWithData {
@@ -1080,8 +1147,8 @@ export interface CheckpointWithData {
   totalSupply: BigNumber;
 }
 
-export interface SecondaryKey {
-  signer: Signer;
+export interface PermissionedAccount {
+  account: Account;
   permissions: Permissions;
 }
 
@@ -1095,15 +1162,15 @@ export type PortfolioLike =
 /**
  * Permissions to grant to a Signer over an Identity
  *
- * @link [[Permissions]]
+ * {@link Permissions}
  *
  * @note TxGroups in the `transactionGroups` array will be transformed into their corresponding `TxTag`s
  */
 export type PermissionsLike = {
   /**
-   * Security Tokens on which to grant permissions. A null value represents full permissions
+   * Assets on which to grant permissions. A null value represents full permissions
    */
-  tokens?: SectionPermissions<string | SecurityToken> | null;
+  assets?: SectionPermissions<string | Asset> | null;
   /**
    * Portfolios on which to grant permissions. A null value represents full permissions
    */
@@ -1121,7 +1188,7 @@ export type PermissionsLike = {
 );
 
 export interface PortfolioMovement {
-  token: string | SecurityToken;
+  asset: string | Asset;
   amount: BigNumber;
   /**
    * identifier string to help differentiate transfers
@@ -1147,7 +1214,7 @@ export interface ProcedureAuthorizationStatus {
    */
   accountFrozen: boolean;
   /**
-   * true only if the Procedure requires an Identity but the current Account
+   * true only if the Procedure requires an Identity but the signing Account
    *   doesn't have one associated
    */
   noIdentity: boolean;
@@ -1176,19 +1243,22 @@ export interface CountTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface PercentageTransferRestriction extends TransferRestrictionBase {
+  /**
+   * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
+   */
   percentage: BigNumber;
 }
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
-   * limit on the amount of different (unique) investors that can hold the Security Token at once
+   * limit on the amount of different (unique) investors that can hold the Asset at once
    */
   count: BigNumber;
 }
 
 export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
-   * limit on the proportion of the total supply of the Security Token that can be held by a single investor at once
+   * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
    */
   percentage: BigNumber;
 }
@@ -1200,7 +1270,7 @@ export interface ActiveTransferRestrictions<
   /**
    * amount of restrictions that can be added before reaching the shared limit
    */
-  availableSlots: number;
+  availableSlots: BigNumber;
 }
 
 export enum TransferRestrictionType {
@@ -1228,7 +1298,7 @@ export enum CalendarUnit {
  */
 export interface CalendarPeriod {
   unit: CalendarUnit;
-  amount: number;
+  amount: BigNumber;
 }
 
 export interface ScheduleWithDetails {
@@ -1254,7 +1324,7 @@ export interface ProcedureOpts {
   /**
    * Account or address of a signing key to replace the current one (for this procedure only)
    */
-  signer?: string | Account;
+  signingAccount?: string | Account;
 }
 
 export interface ProcedureMethod<
@@ -1287,14 +1357,14 @@ export interface GroupedInstructions {
   pending: Instruction[];
   /**
    * Instructions that failed in their execution (can be rescheduled).
-   *   This group supercedes the other three, so for example, a failed Instruction
+   *   This group supersedes the other three, so for example, a failed Instruction
    *   might also belong in the `affirmed` group, but it will only be included in this one
    */
   failed: Instruction[];
 }
 
-export interface TokenWithGroup {
-  token: SecurityToken;
+export interface AssetWithGroup {
+  asset: Asset;
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
@@ -1315,8 +1385,21 @@ export interface HistoricAgentOperation {
   history: EventIdentifier[];
 }
 
+/**
+ * URI|mnemonic|hex representation of a private key
+ */
+export type PrivateKey =
+  | {
+      uri: string;
+    }
+  | {
+      mnemonic: string;
+    }
+  | {
+      seed: string;
+    };
+
 export { TxTags, TxTag, ModuleName };
-export { Signer as PolkadotSigner } from '@polkadot/api/types';
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';
 export * from '~/base/types';

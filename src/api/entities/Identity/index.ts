@@ -1,5 +1,5 @@
 import { u64 } from '@polkadot/types';
-import { BigNumber } from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
 import { CddStatus, DidRecord } from 'polymesh-types/types';
@@ -7,11 +7,11 @@ import { CddStatus, DidRecord } from 'polymesh-types/types';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
   Account,
+  Asset,
   Context,
   Entity,
   Instruction,
   PolymeshError,
-  SecurityToken,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -20,22 +20,23 @@ import { Query } from '~/middleware/types';
 import {
   CheckRolesResult,
   DistributionWithDetails,
-  Ensured,
   ErrorCode,
   GroupedInstructions,
+  Order,
+  PermissionedAccount,
+  ResultSet,
+  Role,
+  SubCallback,
+  UnsubCallback,
+} from '~/types';
+import { Ensured, QueryReturnType, tuple } from '~/types/utils';
+import {
   isCddProviderRole,
   isIdentityRole,
   isPortfolioCustodianRole,
   isTickerOwnerRole,
   isVenueOwnerRole,
-  Order,
-  ResultSet,
-  Role,
-  SecondaryKey,
-  SubCallback,
-  UnsubCallback,
-} from '~/types';
-import { QueryReturnType, tuple } from '~/types/utils';
+} from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
@@ -49,17 +50,17 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  signatoryToSignerValue,
-  signerValueToSigner,
+  signatoryToAccount,
   stringToIdentityId,
   stringToTicker,
+  transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
 
+import { AssetPermissions } from './AssetPermissions';
 import { IdentityAuthorizations } from './IdentityAuthorizations';
 import { Portfolios } from './Portfolios';
-import { TokenPermissions } from './TokenPermissions';
 
 /**
  * Properties that uniquely identify an Identity
@@ -74,23 +75,23 @@ export interface UniqueIdentifiers {
 export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Checks if a value is of type [[UniqueIdentifiers]]
+   * Checks if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did } = identifier as UniqueIdentifiers;
 
     return typeof did === 'string';
   }
 
   /**
-   * identity ID as stored in the blockchain
+   * Identity ID as stored in the blockchain
    */
   public did: string;
 
   // Namespaces
   public authorizations: IdentityAuthorizations;
   public portfolios: Portfolios;
-  public tokenPermissions: TokenPermissions;
+  public assetPermissions: AssetPermissions;
 
   /**
    * Create an Identity entity
@@ -103,7 +104,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     this.did = did;
     this.authorizations = new IdentityAuthorizations(this, context);
     this.portfolios = new Portfolios(this, context);
-    this.tokenPermissions = new TokenPermissions(this, context);
+    this.assetPermissions = new AssetPermissions(this, context);
   }
 
   /**
@@ -118,7 +119,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const reservation = new TickerReservation({ ticker }, context);
       const { owner } = await reservation.details();
 
-      return owner?.did === did;
+      return owner ? this.isEqual(owner) : false;
     } else if (isCddProviderRole(role)) {
       const {
         polymeshApi: {
@@ -135,7 +136,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
       const { owner } = await venue.details();
 
-      return owner.did === did;
+      return this.isEqual(owner);
     } else if (isPortfolioCustodianRole(role)) {
       const { portfolioId } = role;
 
@@ -153,18 +154,18 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the balance of a particular Security Token
+   * Retrieve the balance of a particular Asset
    *
    * @note can be subscribed to
    */
-  public getTokenBalance(args: { ticker: string }): Promise<BigNumber>;
-  public getTokenBalance(
+  public getAssetBalance(args: { ticker: string }): Promise<BigNumber>;
+  public getAssetBalance(
     args: { ticker: string },
     callback: SubCallback<BigNumber>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getTokenBalance(
+  public async getAssetBalance(
     args: { ticker: string },
     callback?: SubCallback<BigNumber>
   ): Promise<BigNumber | UnsubCallback> {
@@ -182,12 +183,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
     const rawIdentityId = stringToIdentityId(did, context);
 
-    const token = await asset.tokens(rawTicker);
+    const meshAsset = await asset.tokens(rawTicker);
 
-    if (token.owner_did.isEmpty) {
+    if (meshAsset.owner_did.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `There is no Security Token with ticker "${ticker}"`,
+        message: `There is no Asset with ticker "${ticker}"`,
       });
     }
 
@@ -253,15 +254,19 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the primary key associated with the Identity
+   * Retrieve the primary Account associated with the Identity
    *
    * @note can be subscribed to
    */
-  public async getPrimaryKey(): Promise<Account>;
-  public async getPrimaryKey(callback: SubCallback<Account>): Promise<UnsubCallback>;
+  public async getPrimaryAccount(): Promise<PermissionedAccount>;
+  public async getPrimaryAccount(
+    callback: SubCallback<PermissionedAccount>
+  ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getPrimaryKey(callback?: SubCallback<Account>): Promise<Account | UnsubCallback> {
+  public async getPrimaryAccount(
+    callback?: SubCallback<PermissionedAccount>
+  ): Promise<PermissionedAccount | UnsubCallback> {
     const {
       context: {
         polymeshApi: {
@@ -272,8 +277,16 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): Account => {
-      return new Account({ address: accountIdToString(primaryKey) }, context);
+    const assembleResult = ({ primary_key: primaryKey }: DidRecord): PermissionedAccount => {
+      return {
+        account: new Account({ address: accountIdToString(primaryKey) }, context),
+        permissions: {
+          assets: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: transactionPermissionsToTxGroups(null),
+        },
+      };
     };
 
     const rawDid = stringToIdentityId(did, context);
@@ -287,18 +300,18 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve a list of all tokens which were held at one point by this Identity
+   * Retrieve a list of all Assets which were held at one point by this Identity
    *
    * @note uses the middleware
    * @note supports pagination
    */
-  public async getHeldTokens(
+  public async getHeldAssets(
     opts: {
       order?: Order;
-      size?: number;
-      start?: number;
+      size?: BigNumber;
+      start?: BigNumber;
     } = { order: Order.Asc }
-  ): Promise<ResultSet<SecurityToken>> {
+  ): Promise<ResultSet<Asset>> {
     const { context, did } = this;
 
     const { size, start, order } = opts;
@@ -306,19 +319,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
       tokensHeldByDid({
         did,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
         order,
       })
     );
 
     const {
       data: {
-        tokensHeldByDid: { items: tokensHeldByDidList, totalCount: count },
+        tokensHeldByDid: { items: assetsHeldByDidList, totalCount },
       },
     } = result;
 
-    const data = tokensHeldByDidList.map(ticker => new SecurityToken({ ticker }, context));
+    const count = new BigNumber(totalCount);
+
+    const data = assetsHeldByDidList.map(ticker => new Asset({ ticker }, context));
 
     const next = calculateNextKey(count, size, start);
 
@@ -363,11 +378,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Get the list of tokens for which this Identity is a trusted claim issuer
+   * Get the list of Assets for which this Identity is a trusted claim issuer
    *
    * @note uses the middleware
    */
-  public async getTrustingTokens(): Promise<SecurityToken[]> {
+  public async getTrustingAssets(): Promise<Asset[]> {
     const { context, did } = this;
 
     const {
@@ -376,7 +391,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       tokensByTrustedClaimIssuer({ claimIssuerDid: did })
     );
 
-    return tickers.map(ticker => new SecurityToken({ ticker: removePadding(ticker) }, context));
+    return tickers.map(ticker => new Asset({ ticker: removePadding(ticker) }, context));
   }
 
   /**
@@ -414,15 +429,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Security Token
+   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset
    *
    * @note more on Investor Uniqueness: https://developers.polymesh.live/confidential_identity
    */
-  public async getScopeId(args: { token: SecurityToken | string }): Promise<string> {
+  public async getScopeId(args: { asset: Asset | string }): Promise<string> {
     const { context, did } = this;
-    const { token } = args;
+    const { asset } = args;
 
-    const ticker = getTicker(token);
+    const ticker = getTicker(asset);
 
     const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
       stringToTicker(ticker, context),
@@ -554,15 +569,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether secondary keys are frozen
+   * Check whether secondary Accounts are frozen
    *
    * @note can be subscribed to
    */
-  public areSecondaryKeysFrozen(): Promise<boolean>;
-  public areSecondaryKeysFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
+  public areSecondaryAccountsFrozen(): Promise<boolean>;
+  public areSecondaryAccountsFrozen(callback: SubCallback<boolean>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async areSecondaryKeysFrozen(
+  public async areSecondaryAccountsFrozen(
     callback?: SubCallback<boolean>
   ): Promise<boolean | UnsubCallback> {
     const {
@@ -592,22 +607,22 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Retrieve every Dividend Distribution for which this Identity is eligible and hasn't been paid
    *
    * @note uses the middleware
-   * @note this query can be potentially **SLOW** depending on which Tokens this Identity has held
+   * @note this query can be potentially **SLOW** depending on which Assets this Identity has held
    */
   public async getPendingDistributions(): Promise<DistributionWithDetails[]> {
     const { context, did } = this;
-    let tokens: SecurityToken[] = [];
+    let assets: Asset[] = [];
     let allFetched = false;
-    let start: number | undefined;
+    let start: BigNumber | undefined;
 
     while (!allFetched) {
-      const { data, next } = await this.getHeldTokens({ size: MAX_PAGE_SIZE, start });
-      start = (next as number) || undefined;
+      const { data, next } = await this.getHeldAssets({ size: MAX_PAGE_SIZE, start });
+      start = next ? new BigNumber(next) : undefined;
       allFetched = !next;
-      tokens = [...tokens, ...data];
+      assets = [...assets, ...data];
     }
 
-    const distributions = await this.context.getDividendDistributionsForTokens({ tokens });
+    const distributions = await this.context.getDividendDistributionsForAssets({ assets: assets });
 
     const now = new Date();
 
@@ -617,47 +632,46 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
      *   - They have not begun
      *   - This Identity has already been paid
      */
-    return P.filter(
-      distributions,
-      async ({ distribution }): Promise<boolean> => {
-        const {
-          expiryDate,
-          token: { ticker },
-          id: localId,
-          paymentDate,
-        } = distribution;
+    return P.filter(distributions, async ({ distribution }): Promise<boolean> => {
+      const {
+        expiryDate,
+        asset: { ticker },
+        id: localId,
+        paymentDate,
+      } = distribution;
 
-        const isExpired = expiryDate && expiryDate < now;
-        const hasNotStarted = paymentDate > now;
+      const isExpired = expiryDate && expiryDate < now;
+      const hasNotStarted = paymentDate > now;
 
-        if (isExpired || hasNotStarted) {
-          return false;
-        }
-
-        const holderPaid = await context.polymeshApi.query.capitalDistribution.holderPaid(
-          tuple(
-            corporateActionIdentifierToCaId({ ticker, localId }, context),
-            stringToIdentityId(did, context)
-          )
-        );
-
-        return !boolToBoolean(holderPaid);
+      if (isExpired || hasNotStarted) {
+        return false;
       }
-    );
+
+      const holderPaid = await context.polymeshApi.query.capitalDistribution.holderPaid(
+        tuple(
+          corporateActionIdentifierToCaId({ ticker, localId }, context),
+          stringToIdentityId(did, context)
+        )
+      );
+
+      return !boolToBoolean(holderPaid);
+    });
   }
 
   /**
-   * Get the list of secondary keys related to the Identity
+   * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
    */
-  public async getSecondaryKeys(): Promise<SecondaryKey[]>;
-  public async getSecondaryKeys(callback: SubCallback<SecondaryKey[]>): Promise<UnsubCallback>;
+  public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
+  public async getSecondaryAccounts(
+    callback: SubCallback<PermissionedAccount[]>
+  ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSecondaryKeys(
-    callback?: SubCallback<SecondaryKey[]>
-  ): Promise<SecondaryKey[] | UnsubCallback> {
+  public async getSecondaryAccounts(
+    callback?: SubCallback<PermissionedAccount[]>
+  ): Promise<PermissionedAccount[] | UnsubCallback> {
     const {
       did,
       context,
@@ -668,9 +682,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = ({ secondary_keys: secondaryKeys }: DidRecord): SecondaryKey[] => {
-      return secondaryKeys.map(({ signer: rawSigner, permissions }) => ({
-        signer: signerValueToSigner(signatoryToSignerValue(rawSigner), context),
+    const assembleResult = ({
+      secondary_keys: secondaryAccounts,
+    }: DidRecord): PermissionedAccount[] => {
+      return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
+        account: signatoryToAccount(rawSigner, context),
         permissions: meshPermissionsToPermissions(permissions, context),
       }));
     };

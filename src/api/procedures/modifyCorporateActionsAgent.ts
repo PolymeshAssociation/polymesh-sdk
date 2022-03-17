@@ -1,10 +1,4 @@
-import {
-  Identity,
-  KnownPermissionGroup,
-  PolymeshError,
-  Procedure,
-  SecurityToken,
-} from '~/internal';
+import { Asset, Identity, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import { AuthorizationType, ErrorCode, PermissionGroupType, SignerType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -16,7 +10,7 @@ import {
 
 export interface ModifyCorporateActionsAgentParams {
   /**
-   * identity to be set as Corporate Actions Agent
+   * Identity to be set as Corporate Actions Agent
    */
   target: string | Identity;
   /**
@@ -47,11 +41,11 @@ export async function prepareModifyCorporateActionsAgent(
   } = this;
   const { ticker, target, requestExpiry } = args;
 
-  const securityToken = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
   const [invalidDids, agents] = await Promise.all([
     context.getInvalidDids([target]),
-    securityToken.corporateActions.getAgents(),
+    asset.corporateActions.getAgents(),
   ]);
 
   if (invalidDids.length) {
@@ -93,13 +87,10 @@ export async function prepareModifyCorporateActionsAgent(
     rawExpiry = dateToMoment(requestExpiry, context);
   }
 
-  this.addTransaction(
-    tx.identity.addAuthorization,
-    {},
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+  this.addTransaction({
+    transaction: tx.identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 }
 
 /**
@@ -113,7 +104,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
     },
   };
 }

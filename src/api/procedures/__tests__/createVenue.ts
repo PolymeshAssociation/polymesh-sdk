@@ -26,7 +26,7 @@ describe('createVenue procedure', () => {
     dsMockUtils.initMocks();
     stringToVenueDetailsStub = sinon.stub(utilsConversionModule, 'stringToVenueDetails');
     venueTypeToMeshVenueTypeStub = sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType');
-    venue = ('venue' as unknown) as PostTransactionValue<Venue>;
+    venue = 'venue' as unknown as PostTransactionValue<Venue>;
   });
 
   beforeEach(() => {
@@ -42,12 +42,11 @@ describe('createVenue procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should add a createVenue transaction to the queue', async () => {
+  it('should add a createVenue transaction to the queue', async () => {
     const description = 'description';
     const type = VenueType.Distribution;
     const args = {
@@ -66,13 +65,11 @@ describe('createVenue procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      createVenueTransaction,
       sinon.match({
+        transaction: createVenueTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawDetails,
-      [],
-      rawType
+        args: [rawDetails, [], rawType],
+      })
     );
     expect(result).toBe(venue);
   });
@@ -81,7 +78,7 @@ describe('createVenue procedure', () => {
 describe('createCreateVenueResolver', () => {
   const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
 
   beforeAll(() => {
     entityMockUtils.initMocks({
@@ -99,7 +96,7 @@ describe('createCreateVenueResolver', () => {
     filterEventRecordsStub.reset();
   });
 
-  test('should return the new Venue', () => {
+  it('should return the new Venue', () => {
     const fakeContext = {} as Context;
 
     const result = createCreateVenueResolver(fakeContext)({} as ISubmittableResult);

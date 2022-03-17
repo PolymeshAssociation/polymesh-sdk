@@ -4,7 +4,7 @@ const WebSocketAsPromised = require('websocket-as-promised');
 /* eslint-enable @typescript-eslint/naming-convention */
 
 const replace = require('replace-in-file');
-const { NODE_URL } = require('./consts');
+const { NODE_URL, WS_PORT } = require('./consts');
 
 const versionRegex = /This release is compatible with Polymesh v(\d+\.\d+\.\d+)/;
 
@@ -16,7 +16,7 @@ const createReplacementVersion = newVersion => (text, prevVersion) => {
 };
 
 (async () => {
-  const wsp = new WebSocketAsPromised(`wss://${NODE_URL}`, {
+  const wsp = new WebSocketAsPromised(`ws://${NODE_URL}:${WS_PORT}`, {
     createWebSocket: url => new W3CWebSocket(url),
     packMessage: data => JSON.stringify(data),
     unpackMessage: data => JSON.parse(data.toString()),

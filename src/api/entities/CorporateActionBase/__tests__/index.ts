@@ -29,8 +29,8 @@ jest.mock(
   )
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/base/Procedure',
@@ -84,16 +84,21 @@ describe('CorporateAction class', () => {
         dsMockUtils.createMockCorporateAction({
           kind,
           /* eslint-disable @typescript-eslint/naming-convention */
-          decl_date: declarationDate.getTime(),
+          decl_date: new BigNumber(declarationDate.getTime()),
           record_date: dsMockUtils.createMockRecordDate({
-            date: new Date('10/14/2019').getTime(),
-            checkpoint: { Scheduled: [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(1)] },
+            date: new BigNumber(new Date('10/14/2019').getTime()),
+            checkpoint: {
+              Scheduled: [
+                dsMockUtils.createMockU64(new BigNumber(1)),
+                dsMockUtils.createMockU64(new BigNumber(1)),
+              ],
+            },
           }),
           targets: {
             identities: [],
             treatment: TargetTreatment.Exclude,
           },
-          default_withholding_tax: 100000,
+          default_withholding_tax: new BigNumber(100000),
           withholding_tax: [],
           /* eslint-enable @typescript-eslint/naming-convention */
         })
@@ -123,18 +128,17 @@ describe('CorporateAction class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(CorporateActionBase.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign parameters to instance', () => {
+    it('should assign parameters to instance', () => {
       expect(corporateAction.id).toEqual(id);
-      expect(corporateAction.token.ticker).toBe(ticker);
+      expect(corporateAction.asset.ticker).toBe(ticker);
       expect(corporateAction.declarationDate).toEqual(declarationDate);
       expect(corporateAction.description).toEqual(description);
       expect(corporateAction.targets).toEqual(targets);
@@ -144,7 +148,7 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(
         CorporateActionBase.isUniqueIdentifiers({ ticker: 'SYMBOL', id: new BigNumber(1) })
       ).toBe(true);
@@ -155,7 +159,7 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: linkDocuments', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         documents: [
           {
@@ -166,7 +170,7 @@ describe('CorporateAction class', () => {
         ],
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -180,7 +184,7 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the CA exists', async () => {
+    it('should return whether the CA exists', async () => {
       let result = await corporateAction.exists();
 
       expect(result).toBe(true);
@@ -201,15 +205,15 @@ describe('CorporateAction class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: {
-              start: new Date('10/14/1987').getTime(),
+              start: new BigNumber(new Date('10/14/1987').getTime()),
               period: {
                 unit: 'Month',
-                amount: 2,
+                amount: new BigNumber(2),
               },
             },
-            id: 1,
-            at: new Date('10/14/1987').getTime(),
-            remaining: 2,
+            id: new BigNumber(1),
+            at: new BigNumber(new Date('10/14/1987').getTime()),
+            remaining: new BigNumber(2),
           }),
         ],
       });
@@ -219,7 +223,7 @@ describe('CorporateAction class', () => {
       });
     });
 
-    test('should throw an error if the Corporate Action does not exist', async () => {
+    it('should throw an error if the Corporate Action does not exist', async () => {
       corporateActionsQueryStub.resolves(dsMockUtils.createMockOption());
 
       let err;
@@ -232,27 +236,27 @@ describe('CorporateAction class', () => {
       expect(err.message).toBe('The Corporate Action no longer exists');
     });
 
-    test('should return the Checkpoint Schedule associated to the Corporate Action', async () => {
+    it('should return the Checkpoint Schedule associated to the Corporate Action', async () => {
       const result = (await corporateAction.checkpoint()) as CheckpointSchedule;
 
       expect(result.id).toEqual(new BigNumber(1));
-      expect(result.period).toEqual({ unit: CalendarUnit.Month, amount: 2 });
+      expect(result.period).toEqual({ unit: CalendarUnit.Month, amount: new BigNumber(2) });
       expect(result.start).toEqual(new Date('10/14/1987'));
     });
 
-    test('should return null if the CA does not have a record date', async () => {
+    it('should return null if the CA does not have a record date', async () => {
       corporateActionsQueryStub.resolves(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: declarationDate.getTime(),
+            decl_date: new BigNumber(declarationDate.getTime()),
             record_date: null,
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: 100000,
+            default_withholding_tax: new BigNumber(100000),
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
@@ -263,8 +267,11 @@ describe('CorporateAction class', () => {
       expect(result).toBeNull();
     });
 
-    test('should return null if the CA does not have a record date', async () => {
-      schedulePointsQueryStub.resolves(['someCheckpoint', dsMockUtils.createMockU64(1)]);
+    it('should return null if the CA does not have a record date', async () => {
+      schedulePointsQueryStub.resolves([
+        'someCheckpoint',
+        dsMockUtils.createMockU64(new BigNumber(1)),
+      ]);
       let result = (await corporateAction.checkpoint()) as Checkpoint;
 
       expect(result.id).toEqual(new BigNumber(1));
@@ -275,16 +282,16 @@ describe('CorporateAction class', () => {
           dsMockUtils.createMockCorporateAction({
             kind,
             /* eslint-disable @typescript-eslint/naming-convention */
-            decl_date: declarationDate.getTime(),
+            decl_date: new BigNumber(declarationDate.getTime()),
             record_date: dsMockUtils.createMockRecordDate({
-              date: new Date('10/14/1987').getTime(),
-              checkpoint: { Existing: dsMockUtils.createMockU64(1) },
+              date: new BigNumber(new Date('10/14/1987').getTime()),
+              checkpoint: { Existing: dsMockUtils.createMockU64(new BigNumber(1)) },
             }),
             targets: {
               identities: [],
               treatment: TargetTreatment.Exclude,
             },
-            default_withholding_tax: 100000,
+            default_withholding_tax: new BigNumber(100000),
             withholding_tax: [],
             /* eslint-enable @typescript-eslint/naming-convention */
           })
@@ -299,7 +306,7 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       expect(corporateAction.toJson()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',

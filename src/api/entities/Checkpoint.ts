@@ -1,19 +1,19 @@
 import BigNumber from 'bignumber.js';
 import { CheckpointId, IdentityId, Ticker } from 'polymesh-types/types';
 
-import { Context, Entity, Identity, SecurityToken } from '~/internal';
+import { Asset, Context, Entity, Identity } from '~/internal';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
+  bigNumberToU64,
   identityIdToString,
   momentToDate,
-  numberToU64,
   stringToIdentityId,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { getDid, requestPaginated, toHumanReadable } from '~/utils/internal';
+import { getIdentity, requestPaginated, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -26,15 +26,15 @@ interface HumanReadable {
 }
 
 /**
- * Represents a snapshot of the Security Token's holders and their respective balances
+ * Represents a snapshot of the Asset's holders and their respective balances
  *   at a certain point in time
  */
 export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, ticker } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber && typeof ticker === 'string';
@@ -46,9 +46,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   public id: BigNumber;
 
   /**
-   * Security Token whose balances are being recorded in this Checkpoint
+   * Asset whose balances are being recorded in this Checkpoint
    */
-  public token: SecurityToken;
+  public asset: Asset;
 
   /**
    * @hidden
@@ -59,22 +59,22 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     const { id, ticker } = identifiers;
 
     this.id = id;
-    this.token = new SecurityToken({ ticker }, context);
+    this.asset = new Asset({ ticker }, context);
   }
 
   /**
-   * Retrieve the Security Token's total supply at this checkpoint
+   * Retrieve the Asset's total supply at this checkpoint
    */
   public async totalSupply(): Promise<BigNumber> {
     const {
       context,
-      token: { ticker },
+      asset: { ticker },
       id,
     } = this;
 
     const rawSupply = await context.polymeshApi.query.checkpoint.totalSupply(
       stringToTicker(ticker, context),
-      numberToU64(id, context)
+      bigNumberToU64(id, context)
     );
 
     return balanceToBigNumber(rawSupply);
@@ -86,20 +86,20 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   public async createdAt(): Promise<Date> {
     const {
       context,
-      token: { ticker },
+      asset: { ticker },
       id,
     } = this;
 
     const creationTime = await context.polymeshApi.query.checkpoint.timestamps(
       stringToTicker(ticker, context),
-      numberToU64(id, context)
+      bigNumberToU64(id, context)
     );
 
     return momentToDate(creationTime);
   }
 
   /**
-   * Retrieve all Tokenholder balances at this Checkpoint
+   * Retrieve all Asset Holder balances at this Checkpoint
    *
    * @note supports pagination
    */
@@ -113,7 +113,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       context,
-      token: { ticker },
+      asset: { ticker },
       id,
     } = this;
 
@@ -146,7 +146,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       did: string;
       params: [(Ticker | CheckpointId)[], IdentityId];
     }[] = [];
-    const currentIdentityBalances: IdentityBalance[] = [];
+    const signingIdentityBalances: IdentityBalance[] = [];
 
     rawBalanceUpdates.forEach((rawCheckpointIds, index) => {
       const firstUpdatedCheckpoint = rawCheckpointIds.find(checkpointId =>
@@ -159,7 +159,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           params: tuple([rawTicker, firstUpdatedCheckpoint], stringToIdentityId(did, context)),
         });
       } else {
-        currentIdentityBalances.push({
+        signingIdentityBalances.push({
           identity: new Identity({ did }, context),
           balance,
         });
@@ -176,16 +176,16 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           identity: new Identity({ did }, context),
           balance: balanceToBigNumber(checkpointBalances[index]),
         })),
-        ...currentIdentityBalances,
+        ...signingIdentityBalances,
       ],
       next,
     };
   }
 
   /**
-   * Retrieve the balance of a specific Tokenholder Identity at this Checkpoint
+   * Retrieve the balance of a specific Asset Holder Identity at this Checkpoint
    *
-   * @param args.identity - defaults to the current Identity
+   * @param args.identity - defaults to the signing Identity
    */
   public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
     const {
@@ -195,15 +195,14 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           query: { checkpoint },
         },
       },
-      token: { ticker },
+      asset: { ticker },
       id,
     } = this;
 
-    const did = await getDid(args?.identity, context);
-    const identity = new Identity({ did }, context);
+    const identity = await getIdentity(args?.identity, context);
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawIdentityId = stringToIdentityId(did, context);
+    const rawIdentityId = stringToIdentityId(identity.did, context);
 
     const balanceUpdates = await checkpoint.balanceUpdates(rawTicker, rawIdentityId);
     const firstUpdatedCheckpoint = balanceUpdates.find(checkpointId =>
@@ -218,7 +217,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       );
       balance = balanceToBigNumber(rawBalance);
     } else {
-      balance = await identity.getTokenBalance({ ticker });
+      balance = await identity.getAssetBalance({ ticker });
     }
 
     return balance;
@@ -235,7 +234,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
         },
       },
       context,
-      token: { ticker },
+      asset: { ticker },
       id,
     } = this;
 
@@ -248,10 +247,10 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * Return the Checkpoint's ticker and identifier
    */
   public toJson(): HumanReadable {
-    const { token, id } = this;
+    const { asset, id } = this;
 
     return toHumanReadable({
-      ticker: token,
+      ticker: asset,
       id,
     });
   }

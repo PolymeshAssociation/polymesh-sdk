@@ -1,5 +1,6 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import BigNumber from 'bignumber.js';
+import { AgentGroup, AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -10,12 +11,12 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, SignerValue } from '~/types';
+import { Authorization, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('modifyCorporateActionAgent procedure', () => {
@@ -60,7 +61,7 @@ describe('modifyCorporateActionAgent procedure', () => {
 
   beforeEach(() => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetAgents: [],
       },
     });
@@ -78,12 +79,11 @@ describe('modifyCorporateActionAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test("should throw an error if the supplied target doesn't exist", () => {
+  it("should throw an error if the supplied target doesn't exist", () => {
     const args = {
       target,
       ticker,
@@ -98,9 +98,9 @@ describe('modifyCorporateActionAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
+  it('should throw an error if the supplied Identity is currently the corporate actions agent', () => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetAgents: [entityMockUtils.getIdentityInstance({ did: target })],
       },
     });
@@ -118,9 +118,9 @@ describe('modifyCorporateActionAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied expiry date is not a future date', () => {
+  it('should throw an error if the supplied expiry date is not a future date', () => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetAgents: [],
       },
     });
@@ -138,13 +138,13 @@ describe('modifyCorporateActionAgent procedure', () => {
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const args = {
       target,
       ticker,
     };
     const requestExpiry = new Date('12/12/2050');
-    const rawExpiry = dsMockUtils.createMockMoment(requestExpiry.getTime());
+    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(requestExpiry.getTime()));
 
     dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
 
@@ -153,32 +153,24 @@ describe('modifyCorporateActionAgent procedure', () => {
 
     await prepareModifyCorporateActionsAgent.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
-    );
+      args: [rawSignatory, rawAuthorizationData, null],
+    });
 
     await prepareModifyCorporateActionsAgent.call(proc, {
       ...args,
       requestExpiry,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
+    sinon.assert.calledWith(addTransactionStub, {
       transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawExpiry
-    );
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+    });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
@@ -189,7 +181,7 @@ describe('modifyCorporateActionAgent procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.identity.AddAuthorization],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
         },
       });
     });

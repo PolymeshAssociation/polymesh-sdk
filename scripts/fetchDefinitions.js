@@ -1,11 +1,11 @@
 /* eslint-disable */
-const https = require('https');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
 const { upperFirst, toLower, forEach } = require('lodash');
-const { NODE_URL } = require('./consts');
+const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
@@ -44,7 +44,8 @@ function writeDefinitions(schemaObj) {
     )}`
   );
 
-  let defExports = "export { default as polymesh } from './polymesh/definitions'\n";
+  let defExports =
+    "/* istanbul ignore file */\n\nexport { default as polymesh } from './polymesh/definitions';\n";
 
   forEach(rpcModules, (rpc, moduleName) => {
     const moduleDir = path.resolve(definitionsDir, moduleName);
@@ -64,7 +65,7 @@ function writeDefinitions(schemaObj) {
       )}`
     );
 
-    defExports = `${defExports}export { default as ${moduleName} } from './${moduleName}/definitions'\n`;
+    defExports = `${defExports}export { default as ${moduleName} } from './${moduleName}/definitions';\n`;
   });
 
   fs.writeFileSync(path.resolve(definitionsDir, 'definitions.ts'), defExports);
@@ -124,7 +125,7 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
   fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
 }
 
-https.get(`https://${NODE_URL}/code/polymesh_schema.json`, res => {
+http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   const chunks = [];
   res.on('data', chunk => {
     chunks.push(chunk);

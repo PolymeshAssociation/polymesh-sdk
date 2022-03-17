@@ -1,21 +1,19 @@
-import { differenceWith, isEqual } from 'lodash';
+import BigNumber from 'bignumber.js';
+import { flatten, map } from 'lodash';
 
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { Condition, ErrorCode, TxTags } from '~/types';
+import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
+import { Asset, PolymeshError, Procedure } from '~/internal';
+import { Condition, ErrorCode, InputCondition, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import {
-  complianceRequirementToRequirement,
-  requirementToComplianceRequirement,
-  stringToTicker,
-  u32ToBigNumber,
-} from '~/utils/conversion';
+import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
+import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
 export interface SetAssetRequirementsParams {
   /**
-   * array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays. In other words, higher level arrays are *OR* between them,
-   * while conditions inside each array are *AND* between them
+   * array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays.
+   *   In other words, higher level arrays are *OR* between them, while conditions inside each array are *AND* between them
    */
-  requirements: Condition[][];
+  requirements: InputCondition[][];
 }
 
 /**
@@ -29,12 +27,12 @@ export type Params = SetAssetRequirementsParams & {
  * @hidden
  */
 export async function prepareSetAssetRequirements(
-  this: Procedure<Params, SecurityToken>,
+  this: Procedure<Params, Asset>,
   args: Params
-): Promise<SecurityToken> {
+): Promise<Asset> {
   const {
     context: {
-      polymeshApi: { query, tx, consts },
+      polymeshApi: { tx },
     },
     context,
   } = this;
@@ -42,81 +40,68 @@ export async function prepareSetAssetRequirements(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxConditionComplexity = u32ToBigNumber(
-    consts.complianceManager.maxConditionComplexity
-  ).toNumber();
+  const asset = new Asset({ ticker }, context);
 
-  if (requirements.length >= maxConditionComplexity) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Condition limit reached',
-      data: { limit: maxConditionComplexity },
-    });
-  }
+  const { requirements: currentRequirements, defaultTrustedClaimIssuers } =
+    await asset.compliance.requirements.get();
 
-  const rawCurrentAssetCompliance = await query.complianceManager.assetCompliances(rawTicker);
+  const currentConditions = map(currentRequirements, 'conditions');
 
-  const currentRequirements = rawCurrentAssetCompliance.requirements.map(
-    requirement => complianceRequirementToRequirement(requirement, context).conditions
+  assertRequirementsNotTooComplex(
+    flatten(requirements),
+    new BigNumber(defaultTrustedClaimIssuers.length),
+    context
   );
 
-  const comparator = (a: Condition[], b: Condition[]): boolean => {
-    return !differenceWith(a, b, isEqual).length && a.length === b.length;
+  const comparator = (
+    a: (Condition | InputCondition)[],
+    b: (Condition | InputCondition)[]
+  ): boolean => {
+    return hasSameElements(a, b, conditionsAreEqual);
   };
 
-  if (
-    !differenceWith(requirements, currentRequirements, comparator).length &&
-    requirements.length === currentRequirements.length
-  ) {
+  if (hasSameElements(requirements, currentConditions, comparator)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The supplied condition list is equal to the current one',
     });
   }
 
-  const rawConditions = requirements.map(requirement => {
-    const {
-      sender_conditions: senderConditions,
-      receiver_conditions: receiverConditions,
-    } = requirementToComplianceRequirement({ conditions: requirement, id: 1 }, context);
+  if (!requirements.length) {
+    this.addTransaction({
+      transaction: tx.complianceManager.resetAssetCompliance,
+      args: [rawTicker],
+    });
+  } else {
+    const rawAssetCompliance = requirements.map((requirement, index) =>
+      requirementToComplianceRequirement(
+        { conditions: requirement, id: new BigNumber(index) },
+        context
+      )
+    );
 
-    return {
-      senderConditions,
-      receiverConditions,
-    };
-  });
-
-  if (currentRequirements.length) {
-    this.addTransaction(tx.complianceManager.resetAssetCompliance, {}, rawTicker);
+    this.addTransaction({
+      transaction: tx.complianceManager.replaceAssetCompliance,
+      args: [rawTicker, rawAssetCompliance],
+    });
   }
 
-  rawConditions.forEach(({ senderConditions, receiverConditions }) => {
-    this.addTransaction(
-      tx.complianceManager.addComplianceRequirement,
-      {},
-      rawTicker,
-      senderConditions,
-      receiverConditions
-    );
-  });
-
-  return new SecurityToken({ ticker }, context);
+  return asset;
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, SecurityToken>,
-  { ticker }: Params
+  this: Procedure<Params, Asset>,
+  { ticker, requirements }: Params
 ): ProcedureAuthorization {
   return {
     permissions: {
-      transactions: [
-        TxTags.complianceManager.ResetAssetCompliance,
-        TxTags.complianceManager.AddComplianceRequirement,
-      ],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      transactions: requirements.length
+        ? [TxTags.complianceManager.ReplaceAssetCompliance]
+        : [TxTags.complianceManager.ResetAssetCompliance],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };
@@ -125,5 +110,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const setAssetRequirements = (): Procedure<Params, SecurityToken> =>
+export const setAssetRequirements = (): Procedure<Params, Asset> =>
   new Procedure(prepareSetAssetRequirements, getAuthorization);

@@ -2,17 +2,18 @@ import BigNumber from 'bignumber.js';
 
 import {
   Context,
-  deletePortfolio,
+  PolymeshError,
   Portfolio,
   renamePortfolio,
   RenamePortfolioParams,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Ensured, EventIdentifier, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
+import { Ensured } from '~/types/utils';
 import {
+  bigNumberToU64,
   middlewareEventToEventIdentifier,
-  numberToU64,
   stringToIdentityId,
   textToString,
 } from '~/utils/conversion';
@@ -29,9 +30,9 @@ export interface UniqueIdentifiers {
 export class NumberedPortfolio extends Portfolio {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { did, id } = identifier as UniqueIdentifiers;
 
     return typeof did === 'string' && id instanceof BigNumber;
@@ -52,23 +53,11 @@ export class NumberedPortfolio extends Portfolio {
 
     this.id = id;
 
-    this.delete = createProcedureMethod(
-      { getProcedureAndArgs: () => [deletePortfolio, { did, id }], voidArgs: true },
-      context
-    );
     this.modifyName = createProcedureMethod(
       { getProcedureAndArgs: args => [renamePortfolio, { ...args, did, id }] },
       context
     );
   }
-
-  /**
-   * Delete this Portfolio
-   *
-   * @note required role:
-   *   - Portfolio Custodian
-   */
-  public delete: NoArgsProcedureMethod<void>;
 
   /**
    * Rename portfolio
@@ -92,9 +81,17 @@ export class NumberedPortfolio extends Portfolio {
       },
       context,
     } = this;
+    const [rawPortfolioName, exists] = await Promise.all([
+      portfolio.portfolios(did, bigNumberToU64(id, context)),
+      this.exists(),
+    ]);
 
-    const rawPortfolioName = await portfolio.portfolios(did, numberToU64(id, context));
-
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: "The Portfolio doesn't exist",
+      });
+    }
     return textToString(rawPortfolioName);
   }
 
@@ -141,7 +138,7 @@ export class NumberedPortfolio extends Portfolio {
     } = this;
 
     const identityId = stringToIdentityId(did, context);
-    const rawPortfolioNumber = numberToU64(id, context);
+    const rawPortfolioNumber = bigNumberToU64(id, context);
     const size = await portfolio.portfolios.size(identityId, rawPortfolioNumber);
 
     return !size.isZero();

@@ -3,19 +3,19 @@ import BigNumber from 'bignumber.js';
 import { CAId } from 'polymesh-types/polymesh';
 
 import {
+  Asset,
   Context,
   CorporateActionBase,
   DividendDistribution,
   PolymeshError,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToU32,
   corporateActionIdentifierToCaId,
   momentToDate,
-  numberToU32,
   stringToTicker,
 } from '~/utils/conversion';
 
@@ -42,36 +42,35 @@ const assertCaIsRemovable = async (
   context: Context,
   corporateAction: CorporateActionBase | BigNumber
 ): Promise<void> => {
-  const isBn = corporateAction instanceof BigNumber;
   const distribution = await query.capitalDistribution.distributions(rawCaId);
   const exists = distribution.isSome;
 
-  if (!exists && !isBn) {
+  if (!exists && !(corporateAction instanceof BigNumber)) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: "The Distribution doesn't exist",
     });
   }
 
-  if (!isBn) {
-    const { payment_at: rawPaymentAt } = distribution.unwrap();
-
-    if (momentToDate(rawPaymentAt) < new Date()) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'The Distribution has already started',
-      });
-    }
-  } else {
+  if (corporateAction instanceof BigNumber) {
     const CA = await query.corporateAction.corporateActions(
       stringToTicker(ticker, context),
-      numberToU32(corporateAction as BigNumber, context)
+      bigNumberToU32(corporateAction, context)
     );
 
     if (CA.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: caNotExistsMessage,
+      });
+    }
+  } else {
+    const { payment_at: rawPaymentAt } = distribution.unwrap();
+
+    if (momentToDate(rawPaymentAt) < new Date()) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The Distribution has already started',
       });
     }
   }
@@ -109,7 +108,10 @@ export async function prepareRemoveCorporateAction(
     }
   }
 
-  this.addTransaction(tx.corporateAction.removeCa, {}, rawCaId);
+  this.addTransaction({
+    transaction: tx.corporateAction.removeCa,
+    args: [rawCaId],
+  });
 }
 
 /**
@@ -122,7 +124,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.corporateAction.RemoveCa],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       portfolios: [],
     },
   };

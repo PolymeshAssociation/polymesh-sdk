@@ -1,12 +1,12 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { TxTags } from 'polymesh-types/types';
 
 import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { PermissionsLike, RoleType, SecondaryKey } from '~/types';
+import { PermissionedAccount, PermissionsLike, RoleType, TxTags } from '~/types';
+import { Modify } from '~/types/utils';
 import {
   identityIdToString,
   permissionsLikeToPermissions,
-  secondaryKeyToMeshSecondaryKey,
+  secondaryAccountToMeshSecondaryKey,
   signerToString,
   stringToAccountId,
 } from '~/utils/conversion';
@@ -14,20 +14,20 @@ import { filterEventRecords } from '~/utils/internal';
 
 export interface RegisterIdentityParams {
   targetAccount: string | Account;
-  secondaryKeys?: (Omit<SecondaryKey, 'permissions'> & { permissions: PermissionsLike })[];
+  secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
 }
 
 /**
  * @hidden
  */
-export const createRegisterIdentityResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): Identity => {
-  const [{ data }] = filterEventRecords(receipt, 'identity', 'DidCreated');
-  const did = identityIdToString(data[0]);
+export const createRegisterIdentityResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): Identity => {
+    const [{ data }] = filterEventRecords(receipt, 'identity', 'DidCreated');
+    const did = identityIdToString(data[0]);
 
-  return new Identity({ did }, context);
-};
+    return new Identity({ did }, context);
+  };
 
 /**
  * @hidden
@@ -44,24 +44,21 @@ export async function prepareRegisterIdentity(
     },
     context,
   } = this;
-  const { targetAccount, secondaryKeys = [] } = args;
+  const { targetAccount, secondaryAccounts = [] } = args;
 
   const rawTargetAccount = stringToAccountId(signerToString(targetAccount), context);
-  const rawSecondaryKeys = secondaryKeys.map(({ permissions, ...rest }) =>
-    secondaryKeyToMeshSecondaryKey(
+  const rawSecondaryKeys = secondaryAccounts.map(({ permissions, ...rest }) =>
+    secondaryAccountToMeshSecondaryKey(
       { ...rest, permissions: permissionsLikeToPermissions(permissions, context) },
       context
     )
   );
 
-  const [newIdentity] = this.addTransaction(
-    identity.cddRegisterDid,
-    {
-      resolvers: [createRegisterIdentityResolver(context)],
-    },
-    rawTargetAccount,
-    rawSecondaryKeys
-  );
+  const [newIdentity] = this.addTransaction({
+    transaction: identity.cddRegisterDid,
+    resolvers: [createRegisterIdentityResolver(context)],
+    args: [rawTargetAccount, rawSecondaryKeys],
+  });
 
   return newIdentity;
 }
@@ -73,7 +70,7 @@ export const registerIdentity = (): Procedure<RegisterIdentityParams, Identity> 
   new Procedure(prepareRegisterIdentity, {
     roles: [{ type: RoleType.CddProvider }],
     permissions: {
-      tokens: [],
+      assets: [],
       portfolios: [],
       transactions: [TxTags.identity.CddRegisterDid],
     },

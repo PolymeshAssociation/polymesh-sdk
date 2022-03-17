@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { uniq } from 'lodash';
 
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -18,7 +18,7 @@ import {
   transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
+import { checkTxType } from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
@@ -40,9 +40,9 @@ export type AddTransferRestrictionParams = { ticker: string } & (
  * @hidden
  */
 export async function prepareAddTransferRestriction(
-  this: Procedure<AddTransferRestrictionParams, number>,
+  this: Procedure<AddTransferRestrictionParams, BigNumber>,
   args: AddTransferRestrictionParams
-): Promise<number> {
+): Promise<BigNumber> {
   const {
     context: {
       polymeshApi: {
@@ -53,18 +53,16 @@ export async function prepareAddTransferRestriction(
     },
     context,
   } = this;
-  const { ticker, exemptedScopeIds = [], exemptedIdentities = [] } = args;
+  const { ticker, exemptedScopeIds = [], exemptedIdentities = [], type } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxTransferManagers = u32ToBigNumber(
-    consts.statistics.maxTransferManagersPerAsset
-  ).toNumber();
+  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
 
   const currentTms = await query.statistics.activeTransferManagers(ticker);
-  const restrictionAmount = currentTms.length;
+  const restrictionAmount = new BigNumber(currentTms.length);
 
-  if (restrictionAmount >= maxTransferManagers) {
+  if (restrictionAmount.gte(maxTransferManagers)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
       message: 'Transfer Restriction limit reached',
@@ -74,7 +72,7 @@ export async function prepareAddTransferRestriction(
 
   let value: BigNumber;
 
-  if (args.type === TransferRestrictionType.Count) {
+  if (type === TransferRestrictionType.Count) {
     value = args.count;
   } else {
     value = args.percentage;
@@ -83,7 +81,7 @@ export async function prepareAddTransferRestriction(
   const exists = !!currentTms.find(transferManager => {
     const restriction = transferManagerToTransferRestriction(transferManager);
 
-    return restriction.type === args.type && restriction.value.eq(value);
+    return restriction.type === type && restriction.value.eq(value);
   });
 
   if (exists) {
@@ -93,12 +91,14 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  const rawTransferManager = transferRestrictionToTransferManager(
-    { type: args.type, value },
-    context
-  );
+  const rawTransferManager = transferRestrictionToTransferManager({ type, value }, context);
 
-  this.addTransaction(statistics.addTransferManager, {}, rawTicker, rawTransferManager);
+  const transactions = [
+    checkTxType({
+      transaction: statistics.addTransferManager,
+      args: [rawTicker, rawTransferManager],
+    }),
+  ];
 
   const identityScopes = await P.map(exemptedIdentities, identityValue => {
     let identity: Identity;
@@ -108,7 +108,7 @@ export async function prepareAddTransferRestriction(
       identity = identityValue;
     }
 
-    return identity.getScopeId({ token: ticker });
+    return identity.getScopeId({ asset: ticker });
   });
 
   const exempted: string[] = [...exemptedScopeIds, ...identityScopes];
@@ -127,25 +127,25 @@ export async function prepareAddTransferRestriction(
 
     const scopeIds = exempted.map(scopeId => stringToScopeId(scopeId, context));
 
-    batchArguments(scopeIds, TxTags.statistics.AddExemptedEntities).forEach(scopeIdBatch => {
-      this.addTransaction(
-        statistics.addExemptedEntities,
-        { batchSize: scopeIdBatch.length },
-        rawTicker,
-        rawTransferManager,
-        scopeIdBatch
-      );
-    });
+    transactions.push(
+      checkTxType({
+        transaction: statistics.addExemptedEntities,
+        feeMultiplier: new BigNumber(scopeIds.length),
+        args: [rawTicker, rawTransferManager, scopeIds],
+      })
+    );
   }
 
-  return restrictionAmount + 1;
+  this.addBatchTransaction({ transactions });
+
+  return restrictionAmount.plus(1);
 }
 
 /**
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<AddTransferRestrictionParams, number>,
+  this: Procedure<AddTransferRestrictionParams, BigNumber>,
   { ticker, exemptedScopeIds = [], exemptedIdentities = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.AddTransferManager];
@@ -158,7 +158,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },
@@ -168,5 +168,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const addTransferRestriction = (): Procedure<AddTransferRestrictionParams, number> =>
+export const addTransferRestriction = (): Procedure<AddTransferRestrictionParams, BigNumber> =>
   new Procedure(prepareAddTransferRestriction, getAuthorization);

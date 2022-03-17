@@ -8,6 +8,10 @@
     "es6": true
   },
   "rules": {
+    "no-useless-constructor": "off",
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": ["error"],
+    "@typescript-eslint/no-useless-constructor": "error",
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/no-var-requires": "off",
     "@typescript-eslint/no-shadow": ["error"],
@@ -34,7 +38,6 @@
         "selector": "typeLike",
         "format": ["StrictPascalCase"]
       },
-
       {
         "selector": "typeProperty",
         "format": ["StrictPascalCase", "strictCamelCase"],
@@ -71,7 +74,7 @@
         }
       }
     ],
-    "simple-import-sort/sort": "error",
+    "simple-import-sort/imports": "error",
     "sort-imports": "off",
     "import/order": "off",
     "no-dupe-class-members": "off",
@@ -85,5 +88,5 @@
     "project": "./tsconfig.json"
   },
   "extends": ["standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"],
-  "ignorePatterns": ["src/polkadot/", "src/middleware/", "docs/*"]
+  "ignorePatterns": ["src/polkadot/", "src/middleware/types.ts", "docs/*"]
 }

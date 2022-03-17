@@ -2,17 +2,18 @@ import { u64 } from '@polkadot/types';
 import P from 'bluebird';
 import { forEach, mapValues } from 'lodash';
 
-import { Account, AuthorizationRequest, Procedure } from '~/internal';
+import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
+import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
 import { AuthorizationType, TxTag, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  bigNumberToU64,
   booleanToBool,
-  numberToU64,
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { getDid } from '~/utils/internal';
+import { assembleBatchTransactions } from '~/utils/internal';
 
 export interface ConsumeParams {
   accept: boolean;
@@ -48,7 +49,6 @@ export async function prepareConsumeAuthorizationRequests(
       [AuthorizationType.AddRelayerPayingKey]: tx.relayer.acceptPayingKey,
       [AuthorizationType.BecomeAgent]: tx.externalAgents.acceptBecomeAgent,
       [AuthorizationType.PortfolioCustody]: tx.portfolio.acceptPortfolioCustody,
-      [AuthorizationType.RotatePrimaryKey]: tx.identity.acceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: tx.asset.acceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: tx.asset.acceptTickerTransfer,
     } as const;
@@ -57,36 +57,48 @@ export async function prepareConsumeAuthorizationRequests(
 
     const idsPerType: Record<AllowedAuthType, [u64][]> = mapValues(typesToExtrinsics, () => []);
 
-    liveRequests.forEach(({ authId, data: { type } }) => {
-      const id = tuple(numberToU64(authId, context));
+    const validations: Promise<void>[] = [];
+    liveRequests.forEach(authRequest => {
+      validations.push(assertAuthorizationRequestValid(authRequest, context));
+      const {
+        authId,
+        data: { type },
+      } = authRequest;
+      const id = tuple(bigNumberToU64(authId, context));
 
       idsPerType[type as AllowedAuthType].push(id);
     });
+    await Promise.all(validations);
 
     forEach(idsPerType, (ids, key) => {
       const type = key as AllowedAuthType;
 
-      // TODO @monitz87: include the attestation auth in the mix (should probably be a different procedure)
-      if (type === AuthorizationType.RotatePrimaryKey) {
-        this.addBatchTransaction(
-          typesToExtrinsics[type],
-          {},
-          ids.map(([id]) => tuple(id, null))
-        );
-      } else {
-        this.addBatchTransaction(typesToExtrinsics[type], {}, ids);
-      }
+      const transactions = assembleBatchTransactions(
+        tuple({
+          transaction: typesToExtrinsics[type],
+          argsArray: ids,
+        })
+      );
+
+      this.addBatchTransaction({ transactions });
     });
   } else {
     const falseBool = booleanToBool(false, context);
     const authIdentifiers = liveRequests.map(({ authId, target }) =>
       tuple(
         signerValueToSignatory(signerToSignerValue(target), context),
-        numberToU64(authId, context),
+        bigNumberToU64(authId, context),
         falseBool
       )
     );
-    this.addBatchTransaction(tx.identity.removeAuthorization, {}, authIdentifiers);
+    const transactions = assembleBatchTransactions(
+      tuple({
+        transaction: tx.identity.removeAuthorization,
+        argsArray: authIdentifiers,
+      })
+    );
+
+    this.addBatchTransaction({ transactions });
   }
 }
 
@@ -99,26 +111,25 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  let did: string;
+  let identity: Identity;
+  const fetchIdentity = async () => identity || context.getSigningIdentity();
 
   const unexpiredRequests = authRequests.filter(request => !request.isExpired());
-
-  const fetchDid = async (): Promise<string> => getDid(did, context);
 
   const authorized = await P.mapSeries(unexpiredRequests, async ({ target, issuer }) => {
     let condition;
 
     if (target instanceof Account) {
-      const { address } = context.getCurrentAccount();
-      condition = address === target.address;
+      const account = context.getSigningAccount();
+      condition = target.isEqual(account);
     } else {
-      did = await fetchDid();
-      condition = did === target.did;
+      identity = await fetchIdentity();
+      condition = target.isEqual(identity);
     }
 
     if (!accept) {
-      did = await fetchDid();
-      condition = condition || did === issuer.did;
+      identity = await fetchIdentity();
+      condition = condition || issuer.isEqual(identity);
     }
 
     return condition;
@@ -131,7 +142,6 @@ export async function getAuthorization(
       [AuthorizationType.AddRelayerPayingKey]: TxTags.relayer.AcceptPayingKey,
       [AuthorizationType.BecomeAgent]: TxTags.externalAgents.AcceptBecomeAgent,
       [AuthorizationType.PortfolioCustody]: TxTags.portfolio.AcceptPortfolioCustody,
-      [AuthorizationType.RotatePrimaryKey]: TxTags.identity.AcceptPrimaryKey,
       [AuthorizationType.TransferAssetOwnership]: TxTags.asset.AcceptAssetOwnershipTransfer,
       [AuthorizationType.TransferTicker]: TxTags.asset.AcceptTickerTransfer,
     } as const;
@@ -147,7 +157,7 @@ export async function getAuthorization(
       'Authorization Requests can only be accepted by the target Account/Identity. They can only be rejected by the target Account/Identity or the issuing Identity',
     permissions: {
       transactions,
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };

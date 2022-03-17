@@ -10,14 +10,14 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('claimDividends procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
   let distribution: DividendDistribution;
@@ -48,12 +48,11 @@ describe('claimDividends procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Distribution is expired', async () => {
+  it('should throw an error if the Distribution is expired', async () => {
     const date = new Date(new Date().getTime() + 1000 * 60 * 60);
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate: date,
@@ -80,7 +79,7 @@ describe('claimDividends procedure', () => {
     });
   });
 
-  test('should throw an error if the Distribution is expired', async () => {
+  it('should throw an error if the Distribution is expired', async () => {
     const date = new Date(new Date().getTime() - 1000);
     distribution = entityMockUtils.getDividendDistributionInstance({
       expiryDate: date,
@@ -107,7 +106,7 @@ describe('claimDividends procedure', () => {
     });
   });
 
-  test('should throw an error if the current Identity is not included in the Distribution', async () => {
+  it('should throw an error if the signing Identity is not included in the Distribution', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: null,
@@ -123,14 +122,16 @@ describe('claimDividends procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('The current Identity is not included in this Distribution');
+    expect(err.message).toBe('The signing Identity is not included in this Distribution');
   });
 
-  test('should throw an error if the current Identity has already claimed', async () => {
+  it('should throw an error if the signing Identity has already claimed', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: {
         paid: true,
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: new BigNumber(100),
       },
     });
 
@@ -144,14 +145,16 @@ describe('claimDividends procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('The current Identity has already claimed dividends');
+    expect(err.message).toBe('The signing Identity has already claimed dividends');
   });
 
-  test('should add a claim dividens transaction to the queue', async () => {
+  it('should add a claim dividends transaction to the queue', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: {
         paid: false,
+        identity: entityMockUtils.getIdentityInstance({ did }),
+        amount: new BigNumber(100),
       },
     });
 
@@ -161,6 +164,9 @@ describe('claimDividends procedure', () => {
       distribution,
     });
 
-    sinon.assert.calledWith(addTransactionStub, claimDividendsTransaction, {}, rawCaId);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: claimDividendsTransaction,
+      args: [rawCaId],
+    });
   });
 });

@@ -12,6 +12,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -29,6 +30,7 @@ describe('transferPolyx procedure', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    sinon.stub(utilsInternalModule, 'assertAddressValid');
   });
 
   beforeEach(() => {
@@ -42,12 +44,12 @@ describe('transferPolyx procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+    sinon.restore();
   });
 
-  test('should throw an error if the user has insufficient balance to transfer', () => {
+  it('should throw an error if the user has insufficient balance to transfer', () => {
     dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
@@ -60,25 +62,27 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('Insufficient free balance');
   });
 
-  test("should throw an error if destination account doesn't have an associated Identity", () => {
-    entityMockUtils.getAccountGetIdentityStub().resolves(null);
+  it("should throw an error if destination Account doesn't have an associated Identity", () => {
+    entityMockUtils.configureMocks({
+      accountOptions: {
+        getIdentity: null,
+      },
+    });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     return expect(
       prepareTransferPolyx.call(proc, { to: 'someAccount', amount: new BigNumber(99) })
-    ).rejects.toThrow("The destination account doesn't have an asssociated Identity");
+    ).rejects.toThrow("The destination Account doesn't have an associated Identity");
   });
 
-  test("should throw an error if sender Identity doesn't have valid CDD", () => {
+  it("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        validCdd: false,
-      },
+    mockContext = dsMockUtils.getContextInstance({
+      validCdd: false,
     });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
@@ -88,14 +92,16 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('The sender Identity has an invalid CDD claim');
   });
 
-  test("should throw an error if destination Account doesn't have valid CDD", () => {
+  it("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     entityMockUtils.configureMocks({
-      identityOptions: {
-        hasValidCdd: false,
+      accountOptions: {
+        getIdentity: entityMockUtils.getIdentityInstance({
+          hasValidCdd: false,
+        }),
       },
     });
 
@@ -106,20 +112,20 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('The receiver Identity has an invalid CDD claim');
   });
 
-  test('should add a balance transfer transaction to the queue', async () => {
+  it('should add a balance transfer transaction to the queue', async () => {
     const to = entityMockUtils.getAccountInstance({ address: 'someAccount' });
     const amount = new BigNumber(99);
     const memo = 'someMessage';
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
-    const rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
-    const rawMemo = ('memo' as unknown) as Memo;
+    const rawAmount = dsMockUtils.createMockBalance(amount);
+    const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
       .createQueryStub('identity', 'keyToIdentityIds')
-      .returns(dsMockUtils.createMockIdentityId('currentIdentityId'));
+      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
-    sinon.stub(utilsConversionModule, 'numberToBalance').returns(rawAmount);
+    sinon.stub(utilsConversionModule, 'bigNumberToBalance').returns(rawAmount);
     sinon.stub(utilsConversionModule, 'stringToMemo').returns(rawMemo);
 
     let tx = dsMockUtils.createTxStub('balances', 'transfer');
@@ -130,13 +136,10 @@ describe('transferPolyx procedure', () => {
       amount,
     });
 
-    sinon.assert.calledWith(
-      procedureMockUtils.getAddTransactionStub(),
-      tx,
-      {},
-      rawAccount,
-      rawAmount
-    );
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+      transaction: tx,
+      args: [rawAccount, rawAmount],
+    });
 
     tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
 
@@ -146,18 +149,14 @@ describe('transferPolyx procedure', () => {
       memo,
     });
 
-    sinon.assert.calledWith(
-      procedureMockUtils.getAddTransactionStub(),
-      tx,
-      {},
-      rawAccount,
-      rawAmount,
-      rawMemo
-    );
+    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+      transaction: tx,
+      args: [rawAccount, rawAmount, rawMemo],
+    });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const memo = 'something';
       const args = {
         memo,
@@ -166,7 +165,7 @@ describe('transferPolyx procedure', () => {
       expect(getAuthorization(args)).toEqual({
         permissions: {
           transactions: [TxTags.balances.TransferWithMemo],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });
@@ -176,7 +175,7 @@ describe('transferPolyx procedure', () => {
       expect(getAuthorization(args)).toEqual({
         permissions: {
           transactions: [TxTags.balances.Transfer],
-          tokens: [],
+          assets: [],
           portfolios: [],
         },
       });

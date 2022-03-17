@@ -1,12 +1,10 @@
-import BigNumber from 'bignumber.js';
-
 import {
+  Asset,
   Context,
   PolymeshError,
   PolymeshTransaction,
   PolymeshTransactionBatch,
   PostTransactionValue,
-  SecurityToken,
   TransactionQueue,
 } from '~/internal';
 import {
@@ -20,43 +18,52 @@ import {
   TxTag,
 } from '~/types';
 import {
-  MapMaybePostTransactionValue,
+  AddBatchTransactionArgs,
+  AddTransactionArgs,
   MaybePostTransactionValue,
   PolymeshTx,
   PostTransactionValueArray,
   ProcedureAuthorization,
   ResolverFunctionArray,
 } from '~/types/internal';
-import { signerToString, transactionToTxTag } from '~/utils/conversion';
-import { batchArguments } from '~/utils/internal';
+import { signerToString } from '~/utils/conversion';
 
-interface AddTransactionOptsBase<Values extends unknown[]> {
-  fee?: BigNumber;
-  resolvers?: ResolverFunctionArray<Values>;
-  isCritical?: boolean;
-  paidForBy?: Identity;
+/**
+ * @hidden
+ */
+function assertOnlyOneAsset(assets: Asset[]) {
+  if (assets.length > 1) {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message:
+        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team',
+    });
+  }
 }
 
-interface AddBatchTransactionOpts<Values extends unknown[], Args extends unknown[]>
-  extends AddTransactionOptsBase<Values> {
-  groupByFn?: (obj: MapMaybePostTransactionValue<Args>) => string;
-}
-
-interface AddTransactionOpts<Values extends unknown[]> extends AddTransactionOptsBase<Values> {
-  batchSize?: number;
+/**
+ * @hidden
+ */
+async function getAgentPermissionsResult(
+  identity: Identity | null,
+  asset: Asset,
+  transactions: TxTag[] | null
+): Promise<CheckPermissionsResult<SignerType.Identity>> {
+  return identity
+    ? identity.assetPermissions.checkPermissions({
+        asset,
+        transactions,
+      })
+    : { result: false, missingPermissions: transactions };
 }
 
 /**
  * @hidden
  *
  * Represents an operation performed on the Polymesh blockchain.
- * A Procedure can be prepared to yield a [[TransactionQueue]] that can be run
+ * A Procedure can be prepared to yield a {@link TransactionQueue} that can be run
  */
-export class Procedure<
-  Args extends unknown = void,
-  ReturnValue extends unknown = void,
-  Storage extends unknown = Record<string, unknown>
-> {
+export class Procedure<Args = void, ReturnValue = void, Storage = Record<string, unknown>> {
   private prepareTransactions: (
     this: Procedure<Args, ReturnValue, Storage>,
     args: Args
@@ -72,10 +79,8 @@ export class Procedure<
     args: Args
   ) => Promise<Storage> | Storage;
 
-  private transactions: (
-    | PolymeshTransaction<unknown[]>
-    | PolymeshTransactionBatch<unknown[]>
-  )[] = [];
+  private transactions: (PolymeshTransaction<unknown[]> | PolymeshTransactionBatch<unknown[][]>)[] =
+    [];
 
   private _storage: null | Storage = null;
   private _context: null | Context = null;
@@ -122,10 +127,10 @@ export class Procedure<
   private async setup(args: Args, context: Context, opts: ProcedureOpts = {}): Promise<Context> {
     if (!this._context) {
       const ctx = context.clone();
-      const { signer } = opts;
+      const { signingAccount } = opts;
 
-      if (signer) {
-        ctx.setPair(signerToString(signer));
+      if (signingAccount) {
+        await ctx.setSigningAddress(signerToString(signingAccount));
       }
 
       this._context = ctx;
@@ -162,16 +167,14 @@ export class Procedure<
 
     const { permissions = true, roles = true } = checkAuthorizationResult;
 
-    const {
-      signerPermissions = permissions,
-      agentPermissions = permissions,
-    } = checkAuthorizationResult;
+    const { signerPermissions = permissions, agentPermissions = permissions } =
+      checkAuthorizationResult;
 
     let identity: Identity | null = null;
     let rolesResult: CheckRolesResult;
     let noIdentity = false;
 
-    const account = ctx.getCurrentAccount();
+    const account = ctx.getSigningAccount();
 
     const fetchIdentity = async (): Promise<Identity | null> => identity || account.getIdentity();
 
@@ -209,18 +212,18 @@ export class Procedure<
     } else if (typeof agentPermissions === 'string') {
       agentPermissionsResult = { result: false, message: agentPermissions };
     } else {
-      const { tokens, transactions } = agentPermissions;
+      const { assets, transactions } = agentPermissions;
 
       agentPermissionsResult = { result: true };
 
-      if (tokens?.length && transactions?.length) {
-        assertOnlyOneToken(tokens);
+      if (assets?.length && transactions?.length) {
+        assertOnlyOneAsset(assets);
 
         identity = await fetchIdentity();
 
         noIdentity = !identity;
 
-        agentPermissionsResult = await getAgentPermissionsResult(identity, tokens[0], transactions);
+        agentPermissionsResult = await getAgentPermissionsResult(identity, assets[0], transactions);
       }
     }
 
@@ -255,13 +258,12 @@ export class Procedure<
   }
 
   /**
-   * Build a [[TransactionQueue]] that can be run
+   * Build a {@link TransactionQueue} that can be run
    *
    * @param args.args - arguments required to prepare the queue
    * @param args.transformer - optional function that transforms the Procedure result
    * @param context - context in which the resulting queue will run
    * @param opts.signer - address that will be used as a signer for this procedure
-   *   (it must have already been added to the keyring)
    */
   public async prepare<QueueReturnType>(
     args: {
@@ -275,25 +277,22 @@ export class Procedure<
       const { args: procArgs, transformer } = args;
       const ctx = await this.setup(procArgs, context, opts);
 
-      const {
-        roles,
-        signerPermissions,
-        agentPermissions,
-        accountFrozen,
-        noIdentity,
-      } = await this._checkAuthorization(procArgs, ctx);
+      // parallelize the async calls
+      const prepareTransactionsPromise = this.prepareTransactions(procArgs);
+      const { roles, signerPermissions, agentPermissions, accountFrozen, noIdentity } =
+        await this._checkAuthorization(procArgs, ctx);
 
       if (noIdentity) {
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message: 'This procedure requires the Current Account to have an associated Identity',
+          message: 'This procedure requires the signing Account to have an associated Identity',
         });
       }
 
       if (accountFrozen) {
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message: "Current Account can't execute this procedure because it is frozen",
+          message: "The signing Account can't execute this procedure because it is frozen",
         });
       }
 
@@ -303,7 +302,7 @@ export class Procedure<
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
-            "Current Account doesn't have the required permissions to execute this procedure",
+            "The signing Account doesn't have the required permissions to execute this procedure",
           data: {
             message,
             missingPermissions,
@@ -317,7 +316,7 @@ export class Procedure<
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
           message:
-            "Current Identity doesn't have the required permissions to execute this procedure",
+            "The signing Identity doesn't have the required permissions to execute this procedure",
           data: {
             message,
             missingPermissions,
@@ -330,7 +329,7 @@ export class Procedure<
 
         throw new PolymeshError({
           code: ErrorCode.NotAuthorized,
-          message: "Current Identity doesn't have the required roles to execute this procedure",
+          message: "The signing Identity doesn't have the required roles to execute this procedure",
           data: {
             message,
             missingRoles,
@@ -338,7 +337,7 @@ export class Procedure<
         });
       }
 
-      const procedureResult = await this.prepareTransactions(procArgs);
+      const procedureResult = await prepareTransactionsPromise;
       return new TransactionQueue(
         { transactions: this.transactions, procedureResult, transformer },
         ctx
@@ -349,52 +348,42 @@ export class Procedure<
   }
 
   /**
-   * Appends a transaction into the TransactionQueue's queue. This defines
-   *   what will be run by the TransactionQueue when it is started.
+   * Appends a transaction into this Procedure's queue. This defines
+   *   what will be run by the TransactionQueue when it is started
    *
-   * @param tx - a transaction that will be run in the Procedure's TransactionQueue
-   * @param options.fee - value in POLYX of the transaction (should only be set manually in special cases, otherwise it is fetched automatically from the chain)
-   * @param options.resolvers - asynchronous callbacks used to return runtime data after
-   *   the added transaction has finished successfully
-   * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
-   * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
-   * @param options.batchSize - amount of elements in the batch (this is only used for certain transactions whose fees depend on the size of the arg list, like `asset.addDocuments`)
-   * @param options.paidForBy - third party Identity that will pay for the transaction fees
-   * @param args - arguments to be passed to the transaction method
-   *
-   * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options
+   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
-  public addTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    transaction: PolymeshTx<TxArgs>,
-    options: AddTransactionOpts<Values>,
-    ...args: MapMaybePostTransactionValue<TxArgs>
+  public addTransaction<TxArgs extends unknown[] | [], Values extends unknown[] = []>(
+    args: AddTransactionArgs<TxArgs, Values>
   ): PostTransactionValueArray<Values> {
     const {
-      fee = null,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      transaction,
+      args: txArgs,
+      fee,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
-      batchSize = null,
-    } = options;
+      feeMultiplier,
+    } = args;
     const { context } = this;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    const signer = context.getSigner();
-
-    const tx = transaction as PolymeshTx<unknown[]>;
+    const signingAddress = context.getSigningAddress();
+    const signer = context.getExternalSigner();
 
     this.transactions.push(
-      new PolymeshTransaction<unknown[]>(
+      new PolymeshTransaction<unknown[] | []>(
         {
-          tx,
-          args,
+          transaction: transaction as PolymeshTx<unknown[] | []>,
+          args: txArgs,
           postTransactionValues,
           isCritical,
+          signingAddress,
           signer,
           fee,
-          batchSize,
+          feeMultiplier,
           paidForBy,
         },
         context
@@ -406,24 +395,24 @@ export class Procedure<
 
   /**
    * Appends a Procedure into this Procedure's queue. This defines
-   *   what will be run by the Transaction Queue when it is started.
+   *   what will be run by the TransactionQueue when it is started
    *
    * @param proc - a Procedure that will be run as part of this Procedure's Transaction Queue
    * @param args - arguments to be passed to the procedure
    *
    * @returns whichever value is returned by the passed Procedure
    */
-  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+  public async addProcedure<ProcArgs, R, S>(
     procedure: Procedure<ProcArgs, R, S>,
     args: ProcArgs
   ): Promise<MaybePostTransactionValue<R>>;
 
-  public async addProcedure<R extends unknown, S extends unknown>(
+  public async addProcedure<R, S>(
     procedure: Procedure<void, R, S>
   ): Promise<MaybePostTransactionValue<R>>;
 
   // eslint-disable-next-line require-jsdoc
-  public async addProcedure<ProcArgs extends unknown, R extends unknown, S extends unknown>(
+  public async addProcedure<ProcArgs, R, S>(
     procedure: Procedure<void | ProcArgs, R, S>,
     args: ProcArgs = {} as ProcArgs
   ): Promise<MaybePostTransactionValue<R>> {
@@ -446,81 +435,61 @@ export class Procedure<
   }
 
   /**
-   * Appends a batch of transactions into the TransactionQueue's queue. This defines
+   * Appends a batch of transactions into this Procedure's queue. This defines
    *   what will be run by the TransactionQueue when it is started
    *
-   * @note if the argument list is too large, they will be separated into multiple batch transactions
-   *
-   * @param tx - a transaction that will be run in the Procedure's TransactionQueue
-   * @param options.fee - value in POLYX of the transaction (should only be set manually in special cases, otherwise it is fetched automatically from the chain)
-   * @param options.resolvers - asynchronous callbacks used to return runtime data after
-   *   the added transaction has finished successfully
-   * @param options.isCritical - whether this transaction failing should make the entire queue fail or not. Defaults to true
-   * @param options.signer - address or keyring pair of the account that will sign this transaction. Defaults to the current pair in the context
-   * @param options.paidByThirdParty - if the transaction fees will be paid by a third party. Defaults to false
-   * @param options.groupByFn - function that establishes how to group the arguments in case the list is too large and they must be separated internally
-   * @param args - arguments to be passed to each method in the batch
-   *
-   * @returns an array of [[PostTransactionValue]]. Each element corresponds to whatever is returned by one of the resolver functions passed as options.
-   *   If the batch is separated into smaller batches, resolvers will be run on the last batch
+   * @returns an array of {@link PostTransactionValue}. Each element corresponds to whatever is returned by one of the resolver functions passed as options
    */
-  public addBatchTransaction<TxArgs extends unknown[], Values extends unknown[] = []>(
-    transaction: PolymeshTx<TxArgs>,
-    options: AddBatchTransactionOpts<Values, TxArgs>,
-    args: MapMaybePostTransactionValue<TxArgs>[]
+  public addBatchTransaction<ArgsArray extends (unknown[] | [])[], Values extends unknown[] = []>(
+    args: AddBatchTransactionArgs<Values, ArgsArray>
   ): PostTransactionValueArray<Values> {
     const {
-      fee = null,
-      resolvers = ([] as unknown) as ResolverFunctionArray<Values>,
+      transactions,
+      fee,
+      resolvers = [] as unknown as ResolverFunctionArray<Values>,
       isCritical = true,
       paidForBy,
-      groupByFn,
-    } = options;
+    } = args;
     const { context } = this;
     const postTransactionValues = resolvers.map(
       resolver => new PostTransactionValue(resolver)
     ) as PostTransactionValueArray<Values>;
 
-    const signer = context.getSigner();
+    // if only a single transaction is added to the batch, we don't use a batch
+    if (transactions.length === 1) {
+      const [{ transaction, args: txArgs, feeMultiplier }] = transactions;
+      return this.addTransaction({
+        transaction: transaction as PolymeshTx<unknown[] | []>,
+        args: txArgs,
+        feeMultiplier,
+        fee,
+        resolvers,
+        isCritical,
+        paidForBy,
+      });
+    }
 
-    const tx = transaction as PolymeshTx<unknown[]>;
+    const signingAddress = context.getSigningAddress();
+    const signer = context.getExternalSigner();
 
-    const tag = transactionToTxTag(tx);
-
-    const specBase = {
-      tx,
-      postTransactionValues,
-      isCritical,
-      signer,
-      fee,
-      paidForBy,
-    } as const;
-
-    const batches = batchArguments(args, tag, groupByFn);
-
-    batches.forEach((argumentBatch, index) => {
-      let spec = { ...specBase };
-
-      if (index === batches.length - 1) {
-        spec = { ...spec, postTransactionValues };
-      }
-
-      if (argumentBatch.length === 1) {
-        // single transaction
-        this.transactions.push(
-          new PolymeshTransaction<unknown[]>(
-            { ...spec, args: argumentBatch[0], batchSize: null },
-            context
-          )
-        );
-
-        return;
-      }
-
-      this.transactions.push(
-        new PolymeshTransactionBatch<unknown[]>({ ...spec, args: argumentBatch }, context)
-      );
-    });
+    this.transactions.push(
+      new PolymeshTransactionBatch<(unknown[] | [])[]>(
+        {
+          transactions: transactions.map(({ transaction, args: txArgs, feeMultiplier }) => ({
+            transaction,
+            args: txArgs,
+            feeMultiplier,
+          })),
+          postTransactionValues,
+          isCritical,
+          signingAddress,
+          signer,
+          fee,
+          paidForBy,
+        },
+        context
+      )
+    );
 
     return postTransactionValues;
   }
@@ -543,7 +512,7 @@ export class Procedure<
   }
 
   /**
-   * contains the data services, current account, etc. In short, the *context* in which
+   * contains the data services, signing Account, etc. In short, the *context* in which
    *   the Procedure is being run
    */
   public get context(): Context {
@@ -558,33 +527,4 @@ export class Procedure<
 
     return context;
   }
-}
-
-/**
- * @hidden
- */
-function assertOnlyOneToken(tokens: SecurityToken[]) {
-  if (tokens.length > 1) {
-    throw new PolymeshError({
-      code: ErrorCode.FatalError,
-      message:
-        'Procedures cannot require permissions for more than one Security Token. Please contact the Polymath team',
-    });
-  }
-}
-
-/**
- * @hidden
- */
-async function getAgentPermissionsResult(
-  identity: Identity | null,
-  token: SecurityToken,
-  transactions: TxTag[] | null
-): Promise<CheckPermissionsResult<SignerType.Identity>> {
-  return identity
-    ? identity.tokenPermissions.checkPermissions({
-        token,
-        transactions,
-      })
-    : { result: false, missingPermissions: transactions };
 }

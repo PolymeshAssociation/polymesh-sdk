@@ -669,6 +669,7 @@ export default {
         PortfolioCustody: 'PortfolioId',
         BecomeAgent: '(Ticker, AgentGroup)',
         AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
+        RotatePrimaryKeyToSecondary: 'Permissions',
       },
     },
     SmartExtensionType: {
@@ -842,6 +843,7 @@ export default {
         PortfolioCustody: '',
         BecomeAgent: '',
         AddRelayerPayingKey: '',
+        RotatePrimaryKeyToSecondary: '',
       },
     },
     ProposalDetails: {

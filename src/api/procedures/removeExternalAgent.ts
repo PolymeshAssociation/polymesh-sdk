@@ -1,11 +1,9 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { isFullGroupType } from '~/api/procedures/utils';
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode } from '~/types';
+import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
-import { getDid } from '~/utils/internal';
+import { getIdentity } from '~/utils/internal';
 
 export interface RemoveExternalAgentParams {
   target: string | Identity;
@@ -22,7 +20,7 @@ export type Params = RemoveExternalAgentParams & {
  * @hidden
  */
 export interface Storage {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 /**
@@ -39,17 +37,17 @@ export async function prepareRemoveExternalAgent(
       },
     },
     context,
-    storage: { token },
+    storage: { asset },
   } = this;
 
   const { ticker, target } = args;
 
-  const [currentAgents, did] = await Promise.all([
-    token.permissions.getAgents(),
-    getDid(target, context),
+  const [currentAgents, targetIdentity] = await Promise.all([
+    asset.permissions.getAgents(),
+    getIdentity(target, context),
   ]);
 
-  const agentWithGroup = currentAgents.find(({ agent: { did: agentDid } }) => agentDid === did);
+  const agentWithGroup = currentAgents.find(({ agent }) => agent.isEqual(targetIdentity));
 
   if (!agentWithGroup) {
     throw new PolymeshError({
@@ -64,15 +62,18 @@ export async function prepareRemoveExternalAgent(
       throw new PolymeshError({
         code: ErrorCode.EntityInUse,
         message:
-          'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions',
+          'The target is the last Agent with full permissions for this Asset. There should always be at least one Agent with full permissions',
       });
     }
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawAgent = stringToIdentityId(did, context);
+  const rawAgent = stringToIdentityId(targetIdentity.did, context);
 
-  this.addTransaction(externalAgents.removeAgent, {}, rawTicker, rawAgent);
+  this.addTransaction({
+    transaction: externalAgents.removeAgent,
+    args: [rawTicker, rawAgent],
+  });
 }
 
 /**
@@ -80,12 +81,12 @@ export async function prepareRemoveExternalAgent(
  */
 export function getAuthorization(this: Procedure<Params, void, Storage>): ProcedureAuthorization {
   const {
-    storage: { token },
+    storage: { asset },
   } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.RemoveAgent],
-      tokens: [token],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -101,7 +102,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    token: new SecurityToken({ ticker }, context),
+    asset: new Asset({ ticker }, context),
   };
 }
 

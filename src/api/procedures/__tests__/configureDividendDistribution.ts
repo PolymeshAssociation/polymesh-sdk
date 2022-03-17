@@ -19,17 +19,10 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/configureDividendDistribution';
-import {
-  Checkpoint,
-  CheckpointSchedule,
-  Context,
-  DividendDistribution,
-  NumberedPortfolio,
-  PostTransactionValue,
-} from '~/internal';
+import { Context, DividendDistribution, NumberedPortfolio, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TargetTreatment, TxTags } from '~/types';
+import { InputCaCheckpoint, RoleType, TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -58,14 +51,14 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('configureDividendDistribution procedure', () => {
   let ticker: string;
   let declarationDate: Date;
-  let checkpoint: Checkpoint | CheckpointSchedule | Date;
+  let checkpoint: InputCaCheckpoint;
   let description: string;
   let targets: { identities: string[]; treatment: TargetTreatment };
   let defaultTaxWithholding: BigNumber;
@@ -92,9 +85,9 @@ describe('configureDividendDistribution procedure', () => {
   let distributeTransaction: PolymeshTx<unknown[]>;
 
   let stringToTickerStub: sinon.SinonStub;
-  let numberToU64Stub: sinon.SinonStub;
+  let bigNumberToU64Stub: sinon.SinonStub;
   let dateToMomentStub: sinon.SinonStub;
-  let numberToBalanceStub: sinon.SinonStub;
+  let bigNumberToBalanceStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -113,9 +106,9 @@ describe('configureDividendDistribution procedure', () => {
     taxWithholdings = [{ identity: 'someDid', percentage: new BigNumber(30) }];
     originPortfolio = entityMockUtils.getNumberedPortfolioInstance({
       id: new BigNumber(2),
-      tokenBalances: [
+      getAssetBalances: [
         {
-          token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+          asset: entityMockUtils.getAssetInstance({ ticker: currency }),
           total: new BigNumber(1000001),
           locked: new BigNumber(0),
           free: new BigNumber(1000001),
@@ -128,20 +121,20 @@ describe('configureDividendDistribution procedure', () => {
     paymentDate = new Date(checkpoint.getTime() + 60 * 60 * 1000);
     expiryDate = new Date(paymentDate.getTime() + 60 * 60 * 1000 * 24 * 365);
 
-    rawPortfolioNumber = dsMockUtils.createMockU64(originPortfolio.id.toNumber());
+    rawPortfolioNumber = dsMockUtils.createMockU64(originPortfolio.id);
     rawCurrency = dsMockUtils.createMockTicker(currency);
-    rawPerShare = dsMockUtils.createMockBalance(perShare.toNumber());
-    rawAmount = dsMockUtils.createMockBalance(maxAmount.toNumber());
-    rawPaymentAt = dsMockUtils.createMockMoment(paymentDate.getTime());
-    rawExpiresAt = dsMockUtils.createMockMoment(expiryDate.getTime());
+    rawPerShare = dsMockUtils.createMockBalance(perShare);
+    rawAmount = dsMockUtils.createMockBalance(maxAmount);
+    rawPaymentAt = dsMockUtils.createMockMoment(new BigNumber(paymentDate.getTime()));
+    rawExpiresAt = dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()));
 
-    rawCaId = ('caId' as unknown) as PostTransactionValue<CAId>;
-    distribution = ('distribution' as unknown) as PostTransactionValue<DividendDistribution>;
+    rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
+    distribution = 'distribution' as unknown as PostTransactionValue<DividendDistribution>;
 
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
@@ -152,11 +145,11 @@ describe('configureDividendDistribution procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     stringToTickerStub.withArgs(currency, mockContext).returns(rawCurrency);
-    numberToU64Stub.withArgs(originPortfolio.id, mockContext).returns(rawPortfolioNumber);
+    bigNumberToU64Stub.withArgs(originPortfolio.id, mockContext).returns(rawPortfolioNumber);
     dateToMomentStub.withArgs(paymentDate, mockContext).returns(rawPaymentAt);
     dateToMomentStub.withArgs(expiryDate, mockContext).returns(rawExpiresAt);
-    numberToBalanceStub.withArgs(perShare, mockContext).returns(rawPerShare);
-    numberToBalanceStub.withArgs(maxAmount, mockContext).returns(rawAmount);
+    bigNumberToBalanceStub.withArgs(perShare, mockContext).returns(rawPerShare);
+    bigNumberToBalanceStub.withArgs(maxAmount, mockContext).returns(rawAmount);
   });
 
   afterEach(() => {
@@ -166,12 +159,11 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Security Token is being used as the distribution currency', async () => {
+  it('should throw an error if the Asset is being used as the distribution currency', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -199,10 +191,10 @@ describe('configureDividendDistribution procedure', () => {
       err = error;
     }
 
-    expect(err.message).toBe('Cannot distribute Dividends using the Security Token as currency');
+    expect(err.message).toBe('Cannot distribute Dividends using the Asset as currency');
   });
 
-  test('should throw an error if the payment date is in the past', async () => {
+  it('should throw an error if the payment date is in the past', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -233,7 +225,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Payment date must be in the future');
   });
 
-  test('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
+  it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -290,7 +282,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Payment date must be after the Checkpoint date');
   });
 
-  test('should throw an error if the payment date is after the expiry date', async () => {
+  it('should throw an error if the payment date is after the expiry date', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       { portfolio: originPortfolio }
@@ -320,14 +312,14 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Expiry date must be after payment date');
   });
 
-  test('should throw an error if the origin Portfolio does not have enough balance', async () => {
+  it('should throw an error if the origin Portfolio does not have enough balance', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       {
         portfolio: entityMockUtils.getNumberedPortfolioInstance({
-          tokenBalances: [
+          getAssetBalances: [
             {
-              token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+              asset: entityMockUtils.getAssetInstance({ ticker: currency }),
               total: new BigNumber(1),
               locked: new BigNumber(0),
               free: new BigNumber(1),
@@ -367,7 +359,7 @@ describe('configureDividendDistribution procedure', () => {
     });
   });
 
-  test('should throw an error if the origin Portfolio does not exist', async () => {
+  it('should throw an error if the origin Portfolio does not exist', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
       {
@@ -402,7 +394,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe("The origin Portfolio doesn't exist");
   });
 
-  test('should add a distribute transaction to the queue', async () => {
+  it('should add a distribute transaction to the queue', async () => {
     let proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: originPortfolio,
     });
@@ -425,17 +417,19 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      rawPortfolioNumber,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      rawExpiresAt
+        args: [
+          rawCaId,
+          rawPortfolioNumber,
+          rawCurrency,
+          rawPerShare,
+          rawAmount,
+          rawPaymentAt,
+          rawExpiresAt,
+        ],
+      })
     );
 
     expect(result).toEqual(distribution);
@@ -458,25 +452,27 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      rawPortfolioNumber,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      rawExpiresAt
+        args: [
+          rawCaId,
+          rawPortfolioNumber,
+          rawCurrency,
+          rawPerShare,
+          rawAmount,
+          rawPaymentAt,
+          rawExpiresAt,
+        ],
+      })
     );
 
     proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: entityMockUtils.getDefaultPortfolioInstance({
         did: 'someDid',
-        tokenBalances: [
+        getAssetBalances: [
           {
-            token: entityMockUtils.getSecurityTokenInstance({ ticker: currency }),
+            asset: entityMockUtils.getAssetInstance({ ticker: currency }),
             total: new BigNumber(1000001),
             locked: new BigNumber(0),
             free: new BigNumber(1000001),
@@ -501,24 +497,18 @@ describe('configureDividendDistribution procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      distributeTransaction,
       sinon.match({
+        transaction: distributeTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawCaId,
-      null,
-      rawCurrency,
-      rawPerShare,
-      rawAmount,
-      rawPaymentAt,
-      null
+        args: [rawCaId, null, rawCurrency, rawPerShare, rawAmount, rawPaymentAt, null],
+      })
     );
   });
 
   describe('dividendDistributionResolver', () => {
     const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
-    const portfolioNumber = 3;
+    const portfolioNumber = new BigNumber(3);
     const did = 'someDid';
 
     let rawCorporateAction: CorporateAction;
@@ -530,29 +520,32 @@ describe('configureDividendDistribution procedure', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       rawCorporateAction = dsMockUtils.createMockCorporateAction({
         kind: 'UnpredictableBenefit',
-        decl_date: declarationDate.getTime(),
+        decl_date: new BigNumber(declarationDate.getTime()),
         record_date: dsMockUtils.createMockRecordDate({
-          date: new Date('10/14/2021').getTime(),
+          date: new BigNumber(new Date('10/14/2021').getTime()),
           checkpoint: {
-            Scheduled: [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)],
+            Scheduled: [
+              dsMockUtils.createMockU64(new BigNumber(1)),
+              dsMockUtils.createMockU64(new BigNumber(2)),
+            ],
           },
         }),
         targets,
-        default_withholding_tax: defaultTaxWithholding.shiftedBy(4).toNumber(),
+        default_withholding_tax: defaultTaxWithholding.shiftedBy(4),
         withholding_tax: taxWithholdings.map(({ identity, percentage }) =>
-          tuple(identity, percentage.shiftedBy(4).toNumber())
+          tuple(identity, percentage.shiftedBy(4))
         ),
       });
       rawDistribution = dsMockUtils.createMockDistribution({
         from: { did, kind: { User: dsMockUtils.createMockU64(portfolioNumber) } },
         currency,
-        per_share: perShare.shiftedBy(6).toNumber(),
-        amount: maxAmount.shiftedBy(6).toNumber(),
-        remaining: 10000,
+        per_share: perShare.shiftedBy(6),
+        amount: maxAmount.shiftedBy(6),
+        remaining: new BigNumber(10000),
         reclaimed: false,
-        payment_at: paymentDate.getTime(),
+        payment_at: new BigNumber(paymentDate.getTime()),
         expires_at: dsMockUtils.createMockOption(
-          dsMockUtils.createMockMoment(expiryDate?.getTime())
+          dsMockUtils.createMockMoment(new BigNumber(expiryDate?.getTime()))
         ),
       });
       /* eslint-enable @typescript-eslint/naming-convention */
@@ -572,7 +565,7 @@ describe('configureDividendDistribution procedure', () => {
           'data',
           dsMockUtils.createMockCAId({
             ticker,
-            local_id: id.toNumber(),
+            local_id: id,
           }),
           rawDistribution,
         ]),
@@ -584,18 +577,18 @@ describe('configureDividendDistribution procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new DividendDistribution', async () => {
+    it('should return the new DividendDistribution', async () => {
       const result = await createDividendDistributionResolver(mockContext)(
         {} as ISubmittableResult
       );
 
-      expect(result.token.ticker).toBe(ticker);
+      expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
       expect(result.declarationDate).toEqual(declarationDate);
       expect(result.description).toEqual(description);
       expect(result.targets).toEqual({
         identities: targets.identities.map(targetDid =>
-          entityMockUtils.getIdentityInstance({ did: targetDid })
+          expect.objectContaining({ did: targetDid })
         ),
 
         treatment: targets.treatment,
@@ -603,12 +596,15 @@ describe('configureDividendDistribution procedure', () => {
       expect(result.defaultTaxWithholding).toEqual(defaultTaxWithholding);
       expect(result.taxWithholdings).toEqual([
         {
-          identity: entityMockUtils.getIdentityInstance({ did: taxWithholdings[0].identity }),
+          identity: expect.objectContaining({ did: taxWithholdings[0].identity }),
           percentage: taxWithholdings[0].percentage,
         },
       ]);
       expect(result.origin).toEqual(
-        entityMockUtils.getNumberedPortfolioInstance({ did, id: new BigNumber(portfolioNumber) })
+        expect.objectContaining({
+          owner: expect.objectContaining({ did }),
+          id: new BigNumber(portfolioNumber),
+        })
       );
       expect(result.currency).toEqual(currency);
       expect(result.maxAmount).toEqual(maxAmount);
@@ -618,7 +614,7 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
         mockContext,
         { portfolio: originPortfolio }
@@ -637,7 +633,7 @@ describe('configureDividendDistribution procedure', () => {
         ],
         permissions: {
           transactions: [TxTags.capitalDistribution.Distribute],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [originPortfolio],
         },
       });
@@ -645,7 +641,7 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the origin Portfolio', async () => {
+    it('should return the origin Portfolio', async () => {
       const did = 'someDid';
       dsMockUtils.configureMocks({
         contextOptions: {
@@ -667,7 +663,8 @@ describe('configureDividendDistribution procedure', () => {
       result = await boundFunc({ originPortfolio: portfolioId } as Params);
 
       expect(result).toEqual({
-        portfolio: entityMockUtils.getNumberedPortfolioInstance({
+        portfolio: expect.objectContaining({
+          owner: expect.objectContaining({ did }),
           id: portfolioId,
         }),
       });
@@ -675,7 +672,7 @@ describe('configureDividendDistribution procedure', () => {
       result = await boundFunc({} as Params);
 
       expect(result).toEqual({
-        portfolio: entityMockUtils.getDefaultPortfolioInstance({ did }),
+        portfolio: expect.objectContaining({ owner: expect.objectContaining({ did }) }),
       });
     });
   });

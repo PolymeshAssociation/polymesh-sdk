@@ -1,17 +1,21 @@
 import BigNumber from 'bignumber.js';
 import { isEqual, remove } from 'lodash';
-import { DocumentId, TxTags } from 'polymesh-types/types';
+import { DocumentId } from 'polymesh-types/types';
 
-import { PolymeshError, Procedure, SecurityToken } from '~/internal';
-import { ErrorCode, TokenDocument } from '~/types';
+import { Asset, PolymeshError, Procedure } from '~/internal';
+import { AssetDocument, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { documentToTokenDocument, stringToTicker } from '~/utils/conversion';
+import {
+  corporateActionIdentifierToCaId,
+  documentToAssetDocument,
+  stringToTicker,
+} from '~/utils/conversion';
 
 export interface LinkCaDocsParams {
   /**
    * list of documents
    */
-  documents: TokenDocument[];
+  documents: AssetDocument[];
 }
 
 /**
@@ -50,7 +54,7 @@ export async function prepareLinkCaDocs(
   rawAssetDocuments.forEach(([key, doc]) => {
     const [, id] = key.args;
     const removedList = remove(documentsCopy, document =>
-      isEqual(document, documentToTokenDocument(doc))
+      isEqual(document, documentToAssetDocument(doc))
     );
     if (removedList.length) {
       docIdsToLink.push(id);
@@ -60,17 +64,19 @@ export async function prepareLinkCaDocs(
   if (documentsCopy.length) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Some of the provided documents are not associated with the Security Token',
+      message: 'Some of the provided documents are not associated with the Asset',
       data: {
         documents: documentsCopy,
       },
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCAId = { ticker, local_id: caId };
+  const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
 
-  this.addTransaction(corporateAction.linkCaDoc, {}, rawCAId, docIdsToLink);
+  this.addTransaction({
+    transaction: corporateAction.linkCaDoc,
+    args: [rawCaId, docIdsToLink],
+  });
 }
 
 /**
@@ -82,7 +88,7 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   return {
     permissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       transactions: [TxTags.corporateAction.LinkCaDoc],
       portfolios: [],
     },

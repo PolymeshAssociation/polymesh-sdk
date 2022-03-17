@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, Identity, PolymeshError, Procedure } from '~/internal';
-import { AccountBalance, ErrorCode, TxTags } from '~/types';
+import { Account, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  numberToBalance,
+  bigNumberToBalance,
   signerToString,
   stringToAccountId,
   stringToMemo,
@@ -12,7 +12,7 @@ import {
 
 export interface TransferPolyxParams {
   /**
-   * account that will receive the POLYX
+   * Account that will receive the POLYX
    */
   to: string | Account;
   /**
@@ -51,10 +51,10 @@ export async function prepareTransferPolyx(
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
 
-  const [{ free: freeBalance }, receiverIdentity] = await Promise.all<
-    AccountBalance,
-    Identity | null
-  >([context.accountBalance(), toAccount.getIdentity()]);
+  const [{ free: freeBalance }, receiverIdentity] = await Promise.all([
+    context.accountBalance(),
+    toAccount.getIdentity(),
+  ]);
 
   if (amount.isGreaterThan(freeBalance)) {
     throw new PolymeshError({
@@ -69,11 +69,11 @@ export async function prepareTransferPolyx(
   if (!receiverIdentity) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: "The destination account doesn't have an asssociated Identity",
+      message: "The destination Account doesn't have an associated Identity",
     });
   }
 
-  const senderIdentity = await context.getCurrentIdentity();
+  const senderIdentity = await context.getSigningIdentity();
 
   const [senderCdd, receiverCdd] = await Promise.all([
     senderIdentity.hasValidCdd(),
@@ -94,18 +94,18 @@ export async function prepareTransferPolyx(
     });
   }
 
-  const rawAmount = numberToBalance(amount, context);
+  const rawAmount = bigNumberToBalance(amount, context);
 
   if (memo) {
-    this.addTransaction(
-      tx.balances.transferWithMemo,
-      {},
-      rawAccountId,
-      rawAmount,
-      stringToMemo(memo, context)
-    );
+    this.addTransaction({
+      transaction: tx.balances.transferWithMemo,
+      args: [rawAccountId, rawAmount, stringToMemo(memo, context)],
+    });
   } else {
-    this.addTransaction(tx.balances.transfer, {}, rawAccountId, rawAmount);
+    this.addTransaction({
+      transaction: tx.balances.transfer,
+      args: [rawAccountId, rawAmount],
+    });
   }
 }
 
@@ -116,7 +116,7 @@ export function getAuthorization({ memo }: TransferPolyxParams): ProcedureAuthor
   return {
     permissions: {
       transactions: [memo ? TxTags.balances.TransferWithMemo : TxTags.balances.Transfer],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };

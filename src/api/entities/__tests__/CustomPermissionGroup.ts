@@ -6,8 +6,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/base/Procedure',
@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'TOKENNAME';
+  const ticker = 'ASSET_NAME';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -40,25 +40,24 @@ describe('CustomPermissionGroup class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
-  test('should extend PermissionGroup', () => {
+  it('should extend PermissionGroup', () => {
     expect(CustomPermissionGroup.prototype instanceof PermissionGroup).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign id to instance', () => {
+    it('should assign id to instance', () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       expect(customPermissionGroup.id).toBe(id);
-      expect(customPermissionGroup.token.ticker).toBe(ticker);
+      expect(customPermissionGroup.asset.ticker).toBe(ticker);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(CustomPermissionGroup.isUniqueIdentifiers({ id: new BigNumber(1), ticker })).toBe(
         true
       );
@@ -68,9 +67,9 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
-        securityTokenOptions: {
+        assetOptions: {
           toJson: ticker,
         },
       });
@@ -83,7 +82,7 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: setPermissions', () => {
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       const args = {
@@ -92,7 +91,7 @@ describe('CustomPermissionGroup class', () => {
         },
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -109,10 +108,10 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: getPermissions', () => {
-    test('should return a list of permissions and transaction groups', async () => {
+    it('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      sinon.stub(utilsConversionModule, 'numberToU32');
+      sinon.stub(utilsConversionModule, 'bigNumberToU32');
 
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
@@ -147,17 +146,17 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: exists', () => {
-    test('should return whether the Custom Permission Group exists', async () => {
+    it('should return whether the Custom Permission Group exists', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
-        returnValue: dsMockUtils.createMockU32(0),
+      dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(0)),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(false);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
-        returnValue: dsMockUtils.createMockU32(10),
+      dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
+        returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(true);

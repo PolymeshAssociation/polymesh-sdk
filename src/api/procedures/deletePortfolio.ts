@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, portfolioLikeToPortfolio } from '~/utils/conversion';
+import { bigNumberToU64, portfolioLikeToPortfolio } from '~/utils/conversion';
 
 export interface DeletePortfolioParams {
   did: string;
@@ -29,11 +29,11 @@ export async function prepareDeletePortfolio(
   const { did, id } = args;
 
   const numberedPortfolio = new NumberedPortfolio({ did, id }, context);
-  const rawPortfolioNumber = numberToU64(id, context);
+  const rawPortfolioNumber = bigNumberToU64(id, context);
 
   const [exists, portfolioBalances] = await Promise.all([
     numberedPortfolio.exists(),
-    numberedPortfolio.getTokenBalances(),
+    numberedPortfolio.getAssetBalances(),
   ]);
 
   if (!exists) {
@@ -50,7 +50,10 @@ export async function prepareDeletePortfolio(
     });
   }
 
-  this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);
+  this.addTransaction({
+    transaction: portfolio.deletePortfolio,
+    args: [rawPortfolioNumber],
+  });
 }
 
 /**
@@ -67,7 +70,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.portfolio.DeletePortfolio],
       portfolios: [portfolioLikeToPortfolio({ identity: did, id }, context)],
-      tokens: [],
+      assets: [],
     },
   };
 }
