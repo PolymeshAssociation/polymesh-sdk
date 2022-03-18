@@ -12,8 +12,6 @@ export type Params = {
 
 /**
  * @hidden
- *
- * @deprecated
  */
 export async function prepareRemovePrimaryIssuanceAgent(
   this: Procedure<Params, void>,
