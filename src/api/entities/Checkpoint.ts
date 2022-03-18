@@ -130,7 +130,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     const currentDidBalances: { did: string; balance: BigNumber }[] = [];
     const balanceUpdatesMultiParams: [Ticker, IdentityId][] = [];
 
-    // Prepare the query for balance updates for balance updates. Push to currentDidBalances in case there are none
+    // Prepare the query for balance updates. Push to currentDidBalances to be used if there are no updates for the balance
     entries.forEach(([storageKey, balance]) => {
       const {
         args: [, identityId],
@@ -159,13 +159,13 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       );
       const { did, balance } = currentDidBalances[index];
       if (firstUpdatedCheckpoint) {
-        // If a balance update has occurred for the Identity, then query Checkpoint storage directly
+        // If a balance update has occurred for the Identity since the desired Checkpoint, then query Checkpoint storage directly
         checkpointBalanceMultiParams.push({
           did,
           params: tuple([rawTicker, firstUpdatedCheckpoint], stringToIdentityId(did, context)),
         });
       } else {
-        // otherwise use the current balance
+        // Otherwise use the current balance
         currentIdentityBalances.push({
           identity: new Identity({ did }, context),
           balance,
@@ -220,11 +220,12 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       u64ToBigNumber(checkpointId).gte(id)
     );
 
-    // If there has been a balance change since the Checkpoint was created, then we can query the Checkpoint storage
-    // If there hasn't been a balance update, the storage will not have an entry for the Identity. Instead the current balance should be queried instead.
+    /*
+     * If there has been a balance change since the Checkpoint was created, then query the Checkpoint storage.
+     * Otherwise, the storage will not have an entry for the Identity. The current balance should be queried instead.
+     */
     let balance: BigNumber;
     if (firstUpdatedCheckpoint) {
-      // if a balance has happened after the checkpoint has been created, then we can query the Checkpoint storage for the balance
       const rawBalance = await checkpoint.balance(
         tuple(rawTicker, firstUpdatedCheckpoint),
         rawIdentityId
