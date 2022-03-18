@@ -166,9 +166,9 @@ export class Polymesh {
       context = await Context.create({
         polymeshApi,
         middlewareApi,
-        signingManager,
         middlewareV2Api,
         middlewareDiffLogger,
+        signingManager,
       });
     } catch (err) {
       const { message, code } = err;

@@ -64,6 +64,7 @@ describe('Polymesh Class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
+    sinon.restore();
   });
 
   describe('method: create', () => {
@@ -95,8 +96,8 @@ describe('Polymesh Class', () => {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
         middlewareV2Api: null,
-        middlewareDiffLogger: undefined,
         signingManager,
+        middlewareDiffLogger: undefined,
       });
     });
 
@@ -107,20 +108,21 @@ describe('Polymesh Class', () => {
         key: 'someKey',
       };
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.createApolloQueryStub(heartbeat(), true, true);
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         middleware,
+        middlewareV2: middleware,
       });
 
       sinon.assert.calledOnce(createStub);
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        middlewareV2Api: null,
-        middlewareDiffLogger: undefined,
         signingManager: undefined,
+        middlewareV2Api: dsMockUtils.getMiddlewareApi(),
+        middlewareDiffLogger: undefined,
       });
     });
 

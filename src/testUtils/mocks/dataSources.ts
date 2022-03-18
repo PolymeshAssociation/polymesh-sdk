@@ -665,6 +665,7 @@ function configureContext(opts: ContextOptions): void {
     getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
+    middlewareV2Api: mockInstanceContainer.apolloInstanceV2,
     queryMiddleware: sinon
       .stub()
       .callsFake(query => mockInstanceContainer.apolloInstance.query(query.v1)),
@@ -1036,7 +1037,7 @@ export function createApolloQueryStub(
     data: returnData,
   });
   instance.query = stub;
-  if (returnDataV2) {
+  if (returnDataV2 !== undefined) {
     const stub2 = sinon.stub();
     const instance2 = mockInstanceContainer.apolloInstanceV2;
     stub2.withArgs(query.v2.request).resolves({

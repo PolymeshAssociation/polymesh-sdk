@@ -1398,10 +1398,18 @@ describe('Context class', () => {
       };
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult1, fakeResult2);
 
-      const res = await context.queryMiddleware(fakeQuery);
+      let res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult1);
+
+      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult2, null);
+
+      res = await context.queryMiddleware(fakeQuery);
+
+      expect(res.data).toBe(fakeResult2);
+
       sinon.assert.notCalled(middlewareDiffLogger);
+      sinon.assert.calledOnce(mapper);
       sinon.assert.calledWith(mapper, fakeResult2);
     });
 
@@ -1465,10 +1473,18 @@ describe('Context class', () => {
       };
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult1, fakeResult2);
 
-      const res = await context.queryMiddleware(fakeQuery);
+      let res = await context.queryMiddleware(fakeQuery);
 
       expect(res.data).toBe(fakeResult2);
+
+      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult1, null);
+
+      res = await context.queryMiddleware(fakeQuery);
+
+      expect(res.data).toBe(null);
+
       sinon.assert.notCalled(middlewareDiffLogger);
+      sinon.assert.calledOnce(mapper);
       sinon.assert.calledWith(mapper, fakeResult2);
     });
   });
@@ -1584,14 +1600,28 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    it('should return true if the middleware is available', async () => {
+    it('should return true if the middleware V1 is enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        middlewareV2Api: dsMockUtils.getMiddlewareV2Api(),
+        middlewareV2Api: null,
       });
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
+
+      const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return true if the middleware V2 is enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareV2Api: dsMockUtils.getMiddlewareV2Api(),
+      });
+
+      dsMockUtils.createApolloQueryStub(heartbeat(), true, true);
 
       const result = await context.isMiddlewareAvailable();
 
