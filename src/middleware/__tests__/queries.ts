@@ -97,6 +97,14 @@ describe('eventsByIndexedArgs', () => {
 });
 
 describe('transactionByHash', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
   it('should pass the variables to the grapqhl query', () => {
     const variables = {
       transactionHash: 'someTransactionHash',
@@ -136,8 +144,17 @@ describe('assetsHeldByDid', () => {
 });
 
 describe('transactions', () => {
-  test('should pass the variables to the grapqhl query', () => {
-    let result = transactions(dsMockUtils.getContextInstance());
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  it('should pass the variables to the grapqhl query', () => {
+    const context = dsMockUtils.getContextInstance();
+    let result = transactions(context);
 
     expect(result.v1.query).toBeDefined();
     expect(result.v1.variables).toEqual({});
@@ -145,7 +162,7 @@ describe('transactions', () => {
     const variables = {
       address: '5Dr6HW25yAgXKPs5re5qXsDi7wWzwSF7xQgGYJvQeFFJoGpV',
     };
-    result = transactions(dsMockUtils.getContextInstance(), variables);
+    result = transactions(context, variables);
     expect(result.v1.query).toBeDefined();
     expect(result.v1.variables).toEqual(variables);
   });

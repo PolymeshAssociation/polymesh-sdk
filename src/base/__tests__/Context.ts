@@ -1076,7 +1076,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        middlewareV2Api: dsMockUtils.getMiddlewareV2Api(),
+        middlewareV2Api: null,
       });
 
       const targetDid = 'someTargetDid';
@@ -1407,10 +1407,10 @@ describe('Context class', () => {
 
     it('should report differences in results between middleware instances', async () => {
       const fakeResult1 = 'res1';
-      const fakeQuery1 = 'fakeQuery1' as unknown as MultiGraphqlQuery<undefined>;
+      const fakeQuery1 = 'fakeQuery1' as unknown as GraphqlQuery<undefined>;
 
       const fakeResult2 = 'res2';
-      const fakeQuery2 = 'fakeQuery2' as unknown as MultiGraphqlQuery<undefined>;
+      const fakeQuery2 = 'fakeQuery2' as unknown as GraphqlQuery<undefined>;
 
       const middlewareDiffLogger = sinon.stub();
       const mapper = sinon.stub();
@@ -1442,10 +1442,10 @@ describe('Context class', () => {
 
     it('should use only middleware v2 if middleware v1 is not available', async () => {
       const fakeResult1 = 'res1';
-      const fakeQuery1 = 'fakeQuery1' as unknown as MultiGraphqlQuery<undefined>;
+      const fakeQuery1 = 'fakeQuery1' as unknown as GraphqlQuery<undefined>;
 
       const fakeResult2 = 'res2';
-      const fakeQuery2 = 'fakeQuery2' as unknown as MultiGraphqlQuery<undefined>;
+      const fakeQuery2 = 'fakeQuery2' as unknown as GraphqlQuery<undefined>;
 
       const middlewareDiffLogger = sinon.stub();
       const mapper = sinon.stub();
@@ -1531,7 +1531,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: isMiddlewareEnabled', () => {
+  describe('methd: isMiddlewareEnabled', () => {
     beforeAll(() => {
       sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
@@ -1540,11 +1540,11 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    it('should return true if the middleware is enabled', async () => {
+    it('should return true if the middleware v1 is enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
-        middlewareV2Api: dsMockUtils.getMiddlewareV2Api(),
+        middlewareV2Api: null,
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1552,7 +1552,7 @@ describe('Context class', () => {
       expect(result).toBe(true);
     });
 
-    it('should return false if the middleware is not enabled', async () => {
+    it('should return true if the middleware v2 is enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
@@ -1560,7 +1560,17 @@ describe('Context class', () => {
       });
 
       const result = context.isMiddlewareEnabled();
+      expect(result).toBe(true);
+    });
 
+    it('should return false if the middleware is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareV2Api: null,
+      });
+
+      const result = context.isMiddlewareEnabled();
       expect(result).toBe(false);
     });
   });
@@ -1592,7 +1602,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
-        middlewareV2Api: dsMockUtils.getMiddlewareV2Api(),
+        middlewareV2Api: null,
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1908,12 +1918,23 @@ describe('Context class', () => {
   });
 });
 
+/* eslint-disable @typescript-eslint/naming-convention */
 describe('removeIncomparableKeys', () => {
   expect(
     removeIncomparableKeys({
       didsWithClaims: {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        items: [{ did: 'foo', claims: [{ cdd_id: 'bar', last_update_date: 'some date' as any }] }],
+        items: [
+          {
+            did: 'foo',
+            claims: [
+              {
+                cdd_id: 'bar',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                last_update_date: 'some date' as any,
+              },
+            ],
+          },
+        ],
       },
     })
   ).toEqual({
@@ -1923,3 +1944,4 @@ describe('removeIncomparableKeys', () => {
     },
   });
 });
+/* eslint-enable @typescript-eslint/naming-convention */

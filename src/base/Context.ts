@@ -174,6 +174,7 @@ export class Context {
       middlewareV2Api,
       signingManager,
       ss58Format,
+      middlewareDiffLogger,
     });
 
     const isArchiveNodePromise = context.isCurrentNodeArchive();
@@ -1106,11 +1107,9 @@ export class Context {
         };
       }
     } catch (err) {
-      console.error(err);
       const resultMessage = err.networkError?.result?.message;
       const { message: errorMessage } = err;
       const message = resultMessage ?? errorMessage;
-      console.error(JSON.stringify(err, null, 2));
       throw new PolymeshError({
         code: ErrorCode.MiddlewareError,
         message: `Error in middleware query: ${message}`,
@@ -1135,8 +1134,11 @@ export class Context {
       return;
     }
     const { data: v1Data } = await v1ResultPromise;
+
+    /* eslint-disable @typescript-eslint/no-use-before-define */
     const mapped = removeIncomparableKeys(v2.mapper(v2Data));
     const comparableV1Data = removeIncomparableKeys(v1Data);
+    /* eslint-enable @typescript-eslint/no-use-before-define */
 
     if (!isEqual(mapped, comparableV1Data)) {
       const noColor = (s: string) => s;
@@ -1288,6 +1290,7 @@ const TROUBLESOME_QUERIES = new Set([
 ]);
 const INCOMPARABLE_KEYS = new Set(['last_update_date', 'datetime', 'issuance_date']);
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @hidden
  * Returns response with incomparable keys removed (like last_updated_date) because of precision issues.
@@ -1327,3 +1330,4 @@ export function removeIncomparableKeys(response: DeepPartial<Query>): any {
   }
   return response;
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */

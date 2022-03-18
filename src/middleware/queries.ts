@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
+
 import { hexStripPrefix } from '@polkadot/util';
 import gql from 'graphql-tag';
 
@@ -1228,7 +1229,6 @@ export function eventByAddedTrustedClaimIssuer(
   'events',
   'eventByAddedTrustedClaimIssuer'
 > {
-  console.log(variables);
   const query = gql`
     query EventByAddedTrustedClaimIssuerQuery($ticker: String!, $identityId: String!) {
       eventByAddedTrustedClaimIssuer(ticker: $ticker, identityId: $identityId) {

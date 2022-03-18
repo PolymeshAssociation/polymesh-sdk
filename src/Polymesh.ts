@@ -41,6 +41,7 @@ function createMiddlewareApi(middleware: MiddlewareConfig) {
       return {
         headers: {
           ...headers,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           'x-api-key': middleware.key,
         },
       };
