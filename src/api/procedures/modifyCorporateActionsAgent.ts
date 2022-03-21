@@ -26,8 +26,6 @@ export type Params = { ticker: string } & ModifyCorporateActionsAgentParams;
 
 /**
  * @hidden
- *
- * @deprecated in favor of `inviteAgent`
  */
 export async function prepareModifyCorporateActionsAgent(
   this: Procedure<Params, void>,

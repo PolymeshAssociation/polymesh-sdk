@@ -241,7 +241,6 @@ export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactio
  */
 type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Data : never;
 
-// TODO @monitz87: use event enum instead of string when it exists
 /**
  * @hidden
  * Find every occurrence of a specific event inside a receipt
