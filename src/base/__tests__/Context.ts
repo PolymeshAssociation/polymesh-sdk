@@ -1659,7 +1659,7 @@ describe('Context class', () => {
       let context = await Context.create({
         polymeshApi,
         middlewareApi,
-        middlewareV2Api,
+        middlewareV2Api: null,
       });
 
       await context.disconnect();

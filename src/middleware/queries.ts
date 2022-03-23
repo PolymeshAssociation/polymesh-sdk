@@ -129,8 +129,10 @@ export function proposalVotes(
         const { nodes } = results!;
         return {
           proposalVotes: nodes.map(node => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const { blockId, ...rest } = node!;
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            return { __typename: 'ProposalVote', ...node };
+            return { __typename: 'ProposalVote', block_id: +blockId, ...rest };
           }),
         };
       },
@@ -1435,7 +1437,7 @@ export function settlements(
             totalCount: result?.totalCount,
             items: (result?.nodes as V2Settlement[]).map(n => ({
               __typename: 'Settlement',
-              block_id: n.blockId,
+              block_id: +n.blockId,
               result: n.result,
               addresses: n.addresses.map(hexStripPrefix),
               legs: n.legs.map(({ from, to, ...leg }) => ({
@@ -1705,7 +1707,9 @@ export function getHistoryOfPaymentEventsForCa(
             __typename: 'HistoryOfPaymentEventsForCAResults',
             totalCount,
             items: nodes.map(node => {
-              return { ...node, __typename: 'HistoryOfPaymentEventsForCA' };
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              const { blockId, ...rest } = node!;
+              return { block_id: +blockId, ...rest, __typename: 'HistoryOfPaymentEventsForCA' };
             }),
             /* eslint-enable @typescript-eslint/naming-convention */
           },
