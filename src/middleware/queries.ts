@@ -238,7 +238,7 @@ export function didsWithClaims(
           id
           claims(orderBy: [BLOCK_ID_ASC, EVENT_IDX_ASC] ${maybeClaimFilter}) {
            nodes {
-              targetDidId
+              targetId
               type
               scope
               cddId
@@ -360,7 +360,7 @@ function mapClaim({
   lastUpdateDate,
   expiry,
   jurisdiction,
-  targetDidId,
+  targetId,
 }: ClaimV2): ClaimV1 {
   return {
     /* eslint-disable @typescript-eslint/naming-convention */
@@ -373,7 +373,7 @@ function mapClaim({
     last_update_date: lastUpdateDate,
     expiry: expiry ? Number(expiry) : expiry,
     jurisdiction,
-    targetDID: targetDidId,
+    targetDID: targetId,
     /* eslint-enable @typescript-eslint/naming-convention */
   };
 }
@@ -421,7 +421,7 @@ export function eventByIndexedArgs(
           blockId
           eventIdx
           extrinsicIdx
-          parentBlock {
+          block {
             datetime
           }
         }
@@ -456,13 +456,13 @@ export function eventByIndexedArgs(
 /**
  *  @hidden
  */
-function mapEvent({ blockId, eventIdx, extrinsicIdx, parentBlock }: EventV2): DeepPartial<EventV1> {
+function mapEvent({ blockId, eventIdx, extrinsicIdx, block }: EventV2): DeepPartial<EventV1> {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const { datetime } = parentBlock!;
+  const { datetime } = block!;
   return {
     /* eslint-disable @typescript-eslint/naming-convention */
     __typename: 'Event',
-    block_id: blockId,
+    block_id: +blockId,
     event_idx: eventIdx,
     extrinsic_idx: extrinsicIdx,
     block: { __typename: 'Block', datetime },
@@ -546,7 +546,7 @@ export function eventsByIndexedArgs(
           blockId
           eventIdx
           extrinsicIdx
-          parentBlock {
+          block {
             datetime
           }
         }
@@ -660,7 +660,7 @@ function mapTransaction(
   return {
     /* eslint-disable @typescript-eslint/naming-convention */
     __typename: 'Extrinsic',
-    block_id: blockId,
+    block_id: +blockId,
     extrinsic_hash: extrinsicHash,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     address: keyToAddress('0x' + address!, context),
@@ -1006,7 +1006,7 @@ export function scopesByIdentity(
 
   const queryV2 = gql`
     query ScopesByIdentityQuery($did: String!) {
-      claimScopes(filter: { targetDid: { equalTo: $did } }, first: 1) {
+      claimScopes(filter: { target: { equalTo: $did } }, first: 1) {
         nodes {
           scope
           ticker
@@ -1102,9 +1102,9 @@ export function issuerDidsWithClaimsByTarget(
         totalCount
         nodes {
           id
-          claims(orderBy: [BLOCK_ID_ASC, EVENT_IDX_ASC], filter:{ targetDidId: { equalTo: $target } ${claimFilter}}) {
+          claims(orderBy: [BLOCK_ID_ASC, EVENT_IDX_ASC], filter:{ targetId: { equalTo: $target } ${claimFilter}}) {
             nodes {
-              targetDidId
+              targetId
               type
               scope
               cddId
@@ -1257,7 +1257,7 @@ export function eventByAddedTrustedClaimIssuer(
           blockId
           eventIdx
           extrinsicIdx
-          parentBlock {
+          block {
             datetime
           }
         }
@@ -1282,18 +1282,18 @@ export function eventByAddedTrustedClaimIssuer(
         if (!node) {
           return { eventByAddedTrustedClaimIssuer: null };
         }
-        const { blockId, eventIdx, extrinsicIdx, parentBlock } = node;
+        const { blockId, eventIdx, extrinsicIdx, block } = node;
         return {
           eventByAddedTrustedClaimIssuer: {
             /* eslint-disable @typescript-eslint/naming-convention */
             __typename: 'Event',
-            block_id: blockId,
+            block_id: +blockId,
             event_idx: eventIdx,
             extrinsic_idx: extrinsicIdx,
             block: {
               __typename: 'Block',
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              datetime: parentBlock!.datetime,
+              datetime: block!.datetime,
             },
             /* eslint-enable @typescript-eslint/naming-convention */
           },
@@ -1773,7 +1773,7 @@ export function tickerExternalAgentHistory(
           const { did, datetime, blockId, eventIdx, type } = node!;
           const events = byDid.get(did) || [];
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          events.push({ datetime, block_id: blockId, event_idx: eventIdx, __typename: type });
+          events.push({ datetime, block_id: +blockId, event_idx: eventIdx, __typename: type });
           byDid.set(did, events);
         }
 
@@ -1891,7 +1891,7 @@ export function tickerExternalAgentActions(
               const { blockId, datetime, eventIdx, palletName, eventId, callerDid } = node!;
               return {
                 __typename: 'TickerExternalAgentAction',
-                block_id: blockId,
+                block_id: +blockId,
                 datetime,
                 event_idx: eventIdx,
                 pallet_name: palletName as ModuleIdEnum,

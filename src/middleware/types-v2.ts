@@ -9,8 +9,12 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** A floating point number that requires more precision than IEEE 754 binary 64 */
+  BigFloat: any;
   /** A location in a connection that can be used for resuming pagination. */
   Cursor: any;
+  /** The day, does not include a time. */
+  Date: any;
   /**
    * A point in time as described by the [ISO
    * 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
@@ -18,8 +22,6 @@ export type Scalars = {
   Datetime: any;
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: any;
-  /** A floating point number that requires more precision than IEEE 754 binary 64 */
-  BigFloat: any;
 };
 
 export type AgentGroup = Node & {
@@ -42,6 +44,11 @@ export type AgentGroupMembersArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<AgentGroupMembershipsOrderBy>>;
   filter?: Maybe<AgentGroupMembershipFilter>;
+};
+
+export type AgentGroupAggregates = {
+  __typename?: 'AgentGroupAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `AgentGroup` object types. All fields are combined with a logical ‘and.’ */
@@ -75,6 +82,11 @@ export type AgentGroupMembership = Node & {
   group?: Maybe<AgentGroup>;
 };
 
+export type AgentGroupMembershipAggregates = {
+  __typename?: 'AgentGroupMembershipAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `AgentGroupMembership` object types. All fields are combined with a logical ‘and.’ */
 export type AgentGroupMembershipFilter = {
   /** Filter by the object’s `id` field. */
@@ -106,6 +118,16 @@ export type AgentGroupMembershipsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `AgentGroupMembership` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AgentGroupMembershipAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AgentGroupMembershipAggregates>>;
+};
+
+/** A connection to a list of `AgentGroupMembership` values. */
+export type AgentGroupMembershipsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AgentGroupMembershipsGroupBy>;
+  having?: Maybe<AgentGroupMembershipsHavingInput>;
 };
 
 /** A `AgentGroupMembership` edge in the connection. */
@@ -115,6 +137,20 @@ export type AgentGroupMembershipsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `AgentGroupMembership` at the end of the edge. */
   node?: Maybe<AgentGroupMembership>;
+};
+
+/** Grouping methods for `AgentGroupMembership` for usage during aggregation. */
+export enum AgentGroupMembershipsGroupBy {
+  Member = 'MEMBER',
+  GroupId = 'GROUP_ID',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `AgentGroupMembership` aggregates. */
+export type AgentGroupMembershipsHavingInput = {
+  AND?: Maybe<Array<AgentGroupMembershipsHavingInput>>;
+  OR?: Maybe<Array<AgentGroupMembershipsHavingInput>>;
 };
 
 /** Methods to use when ordering `AgentGroupMembership`. */
@@ -145,6 +181,16 @@ export type AgentGroupsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `AgentGroup` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AgentGroupAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AgentGroupAggregates>>;
+};
+
+/** A connection to a list of `AgentGroup` values. */
+export type AgentGroupsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AgentGroupsGroupBy>;
+  having?: Maybe<AgentGroupsHavingInput>;
 };
 
 /** A `AgentGroup` edge in the connection. */
@@ -154,6 +200,19 @@ export type AgentGroupsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `AgentGroup` at the end of the edge. */
   node?: Maybe<AgentGroup>;
+};
+
+/** Grouping methods for `AgentGroup` for usage during aggregation. */
+export enum AgentGroupsGroupBy {
+  Permissions = 'PERMISSIONS',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `AgentGroup` aggregates. */
+export type AgentGroupsHavingInput = {
+  AND?: Maybe<Array<AgentGroupsHavingInput>>;
+  OR?: Maybe<Array<AgentGroupsHavingInput>>;
 };
 
 /** Methods to use when ordering `AgentGroup`. */
@@ -169,6 +228,416 @@ export enum AgentGroupsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  MembersCountAsc = 'MEMBERS_COUNT_ASC',
+  MembersCountDesc = 'MEMBERS_COUNT_DESC',
+}
+
+export type Asset = Node & {
+  __typename?: 'Asset';
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  id: Scalars['String'];
+  ticker: Scalars['String'];
+  name?: Maybe<Scalars['String']>;
+  type?: Maybe<Scalars['String']>;
+  fundingRound?: Maybe<Scalars['String']>;
+  isDivisible: Scalars['Boolean'];
+  isFrozen: Scalars['Boolean'];
+  isUniquenessRequired: Scalars['Boolean'];
+  documents: Scalars['JSON'];
+  identifiers: Scalars['JSON'];
+  ownerDid: Scalars['String'];
+  totalSupply: Scalars['String'];
+  totalTransfers: Scalars['String'];
+  compliance: Scalars['JSON'];
+  createdAt: Scalars['Datetime'];
+  updatedAt: Scalars['Datetime'];
+  /** Reads and enables pagination through a set of `AssetHolder`. */
+  holders: AssetHoldersConnection;
+};
+
+export type AssetHoldersArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetHoldersOrderBy>>;
+  filter?: Maybe<AssetHolderFilter>;
+};
+
+export type AssetAggregates = {
+  __typename?: 'AssetAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `Asset` object types. All fields are combined with a logical ‘and.’ */
+export type AssetFilter = {
+  /** Filter by the object’s `id` field. */
+  id?: Maybe<StringFilter>;
+  /** Filter by the object’s `ticker` field. */
+  ticker?: Maybe<StringFilter>;
+  /** Filter by the object’s `name` field. */
+  name?: Maybe<StringFilter>;
+  /** Filter by the object’s `type` field. */
+  type?: Maybe<StringFilter>;
+  /** Filter by the object’s `fundingRound` field. */
+  fundingRound?: Maybe<StringFilter>;
+  /** Filter by the object’s `isDivisible` field. */
+  isDivisible?: Maybe<BooleanFilter>;
+  /** Filter by the object’s `isFrozen` field. */
+  isFrozen?: Maybe<BooleanFilter>;
+  /** Filter by the object’s `isUniquenessRequired` field. */
+  isUniquenessRequired?: Maybe<BooleanFilter>;
+  /** Filter by the object’s `documents` field. */
+  documents?: Maybe<JsonFilter>;
+  /** Filter by the object’s `identifiers` field. */
+  identifiers?: Maybe<JsonFilter>;
+  /** Filter by the object’s `ownerDid` field. */
+  ownerDid?: Maybe<StringFilter>;
+  /** Filter by the object’s `totalSupply` field. */
+  totalSupply?: Maybe<StringFilter>;
+  /** Filter by the object’s `totalTransfers` field. */
+  totalTransfers?: Maybe<StringFilter>;
+  /** Filter by the object’s `compliance` field. */
+  compliance?: Maybe<JsonFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: Maybe<DatetimeFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<AssetFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<AssetFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<AssetFilter>;
+};
+
+export type AssetHolder = Node & {
+  __typename?: 'AssetHolder';
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  id: Scalars['String'];
+  did: Scalars['String'];
+  ticker: Scalars['String'];
+  amount: Scalars['String'];
+  assetId: Scalars['String'];
+  createdAt: Scalars['Datetime'];
+  updatedAt: Scalars['Datetime'];
+  /** Reads a single `Asset` that is related to this `AssetHolder`. */
+  asset?: Maybe<Asset>;
+};
+
+export type AssetHolderAggregates = {
+  __typename?: 'AssetHolderAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `AssetHolder` object types. All fields are combined with a logical ‘and.’ */
+export type AssetHolderFilter = {
+  /** Filter by the object’s `id` field. */
+  id?: Maybe<StringFilter>;
+  /** Filter by the object’s `did` field. */
+  did?: Maybe<StringFilter>;
+  /** Filter by the object’s `ticker` field. */
+  ticker?: Maybe<StringFilter>;
+  /** Filter by the object’s `amount` field. */
+  amount?: Maybe<StringFilter>;
+  /** Filter by the object’s `assetId` field. */
+  assetId?: Maybe<StringFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: Maybe<DatetimeFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<AssetHolderFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<AssetHolderFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<AssetHolderFilter>;
+};
+
+/** A connection to a list of `AssetHolder` values. */
+export type AssetHoldersConnection = {
+  __typename?: 'AssetHoldersConnection';
+  /** A list of `AssetHolder` objects. */
+  nodes: Array<Maybe<AssetHolder>>;
+  /** A list of edges which contains the `AssetHolder` and cursor to aid in pagination. */
+  edges: Array<AssetHoldersEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `AssetHolder` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetHolderAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetHolderAggregates>>;
+};
+
+/** A connection to a list of `AssetHolder` values. */
+export type AssetHoldersConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetHoldersGroupBy>;
+  having?: Maybe<AssetHoldersHavingInput>;
+};
+
+/** A `AssetHolder` edge in the connection. */
+export type AssetHoldersEdge = {
+  __typename?: 'AssetHoldersEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `AssetHolder` at the end of the edge. */
+  node?: Maybe<AssetHolder>;
+};
+
+/** Grouping methods for `AssetHolder` for usage during aggregation. */
+export enum AssetHoldersGroupBy {
+  Did = 'DID',
+  Ticker = 'TICKER',
+  Amount = 'AMOUNT',
+  AssetId = 'ASSET_ID',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `AssetHolder` aggregates. */
+export type AssetHoldersHavingInput = {
+  AND?: Maybe<Array<AssetHoldersHavingInput>>;
+  OR?: Maybe<Array<AssetHoldersHavingInput>>;
+};
+
+/** Methods to use when ordering `AssetHolder`. */
+export enum AssetHoldersOrderBy {
+  Natural = 'NATURAL',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  DidAsc = 'DID_ASC',
+  DidDesc = 'DID_DESC',
+  TickerAsc = 'TICKER_ASC',
+  TickerDesc = 'TICKER_DESC',
+  AmountAsc = 'AMOUNT_ASC',
+  AmountDesc = 'AMOUNT_DESC',
+  AssetIdAsc = 'ASSET_ID_ASC',
+  AssetIdDesc = 'ASSET_ID_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+}
+
+export type AssetPendingOwnershipTransfer = Node & {
+  __typename?: 'AssetPendingOwnershipTransfer';
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  id: Scalars['String'];
+  ticker: Scalars['String'];
+  from: Scalars['String'];
+  to: Scalars['String'];
+  type: Scalars['String'];
+  data?: Maybe<Scalars['String']>;
+  createdAt: Scalars['Datetime'];
+  updatedAt: Scalars['Datetime'];
+};
+
+export type AssetPendingOwnershipTransferAggregates = {
+  __typename?: 'AssetPendingOwnershipTransferAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `AssetPendingOwnershipTransfer` object types. All fields are combined with a logical ‘and.’ */
+export type AssetPendingOwnershipTransferFilter = {
+  /** Filter by the object’s `id` field. */
+  id?: Maybe<StringFilter>;
+  /** Filter by the object’s `ticker` field. */
+  ticker?: Maybe<StringFilter>;
+  /** Filter by the object’s `from` field. */
+  from?: Maybe<StringFilter>;
+  /** Filter by the object’s `to` field. */
+  to?: Maybe<StringFilter>;
+  /** Filter by the object’s `type` field. */
+  type?: Maybe<StringFilter>;
+  /** Filter by the object’s `data` field. */
+  data?: Maybe<StringFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: Maybe<DatetimeFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<AssetPendingOwnershipTransferFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<AssetPendingOwnershipTransferFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<AssetPendingOwnershipTransferFilter>;
+};
+
+/** A connection to a list of `AssetPendingOwnershipTransfer` values. */
+export type AssetPendingOwnershipTransfersConnection = {
+  __typename?: 'AssetPendingOwnershipTransfersConnection';
+  /** A list of `AssetPendingOwnershipTransfer` objects. */
+  nodes: Array<Maybe<AssetPendingOwnershipTransfer>>;
+  /** A list of edges which contains the `AssetPendingOwnershipTransfer` and cursor to aid in pagination. */
+  edges: Array<AssetPendingOwnershipTransfersEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `AssetPendingOwnershipTransfer` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetPendingOwnershipTransferAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetPendingOwnershipTransferAggregates>>;
+};
+
+/** A connection to a list of `AssetPendingOwnershipTransfer` values. */
+export type AssetPendingOwnershipTransfersConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetPendingOwnershipTransfersGroupBy>;
+  having?: Maybe<AssetPendingOwnershipTransfersHavingInput>;
+};
+
+/** A `AssetPendingOwnershipTransfer` edge in the connection. */
+export type AssetPendingOwnershipTransfersEdge = {
+  __typename?: 'AssetPendingOwnershipTransfersEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `AssetPendingOwnershipTransfer` at the end of the edge. */
+  node?: Maybe<AssetPendingOwnershipTransfer>;
+};
+
+/** Grouping methods for `AssetPendingOwnershipTransfer` for usage during aggregation. */
+export enum AssetPendingOwnershipTransfersGroupBy {
+  Ticker = 'TICKER',
+  From = 'FROM',
+  To = 'TO',
+  Type = 'TYPE',
+  Data = 'DATA',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `AssetPendingOwnershipTransfer` aggregates. */
+export type AssetPendingOwnershipTransfersHavingInput = {
+  AND?: Maybe<Array<AssetPendingOwnershipTransfersHavingInput>>;
+  OR?: Maybe<Array<AssetPendingOwnershipTransfersHavingInput>>;
+};
+
+/** Methods to use when ordering `AssetPendingOwnershipTransfer`. */
+export enum AssetPendingOwnershipTransfersOrderBy {
+  Natural = 'NATURAL',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  TickerAsc = 'TICKER_ASC',
+  TickerDesc = 'TICKER_DESC',
+  FromAsc = 'FROM_ASC',
+  FromDesc = 'FROM_DESC',
+  ToAsc = 'TO_ASC',
+  ToDesc = 'TO_DESC',
+  TypeAsc = 'TYPE_ASC',
+  TypeDesc = 'TYPE_DESC',
+  DataAsc = 'DATA_ASC',
+  DataDesc = 'DATA_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+}
+
+/** A connection to a list of `Asset` values. */
+export type AssetsConnection = {
+  __typename?: 'AssetsConnection';
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** A list of edges which contains the `Asset` and cursor to aid in pagination. */
+  edges: Array<AssetsEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+};
+
+/** A connection to a list of `Asset` values. */
+export type AssetsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetsGroupBy>;
+  having?: Maybe<AssetsHavingInput>;
+};
+
+/** A `Asset` edge in the connection. */
+export type AssetsEdge = {
+  __typename?: 'AssetsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+};
+
+/** Grouping methods for `Asset` for usage during aggregation. */
+export enum AssetsGroupBy {
+  Name = 'NAME',
+  Type = 'TYPE',
+  FundingRound = 'FUNDING_ROUND',
+  IsDivisible = 'IS_DIVISIBLE',
+  IsFrozen = 'IS_FROZEN',
+  IsUniquenessRequired = 'IS_UNIQUENESS_REQUIRED',
+  Documents = 'DOCUMENTS',
+  Identifiers = 'IDENTIFIERS',
+  OwnerDid = 'OWNER_DID',
+  TotalSupply = 'TOTAL_SUPPLY',
+  TotalTransfers = 'TOTAL_TRANSFERS',
+  Compliance = 'COMPLIANCE',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Asset` aggregates. */
+export type AssetsHavingInput = {
+  AND?: Maybe<Array<AssetsHavingInput>>;
+  OR?: Maybe<Array<AssetsHavingInput>>;
+};
+
+/** Methods to use when ordering `Asset`. */
+export enum AssetsOrderBy {
+  Natural = 'NATURAL',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  TickerAsc = 'TICKER_ASC',
+  TickerDesc = 'TICKER_DESC',
+  NameAsc = 'NAME_ASC',
+  NameDesc = 'NAME_DESC',
+  TypeAsc = 'TYPE_ASC',
+  TypeDesc = 'TYPE_DESC',
+  FundingRoundAsc = 'FUNDING_ROUND_ASC',
+  FundingRoundDesc = 'FUNDING_ROUND_DESC',
+  IsDivisibleAsc = 'IS_DIVISIBLE_ASC',
+  IsDivisibleDesc = 'IS_DIVISIBLE_DESC',
+  IsFrozenAsc = 'IS_FROZEN_ASC',
+  IsFrozenDesc = 'IS_FROZEN_DESC',
+  IsUniquenessRequiredAsc = 'IS_UNIQUENESS_REQUIRED_ASC',
+  IsUniquenessRequiredDesc = 'IS_UNIQUENESS_REQUIRED_DESC',
+  DocumentsAsc = 'DOCUMENTS_ASC',
+  DocumentsDesc = 'DOCUMENTS_DESC',
+  IdentifiersAsc = 'IDENTIFIERS_ASC',
+  IdentifiersDesc = 'IDENTIFIERS_DESC',
+  OwnerDidAsc = 'OWNER_DID_ASC',
+  OwnerDidDesc = 'OWNER_DID_DESC',
+  TotalSupplyAsc = 'TOTAL_SUPPLY_ASC',
+  TotalSupplyDesc = 'TOTAL_SUPPLY_DESC',
+  TotalTransfersAsc = 'TOTAL_TRANSFERS_ASC',
+  TotalTransfersDesc = 'TOTAL_TRANSFERS_DESC',
+  ComplianceAsc = 'COMPLIANCE_ASC',
+  ComplianceDesc = 'COMPLIANCE_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  HoldersCountAsc = 'HOLDERS_COUNT_ASC',
+  HoldersCountDesc = 'HOLDERS_COUNT_DESC',
 }
 
 export type Authorization = Node & {
@@ -188,6 +657,11 @@ export type Authorization = Node & {
   updatedBlock: Scalars['Int'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+};
+
+export type AuthorizationAggregates = {
+  __typename?: 'AuthorizationAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Authorization` object types. All fields are combined with a logical ‘and.’ */
@@ -237,6 +711,16 @@ export type AuthorizationsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Authorization` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AuthorizationAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AuthorizationAggregates>>;
+};
+
+/** A connection to a list of `Authorization` values. */
+export type AuthorizationsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AuthorizationsGroupBy>;
+  having?: Maybe<AuthorizationsHavingInput>;
 };
 
 /** A `Authorization` edge in the connection. */
@@ -246,6 +730,28 @@ export type AuthorizationsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Authorization` at the end of the edge. */
   node?: Maybe<Authorization>;
+};
+
+/** Grouping methods for `Authorization` for usage during aggregation. */
+export enum AuthorizationsGroupBy {
+  CreatedBlock = 'CREATED_BLOCK',
+  AuthId = 'AUTH_ID',
+  Type = 'TYPE',
+  FromDid = 'FROM_DID',
+  ToDid = 'TO_DID',
+  ToKey = 'TO_KEY',
+  Data = 'DATA',
+  Expiry = 'EXPIRY',
+  Status = 'STATUS',
+  UpdatedBlock = 'UPDATED_BLOCK',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Authorization` aggregates. */
+export type AuthorizationsHavingInput = {
+  AND?: Maybe<Array<AuthorizationsHavingInput>>;
+  OR?: Maybe<Array<AuthorizationsHavingInput>>;
 };
 
 /** Methods to use when ordering `Authorization`. */
@@ -329,10 +835,44 @@ export type Block = Node & {
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
   /** Reads and enables pagination through a set of `Event`. */
-  eventsByParentBlockId: EventsConnection;
+  events: EventsConnection;
+  /** Reads and enables pagination through a set of `Extrinsic`. */
+  extrinsics: ExtrinsicsConnection;
+  /** Reads and enables pagination through a set of `BridgeEvent`. */
+  bridgeEvents: BridgeEventsConnection;
+  /** Reads and enables pagination through a set of `StakingEvent`. */
+  stakingEvents: StakingEventsConnection;
+  /** Reads and enables pagination through a set of `TickerExternalAgentAction`. */
+  tickerExternalAgentActions: TickerExternalAgentActionsConnection;
+  /** Reads and enables pagination through a set of `Funding`. */
+  fundings: FundingsConnection;
+  /** Reads and enables pagination through a set of `Investment`. */
+  investments: InvestmentsConnection;
+  /** Reads and enables pagination through a set of `TickerExternalAgentAdded`. */
+  tickerExternalAgentAddeds: TickerExternalAgentAddedsConnection;
+  /** Reads and enables pagination through a set of `TickerExternalAgentHistory`. */
+  tickerExternalAgentHistories: TickerExternalAgentHistoriesConnection;
+  /** Reads and enables pagination through a set of `Settlement`. */
+  settlements: SettlementsConnection;
+  /** Reads and enables pagination through a set of `Instruction`. */
+  instructions: InstructionsConnection;
+  /** Reads and enables pagination through a set of `HistoryOfPaymentEventsForCa`. */
+  historyOfPaymentEventsForCas: HistoryOfPaymentEventsForCasConnection;
+  /** Reads and enables pagination through a set of `Proposal`. */
+  proposals: ProposalsConnection;
+  /** Reads and enables pagination through a set of `ProposalVote`. */
+  proposalVotes: ProposalVotesConnection;
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+  /** Reads and enables pagination through a set of `Proposal`. */
+  proposalsByProposalVoteBlockIdAndProposalId: BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `IdentityWithClaim`. */
+  identityWithClaimsByClaimBlockIdAndTargetId: BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `IssuerIdentityWithClaim`. */
+  issuerIdentityWithClaimsByClaimBlockIdAndIssuerId: BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyConnection;
 };
 
-export type BlockEventsByParentBlockIdArgs = {
+export type BlockEventsArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
   offset?: Maybe<Scalars['Int']>;
@@ -340,6 +880,181 @@ export type BlockEventsByParentBlockIdArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<EventsOrderBy>>;
   filter?: Maybe<EventFilter>;
+};
+
+export type BlockExtrinsicsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ExtrinsicsOrderBy>>;
+  filter?: Maybe<ExtrinsicFilter>;
+};
+
+export type BlockBridgeEventsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<BridgeEventsOrderBy>>;
+  filter?: Maybe<BridgeEventFilter>;
+};
+
+export type BlockStakingEventsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<StakingEventsOrderBy>>;
+  filter?: Maybe<StakingEventFilter>;
+};
+
+export type BlockTickerExternalAgentActionsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<TickerExternalAgentActionsOrderBy>>;
+  filter?: Maybe<TickerExternalAgentActionFilter>;
+};
+
+export type BlockFundingsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<FundingsOrderBy>>;
+  filter?: Maybe<FundingFilter>;
+};
+
+export type BlockInvestmentsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<InvestmentsOrderBy>>;
+  filter?: Maybe<InvestmentFilter>;
+};
+
+export type BlockTickerExternalAgentAddedsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<TickerExternalAgentAddedsOrderBy>>;
+  filter?: Maybe<TickerExternalAgentAddedFilter>;
+};
+
+export type BlockTickerExternalAgentHistoriesArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<TickerExternalAgentHistoriesOrderBy>>;
+  filter?: Maybe<TickerExternalAgentHistoryFilter>;
+};
+
+export type BlockSettlementsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<SettlementsOrderBy>>;
+  filter?: Maybe<SettlementFilter>;
+};
+
+export type BlockInstructionsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<InstructionsOrderBy>>;
+  filter?: Maybe<InstructionFilter>;
+};
+
+export type BlockHistoryOfPaymentEventsForCasArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<HistoryOfPaymentEventsForCasOrderBy>>;
+  filter?: Maybe<HistoryOfPaymentEventsForCaFilter>;
+};
+
+export type BlockProposalsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ProposalsOrderBy>>;
+  filter?: Maybe<ProposalFilter>;
+};
+
+export type BlockProposalVotesArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ProposalVotesOrderBy>>;
+  filter?: Maybe<ProposalVoteFilter>;
+};
+
+export type BlockClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
+};
+
+export type BlockProposalsByProposalVoteBlockIdAndProposalIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ProposalsOrderBy>>;
+  filter?: Maybe<ProposalFilter>;
+};
+
+export type BlockIdentityWithClaimsByClaimBlockIdAndTargetIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<IdentityWithClaimsOrderBy>>;
+  filter?: Maybe<IdentityWithClaimFilter>;
+};
+
+export type BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<IssuerIdentityWithClaimsOrderBy>>;
+  filter?: Maybe<IssuerIdentityWithClaimFilter>;
+};
+
+export type BlockAggregates = {
+  __typename?: 'BlockAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Block` object types. All fields are combined with a logical ‘and.’ */
@@ -386,6 +1101,144 @@ export type BlockFilter = {
   not?: Maybe<BlockFilter>;
 };
 
+/** A connection to a list of `IdentityWithClaim` values, with data from `Claim`. */
+export type BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyConnection = {
+  __typename?: 'BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyConnection';
+  /** A list of `IdentityWithClaim` objects. */
+  nodes: Array<Maybe<IdentityWithClaim>>;
+  /** A list of edges which contains the `IdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
+  edges: Array<BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `IdentityWithClaim` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityWithClaimAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityWithClaimAggregates>>;
+};
+
+/** A connection to a list of `IdentityWithClaim` values, with data from `Claim`. */
+export type BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IdentityWithClaimsGroupBy>;
+    having?: Maybe<IdentityWithClaimsHavingInput>;
+  };
+
+/** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyEdge = {
+  __typename?: 'BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `IdentityWithClaim` at the end of the edge. */
+  node?: Maybe<IdentityWithClaim>;
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+};
+
+/** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type BlockIdentityWithClaimsByClaimBlockIdAndTargetIdManyToManyEdgeClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
+};
+
+/** A connection to a list of `IssuerIdentityWithClaim` values, with data from `Claim`. */
+export type BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyConnection = {
+  __typename?: 'BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyConnection';
+  /** A list of `IssuerIdentityWithClaim` objects. */
+  nodes: Array<Maybe<IssuerIdentityWithClaim>>;
+  /** A list of edges which contains the `IssuerIdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
+  edges: Array<BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `IssuerIdentityWithClaim` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IssuerIdentityWithClaimAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IssuerIdentityWithClaimAggregates>>;
+};
+
+/** A connection to a list of `IssuerIdentityWithClaim` values, with data from `Claim`. */
+export type BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IssuerIdentityWithClaimsGroupBy>;
+    having?: Maybe<IssuerIdentityWithClaimsHavingInput>;
+  };
+
+/** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyEdge = {
+  __typename?: 'BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `IssuerIdentityWithClaim` at the end of the edge. */
+  node?: Maybe<IssuerIdentityWithClaim>;
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+};
+
+/** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
+export type BlockIssuerIdentityWithClaimsByClaimBlockIdAndIssuerIdManyToManyEdgeClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
+};
+
+/** A connection to a list of `Proposal` values, with data from `ProposalVote`. */
+export type BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyConnection = {
+  __typename?: 'BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyConnection';
+  /** A list of `Proposal` objects. */
+  nodes: Array<Maybe<Proposal>>;
+  /** A list of edges which contains the `Proposal`, info from the `ProposalVote`, and the cursor to aid in pagination. */
+  edges: Array<BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Proposal` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ProposalAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ProposalAggregates>>;
+};
+
+/** A connection to a list of `Proposal` values, with data from `ProposalVote`. */
+export type BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<ProposalsGroupBy>;
+    having?: Maybe<ProposalsHavingInput>;
+  };
+
+/** A `Proposal` edge in the connection, with data from `ProposalVote`. */
+export type BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyEdge = {
+  __typename?: 'BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Proposal` at the end of the edge. */
+  node?: Maybe<Proposal>;
+  /** Reads and enables pagination through a set of `ProposalVote`. */
+  votes: ProposalVotesConnection;
+};
+
+/** A `Proposal` edge in the connection, with data from `ProposalVote`. */
+export type BlockProposalsByProposalVoteBlockIdAndProposalIdManyToManyEdgeVotesArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ProposalVotesOrderBy>>;
+  filter?: Maybe<ProposalVoteFilter>;
+};
+
 /** A connection to a list of `Block` values. */
 export type BlocksConnection = {
   __typename?: 'BlocksConnection';
@@ -397,6 +1250,16 @@ export type BlocksConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Block` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+};
+
+/** A connection to a list of `Block` values. */
+export type BlocksConnectionGroupedAggregatesArgs = {
+  groupBy: Array<BlocksGroupBy>;
+  having?: Maybe<BlocksHavingInput>;
 };
 
 /** A `Block` edge in the connection. */
@@ -406,6 +1269,30 @@ export type BlocksEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Block` at the end of the edge. */
   node?: Maybe<Block>;
+};
+
+/** Grouping methods for `Block` for usage during aggregation. */
+export enum BlocksGroupBy {
+  ParentId = 'PARENT_ID',
+  ParentHash = 'PARENT_HASH',
+  StateRoot = 'STATE_ROOT',
+  ExtrinsicsRoot = 'EXTRINSICS_ROOT',
+  CountExtrinsics = 'COUNT_EXTRINSICS',
+  CountExtrinsicsUnsigned = 'COUNT_EXTRINSICS_UNSIGNED',
+  CountExtrinsicsSigned = 'COUNT_EXTRINSICS_SIGNED',
+  CountExtrinsicsError = 'COUNT_EXTRINSICS_ERROR',
+  CountExtrinsicsSuccess = 'COUNT_EXTRINSICS_SUCCESS',
+  CountEvents = 'COUNT_EVENTS',
+  Datetime = 'DATETIME',
+  SpecVersionId = 'SPEC_VERSION_ID',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Block` aggregates. */
+export type BlocksHavingInput = {
+  AND?: Maybe<Array<BlocksHavingInput>>;
+  OR?: Maybe<Array<BlocksHavingInput>>;
 };
 
 /** Methods to use when ordering `Block`. */
@@ -447,6 +1334,36 @@ export enum BlocksOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  EventsCountAsc = 'EVENTS_COUNT_ASC',
+  EventsCountDesc = 'EVENTS_COUNT_DESC',
+  ExtrinsicsCountAsc = 'EXTRINSICS_COUNT_ASC',
+  ExtrinsicsCountDesc = 'EXTRINSICS_COUNT_DESC',
+  BridgeEventsCountAsc = 'BRIDGE_EVENTS_COUNT_ASC',
+  BridgeEventsCountDesc = 'BRIDGE_EVENTS_COUNT_DESC',
+  StakingEventsCountAsc = 'STAKING_EVENTS_COUNT_ASC',
+  StakingEventsCountDesc = 'STAKING_EVENTS_COUNT_DESC',
+  TickerExternalAgentActionsCountAsc = 'TICKER_EXTERNAL_AGENT_ACTIONS_COUNT_ASC',
+  TickerExternalAgentActionsCountDesc = 'TICKER_EXTERNAL_AGENT_ACTIONS_COUNT_DESC',
+  FundingsCountAsc = 'FUNDINGS_COUNT_ASC',
+  FundingsCountDesc = 'FUNDINGS_COUNT_DESC',
+  InvestmentsCountAsc = 'INVESTMENTS_COUNT_ASC',
+  InvestmentsCountDesc = 'INVESTMENTS_COUNT_DESC',
+  TickerExternalAgentAddedsCountAsc = 'TICKER_EXTERNAL_AGENT_ADDEDS_COUNT_ASC',
+  TickerExternalAgentAddedsCountDesc = 'TICKER_EXTERNAL_AGENT_ADDEDS_COUNT_DESC',
+  TickerExternalAgentHistoriesCountAsc = 'TICKER_EXTERNAL_AGENT_HISTORIES_COUNT_ASC',
+  TickerExternalAgentHistoriesCountDesc = 'TICKER_EXTERNAL_AGENT_HISTORIES_COUNT_DESC',
+  SettlementsCountAsc = 'SETTLEMENTS_COUNT_ASC',
+  SettlementsCountDesc = 'SETTLEMENTS_COUNT_DESC',
+  InstructionsCountAsc = 'INSTRUCTIONS_COUNT_ASC',
+  InstructionsCountDesc = 'INSTRUCTIONS_COUNT_DESC',
+  HistoryOfPaymentEventsForCasCountAsc = 'HISTORY_OF_PAYMENT_EVENTS_FOR_CAS_COUNT_ASC',
+  HistoryOfPaymentEventsForCasCountDesc = 'HISTORY_OF_PAYMENT_EVENTS_FOR_CAS_COUNT_DESC',
+  ProposalsCountAsc = 'PROPOSALS_COUNT_ASC',
+  ProposalsCountDesc = 'PROPOSALS_COUNT_DESC',
+  ProposalVotesCountAsc = 'PROPOSAL_VOTES_COUNT_ASC',
+  ProposalVotesCountDesc = 'PROPOSAL_VOTES_COUNT_DESC',
+  ClaimsCountAsc = 'CLAIMS_COUNT_ASC',
+  ClaimsCountDesc = 'CLAIMS_COUNT_DESC',
 }
 
 /** A filter to be used against Boolean fields. All fields are combined with a logical ‘and.’ */
@@ -475,12 +1392,145 @@ export type BooleanFilter = {
   greaterThanOrEqualTo?: Maybe<Scalars['Boolean']>;
 };
 
+export type BridgeEvent = Node & {
+  __typename?: 'BridgeEvent';
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  id: Scalars['String'];
+  blockId: Scalars['String'];
+  eventIdx: Scalars['Int'];
+  identityId: Scalars['String'];
+  recipient: Scalars['String'];
+  amount: Scalars['BigFloat'];
+  txHash: Scalars['String'];
+  datetime: Scalars['Datetime'];
+  createdAt: Scalars['Datetime'];
+  updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `BridgeEvent`. */
+  block?: Maybe<Block>;
+};
+
+export type BridgeEventAggregates = {
+  __typename?: 'BridgeEventAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `BridgeEvent` object types. All fields are combined with a logical ‘and.’ */
+export type BridgeEventFilter = {
+  /** Filter by the object’s `id` field. */
+  id?: Maybe<StringFilter>;
+  /** Filter by the object’s `blockId` field. */
+  blockId?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventIdx` field. */
+  eventIdx?: Maybe<IntFilter>;
+  /** Filter by the object’s `identityId` field. */
+  identityId?: Maybe<StringFilter>;
+  /** Filter by the object’s `recipient` field. */
+  recipient?: Maybe<StringFilter>;
+  /** Filter by the object’s `amount` field. */
+  amount?: Maybe<BigFloatFilter>;
+  /** Filter by the object’s `txHash` field. */
+  txHash?: Maybe<StringFilter>;
+  /** Filter by the object’s `datetime` field. */
+  datetime?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: Maybe<DatetimeFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<BridgeEventFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<BridgeEventFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<BridgeEventFilter>;
+};
+
+/** A connection to a list of `BridgeEvent` values. */
+export type BridgeEventsConnection = {
+  __typename?: 'BridgeEventsConnection';
+  /** A list of `BridgeEvent` objects. */
+  nodes: Array<Maybe<BridgeEvent>>;
+  /** A list of edges which contains the `BridgeEvent` and cursor to aid in pagination. */
+  edges: Array<BridgeEventsEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `BridgeEvent` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BridgeEventAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BridgeEventAggregates>>;
+};
+
+/** A connection to a list of `BridgeEvent` values. */
+export type BridgeEventsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<BridgeEventsGroupBy>;
+  having?: Maybe<BridgeEventsHavingInput>;
+};
+
+/** A `BridgeEvent` edge in the connection. */
+export type BridgeEventsEdge = {
+  __typename?: 'BridgeEventsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `BridgeEvent` at the end of the edge. */
+  node?: Maybe<BridgeEvent>;
+};
+
+/** Grouping methods for `BridgeEvent` for usage during aggregation. */
+export enum BridgeEventsGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  IdentityId = 'IDENTITY_ID',
+  Recipient = 'RECIPIENT',
+  Amount = 'AMOUNT',
+  TxHash = 'TX_HASH',
+  Datetime = 'DATETIME',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `BridgeEvent` aggregates. */
+export type BridgeEventsHavingInput = {
+  AND?: Maybe<Array<BridgeEventsHavingInput>>;
+  OR?: Maybe<Array<BridgeEventsHavingInput>>;
+};
+
+/** Methods to use when ordering `BridgeEvent`. */
+export enum BridgeEventsOrderBy {
+  Natural = 'NATURAL',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  BlockIdAsc = 'BLOCK_ID_ASC',
+  BlockIdDesc = 'BLOCK_ID_DESC',
+  EventIdxAsc = 'EVENT_IDX_ASC',
+  EventIdxDesc = 'EVENT_IDX_DESC',
+  IdentityIdAsc = 'IDENTITY_ID_ASC',
+  IdentityIdDesc = 'IDENTITY_ID_DESC',
+  RecipientAsc = 'RECIPIENT_ASC',
+  RecipientDesc = 'RECIPIENT_DESC',
+  AmountAsc = 'AMOUNT_ASC',
+  AmountDesc = 'AMOUNT_DESC',
+  TxHashAsc = 'TX_HASH_ASC',
+  TxHashDesc = 'TX_HASH_DESC',
+  DatetimeAsc = 'DATETIME_ASC',
+  DatetimeDesc = 'DATETIME_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+}
+
 export type Claim = Node & {
   __typename?: 'Claim';
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  targetDidId: Scalars['String'];
+  blockId: Scalars['String'];
+  eventIdx: Scalars['Int'];
+  targetId: Scalars['String'];
   issuerId: Scalars['String'];
   issuanceDate: Scalars['BigFloat'];
   lastUpdateDate: Scalars['BigFloat'];
@@ -492,18 +1542,29 @@ export type Claim = Node & {
   cddId?: Maybe<Scalars['String']>;
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `Claim`. */
+  block?: Maybe<Block>;
   /** Reads a single `IdentityWithClaim` that is related to this `Claim`. */
-  targetDid?: Maybe<IdentityWithClaim>;
+  target?: Maybe<IdentityWithClaim>;
   /** Reads a single `IssuerIdentityWithClaim` that is related to this `Claim`. */
   issuer?: Maybe<IssuerIdentityWithClaim>;
+};
+
+export type ClaimAggregates = {
+  __typename?: 'ClaimAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Claim` object types. All fields are combined with a logical ‘and.’ */
 export type ClaimFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
-  /** Filter by the object’s `targetDidId` field. */
-  targetDidId?: Maybe<StringFilter>;
+  /** Filter by the object’s `blockId` field. */
+  blockId?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventIdx` field. */
+  eventIdx?: Maybe<IntFilter>;
+  /** Filter by the object’s `targetId` field. */
+  targetId?: Maybe<StringFilter>;
   /** Filter by the object’s `issuerId` field. */
   issuerId?: Maybe<StringFilter>;
   /** Filter by the object’s `issuanceDate` field. */
@@ -534,37 +1595,29 @@ export type ClaimFilter = {
   not?: Maybe<ClaimFilter>;
 };
 
-/** A connection to a list of `Claim` values. */
-export type ClaimsConnection = {
-  __typename?: 'ClaimsConnection';
-  /** A list of `Claim` objects. */
-  nodes: Array<Maybe<Claim>>;
-  /** A list of edges which contains the `Claim` and cursor to aid in pagination. */
-  edges: Array<ClaimsEdge>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** The count of *all* `Claim` you could get from the connection. */
-  totalCount: Scalars['Int'];
-};
-
 export type ClaimScope = Node & {
   __typename?: 'ClaimScope';
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  targetDid: Scalars['String'];
+  target: Scalars['String'];
   ticker?: Maybe<Scalars['String']>;
   scope?: Maybe<Scalars['JSON']>;
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
 };
 
+export type ClaimScopeAggregates = {
+  __typename?: 'ClaimScopeAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `ClaimScope` object types. All fields are combined with a logical ‘and.’ */
 export type ClaimScopeFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
-  /** Filter by the object’s `targetDid` field. */
-  targetDid?: Maybe<StringFilter>;
+  /** Filter by the object’s `target` field. */
+  target?: Maybe<StringFilter>;
   /** Filter by the object’s `ticker` field. */
   ticker?: Maybe<StringFilter>;
   /** Filter by the object’s `scope` field. */
@@ -592,6 +1645,16 @@ export type ClaimScopesConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `ClaimScope` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ClaimScopeAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ClaimScopeAggregates>>;
+};
+
+/** A connection to a list of `ClaimScope` values. */
+export type ClaimScopesConnectionGroupedAggregatesArgs = {
+  groupBy: Array<ClaimScopesGroupBy>;
+  having?: Maybe<ClaimScopesHavingInput>;
 };
 
 /** A `ClaimScope` edge in the connection. */
@@ -603,13 +1666,28 @@ export type ClaimScopesEdge = {
   node?: Maybe<ClaimScope>;
 };
 
+/** Grouping methods for `ClaimScope` for usage during aggregation. */
+export enum ClaimScopesGroupBy {
+  Target = 'TARGET',
+  Ticker = 'TICKER',
+  Scope = 'SCOPE',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `ClaimScope` aggregates. */
+export type ClaimScopesHavingInput = {
+  AND?: Maybe<Array<ClaimScopesHavingInput>>;
+  OR?: Maybe<Array<ClaimScopesHavingInput>>;
+};
+
 /** Methods to use when ordering `ClaimScope`. */
 export enum ClaimScopesOrderBy {
   Natural = 'NATURAL',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  TargetDidAsc = 'TARGET_DID_ASC',
-  TargetDidDesc = 'TARGET_DID_DESC',
+  TargetAsc = 'TARGET_ASC',
+  TargetDesc = 'TARGET_DESC',
   TickerAsc = 'TICKER_ASC',
   TickerDesc = 'TICKER_DESC',
   ScopeAsc = 'SCOPE_ASC',
@@ -622,6 +1700,29 @@ export enum ClaimScopesOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
 
+/** A connection to a list of `Claim` values. */
+export type ClaimsConnection = {
+  __typename?: 'ClaimsConnection';
+  /** A list of `Claim` objects. */
+  nodes: Array<Maybe<Claim>>;
+  /** A list of edges which contains the `Claim` and cursor to aid in pagination. */
+  edges: Array<ClaimsEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Claim` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ClaimAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ClaimAggregates>>;
+};
+
+/** A connection to a list of `Claim` values. */
+export type ClaimsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<ClaimsGroupBy>;
+  having?: Maybe<ClaimsHavingInput>;
+};
+
 /** A `Claim` edge in the connection. */
 export type ClaimsEdge = {
   __typename?: 'ClaimsEdge';
@@ -631,13 +1732,41 @@ export type ClaimsEdge = {
   node?: Maybe<Claim>;
 };
 
+/** Grouping methods for `Claim` for usage during aggregation. */
+export enum ClaimsGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  TargetId = 'TARGET_ID',
+  IssuerId = 'ISSUER_ID',
+  IssuanceDate = 'ISSUANCE_DATE',
+  LastUpdateDate = 'LAST_UPDATE_DATE',
+  Expiry = 'EXPIRY',
+  FilterExpiry = 'FILTER_EXPIRY',
+  Type = 'TYPE',
+  Jurisdiction = 'JURISDICTION',
+  Scope = 'SCOPE',
+  CddId = 'CDD_ID',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Claim` aggregates. */
+export type ClaimsHavingInput = {
+  AND?: Maybe<Array<ClaimsHavingInput>>;
+  OR?: Maybe<Array<ClaimsHavingInput>>;
+};
+
 /** Methods to use when ordering `Claim`. */
 export enum ClaimsOrderBy {
   Natural = 'NATURAL',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  TargetDidIdAsc = 'TARGET_DID_ID_ASC',
-  TargetDidIdDesc = 'TARGET_DID_ID_DESC',
+  BlockIdAsc = 'BLOCK_ID_ASC',
+  BlockIdDesc = 'BLOCK_ID_DESC',
+  EventIdxAsc = 'EVENT_IDX_ASC',
+  EventIdxDesc = 'EVENT_IDX_DESC',
+  TargetIdAsc = 'TARGET_ID_ASC',
+  TargetIdDesc = 'TARGET_ID_DESC',
   IssuerIdAsc = 'ISSUER_ID_ASC',
   IssuerIdDesc = 'ISSUER_ID_DESC',
   IssuanceDateAsc = 'ISSUANCE_DATE_ASC',
@@ -682,6 +1811,11 @@ export type DataBlock = {
   specVersionId?: Maybe<Scalars['String']>;
 };
 
+export type DataBlockAggregates = {
+  __typename?: 'DataBlockAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `DataBlock` object types. All fields are combined with a logical ‘and.’ */
 export type DataBlockFilter = {
   /** Filter by the object’s `id` field. */
@@ -720,6 +1854,30 @@ export type DataBlockFilter = {
   not?: Maybe<DataBlockFilter>;
 };
 
+/** Grouping methods for `DataBlock` for usage during aggregation. */
+export enum DataBlockGroupBy {
+  Id = 'ID',
+  ParentId = 'PARENT_ID',
+  Hash = 'HASH',
+  ParentHash = 'PARENT_HASH',
+  StateRoot = 'STATE_ROOT',
+  ExtrinsicsRoot = 'EXTRINSICS_ROOT',
+  CountExtrinsics = 'COUNT_EXTRINSICS',
+  CountExtrinsicsUnsigned = 'COUNT_EXTRINSICS_UNSIGNED',
+  CountExtrinsicsSigned = 'COUNT_EXTRINSICS_SIGNED',
+  CountExtrinsicsError = 'COUNT_EXTRINSICS_ERROR',
+  CountExtrinsicsSuccess = 'COUNT_EXTRINSICS_SUCCESS',
+  CountEvents = 'COUNT_EVENTS',
+  Datetime = 'DATETIME',
+  SpecVersionId = 'SPEC_VERSION_ID',
+}
+
+/** Conditions for `DataBlock` aggregates. */
+export type DataBlockHavingInput = {
+  AND?: Maybe<Array<DataBlockHavingInput>>;
+  OR?: Maybe<Array<DataBlockHavingInput>>;
+};
+
 /** A connection to a list of `DataBlock` values. */
 export type DataBlocksConnection = {
   __typename?: 'DataBlocksConnection';
@@ -731,6 +1889,16 @@ export type DataBlocksConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `DataBlock` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<DataBlockAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<DataBlockAggregates>>;
+};
+
+/** A connection to a list of `DataBlock` values. */
+export type DataBlocksConnectionGroupedAggregatesArgs = {
+  groupBy: Array<DataBlockGroupBy>;
+  having?: Maybe<DataBlockHavingInput>;
 };
 
 /** A `DataBlock` edge in the connection. */
@@ -777,7 +1945,7 @@ export enum DataBlocksOrderBy {
 
 export type DataEvent = {
   __typename?: 'DataEvent';
-  blockId?: Maybe<Scalars['Int']>;
+  blockId?: Maybe<Scalars['String']>;
   eventIdx?: Maybe<Scalars['Int']>;
   extrinsicIdx?: Maybe<Scalars['Int']>;
   specVersionId?: Maybe<Scalars['Int']>;
@@ -797,10 +1965,15 @@ export type DataEvent = {
   transferTo?: Maybe<Scalars['String']>;
 };
 
+export type DataEventAggregates = {
+  __typename?: 'DataEventAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `DataEvent` object types. All fields are combined with a logical ‘and.’ */
 export type DataEventFilter = {
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `extrinsicIdx` field. */
@@ -843,6 +2016,34 @@ export type DataEventFilter = {
   not?: Maybe<DataEventFilter>;
 };
 
+/** Grouping methods for `DataEvent` for usage during aggregation. */
+export enum DataEventGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  ExtrinsicIdx = 'EXTRINSIC_IDX',
+  SpecVersionId = 'SPEC_VERSION_ID',
+  ModuleId = 'MODULE_ID',
+  EventId = 'EVENT_ID',
+  Attributes = 'ATTRIBUTES',
+  EventArg_0 = 'EVENT_ARG_0',
+  EventArg_1 = 'EVENT_ARG_1',
+  EventArg_2 = 'EVENT_ARG_2',
+  EventArg_3 = 'EVENT_ARG_3',
+  ClaimType = 'CLAIM_TYPE',
+  ClaimScope = 'CLAIM_SCOPE',
+  ClaimIssuer = 'CLAIM_ISSUER',
+  ClaimExpiry = 'CLAIM_EXPIRY',
+  CorporateActionTicker = 'CORPORATE_ACTION_TICKER',
+  FundraiserOfferingAsset = 'FUNDRAISER_OFFERING_ASSET',
+  TransferTo = 'TRANSFER_TO',
+}
+
+/** Conditions for `DataEvent` aggregates. */
+export type DataEventHavingInput = {
+  AND?: Maybe<Array<DataEventHavingInput>>;
+  OR?: Maybe<Array<DataEventHavingInput>>;
+};
+
 /** A connection to a list of `DataEvent` values. */
 export type DataEventsConnection = {
   __typename?: 'DataEventsConnection';
@@ -854,6 +2055,16 @@ export type DataEventsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `DataEvent` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<DataEventAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<DataEventAggregates>>;
+};
+
+/** A connection to a list of `DataEvent` values. */
+export type DataEventsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<DataEventGroupBy>;
+  having?: Maybe<DataEventHavingInput>;
 };
 
 /** A `DataEvent` edge in the connection. */
@@ -908,7 +2119,7 @@ export enum DataEventsOrderBy {
 
 export type DataExtrinsic = {
   __typename?: 'DataExtrinsic';
-  blockId?: Maybe<Scalars['Int']>;
+  blockId?: Maybe<Scalars['String']>;
   extrinsicIdx?: Maybe<Scalars['Int']>;
   signed?: Maybe<Scalars['Int']>;
   callId?: Maybe<Scalars['String']>;
@@ -922,10 +2133,15 @@ export type DataExtrinsic = {
   specVersionId?: Maybe<Scalars['Int']>;
 };
 
+export type DataExtrinsicAggregates = {
+  __typename?: 'DataExtrinsicAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `DataExtrinsic` object types. All fields are combined with a logical ‘and.’ */
 export type DataExtrinsicFilter = {
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `extrinsicIdx` field. */
   extrinsicIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `signed` field. */
@@ -956,6 +2172,28 @@ export type DataExtrinsicFilter = {
   not?: Maybe<DataExtrinsicFilter>;
 };
 
+/** Grouping methods for `DataExtrinsic` for usage during aggregation. */
+export enum DataExtrinsicGroupBy {
+  BlockId = 'BLOCK_ID',
+  ExtrinsicIdx = 'EXTRINSIC_IDX',
+  Signed = 'SIGNED',
+  CallId = 'CALL_ID',
+  ModuleId = 'MODULE_ID',
+  Nonce = 'NONCE',
+  ExtrinsicHash = 'EXTRINSIC_HASH',
+  Address = 'ADDRESS',
+  SignedbyAddress = 'SIGNEDBY_ADDRESS',
+  Params = 'PARAMS',
+  Success = 'SUCCESS',
+  SpecVersionId = 'SPEC_VERSION_ID',
+}
+
+/** Conditions for `DataExtrinsic` aggregates. */
+export type DataExtrinsicHavingInput = {
+  AND?: Maybe<Array<DataExtrinsicHavingInput>>;
+  OR?: Maybe<Array<DataExtrinsicHavingInput>>;
+};
+
 /** A connection to a list of `DataExtrinsic` values. */
 export type DataExtrinsicsConnection = {
   __typename?: 'DataExtrinsicsConnection';
@@ -967,6 +2205,16 @@ export type DataExtrinsicsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `DataExtrinsic` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<DataExtrinsicAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<DataExtrinsicAggregates>>;
+};
+
+/** A connection to a list of `DataExtrinsic` values. */
+export type DataExtrinsicsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<DataExtrinsicGroupBy>;
+  having?: Maybe<DataExtrinsicHavingInput>;
 };
 
 /** A `DataExtrinsic` edge in the connection. */
@@ -1044,6 +2292,11 @@ export type Debug = Node & {
   updatedAt: Scalars['Datetime'];
 };
 
+export type DebugAggregates = {
+  __typename?: 'DebugAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `Debug` object types. All fields are combined with a logical ‘and.’ */
 export type DebugFilter = {
   /** Filter by the object’s `id` field. */
@@ -1075,6 +2328,16 @@ export type DebugsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Debug` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<DebugAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<DebugAggregates>>;
+};
+
+/** A connection to a list of `Debug` values. */
+export type DebugsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<DebugsGroupBy>;
+  having?: Maybe<DebugsHavingInput>;
 };
 
 /** A `Debug` edge in the connection. */
@@ -1084,6 +2347,20 @@ export type DebugsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Debug` at the end of the edge. */
   node?: Maybe<Debug>;
+};
+
+/** Grouping methods for `Debug` for usage during aggregation. */
+export enum DebugsGroupBy {
+  Line = 'LINE',
+  Context = 'CONTEXT',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Debug` aggregates. */
+export type DebugsHavingInput = {
+  AND?: Maybe<Array<DebugsHavingInput>>;
+  OR?: Maybe<Array<DebugsHavingInput>>;
 };
 
 /** Methods to use when ordering `Debug`. */
@@ -1108,8 +2385,7 @@ export type Event = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
-  parentBlockId: Scalars['String'];
+  blockId: Scalars['String'];
   eventIdx: Scalars['Int'];
   extrinsicIdx?: Maybe<Scalars['Int']>;
   specVersionId: Scalars['Int'];
@@ -1131,7 +2407,12 @@ export type Event = Node & {
   updatedAt: Scalars['Datetime'];
   attributes?: Maybe<Scalars['JSON']>;
   /** Reads a single `Block` that is related to this `Event`. */
-  parentBlock?: Maybe<Block>;
+  block?: Maybe<Block>;
+};
+
+export type EventAggregates = {
+  __typename?: 'EventAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Event` object types. All fields are combined with a logical ‘and.’ */
@@ -1139,9 +2420,7 @@ export type EventFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
-  /** Filter by the object’s `parentBlockId` field. */
-  parentBlockId?: Maybe<StringFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `extrinsicIdx` field. */
@@ -1201,6 +2480,16 @@ export type EventsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Event` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<EventAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<EventAggregates>>;
+};
+
+/** A connection to a list of `Event` values. */
+export type EventsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<EventsGroupBy>;
+  having?: Maybe<EventsHavingInput>;
 };
 
 /** A `Event` edge in the connection. */
@@ -1212,6 +2501,37 @@ export type EventsEdge = {
   node?: Maybe<Event>;
 };
 
+/** Grouping methods for `Event` for usage during aggregation. */
+export enum EventsGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  ExtrinsicIdx = 'EXTRINSIC_IDX',
+  SpecVersionId = 'SPEC_VERSION_ID',
+  ModuleId = 'MODULE_ID',
+  EventId = 'EVENT_ID',
+  AttributesTxt = 'ATTRIBUTES_TXT',
+  EventArg_0 = 'EVENT_ARG_0',
+  EventArg_1 = 'EVENT_ARG_1',
+  EventArg_2 = 'EVENT_ARG_2',
+  EventArg_3 = 'EVENT_ARG_3',
+  ClaimType = 'CLAIM_TYPE',
+  ClaimScope = 'CLAIM_SCOPE',
+  ClaimIssuer = 'CLAIM_ISSUER',
+  ClaimExpiry = 'CLAIM_EXPIRY',
+  CorporateActionTicker = 'CORPORATE_ACTION_TICKER',
+  FundraiserOfferingAsset = 'FUNDRAISER_OFFERING_ASSET',
+  TransferTo = 'TRANSFER_TO',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+  Attributes = 'ATTRIBUTES',
+}
+
+/** Conditions for `Event` aggregates. */
+export type EventsHavingInput = {
+  AND?: Maybe<Array<EventsHavingInput>>;
+  OR?: Maybe<Array<EventsHavingInput>>;
+};
+
 /** Methods to use when ordering `Event`. */
 export enum EventsOrderBy {
   Natural = 'NATURAL',
@@ -1219,8 +2539,6 @@ export enum EventsOrderBy {
   IdDesc = 'ID_DESC',
   BlockIdAsc = 'BLOCK_ID_ASC',
   BlockIdDesc = 'BLOCK_ID_DESC',
-  ParentBlockIdAsc = 'PARENT_BLOCK_ID_ASC',
-  ParentBlockIdDesc = 'PARENT_BLOCK_ID_DESC',
   EventIdxAsc = 'EVENT_IDX_ASC',
   EventIdxDesc = 'EVENT_IDX_DESC',
   ExtrinsicIdxAsc = 'EXTRINSIC_IDX_ASC',
@@ -1270,7 +2588,7 @@ export type Extrinsic = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   extrinsicIdx: Scalars['Int'];
   extrinsicLength: Scalars['String'];
   signed: Scalars['Int'];
@@ -1286,6 +2604,13 @@ export type Extrinsic = Node & {
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
   params?: Maybe<Scalars['JSON']>;
+  /** Reads a single `Block` that is related to this `Extrinsic`. */
+  block?: Maybe<Block>;
+};
+
+export type ExtrinsicAggregates = {
+  __typename?: 'ExtrinsicAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Extrinsic` object types. All fields are combined with a logical ‘and.’ */
@@ -1293,7 +2618,7 @@ export type ExtrinsicFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `extrinsicIdx` field. */
   extrinsicIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `extrinsicLength` field. */
@@ -1343,6 +2668,16 @@ export type ExtrinsicsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Extrinsic` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ExtrinsicAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ExtrinsicAggregates>>;
+};
+
+/** A connection to a list of `Extrinsic` values. */
+export type ExtrinsicsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<ExtrinsicsGroupBy>;
+  having?: Maybe<ExtrinsicsHavingInput>;
 };
 
 /** A `Extrinsic` edge in the connection. */
@@ -1352,6 +2687,32 @@ export type ExtrinsicsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Extrinsic` at the end of the edge. */
   node?: Maybe<Extrinsic>;
+};
+
+/** Grouping methods for `Extrinsic` for usage during aggregation. */
+export enum ExtrinsicsGroupBy {
+  BlockId = 'BLOCK_ID',
+  ExtrinsicIdx = 'EXTRINSIC_IDX',
+  ExtrinsicLength = 'EXTRINSIC_LENGTH',
+  Signed = 'SIGNED',
+  SignedbyAddress = 'SIGNEDBY_ADDRESS',
+  Address = 'ADDRESS',
+  ModuleId = 'MODULE_ID',
+  CallId = 'CALL_ID',
+  ParamsTxt = 'PARAMS_TXT',
+  Success = 'SUCCESS',
+  Nonce = 'NONCE',
+  ExtrinsicHash = 'EXTRINSIC_HASH',
+  SpecVersionId = 'SPEC_VERSION_ID',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+  Params = 'PARAMS',
+}
+
+/** Conditions for `Extrinsic` aggregates. */
+export type ExtrinsicsHavingInput = {
+  AND?: Maybe<Array<ExtrinsicsHavingInput>>;
+  OR?: Maybe<Array<ExtrinsicsHavingInput>>;
 };
 
 /** Methods to use when ordering `Extrinsic`. */
@@ -1405,6 +2766,11 @@ export type FoundType = Node & {
   updatedAt: Scalars['Datetime'];
 };
 
+export type FoundTypeAggregates = {
+  __typename?: 'FoundTypeAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `FoundType` object types. All fields are combined with a logical ‘and.’ */
 export type FoundTypeFilter = {
   /** Filter by the object’s `id` field. */
@@ -1434,6 +2800,16 @@ export type FoundTypesConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `FoundType` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<FoundTypeAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<FoundTypeAggregates>>;
+};
+
+/** A connection to a list of `FoundType` values. */
+export type FoundTypesConnectionGroupedAggregatesArgs = {
+  groupBy: Array<FoundTypesGroupBy>;
+  having?: Maybe<FoundTypesHavingInput>;
 };
 
 /** A `FoundType` edge in the connection. */
@@ -1443,6 +2819,19 @@ export type FoundTypesEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `FoundType` at the end of the edge. */
   node?: Maybe<FoundType>;
+};
+
+/** Grouping methods for `FoundType` for usage during aggregation. */
+export enum FoundTypesGroupBy {
+  RawType = 'RAW_TYPE',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `FoundType` aggregates. */
+export type FoundTypesHavingInput = {
+  AND?: Maybe<Array<FoundTypesHavingInput>>;
+  OR?: Maybe<Array<FoundTypesHavingInput>>;
 };
 
 /** Methods to use when ordering `FoundType`. */
@@ -1465,13 +2854,20 @@ export type Funding = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   ticker: Scalars['String'];
   fundingName: Scalars['String'];
   value: Scalars['String'];
   totalIssuedInFundingRound: Scalars['String'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `Funding`. */
+  block?: Maybe<Block>;
+};
+
+export type FundingAggregates = {
+  __typename?: 'FundingAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Funding` object types. All fields are combined with a logical ‘and.’ */
@@ -1479,7 +2875,7 @@ export type FundingFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `ticker` field. */
   ticker?: Maybe<StringFilter>;
   /** Filter by the object’s `fundingName` field. */
@@ -1511,6 +2907,16 @@ export type FundingsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Funding` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<FundingAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<FundingAggregates>>;
+};
+
+/** A connection to a list of `Funding` values. */
+export type FundingsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<FundingsGroupBy>;
+  having?: Maybe<FundingsHavingInput>;
 };
 
 /** A `Funding` edge in the connection. */
@@ -1520,6 +2926,23 @@ export type FundingsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Funding` at the end of the edge. */
   node?: Maybe<Funding>;
+};
+
+/** Grouping methods for `Funding` for usage during aggregation. */
+export enum FundingsGroupBy {
+  BlockId = 'BLOCK_ID',
+  Ticker = 'TICKER',
+  FundingName = 'FUNDING_NAME',
+  Value = 'VALUE',
+  TotalIssuedInFundingRound = 'TOTAL_ISSUED_IN_FUNDING_ROUND',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Funding` aggregates. */
+export type FundingsHavingInput = {
+  AND?: Maybe<Array<FundingsHavingInput>>;
+  OR?: Maybe<Array<FundingsHavingInput>>;
 };
 
 /** Methods to use when ordering `Funding`. */
@@ -1556,6 +2979,11 @@ export type HeldToken = Node & {
   updatedAt: Scalars['Datetime'];
 };
 
+export type HeldTokenAggregates = {
+  __typename?: 'HeldTokenAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `HeldToken` object types. All fields are combined with a logical ‘and.’ */
 export type HeldTokenFilter = {
   /** Filter by the object’s `id` field. */
@@ -1587,6 +3015,16 @@ export type HeldTokensConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `HeldToken` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<HeldTokenAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<HeldTokenAggregates>>;
+};
+
+/** A connection to a list of `HeldToken` values. */
+export type HeldTokensConnectionGroupedAggregatesArgs = {
+  groupBy: Array<HeldTokensGroupBy>;
+  having?: Maybe<HeldTokensHavingInput>;
 };
 
 /** A `HeldToken` edge in the connection. */
@@ -1596,6 +3034,20 @@ export type HeldTokensEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `HeldToken` at the end of the edge. */
   node?: Maybe<HeldToken>;
+};
+
+/** Grouping methods for `HeldToken` for usage during aggregation. */
+export enum HeldTokensGroupBy {
+  Did = 'DID',
+  Token = 'TOKEN',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `HeldToken` aggregates. */
+export type HeldTokensHavingInput = {
+  AND?: Maybe<Array<HeldTokensHavingInput>>;
+  OR?: Maybe<Array<HeldTokensHavingInput>>;
 };
 
 /** Methods to use when ordering `HeldToken`. */
@@ -1620,17 +3072,24 @@ export type HistoryOfPaymentEventsForCa = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   eventId: Scalars['String'];
   eventIdx: Scalars['Int'];
   eventDid: Scalars['String'];
   ticker: Scalars['String'];
   localId: Scalars['Int'];
-  balance: Scalars['Int'];
-  tax: Scalars['Int'];
+  balance: Scalars['BigFloat'];
+  tax: Scalars['BigFloat'];
   datetime: Scalars['Datetime'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `HistoryOfPaymentEventsForCa`. */
+  block?: Maybe<Block>;
+};
+
+export type HistoryOfPaymentEventsForCaAggregates = {
+  __typename?: 'HistoryOfPaymentEventsForCaAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `HistoryOfPaymentEventsForCa` object types. All fields are combined with a logical ‘and.’ */
@@ -1638,7 +3097,7 @@ export type HistoryOfPaymentEventsForCaFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventId` field. */
   eventId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
@@ -1650,9 +3109,9 @@ export type HistoryOfPaymentEventsForCaFilter = {
   /** Filter by the object’s `localId` field. */
   localId?: Maybe<IntFilter>;
   /** Filter by the object’s `balance` field. */
-  balance?: Maybe<IntFilter>;
+  balance?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `tax` field. */
-  tax?: Maybe<IntFilter>;
+  tax?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `datetime` field. */
   datetime?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `createdAt` field. */
@@ -1678,6 +3137,16 @@ export type HistoryOfPaymentEventsForCasConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `HistoryOfPaymentEventsForCa` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<HistoryOfPaymentEventsForCaAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<HistoryOfPaymentEventsForCaAggregates>>;
+};
+
+/** A connection to a list of `HistoryOfPaymentEventsForCa` values. */
+export type HistoryOfPaymentEventsForCasConnectionGroupedAggregatesArgs = {
+  groupBy: Array<HistoryOfPaymentEventsForCasGroupBy>;
+  having?: Maybe<HistoryOfPaymentEventsForCasHavingInput>;
 };
 
 /** A `HistoryOfPaymentEventsForCa` edge in the connection. */
@@ -1687,6 +3156,27 @@ export type HistoryOfPaymentEventsForCasEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `HistoryOfPaymentEventsForCa` at the end of the edge. */
   node?: Maybe<HistoryOfPaymentEventsForCa>;
+};
+
+/** Grouping methods for `HistoryOfPaymentEventsForCa` for usage during aggregation. */
+export enum HistoryOfPaymentEventsForCasGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventId = 'EVENT_ID',
+  EventIdx = 'EVENT_IDX',
+  EventDid = 'EVENT_DID',
+  Ticker = 'TICKER',
+  LocalId = 'LOCAL_ID',
+  Balance = 'BALANCE',
+  Tax = 'TAX',
+  Datetime = 'DATETIME',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `HistoryOfPaymentEventsForCa` aggregates. */
+export type HistoryOfPaymentEventsForCasHavingInput = {
+  AND?: Maybe<Array<HistoryOfPaymentEventsForCasHavingInput>>;
+  OR?: Maybe<Array<HistoryOfPaymentEventsForCasHavingInput>>;
 };
 
 /** Methods to use when ordering `HistoryOfPaymentEventsForCa`. */
@@ -1733,8 +3223,10 @@ export type IdentityWithClaim = Node & {
   updatedAt: Scalars['Datetime'];
   /** Reads and enables pagination through a set of `Claim`. */
   claims: ClaimsConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByClaimTargetIdAndBlockId: IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `IssuerIdentityWithClaim`. */
-  issuerIdentityWithClaimsByClaimTargetDidIdAndIssuerId: IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection;
+  issuerIdentityWithClaimsByClaimTargetIdAndIssuerId: IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyConnection;
 };
 
 export type IdentityWithClaimClaimsArgs = {
@@ -1747,7 +3239,17 @@ export type IdentityWithClaimClaimsArgs = {
   filter?: Maybe<ClaimFilter>;
 };
 
-export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdArgs = {
+export type IdentityWithClaimBlocksByClaimTargetIdAndBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<BlocksOrderBy>>;
+  filter?: Maybe<BlockFilter>;
+};
+
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
   offset?: Maybe<Scalars['Int']>;
@@ -1755,6 +3257,57 @@ export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuer
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<IssuerIdentityWithClaimsOrderBy>>;
   filter?: Maybe<IssuerIdentityWithClaimFilter>;
+};
+
+export type IdentityWithClaimAggregates = {
+  __typename?: 'IdentityWithClaimAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Claim`. */
+export type IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyConnection = {
+  __typename?: 'IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyConnection';
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** A list of edges which contains the `Block`, info from the `Claim`, and the cursor to aid in pagination. */
+  edges: Array<IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Claim`. */
+export type IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: Maybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Claim`. */
+export type IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyEdge = {
+  __typename?: 'IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Claim`. */
+export type IdentityWithClaimBlocksByClaimTargetIdAndBlockIdManyToManyEdgeClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
 };
 
 /** A filter to be used against `IdentityWithClaim` object types. All fields are combined with a logical ‘and.’ */
@@ -1782,22 +3335,33 @@ export type IdentityWithClaimFilter = {
 };
 
 /** A connection to a list of `IssuerIdentityWithClaim` values, with data from `Claim`. */
-export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection =
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyConnection =
   {
-    __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyConnection';
+    __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyConnection';
     /** A list of `IssuerIdentityWithClaim` objects. */
     nodes: Array<Maybe<IssuerIdentityWithClaim>>;
     /** A list of edges which contains the `IssuerIdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
-    edges: Array<IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge>;
+    edges: Array<IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyEdge>;
     /** Information to aid in pagination. */
     pageInfo: PageInfo;
     /** The count of *all* `IssuerIdentityWithClaim` you could get from the connection. */
     totalCount: Scalars['Int'];
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<IssuerIdentityWithClaimAggregates>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<IssuerIdentityWithClaimAggregates>>;
+  };
+
+/** A connection to a list of `IssuerIdentityWithClaim` values, with data from `Claim`. */
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IssuerIdentityWithClaimsGroupBy>;
+    having?: Maybe<IssuerIdentityWithClaimsHavingInput>;
   };
 
 /** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
-export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge = {
-  __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdge';
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyEdge = {
+  __typename?: 'IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyEdge';
   /** A cursor for use in pagination. */
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `IssuerIdentityWithClaim` at the end of the edge. */
@@ -1807,7 +3371,7 @@ export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuer
 };
 
 /** A `IssuerIdentityWithClaim` edge in the connection, with data from `Claim`. */
-export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetDidIdAndIssuerIdManyToManyEdgeClaimsArgs =
+export type IdentityWithClaimIssuerIdentityWithClaimsByClaimTargetIdAndIssuerIdManyToManyEdgeClaimsArgs =
   {
     first?: Maybe<Scalars['Int']>;
     last?: Maybe<Scalars['Int']>;
@@ -1829,6 +3393,16 @@ export type IdentityWithClaimsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `IdentityWithClaim` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityWithClaimAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityWithClaimAggregates>>;
+};
+
+/** A connection to a list of `IdentityWithClaim` values. */
+export type IdentityWithClaimsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<IdentityWithClaimsGroupBy>;
+  having?: Maybe<IdentityWithClaimsHavingInput>;
 };
 
 /** A `IdentityWithClaim` edge in the connection. */
@@ -1838,6 +3412,22 @@ export type IdentityWithClaimsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `IdentityWithClaim` at the end of the edge. */
   node?: Maybe<IdentityWithClaim>;
+};
+
+/** Grouping methods for `IdentityWithClaim` for usage during aggregation. */
+export enum IdentityWithClaimsGroupBy {
+  ScopeIndex = 'SCOPE_INDEX',
+  IssuerIndex = 'ISSUER_INDEX',
+  TypeIndex = 'TYPE_INDEX',
+  MaxExpiry = 'MAX_EXPIRY',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `IdentityWithClaim` aggregates. */
+export type IdentityWithClaimsHavingInput = {
+  AND?: Maybe<Array<IdentityWithClaimsHavingInput>>;
+  OR?: Maybe<Array<IdentityWithClaimsHavingInput>>;
 };
 
 /** Methods to use when ordering `IdentityWithClaim`. */
@@ -1859,6 +3449,8 @@ export enum IdentityWithClaimsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  ClaimsCountAsc = 'CLAIMS_COUNT_ASC',
+  ClaimsCountDesc = 'CLAIMS_COUNT_DESC',
 }
 
 export type Instruction = Node & {
@@ -1866,7 +3458,7 @@ export type Instruction = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   eventId: Scalars['String'];
   status: Scalars['String'];
   venueId: Scalars['String'];
@@ -1875,6 +3467,13 @@ export type Instruction = Node & {
   addresses: Scalars['JSON'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `Instruction`. */
+  block?: Maybe<Block>;
+};
+
+export type InstructionAggregates = {
+  __typename?: 'InstructionAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Instruction` object types. All fields are combined with a logical ‘and.’ */
@@ -1882,7 +3481,7 @@ export type InstructionFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventId` field. */
   eventId?: Maybe<StringFilter>;
   /** Filter by the object’s `status` field. */
@@ -1918,6 +3517,16 @@ export type InstructionsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Instruction` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<InstructionAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<InstructionAggregates>>;
+};
+
+/** A connection to a list of `Instruction` values. */
+export type InstructionsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<InstructionsGroupBy>;
+  having?: Maybe<InstructionsHavingInput>;
 };
 
 /** A `Instruction` edge in the connection. */
@@ -1927,6 +3536,25 @@ export type InstructionsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Instruction` at the end of the edge. */
   node?: Maybe<Instruction>;
+};
+
+/** Grouping methods for `Instruction` for usage during aggregation. */
+export enum InstructionsGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventId = 'EVENT_ID',
+  Status = 'STATUS',
+  VenueId = 'VENUE_ID',
+  SettlementType = 'SETTLEMENT_TYPE',
+  Legs = 'LEGS',
+  Addresses = 'ADDRESSES',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Instruction` aggregates. */
+export type InstructionsHavingInput = {
+  AND?: Maybe<Array<InstructionsHavingInput>>;
+  OR?: Maybe<Array<InstructionsHavingInput>>;
 };
 
 /** Methods to use when ordering `Instruction`. */
@@ -1987,7 +3615,7 @@ export type Investment = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   investor: Scalars['String'];
   stoId: Scalars['Int'];
   offeringToken: Scalars['String'];
@@ -1997,6 +3625,13 @@ export type Investment = Node & {
   datetime: Scalars['Datetime'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `Investment`. */
+  block?: Maybe<Block>;
+};
+
+export type InvestmentAggregates = {
+  __typename?: 'InvestmentAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Investment` object types. All fields are combined with a logical ‘and.’ */
@@ -2004,7 +3639,7 @@ export type InvestmentFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `investor` field. */
   investor?: Maybe<StringFilter>;
   /** Filter by the object’s `stoId` field. */
@@ -2042,6 +3677,16 @@ export type InvestmentsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Investment` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<InvestmentAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<InvestmentAggregates>>;
+};
+
+/** A connection to a list of `Investment` values. */
+export type InvestmentsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<InvestmentsGroupBy>;
+  having?: Maybe<InvestmentsHavingInput>;
 };
 
 /** A `Investment` edge in the connection. */
@@ -2051,6 +3696,26 @@ export type InvestmentsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Investment` at the end of the edge. */
   node?: Maybe<Investment>;
+};
+
+/** Grouping methods for `Investment` for usage during aggregation. */
+export enum InvestmentsGroupBy {
+  BlockId = 'BLOCK_ID',
+  Investor = 'INVESTOR',
+  StoId = 'STO_ID',
+  OfferingToken = 'OFFERING_TOKEN',
+  RaiseToken = 'RAISE_TOKEN',
+  OfferingTokenAmount = 'OFFERING_TOKEN_AMOUNT',
+  RaiseTokenAmount = 'RAISE_TOKEN_AMOUNT',
+  Datetime = 'DATETIME',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Investment` aggregates. */
+export type InvestmentsHavingInput = {
+  AND?: Maybe<Array<InvestmentsHavingInput>>;
+  OR?: Maybe<Array<InvestmentsHavingInput>>;
 };
 
 /** Methods to use when ordering `Investment`. */
@@ -2095,8 +3760,10 @@ export type IssuerIdentityWithClaim = Node & {
   updatedAt: Scalars['Datetime'];
   /** Reads and enables pagination through a set of `Claim`. */
   claims: ClaimsConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByClaimIssuerIdAndBlockId: IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `IdentityWithClaim`. */
-  identityWithClaimsByClaimIssuerIdAndTargetDidId: IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection;
+  identityWithClaimsByClaimIssuerIdAndTargetId: IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyConnection;
 };
 
 export type IssuerIdentityWithClaimClaimsArgs = {
@@ -2109,7 +3776,17 @@ export type IssuerIdentityWithClaimClaimsArgs = {
   filter?: Maybe<ClaimFilter>;
 };
 
-export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdArgs = {
+export type IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<BlocksOrderBy>>;
+  filter?: Maybe<BlockFilter>;
+};
+
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
   offset?: Maybe<Scalars['Int']>;
@@ -2117,6 +3794,57 @@ export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDid
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<IdentityWithClaimsOrderBy>>;
   filter?: Maybe<IdentityWithClaimFilter>;
+};
+
+export type IssuerIdentityWithClaimAggregates = {
+  __typename?: 'IssuerIdentityWithClaimAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Claim`. */
+export type IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyConnection = {
+  __typename?: 'IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyConnection';
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** A list of edges which contains the `Block`, info from the `Claim`, and the cursor to aid in pagination. */
+  edges: Array<IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Claim`. */
+export type IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: Maybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Claim`. */
+export type IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyEdge = {
+  __typename?: 'IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Claim`. */
+  claims: ClaimsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Claim`. */
+export type IssuerIdentityWithClaimBlocksByClaimIssuerIdAndBlockIdManyToManyEdgeClaimsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ClaimsOrderBy>>;
+  filter?: Maybe<ClaimFilter>;
 };
 
 /** A filter to be used against `IssuerIdentityWithClaim` object types. All fields are combined with a logical ‘and.’ */
@@ -2144,22 +3872,33 @@ export type IssuerIdentityWithClaimFilter = {
 };
 
 /** A connection to a list of `IdentityWithClaim` values, with data from `Claim`. */
-export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection =
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyConnection =
   {
-    __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyConnection';
+    __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyConnection';
     /** A list of `IdentityWithClaim` objects. */
     nodes: Array<Maybe<IdentityWithClaim>>;
     /** A list of edges which contains the `IdentityWithClaim`, info from the `Claim`, and the cursor to aid in pagination. */
-    edges: Array<IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge>;
+    edges: Array<IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyEdge>;
     /** Information to aid in pagination. */
     pageInfo: PageInfo;
     /** The count of *all* `IdentityWithClaim` you could get from the connection. */
     totalCount: Scalars['Int'];
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<IdentityWithClaimAggregates>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<IdentityWithClaimAggregates>>;
+  };
+
+/** A connection to a list of `IdentityWithClaim` values, with data from `Claim`. */
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IdentityWithClaimsGroupBy>;
+    having?: Maybe<IdentityWithClaimsHavingInput>;
   };
 
 /** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
-export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge = {
-  __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdge';
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyEdge = {
+  __typename?: 'IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyEdge';
   /** A cursor for use in pagination. */
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `IdentityWithClaim` at the end of the edge. */
@@ -2169,7 +3908,7 @@ export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDid
 };
 
 /** A `IdentityWithClaim` edge in the connection, with data from `Claim`. */
-export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetDidIdManyToManyEdgeClaimsArgs =
+export type IssuerIdentityWithClaimIdentityWithClaimsByClaimIssuerIdAndTargetIdManyToManyEdgeClaimsArgs =
   {
     first?: Maybe<Scalars['Int']>;
     last?: Maybe<Scalars['Int']>;
@@ -2191,6 +3930,16 @@ export type IssuerIdentityWithClaimsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `IssuerIdentityWithClaim` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IssuerIdentityWithClaimAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IssuerIdentityWithClaimAggregates>>;
+};
+
+/** A connection to a list of `IssuerIdentityWithClaim` values. */
+export type IssuerIdentityWithClaimsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<IssuerIdentityWithClaimsGroupBy>;
+  having?: Maybe<IssuerIdentityWithClaimsHavingInput>;
 };
 
 /** A `IssuerIdentityWithClaim` edge in the connection. */
@@ -2200,6 +3949,22 @@ export type IssuerIdentityWithClaimsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `IssuerIdentityWithClaim` at the end of the edge. */
   node?: Maybe<IssuerIdentityWithClaim>;
+};
+
+/** Grouping methods for `IssuerIdentityWithClaim` for usage during aggregation. */
+export enum IssuerIdentityWithClaimsGroupBy {
+  ScopeIndex = 'SCOPE_INDEX',
+  TargetIndex = 'TARGET_INDEX',
+  TypeIndex = 'TYPE_INDEX',
+  MaxExpiry = 'MAX_EXPIRY',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `IssuerIdentityWithClaim` aggregates. */
+export type IssuerIdentityWithClaimsHavingInput = {
+  AND?: Maybe<Array<IssuerIdentityWithClaimsHavingInput>>;
+  OR?: Maybe<Array<IssuerIdentityWithClaimsHavingInput>>;
 };
 
 /** Methods to use when ordering `IssuerIdentityWithClaim`. */
@@ -2221,6 +3986,8 @@ export enum IssuerIdentityWithClaimsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  ClaimsCountAsc = 'CLAIMS_COUNT_ASC',
+  ClaimsCountDesc = 'CLAIMS_COUNT_DESC',
 }
 
 /** A filter to be used against JSON fields. All fields are combined with a logical ‘and.’ */
@@ -2283,7 +4050,7 @@ export type Proposal = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   proposer: Scalars['String'];
   state: Scalars['String'];
   identityId: Scalars['String'];
@@ -2296,11 +4063,76 @@ export type Proposal = Node & {
   totalNayWeight: Scalars['BigFloat'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `Proposal`. */
+  block?: Maybe<Block>;
   /** Reads and enables pagination through a set of `ProposalVote`. */
   votes: ProposalVotesConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByProposalVoteProposalIdAndBlockId: ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyConnection;
 };
 
 export type ProposalVotesArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<ProposalVotesOrderBy>>;
+  filter?: Maybe<ProposalVoteFilter>;
+};
+
+export type ProposalBlocksByProposalVoteProposalIdAndBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<BlocksOrderBy>>;
+  filter?: Maybe<BlockFilter>;
+};
+
+export type ProposalAggregates = {
+  __typename?: 'ProposalAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A connection to a list of `Block` values, with data from `ProposalVote`. */
+export type ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyConnection = {
+  __typename?: 'ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyConnection';
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** A list of edges which contains the `Block`, info from the `ProposalVote`, and the cursor to aid in pagination. */
+  edges: Array<ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+};
+
+/** A connection to a list of `Block` values, with data from `ProposalVote`. */
+export type ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: Maybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `ProposalVote`. */
+export type ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyEdge = {
+  __typename?: 'ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `ProposalVote`. */
+  proposalVotes: ProposalVotesConnection;
+};
+
+/** A `Block` edge in the connection, with data from `ProposalVote`. */
+export type ProposalBlocksByProposalVoteProposalIdAndBlockIdManyToManyEdgeProposalVotesArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
   offset?: Maybe<Scalars['Int']>;
@@ -2315,7 +4147,7 @@ export type ProposalFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `proposer` field. */
   proposer?: Maybe<StringFilter>;
   /** Filter by the object’s `state` field. */
@@ -2348,6 +4180,133 @@ export type ProposalFilter = {
   not?: Maybe<ProposalFilter>;
 };
 
+export type ProposalVote = Node & {
+  __typename?: 'ProposalVote';
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  id: Scalars['String'];
+  proposalId: Scalars['String'];
+  blockId: Scalars['String'];
+  eventIdx: Scalars['Int'];
+  account: Scalars['String'];
+  vote: Scalars['Boolean'];
+  weight: Scalars['BigFloat'];
+  createdAt: Scalars['Datetime'];
+  updatedAt: Scalars['Datetime'];
+  /** Reads a single `Proposal` that is related to this `ProposalVote`. */
+  proposal?: Maybe<Proposal>;
+  /** Reads a single `Block` that is related to this `ProposalVote`. */
+  block?: Maybe<Block>;
+};
+
+export type ProposalVoteAggregates = {
+  __typename?: 'ProposalVoteAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `ProposalVote` object types. All fields are combined with a logical ‘and.’ */
+export type ProposalVoteFilter = {
+  /** Filter by the object’s `id` field. */
+  id?: Maybe<StringFilter>;
+  /** Filter by the object’s `proposalId` field. */
+  proposalId?: Maybe<StringFilter>;
+  /** Filter by the object’s `blockId` field. */
+  blockId?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventIdx` field. */
+  eventIdx?: Maybe<IntFilter>;
+  /** Filter by the object’s `account` field. */
+  account?: Maybe<StringFilter>;
+  /** Filter by the object’s `vote` field. */
+  vote?: Maybe<BooleanFilter>;
+  /** Filter by the object’s `weight` field. */
+  weight?: Maybe<BigFloatFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: Maybe<DatetimeFilter>;
+  /** Checks for all expressions in this list. */
+  and?: Maybe<Array<ProposalVoteFilter>>;
+  /** Checks for any expressions in this list. */
+  or?: Maybe<Array<ProposalVoteFilter>>;
+  /** Negates the expression. */
+  not?: Maybe<ProposalVoteFilter>;
+};
+
+/** A connection to a list of `ProposalVote` values. */
+export type ProposalVotesConnection = {
+  __typename?: 'ProposalVotesConnection';
+  /** A list of `ProposalVote` objects. */
+  nodes: Array<Maybe<ProposalVote>>;
+  /** A list of edges which contains the `ProposalVote` and cursor to aid in pagination. */
+  edges: Array<ProposalVotesEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `ProposalVote` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ProposalVoteAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ProposalVoteAggregates>>;
+};
+
+/** A connection to a list of `ProposalVote` values. */
+export type ProposalVotesConnectionGroupedAggregatesArgs = {
+  groupBy: Array<ProposalVotesGroupBy>;
+  having?: Maybe<ProposalVotesHavingInput>;
+};
+
+/** A `ProposalVote` edge in the connection. */
+export type ProposalVotesEdge = {
+  __typename?: 'ProposalVotesEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `ProposalVote` at the end of the edge. */
+  node?: Maybe<ProposalVote>;
+};
+
+/** Grouping methods for `ProposalVote` for usage during aggregation. */
+export enum ProposalVotesGroupBy {
+  ProposalId = 'PROPOSAL_ID',
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  Account = 'ACCOUNT',
+  Vote = 'VOTE',
+  Weight = 'WEIGHT',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `ProposalVote` aggregates. */
+export type ProposalVotesHavingInput = {
+  AND?: Maybe<Array<ProposalVotesHavingInput>>;
+  OR?: Maybe<Array<ProposalVotesHavingInput>>;
+};
+
+/** Methods to use when ordering `ProposalVote`. */
+export enum ProposalVotesOrderBy {
+  Natural = 'NATURAL',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  ProposalIdAsc = 'PROPOSAL_ID_ASC',
+  ProposalIdDesc = 'PROPOSAL_ID_DESC',
+  BlockIdAsc = 'BLOCK_ID_ASC',
+  BlockIdDesc = 'BLOCK_ID_DESC',
+  EventIdxAsc = 'EVENT_IDX_ASC',
+  EventIdxDesc = 'EVENT_IDX_DESC',
+  AccountAsc = 'ACCOUNT_ASC',
+  AccountDesc = 'ACCOUNT_DESC',
+  VoteAsc = 'VOTE_ASC',
+  VoteDesc = 'VOTE_DESC',
+  WeightAsc = 'WEIGHT_ASC',
+  WeightDesc = 'WEIGHT_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+}
+
 /** A connection to a list of `Proposal` values. */
 export type ProposalsConnection = {
   __typename?: 'ProposalsConnection';
@@ -2359,6 +4318,16 @@ export type ProposalsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Proposal` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ProposalAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ProposalAggregates>>;
+};
+
+/** A connection to a list of `Proposal` values. */
+export type ProposalsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<ProposalsGroupBy>;
+  having?: Maybe<ProposalsHavingInput>;
 };
 
 /** A `Proposal` edge in the connection. */
@@ -2368,6 +4337,29 @@ export type ProposalsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Proposal` at the end of the edge. */
   node?: Maybe<Proposal>;
+};
+
+/** Grouping methods for `Proposal` for usage during aggregation. */
+export enum ProposalsGroupBy {
+  BlockId = 'BLOCK_ID',
+  Proposer = 'PROPOSER',
+  State = 'STATE',
+  IdentityId = 'IDENTITY_ID',
+  Balance = 'BALANCE',
+  Url = 'URL',
+  Description = 'DESCRIPTION',
+  LastStateUpdatedAt = 'LAST_STATE_UPDATED_AT',
+  Snapshotted = 'SNAPSHOTTED',
+  TotalAyeWeight = 'TOTAL_AYE_WEIGHT',
+  TotalNayWeight = 'TOTAL_NAY_WEIGHT',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Proposal` aggregates. */
+export type ProposalsHavingInput = {
+  AND?: Maybe<Array<ProposalsHavingInput>>;
+  OR?: Maybe<Array<ProposalsHavingInput>>;
 };
 
 /** Methods to use when ordering `Proposal`. */
@@ -2403,98 +4395,8 @@ export enum ProposalsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
-}
-
-export type ProposalVote = Node & {
-  __typename?: 'ProposalVote';
-  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
-  nodeId: Scalars['ID'];
-  id: Scalars['String'];
-  proposalId: Scalars['String'];
-  blockId: Scalars['Int'];
-  eventIdx: Scalars['Int'];
-  account: Scalars['String'];
-  vote: Scalars['Boolean'];
-  weight: Scalars['BigFloat'];
-  createdAt: Scalars['Datetime'];
-  updatedAt: Scalars['Datetime'];
-  /** Reads a single `Proposal` that is related to this `ProposalVote`. */
-  proposal?: Maybe<Proposal>;
-};
-
-/** A filter to be used against `ProposalVote` object types. All fields are combined with a logical ‘and.’ */
-export type ProposalVoteFilter = {
-  /** Filter by the object’s `id` field. */
-  id?: Maybe<StringFilter>;
-  /** Filter by the object’s `proposalId` field. */
-  proposalId?: Maybe<StringFilter>;
-  /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
-  /** Filter by the object’s `eventIdx` field. */
-  eventIdx?: Maybe<IntFilter>;
-  /** Filter by the object’s `account` field. */
-  account?: Maybe<StringFilter>;
-  /** Filter by the object’s `vote` field. */
-  vote?: Maybe<BooleanFilter>;
-  /** Filter by the object’s `weight` field. */
-  weight?: Maybe<BigFloatFilter>;
-  /** Filter by the object’s `createdAt` field. */
-  createdAt?: Maybe<DatetimeFilter>;
-  /** Filter by the object’s `updatedAt` field. */
-  updatedAt?: Maybe<DatetimeFilter>;
-  /** Checks for all expressions in this list. */
-  and?: Maybe<Array<ProposalVoteFilter>>;
-  /** Checks for any expressions in this list. */
-  or?: Maybe<Array<ProposalVoteFilter>>;
-  /** Negates the expression. */
-  not?: Maybe<ProposalVoteFilter>;
-};
-
-/** A connection to a list of `ProposalVote` values. */
-export type ProposalVotesConnection = {
-  __typename?: 'ProposalVotesConnection';
-  /** A list of `ProposalVote` objects. */
-  nodes: Array<Maybe<ProposalVote>>;
-  /** A list of edges which contains the `ProposalVote` and cursor to aid in pagination. */
-  edges: Array<ProposalVotesEdge>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** The count of *all* `ProposalVote` you could get from the connection. */
-  totalCount: Scalars['Int'];
-};
-
-/** A `ProposalVote` edge in the connection. */
-export type ProposalVotesEdge = {
-  __typename?: 'ProposalVotesEdge';
-  /** A cursor for use in pagination. */
-  cursor?: Maybe<Scalars['Cursor']>;
-  /** The `ProposalVote` at the end of the edge. */
-  node?: Maybe<ProposalVote>;
-};
-
-/** Methods to use when ordering `ProposalVote`. */
-export enum ProposalVotesOrderBy {
-  Natural = 'NATURAL',
-  IdAsc = 'ID_ASC',
-  IdDesc = 'ID_DESC',
-  ProposalIdAsc = 'PROPOSAL_ID_ASC',
-  ProposalIdDesc = 'PROPOSAL_ID_DESC',
-  BlockIdAsc = 'BLOCK_ID_ASC',
-  BlockIdDesc = 'BLOCK_ID_DESC',
-  EventIdxAsc = 'EVENT_IDX_ASC',
-  EventIdxDesc = 'EVENT_IDX_DESC',
-  AccountAsc = 'ACCOUNT_ASC',
-  AccountDesc = 'ACCOUNT_DESC',
-  VoteAsc = 'VOTE_ASC',
-  VoteDesc = 'VOTE_DESC',
-  WeightAsc = 'WEIGHT_ASC',
-  WeightDesc = 'WEIGHT_DESC',
-  CreatedAtAsc = 'CREATED_AT_ASC',
-  CreatedAtDesc = 'CREATED_AT_DESC',
-  UpdatedAtAsc = 'UPDATED_AT_ASC',
-  UpdatedAtDesc = 'UPDATED_AT_DESC',
-  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
-  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  VotesCountAsc = 'VOTES_COUNT_ASC',
+  VotesCountDesc = 'VOTES_COUNT_DESC',
 }
 
 /** The root query type which gives access points into the data universe. */
@@ -2513,10 +4415,18 @@ export type Query = Node & {
   agentGroupMemberships?: Maybe<AgentGroupMembershipsConnection>;
   /** Reads and enables pagination through a set of `AgentGroup`. */
   agentGroups?: Maybe<AgentGroupsConnection>;
+  /** Reads and enables pagination through a set of `AssetHolder`. */
+  assetHolders?: Maybe<AssetHoldersConnection>;
+  /** Reads and enables pagination through a set of `AssetPendingOwnershipTransfer`. */
+  assetPendingOwnershipTransfers?: Maybe<AssetPendingOwnershipTransfersConnection>;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assets?: Maybe<AssetsConnection>;
   /** Reads and enables pagination through a set of `Authorization`. */
   authorizations?: Maybe<AuthorizationsConnection>;
   /** Reads and enables pagination through a set of `Block`. */
   blocks?: Maybe<BlocksConnection>;
+  /** Reads and enables pagination through a set of `BridgeEvent`. */
+  bridgeEvents?: Maybe<BridgeEventsConnection>;
   /** Reads and enables pagination through a set of `ClaimScope`. */
   claimScopes?: Maybe<ClaimScopesConnection>;
   /** Reads and enables pagination through a set of `Claim`. */
@@ -2573,8 +4483,12 @@ export type Query = Node & {
   withholdingTaxesOfCas?: Maybe<WithholdingTaxesOfCasConnection>;
   agentGroupMembership?: Maybe<AgentGroupMembership>;
   agentGroup?: Maybe<AgentGroup>;
+  assetHolder?: Maybe<AssetHolder>;
+  assetPendingOwnershipTransfer?: Maybe<AssetPendingOwnershipTransfer>;
+  asset?: Maybe<Asset>;
   authorization?: Maybe<Authorization>;
   block?: Maybe<Block>;
+  bridgeEvent?: Maybe<BridgeEvent>;
   claimScope?: Maybe<ClaimScope>;
   claim?: Maybe<Claim>;
   debug?: Maybe<Debug>;
@@ -2604,10 +4518,18 @@ export type Query = Node & {
   agentGroupMembershipByNodeId?: Maybe<AgentGroupMembership>;
   /** Reads a single `AgentGroup` using its globally unique `ID`. */
   agentGroupByNodeId?: Maybe<AgentGroup>;
+  /** Reads a single `AssetHolder` using its globally unique `ID`. */
+  assetHolderByNodeId?: Maybe<AssetHolder>;
+  /** Reads a single `AssetPendingOwnershipTransfer` using its globally unique `ID`. */
+  assetPendingOwnershipTransferByNodeId?: Maybe<AssetPendingOwnershipTransfer>;
+  /** Reads a single `Asset` using its globally unique `ID`. */
+  assetByNodeId?: Maybe<Asset>;
   /** Reads a single `Authorization` using its globally unique `ID`. */
   authorizationByNodeId?: Maybe<Authorization>;
   /** Reads a single `Block` using its globally unique `ID`. */
   blockByNodeId?: Maybe<Block>;
+  /** Reads a single `BridgeEvent` using its globally unique `ID`. */
+  bridgeEventByNodeId?: Maybe<BridgeEvent>;
   /** Reads a single `ClaimScope` using its globally unique `ID`. */
   claimScopeByNodeId?: Maybe<ClaimScope>;
   /** Reads a single `Claim` using its globally unique `ID`. */
@@ -2656,6 +4578,7 @@ export type Query = Node & {
   trustedClaimIssuerTickerByNodeId?: Maybe<TrustedClaimIssuerTicker>;
   /** Reads a single `WithholdingTaxesOfCa` using its globally unique `ID`. */
   withholdingTaxesOfCaByNodeId?: Maybe<WithholdingTaxesOfCa>;
+  _metadata?: Maybe<_Metadata>;
 };
 
 /** The root query type which gives access points into the data universe. */
@@ -2686,6 +4609,39 @@ export type QueryAgentGroupsArgs = {
 };
 
 /** The root query type which gives access points into the data universe. */
+export type QueryAssetHoldersArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetHoldersOrderBy>>;
+  filter?: Maybe<AssetHolderFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetPendingOwnershipTransfersArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetPendingOwnershipTransfersOrderBy>>;
+  filter?: Maybe<AssetPendingOwnershipTransferFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetsOrderBy>>;
+  filter?: Maybe<AssetFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
 export type QueryAuthorizationsArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
@@ -2705,6 +4661,17 @@ export type QueryBlocksArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<BlocksOrderBy>>;
   filter?: Maybe<BlockFilter>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryBridgeEventsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<BridgeEventsOrderBy>>;
+  filter?: Maybe<BridgeEventFilter>;
 };
 
 /** The root query type which gives access points into the data universe. */
@@ -3015,12 +4982,32 @@ export type QueryAgentGroupArgs = {
 };
 
 /** The root query type which gives access points into the data universe. */
+export type QueryAssetHolderArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetPendingOwnershipTransferArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
 export type QueryAuthorizationArgs = {
   id: Scalars['String'];
 };
 
 /** The root query type which gives access points into the data universe. */
 export type QueryBlockArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryBridgeEventArgs = {
   id: Scalars['String'];
 };
 
@@ -3160,12 +5147,32 @@ export type QueryAgentGroupByNodeIdArgs = {
 };
 
 /** The root query type which gives access points into the data universe. */
+export type QueryAssetHolderByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetPendingOwnershipTransferByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
 export type QueryAuthorizationByNodeIdArgs = {
   nodeId: Scalars['ID'];
 };
 
 /** The root query type which gives access points into the data universe. */
 export type QueryBlockByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryBridgeEventByNodeIdArgs = {
   nodeId: Scalars['ID'];
 };
 
@@ -3294,12 +5301,19 @@ export type Settlement = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   addresses: Scalars['JSON'];
   result: Scalars['String'];
   legs: Scalars['JSON'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `Settlement`. */
+  block?: Maybe<Block>;
+};
+
+export type SettlementAggregates = {
+  __typename?: 'SettlementAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Settlement` object types. All fields are combined with a logical ‘and.’ */
@@ -3307,7 +5321,7 @@ export type SettlementFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `addresses` field. */
   addresses?: Maybe<JsonFilter>;
   /** Filter by the object’s `result` field. */
@@ -3337,6 +5351,16 @@ export type SettlementsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Settlement` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<SettlementAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<SettlementAggregates>>;
+};
+
+/** A connection to a list of `Settlement` values. */
+export type SettlementsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<SettlementsGroupBy>;
+  having?: Maybe<SettlementsHavingInput>;
 };
 
 /** A `Settlement` edge in the connection. */
@@ -3346,6 +5370,22 @@ export type SettlementsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Settlement` at the end of the edge. */
   node?: Maybe<Settlement>;
+};
+
+/** Grouping methods for `Settlement` for usage during aggregation. */
+export enum SettlementsGroupBy {
+  BlockId = 'BLOCK_ID',
+  Addresses = 'ADDRESSES',
+  Result = 'RESULT',
+  Legs = 'LEGS',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Settlement` aggregates. */
+export type SettlementsHavingInput = {
+  AND?: Maybe<Array<SettlementsHavingInput>>;
+  OR?: Maybe<Array<SettlementsHavingInput>>;
 };
 
 /** Methods to use when ordering `Settlement`. */
@@ -3374,7 +5414,7 @@ export type StakingEvent = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   eventIdx: Scalars['Int'];
   stakingEventId: Scalars['String'];
   date: Scalars['Datetime'];
@@ -3382,8 +5422,16 @@ export type StakingEvent = Node & {
   stashAccount?: Maybe<Scalars['String']>;
   amount?: Maybe<Scalars['BigFloat']>;
   nominatedValidators?: Maybe<Scalars['JSON']>;
+  transactionId?: Maybe<Scalars['String']>;
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `StakingEvent`. */
+  block?: Maybe<Block>;
+};
+
+export type StakingEventAggregates = {
+  __typename?: 'StakingEventAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `StakingEvent` object types. All fields are combined with a logical ‘and.’ */
@@ -3391,7 +5439,7 @@ export type StakingEventFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `stakingEventId` field. */
@@ -3406,6 +5454,8 @@ export type StakingEventFilter = {
   amount?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `nominatedValidators` field. */
   nominatedValidators?: Maybe<JsonFilter>;
+  /** Filter by the object’s `transactionId` field. */
+  transactionId?: Maybe<StringFilter>;
   /** Filter by the object’s `createdAt` field. */
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
@@ -3429,6 +5479,16 @@ export type StakingEventsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `StakingEvent` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<StakingEventAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<StakingEventAggregates>>;
+};
+
+/** A connection to a list of `StakingEvent` values. */
+export type StakingEventsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<StakingEventsGroupBy>;
+  having?: Maybe<StakingEventsHavingInput>;
 };
 
 /** A `StakingEvent` edge in the connection. */
@@ -3438,6 +5498,27 @@ export type StakingEventsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `StakingEvent` at the end of the edge. */
   node?: Maybe<StakingEvent>;
+};
+
+/** Grouping methods for `StakingEvent` for usage during aggregation. */
+export enum StakingEventsGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  StakingEventId = 'STAKING_EVENT_ID',
+  Date = 'DATE',
+  IdentityId = 'IDENTITY_ID',
+  StashAccount = 'STASH_ACCOUNT',
+  Amount = 'AMOUNT',
+  NominatedValidators = 'NOMINATED_VALIDATORS',
+  TransactionId = 'TRANSACTION_ID',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `StakingEvent` aggregates. */
+export type StakingEventsHavingInput = {
+  AND?: Maybe<Array<StakingEventsHavingInput>>;
+  OR?: Maybe<Array<StakingEventsHavingInput>>;
 };
 
 /** Methods to use when ordering `StakingEvent`. */
@@ -3461,6 +5542,8 @@ export enum StakingEventsOrderBy {
   AmountDesc = 'AMOUNT_DESC',
   NominatedValidatorsAsc = 'NOMINATED_VALIDATORS_ASC',
   NominatedValidatorsDesc = 'NOMINATED_VALIDATORS_DESC',
+  TransactionIdAsc = 'TRANSACTION_ID_ASC',
+  TransactionIdDesc = 'TRANSACTION_ID_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
@@ -3477,6 +5560,11 @@ export type Sto = Node & {
   offeringAsset: Scalars['String'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+};
+
+export type StoAggregates = {
+  __typename?: 'StoAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `Sto` object types. All fields are combined with a logical ‘and.’ */
@@ -3508,6 +5596,16 @@ export type StosConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Sto` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<StoAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<StoAggregates>>;
+};
+
+/** A connection to a list of `Sto` values. */
+export type StosConnectionGroupedAggregatesArgs = {
+  groupBy: Array<StosGroupBy>;
+  having?: Maybe<StosHavingInput>;
 };
 
 /** A `Sto` edge in the connection. */
@@ -3517,6 +5615,19 @@ export type StosEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Sto` at the end of the edge. */
   node?: Maybe<Sto>;
+};
+
+/** Grouping methods for `Sto` for usage during aggregation. */
+export enum StosGroupBy {
+  OfferingAsset = 'OFFERING_ASSET',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Sto` aggregates. */
+export type StosHavingInput = {
+  AND?: Maybe<Array<StosHavingInput>>;
+  OR?: Maybe<Array<StosHavingInput>>;
 };
 
 /** Methods to use when ordering `Sto`. */
@@ -3582,27 +5693,13 @@ export type StringFilter = {
   endsWithInsensitive?: Maybe<Scalars['String']>;
   /** Does not end with the specified string (case-insensitive). */
   notEndsWithInsensitive?: Maybe<Scalars['String']>;
-  /**
-   * Matches the specified pattern (case-sensitive). An underscore (_) matches any
-   * single character; a percent sign (%) matches any sequence of zero or more characters.
-   */
+  /** Matches the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters. */
   like?: Maybe<Scalars['String']>;
-  /**
-   * Does not match the specified pattern (case-sensitive). An underscore (_)
-   * matches any single character; a percent sign (%) matches any sequence of zero
-   * or more characters.
-   */
+  /** Does not match the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters. */
   notLike?: Maybe<Scalars['String']>;
-  /**
-   * Matches the specified pattern (case-insensitive). An underscore (_) matches
-   * any single character; a percent sign (%) matches any sequence of zero or more characters.
-   */
+  /** Matches the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters. */
   likeInsensitive?: Maybe<Scalars['String']>;
-  /**
-   * Does not match the specified pattern (case-insensitive). An underscore (_)
-   * matches any single character; a percent sign (%) matches any sequence of zero
-   * or more characters.
-   */
+  /** Does not match the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters. */
   notLikeInsensitive?: Maybe<Scalars['String']>;
   /** Equal to the specified value (case-insensitive). */
   equalToInsensitive?: Maybe<Scalars['String']>;
@@ -3637,6 +5734,16 @@ export type SubqueriesConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `Subquery` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<SubqueryAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<SubqueryAggregates>>;
+};
+
+/** A connection to a list of `Subquery` values. */
+export type SubqueriesConnectionGroupedAggregatesArgs = {
+  groupBy: Array<SubqueriesGroupBy>;
+  having?: Maybe<SubqueriesHavingInput>;
 };
 
 /** A `Subquery` edge in the connection. */
@@ -3646,6 +5753,24 @@ export type SubqueriesEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `Subquery` at the end of the edge. */
   node?: Maybe<Subquery>;
+};
+
+/** Grouping methods for `Subquery` for usage during aggregation. */
+export enum SubqueriesGroupBy {
+  DbSchema = 'DB_SCHEMA',
+  Version = 'VERSION',
+  Hash = 'HASH',
+  NextBlockHeight = 'NEXT_BLOCK_HEIGHT',
+  Network = 'NETWORK',
+  NetworkGenesis = 'NETWORK_GENESIS',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `Subquery` aggregates. */
+export type SubqueriesHavingInput = {
+  AND?: Maybe<Array<SubqueriesHavingInput>>;
+  OR?: Maybe<Array<SubqueriesHavingInput>>;
 };
 
 /** Methods to use when ordering `Subquery`. */
@@ -3691,6 +5816,11 @@ export type Subquery = Node & {
   updatedAt: Scalars['Datetime'];
 };
 
+export type SubqueryAggregates = {
+  __typename?: 'SubqueryAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
 /** A filter to be used against `Subquery` object types. All fields are combined with a logical ‘and.’ */
 export type SubqueryFilter = {
   /** Filter by the object’s `id` field. */
@@ -3721,12 +5851,18 @@ export type SubqueryFilter = {
   not?: Maybe<SubqueryFilter>;
 };
 
+export type TableEstimate = {
+  __typename?: 'TableEstimate';
+  table?: Maybe<Scalars['String']>;
+  estimate?: Maybe<Scalars['Int']>;
+};
+
 export type TickerExternalAgentAction = Node & {
   __typename?: 'TickerExternalAgentAction';
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   eventIdx: Scalars['Int'];
   ticker: Scalars['String'];
   palletName: Scalars['String'];
@@ -3735,6 +5871,13 @@ export type TickerExternalAgentAction = Node & {
   datetime: Scalars['Datetime'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `TickerExternalAgentAction`. */
+  block?: Maybe<Block>;
+};
+
+export type TickerExternalAgentActionAggregates = {
+  __typename?: 'TickerExternalAgentActionAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `TickerExternalAgentAction` object types. All fields are combined with a logical ‘and.’ */
@@ -3742,7 +5885,7 @@ export type TickerExternalAgentActionFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `ticker` field. */
@@ -3778,6 +5921,16 @@ export type TickerExternalAgentActionsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `TickerExternalAgentAction` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<TickerExternalAgentActionAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<TickerExternalAgentActionAggregates>>;
+};
+
+/** A connection to a list of `TickerExternalAgentAction` values. */
+export type TickerExternalAgentActionsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<TickerExternalAgentActionsGroupBy>;
+  having?: Maybe<TickerExternalAgentActionsHavingInput>;
 };
 
 /** A `TickerExternalAgentAction` edge in the connection. */
@@ -3787,6 +5940,25 @@ export type TickerExternalAgentActionsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `TickerExternalAgentAction` at the end of the edge. */
   node?: Maybe<TickerExternalAgentAction>;
+};
+
+/** Grouping methods for `TickerExternalAgentAction` for usage during aggregation. */
+export enum TickerExternalAgentActionsGroupBy {
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  Ticker = 'TICKER',
+  PalletName = 'PALLET_NAME',
+  EventId = 'EVENT_ID',
+  CallerDid = 'CALLER_DID',
+  Datetime = 'DATETIME',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `TickerExternalAgentAction` aggregates. */
+export type TickerExternalAgentActionsHavingInput = {
+  AND?: Maybe<Array<TickerExternalAgentActionsHavingInput>>;
+  OR?: Maybe<Array<TickerExternalAgentActionsHavingInput>>;
 };
 
 /** Methods to use when ordering `TickerExternalAgentAction`. */
@@ -3823,11 +5995,18 @@ export type TickerExternalAgentAdded = Node & {
   id: Scalars['String'];
   ticker: Scalars['String'];
   callerDid: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   eventIdx: Scalars['Int'];
   datetime: Scalars['Datetime'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `TickerExternalAgentAdded`. */
+  block?: Maybe<Block>;
+};
+
+export type TickerExternalAgentAddedAggregates = {
+  __typename?: 'TickerExternalAgentAddedAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `TickerExternalAgentAdded` object types. All fields are combined with a logical ‘and.’ */
@@ -3839,7 +6018,7 @@ export type TickerExternalAgentAddedFilter = {
   /** Filter by the object’s `callerDid` field. */
   callerDid?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `datetime` field. */
@@ -3867,6 +6046,16 @@ export type TickerExternalAgentAddedsConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `TickerExternalAgentAdded` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<TickerExternalAgentAddedAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<TickerExternalAgentAddedAggregates>>;
+};
+
+/** A connection to a list of `TickerExternalAgentAdded` values. */
+export type TickerExternalAgentAddedsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<TickerExternalAgentAddedsGroupBy>;
+  having?: Maybe<TickerExternalAgentAddedsHavingInput>;
 };
 
 /** A `TickerExternalAgentAdded` edge in the connection. */
@@ -3876,6 +6065,23 @@ export type TickerExternalAgentAddedsEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `TickerExternalAgentAdded` at the end of the edge. */
   node?: Maybe<TickerExternalAgentAdded>;
+};
+
+/** Grouping methods for `TickerExternalAgentAdded` for usage during aggregation. */
+export enum TickerExternalAgentAddedsGroupBy {
+  Ticker = 'TICKER',
+  CallerDid = 'CALLER_DID',
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  Datetime = 'DATETIME',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `TickerExternalAgentAdded` aggregates. */
+export type TickerExternalAgentAddedsHavingInput = {
+  AND?: Maybe<Array<TickerExternalAgentAddedsHavingInput>>;
+  OR?: Maybe<Array<TickerExternalAgentAddedsHavingInput>>;
 };
 
 /** Methods to use when ordering `TickerExternalAgentAdded`. */
@@ -3912,6 +6118,16 @@ export type TickerExternalAgentHistoriesConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `TickerExternalAgentHistory` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<TickerExternalAgentHistoryAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<TickerExternalAgentHistoryAggregates>>;
+};
+
+/** A connection to a list of `TickerExternalAgentHistory` values. */
+export type TickerExternalAgentHistoriesConnectionGroupedAggregatesArgs = {
+  groupBy: Array<TickerExternalAgentHistoriesGroupBy>;
+  having?: Maybe<TickerExternalAgentHistoriesHavingInput>;
 };
 
 /** A `TickerExternalAgentHistory` edge in the connection. */
@@ -3921,6 +6137,25 @@ export type TickerExternalAgentHistoriesEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `TickerExternalAgentHistory` at the end of the edge. */
   node?: Maybe<TickerExternalAgentHistory>;
+};
+
+/** Grouping methods for `TickerExternalAgentHistory` for usage during aggregation. */
+export enum TickerExternalAgentHistoriesGroupBy {
+  Ticker = 'TICKER',
+  Did = 'DID',
+  BlockId = 'BLOCK_ID',
+  EventIdx = 'EVENT_IDX',
+  Datetime = 'DATETIME',
+  Type = 'TYPE',
+  Permissions = 'PERMISSIONS',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `TickerExternalAgentHistory` aggregates. */
+export type TickerExternalAgentHistoriesHavingInput = {
+  AND?: Maybe<Array<TickerExternalAgentHistoriesHavingInput>>;
+  OR?: Maybe<Array<TickerExternalAgentHistoriesHavingInput>>;
 };
 
 /** Methods to use when ordering `TickerExternalAgentHistory`. */
@@ -3957,13 +6192,20 @@ export type TickerExternalAgentHistory = Node & {
   id: Scalars['String'];
   ticker: Scalars['String'];
   did: Scalars['String'];
-  blockId: Scalars['Int'];
+  blockId: Scalars['String'];
   eventIdx: Scalars['Int'];
   datetime: Scalars['Datetime'];
   type: Scalars['String'];
   permissions?: Maybe<Scalars['String']>;
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `TickerExternalAgentHistory`. */
+  block?: Maybe<Block>;
+};
+
+export type TickerExternalAgentHistoryAggregates = {
+  __typename?: 'TickerExternalAgentHistoryAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `TickerExternalAgentHistory` object types. All fields are combined with a logical ‘and.’ */
@@ -3975,7 +6217,7 @@ export type TickerExternalAgentHistoryFilter = {
   /** Filter by the object’s `did` field. */
   did?: Maybe<StringFilter>;
   /** Filter by the object’s `blockId` field. */
-  blockId?: Maybe<IntFilter>;
+  blockId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `datetime` field. */
@@ -4005,6 +6247,11 @@ export type TrustedClaimIssuerTicker = Node & {
   issuer: Scalars['String'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+};
+
+export type TrustedClaimIssuerTickerAggregates = {
+  __typename?: 'TrustedClaimIssuerTickerAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `TrustedClaimIssuerTicker` object types. All fields are combined with a logical ‘and.’ */
@@ -4038,6 +6285,16 @@ export type TrustedClaimIssuerTickersConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `TrustedClaimIssuerTicker` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<TrustedClaimIssuerTickerAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<TrustedClaimIssuerTickerAggregates>>;
+};
+
+/** A connection to a list of `TrustedClaimIssuerTicker` values. */
+export type TrustedClaimIssuerTickersConnectionGroupedAggregatesArgs = {
+  groupBy: Array<TrustedClaimIssuerTickersGroupBy>;
+  having?: Maybe<TrustedClaimIssuerTickersHavingInput>;
 };
 
 /** A `TrustedClaimIssuerTicker` edge in the connection. */
@@ -4047,6 +6304,20 @@ export type TrustedClaimIssuerTickersEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `TrustedClaimIssuerTicker` at the end of the edge. */
   node?: Maybe<TrustedClaimIssuerTicker>;
+};
+
+/** Grouping methods for `TrustedClaimIssuerTicker` for usage during aggregation. */
+export enum TrustedClaimIssuerTickersGroupBy {
+  Ticker = 'TICKER',
+  Issuer = 'ISSUER',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `TrustedClaimIssuerTicker` aggregates. */
+export type TrustedClaimIssuerTickersHavingInput = {
+  AND?: Maybe<Array<TrustedClaimIssuerTickersHavingInput>>;
+  OR?: Maybe<Array<TrustedClaimIssuerTickersHavingInput>>;
 };
 
 /** Methods to use when ordering `TrustedClaimIssuerTicker`. */
@@ -4074,9 +6345,14 @@ export type WithholdingTaxesOfCa = Node & {
   ticker: Scalars['String'];
   localId: Scalars['Int'];
   datetime: Scalars['Datetime'];
-  taxes: Scalars['Int'];
+  taxes: Scalars['BigFloat'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+};
+
+export type WithholdingTaxesOfCaAggregates = {
+  __typename?: 'WithholdingTaxesOfCaAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
 };
 
 /** A filter to be used against `WithholdingTaxesOfCa` object types. All fields are combined with a logical ‘and.’ */
@@ -4090,7 +6366,7 @@ export type WithholdingTaxesOfCaFilter = {
   /** Filter by the object’s `datetime` field. */
   datetime?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `taxes` field. */
-  taxes?: Maybe<IntFilter>;
+  taxes?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `createdAt` field. */
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
@@ -4114,6 +6390,16 @@ export type WithholdingTaxesOfCasConnection = {
   pageInfo: PageInfo;
   /** The count of *all* `WithholdingTaxesOfCa` you could get from the connection. */
   totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<WithholdingTaxesOfCaAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<WithholdingTaxesOfCaAggregates>>;
+};
+
+/** A connection to a list of `WithholdingTaxesOfCa` values. */
+export type WithholdingTaxesOfCasConnectionGroupedAggregatesArgs = {
+  groupBy: Array<WithholdingTaxesOfCasGroupBy>;
+  having?: Maybe<WithholdingTaxesOfCasHavingInput>;
 };
 
 /** A `WithholdingTaxesOfCa` edge in the connection. */
@@ -4123,6 +6409,22 @@ export type WithholdingTaxesOfCasEdge = {
   cursor?: Maybe<Scalars['Cursor']>;
   /** The `WithholdingTaxesOfCa` at the end of the edge. */
   node?: Maybe<WithholdingTaxesOfCa>;
+};
+
+/** Grouping methods for `WithholdingTaxesOfCa` for usage during aggregation. */
+export enum WithholdingTaxesOfCasGroupBy {
+  Ticker = 'TICKER',
+  LocalId = 'LOCAL_ID',
+  Datetime = 'DATETIME',
+  Taxes = 'TAXES',
+  CreatedAt = 'CREATED_AT',
+  UpdatedAt = 'UPDATED_AT',
+}
+
+/** Conditions for `WithholdingTaxesOfCa` aggregates. */
+export type WithholdingTaxesOfCasHavingInput = {
+  AND?: Maybe<Array<WithholdingTaxesOfCasHavingInput>>;
+  OR?: Maybe<Array<WithholdingTaxesOfCasHavingInput>>;
 };
 
 /** Methods to use when ordering `WithholdingTaxesOfCa`. */
@@ -4145,3 +6447,18 @@ export enum WithholdingTaxesOfCasOrderBy {
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
+
+export type _Metadata = {
+  __typename?: '_Metadata';
+  lastProcessedHeight?: Maybe<Scalars['Int']>;
+  lastProcessedTimestamp?: Maybe<Scalars['Date']>;
+  targetHeight?: Maybe<Scalars['Int']>;
+  chain?: Maybe<Scalars['String']>;
+  specName?: Maybe<Scalars['String']>;
+  genesisHash?: Maybe<Scalars['String']>;
+  indexerHealthy?: Maybe<Scalars['Boolean']>;
+  indexerNodeVersion?: Maybe<Scalars['String']>;
+  queryNodeVersion?: Maybe<Scalars['String']>;
+  rowCountEstimate?: Maybe<Array<Maybe<TableEstimate>>>;
+  dynamicDatasources?: Maybe<Scalars['String']>;
+};
