@@ -705,7 +705,6 @@ describe('Identity class', () => {
     let rawScopeId: ScopeId;
 
     let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-    let scopeIdOfStub: sinon.SinonStub;
 
     beforeAll(() => {
       did = 'someDid';
