@@ -102,6 +102,8 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * Retrieve all Asset Holder balances at this Checkpoint
    *
    * @note supports pagination
+   * @note current Asset holders who didn't hold any tokens when the Checkpoint was created will be listed with a balance of 0.
+   * This arises from a chain storage optimization and pagination. @see {@link balance} for a more detailed explanation of the logic
    */
   public async allBalances(
     paginationOpts?: PaginationOptions
@@ -119,6 +121,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const rawTicker = stringToTicker(ticker, context);
 
+    // Get one page of current Asset balances
     const { entries, lastKey: next } = await requestPaginated(asset.balanceOf, {
       arg: rawTicker,
       paginationOpts,
@@ -127,6 +130,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     const currentDidBalances: { did: string; balance: BigNumber }[] = [];
     const balanceUpdatesMultiParams: [Ticker, IdentityId][] = [];
 
+    // Prepare the query for balance updates. Push to currentDidBalances to be used if there are no updates for the balance
     entries.forEach(([storageKey, balance]) => {
       const {
         args: [, identityId],
@@ -138,6 +142,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       balanceUpdatesMultiParams.push(tuple(rawTicker, identityId));
     });
 
+    // Query for balance updates
     const rawBalanceUpdates = await checkpoint.balanceUpdates.multi<
       QueryReturnType<typeof checkpoint.balanceUpdates>
     >(balanceUpdatesMultiParams);
@@ -146,7 +151,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       did: string;
       params: [(Ticker | CheckpointId)[], IdentityId];
     }[] = [];
-    const signingIdentityBalances: IdentityBalance[] = [];
+    const currentIdentityBalances: IdentityBalance[] = [];
 
     rawBalanceUpdates.forEach((rawCheckpointIds, index) => {
       const firstUpdatedCheckpoint = rawCheckpointIds.find(checkpointId =>
@@ -154,18 +159,21 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       );
       const { did, balance } = currentDidBalances[index];
       if (firstUpdatedCheckpoint) {
+        // If a balance update has occurred for the Identity since the desired Checkpoint, then query Checkpoint storage directly
         checkpointBalanceMultiParams.push({
           did,
           params: tuple([rawTicker, firstUpdatedCheckpoint], stringToIdentityId(did, context)),
         });
       } else {
-        signingIdentityBalances.push({
+        // Otherwise use the current balance
+        currentIdentityBalances.push({
           identity: new Identity({ did }, context),
           balance,
         });
       }
     });
 
+    // Query for Identities with balance updates
     const checkpointBalances = await checkpoint.balance.multi<
       QueryReturnType<typeof checkpoint.balance>
     >(checkpointBalanceMultiParams.map(({ params }) => params));
@@ -176,7 +184,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
           identity: new Identity({ did }, context),
           balance: balanceToBigNumber(checkpointBalances[index]),
         })),
-        ...signingIdentityBalances,
+        ...currentIdentityBalances,
       ],
       next,
     };
@@ -186,6 +194,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * Retrieve the balance of a specific Asset Holder Identity at this Checkpoint
    *
    * @param args.identity - defaults to the signing Identity
+   * @note A checkpoint only records balances when they change. The implementation is to query for all balance updates for [ticker, did] pair.
+   * If no balance updates have happened since the Checkpoint has been created, then the storage will not have an entry for the user. Instead the current balance should be used.
+   * The balance is stored only when the Identity makes a transaction after a Checkpoint is created. This helps keep storage usage to a minimum
    */
   public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
     const {
@@ -209,6 +220,10 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       u64ToBigNumber(checkpointId).gte(id)
     );
 
+    /*
+     * If there has been a balance change since the Checkpoint was created, then query the Checkpoint storage.
+     * Otherwise, the storage will not have an entry for the Identity. The current balance should be queried instead.
+     */
     let balance: BigNumber;
     if (firstUpdatedCheckpoint) {
       const rawBalance = await checkpoint.balance(
@@ -217,6 +232,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
       );
       balance = balanceToBigNumber(rawBalance);
     } else {
+      // if no balanceUpdate has occurred since the Checkpoint has been created, then the current balance should be used. The Checkpoint storage will not have an entry
       balance = await identity.getAssetBalance({ ticker });
     }
 
