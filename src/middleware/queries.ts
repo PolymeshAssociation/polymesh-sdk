@@ -957,33 +957,25 @@ function mapTransactionOrderBy(
     order: Order.Asc,
   }
 ): ExtrinsicsOrderBy {
-  if (field === TransactionOrderFields.Address) {
-    if (order === Order.Asc) {
-      return ExtrinsicsOrderBy.AddressAsc;
-    } else {
-      return ExtrinsicsOrderBy.AddressDesc;
-    }
-  } else if (field === TransactionOrderFields.BlockId) {
-    if (order === Order.Asc) {
-      return ExtrinsicsOrderBy.BlockIdAsc;
-    } else {
-      return ExtrinsicsOrderBy.BlockIdDesc;
-    }
-  } else if (field === TransactionOrderFields.CallId) {
-    if (order === Order.Asc) {
-      return ExtrinsicsOrderBy.CallIdAsc;
-    } else {
-      return ExtrinsicsOrderBy.CallIdDesc;
-    }
-  } else if (field === TransactionOrderFields.ModuleId) {
-    if (order === Order.Asc) {
-      return ExtrinsicsOrderBy.ModuleIdAsc;
-    } else {
-      return ExtrinsicsOrderBy.ModuleIdDesc;
-    }
-  }
-  // The ts compiler is not smart enough.
-  return ExtrinsicsOrderBy.BlockIdAsc;
+  const fieldOrderMap = {
+    [TransactionOrderFields.Address]: {
+      [Order.Asc]: ExtrinsicsOrderBy.AddressAsc,
+      [Order.Desc]: ExtrinsicsOrderBy.AddressDesc,
+    },
+    [TransactionOrderFields.BlockId]: {
+      [Order.Asc]: ExtrinsicsOrderBy.BlockIdAsc,
+      [Order.Desc]: ExtrinsicsOrderBy.BlockIdDesc,
+    },
+    [TransactionOrderFields.CallId]: {
+      [Order.Asc]: ExtrinsicsOrderBy.CallIdAsc,
+      [Order.Desc]: ExtrinsicsOrderBy.CallIdDesc,
+    },
+    [TransactionOrderFields.ModuleId]: {
+      [Order.Asc]: ExtrinsicsOrderBy.ModuleIdAsc,
+      [Order.Desc]: ExtrinsicsOrderBy.ModuleIdDesc,
+    },
+  };
+  return fieldOrderMap[field][order];
 }
 
 /**
