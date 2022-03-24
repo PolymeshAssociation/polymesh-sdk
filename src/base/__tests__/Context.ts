@@ -57,7 +57,6 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
 );
 
-// TODO: refactor tests (too much repeated code)
 describe('Context class', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
