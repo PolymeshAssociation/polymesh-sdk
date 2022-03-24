@@ -196,7 +196,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
    * @param args.identity - defaults to the signing Identity
    * @note A checkpoint only records balances when they change. The implementation is to query for all balance updates for [ticker, did] pair.
    * If no balance updates have happened since the Checkpoint has been created, then the storage will not have an entry for the user. Instead the current balance should be used.
-   * Only when the Identity makes a transaction after a Checkpoint is create the balance is stored. This helps keep the total size of the Checkpoint to a minimum
+   * The balance is stored only when the Identity makes a transaction after a Checkpoint is created. This helps keep storage usage to a minimum
    */
   public async balance(args?: { identity: string | Identity }): Promise<BigNumber> {
     const {
