@@ -461,6 +461,13 @@ export function signerValueToSigner(signerValue: SignerValue, context: Context):
 /**
  * @hidden
  */
+export function signerToSignatory(signer: Signer, context: Context): Signatory {
+  return signerValueToSignatory(signerToSignerValue(signer), context);
+}
+
+/**
+ * @hidden
+ */
 export function signerToString(signer: string | Signer): string {
   if (typeof signer === 'string') {
     return signer;

@@ -112,6 +112,8 @@ import {
   PortfolioValidityResult,
   PosRatio,
   PriceTier,
+  ProposalData,
+  ProposalDetails,
   ProposalState,
   RecordDate,
   RecordDateSpec,
@@ -3474,4 +3476,55 @@ export const createMockSignedBlock = (
     },
     !signedBlock
   ) as SignedBlock;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockProposalData = (proposalData?: {
+  args: unknown[];
+  method: string;
+  section: string;
+}): ProposalData => {
+  const { args, method, section } = proposalData || {
+    args: [],
+    method: '',
+    section: '',
+  };
+
+  return createMockCodec(
+    {
+      args: createMockCodec(args, false),
+      method,
+      section,
+    },
+    !proposalData
+  ) as ProposalData;
+};
+
+export const createMockProposalDetails = (proposalDetails?: {
+  approvals: string;
+  rejections: string;
+  status: string;
+  expiry: Moment | null;
+  autoClose: boolean;
+}): ProposalDetails => {
+  const { approvals, rejections, status, autoClose, expiry } = proposalDetails || {
+    approvals: '0',
+    rejections: '0',
+    status: '',
+    autoClose: false,
+    expiry: null,
+  };
+  return createMockCodec(
+    {
+      approvals,
+      rejections,
+      status,
+      expiry,
+      auto_close: autoClose,
+    },
+    !proposalDetails
+  ) as ProposalDetails;
 };

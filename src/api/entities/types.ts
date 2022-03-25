@@ -12,6 +12,7 @@ import {
   Identity as IdentityClass,
   Instruction as InstructionClass,
   KnownPermissionGroup as KnownPermissionGroupClass,
+  MultiSig as MultiSigClass,
   NumberedPortfolio as NumberedPortfolioClass,
   Offering as OfferingClass,
   Subsidy as SubsidyClass,
@@ -20,6 +21,7 @@ import {
 } from '~/internal';
 
 export type Account = AccountClass;
+export type MultiSig = MultiSigClass;
 export type AuthorizationRequest = AuthorizationRequestClass;
 export type Checkpoint = CheckpointClass;
 export type CheckpointSchedule = CheckpointScheduleClass;

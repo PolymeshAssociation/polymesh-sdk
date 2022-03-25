@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { AccountManagement } from '~/AccountManagement';
-import { Account, TransactionQueue } from '~/internal';
+import { Account, MultiSig, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
@@ -203,9 +203,25 @@ describe('AccountManagement class', () => {
   describe('method: getAccount', () => {
     it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
+      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+        returnValue: [],
+      });
 
-      const result = accountManagement.getAccount(params);
+      const result = await accountManagement.getAccount(params);
 
+      expect(result).toBeInstanceOf(Account);
+      expect(result.address).toBe(params.address);
+    });
+
+    it('should return a MultiSig object if the address is for a MultiSig', async () => {
+      const params = { address: 'testAddress' };
+      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+        entries: [[['someSignerAddress'], 'someSignerAddress']],
+      });
+
+      const result = await accountManagement.getAccount(params);
+
+      expect(result).toBeInstanceOf(MultiSig);
       expect(result.address).toBe(params.address);
     });
   });

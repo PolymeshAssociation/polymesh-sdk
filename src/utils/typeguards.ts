@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 
+import { ProposalStatus } from '~/api/entities/MultiSigProposal';
 import {
   Account,
   Asset,
@@ -15,6 +16,7 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  MultiSig,
   NumberedPortfolio,
   Offering,
   PolymeshError,
@@ -361,4 +363,26 @@ export function isPolymeshTransaction(value: unknown): value is PolymeshTransact
  */
 export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTransactionBatch {
   return value instanceof PolymeshTransactionBatch;
+}
+
+/**
+ * Return whether value is a MultiSig Account
+ */
+export function isMultiSig(value: Account): value is MultiSig {
+  return value instanceof MultiSig;
+}
+
+/**
+ * @hidden
+ */
+export function isProposalStatus(status: string): status is ProposalStatus {
+  const expectedStatus: ProposalStatus[] = [
+    'Invalid',
+    'ActiveOrExpired',
+    'ExecutionSuccessful',
+    'ExecutionFailed',
+    'Rejected',
+  ];
+
+  return expectedStatus.includes(status as ProposalStatus);
 }

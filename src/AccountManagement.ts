@@ -1,3 +1,4 @@
+import { MultiSig } from '~/api/entities/MultiSig';
 import {
   Account,
   AuthorizationRequest,
@@ -195,10 +196,24 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Account instance from an address
+   * Return an Account instance from an address. If the Account is a signer for a MultiSig then it will be a MultiSig
+   *
+   * @note There is a {@link isMultiSig} type guard to help narrow to MultiSig.
    */
-  public getAccount(args: { address: string }): Account {
-    const { context } = this;
+  public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+      },
+    } = this;
+
+    const rawSigners = await multiSig.multiSigSigners.entries(args.address);
+    if (rawSigners.length > 0) {
+      return new MultiSig(args, context);
+    }
 
     return new Account(args, context);
   }

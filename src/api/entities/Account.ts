@@ -10,7 +10,7 @@ import {
   union,
 } from 'lodash';
 
-import { Asset, Authorizations, Context, Entity, Identity } from '~/internal';
+import { Asset, Authorizations, Context, Entity, Identity, MultiSig } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
@@ -35,6 +35,7 @@ import {
 } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
+  accountIdToString,
   addressToKey,
   extrinsicIdentifierToTxTag,
   identityIdToString,
@@ -564,6 +565,27 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { result } = await this.checkPermissions(permissions);
 
     return result;
+  }
+
+  /**
+   * Resolves to the multiSig this account is a signer for. If this Account is not a multiSig signer resolves to null
+   */
+  public async getMultiSig(): Promise<MultiSig | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+      },
+      context,
+    } = this;
+
+    const rawAddress = await multiSig.keyToMultiSig(this.address);
+    if (rawAddress.isEmpty) {
+      return null;
+    }
+    const address = accountIdToString(rawAddress);
+    return new MultiSig({ address }, context);
   }
 
   /**
