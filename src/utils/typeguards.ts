@@ -193,17 +193,21 @@ export function isPolymeshError(value: unknown): value is PolymeshError {
 }
 
 /**
- * Return whether a Claim is a ScopedClaim
- */
-export function isScopedClaim(claim: Claim): claim is ScopedClaim {
-  return 'scope' in claim;
-}
-
-/**
  * Return whether a Claim is an UnscopedClaim
  */
 export function isUnscopedClaim(claim: Claim): claim is UnscopedClaim {
-  return !('scope' in claim);
+  return [
+    ClaimType.NoData,
+    ClaimType.CustomerDueDiligence,
+    ClaimType.InvestorUniquenessV2,
+  ].includes(claim.type);
+}
+
+/**
+ * Return whether a Claim is a ScopedClaim
+ */
+export function isScopedClaim(claim: Claim): claim is ScopedClaim {
+  return !isUnscopedClaim(claim);
 }
 
 /**
