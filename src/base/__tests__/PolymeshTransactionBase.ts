@@ -1,6 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { noop } from 'lodash';
 import sinon from 'sinon';
 
 import {
@@ -47,8 +48,10 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: run', () => {
+    let getBlockStub: sinon.SinonStub;
+
     beforeEach(() => {
-      dsMockUtils.createRpcStub('chain', 'getBlock', {
+      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock', {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
@@ -77,7 +80,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      tx.run();
+      tx.run().catch(noop);
 
       dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.InBlock);
 
@@ -112,7 +115,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      tx.run();
+      tx.run().catch(noop);
 
       dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.InBlock);
 
@@ -146,7 +149,7 @@ describe('Polymesh Transaction Base class', () => {
 
       expect(tx.status).toBe(TransactionStatus.Idle);
 
-      tx.run();
+      tx.run().catch(noop);
 
       expect(tx.status).toBe(TransactionStatus.Unapproved);
 
@@ -308,6 +311,59 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Failed);
     });
 
+    it('should throw an error if there is a problem fetching block data', async () => {
+      const message = 'Something went wrong';
+      getBlockStub.rejects(new Error(message));
+
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
+        autoResolve: false,
+      });
+      const args = tuple('HERE WE ARE AGAIN');
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+        },
+        context
+      );
+      const runPromise = tx.run();
+
+      dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.InBlock);
+
+      await fakePromise();
+
+      dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.Succeeded);
+
+      return expect(runPromise).rejects.toThrow(message);
+    });
+
+    it('should throw an error if there is a problem unsubscribing', async () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
+        autoResolve: false,
+      });
+      const args = tuple('I HATE TESTING THESE THINGS');
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+        },
+        context
+      );
+      const runPromise = tx.run();
+
+      dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.InBlock);
+
+      await fakePromise();
+
+      dsMockUtils.updateTxStatus(transaction, dsMockUtils.MockTxStatus.FailedToUnsubscribe);
+
+      return expect(runPromise).rejects.toThrow();
+    });
+
     it('should throw an error when the transaction is rejected', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: dsMockUtils.MockTxStatus.Rejected,
@@ -372,7 +428,7 @@ describe('Polymesh Transaction Base class', () => {
 
       const unsub = tx.onStatusChange(t => listenerStub(t.status));
 
-      tx.run();
+      tx.run().catch(noop);
 
       await fakePromise();
 

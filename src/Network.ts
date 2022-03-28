@@ -113,6 +113,7 @@ export class Network {
 
     if (callback) {
       return account.getBalance(({ free: freeBalance }) => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(freeBalance);
       });
     }

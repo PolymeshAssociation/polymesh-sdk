@@ -2,7 +2,7 @@ import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
-import { getAsset } from '~/utils/internal';
+import { asAsset } from '~/utils/internal';
 
 export interface WaivePermissionsParams {
   asset: string | Asset;
@@ -84,7 +84,7 @@ export function prepareStorage(this: Procedure<Params, void, Storage>, { asset }
   const { context } = this;
 
   return {
-    asset: getAsset(asset, context),
+    asset: asAsset(asset, context),
   };
 }
 

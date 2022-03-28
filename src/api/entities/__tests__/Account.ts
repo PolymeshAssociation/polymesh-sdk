@@ -8,6 +8,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
+  Balance,
   ModuleName,
   Permissions,
   PermissionType,
@@ -108,7 +109,7 @@ describe('Account class', () => {
       const unsubCallback = 'unsubCallback';
       const callback = sinon.stub();
 
-      context.accountBalance.callsFake(async (_, cbFunc) => {
+      context.accountBalance.callsFake((_, cbFunc: (balance: Balance) => void) => {
         cbFunc(fakeResult);
         return unsubCallback;
       });
@@ -146,10 +147,12 @@ describe('Account class', () => {
       const unsubCallback = 'unsubCallback';
       const callback = sinon.stub();
 
-      context.accountSubsidy.callsFake(async (_, cbFunc) => {
-        cbFunc(fakeResult);
-        return unsubCallback;
-      });
+      context.accountSubsidy.callsFake(
+        async (_, cbFunc: (balance: SubsidyWithAllowance) => void) => {
+          cbFunc(fakeResult);
+          return unsubCallback;
+        }
+      );
 
       const result = await account.getSubsidy(callback);
 

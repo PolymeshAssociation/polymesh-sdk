@@ -80,14 +80,14 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the Authorization Request is expired', async () => {
+  it('should throw an error if the Authorization Request is expired', () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
 
     const target = entityMockUtils.getAccountInstance({ address: 'someAddress' });
 
-    expect(
+    return expect(
       prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
         authRequest: new AuthorizationRequest(
           {

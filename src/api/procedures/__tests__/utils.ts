@@ -1156,7 +1156,7 @@ describe('authorization request validations', () => {
   });
 
   describe('assertMultiSigSignerAuthorizationValid', () => {
-    test('should not throw with a valid request', () => {
+    it('should not throw with a valid request', () => {
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -1174,7 +1174,7 @@ describe('authorization request validations', () => {
       return expect(assertAuthorizationRequestValid(auth, mockContext)).resolves.not.toThrow();
     });
 
-    test('should throw if the multisig is being added as its own signer', () => {
+    it('should throw if the multisig is being added as its own signer', () => {
       const address = 'multiSigAddr';
 
       const badTarget = entityMockUtils.getAccountInstance({
@@ -1205,7 +1205,7 @@ describe('authorization request validations', () => {
       );
     });
 
-    test('should throw if the target Account is already associated to an Identity', () => {
+    it('should throw if the target Account is already associated to an Identity', () => {
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -1230,7 +1230,7 @@ describe('authorization request validations', () => {
       );
     });
 
-    test('should throw if the target Account is already associated to a multisig', () => {
+    it('should throw if the target Account is already associated to a multisig', () => {
       const auth = new AuthorizationRequest(
         {
           authId: new BigNumber(1),

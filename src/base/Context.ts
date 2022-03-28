@@ -328,6 +328,7 @@ export class Context {
 
     if (callback) {
       return system.account(rawAddress, info => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(info));
       });
     }
@@ -389,6 +390,7 @@ export class Context {
 
     if (callback) {
       return relayer.subsidies(rawAddress, subsidy => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(subsidy));
       });
     }
@@ -1082,7 +1084,7 @@ export class Context {
    */
   public async isMiddlewareAvailable(): Promise<boolean> {
     try {
-      this.middlewareApi.query(heartbeat());
+      await this.middlewareApi.query(heartbeat());
     } catch (err) {
       return false;
     }

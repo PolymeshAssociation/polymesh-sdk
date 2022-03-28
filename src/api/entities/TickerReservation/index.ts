@@ -149,6 +149,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
           [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
         ],
         ([registration, token]) => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
           callback(assembleResult(registration, token));
         }
       );
@@ -184,7 +185,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted
-   *   by the destinatary
+   *   by the target
    *
    * @note this will create {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
    *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.

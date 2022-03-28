@@ -315,7 +315,7 @@ describe('Polymesh Class', () => {
 
       const address = 'address';
 
-      polymesh.setSigningAccount(address);
+      await polymesh.setSigningAccount(address);
       sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningAddress, address);
     });
   });
@@ -333,7 +333,7 @@ describe('Polymesh Class', () => {
 
       const signingManager = 'manager' as unknown as SigningManager;
 
-      polymesh.setSigningManager(signingManager);
+      await polymesh.setSigningManager(signingManager);
       sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningManager, signingManager);
     });
   });

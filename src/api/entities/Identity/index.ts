@@ -56,7 +56,7 @@ import {
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { calculateNextKey, getTicker, removePadding } from '~/utils/internal';
+import { asTicker, calculateNextKey, removePadding } from '~/utils/internal';
 
 import { AssetPermissions } from './AssetPermissions';
 import { IdentityAuthorizations } from './IdentityAuthorizations';
@@ -194,6 +194,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     if (callback) {
       return asset.balanceOf(rawTicker, rawIdentityId, res => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(balanceToBigNumber(res));
       });
     }
@@ -429,20 +430,26 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset
+   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset, or null
+   *   if there is none
    *
-   * @note more on Investor Uniqueness: https://developers.polymesh.live/confidential_identity
+   * @note more on Investor Uniqueness {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
+   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
    */
-  public async getScopeId(args: { asset: Asset | string }): Promise<string> {
+  public async getScopeId(args: { asset: Asset | string }): Promise<string | null> {
     const { context, did } = this;
     const { asset } = args;
 
-    const ticker = getTicker(asset);
+    const ticker = asTicker(asset);
 
     const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
       stringToTicker(ticker, context),
       stringToIdentityId(did, context)
     );
+
+    if (scopeId.isEmpty) {
+      return null;
+    }
 
     return scopeIdToString(scopeId);
   }
@@ -594,6 +601,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     if (callback) {
       return identity.isDidFrozen(rawIdentityId, frozen => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(boolToBoolean(frozen));
       });
     }
