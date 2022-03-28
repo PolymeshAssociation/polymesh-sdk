@@ -11,11 +11,11 @@ interface MultiSigDetails {
 }
 
 /**
- * Represents a MultiSig Account
+ * Represents a MultiSig Account. This functions like a regular account except to execute a transaction a proposal must be made and accepted by signers
  */
 export class MultiSig extends Account {
   /**
-   * Returns details about this MultiSig
+   * Returns details about this MultiSig such as its Signers and the require number of signatures to execute an extrinsic
    */
   public async details(): Promise<MultiSigDetails> {
     const {
@@ -44,7 +44,9 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Given an ID fetches a Proposal for this MultiSig
+   * Given an ID fetches a { @link MultiSigProposal } for this MultiSig
+   *
+   * @throws if the MultiSigProposal is not found
    */
   public async getProposal(id: BigNumber): Promise<MultiSigProposal> {
     const { address, context } = this;
@@ -61,7 +63,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Returns all pending Proposals for this MultiSig
+   * Returns all pending { @link MultiSigProposal | MultiSigProposals } for this MultiSig Account
    */
   public async getPendingProposals(): Promise<MultiSigProposal[]> {
     const {

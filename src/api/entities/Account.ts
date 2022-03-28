@@ -568,7 +568,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Resolves to the multiSig this account is a signer for. If this Account is not a multiSig signer resolves to null
+   * Returns the multiSig this account is a signer for. If this Account is not a multiSig signer returns null
    */
   public async getMultiSig(): Promise<MultiSig | null> {
     const {

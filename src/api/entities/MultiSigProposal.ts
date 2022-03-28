@@ -34,7 +34,7 @@ export interface MultiSigProposalDetails {
 }
 
 /**
- * A Proposal for a MultiSig
+ * A Proposal for a MultiSig. This is a wrapper around an extrinsic that multiSig signers need to approve. It will be executed when the approvals reach the signature threshold set on the MultiSig address
  */
 export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   public multiSigAddress: string;
@@ -52,7 +52,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Fetches the details of the Proposal
+   * Fetches the details of the Proposal. This includes the approvals, rejections, the expiry along with details of the wrapped extrinsic
    */
   public async details(): Promise<MultiSigProposalDetails> {
     const {
@@ -87,7 +87,10 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       method = value.method;
       section = value.section;
     } else {
-      throw new Error('proposal was empty');
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
+      });
     }
 
     const approvals = u64ToBigNumber(rawApprovals);

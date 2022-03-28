@@ -96,7 +96,6 @@ import {
 } from 'polymesh-types/types';
 
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
-// import { ProposalDetails } from '~/api/types';
 import {
   Account,
   Asset,
