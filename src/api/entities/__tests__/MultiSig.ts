@@ -4,7 +4,13 @@ import sinon from 'sinon';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockOption, createMockU64 } from '~/testUtils/mocks/dataSources';
+import {
+  createMockAccountId,
+  createMockIdentityId,
+  createMockOption,
+  createMockSignatory,
+  createMockU64,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -57,7 +63,20 @@ describe('MultiSig class', () => {
   describe('method: details', () => {
     it('should return the details of the MultiSig', async () => {
       dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
-        returnValue: 3,
+        entries: [
+          [
+            [],
+            createMockSignatory({
+              Identity: createMockIdentityId('def'),
+            }),
+          ],
+          [
+            [],
+            createMockSignatory({
+              Account: createMockAccountId('abc'),
+            }),
+          ],
+        ],
       });
 
       dsMockUtils.createQueryStub('multiSig', 'multiSigSignsRequired', {
@@ -120,6 +139,19 @@ describe('MultiSig class', () => {
       const expectedProposals: MultiSigProposal[] = [];
 
       expect(result).toEqual(expectedProposals);
+    });
+
+    it('should throw if a pending proposal lacks an ID', () => {
+      dsMockUtils.createQueryStub('multiSig', 'proposalIds', {
+        entries: [[[], createMockOption()]],
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'A Proposal was missing its ID. Maybe it was already executed',
+      });
+
+      return expect(multiSig.getPendingProposals()).rejects.toThrowError(expectedError);
     });
   });
 });

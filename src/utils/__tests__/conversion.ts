@@ -194,6 +194,7 @@ import {
   securityIdentifierToAssetIdentifier,
   signatoryToAccount,
   signatoryToSignerValue,
+  signerToSignatory,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
@@ -814,6 +815,36 @@ describe('signerValueToSignatory and signatoryToSignerValue', () => {
       const result = signerValueToSignatory(value, context);
 
       expect(result).toBe(fakeResult);
+    });
+  });
+
+  describe('signerToSignatory', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+      sinon.restore();
+    });
+    it('should convert a Signer to a polkadot Signatory object', () => {
+      const context = dsMockUtils.getContextInstance();
+      const address = DUMMY_ACCOUNT_ID;
+      const fakeResult = 'SignatoryEnum' as unknown as Signatory;
+      const account = new Account({ address }, context);
+
+      context.createType
+        .withArgs('Signatory', { [SignerType.Account]: address })
+        .returns(fakeResult);
+
+      const result = signerToSignatory(account, context);
+      expect(result).toEqual(fakeResult);
     });
   });
 

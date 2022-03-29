@@ -1,11 +1,17 @@
 import BigNumber from 'bignumber.js';
+import { create } from 'lodash';
 import sinon from 'sinon';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { Account, Context, MultiSig } from '~/internal';
+import { Account, Context, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockOption } from '~/testUtils/mocks/dataSources';
+import {
+  createMockMoment,
+  createMockOption,
+  createMockRecordDate,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
+import { ErrorCode } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('MultiSigProposal class', () => {
@@ -52,7 +58,7 @@ describe('MultiSigProposal class', () => {
           rejections: '1',
           status: 'ActiveOrExpired',
           autoClose: true,
-          expiry: null,
+          expiry: createMockOption(createMockMoment()),
         }),
       });
 
@@ -69,6 +75,59 @@ describe('MultiSigProposal class', () => {
       const result = await proposal.details();
 
       expect(result).toBeDefined();
+    });
+
+    it('should throw an error if no data is returned', () => {
+      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+        returnValue: createMockOption(),
+      });
+
+      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+        returnValue: dsMockUtils.createMockProposalDetails({
+          approvals: '1',
+          rejections: '1',
+          status: 'ActiveOrExpired',
+          autoClose: true,
+          expiry: null,
+        }),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Proposal with ID: "1" was not found. It may have already been executed',
+      });
+
+      return expect(proposal.details()).rejects.toThrowError(expectedError);
+    });
+
+    it('should throw if it receives an unexpected proposal status', () => {
+      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+        returnValue: createMockOption(
+          dsMockUtils.createMockProposalData({
+            args: ['ABC'],
+            method: 'reserveTicker',
+            section: 'asset',
+          })
+        ),
+      });
+
+      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+        returnValue: dsMockUtils.createMockProposalDetails({
+          approvals: '1',
+          rejections: '1',
+          status: 'badStatus',
+          autoClose: false,
+          expiry: null,
+        }),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message:
+          'Unexpected MultiSigProposal status: "badStatus". Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
+      });
+
+      return expect(proposal.details()).rejects.toThrowError(expectedError);
     });
   });
 

@@ -3519,7 +3519,7 @@ export const createMockProposalDetails = (proposalDetails?: {
   approvals: string;
   rejections: string;
   status: string;
-  expiry: Moment | null;
+  expiry: Option<Moment> | null;
   autoClose: boolean;
 }): ProposalDetails => {
   const { approvals, rejections, status, autoClose, expiry } = proposalDetails || {

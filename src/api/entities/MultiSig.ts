@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { sign } from 'crypto';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Identity, PolymeshError } from '~/internal';
@@ -77,7 +78,6 @@ export class MultiSig extends Account {
 
     const rawProposals = await multiSig.proposalIds.entries(address);
     return rawProposals.map(([, rawId]) => {
-      // Not sure why the ID will not be present
       if (rawId.isSome) {
         const id = u64ToBigNumber(rawId.unwrap());
         return new MultiSigProposal(
@@ -85,8 +85,10 @@ export class MultiSig extends Account {
           this.context
         );
       } else {
-        // I don't think this should happen
-        throw new Error('no proposal ID');
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: 'A Proposal was missing its ID. Maybe it was already executed',
+        });
       }
     });
   }
