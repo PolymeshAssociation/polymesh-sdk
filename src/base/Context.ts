@@ -438,6 +438,15 @@ export class Context {
   /**
    * @hidden
    *
+   * Retrieve the non-proxied Polkadot client
+   */
+  public getPolymeshApi(): ApiPromise {
+    return this._polymeshApi;
+  }
+
+  /**
+   * @hidden
+   *
    * Retrieve the signing address
    *
    * @throws if there is no signing Account associated to the SDK instance
