@@ -1,5 +1,6 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { noop } from 'lodash';
 import sinon from 'sinon';
 
 import { Context, PolymeshTransactionBatch } from '~/internal';
@@ -96,7 +97,7 @@ describe('Polymesh Transaction Batch class', () => {
         context
       );
 
-      tx.run();
+      tx.run().catch(noop);
 
       dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.InBlock);
 

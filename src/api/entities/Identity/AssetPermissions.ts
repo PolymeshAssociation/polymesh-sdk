@@ -43,9 +43,9 @@ import {
   tickerToString,
 } from '~/utils/conversion';
 import {
+  asTicker,
   calculateNextKey,
   createProcedureMethod,
-  getTicker,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -150,7 +150,7 @@ export class AssetPermissions extends Namespace<Identity> {
       });
     }
 
-    const ticker = getTicker(asset);
+    const ticker = asTicker(asset);
     const rawTicker = stringToTicker(ticker, context);
 
     const groupOption = await externalAgents.groupOfAgent(
@@ -307,7 +307,7 @@ export class AssetPermissions extends Namespace<Identity> {
       parent: { did },
     } = this;
 
-    const ticker = getTicker(asset);
+    const ticker = asTicker(asset);
 
     const rawTicker = stringToTicker(ticker, context);
     const rawIdentityId = stringToIdentityId(did, context);
@@ -334,7 +334,7 @@ export class AssetPermissions extends Namespace<Identity> {
    */
   public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
-    const ticker = getTicker(asset);
+    const ticker = asTicker(asset);
 
     const {
       data: { eventByIndexedArgs: event },
@@ -394,7 +394,7 @@ export class AssetPermissions extends Namespace<Identity> {
     /* eslint-disable @typescript-eslint/naming-convention */
     const { asset, moduleId: pallet_name, eventId: event_id, size, start } = opts;
 
-    const ticker = getTicker(asset);
+    const ticker = asTicker(asset);
 
     const result = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActions({

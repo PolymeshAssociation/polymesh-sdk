@@ -12,7 +12,7 @@ import {
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
+import { asIdentity, assembleBatchTransactions, hasSameElements } from '~/utils/internal';
 
 export interface ModifyAssetTrustedClaimIssuersAddSetParams {
   claimIssuers: InputTrustedClaimIssuer[];
@@ -45,12 +45,8 @@ const convertArgsToRaw = (
   const claimIssuersToAdd: [Ticker, TrustedIssuer][] = [];
   const inputDids: string[] = [];
   claimIssuers.forEach(({ identity, trustedFor }) => {
-    let issuerIdentity: Identity;
-    if (typeof identity === 'string') {
-      issuerIdentity = new Identity({ did: identity }, context);
-    } else {
-      issuerIdentity = identity;
-    }
+    const issuerIdentity = asIdentity(identity, context);
+
     claimIssuersToAdd.push(
       tuple(
         rawTicker,

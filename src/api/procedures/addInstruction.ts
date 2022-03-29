@@ -41,8 +41,8 @@ import {
 } from '~/utils/conversion';
 import {
   assembleBatchTransactions,
+  asTicker,
   filterEventRecords,
-  getTicker,
   optionize,
 } from '~/utils/internal';
 
@@ -235,7 +235,7 @@ async function getTxArgsAndErrors(
           rawLegs.push({
             from: rawFromPortfolio,
             to: rawToPortfolio,
-            asset: stringToTicker(getTicker(asset), context),
+            asset: stringToTicker(asTicker(asset), context),
             amount: bigNumberToBalance(amount, context),
           });
         })

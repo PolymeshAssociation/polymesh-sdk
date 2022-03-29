@@ -7,7 +7,7 @@ import {
   RegisterIdentityParams,
 } from '~/internal';
 import { ProcedureMethod } from '~/types';
-import { createProcedureMethod } from '~/utils/internal';
+import { asIdentity, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Identity related functionality
@@ -55,17 +55,14 @@ export class Identities {
    *
    * @throws if there is no Identity with the passed DID
    */
-  public async getIdentity(args: { did: string }): Promise<Identity> {
+  public getIdentity(args: { did: string }): Promise<Identity> {
     return this.context.getIdentity(args.did);
   }
 
   /**
    * Return whether the supplied Identity/DID exists
    */
-  public async isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
-    const { identity: did } = args;
-    const identity = did instanceof Identity ? did : new Identity({ did }, this.context);
-
-    return identity.exists();
+  public isIdentityValid(args: { identity: Identity | string }): Promise<boolean> {
+    return asIdentity(args.identity, this.context).exists();
   }
 }

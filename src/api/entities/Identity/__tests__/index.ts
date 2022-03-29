@@ -696,6 +696,7 @@ describe('Identity class', () => {
 
   describe('method: getScopeId', () => {
     let did: string;
+    let identity: Identity;
     let ticker: string;
     let scopeId: string;
 
@@ -720,6 +721,7 @@ describe('Identity class', () => {
     beforeEach(() => {
       stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
       stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+      identity = new Identity({ did: 'someDid' }, context);
 
       dsMockUtils.createQueryStub('asset', 'scopeIdOf', {
         returnValue: rawScopeId,
@@ -731,8 +733,6 @@ describe('Identity class', () => {
     });
 
     it("should return the Identity's scopeId associated to the Asset", async () => {
-      const identity = new Identity({ did }, context);
-
       let result = await identity.getScopeId({ asset: ticker });
       expect(result).toEqual(scopeId);
 
@@ -740,6 +740,15 @@ describe('Identity class', () => {
         asset: entityMockUtils.getAssetInstance({ ticker }),
       });
       expect(result).toEqual(scopeId);
+    });
+
+    it("should return null if the Identity doesn't have a ScopeId for the Asset", async () => {
+      dsMockUtils.createQueryStub('asset', 'scopeIdOf', {
+        returnValue: dsMockUtils.createMockScopeId(),
+      });
+
+      const result = await identity.getScopeId({ asset: ticker });
+      expect(result).toBeNull();
     });
   });
 

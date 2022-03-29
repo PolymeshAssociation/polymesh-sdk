@@ -342,8 +342,8 @@ describe('AssetPermissions class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     });
 
-    it('should throw an error if the transaction array is empty', async () => {
-      expect(assetPermissions.checkPermissions({ asset, transactions: [] })).rejects.toThrow(
+    it('should throw an error if the transaction array is empty', () => {
+      return expect(assetPermissions.checkPermissions({ asset, transactions: [] })).rejects.toThrow(
         'Cannot check Permissions for an empty transaction array'
       );
     });

@@ -123,6 +123,7 @@ export class TrustedClaimIssuers extends Namespace<Asset> {
 
     if (callback) {
       return complianceManager.trustedClaimIssuer(rawTicker, issuers => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(assembleResult(issuers));
       });
     }

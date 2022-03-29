@@ -32,9 +32,9 @@ import {
   tickerToString,
 } from '~/utils/conversion';
 import {
+  asAsset,
   calculateNextKey,
   createProcedureMethod,
-  getAsset,
   getIdentity,
   toHumanReadable,
 } from '~/utils/internal';
@@ -190,7 +190,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       total: new BigNumber(0),
       locked: new BigNumber(0),
       free: new BigNumber(0),
-      asset: getAsset(asset, context),
+      asset: asAsset(asset, context),
     }));
 
     if (mask) {

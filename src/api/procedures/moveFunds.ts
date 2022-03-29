@@ -9,7 +9,7 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
 } from '~/utils/conversion';
-import { getTicker } from '~/utils/internal';
+import { asTicker } from '~/utils/internal';
 
 export interface MoveFundsParams {
   /**
@@ -90,7 +90,7 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
 
   portfolioBalances.forEach(({ asset: { ticker }, free }) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transferItem = items.find(({ asset: itemAsset }) => getTicker(itemAsset) === ticker)!;
+    const transferItem = items.find(({ asset: itemAsset }) => asTicker(itemAsset) === ticker)!;
 
     if (transferItem.amount.gt(free)) {
       balanceExceeded.push({ ...transferItem, free });

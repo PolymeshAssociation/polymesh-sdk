@@ -118,7 +118,7 @@ interface IdentityOptions extends EntityOptions {
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
   getVenues?: EntityGetter<Venue[]>;
-  getScopeId?: EntityGetter<string>;
+  getScopeId?: EntityGetter<string | null>;
   getAssetBalance?: EntityGetter<BigNumber>;
   getSecondaryAccounts?: EntityGetter<PermissionedAccount[]>;
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
