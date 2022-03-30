@@ -267,7 +267,7 @@ export class Polymesh {
    * Polkadot client
    */
   public get _polkadotApi(): ApiPromise {
-    return this.context.polymeshApi;
+    return this.context.getPolymeshApi();
   }
 
   /* istanbul ignore next: not part of the official public API */
