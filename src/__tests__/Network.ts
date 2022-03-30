@@ -78,12 +78,12 @@ describe('Network Class', () => {
   });
 
   describe('method: getSs58Format', () => {
-    it("should return the chain's SS58 format", async () => {
+    it("should return the chain's SS58 format", () => {
       const ss58Format = new BigNumber(42);
 
       dsMockUtils.configureMocks({ contextOptions: { ss58Format } });
 
-      const result = await network.getSs58Format();
+      const result = network.getSs58Format();
 
       expect(result).toEqual(ss58Format);
     });
