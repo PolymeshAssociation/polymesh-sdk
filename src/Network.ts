@@ -56,6 +56,13 @@ export class Network {
   }
 
   /**
+   * Retrieve the chain's SS58 format
+   */
+  public getSs58Format(): BigNumber {
+    return this.context.ss58Format;
+  }
+
+  /**
    * Retrieve information for the current network
    */
   public async getNetworkProperties(): Promise<NetworkProperties> {

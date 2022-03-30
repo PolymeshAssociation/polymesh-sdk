@@ -64,7 +64,7 @@ describe('Network Class', () => {
     });
   });
 
-  describe('method: getNetworkVersion', () => {
+  describe('method: getVersion', () => {
     it('should return the network version', async () => {
       const networkVersion = '1.0.0';
 
@@ -74,6 +74,18 @@ describe('Network Class', () => {
       const result = await network.getVersion();
 
       expect(result).toEqual(networkVersion);
+    });
+  });
+
+  describe('method: getSs58Format', () => {
+    it("should return the chain's SS58 format", () => {
+      const ss58Format = new BigNumber(42);
+
+      dsMockUtils.configureMocks({ contextOptions: { ss58Format } });
+
+      const result = network.getSs58Format();
+
+      expect(result).toEqual(ss58Format);
     });
   });
 
