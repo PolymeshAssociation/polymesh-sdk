@@ -438,7 +438,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the non-proxied Polkadot client
+   * Retrieve the polkadot.js promise client
    */
   public getPolymeshApi(): ApiPromise {
     return this._polymeshApi;
