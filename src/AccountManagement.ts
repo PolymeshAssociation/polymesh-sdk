@@ -1,9 +1,10 @@
 import { MultiSig } from '~/api/entities/MultiSig';
-import { createMultiSigAccount, CreateMultiSigParams } from '~/api/procedures/createMultiSig';
 import {
   Account,
   AuthorizationRequest,
   Context,
+  createMultiSigAccount,
+  CreateMultiSigParams,
   inviteAccount,
   InviteAccountParams,
   leaveIdentity,
