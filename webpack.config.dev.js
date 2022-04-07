@@ -8,6 +8,7 @@ const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 const SANDBOX_FILE_NAME = 'sandbox.ts';
 
 const sandboxFilePath = path.resolve(`./${SANDBOX_FILE_NAME}`);
+const webpack = require('webpack');
 
 if (!fs.existsSync(sandboxFilePath)) {
   fs.writeFileSync(
@@ -33,14 +34,16 @@ const devConfig = {
         test: /\.mjs$/,
         include: /node_modules/,
         type: 'javascript/auto',
+        resolve: {
+          fullySpecified: false,
+        },
       },
     ],
   },
 
   devServer: {
     // This is not written to the disk, but has to be named anyways
-    contentBase: path.join(__dirname, 'dist'),
-    watchContentBase: true,
+    static: path.join(__dirname, 'dist'),
     // Opens the browser when the watcher starts
     open: true,
     // No need for compression on development
@@ -52,6 +55,11 @@ const devConfig = {
       title: 'Polymesh SDK - Sandbox',
     }),
     new CaseSensitivePathsPlugin(),
+    // Work around for Buffer is undefined:
+    // https://github.com/webpack/changelog-v5/issues/10
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
   ],
   output: {
     pathinfo: true,
@@ -59,12 +67,14 @@ const devConfig = {
     path: path.resolve(__dirname, 'dist'),
     publicPath: '/',
   },
-  node: {
-    fs: 'empty',
-  },
   resolve: {
     extensions: ['.ts', '.js'],
     plugins: [new TsconfigPathsPlugin()],
+    fallback: {
+      crypto: require.resolve('crypto-browserify'),
+      stream: require.resolve('stream-browserify'),
+      assert: require.resolve('assert/'),
+    },
   },
 };
 

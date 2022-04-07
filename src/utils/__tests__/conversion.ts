@@ -1040,6 +1040,24 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
     result = authorizationToAuthorizationData(value, context);
     expect(result).toBe(fakeResult);
+
+    value = {
+      type: AuthorizationType.TransferTicker,
+      value: 'TICKER',
+    };
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH))
+      .returns(fakeTicker);
+
+    dsMockUtils
+      .getCreateTypeStub()
+      .withArgs('AuthorizationData', { [value.type]: fakeTicker })
+      .returns(fakeResult);
+
+    result = authorizationToAuthorizationData(value, context);
+    expect(result).toBe(fakeResult);
   });
 
   test('authorizationDataToAuthorization should convert a polkadot AuthorizationData object to an Authorization', () => {
