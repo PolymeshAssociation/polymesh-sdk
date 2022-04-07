@@ -197,8 +197,6 @@ export class AccountManagement {
 
   /**
    * Return an Account instance from an address. If the Account is a signer for a MultiSig then it will be a MultiSig
-   *
-   * @note There is a {@link isMultiSig} type guard to help narrow to MultiSig. This is only needed for MultiSig specific functionality
    */
   public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
     const {

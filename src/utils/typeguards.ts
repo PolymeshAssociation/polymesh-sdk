@@ -16,7 +16,6 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
-  MultiSig,
   NumberedPortfolio,
   Offering,
   PolymeshError,
@@ -367,13 +366,6 @@ export function isPolymeshTransaction(value: unknown): value is PolymeshTransact
  */
 export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTransactionBatch {
   return value instanceof PolymeshTransactionBatch;
-}
-
-/**
- * Return whether value is a MultiSig Account
- */
-export function isMultiSig(value: Account): value is MultiSig {
-  return value instanceof MultiSig;
 }
 
 /**

@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { sign } from 'crypto';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Identity, PolymeshError } from '~/internal';
@@ -12,11 +11,11 @@ interface MultiSigDetails {
 }
 
 /**
- * Represents a MultiSig Account. This functions like a regular account except to execute a transaction a proposal must be made and accepted by signers
+ * Represents a MultiSig Account. This functions like an Account except when creating transactions
  */
 export class MultiSig extends Account {
   /**
-   * Returns details about this MultiSig such as its Signers and the require number of signatures to execute an extrinsic
+   * Returns details about this MultiSig such as the signing accounts and the required number of signatures to execute a MultiSigProposal
    */
   public async details(): Promise<MultiSigDetails> {
     const {
@@ -49,14 +48,15 @@ export class MultiSig extends Account {
    *
    * @throws if the MultiSigProposal is not found
    */
-  public async getProposal(id: BigNumber): Promise<MultiSigProposal> {
+  public async getProposal(args: { id: BigNumber }): Promise<MultiSigProposal> {
+    const { id } = args;
     const { address, context } = this;
     const proposal = new MultiSigProposal({ multiSigAddress: address, id }, context);
     const exists = await proposal.exists();
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: `Proposal with ID "${id}" doesn't exist on chain. Maybe it was already executed`,
+        message: `Proposal with ID "${id}" was not found`,
       });
     }
 
@@ -64,9 +64,9 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Returns all pending { @link MultiSigProposal | MultiSigProposals } for this MultiSig Account
+   * Returns all { @link MultiSigProposal | MultiSigProposals } for this MultiSig Account
    */
-  public async getPendingProposals(): Promise<MultiSigProposal[]> {
+  public async getProposals(): Promise<MultiSigProposal[]> {
     const {
       context: {
         polymeshApi: {
@@ -87,7 +87,7 @@ export class MultiSig extends Account {
       } else {
         throw new PolymeshError({
           code: ErrorCode.DataUnavailable,
-          message: 'A Proposal was missing its ID. Maybe it was already executed',
+          message: 'A Proposal was missing its ID. Perhaps it was already executed',
         });
       }
     });

@@ -95,7 +95,7 @@ describe('MultiSig class', () => {
       entityMockUtils.configureMocks({
         multiSigProposalOptions: { exists: true },
       });
-      const result = await multiSig.getProposal(id);
+      const result = await multiSig.getProposal({ id });
       expect(result).toBeDefined();
       expect(result.id).toEqual(id);
       expect(result.multiSigAddress).toEqual(address);
@@ -108,9 +108,9 @@ describe('MultiSig class', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'Proposal with ID "1" doesn\'t exist on chain. Maybe it was already executed',
+        message: 'Proposal with ID "1" was not found',
       });
-      return expect(multiSig.getProposal(id)).rejects.toThrowError(expectedError);
+      return expect(multiSig.getProposal({ id })).rejects.toThrowError(expectedError);
     });
   });
 
@@ -120,7 +120,7 @@ describe('MultiSig class', () => {
       dsMockUtils.createQueryStub('multiSig', 'proposalIds', {
         entries: [[[''], createMockOption(createMockU64(id))]],
       });
-      const result = await multiSig.getPendingProposals();
+      const result = await multiSig.getProposals();
 
       const expectedProposals: MultiSigProposal[] = [
         new MultiSigProposal({ multiSigAddress: address, id }, context),
@@ -134,7 +134,7 @@ describe('MultiSig class', () => {
         entries: [],
       });
 
-      const result = await multiSig.getPendingProposals();
+      const result = await multiSig.getProposals();
 
       const expectedProposals: MultiSigProposal[] = [];
 
@@ -148,10 +148,10 @@ describe('MultiSig class', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'A Proposal was missing its ID. Maybe it was already executed',
+        message: 'A Proposal was missing its ID. Perhaps it was already executed',
       });
 
-      return expect(multiSig.getPendingProposals()).rejects.toThrowError(expectedError);
+      return expect(multiSig.getProposals()).rejects.toThrowError(expectedError);
     });
   });
 });

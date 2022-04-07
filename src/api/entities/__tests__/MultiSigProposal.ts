@@ -1,15 +1,10 @@
 import BigNumber from 'bignumber.js';
-import { create } from 'lodash';
 import sinon from 'sinon';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
-  createMockMoment,
-  createMockOption,
-  createMockRecordDate,
-} from '~/testUtils/mocks/dataSources';
+import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';

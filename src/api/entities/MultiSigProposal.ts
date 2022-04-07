@@ -30,11 +30,11 @@ export interface MultiSigProposalDetails {
   expiry: Date | null;
   autoClose: boolean;
   txTag: TxTag;
-  args: unknown[];
+  args: string[];
 }
 
 /**
- * A Proposal for a MultiSig. This is a wrapper around an extrinsic that multiSig signers need to approve. It will be executed when the approvals reach the signature threshold set on the MultiSig address
+ * A proposal for a MultiSig transaction. This is a wrapper around an extrinsic and will be executed when the approvals reach the signature threshold set on the MultiSig Account
  */
 export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   public multiSigAddress: string;
@@ -110,7 +110,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       status,
       expiry,
       autoClose,
-      args,
+      args: args.map(a => a.toString()),
       txTag: `${section}.${method}` as TxTag,
     };
   }
