@@ -644,6 +644,19 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: getPolymeshApi', () => {
+    it('should return the polkadot.js promise client', async () => {
+      const polymeshApi = dsMockUtils.getApiInstance();
+
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      expect(context.getPolymeshApi()).toBe(polymeshApi);
+    });
+  });
+
   describe('method: getSigningAddress', () => {
     beforeAll(() => {
       sinon.stub(utilsInternalModule, 'assertAddressValid');
