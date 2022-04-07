@@ -213,7 +213,7 @@ describe('AccountManagement class', () => {
       expect(result.address).toBe(params.address);
     });
 
-    it('should return a MultiSig object if the address is for a MultiSig', async () => {
+    it('should return a MultiSig instance if the address is for a MultiSig', async () => {
       const params = { address: 'testAddress' };
       dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
         entries: [[['someSignerAddress'], 'someSignerAddress']],
