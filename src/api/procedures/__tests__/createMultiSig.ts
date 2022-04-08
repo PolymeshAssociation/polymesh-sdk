@@ -87,7 +87,8 @@ describe('createMultiSig procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The number of required signatures should not exceed the number of signers',
+      message:
+        'The number of required signatures should not exceed the number of signatures required',
     });
 
     return expect(
