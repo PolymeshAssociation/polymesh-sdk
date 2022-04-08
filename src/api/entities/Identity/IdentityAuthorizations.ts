@@ -1,7 +1,9 @@
+import BigNumber from 'bignumber.js';
+
 import { AuthorizationRequest, Authorizations, Identity } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
 import { QueryReturnType, tuple } from '~/types/utils';
-import { signatoryToSignerValue, stringToIdentityId } from '~/utils/conversion';
+import { bigNumberToU64, signatoryToSignerValue, stringToIdentityId } from '~/utils/conversion';
 import { requestPaginated } from '~/utils/internal';
 
 /**
@@ -50,5 +52,40 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
       data,
       next,
     };
+  }
+
+  /**
+   * Retrieve a single Authorization Request targeting or issued by this Identity by its ID
+   *
+   * @throws if there is no Authorization Request with the passed ID targeting or issued by this Identity
+   */
+  public override async getOne(args: { id: BigNumber }): Promise<AuthorizationRequest> {
+    const {
+      context,
+      parent: { did },
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const { id } = args;
+
+    const rawId = bigNumberToU64(id, context);
+
+    const targetSignatory = await identity.authorizationsGiven(
+      stringToIdentityId(did, context),
+      rawId
+    );
+
+    if (!targetSignatory.isEmpty) {
+      const auth = await identity.authorizations(targetSignatory, rawId);
+      const signerValue = signatoryToSignerValue(targetSignatory);
+
+      return this.createAuthorizationRequests([{ auth: auth.unwrap(), target: signerValue }])[0];
+    }
+
+    return super.getOne({ id });
   }
 }
