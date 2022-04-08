@@ -42,8 +42,7 @@ export async function prepareCreateMultiSigAccount(
   if (signaturesRequired.gt(signers.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message:
-        'The number of required signatures should not exceed the number of signatured required',
+      message: 'The number of signatures required should not exceed the number of signers',
     });
   }
 
