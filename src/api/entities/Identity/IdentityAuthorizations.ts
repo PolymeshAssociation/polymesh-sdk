@@ -57,6 +57,8 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
   /**
    * Retrieve a single Authorization Request targeting or issued by this Identity by its ID
    *
+   * `authorizations` storage only returns results for the authorization target, so `authorizationsGiven` needs to be queried first to find the relevant target if present
+   *
    * @throws if there is no Authorization Request with the passed ID targeting or issued by this Identity
    */
   public override async getOne(args: { id: BigNumber }): Promise<AuthorizationRequest> {
@@ -81,9 +83,9 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
 
     if (!targetSignatory.isEmpty) {
       const auth = await identity.authorizations(targetSignatory, rawId);
-      const signerValue = signatoryToSignerValue(targetSignatory);
+      const target = signatoryToSignerValue(targetSignatory);
 
-      return this.createAuthorizationRequests([{ auth: auth.unwrap(), target: signerValue }])[0];
+      return this.createAuthorizationRequests([{ auth: auth.unwrap(), target }])[0];
     }
 
     return super.getOne({ id });
