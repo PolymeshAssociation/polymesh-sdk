@@ -5,7 +5,6 @@ import { AccountManagement } from '~/AccountManagement';
 import { Account, MultiSig, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
-import { getAccountInstance } from '~/testUtils/mocks/entities';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
 
 jest.mock(
@@ -316,7 +315,7 @@ describe('AccountManagement class', () => {
   describe('method: createMultiSigAccount', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
-        signers: [getAccountInstance()],
+        signers: [entityMockUtils.getAccountInstance()],
         signaturesRequired: new BigNumber(1),
       };
 

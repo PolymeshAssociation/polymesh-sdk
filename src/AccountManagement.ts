@@ -155,6 +155,7 @@ export class AccountManagement {
    * Create a MultiSig Account
    *
    * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signer which will have to be accepted before they can approve transactions. Each signing account cannot be associated with an Identity
+   * An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
    */
   public createMultiSigAccount: ProcedureMethod<CreateMultiSigParams, MultiSig>;
 

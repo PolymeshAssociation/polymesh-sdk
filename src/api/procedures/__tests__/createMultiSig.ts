@@ -24,15 +24,15 @@ describe('createMultiSig procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    multiSigResponse = [
-      'callerDid',
-      'multiSigResponse',
-    ] as unknown as PostTransactionValue<MultiSig>;
     sinon.stub(utilsInternalModule, 'assertAddressValid');
     sinon.stub(utilsConversionModule, 'addressToKey');
   });
 
   beforeEach(() => {
+    multiSigResponse = [
+      'callerDid',
+      'multiSigResponse',
+    ] as unknown as PostTransactionValue<MultiSig>;
     mockContext = dsMockUtils.getContextInstance();
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([multiSigResponse]);
   });

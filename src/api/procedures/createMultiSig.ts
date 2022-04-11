@@ -1,8 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { MultiSig } from '~/api/entities/MultiSig';
-import { Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
+import { Context, MultiSig, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ErrorCode, Signer, TxTags } from '~/types';
 import { accountIdToString, bigNumberToU64, signerToSignatory } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
@@ -46,13 +45,13 @@ export async function prepareCreateMultiSigAccount(
     });
   }
 
-  const numSigners = bigNumberToU64(signaturesRequired, context);
-  const signatories = signers.map(signer => signerToSignatory(signer, context));
+  const rawSignaturesRequired = bigNumberToU64(signaturesRequired, context);
+  const rawSignatories = signers.map(signer => signerToSignatory(signer, context));
 
   const [multiSig] = this.addTransaction({
     transaction: tx.multiSig.createMultisig,
     resolvers: [createMultiSigResolver(context)],
-    args: [signatories, numSigners],
+    args: [rawSignatories, rawSignaturesRequired],
   });
 
   return multiSig;
