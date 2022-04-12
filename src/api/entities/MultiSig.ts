@@ -19,7 +19,7 @@ interface MultiSigDetails {
 }
 
 /**
- * Represents a MultiSig Account. This functions like an Account except when creating transactions
+ * Represents a MultiSig Account. MultiSig functions like an { @link Account } except submitted extrinsics need to be approved by a number of signers
  */
 export class MultiSig extends Account {
   /**

@@ -154,7 +154,9 @@ export class AccountManagement {
   /**
    * Create a MultiSig Account
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signer which will have to be accepted before they can approve transactions. Each signing account cannot be associated with an Identity
+   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signer which will have to be accepted before they can approve transactions. Each signing account cannot be associated with an Identity when accepting the authorization
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    */
   public createMultiSigAccount: ProcedureMethod<CreateMultiSigParams, MultiSig>;
 
@@ -209,7 +211,7 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Account instance from an address. If the Account is a signer for a MultiSig then it will be a MultiSig
+   * Return an Account instance from an address. If the Account has multiSig signers the returned value will be a {@link MultiSig} instance
    */
   public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
     const {

@@ -116,7 +116,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Determines wether this Proposal exists on chain or not
+   * Determines whether or not this Proposal exists on chain
    */
   public async exists(): Promise<boolean> {
     const {
@@ -135,7 +135,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns the multiSig address and this Proposal's ID
+   * Returns the MultiSig address and this Proposal's ID as a human readable string
    */
   public toJson(): string {
     const { multiSigAddress, id } = this;
