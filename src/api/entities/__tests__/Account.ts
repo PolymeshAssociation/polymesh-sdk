@@ -396,12 +396,30 @@ describe('Account class', () => {
   });
 
   describe('method: getPermissions', () => {
+    it('should throw if no Identity is associated with the Account', async () => {
+      context = dsMockUtils.getContextInstance();
+
+      account = new Account({ address }, context);
+
+      const spy = jest.spyOn(account, 'getIdentity').mockResolvedValue(null);
+
+      await expect(() => account.getPermissions()).rejects.toThrowError(
+        'There is no Identity associated with this Account'
+      );
+
+      spy.mockRestore();
+    });
+
     it('should return full permissions if the Account is the primary Account', async () => {
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
+      const identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({ address }),
+        },
       });
 
       account = new Account({ address }, context);
+
+      const spy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
 
       const result = await account.getPermissions();
 
@@ -411,6 +429,8 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       });
+
+      spy.mockRestore();
     });
 
     it("should return the Account's permissions if it is a secondary Account", async () => {
@@ -421,8 +441,8 @@ describe('Account class', () => {
         portfolios: null,
       };
 
-      context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
+      const identity = entityMockUtils.getIdentityInstance({
+        getSecondaryAccounts: [
           { account: entityMockUtils.getAccountInstance({ address }), permissions },
           {
             account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
@@ -441,9 +461,13 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
+      const spy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
+
       const result = await account.getPermissions();
 
       expect(result).toEqual(permissions);
+
+      spy.mockRestore();
     });
   });
 
