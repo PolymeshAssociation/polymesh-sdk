@@ -4,7 +4,7 @@ import { AuthorizationRequest, Authorizations, Identity } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
 import { QueryReturnType, tuple } from '~/types/utils';
 import { bigNumberToU64, signatoryToSignerValue, stringToIdentityId } from '~/utils/conversion';
-import { requestPaginated } from '~/utils/internal';
+import { defusePromise, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Identity Authorization related functionality
@@ -57,8 +57,6 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
   /**
    * Retrieve a single Authorization Request targeting or issued by this Identity by its ID
    *
-   * `authorizations` storage only returns results for the authorization target, so `authorizationsGiven` needs to be queried first to find the relevant target if present
-   *
    * @throws if there is no Authorization Request with the passed ID targeting or issued by this Identity
    */
   public override async getOne(args: { id: BigNumber }): Promise<AuthorizationRequest> {
@@ -76,6 +74,17 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
 
     const rawId = bigNumberToU64(id, context);
 
+    /*
+     * We're using `defusePromise` here because if the id corresponds to a sent auth,
+     * we don't care about the error, and if it doesn't, then we return the promise and
+     * the error will be handled by the caller
+     */
+    const gettingReceivedAuth = defusePromise(super.getOne({ id }));
+
+    /**
+     * `authorizations` storage only returns results for the authorization target,
+     * so `authorizationsGiven` needs to be queried first to find the relevant target if present
+     */
     const targetSignatory = await identity.authorizationsGiven(
       stringToIdentityId(did, context),
       rawId
@@ -88,6 +97,6 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
       return this.createAuthorizationRequests([{ auth: auth.unwrap(), target }])[0];
     }
 
-    return super.getOne({ id });
+    return gettingReceivedAuth;
   }
 }

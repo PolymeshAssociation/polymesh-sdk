@@ -154,7 +154,7 @@ describe('IdentityAuthorizations class', () => {
       sinon.stub(utilsConversionModule, 'bigNumberToU64');
     });
 
-    it('should return the requested Authorization Request issued by the signing Identity', async () => {
+    it('should return the requested Authorization Request issued by the parent Identity', async () => {
       const did = 'someDid';
       const targetDid = 'alice';
       const context = dsMockUtils.getContextInstance({ did });
@@ -195,7 +195,7 @@ describe('IdentityAuthorizations class', () => {
       expect(result.issuer.did).toEqual(did);
     });
 
-    it('should return the requested Authorization Request targeted by the signing Identity', async () => {
+    it('should return the requested Authorization Request targeting the parent Identity', async () => {
       const did = 'someDid';
       const issuerDid = 'alice';
       const context = dsMockUtils.getContextInstance({ did });
