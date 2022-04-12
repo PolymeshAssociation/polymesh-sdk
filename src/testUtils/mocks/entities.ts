@@ -20,6 +20,7 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  MultiSig,
   NumberedPortfolio,
   Offering,
   Subsidy,
@@ -95,6 +96,7 @@ export type MockCorporateAction = Mocked<CorporateAction>;
 export type MockDividendDistribution = Mocked<DividendDistribution>;
 export type MockCustomPermissionGroup = Mocked<CustomPermissionGroup>;
 export type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
+export type MockMultiSig = Mocked<MultiSig>;
 export type MockMultiSigProposal = Mocked<MultiSigProposal>;
 
 interface EntityOptions {
@@ -281,6 +283,11 @@ interface MultiSigProposalOptions extends EntityOptions {
   details?: EntityGetter<MultiSigProposalDetails>;
 }
 
+interface MultiSigOptions extends AccountOptions {
+  details?: { signers: Signer[]; signaturesRequired: BigNumber };
+  getCreator?: EntityGetter<Identity>;
+}
+
 type MockOptions = {
   identityOptions?: IdentityOptions;
   accountOptions?: AccountOptions;
@@ -299,6 +306,7 @@ type MockOptions = {
   dividendDistributionOptions?: DividendDistributionOptions;
   customPermissionGroupOptions?: CustomPermissionGroupOptions;
   knownPermissionGroupOptions?: KnownPermissionGroupOptions;
+  multiSigOptions?: MultiSigOptions;
   multiSigProposalOptions?: MultiSigProposalOptions;
 };
 
@@ -1418,6 +1426,68 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
   ['PermissionGroup', 'CustomPermissionGroup']
 );
 
+const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
+  class {
+    uuid!: string;
+    address!: string;
+    key!: string;
+    isFrozen!: sinon.SinonStub;
+    getBalance!: sinon.SinonStub;
+    getIdentity!: sinon.SinonStub;
+    getTransactionHistory!: sinon.SinonStub;
+    hasPermissions!: sinon.SinonStub;
+    checkPermissions!: sinon.SinonStub;
+    details!: sinon.SinonStub;
+    getCreator!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof MultiSig>) {
+      return extractFromArgs(args, ['address']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<MultiSigOptions>) {
+      this.uuid = 'account';
+      this.address = opts.address;
+      this.key = opts.key;
+      this.isFrozen = createEntityGetterStub(opts.isFrozen);
+      this.getBalance = createEntityGetterStub(opts.getBalance);
+      this.getIdentity = createEntityGetterStub(opts.getIdentity);
+      this.getTransactionHistory = createEntityGetterStub(opts.getTransactionHistory);
+      this.hasPermissions = createEntityGetterStub(opts.hasPermissions);
+      this.checkPermissions = createEntityGetterStub(opts.checkPermissions);
+      this.details = createEntityGetterStub(opts.details);
+      this.getCreator = createEntityGetterStub(opts.getCreator);
+    }
+  },
+  () => ({
+    address: 'someAddress',
+    key: 'someKey',
+    getBalance: {
+      free: new BigNumber(100),
+      locked: new BigNumber(10),
+      total: new BigNumber(110),
+    },
+    getTransactionHistory: [],
+    getIdentity: getIdentityInstance(),
+    isFrozen: false,
+    hasPermissions: true,
+    checkPermissions: {
+      result: true,
+    },
+    details: {
+      signers: [],
+      signaturesRequired: new BigNumber(0),
+    },
+    getCreator: getIdentityInstance(),
+  }),
+  ['MultiSig']
+);
+
 const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>(
   class {
     id!: BigNumber;
@@ -1564,6 +1634,11 @@ export const mockDividendDistributionModule = (path: string) => (): Record<strin
   DividendDistribution: MockDividendDistributionClass,
 });
 
+export const mockMultiSigModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  MultiSig: MockMultiSigClass,
+});
+
 export const mockMultiSigProposalModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   MultiSigProposal: MockMultiSigProposalClass,
@@ -1602,6 +1677,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockCheckpointScheduleClass.init(opts?.checkpointScheduleOptions);
   MockCorporateActionClass.init(opts?.corporateActionOptions);
   MockDividendDistributionClass.init(opts?.dividendDistributionOptions);
+  MockMultiSigClass.init(opts?.multiSigOptions);
   MockMultiSigProposalClass.init(opts?.multiSigProposalOptions);
 };
 
@@ -1628,6 +1704,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockCheckpointScheduleClass.setOptions(opts?.checkpointScheduleOptions);
   MockCorporateActionClass.setOptions(opts?.corporateActionOptions);
   MockDividendDistributionClass.setOptions(opts?.dividendDistributionOptions);
+  MockMultiSigClass.setOptions(opts?.multiSigOptions);
   MockMultiSigProposalClass.setOptions(opts?.multiSigProposalOptions);
 };
 
@@ -1653,6 +1730,7 @@ export const reset = function (): void {
   MockCheckpointScheduleClass.resetOptions();
   MockCorporateActionClass.resetOptions();
   MockDividendDistributionClass.resetOptions();
+  MockMultiSigClass.resetOptions();
   MockMultiSigProposalClass.resetOptions();
 };
 
@@ -1908,6 +1986,16 @@ export const getDividendDistributionInstance = (
   }
 
   return instance as unknown as MockDividendDistribution;
+};
+
+export const getMultiSigInstance = (opts?: MultiSigOptions): MockMultiSig => {
+  const instance = new MockMultiSigClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockMultiSig;
 };
 
 export const getMultiSigProposalInstance = (

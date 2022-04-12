@@ -1,9 +1,17 @@
 import BigNumber from 'bignumber.js';
 
+import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { Account, Identity, PolymeshError } from '~/internal';
-import { ErrorCode, Signer } from '~/types';
-import { accountIdToString, identityIdToString, u64ToBigNumber } from '~/utils/conversion';
+import { modifyMultiSigAccount, ModifyMultiSigParams } from '~/api/procedures/modifyMultiSig';
+import { Account, Context, Identity, PolymeshError } from '~/internal';
+import { ErrorCode, ProcedureMethod, Signer } from '~/types';
+import {
+  accountIdToString,
+  addressToKey,
+  identityIdToString,
+  u64ToBigNumber,
+} from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 interface MultiSigDetails {
   signers: Signer[];
@@ -14,6 +22,23 @@ interface MultiSigDetails {
  * Represents a MultiSig Account. This functions like an Account except when creating transactions
  */
 export class MultiSig extends Account {
+  /**
+   * @hidden
+   */
+  public constructor(identifiers: UniqueIdentifiers, context: Context) {
+    super(identifiers, context);
+
+    this.modify = createProcedureMethod(
+      {
+        getProcedureAndArgs: modifyAsCreatorArgs => [
+          modifyMultiSigAccount,
+          { ...modifyAsCreatorArgs, multiSig: this },
+        ],
+      },
+      context
+    );
+  }
+
   /**
    * Returns details about this MultiSig such as the signing accounts and the required number of signatures to execute a MultiSigProposal
    */
@@ -92,4 +117,36 @@ export class MultiSig extends Account {
       }
     });
   }
+
+  /**
+   * Returns the Identity of the MultiSig creator. This Identity can add or remove signers directly without creating a MultiSigProposal first.
+   */
+  public async getCreator(): Promise<Identity> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+      },
+      context,
+    } = this;
+
+    const rawAddress = addressToKey(this.address, context);
+    const rawCreatorDid = await multiSig.multiSigToIdentity(rawAddress);
+    if (rawCreatorDid.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No creator was found for this MultiSig address',
+      });
+    }
+
+    const did = identityIdToString(rawCreatorDid);
+
+    return new Identity({ did }, context);
+  }
+
+  /**
+   * Modify the signers for the MultiSig. The signingAccount must belong to the Identity of the creator of the MultiSig
+   */
+  public modify: ProcedureMethod<{ signers: Signer[] }, void>;
 }

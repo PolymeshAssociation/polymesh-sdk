@@ -12,7 +12,7 @@ import {
   createMockU64,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TransactionQueue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -152,6 +152,48 @@ describe('MultiSig class', () => {
       });
 
       return expect(multiSig.getProposals()).rejects.toThrowError(expectedError);
+    });
+  });
+
+  describe('method: getCreator', () => {
+    it('should return the Identity of the creator of the MultiSig', async () => {
+      const expectedDid = 'abc';
+      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+        returnValue: createMockIdentityId(expectedDid),
+      });
+
+      const result = await multiSig.getCreator();
+      return expect(result.did).toEqual(expectedDid);
+    });
+
+    it('should throw an error if there is no creator', () => {
+      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+        returnValue: createMockIdentityId(),
+      });
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'No creator was found for this MultiSig address',
+      });
+
+      return expect(multiSig.getCreator()).rejects.toThrowError(expectedError);
+    });
+  });
+
+  describe('method: modify', () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const args = {
+        signers: [],
+      };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { multiSig, ...args }, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await multiSig.modify(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });
