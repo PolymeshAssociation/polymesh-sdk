@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { modifyMultiSigAccount, ModifyMultiSigParams } from '~/api/procedures/modifyMultiSig';
+import { modifyMultiSigAccount } from '~/api/procedures/modifyMultiSig';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { ErrorCode, ProcedureMethod, Signer } from '~/types';
 import {
@@ -30,9 +30,9 @@ export class MultiSig extends Account {
 
     this.modify = createProcedureMethod(
       {
-        getProcedureAndArgs: modifyAsCreatorArgs => [
+        getProcedureAndArgs: modifyArgs => [
           modifyMultiSigAccount,
-          { ...modifyAsCreatorArgs, multiSig: this },
+          { multiSig: this, ...modifyArgs },
         ],
       },
       context

@@ -23,6 +23,11 @@ jest.mock(
   )
 );
 
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+
 describe('MultiSig class', () => {
   let context: Mocked<Context>;
 

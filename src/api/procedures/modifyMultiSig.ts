@@ -70,18 +70,16 @@ export async function prepareModifyMultiSig(
     });
   }
 
-  if (addedSigners) {
+  if (addedSigners.length > 0) {
     const rawAddedSigners = addedSigners.map(s => signerToSignatory(s, context));
-    console.log('adding signers', rawAddedSigners);
     this.addTransaction({
       transaction: tx.multiSig.addMultisigSignersViaCreator,
       args: [rawAddress, rawAddedSigners],
     });
   }
 
-  if (removedSigners) {
+  if (removedSigners.length > 0) {
     const rawRemovedSigners = removedSigners.map(s => signerToSignatory(s, context));
-    console.log('removing signers', rawRemovedSigners);
     this.addTransaction({
       transaction: tx.multiSig.removeMultisigSignersViaCreator,
       args: [rawAddress, rawRemovedSigners],
