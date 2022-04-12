@@ -224,3 +224,4 @@ export {
   DecreaseAllowanceParams,
   IncreaseAllowanceParams,
 } from '~/api/procedures/modifyAllowance';
+export { createMultiSigAccount, CreateMultiSigParams } from '~/api/procedures/createMultiSig';

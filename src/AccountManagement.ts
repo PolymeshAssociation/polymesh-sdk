@@ -3,6 +3,8 @@ import {
   Account,
   AuthorizationRequest,
   Context,
+  createMultiSigAccount,
+  CreateMultiSigParams,
   inviteAccount,
   InviteAccountParams,
   leaveIdentity,
@@ -95,6 +97,10 @@ export class AccountManagement {
       { getProcedureAndArgs: args => [subsidizeAccount, { ...args }] },
       context
     );
+    this.createMultiSigAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [createMultiSigAccount, args] },
+      context
+    );
   }
 
   /**
@@ -144,6 +150,15 @@ export class AccountManagement {
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    */
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
+
+  /**
+   * Create a MultiSig Account
+   *
+   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signer which will have to be accepted before they can approve transactions. Each signing account cannot be associated with an Identity when accepting the authorization
+   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   */
+  public createMultiSigAccount: ProcedureMethod<CreateMultiSigParams, MultiSig>;
 
   /**
    * Get the free/locked POLYX balance of an Account
