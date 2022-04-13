@@ -396,12 +396,30 @@ describe('Account class', () => {
   });
 
   describe('method: getPermissions', () => {
+    it('should throw if no Identity is associated with the Account', async () => {
+      context = dsMockUtils.getContextInstance();
+
+      account = new Account({ address }, context);
+
+      const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(null);
+
+      await expect(() => account.getPermissions()).rejects.toThrowError(
+        'There is no Identity associated with this Account'
+      );
+
+      getIdentitySpy.mockRestore();
+    });
+
     it('should return full permissions if the Account is the primary Account', async () => {
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
+      const identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({ address }),
+        },
       });
 
       account = new Account({ address }, context);
+
+      const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
 
       const result = await account.getPermissions();
 
@@ -411,6 +429,8 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       });
+
+      getIdentitySpy.mockRestore();
     });
 
     it("should return the Account's permissions if it is a secondary Account", async () => {
@@ -421,8 +441,8 @@ describe('Account class', () => {
         portfolios: null,
       };
 
-      context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
+      const identity = entityMockUtils.getIdentityInstance({
+        getSecondaryAccounts: [
           { account: entityMockUtils.getAccountInstance({ address }), permissions },
           {
             account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
@@ -441,25 +461,19 @@ describe('Account class', () => {
 
       account = new Account({ address }, context);
 
+      const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
+
       const result = await account.getPermissions();
 
       expect(result).toEqual(permissions);
+
+      getIdentitySpy.mockRestore();
     });
   });
 
   describe('method: checkPermissions', () => {
     it('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-      });
-
-      account = new Account({ address }, context);
-
-      let result = await account.checkPermissions({ assets: [], portfolios: [], transactions: [] });
-
-      expect(result).toEqual({
-        result: true,
-      });
+      const getPermissionsSpy = jest.spyOn(account, 'getPermissions');
 
       let permissions: Permissions = {
         assets: null,
@@ -467,19 +481,10 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       };
-      const secondaryAccountAddress = 'secondaryAccount';
-      const secondaryAccount = entityMockUtils.getAccountInstance({
-        address: secondaryAccountAddress,
-      });
 
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
+      getPermissionsSpy.mockResolvedValue(permissions);
 
-      account = new Account({ address: secondaryAccountAddress }, context);
-
-      result = await account.checkPermissions({
+      let result = await account.checkPermissions({
         assets: null,
         portfolios: null,
         transactions: null,
@@ -498,12 +503,8 @@ describe('Account class', () => {
           type: PermissionType.Include,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
 
@@ -529,12 +530,8 @@ describe('Account class', () => {
           type: PermissionType.Exclude,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       result = await account.checkPermissions({
         assets: [asset],
@@ -594,12 +591,8 @@ describe('Account class', () => {
           type: PermissionType.Exclude,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       result = await account.checkPermissions({
         assets: [],
@@ -628,12 +621,8 @@ describe('Account class', () => {
           type: PermissionType.Exclude,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       result = await account.checkPermissions({
         assets: [],
@@ -648,14 +637,20 @@ describe('Account class', () => {
           transactions: [TxTags.identity.AddClaim],
         },
       });
+      getPermissionsSpy.mockRestore();
     });
 
     it('should exempt certain transactions from requiring permissions', async () => {
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-      });
+      const permissions: Permissions = {
+        assets: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
 
-      account = new Account({ address }, context);
+      const getPermissionsSpy = jest
+        .spyOn(account, 'getPermissions')
+        .mockResolvedValue(permissions);
 
       const result = await account.checkPermissions({
         assets: [],
@@ -672,21 +667,20 @@ describe('Account class', () => {
       expect(result).toEqual({
         result: true,
       });
+      getPermissionsSpy.mockRestore();
     });
   });
 
   describe('method: hasPermissions', () => {
     it('should return whether the Account has the passed permissions', async () => {
-      const mockAccount = entityMockUtils.getAccountInstance({ address });
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-      });
-
-      account = new Account(mockAccount, context);
+      const checkPermissionsSpy = jest
+        .spyOn(account, 'checkPermissions')
+        .mockResolvedValue({ result: true });
 
       const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual(true);
+      checkPermissionsSpy.mockRestore();
     });
   });
 });

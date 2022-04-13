@@ -10,13 +10,14 @@ import {
   union,
 } from 'lodash';
 
-import { Asset, Authorizations, Context, Entity, Identity } from '~/internal';
+import { Asset, Authorizations, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
 import {
   AccountBalance,
   CheckPermissionsResult,
   DefaultPortfolio,
+  ErrorCode,
   ExtrinsicData,
   ModuleName,
   NumberedPortfolio,
@@ -470,21 +471,27 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Retrieve the Permissions this Account has as a Permissioned Account for its corresponding Identity
+   *
+   * @throws if there is no Identity associated with the Account
    */
   public async getPermissions(): Promise<Permissions> {
-    const { context, address } = this;
+    const { address } = this;
 
-    const signingIdentity = await context.getSigningIdentity();
+    const identity = await this.getIdentity();
+
+    if (identity === null) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'There is no Identity associated with this Account',
+      });
+    }
 
     const [
       {
         account: { address: primaryAccountAddress },
       },
       secondaryAccounts,
-    ] = await Promise.all([
-      signingIdentity.getPrimaryAccount(),
-      signingIdentity.getSecondaryAccounts(),
-    ]);
+    ] = await Promise.all([identity.getPrimaryAccount(), identity.getSecondaryAccounts()]);
 
     if (address === primaryAccountAddress) {
       return {
