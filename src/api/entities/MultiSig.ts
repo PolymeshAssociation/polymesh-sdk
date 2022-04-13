@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { modifyMultiSigAccount } from '~/api/procedures/modifyMultiSig';
-import { Account, Context, Identity, PolymeshError } from '~/internal';
+import { Account, Context, Identity, modifyMultiSigAccount, PolymeshError } from '~/internal';
 import { ErrorCode, ProcedureMethod, Signer } from '~/types';
 import {
   accountIdToString,
