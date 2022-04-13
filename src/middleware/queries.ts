@@ -137,6 +137,7 @@ export function eventByIndexedArgs(
         extrinsic_idx
         block {
           datetime
+          hash
         }
       }
     }
@@ -180,6 +181,7 @@ export function eventsByIndexedArgs(
         extrinsic_idx
         block {
           datetime
+          hash
         }
       }
     }
@@ -212,6 +214,9 @@ export function transactionByHash(
         success
         spec_version_id
         extrinsic_hash
+        block {
+          hash
+        }
       }
     }
   `;
@@ -354,6 +359,9 @@ export function transactions(
           success
           spec_version_id
           extrinsic_hash
+          block {
+            hash
+          }
         }
       }
     }
@@ -530,6 +538,7 @@ export function eventByAddedTrustedClaimIssuer(
         extrinsic_idx
         block {
           datetime
+          hash
         }
       }
     }

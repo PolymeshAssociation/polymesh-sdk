@@ -114,57 +114,62 @@ function getMissingTransactionPermissions(
 
   if (currentPermissions === null) {
     return undefined;
-  } else if (requiredPermissions === null) {
+  }
+
+  if (requiredPermissions === null) {
     return null;
-  } else if (requiredPermissions) {
-    const {
-      type: transactionsType,
-      values: transactionsValues,
-      exceptions = [],
-    } = currentPermissions;
-    if (requiredPermissions.length) {
-      let missingPermissions: TxTag[];
+  }
 
-      const exceptionMatches = intersection(requiredPermissions, exceptions);
+  if (!requiredPermissions?.length) {
+    return undefined;
+  }
 
-      if (transactionsType === PermissionType.Include) {
-        const includedTransactions = union(transactionsValues, exemptedTransactions);
+  const {
+    type: transactionsType,
+    values: transactionsValues,
+    exceptions = [],
+  } = currentPermissions;
 
-        missingPermissions = union(
-          differenceWith(requiredPermissions, includedTransactions, isModuleOrTagMatch),
-          exceptionMatches
-        );
-      } else {
-        /*
-         * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
-         *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
-         *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
-         *   removing the entire Identity module from the result, which doesn't make sense
-         */
-        const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName) => {
-          if (!tx.includes('.')) {
-            return tx === exemptedTx;
-          }
+  let missingPermissions: TxTag[];
 
-          return isModuleOrTagMatch(tx, exemptedTx);
-        };
+  const exceptionMatches = intersection(requiredPermissions, exceptions);
 
-        const excludedTransactions = differenceWith(
-          transactionsValues,
-          exemptedTransactions,
-          txComparator
-        );
+  if (transactionsType === PermissionType.Include) {
+    const includedTransactions = union(transactionsValues, exemptedTransactions);
 
-        missingPermissions = difference(
-          intersectionWith(requiredPermissions, excludedTransactions, isModuleOrTagMatch),
-          exceptionMatches
-        );
+    missingPermissions = union(
+      differenceWith(requiredPermissions, includedTransactions, isModuleOrTagMatch),
+      exceptionMatches
+    );
+  } else {
+    /*
+     * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
+     *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
+     *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
+     *   removing the entire Identity module from the result, which doesn't make sense
+     */
+    const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName) => {
+      if (!tx.includes('.')) {
+        return tx === exemptedTx;
       }
 
-      if (missingPermissions.length) {
-        return missingPermissions;
-      }
-    }
+      return isModuleOrTagMatch(tx, exemptedTx);
+    };
+
+    const excludedTransactions = differenceWith(
+      transactionsValues,
+      exemptedTransactions,
+      txComparator
+    );
+
+    missingPermissions = difference(
+      intersectionWith(requiredPermissions, excludedTransactions, isModuleOrTagMatch),
+      exceptionMatches
+    );
+  }
+
+  if (missingPermissions.length) {
+    return missingPermissions;
   }
 
   return undefined;
