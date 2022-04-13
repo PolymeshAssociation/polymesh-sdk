@@ -1445,7 +1445,7 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): E
     codec[`as${upperFirst(key)}`] = enumValue[key];
   }
 
-  return createMockCodec(codec, false) as Enum;
+  return createMockCodec(codec, !enumValue) as Enum;
 };
 
 /**

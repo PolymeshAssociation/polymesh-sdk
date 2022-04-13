@@ -70,8 +70,6 @@ describe('Authorizations class', () => {
       const rawSignatory = dsMockUtils.createMockSignatory();
       const rawAuthorizationType = dsMockUtils.createMockAuthorizationType(filter);
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -89,6 +87,7 @@ describe('Authorizations class', () => {
         } as const,
       ];
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
         dsMockUtils.createMockAuthorization({
           auth_id: dsMockUtils.createMockU64(authId),
@@ -101,6 +100,7 @@ describe('Authorizations class', () => {
           authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
         })
       );
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       signerValueToSignatoryStub.returns(rawSignatory);
       booleanToBoolStub.withArgs(true, context).returns(dsMockUtils.createMockBool(true));
@@ -154,11 +154,10 @@ describe('Authorizations class', () => {
       const authsNamespace = new Authorizations(identity, context);
       const id = new BigNumber(1);
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
@@ -171,6 +170,7 @@ describe('Authorizations class', () => {
           })
         ),
       });
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await authsNamespace.getOne({ id });
 
@@ -188,26 +188,9 @@ describe('Authorizations class', () => {
       const authsNamespace = new Authorizations(identity, context);
       const id = new BigNumber(1);
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-
-      const authId = new BigNumber(1);
-      const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
-      const target = identity;
-      const issuer = entityMockUtils.getIdentityInstance({ did: 'alice' });
-
-      const authParams = {
-        authId,
-        expiry: null,
-        data,
-        target,
-        issuer,
-      };
-
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(),
       });
-
-      entityMockUtils.getAuthorizationRequestInstance(authParams);
 
       return expect(authsNamespace.getOne({ id })).rejects.toThrow(
         'The Authorization Request does not exist'
